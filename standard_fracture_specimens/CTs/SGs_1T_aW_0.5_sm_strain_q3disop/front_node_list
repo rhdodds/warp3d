@@ -1,0 +1,41 @@
+c
+c
+c    C(T), 20% SG, W=2, B=1   20 node brick mesh
+c    15 elements across the front (Bnet). node set 1 is on the
+c    outside.
+c    
+c    Thickness direction is  Y. Outside surface at Y=0,
+c    Centerplane at Y = -0.5
+c
+c2345678901234512345678  
+  node set    1     1
+  node set    2 12968
+  node set    3    51
+  node set    4 14686
+  node set    5   101
+  node set    6 15722
+  node set    7   151
+  node set    8 16758
+  node set    9   201
+  node set   10 17794
+  node set   11   251
+  node set   12 18830
+  node set   13   301
+  node set   14 19866
+  node set   15   351
+  node set   16 20902
+  node set   17   401
+  node set   18 21938
+  node set   19   451
+  node set   20 22974
+  node set   21   501
+  node set   22 24010
+  node set   23   551
+  node set   24 25046
+  node set   25   601
+  node set   26 26082
+  node set   27   651
+  node set   28 27118
+  node set   29   701
+  node set   30 28154
+  node set   31   751

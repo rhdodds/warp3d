@@ -1,0 +1,167 @@
+c 
+c  thin panel of 20-node brick elements containing
+c  a central hole.
+c
+c  model is in 1st quadrant with symmetry on x=y=z=0 planes
+c  
+c  loading is a uniform tension traction applied across top (y=18)
+c  surface of elements
+c
+c  ramp increase remote traction loading with Newmark 
+c  time integration for 80 x 10**(-5) secs 
+c
+c  display of velocities show stress wave making multiple
+c  transits over structure during this time.
+c
+c  rate dependent mises plasticity model representative of
+c  mild steel.
+c
+c  finite strains,large displacements. fully yielding
+c  in reduced cross-section at hole.
+c
+c  model setup with 4-domains to check MPI solution with
+c  direct or hypre solver.
+c
+c  runs fine with direct solver threads only
+c
+c  ask for different kinds of results testing output
+c  capabilities.
+c
+structure panel_w_hole 
+c 
+ material steel
+    properties mises  e 30000 nu 0.3 yld_pt 60 n_power 10,
+                    ref_eps 1.0  m_power 35.0  rho 7.3e-07
+c 
+number of nodes  2812 elements 456
+c
+elements
+ 1- 456 type q3disop nonlinear material steel,
+         order 14pt_rule  center_output short
+c 
+*input from 'panel_crd.inp'
+c 
+c 
+*input from 'panel_incid.inp'
+c
+ blocking $ scalar, 4 domains
+       1       8       1       3
+       2       8       9       3
+       3       8      17       3
+       4       8      25       3
+       5       8      33       3
+       6       8      41       3
+       7       8      49       3
+       8       8      57       3
+       9       8      65       3
+      10       8      73       3
+      11       8      81       3
+      12       8      89       3
+      13       8      97       3
+      14       8     105       3
+      15       2     113       3
+      16       8     115       2
+      17       8     123       2
+      18       8     131       2
+      19       8     139       2
+      20       8     147       2
+      21       8     155       2
+      22       8     163       2
+      23       8     171       2
+      24       8     179       2
+      25       8     187       2
+      26       8     195       2
+      27       8     203       2
+      28       8     211       2
+      29       8     219       2
+      30       2     227       2
+      31       8     229       0
+      32       8     237       0
+      33       8     245       0
+      34       8     253       0
+      35       8     261       0
+      36       8     269       0
+      37       8     277       0
+      38       8     285       0
+      39       8     293       0
+      40       8     301       0
+      41       8     309       0
+      42       8     317       0
+      43       8     325       0
+      44       8     333       0
+      45       2     341       0
+      46       8     343       1
+      47       8     351       1
+      48       8     359       1
+      49       8     367       1
+      50       8     375       1
+      51       8     383       1
+      52       8     391       1
+      53       8     399       1
+      54       8     407       1
+      55       8     415       1
+      56       8     423       1
+      57       8     431       1
+      58       8     439       1
+      59       8     447       1
+      60       2     455       1
+c
+loading unit_tension
+  element loads
+         9 face 3 pressure   -1.000
+       137 face 3 pressure   -1.000
+       138 face 3 pressure   -1.000
+       139 face 3 pressure   -1.000
+       140 face 3 pressure   -1.000
+       141 face 3 pressure   -1.000
+        18 face 3 pressure   -1.000
+       164 face 3 pressure   -1.000
+       165 face 3 pressure   -1.000
+       166 face 3 pressure   -1.000
+       167 face 3 pressure   -1.000
+       168 face 3 pressure   -1.000
+        91 face 4 pressure   -1.000
+        92 face 4 pressure   -1.000
+       113 face 4 pressure   -1.000
+       114 face 4 pressure   -1.000
+c 
+constraints
+  plane x=0 symmetry
+  plane y=0 symmetry
+  plane z=0 symmetry
+c 
+ loading test
+  nonlinear
+    step 1-100 unit_tension 0.5
+c
+ output model flat patran convention text file "panel_model_flat"
+ output patran neutral file "panel_model.neut"
+c
+ nonlinear analysis parameters
+  time step 0.00001
+   solution technique sparse direct
+c   solution technique sparse iterative 
+c   solution technique hypre
+   hypre tolerance 0.000001
+   maximum iterations 5 $  newton iterations
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on 
+   extrapolate off
+   display tied mesh mpcs off
+c 
+ output commands use file "get_output.inp" steps all
+c
+ compute displacements for loading test step 100
+ output displacements 1009 1891 velocities 1009 1891 
+ output wide stresses element 343
+c
+stop

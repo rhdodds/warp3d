@@ -1,0 +1,81 @@
+!
+!        Test 75 -- test "release constraints" capability
+!        ================================================
+!
+!        test the "release constraints: command using
+!        a simple test case.
+!
+!        model is a fixed-fixed beam. 20 in. long (X) with
+!        1 in x 1 in cross sections. All nodes at x=0 and x=20
+!        are fixed.
+!
+!        This is model with node releases
+! 
+!        Loading: uniform downward load across top surface.
+!
+!        Two solutions:
+!
+!         a) no constraints at right end (just a cantilever) 3 load
+!            steps
+!         b) 2 load steps, then release nodes at x=20, then 1 more
+!            downward load increment.
+!
+!        Material is deformation plasticity so solutions for 
+!         (a) and (b) must be same after step 3
+!
+material steel
+properties deformation e 30000 nu 0.3 yld_pt 60 n_power 5
+!
+structure fixed_beam
+!
+number nodes 7265 elements 1280
+!
+elements
+ 1-1280 type q3disop linear material steel,
+        order 2x2x2 center_output short
+! 
+*input from 'test_75_coords.inp'
+*input from 'test_75_incid.inp'
+!
+blocking automatic size = 128
+!
+*input from 'test_75_loads.inp'
+! 
+ constraints
+   plane x=0 fixed
+   plane x=20.0 fixed
+! 
+ loading test
+  nonlinear
+    step 1-3 top 0.04
+! 
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   maximum iterations 10 $  newton iterations
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+! 
+ compute displacements for loading test step 2
+!  
+ list 'right-end'  x=20 
+ list 'left-end' x=0
+!
+  release constraints steps 1
+  'right-end' u v w
+!
+ compute displacements for loading test step 3
+ output displacements 6217
+ output displacements 'right-end'
+ output reactions 'left-end'
+ output reactions 'right-end'
+stop

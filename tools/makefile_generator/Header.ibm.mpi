@@ -1,0 +1,17 @@
+#
+#               Makefile for WARP-3D on RISC-6000 and SP-x
+#               ------------------------------------------
+#
+#    MPI version
+#
+#	This makefile sets specific flags required to compile the parallel
+#	(MPI) version of warp3d, then calls the part of the Makefile
+#	which is the same for both the MPI and serial versions of the code.
+#
+MPIF77 = mpxlf_r -q64 -qwarn64 -b64 -qarch=auto -qtune=auto -qcache=auto -qnoipa -qreport
+MPIF90 = mpxlf_r -q64 -qwarn64 -b64 -qarch=auto -qtune=auto -qcache=auto -qnoipa -qreport
+MPILIB = 
+EXE_NAME = warp3d.mpi
+#
+include Makefile.ibm.inc
+#

@@ -1,0 +1,247 @@
+c
+c   The problem analysed
+c   --------------------
+c        Fatigue analysis of a thin square plate
+c         containing a circular hole at the center.
+c        The plate is loaded at top with R=-1,
+c         crack assumed to grow in mode I.
+c        Ref: McClung and Sehitoglu, EFM, 1989.
+c
+c   FE model
+c   --------
+c        Three-fold symmetry permits analysis of 1/8th plate geometry.
+c        The FE mesh consists of single layer hex8 (l3disop) elements.
+c        Total nodes: 1780     Total elements: 818
+c        Element face loads are applied in the FE model.
+c        Elements follow geometric linear formulation.
+c
+c   Material properties
+c   -------------------
+c        bilinear, kinematic hardening
+c
+c   Crack growth procedure
+c   ----------------------
+c        Crack is grown by 1 element length in every cycle.
+c        The growth takes place at the load step immediately after
+c         peak load.
+c        The growth is by simple node release. We use the option
+c         for the user to request node release at the front for
+c         the next step.
+c
+c   Crack flank contact
+c   -------------------
+c        Mode I symmetry allows modeling of crack flank interaction
+c         through rigid body contact procedure. A contact plane
+c         parallel to x-z plane is defined for this purpose.
+c
+c   Load cycle
+c   ----------
+c        R ratio (Max_load/Min_load) = -1
+c        100 steps in each load cycle.
+c        Analysis runs for 10 cycles.
+c
+c   Output
+c   ------
+c        The main results in the fatigue analysis are related to the
+c         closeing/opening behaviour of the crack.
+c        One way of defining the crack closed/open is based on the
+c         displacement of the nodes in the crack wake.
+c        For continuous monitoring, displacement of all nodes in the
+c         crack plane are requested at every step (both in binary packets
+c         and ascii output file).
+c        A packet processor greatly helps in post-processing the result.
+c
+c
+ structure plate
+c
+ material rail_steel
+    properties bilinear e 205410 nu 0.3 yld_pt 430,
+               tan_e 12817 beta 0.0
+c
+number of nodes  1780 elements 818
+c
+elements
+  1-818 818 type l3disop  nonlinear material rail_steel,
+            order 2x2x2 bbar center_output short
+c
+*input from "coords_incids"
+c
+blocking automatic 
+c
+ constraints
+   plane x=0 symmetry verify
+   plane z=0 symmetry verify
+c  constrain nodes at and ahead of crack tip
+      6      5     14     13     16     15,
+     62     61     64     63    112    111    114    113    160    159,
+    164    163    210    209    212    211    258    257    260    259,
+    308    307    310    309    356    355    358    357    406    405,
+    408    407    454    453    456    455    504    503    506    505,
+    552    551    554    553    602    601    604    603    650    649,
+    652    651    700    699    702    701    748    747    752    751,
+    798    797    800    799    846    845    850    849    896    895,
+    898    897    944    943    992    991   1036   1035   1038   1037,
+   1086   1085   1124   1123   1162   1161   1200   1199   1238   1237,
+   1276   1275   1314   1313   1352   1351   1354   1353   1356   1355,
+   1358   1357   1360   1359   1362   1361   1364   1363   1366   1365,
+   1368   1367   v = 0
+c
+c      define a pattern to describe stress load at top surface.
+c      element load with traction on top face.
+c
+ loading pull
+  element loads
+    809-818   face 3  tractions ty=12.9
+c
+ loading alternate
+  nonlinear
+  steps  1-20,  83- 120,  183- 220,  283- 320,  383- 420,
+               483- 520,  583- 620,  683- 720,  783- 820,
+               883- 920,  983-1020, 1083-1120, 1183-1220,
+              1283-1320, 1383-1420, 1483-1520, 1583-1620,
+              1683-1720, 1783-1820, 1883-1920, 1983-2020,
+              2083-2120, 2183-2220, 2283-2320, 2383-2420,
+              2483-2520, 2583-2620, 2683-2720, 2783-2820,
+              2883-2920, 2983-3020, 3083-3120, 3183-3220,
+              3283-3320, 3383-3420, 3483-3520, 3583-3620,
+              3683-3720, 3783-3820, 3883-3920, 3983-4020,
+              4083-4120, 4183-4220, 4283-4320, 4383-4420,
+              4483-4520, 4583-4620, 4683-4720, 4783-4820,
+           pull 1.0
+c
+   steps        21-  40,  121- 140,  221- 240,  321- 340,
+               421- 440,  521- 540,  621- 640,  721- 740,
+               821- 840,  921- 940, 1021-1040, 1121-1140,
+              1221-1240, 1321-1340, 1421-1440, 1521-1540,
+              1621-1640, 1721-1740, 1821-1840, 1921-1940,
+              2021-2040, 2121-2140, 2221-2240, 2321-2340,
+              2421-2440, 2521-2540, 2621-2640, 2721-2740,
+              2821-2840, 2921-2940, 3021-3040, 3121-3140,
+              3221-3240, 3321-3340, 3421-3440, 3521-3540,
+              3621-3640, 3721-3740, 3821-3840, 3921-3940,
+              4021-4040, 4121-4140, 4221-4240, 4321-4340,
+              4421-4440, 4521-4540, 4621-4640, 4721-4740,
+           pull -0.1
+c
+   steps        41-  78,  141- 178,  241- 278,  341- 378,
+               441- 478,  541- 578,  641- 678,  741- 778,
+               841- 878,  941- 978, 1041-1078, 1141-1178,
+              1241-1278, 1341-1378, 1441-1478, 1541-1578,
+              1641-1678, 1741-1778, 1841-1878, 1941-1978,
+              2041-2078, 2141-2178, 2241-2278, 2341-2378,
+              2441-2478, 2541-2578, 2641-2678, 2741-2778,
+              2841-2878, 2941-2978, 3041-3078, 3141-3178,
+              3241-3278, 3341-3378, 3441-3478, 3541-3578,
+              3641-3678, 3741-3778, 3841-3878, 3941-3978,
+              4041-4078, 4141-4178, 4241-4278, 4341-4378,
+              4441-4478, 4541-4578, 4641-4678, 4741-4778,
+           pull -1.0
+c
+   steps        79-  82,  179- 182,  279- 282,  379- 382,
+               479- 482,  579- 582,  679- 682,  779- 782,
+               879- 882,  979- 982, 1079-1082, 1179-1182,
+              1279-1282, 1379-1382, 1479-1482, 1579-1582,
+              1679-1682, 1779-1782, 1879-1882, 1979-1982,
+              2079-2082, 2179-2182, 2279-2282, 2379-2382,
+              2479-2482, 2579-2582, 2679-2682, 2779-2782,
+              2879-2882, 2979-2982, 3079-3082, 3179-3182,
+              3279-3282, 3379-3382, 3479-3482, 3579-3582,
+              3679-3682, 3779-3782, 3879-3882, 3979-3982,
+              4079-4082, 4179-4182, 4279-4282, 4379-4382,
+              4479-4482, 4579-4582, 4679-4682, 4779-4782,
+           pull  0.5
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 100
+   minimum iterations 4
+   convergence test norm res tol 0.0005 max res tol 0.005
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate off   $ recommended for growing crack
+   binary packets on file 'fatigue_packets'
+c
+ crack growth parameters
+  type of crack growth node_release
+  crack plane normal y coordinate 0.0
+  constant front growth on
+  master node list 5
+  number of nodes along front 2   $ only 1 element thick model
+  angle for release 100 distance 2.0 $ set to large value
+  angle for initiation 100 distance 2.0 $ set to large value
+  characteristic length 2.0
+  force release type steps
+  release steps 5 $ zero reac. forces over 5 steps
+  print status on  $ crack front nodes crack plane nodes
+c
+ contact surface
+  surface 1 plane
+  point -5.0 0.0 -5.0
+  point -5.0 0.0  5.0
+  point  1500.0 0.0 -5.0
+  stiffness 20.0e8
+c
+c
+ output commands file "test_50_get_results" after steps all
+c
+ compute displacements for loading alternate step  20
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  120
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  220
+c
+   crack growth parameters
+      enforce node release
+ compute displacements for loading alternate step  320
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  420
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  520
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  620
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  720
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  820
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step  920
+c
+   crack growth parameters
+      enforce node release
+c
+ compute displacements for loading alternate step 1000
+c
+c
+ save to file 'test_50_rest1000'
+ stop

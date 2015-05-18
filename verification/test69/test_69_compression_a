@@ -1,0 +1,87 @@
+c
+c      small block of grains connected with cohesive elements.
+c      angled and horizontal GBs. 1 layer model in 3D.
+c
+c      uniaxial plane strain constraints.
+c      loading top surface in tension then reverse loading to
+c      put solids and interfaces into compression.
+c
+c      assess how well penalty method works to suppress
+c      interpenetaion along GBs.
+c
+structure grain
+c 
+material metal
+  properties bilinear e 30000 nu 0.3 yld_pt 1.0e20 tan_e 100 
+c
+material gb_linear
+ properties cohesive linear_intf,
+  stiffn 10000 stifft 1000 stiffs 1000 compression_multiplier 100
+c
+material gb_exp
+ properties cohesive exp1_intf,
+   sig_peak 5.0 delta_peak 0.01359141 beta 1.0,
+   compression_multiplier 1000
+c 
+material gb_ppr
+ properties cohesive ppr,
+    sig_peak 5.0 tau_peak 5.0 G_normal 0.1, $1.85,
+    G_shear 1.85 shape_normal 7.0 shape_shear 7.0,
+    ratio_normal 0.1 ratio_shear 0.1,
+    compression_multiplier 1000
+c
+number of nodes 54 elements 18
+c
+elements
+ 1-4 9 10 type inter_8 linear material gb_linear,
+    order '2x2gs'
+ 5-8 11-18 type l3disop linear material metal,
+     order 2x2x2 bbar center_output short
+c 
+*input from 'test_69_comp_coords.inp'
+*input from 'test_69_comp_incid.inp'
+ blocking automatic 
+c
+loading unit_tension  
+  element loads
+   5 7 12 14 face 6 pressure -1.0
+c
+constraints
+  plane z=0.0 symmetry verify
+  plane z=0.25 symmetry verify
+  plane x=0.0 symmetry verify
+  plane x=1.0 symmetry verify 
+  plane y=0.0 symmetry verify
+
+  36 32 u 0.0 v 0.0 $ lower-left corner nodes
+  34 38 u 0.0 v 0.0 $  not detected by above
+c 
+ loading top
+  nonlinear
+    step 1 unit_tension 1.0
+    step 2-10 unit_tension -0.2 
+c 
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+   display tied mesh mpcs off
+c 
+ list 'top' y=1.0
+ list 'interface' 18 22 $ lower & top side of interface at r. edge
+c
+ compute displacements for loading top step 10
+ output wide displacements 'interface'
+stop

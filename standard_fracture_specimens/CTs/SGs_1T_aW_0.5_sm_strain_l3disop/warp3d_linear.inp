@@ -1,0 +1,124 @@
+c
+c ========================================================================
+c
+c        3D C(T) specimen, plane-sided. 1/4 symmetric model. straight
+c        crack front.
+c
+c        Dimensions:
+c           a = 1.0 in
+c           B = 1.0 in B-net = 0.8 in.
+c           W = 2.0 in
+c           H = 2.2 in
+c           a/W = 0.50
+c
+c           10% SG each side.
+c
+c       *** 3D Linear-Elastic Analysis ***
+c
+c =======================================================================
+c
+c
+c        21 (variable) layers through half-thickness in tube mesh region
+c        along crack front. 
+c
+c        focused mesh for non-growth analysis. initially 
+c        collapsed element at front.
+c
+c        pin hole filled with linear elastic elements with connection
+c        to specimen only along top of hole.
+c   
+c        8-node elements. small strain formulation.
+c
+c        displacement control (center of loading pin)
+c
+c     Nonlinear material:    (deformation or mises)
+c         E      = 30,000  ksi 
+c         sig_ys = 60.0 ksi
+c         n = 10 (for small strains)  
+c
+c     Model is loaded by imposed displacements (w) at the center
+c     of the pin (modeled with stiffer, linear-elastic elements).
+c     The same v displacement is imposed at each through-thickness 
+c     node.
+c
+c     Pin loading of 1 mils leads to:
+c
+c     J average = 0.003847 kip-in/in**2
+c     KI-average = 11.262 ksi-in**0.5
+c        J centerplane = 0.003553 kip-in/in**2
+c        KI centerplane = 10.823 ksi-in**0.5
+c        KI factor on load: 10.823/(2*.6794) = 7.965 (=f below)
+c
+c     The total LLD displacement (=2 x v @ @ node 13060) 
+c     is 2 * 0.0008889 in.)
+c
+c     The pin loading for this displacement is: 2 x 0.6794 kips
+c      (2 because only 1/2 of the thickness is modeled)
+c
+c     The 2-D analytical SIF load factor this specimen:
+c         KI = 7.636 * load  ksi-in**0.5, using (B*BN*W)**0.5. 
+c
+c     The load / LLD stiffness is = (2 x 0.6794) / (2 x 0.0008889)
+c                                 = 764.315 kips/in
+c     KI (average) factor.  KI = f * pin load (total)
+c                 f = 11.262/ (2 x 0.6794) = 8.288 ksi-in**0.5 / kips
+c
+c     Check on J value. Run same model with whole crack tip
+c     region offset in x-dir by (+,-) 0.01 in.
+c     Get internal energy for each analysis.
+c
+c     J = 4 * energy difference / (2 * Bnet * 0.01)
+c       = 0.003843 compared to 0.003847 above from domain J-values.
+c         Excellent agreement.
+c
+structure ct_3d_sg_8_node
+c  
+number of nodes 27718 elements 22930
+c
+ material specimen
+   properties deformation e 30000 nu 0.3 yld_pt 60.0e10,
+                          n_power 10 rho 0.0
+c
+ material pin $ stiffer, linear elastic
+   properties linear_elastic e 60000  nu 0.3  rho  0.0
+c  
+elements
+  1-19090 type l3disop linear  material specimen,
+           order 2x2x2  bbar  center_output short     
+  19091-22930 type l3disop linear material pin,
+           order 2x2x2  bbar center_output short     
+c
+ *echo off
+ *input from file 'coord_incidences.inp'
+  blocking automatic display
+ *input from file 'constraints.inp'
+  *echo on
+c
+     27046 w 1.0 u 0.0
+     27045 27044 27043 27042 27041 w 1.0
+c 
+loading test
+  nonlinear
+   steps 1 constraints -0.001
+c
+nonlinear analysis parameters
+  solution technique direct sparse 
+  maximum iterations 10
+  minimum iterations 1
+  nonconvergent solutions stop
+  convergence test norm residual tolerance 0.005
+  time step 1.0E+06
+  adaptive solution off
+  batch messages on
+  cpu time limit off
+  extrapolate off
+  show details on
+  material messages off
+  bbar stabilization factor 0.0
+c 
+  compute displacements for loading test step 1
+  output patran formatted displacements
+  *input from file get_output
+  *input from file domain_define_average
+  *input from file domain_define_center
+stop

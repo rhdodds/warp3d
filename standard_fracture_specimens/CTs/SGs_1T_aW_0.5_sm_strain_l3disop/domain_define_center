@@ -1,0 +1,20 @@
+c
+domain J_center
+  normal plane nx 0 ny 0 nz 1.0
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   1 to  16
+c  
+
+  node set   1   701    725   724   723   722   721   720   719   718,
+             717   716   715   714   713   712   711   710   709   708,
+             707   706   705   704   703   702 
+  node set   2   751    775   774   773   772   771   770   769   768,
+             767   766   765   764   763   762   761   760   759   758,
+             757   756   755   754   753   752 
+  front node sets 1 2  l3disop verify
+  q-values automatic rings    10-15
+  function type c
+  print totals
+  compute domain integral

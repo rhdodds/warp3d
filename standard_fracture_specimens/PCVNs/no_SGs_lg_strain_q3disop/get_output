@@ -1,0 +1,10 @@
+c
+c          LLD displacements
+c
+ output eformat displacements 24, 51195, 53974
+ output packets displacements 24, 51195, 53974
+c
+c          forces at roller nodesk
+c
+output reactions 1 8     62 63    64 65   66 67,    
+68 4483 4561 4612 4663 4714 4765 4816  4867 

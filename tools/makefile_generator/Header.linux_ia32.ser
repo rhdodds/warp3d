@@ -1,0 +1,18 @@
+#
+#
+#    Makefile for WARP3D, Linux, IA-32
+#    ---------------------------------
+#
+#    Intel ifort compiler + MKL library
+#
+#	This makefile sets specific flags required to compile the serial
+#	(non-MPI) version of warp3d, then calls the part of the Makefile
+#	which is the same for both the MPI and serial versions of the code.
+#
+MPIF77 = $(F77)
+MPIF90 = $(F90)
+MPILIB = 
+EXE_NAME = warp3d.ser
+#
+include Makefile.linux_ia32.inc
+#

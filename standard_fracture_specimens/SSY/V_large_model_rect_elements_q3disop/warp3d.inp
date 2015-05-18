@@ -1,0 +1,89 @@
+c
+c
+c      Very large 3-D SSY boundary layer model for
+c      WARP3D testing.
+c
+c      104,145 20-node bricks; 443,654 nodes
+c
+c      Model is set up for serial or threaded-parallel
+c      execution - not MPI.
+c
+c      The model has 15 layers of 20-node bricks with
+c      a very refined in-plane meshing scheme.
+c
+c      The mesh is set up with rectangular shaped (in-plane)
+c      elements in the crack front region - not a focused mesh.
+c
+c      The model can be used to support crack growth analysis via
+c      node release for example.
+c
+c      Simple mises plasticity models the material.
+c
+c      The 14pt integration rule is needed to eliminate the
+c      zero energy modes of the 8-pt rule that occurs in some 20-node
+c      element models.
+c
+c      The block size 128 and probably should be larger.
+c
+c      A plane-stress KI field is imposed thru displacements on the
+c      outer boundary of the model.
+c
+c      Solution is set up for 150 load steps - use the number of
+c      steps desired for testing.
+c
+c
+structure T03B20L15
+c
+ material steel
+    properties mises  e 30000 nu 0.3 yld_pt 60 n_power 10
+c
+number of nodes   443654 elements 104145
+c
+elements
+  1-104145 type q3disop linear material steel,
+              order 14pt_rule no_bbar gausspts short
+c
+*input from 'coordinates.inp'
+*input from 'incidences.inp'
+blocking automatic
+c
+c     displacement controlled, plane stress,
+c     delta_K = 1.0 ksi sqrt(in) per step
+c
+*input from 'constraints.inp'
+c
+ loading dummy
+   nodal loads
+    1 force_x 0.0
+c
+ loading test
+  nonlinear
+    step 1-150 dummy 1.0 constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 2
+   convergence test norm res tol 0.001 max res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+   display tied mesh mpcs off
+c
+c
+ compute displacements for loading test step   1-30
+ output eformat stresses for elements  1596 1660 1724
+ output eformat strains for elements  1596 1660 1724
+ save to file 'ssy3d_big_saved_at_step_30'
+ output patran formatted displacements
+ output patran formatted nodal strains
+ output patran formatted nodal stresses
+c
+ stop

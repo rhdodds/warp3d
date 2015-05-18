@@ -1,0 +1,503 @@
+c
+c
+c
+c  Domain definitions for the blunt CT CVN  model
+c
+c       Through thickness avg
+c
+domain thr_avg
+ symmetric
+c 
+ node set   1        1     2     3     4     5     6     7     8,
+                     9    10    11    12    13    14    15    16,
+                    17    33    52
+c 
+ node set   2     1477  1478  1479  1480  1481  1482  1483  1484,
+                  1485  1486  1487  1488  1489  1490  1491  1492,
+                  1493  1509  1528
+c 
+ node set   3     2953  2954  2955  2956  2957  2958  2959  2960,
+                  2961  2962  2963  2964  2965  2966  2967  2968,
+                  2969  2985  3004
+c 
+ node set   4     4429  4430  4431  4432  4433  4434  4435  4436,
+                  4437  4438  4439  4440  4441  4442  4443  4444,
+                  4445  4461  4480
+c 
+ node set   5     5905  5906  5907  5908  5909  5910  5911  5912,
+                  5913  5914  5915  5916  5917  5918  5919  5920,
+                  5921  5937  5956
+c 
+ node set   6     7381  7382  7383  7384  7385  7386  7387  7388,
+                  7389  7390  7391  7392  7393  7394  7395  7396,
+                  7397  7413  7432
+c 
+ node set   7     8857  8858  8859  8860  8861  8862  8863  8864,
+                  8865  8866  8867  8868  8869  8870  8871  8872,
+                  8873  8889  8908
+c 
+ node set   8    10333 10334 10335 10336 10337 10338 10339 10340,
+                 10341 10342 10343 10344 10345 10346 10347 10348,
+                 10349 10365 10384
+c 
+ node set   9    11809 11810 11811 11812 11813 11814 11815 11816,
+                 11817 11818 11819 11820 11821 11822 11823 11824,
+                 11825 11841 11860
+c 
+ node set  10    13285 13286 13287 13288 13289 13290 13291 13292,
+                 13293 13294 13295 13296 13297 13298 13299 13300,
+                 13301 13317 13336
+c 
+ node set  11    14761 14762 14763 14764 14765 14766 14767 14768,
+                 14769 14770 14771 14772 14773 14774 14775 14776,
+                 14777 14793 14812
+c 
+ node set  12    16237 16238 16239 16240 16241 16242 16243 16244,
+                 16245 16246 16247 16248 16249 16250 16251 16252,
+                 16253 16269 16288
+c 
+ node set  13    17713 17714 17715 17716 17717 17718 17719 17720,
+                 17721 17722 17723 17724 17725 17726 17727 17728,
+                 17729 17745 17764
+c 
+ node set  14    19189 19190 19191 19192 19193 19194 19195 19196,
+                 19197 19198 19199 19200 19201 19202 19203 19204,
+                 19205 19221 19240
+c 
+ node set  15    20665 20666 20667 20668 20669 20670 20671 20672,
+                 20673 20674 20675 20676 20677 20678 20679 20680,
+                 20681 20697 20716
+c
+ front nodes sets 1-15 linear
+ function type d
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c     
+c       Center plane of specimen
+c
+domain inner
+ symmetric
+c 
+ node set   1        1     2     3     4     5     6     7     8,
+                     9    10    11    12    13    14    15    16,
+                    17    33    52
+c 
+ node set   2     1477  1478  1479  1480  1481  1482  1483  1484,
+                  1485  1486  1487  1488  1489  1490  1491  1492,
+                  1493  1509  1528
+c 
+
+c 
+ front node sets 1 2 linear 
+ function type a 
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c      Second  Layer through thickness
+c
+c
+domain two
+ symmetric
+c 
+ node set   1        1     2     3     4     5     6     7     8,
+                     9    10    11    12    13    14    15    16,
+                    17    33    52
+c 
+ node set   2     1477  1478  1479  1480  1481  1482  1483  1484,
+                  1485  1486  1487  1488  1489  1490  1491  1492,
+                  1493  1509  1528
+c 
+ node set   3     2953  2954  2955  2956  2957  2958  2959  2960,
+                  2961  2962  2963  2964  2965  2966  2967  2968,
+                  2969  2985  3004
+c 
+ front nodes sets 1 2 3 linear
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+
+c
+c
+c       Third Layer through thickness
+c
+c
+c 
+domain three 
+ symmetric
+ node set   2     1477  1478  1479  1480  1481  1482  1483  1484,
+                  1485  1486  1487  1488  1489  1490  1491  1492,
+                  1493  1509  1528
+c 
+ node set   3     2953  2954  2955  2956  2957  2958  2959  2960,
+                  2961  2962  2963  2964  2965  2966  2967  2968,
+                  2969  2985  3004
+c 
+ node set   4     4429  4430  4431  4432  4433  4434  4435  4436,
+                  4437  4438  4439  4440  4441  4442  4443  4444,
+                  4445  4461  4480
+c 
+ front nodes sets  2 3 4   linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c      Fourth  Layer through thickness
+c
+c
+domain four
+ symmetric
+c 
+ node set   3     2953  2954  2955  2956  2957  2958  2959  2960,
+                  2961  2962  2963  2964  2965  2966  2967  2968,
+                  2969  2985  3004
+c 
+ node set   4     4429  4430  4431  4432  4433  4434  4435  4436,
+                  4437  4438  4439  4440  4441  4442  4443  4444,
+                  4445  4461  4480
+c 
+ node set   5     5905  5906  5907  5908  5909  5910  5911  5912,
+                  5913  5914  5915  5916  5917  5918  5919  5920,
+                  5921  5937  5956
+c 
+
+ front nodes sets 3 4 5   linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c      Fifth  Layer through thickness
+c
+c
+domain five
+ symmetric
+c 
+ node set   4     4429  4430  4431  4432  4433  4434  4435  4436,
+                  4437  4438  4439  4440  4441  4442  4443  4444,
+                  4445  4461  4480
+c 
+ node set   5     5905  5906  5907  5908  5909  5910  5911  5912,
+                  5913  5914  5915  5916  5917  5918  5919  5920,
+                  5921  5937  5956
+c 
+ node set   6     7381  7382  7383  7384  7385  7386  7387  7388,
+                  7389  7390  7391  7392  7393  7394  7395  7396,
+                  7397  7413  7432
+c 
+
+ front nodes sets 4 5 6  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c      Sixth  Layer through thickness
+c
+c
+domain six
+ symmetric
+c
+ node set   5     5905  5906  5907  5908  5909  5910  5911  5912,
+                  5913  5914  5915  5916  5917  5918  5919  5920,
+                  5921  5937  5956
+c 
+ node set   6     7381  7382  7383  7384  7385  7386  7387  7388,
+                  7389  7390  7391  7392  7393  7394  7395  7396,
+                  7397  7413  7432
+c 
+ node set   7     8857  8858  8859  8860  8861  8862  8863  8864,
+                  8865  8866  8867  8868  8869  8870  8871  8872,
+                  8873  8889  8908
+c 
+front nodes sets 5 6 7  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c        Seventh Layer through thickness
+c
+c
+domain seven
+ symmetric
+c 
+ node set   6     7381  7382  7383  7384  7385  7386  7387  7388,
+                  7389  7390  7391  7392  7393  7394  7395  7396,
+                  7397  7413  7432
+c 
+ node set   7     8857  8858  8859  8860  8861  8862  8863  8864,
+                  8865  8866  8867  8868  8869  8870  8871  8872,
+                  8873  8889  8908
+c 
+ node set   8    10333 10334 10335 10336 10337 10338 10339 10340,
+                 10341 10342 10343 10344 10345 10346 10347 10348,
+                 10349 10365 10384
+c 
+
+ front nodes sets 6 7 8  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c       Eight  Layer through thickness
+c
+c
+domain eight
+ symmetric
+c 
+ node set   7     8857  8858  8859  8860  8861  8862  8863  8864,
+                  8865  8866  8867  8868  8869  8870  8871  8872,
+                  8873  8889  8908
+c 
+ node set   8    10333 10334 10335 10336 10337 10338 10339 10340,
+                 10341 10342 10343 10344 10345 10346 10347 10348,
+                 10349 10365 10384
+c 
+ node set   9    11809 11810 11811 11812 11813 11814 11815 11816,
+                 11817 11818 11819 11820 11821 11822 11823 11824,
+                 11825 11841 11860
+c 
+
+ front nodes sets 7 8 9  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c       Ninth Layer through thickness
+c
+c
+domain nine
+ symmetric
+c 
+ node set   8    10333 10334 10335 10336 10337 10338 10339 10340,
+                 10341 10342 10343 10344 10345 10346 10347 10348,
+                 10349 10365 10384
+c 
+ node set   9    11809 11810 11811 11812 11813 11814 11815 11816,
+                 11817 11818 11819 11820 11821 11822 11823 11824,
+                 11825 11841 11860
+c 
+ node set  10    13285 13286 13287 13288 13289 13290 13291 13292,
+                 13293 13294 13295 13296 13297 13298 13299 13300,
+                 13301 13317 13336
+c             
+c
+ front nodes sets 8 9 10 linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c      Tenth  Layer through thickness
+c
+c
+domain ten
+ symmetric
+c 
+ node set   9    11809 11810 11811 11812 11813 11814 11815 11816,
+                 11817 11818 11819 11820 11821 11822 11823 11824,
+                 11825 11841 11860
+c 
+ node set  10    13285 13286 13287 13288 13289 13290 13291 13292,
+                 13293 13294 13295 13296 13297 13298 13299 13300,
+                 13301 13317 13336
+c 
+ node set  11    14761 14762 14763 14764 14765 14766 14767 14768,
+                 14769 14770 14771 14772 14773 14774 14775 14776,
+                 14777 14793 14812
+c 
+ front nodes sets 9 10 11  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c      Eleventh  Layer through thickness
+c
+c
+domain eleven
+ symmetric
+c 
+ node set  10    13285 13286 13287 13288 13289 13290 13291 13292,
+                 13293 13294 13295 13296 13297 13298 13299 13300,
+                 13301 13317 13336
+c 
+ node set  11    14761 14762 14763 14764 14765 14766 14767 14768,
+                 14769 14770 14771 14772 14773 14774 14775 14776,
+                 14777 14793 14812
+c 
+ node set  12    16237 16238 16239 16240 16241 16242 16243 16244,
+                 16245 16246 16247 16248 16249 16250 16251 16252,
+                 16253 16269 16288
+c 
+
+ front nodes sets 10 11 12  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c      Twelfth  Layer through thickness
+c
+c
+domain twelve
+ symmetric
+c 
+ node set  11    14761 14762 14763 14764 14765 14766 14767 14768,
+                 14769 14770 14771 14772 14773 14774 14775 14776,
+                 14777 14793 14812
+c 
+ node set  12    16237 16238 16239 16240 16241 16242 16243 16244,
+                 16245 16246 16247 16248 16249 16250 16251 16252,
+                 16253 16269 16288
+c 
+ node set  13    17713 17714 17715 17716 17717 17718 17719 17720,
+                 17721 17722 17723 17724 17725 17726 17727 17728,
+                 17729 17745 17764
+c 
+ front nodes sets 11 12 13  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c        Thirteenth Layer through thickness
+c
+c
+domain thirteen
+ symmetric
+c 
+ node set  12    16237 16238 16239 16240 16241 16242 16243 16244,
+                 16245 16246 16247 16248 16249 16250 16251 16252,
+                 16253 16269 16288
+c 
+ node set  13    17713 17714 17715 17716 17717 17718 17719 17720,
+                 17721 17722 17723 17724 17725 17726 17727 17728,
+                 17729 17745 17764
+c 
+ node set  14    19189 19190 19191 19192 19193 19194 19195 19196,
+                 19197 19198 19199 19200 19201 19202 19203 19204,
+                 19205 19221 19240
+c 
+
+ front nodes sets 12 13 14  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c        Forteenth Layer through thickness
+c
+c
+domain fourteen
+ symmetric
+c 
+ node set  13    17713 17714 17715 17716 17717 17718 17719 17720,
+                 17721 17722 17723 17724 17725 17726 17727 17728,
+                 17729 17745 17764
+c 
+ node set  14    19189 19190 19191 19192 19193 19194 19195 19196,
+                 19197 19198 19199 19200 19201 19202 19203 19204,
+                 19205 19221 19240
+c 
+ node set  15    20665 20666 20667 20668 20669 20670 20671 20672,
+                 20673 20674 20675 20676 20677 20678 20679 20680,
+                 20681 20697 20716
+c
+ front nodes sets 13 14 15  linear 
+ function type b
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+c
+c        Outer edge of specimen
+c
+c
+domain outer
+ symmetric
+c 
+ node set  14    19189 19190 19191 19192 19193 19194 19195 19196,
+                 19197 19198 19199 19200 19201 19202 19203 19204,
+                 19205 19221 19240
+c 
+ node set  15    20665 20666 20667 20668 20669 20670 20671 20672,
+                 20673 20674 20675 20676 20677 20678 20679 20680,
+                 20681 20697 20716
+c
+ front nodes sets 14 15  linear 
+ function type c
+ normal plane nx 1 ny 0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 20-35
+ compute domain integral
+c
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

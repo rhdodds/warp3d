@@ -1,0 +1,49 @@
+#
+#    Makefile for WARP3D running on Win2k/WinXP with Cygwin and
+#    x86 Processors (32 bit mode).  Uses Intel 9.x F90 compiler
+#    & MKL 7.x library. COMPILER macro is set in Makewarp.ksh.
+#
+#
+EXE_NAME = warp3d.exe
+ODIR = ././../obj_windows
+MKLIB= $(ODIR)
+F90OPTS1 =  -static -fpconstant -fixed -traceback -module:$(ODIR)
+F90OPTS2 =  -unroll -Qftz -Qfpstkchk -QaxN -nologo
+F90 = $(COMPILER) $(F90OPTS1) $(F90OPTS2)
+LINK90 = $(F90)
+FILTER = ./filter_intel_windows.exe
+O    = .obj
+RMC = /bin/rm -f
+MVC = /bin/mv -f
+#
+#                Libraries to include at link time. Point to static
+#                libraries we distribute for MKL.
+#
+LIBS = $(MKLIB)/mkl_c.lib \
+       $(MKLIB)/mkl_solver.lib \
+       $(MKLIB)/mkl_ia32.lib \
+       $(MKLIB)/mkl_lapack.lib
+#
+#                All object files for warp3d. Put all 
+#                module files first.
+#
+OBJ =	 \
+[OBJECTS]
+	$(ODIR)/[object]$O	 \
+[END_OBJECTS]
+
+$(EXE_NAME) : $(OBJ)
+	$(LINK90) -Od $(OBJ) $(LOPT) $(LIBS) -o $@
+	$(MVC) $@ ./../run_windows/$@
+
+[CUSTOM]
+$(ODIR)/[f-file]$O : [f-file].f [dependencies]
+	$(RMC)  $@
+	$(RMC)  filt_[f-file].f
+	$(FILTER) < [f-file].f > filt_[f-file].f
+	$(F90) [optimizations]   -c filt_[f-file].f       
+	$(MVC) filt_[f-file]$O  [f-file]$O            
+	$(MVC) [f-file]$O $@
+
+[END_CUSTOM]
+

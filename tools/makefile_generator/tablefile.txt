@@ -1,0 +1,1471 @@
+#
+# ****************************************************************************
+#   
+#   File: tablefile.txt
+#   
+#   Programmer: ejenkins
+#   Date: sept 2004
+#
+#   Description:
+#     A listing of WARP3D source code file dependencies and neccissary
+#     optimizations for use with the WARP3D Makefile Generator Program.
+#
+#     F-File list (based off of HPUX11 makefile)
+#     1st line = The .f file
+#     2nd line = Optimizations
+#           [ HPUX11  HPUXIT  DEC  WIN_MKS  WIN_CYG  IBM  SGI  LNX  SGA  L64 ]
+#
+#     NOTE : Optimizations flagged with a * character (ex. "4*") indicate
+#            MPIF90 optimizations instead of F90
+#     Succeeding lines (tabbed) = Dependencies (1 per line)
+#     All file entries should be separated by one empty line
+#     More than 99 dependencies for a given .f file is not supported
+#
+#   Revision History:
+#     Sept 01 2004 - Added 32-bit Linux Column (7th column as of Sept 2004)  - ejenkins
+#     Sept 01 2004 - Added entry for direct_sparse_mkl.f                     - ejenkins
+#     Sept 01 2005 - Added SGI Altix column (8th column as of Sept 2005)     - acarlyle
+#     Jan  01 2006 - Added 64-bit Linux Column (9th column as of Jan 1 2006) - acarlyle
+#     Jan  31 2006 - Changed DVF label to "WIN_MKS".                         - acarlyle
+#     Jan  31 2006 - Inserted a column for "WIN_CYG". Became column 5.
+#                    Old columns 5-9 move to columns 6-10.                   - acarlyle
+#     July 24 2006 - Added "direct_sparse_solversoft_vss.f" file.            - acarlyle
+#     Feb  12 2007 - Changed opt on ebksub.f and efrwrd.f for ifort 9.1      - acarlyle
+#
+# *****************************************************************************
+#
+# !! Make *SURE* there is no white space before the first filename entry !!
+addifv.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_damage.f
+
+addmas.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+adapt_check.f
+4 4 4 3 2 0 2 3 2 2
+	mod_adaptive_steps.f
+
+addstf.f
+4 4 4 3 2 1 2 3 2 2
+
+allocate_damage.f
+4 4 4 3 2 1 2 3 2 2
+	mod_crack_growth.f
+	common.main
+	param_def
+	mod_damage.f
+
+allocate_load.f
+4 4 4 3 2 1 2 3 2 2
+	mod_elem_load.f
+	common.main
+	param_def
+
+aplacc.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+applcn.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_eleblocks.f
+	mod_main.f
+	mod_pcg.f
+	mod_mpi_lnpcg.f
+
+bdbt.f
+4 4 4 3 3 1 3 3 3 3
+
+blcmp1.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+bscmp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+btcmp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+chkcrack.f
+4 4 4 3 2 1 2 3 2 2
+	mod_crack_growth.f
+	common.main
+	mod_damage.f
+	param_def
+	mod_eleblocks.f
+	mod_main.f
+
+chk_stp_reduce.f
+4 4 4 3 2 1 2 3 2 2
+	mod_crack_growth.f
+	common.main
+	mod_damage.f
+	param_def
+	mod_main.f
+
+cmpmas.f
+4 4 4 3 2 1 1 3 2 2
+	mod_eleblocks.f
+	common.main
+	param_def
+	mod_main.f
+	mod_mpi_lnpcg.f
+
+cnst1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+cnst2.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+cnst3.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+cnst4.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+cohes_elem.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+comput.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_jintegral.f
+
+con_dump.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_mpc.f
+
+contact.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	mod_contact.f
+	param_def
+	mod_main.f
+
+cpu_time.f
+4 4 4 3 2 1 1 3 2 2
+
+croutf.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+ctran1.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+cvtest.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+derivs.f
+4 4 4 3 2 1 2 3 2 2
+
+direct_solver_a.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_main.f
+
+direct_solver_b.f
+4 4 4 3 3 1 3 3 3 3
+	mod_eleblocks.f
+	mod_main.f
+
+direct_driver.f
+4 4 4 3 2 1 2 3 2 2
+	mod_eleblocks.f
+	param_def
+	common.main
+
+direct_driver_sparse.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	common.main
+	mod_eleblocks.f
+	mod_main.f
+	mod_mpc.f
+	mod_stiffness.f
+
+direct_sparse_sgi.f
+4 4 4 3 2 1 2 3 2 2
+
+direct_sparse_ibm.f
+4 4 4 3 2 1* 2 3 2 2
+
+direct_sparse_vss.f
+4 4 4 3 2 1 2 3 2 2
+
+direct_sparse_solversoft_vss.f
+4 4 4 3 2 1 2 3 2 2
+
+direct_sparse_hpe.f
+4 4 4 3 2 1 2 3 2 2
+
+direct_sparse_dec.f
+4 4 4 3 2 1 2 3 2 2
+
+direct_sparse_mkl.f
+0 0 0 0 0 0 0 2 0 0
+
+discon.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+disdpm.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+dislod.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+dismat.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+dispel.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+displa.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+dispnd.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+didriv.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_jintegral.f
+	mod_main.f
+	mod_eleblocks.f
+
+diexp4.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_jintegral.f
+	mod_main.f
+
+distup.f
+4 4 4 3 2 1 2 3 2 2
+	mod_jintegral.f
+
+difrar.f
+4 4 4 3 2 1 2 3 2 2
+	mod_jintegral.f
+
+difrtn.f
+4 4 4 3 2 1 2 3 2 2
+
+di1dsf.f
+4 4 4 3 2 1 2 3 2 2
+
+dimrot.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	mod_main.f
+	mod_jintegral.f
+	param_def
+
+dicmj.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_jintegral.f
+	common.main
+	mod_main.f
+	mod_eleblocks.f
+
+dielem_a.f
+4 4 4 3 2 0 2 3 2 2
+
+dielem_b.f
+2 2 4 3 2 0 2 3 2 2
+
+dielem_c.f
+4 4 4 3 2 0 2 3 2 2
+
+dplstf.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+dptstf.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+driver.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	mod_file_info.f
+	param_def
+
+dstran.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+dupmas.f
+4 4 4 3 2 1 2 3 2 2
+
+dupstr.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+ebeslv.f
+4* 4* 4 3 2 1 2 3 2 2
+	common.main
+	mod_eleblocks.f
+	param_def
+	mod_pcg.f
+	mod_mpi_lnpcg.f
+
+ebksub.f
+4 4 4 0 0 1 1 0 0 0
+	param_def
+
+ebksub_gen_8.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+edgscl.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+efrwrd.f
+4 4 4 0 0 1 1 0 0 0
+	param_def
+
+efrwrd_gen_8.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+elem_load_a.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	mod_elem_load.f
+	param_def
+
+elem_load_b.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+elem_load_c.f
+4 4 4 3 2 1 2 3 2 2
+
+elmas1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+elprp.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_segmental_curves.f
+
+energy.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+eqivld.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+equiv_strain.f
+4 4 4 3 2 1 2 3 2 2
+
+errchk.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_damage.f
+	mod_contact.f
+	mod_main.f
+	mod_segmental_curves.f
+
+errmsg.f
+4 4 4 3 2 1 0 3 2 2
+	common.main
+	param_def
+
+evcmp1.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+f_clmloc.f
+4 4 4 3 2 1 2 3 2 2
+
+fcomp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+find_neighbors.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	common.main
+	mod_main.f
+
+gastr.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+getrm1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+gatemps.f
+4 4 4 3 2 1 2 3 2 2
+
+gp_temp_eps.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+gpifv1.f
+4 4 4 3 3 1 2 3 3 3
+	param_def
+	include_sig_up
+	mod_segmental_curves.f
+
+gplns1.f
+4 4 4 3 2 1 2 3 2 2
+
+gpmas1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+gptns1.f
+4 4 4 3 2 1 2 3 2 2
+	include_tan_ek
+	param_def
+	mod_main.f
+
+growth_loads.f
+4 4 4 3 2 1 2 3 2 2
+	mod_crack_growth.f
+	param_def
+	common.main
+	mod_damage.f
+	mod_main.f
+
+gtlsn1.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+gtmat1.f
+4 4 4 3 2 0 2 3 2 2
+	param_def
+	include_sig_up
+	mod_segmental_curves.f
+
+inclmass.f
+4 4 4 3 2 1 2 3 2 2
+	mod_eleblocks.f
+	common.main
+	param_def
+
+inalpha.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+incomp.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_mpc.f
+	mod_contact.f
+
+incon.f
+4 2 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_damage.f
+	mod_main.f
+	mod_mpc.f
+
+insurf.f
+4 2 2 3 2 0 0 3 2 2
+	mod_mpc.f
+	common.main
+	param_def
+
+intied.f
+4 4 2 3 2 0 0 3 2 2
+	mod_mpc.f
+	common.main
+	param_def
+
+incontact.f
+4 4 0 3 2 1 0 3 2 2
+	common.main
+	param_def
+	mod_contact.f
+
+incoor.f
+4 4 4 3 2 1 1 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+incrack.f
+4 4 4 3 2 1 1 3 2 2
+	mod_crack_growth.f
+	mod_damage.f
+	common.main
+	param_def
+	mod_main.f
+
+infgm.f
+4 4 4 3 2 1 1 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+incurv.f
+4 4 4 3 2 1 1 3 2 2
+	param_def
+	mod_segmental_curves.f
+
+indom.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_jintegral.f
+
+indypm.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_pcg.f
+	mod_main.f
+	mod_damage.f
+	mod_mpc.f
+
+inelbk.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+inelem.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+infile.f
+4 4 4 3 2 1 2 3 2 2
+	mod_file_info.f
+	common.main
+	param_def
+
+inicon.f
+4 4 4 3 2 1 0 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+ininc.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+initst.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	mod_damage.f
+	mod_file_info.f
+	mod_contact.f
+	param_def
+	mod_elem_load.f
+	mod_stiffness.f
+	mod_main.f
+	mod_pcg.f
+	mod_segmental_curves.f
+
+initdm.f
+4 4 4 3 2 1 2 3 2 2
+	mod_jintegral.f
+
+inlod.f
+4 4 4 3 2 0 2 3 2 2
+	mod_elem_load.f
+	common.main
+	param_def
+	mod_main.f
+
+inmat.f
+4 4 4 3 2 0 0 3 2 2
+	common.main
+	param_def
+	mod_segmental_curves.f
+	mod_main.f
+
+innum.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+iodevn.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+irscp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+ivcmp1.f
+4 4 4 3 2 1 3 3 2 2
+	param_def
+
+jacob1.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+kg1.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+kill_element.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_eleblocks.f
+
+lcnst1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+lcvtst.f
+4 4 4 3 2 1 3 3 2 2
+	common.main
+	param_def
+
+lfinda_unroll.f
+4 4 4 3 2 1 0 3 2 2
+	common.main
+	param_def
+	mod_eleblocks.f
+	mod_mpi_lnpcg.f
+
+lfindb.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+license.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	common.main
+
+linked_list.f
+4 4 4 3 2 0 2 3 2 2
+	mod_crack_growth.f
+	param_def
+	common.main
+	mod_damage.f
+
+lmprd_unroll.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+lnpcg.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_pcg.f
+	mod_mpi_lnpcg.f
+
+lnstff.f
+4 4 4 3 2 1 2 3 2 2
+	mod_eleblocks.f
+	mod_crack_growth.f
+	mod_damage.f
+	include_lin_ek
+	common.main
+	param_def
+	mod_main.f
+	mod_mpi_lnpcg.f
+
+lupres.f
+4 4 4 3 2 1 3 3 2 2
+	common.main
+	param_def
+
+mem_allocate.f
+4 4 4 3 2 0 2 3 2 2
+	mod_main.f
+	mod_pcg.f
+	mod_contact.f
+	common.main
+	param_def
+	mod_mpi_lnpcg.f
+
+mm02.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+mm03.f
+4 4 4 3 3 1 1 3 3 3
+
+mm03p.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+	mod_segmental_curves.f
+
+mm04.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+mm05.f
+2 2 4 3 3 0 3 3 3 3
+	param_def
+
+mm06.f
+2 2 4 3 3 1 3 3 3 3
+	param_def
+
+mm07.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+mm08.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+mnralg.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_adaptive_steps.f
+	mod_main.f
+	mod_eleblocks.f
+	mod_pcg.f
+
+mpc_modify.f
+4 4 4 3 2 1 2 3 2 2
+	mod_stiffness.f
+	mod_mpc.f
+
+mpi_code.f
+4* 4* 4 3 2 1* 2 3 2 2
+	mod_damage.f
+	mod_adaptive_steps.f
+	mod_mpi_lnpcg.f
+	mod_main.f
+	mod_eleblocks.f
+	mod_segmental_curves.f
+	mod_pcg.f
+	mod_crack_growth.f
+	mod_jintegral.f
+	common.main
+	param_def
+	mod_contact.f
+
+mpi_lnpcg.f
+4* 3* 0 3 2 1* 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_mpi_lnpcg.f
+	mod_pcg.f
+	mod_eleblocks.f
+
+name_strip.f
+4 4 4 3 2 1 2 3 2 2
+
+ndpts1.f
+4 4 4 3 2 1 2 3 2 2
+
+newmrk.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+ou3dpr.f
+4 4 4 3 2 1 2 3 2 2
+
+oualph.f
+4 4 4 3 2 1 2 3 2 2
+
+ouconv.f
+4 4 4 3 2 1 2 3 2 2
+
+ouddpa.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+oudriv.f
+4 4 4 3 2 1 2 3 2 2
+	mod_main.f
+
+oudups.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_eleblocks.f
+	mod_elblk.f
+
+oudva.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+oueff1.f
+4 4 4 3 2 0 0 3 2 2
+
+ouext1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_elblk.f
+
+ouext2.f
+4 4 4 3 2 0 0 3 2 2
+
+ouflnm.f
+4 4 4 3 2 0 2 3 2 2
+
+ougts1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_elblk.f
+
+ouhdva.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+ouhel.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_elblk.f
+
+ouhnod.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+ouhprn.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+ouhrks.f
+4 4 4 3 2 0 0 3 2 2
+	common.main
+	param_def
+
+ouhstr.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+ouinv1.f
+4 4 4 3 2 0 0 3 2 2
+	param_def
+
+oulbdd.f
+4 4 4 3 2 1 2 3 2 2
+
+oulbir.f
+4 4 4 3 2 1 2 3 2 2
+
+oulbst.f
+4 4 4 3 2 1 2 3 2 2
+
+oulbta.f
+4 4 4 3 2 1 2 3 2 2
+
+oulg1.f
+4 4 4 3 2 1 2 3 2 2
+
+oulres.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_pcg.f
+
+oulrlh.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+oultrc.f
+4 4 4 3 2 1 2 3 2 2
+
+oumkcv.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_elblk.f
+
+oundhd.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+ounds1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_elblk.f
+
+ouneut.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+ouocdd.f
+4 4 4 3 2 1 2 3 2 2
+
+ouocst.f
+4 4 4 3 2 1 2 3 2 2
+
+ouocst_elem.f
+4 4 4 3 2 1 2 3 2 2
+
+oupads.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_elblk.f
+
+oupele.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	mod_elblk.f
+
+ouparm.f
+4 4 4 3 2 1 2 3 2 2
+
+oupdva.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+oupri1.f
+4 4 4 3 2 0 0 3 2 2
+	param_def
+
+ouprks.f
+4 4 4 3 2 1 2 3 2 2
+
+oupstr_elem.f
+4 4 4 3 2 1 1 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+oupstr_node.f
+4 4 4 3 2 1 1 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+oures.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+ourlhd.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+ousthd.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+oustpa.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+
+oust_elem.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+oustr.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_elblk.f
+	mod_eleblocks.f
+
+outime.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+
+outfil.f
+4 4 4 3 2 1 2 3 2 2
+	mod_file_info.f
+	common.main
+	param_def
+
+outrac.f
+4 4 4 3 2 0 2 3 2 2
+
+ouyld1.f
+4 4 4 3 2 0 0 3 2 2
+
+packets.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+pconvert.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+        mod_pconvert.f
+
+princ_inv_strain.f
+4 4 4 3 2 1 2 3 2 2
+
+princ_inv_stress.f
+4 4 4 3 2 1 2 3 2 2
+
+princ_strain.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+princ_stress.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+prcsel.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+qmply1.f
+4 4 4 3 2 1 2 3 2 2
+
+getgpts.f
+4 4 4 3 2 1 2 3 2 2
+
+read_damage.f
+4 4 4 3 2 0 2 3 2 2
+	mod_crack_growth.f
+	mod_damage.f
+	common.main
+	param_def
+
+recstr.f
+4 4 4 3 2 0 1 3 2 2
+	mod_crack_growth.f
+	mod_damage.f
+	common.main
+	param_def
+	include_sig_up
+	mod_eleblocks.f
+	mod_main.f
+	mod_segmental_curves.f
+
+reopen.f
+4 4 4 3 2 0 2 3 2 2
+	mod_eleblocks.f
+	common.main
+	mod_damage.f
+	mod_elem_load.f
+	param_def
+	mod_main.f
+	mod_mpc.f
+	mod_contact.f
+	mod_pcg.f
+	mod_segmental_curves.f
+
+rklstf.f
+4 4 4 3 2 1 2 3 2 2
+	include_lin_ek
+	param_def
+
+rknifv.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	include_sig_up
+	mod_crack_growth.f
+	mod_segmental_curves.f
+	mod_damage.f
+
+rknmas.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+rknstr.f
+4 4 0 3 2 1 2 3 2 2
+	param_def
+	include_sig_up
+	mod_segmental_curves.f
+	mod_main.f
+
+rktstf.f
+4 4 4 3 3 1 2 3 3 3
+	include_tan_ek
+	param_def
+	mod_main.f
+
+rplstr.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	include_sig_up
+	mod_eleblocks.f
+	mod_segmental_curves.f
+
+rscmp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+rstgp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+	include_sig_up
+	mod_segmental_curves.f
+	mod_main.f
+	common.main
+
+rstgp1s.f
+4 4 4 3 2 1 2 3 2 2
+
+rtcmp1.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+mm01.f
+4 4 4 3 3 1 2 3 3 3
+	param_def
+
+scan.f
+4 4 4 3 2 1 2 3 2 2
+	mod_file_info.f
+
+scstr.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+get_edest.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_eleblocks.f
+
+setelb.f
+4 4 4 3 2 1 2 3 2 2
+
+setup.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+setup_mat_props.f
+4 4 4 3 2 0 3 3 2 2
+	param_def
+	mod_segmental_curves.f
+	common.main
+
+shapef.f
+4 4 4 3 2 1 2 3 2 2
+
+sparse_reorder_a.f
+4 4 4 3 2 0 2 3 2 2
+
+sparse_reorder_b.f
+4 4 4 3 2 1 3 3 2 2
+
+sparse_check.f
+4 4 4 3 2 0 2 3 2 2
+
+sparse_adj.f
+4 4 4 3 2 1 2 3 2 2
+
+sparse_sym_fact.f
+4 4 4 3 2 0 2 3 2 2
+
+sparse_fill.f
+4 4 4 3 2 1 2 3 2 2
+
+sparse_factor.f
+4 4 4 3 2 1 2 3 2 2
+
+sparse_loadpass.f
+4 4 4 3 2 1 2 3 2 2
+
+splunj.f
+4 4 4 3 2 1 2 3 2 2
+
+star_com.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+statistics.f
+4 4 4 3 2 1 2 3 2 2
+
+stifup.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+store.f
+4 4 4 3 2 0 2 3 2 2
+	mod_eleblocks.f
+	mod_crack_growth.f
+	common.main
+	mod_damage.f
+	mod_contact.f
+	mod_elem_load.f
+	param_def
+	mod_main.f
+	mod_pcg.f
+	mod_segmental_curves.f
+	mod_mpc.f
+
+store_ifv.f
+4 4 4 3 2 1 2 3 2 2
+	mod_crack_growth.f
+	common.main
+	mod_damage.f
+	param_def
+	mod_main.f
+	mod_eleblocks.f
+
+stpdrv.f
+4 4 4 3 2 0 2 3 2 2
+	common.main
+	param_def
+	mod_damage.f
+	mod_main.f
+
+tanstf.f
+4 4 4 3 2 1 2 3 2 2
+	mod_eleblocks.f
+	mod_crack_growth.f
+	include_tan_ek
+	mod_damage.f
+	common.main
+	param_def
+	mod_main.f
+	mod_mpi_lnpcg.f
+
+tcomp1.f
+4 4 4 3 3 1 3 3 3 3
+	param_def
+
+temsto.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+
+thyme.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+tied_mesh.f
+2 2 2 3 2 0 2 3 2 2
+	param_def
+	mod_mpc.f
+
+trnmtx.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+trnvec.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+upcnld.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+update.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+	mod_main.f
+	mod_eleblocks.f
+
+update_node_elecnt.f
+4 4 4 3 2 1 2 3 2 2
+	mod_crack_growth.f
+	common.main
+	param_def
+	mod_main.f
+
+updpcm.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	mod_eleblocks.f
+	param_def
+	mod_pcg.f
+	mod_main.f
+
+uppbar.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	param_def
+
+upres.f
+4 4 4 3 2 1 2 3 2 2
+	common.main
+	mod_contact.f
+	param_def
+	mod_mpc.f
+	mod_stiffness.f
+
+vol_avg.f
+4 4 4 3 2 1 2 3 2 2
+
+vol_terms.f
+4 4 4 3 3 1 3 3 3 3
+
+wnregl.f
+4 4 4 3 2 1 2 3 2 2
+	param_def
+
+yield_function.f
+4 4 4 3 2 1 2 3 2 2
+
+zero_vector.f
+4 4 4 3 2 1 2 3 2 2
+
+zero_vol.f
+4 4 4 3 2 1 3 3 2 2
+
+bmod.f
+4 4 4 3 3 1 3 3 3 3
+
+read_write.f
+4 4 4 3 2 1 1 3 2 2
+
+tilde.f
+4 4 4 3 2 1 1 3 2 2
+
+steptime.f
+4 4 4 3 2 1 1 3 2 2
+	common.main
+	param_def
+
+mod_eleblocks.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_crack_growth.f
+0 0 0 0 0 0 0 0 0 0
+
+mod_elem_load.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_main.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_segmental_curves.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_pcg.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_mpi_lnpcg.f
+0 0 0 0 0 0* 0 0 0 0
+	param_def
+
+mod_jintegral.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_mpc.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_elblk.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_stiffness.f
+0 0 0 0 0 0 0 0 0 0
+	param_def
+
+mod_adaptive_steps.f
+0 0 0 0 0 0 0 0 0 0
+
+mod_file_info.f
+0 0 0 0 0 0 0 0 0 0
+
+mod_contact.f
+0 0 0 0 0 0 0 0 0 0
+
+mod_damage.f
+0 0 0 0 0 0 0 0 0 0
+
+mod_pconvert.f
+0 0 0 0 0 0 0 0 0 0

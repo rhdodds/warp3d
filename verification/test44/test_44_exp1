@@ -1,0 +1,129 @@
+c
+c ***********************************************************
+c   Mode I crack growth analysis in a C(T) specimen using 
+c   interface elements and cohesive constitutive model
+c **********************************************************
+c
+c   Model:
+c   ------
+c     problem units are kips and inches
+c     model has one layer of solid elements over the thickness 
+c     to reduce run time for purpose of an example problem.
+c     W = 2.0 inches, B = mesh thickness B= 0.0225 inches
+c     Initial a/W = 0.24, initial remaining ligament length = 1.52 in.
+c     This is a 1/4 symmetric (i.e. full model would have 2 element
+c     layers over full thickness in 3-D).
+c     Model is not contrained to be in plane strain.
+c     Background solitd elements are 8-node hex. 
+c
+c     model is placed in 1st (XYZ) quadrant. crack plane is Y=0,
+c     mid-thickness symmetry plane is Z=0
+c
+c     Interface elements are 8-node, zero initial thickness.
+c     Size on crack plane is Le= 0.02 in. in direction 
+c     (+X) of crack extension. 76 interface elements defined
+c     on initial ligamment = 1.52 in (analysis can effectively
+c     grow crack across entire ligament)
+c
+c     displacement control loading at center of "pins"
+c     holes are plugged with linear-elastic material to
+c     "smooth" deformations in loading area. 
+c
+c   Materials:
+c   ---------
+c     Background: A2024-T3 aluminum, E = 10356 ksi, yiled = 48.5 ksi,
+c                 power-law hardening n = 10 (true-stress vs. log eps)
+c
+c     Cohesive: exp1_intf option. simple exponential formulation. User
+c               sets the peak traction and opening displacement at
+c               peak traction. Model computes fracture energy and
+c               initial linear stiffness. For this symemtric
+c               model, we input 1/2 of actual opening displacement
+c               at peak stress since only 1/2 the "thickness" of the
+c               interface elements exists in the symmetry model.
+c               The cohesive elements represent a Mode I response
+c               for a material with toughness Jc = 0.154 kip-in/in**2
+c               (or KJc = 42 ksi-sqrt(in)).
+c     Pin holes: displacement control loading at center of "pins"
+c                holes are plugged with linear-elastic material to
+c                "smooth" deformations in loading area. 
+c
+c  Solution details:
+c  -----------------
+c
+c   large displacement "nonlinear" element formulations used
+c   for solid and interface elements
+c
+c   analysis runs for 500 load steps which kills about
+c   30 cohesive elements (total delta "a" = 0.6 inches)
+c
+c   crack growth parameters may be adjusted to alter predicted
+c   load vs. Delta-a behvior: especially the multiplier on
+c   peak (critical) displacement at which point the element is considered
+c   failed and has no further load capacity.
+c   
+
+structure ct
+c 
+  material al2024t3
+    properties mises e 10356 nu 0.3 yld_pt 48.5 n_power 10 
+  material pin
+    properties linear_elastic e 10356 nu 0.3
+  material interface
+   properties cohesive exp1_intf,
+     delta_peak 0.000285 sig_peak 100  beta 1.0 killable
+c
+number of nodes 1874 elements 872
+c
+elements
+ 1-76 type inter_8 nonlinear material interface,
+      order 2x2gs surface top $ 1-4 of elements
+c                               connected to adjacent solid eleemnts
+ 77-856  type l3disop  nonlinear material al2024t3,
+      order 2x2x2 bbar center_output short
+ 857-872  type l3disop nonlinear material pin,
+     order 2x2x2 bbar center_output short
+c
+*input from file "test_44_mesh"
+c
+ loading pull_top
+   nonlinear
+     steps 1-500 constraints 5.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   adaptive solution on
+   maximum iterations 25
+   convergence test norm res tol 0.001 max resid tol 0.1
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+   material messages off
+   consistent q-matrix on
+   bbar stabilization factor 0.0
+   binary packets on file 'packets.tst'
+c
+c        cohesive elements deleted from model when their
+c        "effective" displacement jump = "n" x the effective
+c        displacement at peak cohesive stress.
+c
+c        adaptive load control limits the increment in effective,
+c        relative displacement for cohesive elements to < 0.3 x the
+c        relative displacement at peak cohesive stress
+c
+c        remaining forces on nodes of killed cohesive elements are
+c        released to zero in 5 load steps
+c
+ crack growth parameters
+   type of crack growth cohesive
+   critical effective cohesive displacement multiplier  5 $ = n
+   print status on order elements 76-1 by -1
+   force release type steps
+   release steps 5
+   adaptive load control on maximum relative displacement change 0.20
+c
+  compute displacements for loading pull_top steps 100
+   output displacements for nodes 15 16 14 13 3 4 2 1
+   output displacements for nodes 1866 1868 1867 1865 1874 1873 1872 1871
+  save to file "exp1.db"
+stop

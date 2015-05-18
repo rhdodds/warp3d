@@ -1,0 +1,128 @@
+c --------------------------------------------------------------------
+c
+c    middle-crack tension specimen with sharp crack tip and linear-elastic,
+c    functionally graded material
+c
+c    --crack inclined at 36 degrees from horizontal
+c    --crack length 2a = 0.8, in-plane size = 16 x 16 (infinite domain)
+c    --user may impose plane strain conditions by constraining out-of
+c      plane displacements
+c    --model w/ 1 layer of 20-node brick elements in thickness direction
+c    --quarter-point elements with collapsed faces surround crack tip
+c    --20 sectors and 13 semi-circular rings surround each crack tip
+c    --crack-tip elements are 0.007 in dimension
+c    --thickness of mesh is 0.1
+c    --imposed displacement 'delta' along top edge induces unit strain
+c
+c    --material gradient varies in the x-direction according to
+c      E(x) = E_0 * exp (beta * x), E_0 = 1.0, beta * a = 0.5
+c
+c    --semi-analytical solution for normalized stress intensity factors
+c      under plane-stress conditions are (Konda, N., Erdogan, F., 1994
+c      The mixed-mode crack problem in a nonhomogeneous elastic medium,
+c      Engineering Fracture Mechanics 47, 533-545)
+c
+c      left crack:  KI/(delta*E_0*(pi*a)^0.5)  =  0.460
+c                   KII/(delta*E_0*(pi*a)^0.5) = -0.365
+c      right crack: KI/(delta*E_0*(pi*a)^0.5)  =  0.925
+c                   KII/(delta*E_0*(pi*a)^0.5) = -0.548
+c
+c    --WARP3D results are
+c      left crack:  0.5118/(delta*E_0*(pi*a)^0.5)  =  0.457
+c                   -0.4055/(delta*E_0*(pi*a)^0.5) = -0.362
+c      right crack: 1.034/(delta*E_0*(pi*a)^0.5)   =  0.922
+c                   -0.6172/(delta*E_0*(pi*a)^0.5) = -0.551
+c
+c --------------------------------------------------------------------
+c
+c
+structure mt
+c
+material fgm
+  properties linear_elastic  e 'fgm' nu 0.3
+number of nodes  14712 elements  2046
+elements
+ 1-2046 type q3disop linear material fgm,
+             order 2x2x2 gausspts short
+*input from 'test_61_fgm_props'
+*input from file "test_61_incid_coord"
+*echo on
+blocking  automatic
+c
+c roller at middle of left side, pin at middle of right side
+c
+ constraints
+c for bottom edge of specimen
+*echo off
+      2      4      5      6      7     93     95     96,
+     97     98    100    102    103    104    105    149,
+    151    152    153    154    156    158    159    160,
+    161    162    165    166    167    168    295    298,
+    299    300    301    442    445    446    447    448,
+    603    606    607    608    609    631    634    635,
+    636    637    813    816    817    818    819   1158,
+   1161   1162   1163   1164   1179   1182   1183   1184,
+   1185   1186   1189   1190   1191   1192   1639   1642,
+   1643   1644   1645   2112   2115   2116   2117   2118,
+   2631   2634   2635   2636   2637   3199   3202   3203,
+   3204   3205   3842   3845   3846   3847   3848   4444,
+   4447   4448   4449   4450   4989   4992   4993   4994,
+   4995   5497   5500   5501   5502   5503   6015   6018,
+   6019   6020   6021   6659   6662   6663   6664   6665,
+   7255   7258   7259   7260   7261   7849   7852   7853,
+   7854   7855   8399   8402   8403   8404   8405 v = 0.0
+   8407 8411      u    0.0      v    0.0
+   8412   u    0.0      v    0.0      w    0.0
+   8409 8410 8413 8416 8417 8418 8419 8420 8423 8424,
+   8425 8426 8428 8430 8431 8432 8433 8435,
+   8437 8438 8439 8440 8441 8444 8445 8446,
+   8447 8449 8451 8452 8453 8454 8457 8458,
+   8459 8460 8461 8463 8465 8466 8467 8468,
+   8471 8472 8473 8474 8475 8478 8479 8480,
+   8481 8482 8485 8486 8487 8488 8489 8492,
+   8495 8496 8497 8498 8499 8500 8501 v = 0.0
+*echo on
+c
+c top edge displacement corresponding to unit strain in y direction
+c
+ plane y = 4.0 v = 8.0
+c
+c the following constraints impose plane strain if desired
+c
+c  1-14712 w = 0.0
+c
+ loading strain
+  nonlinear
+    step 1 constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   minimum iterations 1
+   maximum iterations 1
+   convergence test norm res tol 0.005 max res tol 0.05  $ v. tight
+   time step 1.0e10
+   trace solution on
+c
+   compute displacements for loading strain step 1
+c
+c   output stresses for elements all
+c   output patran binary stresses
+c   output patran binary displacements
+c
+   domain right
+        normal plane nx 0.587785 ny 0.809017 nz 0.0
+        front nodes 2405 2404 2406 q3disop verify
+        q-values automatic ring 1-13
+	plane stress values for interaction integral
+        function type d
+   compute domain interaction integrals
+c
+   domain left
+        normal plane nx -0.587785 ny -0.809017 nz 0.0
+        front nodes 5632 5631 5633 q3disop verify
+        q-values automatic ring 1-13
+	plane stress values for interaction integral
+        function type d
+   compute domain interaction integrals
+c
+stop

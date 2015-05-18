@@ -1,0 +1,32 @@
+structure test
+ material steel
+    properties linear_elastic e 30000 nu 0.3 alpha 1.5e-05 rho 7.3e-07
+number of nodes    29603
+number of elements     6500
+c 
+*input from 'test.coordinates'
+c 
+c
+elements
+    1 -   6500 type q3disop    linear material steel,
+               order 2x2x2 bbar center_output short
+c 
+*input from 'test.incid_and_blocking'
+c 
+c 
+constraints
+   plane y=0 symmetry
+   plane z=0 symmetry
+   1 u = 0.
+c  
+ list 'a' sphere origin 0 0 0 radius 10
+ list 'b' cylinder first 0 -10 0 second 0 1 0 radius 10 
+ list 'c' plane point x= 5 y=0 z= -10 normal nx 0 ny 4 nz 0 
+ list 'd' x=10 
+ list 'e' y = 0
+ list 'ee' z = 0
+ list 'f' y=0 z=0
+ list 'g' x=10 y=0 z=0
+c
+stop
+

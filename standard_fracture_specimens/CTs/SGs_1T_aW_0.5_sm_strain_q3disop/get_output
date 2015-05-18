@@ -1,0 +1,10 @@
+c
+c          LLD displacements
+c
+ output eformat displacements 50191 50186 $ center, outside
+c
+c          forces at nodes with imposed displacments
+c
+ output totals only reactions 101228 103861 101227 103858 101226,
+    103855 101225 103852 101224 103848 101223 
+c

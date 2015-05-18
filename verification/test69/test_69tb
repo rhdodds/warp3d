@@ -1,0 +1,286 @@
+*echo off
+c
+c    test tet4 connected to trint6 on a twisted surface
+c    ==================================================
+c
+c model: trint6, large displacements, exp1_intf cohesive
+c load:  monotonically increasing axial stresses
+c
+c Simple example to illustrate/test use of the cohesive zone
+c material model and the interface elements.
+c
+c model is 2 (mostly) rectangular prisms of size (x,y,z) =
+c (1,1,1) connected on a twisted surface to invoke true 3D behavior.
+c
+c Points on the twisted surface are z = 1.0 - 0.2*x*y
+c This more severely tests the interface elements
+c
+c tet4 elements 1-52 are below (in z direction) the interface
+c tet4 elements 53-100 are above (in z direction) the interface
+c
+c top and bottom solid elements for each interface element
+c       101             27                68
+c       102             50                56
+c       103             24                92
+c       104             36               100
+c       105             28                84
+c       106             14                93
+c       107             33                63
+c       108             22                67
+c
+c tet4 elements 1-100 are linear elastic
+c
+c Load:
+c   axial (tensile) traction in the Z-direction.
+c   X=0, Y=0, Z=0 are symmetry planes. max axial load is
+c   limited by the strength of the cohesive surface.
+c
+c we mark the interface-cohesive elements as killable to
+c have their status output after each load step. elements
+c are not actually killed at the loading levels in this example.
+c
+structure twisted_interface
+c
+material solid
+ properties bilinear e 200.0 nu 0.3 yld_pt 600.0 tan_e 300
+c
+material exp1_matl
+ properties cohesive exp1_intf,
+   sig_peak 5.0 delta_peak 0.1359141 beta 1.0 killable
+c
+number of nodes  54 elements 108
+c
+elements
+ 1-100 type tet4  nonlinear material solid,
+     order '4pt_rule' center short
+ 101-108 type trint6 nonlinear material exp1_matl,
+        order '3pt_rule'
+coordinates
+      1  0.000000000E+00  0.000000000E+00  0.100000000E+01
+      2  0.000000000E+00  0.500000000E+00  0.100000000E+01
+      3  0.000000000E+00  0.100000000E+01  0.100000000E+01
+      4  0.500000000E+00  0.000000000E+00  0.100000000E+01
+      5  0.500000000E+00  0.500000000E+00  0.925000012E+00
+      6  0.500000000E+00  0.100000000E+01  0.850000024E+00
+      7  0.100000000E+01  0.000000000E+00  0.100000000E+01
+      8  0.100000000E+01  0.500000000E+00  0.849999964E+00
+      9  0.100000000E+01  0.100000000E+01  0.699999988E+00
+     10  0.000000000E+00  0.000000000E+00  0.100999999E+01
+     11  0.000000000E+00  0.500000000E+00  0.100999999E+01
+     12  0.000000000E+00  0.100000000E+01  0.100999999E+01
+     13  0.500000000E+00  0.000000000E+00  0.100999999E+01
+     14  0.500000000E+00  0.500000000E+00  0.935000002E+00
+     15  0.500000000E+00  0.100000000E+01  0.859999955E+00
+     16  0.100000000E+01  0.000000000E+00  0.100999999E+01
+     17  0.100000000E+01  0.500000000E+00  0.859999955E+00
+     18  0.100000000E+01  0.100000000E+01  0.709999978E+00
+     19  0.534620941E+00  0.395229489E+00  0.426509768E+00
+     20  0.784114540E+00  0.737827718E+00  0.229710013E+00
+     21  0.000000000E+00  0.499999970E+00  0.333333314E+00
+     22  0.000000000E+00  0.499999970E+00  0.000000000E+00
+     23  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     24  0.000000000E+00  0.000000000E+00  0.000000000E+00
+     25  0.000000000E+00  0.100000000E+01  0.499999970E+00
+     26  0.000000000E+00  0.000000000E+00  0.499999970E+00
+     27  0.100000000E+01  0.500000000E+00  0.495833337E+00
+     28  0.100000000E+01  0.000000000E+00  0.499999970E+00
+     29  0.100000000E+01  0.000000000E+00  0.000000000E+00
+     30  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     31  0.100000000E+01  0.499999970E+00  0.000000000E+00
+     32  0.333333343E+00  0.000000000E+00  0.500000000E+00
+     33  0.499999970E+00  0.000000000E+00  0.000000000E+00
+     34  0.500000000E+00  0.100000000E+01  0.495833337E+00
+     35  0.499999970E+00  0.100000000E+01  0.000000000E+00
+     36  0.499999970E+00  0.333333343E+00  0.000000000E+00
+     37  0.472646654E+00  0.424373508E+00  0.145664096E+01
+     38  0.000000000E+00  0.500000000E+00  0.136666668E+01
+     39  0.000000000E+00  0.100000000E+01  0.152499998E+01
+     40  0.000000000E+00  0.100000000E+01  0.200000000E+01
+     41  0.000000000E+00  0.499999970E+00  0.200000000E+01
+     42  0.000000000E+00  0.000000000E+00  0.200000000E+01
+     43  0.000000000E+00  0.000000000E+00  0.152499998E+01
+     44  0.100000000E+01  0.500000000E+00  0.126667237E+01
+     45  0.100000000E+01  0.000000000E+00  0.152499998E+01
+     46  0.100000000E+01  0.000000000E+00  0.200000000E+01
+     47  0.100000000E+01  0.499999970E+00  0.200000000E+01
+     48  0.100000000E+01  0.100000000E+01  0.200000000E+01
+     49  0.100000000E+01  0.100000000E+01  0.137500000E+01
+     50  0.400000006E+00  0.000000000E+00  0.162000001E+01
+     51  0.499999970E+00  0.000000000E+00  0.200000000E+01
+     52  0.500000000E+00  0.100000000E+01  0.126667237E+01
+     53  0.499999970E+00  0.100000000E+01  0.200000000E+01
+     54  0.499999970E+00  0.333333343E+00  0.200000000E+01
+incidences
+   1  20  36  19  35
+   2  20  19  36  31
+   3  20   9  34  27
+   4  20  34   9  30
+   5  20  34  30  35
+   6  20  27  19  31
+   7  32  21   2  19
+   8  25  19  35  34
+   9  36  29  28  33
+  10  36  32  21  24
+  11  20  34  19  27
+  12  19  25  21   2
+  13  32   5  28  19
+  14   3  34   6   5
+  15  28  36  32  19
+  16  27  28   7   5
+  17  19  27   5  28
+  18  21  25  19  35
+  19  36  24  33  32
+  20   2   5  19  25
+  21  35  23  21  25
+  22  34   8   9   6
+  23  33  28  36  32
+  24   4   7  28   5
+  25  35  36  21  22
+  26  36  24  21  22
+  27   1   2   4  32
+  28   2  25   3   5
+  29  25   5  19  34
+  30  19  32  21  36
+  31  32   2  26   1
+  32  19  35  36  21
+  33  34   6   5   8
+  34  31  29  28  36
+  35  35  22  21  23
+  36   5  27   8   7
+  37  20  27  30   9
+  38  26  32  21   2
+  39  19  27  34   5
+  40  19   5   2  32
+  41  36  31  19  28
+  42   5  25   3  34
+  43  20  19  34  35
+  44  31  19  28  27
+  45  20  35  31  36
+  46  32  24  26  21
+  47  34  27   9   8
+  48  20  30  27  31
+  49   4  32   5  28
+  50   2   4  32   5
+  51  20  31  35  30
+  52  34  27   8   5
+  53  37  13  43  10
+  54  37  50  41  43
+  55  44  53  49  52
+  56  37  11  14  13
+  57  37  11  52  14
+  58  45  44  14  37
+  59  16  44  14  45
+  60  37  54  45  47
+  61  37  54  50  45
+  62  37  54  47  53
+  63  15  17  44  14
+  64  37  13  45  50
+  65  37  54  41  50
+  66  52  49  44  18
+  67  18  17  44  15
+  68  11  37  10  13
+  69  41  37  38  53
+  70  54  47  46  45
+  71  38  37  11  52
+  72  37  43  41  38
+  73  52  12  38  39
+  74  37  38  10  43
+  75  37  54  53  41
+  76  48  47  53  49
+  77  37  52  44  14
+  78  54  45  46  51
+  79  54  45  51  50
+  80  53  37  44  47
+  81  52  37  44  53
+  82  38  53  39  41
+  83  44  15  52  18
+  84  14  11  52  12
+  85  53  37  38  52
+  86  38  11  37  10
+  87  53  41  40  39
+  88  50  41  43  42
+  89  54  50  42  41
+  90  14  15  52  44
+  91  37  13  50  43
+  92  14  45  13  16
+  93  14  15  12  52
+  94  37  45  13  14
+  95  54  51  42  50
+  96  47  53  49  44
+  97  52  53  39  38
+  98  52  11  38  12
+  99  37  47  45  44
+ 100  14  17  44  16
+c
+c   trint6 interface elements
+c
+   101 1 4 2 10 13 11
+   102 2 4 5 11 13 14
+   103 4 7 5 13 16 14
+   104 5 7 8 14 16 17
+   105 2 5 3 11 14 12
+   106 3 5 6 12 14 15
+   107 5 8 6 14 17 15
+   108  6 8 9 15 17 18
+c
+blocking automatic
+c
+loading unit_axial $ on tet4 elements at remote end
+  element loads
+        62 face 3 pressure  -1.0
+        70 face 1 pressure  -1.0
+        75 face 3 pressure  -1.0
+        76 face 1 pressure  -1.0
+        78 face 4 pressure  -1.0
+        87 face 1 pressure  -1.0
+        89 face 4 pressure  -1.0
+        95 face 1 pressure  -1.0
+c
+constraints
+   plane x=0 symmetry
+   plane y=0 symmetry
+   plane z=0 symmetry
+c
+ loading test
+  nonlinear
+    step 1-9 unit_axial 0.5
+    step 10 unit_axial 0.5
+c
+ nonlinear analysis parameters
+   solution technique sparse direct
+   maximum iterations 5 $  newton iterations
+   minimum iterations 1
+   convergence test norm res tol 0.001
+   nonconvergent solutions stop
+   adaptive off
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+   display tied mesh mpcs off
+c
+ crack growth parameters  $ just so we can get cohesive status
+   type of crack growth cohesive
+   ppr displacement fracture for extinction 0.99
+   print status on order elements 101-108
+   force release type steps
+   release steps 5
+c
+list 'remote-end' z=2.0  $ makes a list of nodes
+list 'fixed-end' z=0.0   $  "   "     "
+c
+ compute displacements for loading test step 10
+ output displacements 'remote-end'
+ output stresses 56  $ zz stress should be v. near + 5.0
+ output strains 56  $ zz stress should be v. near + 5.0
+ output reactions 'fixed-end'  $ sum Z-reactions should = 5.0
+c
+ stop
+
+
+

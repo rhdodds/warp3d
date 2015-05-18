@@ -1,0 +1,22 @@
+#
+#
+#    Makefile for WARP-3D on HP-UX Itanium 2+ Processors
+#    ---------------------------------------------------
+#
+#    Requires: HP-UX 11.x, Version 2.3 or later of f90 compiler
+#
+#    MPI version
+#
+#	This makefile sets specific flags required to compile the parallel
+#	(MPI) version of warp3d, then calls the part of the Makefile
+#	which is the same for both the MPI and serial versions of the code.
+#
+#       Use the Makewarp.ksh script to supervise the building of warp3d !
+#
+MPIF77 = /opt/mpi/bin/mpif90 $(WARPOPTS)
+MPIF90 = /opt/mpi/bin/mpif90 $(WARPOPTS) 
+MPILIB = -lmtmpi 
+EXE_NAME = warp3d.mpi
+#
+include Makefile.hpuxit.inc
+#

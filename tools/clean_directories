@@ -1,0 +1,12 @@
+#!/bin/csh
+#
+find ./ \( -name 'wn*' \) -exec rm -f {} \;
+find ./ \( -name 'we*' \) -exec rm -f {} \;
+find ./ \( -name 'energy' \) -exec rm -f {} \;
+find ./ \( -name '*.db' \) -exec rm -f {} \;
+find ./ \( -name '*_db' \) -exec rm -f {} \;
+find ./ \( -name '*batch_mess*' \) -exec rm -f {} \;
+find ./ \( -name 'CVS' \)  -exec rm -rf {} \;
+#
+rm -rf run* 
+rm -rf obj*

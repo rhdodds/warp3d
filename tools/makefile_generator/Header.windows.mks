@@ -1,0 +1,56 @@
+#
+#               Makefile for WARP3D on Windows 2K, Xp, ..
+#               Uses the Intel F90 (ifort) compiler and the Intel
+#               math library (which has the sparse direct solver).
+#
+#               This file is processed using the MKS (Mortice Kern
+#               Systems ) toolkit which provides provides
+#               Unix commands including the "make" command
+#               to process this file.
+#               (MKS Toolkit info at www.mks.com)
+#
+#
+#
+COMPILER = ifort
+ROOTDIR = C:
+ODIR = ././../obj_windows
+F90OPTS1 =  -static -fpconstant -fixed  -traceback -module:$(ODIR)
+F90OPTS2 =  -unroll -Qftz -Qfpstkchk -Qip -nologo -QaxN
+F90 = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(F90OPTS3)
+FILTER = filter_intel_windows.exe
+O = .obj
+RMC = $(ROOTDIR)/mksnt/rm.exe -f 
+MVC = $(ROOTDIR)/mksnt/mv.exe -f
+LSC = $(ROOTDIR)/mksnt/ls.exe 
+#
+#                linker options
+#
+LOPT = 
+#
+#                libraries to include at link time
+#
+LIBS = 
+#
+#                all object files for warp3d. put all 
+#                module files first.
+#
+OBJ =	 \
+[OBJECTS]
+	$(ODIR)/[object]$(O)	 \
+[END_OBJECTS]
+#
+#
+warp3d : $(OBJ)
+	 csh ./warp_link_windows_mks.csh
+#
+#
+[CUSTOM]
+$(ODIR)/[f-file]$(O) :  [f-file].f [dependencies]
+	$(RMC) $@
+	$(RMC) filt_[f-file].f
+	$(FILTER) < [f-file].f > filt_[f-file].f
+	$(F90) [optimizations]   -c filt_[f-file].f 
+	$(MVC) filt_[f-file]$(O)   [f-file]$(O) 
+	$(MVC) [f-file]$(O) $@
+
+[END_CUSTOM]

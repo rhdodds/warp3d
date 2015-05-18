@@ -1,0 +1,534 @@
+c
+c
+c
+c ********************************************
+c
+c    3D PCVN, 20% SGs
+c
+c ********************************************
+c
+c
+c
+c    3D PCVN, 0.4T, Plane Sided with V-notch and 20% side-groove 
+c    (20% on each side)  unit [in] [kips] 
+c
+c     16 Element Layers through the 1/2 thickness in the crack area:
+c     8  Element Layers through the 1/2 thickness in the beam proper:
+c
+c     20-node bricks, small strain-displacement relations.
+c
+c     Refined 3D block of elements in crack region connected to
+c     remainder of model with mesh-tieing.
+c   
+c     Model has 236.5K equations.
+c 
+c     Mesh tieing used to connect refined crack region and
+c     remote region.
+c
+c     Runs for 100 steps, compute J-integrals across the front
+c     at each step.
+c
+c        W = B  = 10 mm = 0.3937008 in
+c        a    = 0.5 W
+c        Span = 40 mm = 1.57 in
+c
+c     load Control
+c     Static Loading
+c
+c     Non-linear material: 
+c   
+c         E      = 206.844 GPa   = 30,000 ksi
+c         sig_ys = 413.688 MPa   = 60 ksi
+c         n      = 10
+c
+c     Input from the following files:
+c         coordinates.inp
+c         incid_and_blocking.inp
+c         constraints.inp
+c         domain_define
+c         mesh_tieing.inp
+c	        get_output
+c
+c
+c    J-integral computed at each corner node along crack front and the
+c    front average value.
+c
+c
+c    Solution runs thru step 45 with finite strains. Then crack front
+c    elements become too distorted.
+c
+c        J-avg @ step 5:  0.18 kip-in/in**2, M = 66
+c
+c    Switch to small-strain theory and the solution continues to
+c    very large deformations.
+
+c 
+structure pcvn_sgs
+c 
+c 
+material specimen 
+   properties mises  e 30000  nu 0.3,
+   yld_pt 60.0 n_power 10.0 rho  0.0
+c
+material end_roller
+   properties mises  e 30000  nu 0.3,
+   yld_pt 60.0e10 n_power 10.0 rho  0.0
+c 
+number of nodes  81054 elements 18077
+c
+elements
+c
+c           elements at end roller -- linear elastic
+c           material in the area 
+c
+ 713-720 3235 3239 3243 3247 3251 3255 3259 3263,
+  type q3disop linear material end_roller,
+    order 2x2x2 center_output short     
+c  
+c          all other elements
+c
+  1-712 721-3234 3236-3238 3240-3242 3244-3246 3248-3250 3252-3254,
+  3256-3258 3260-3262 3264-18077 type q3disop linear material specimen,
+ order 2x2x2 center_output short 
+c
+*input from 'coordinates.inp'
+*input from 'incid_and_blockinginp'
+*input from file 'mesh_tieing.inp'
+*input from 'constraints.inp'
+c 
+loading unit
+  element loads
+   2942-2946 by 1 face 2 pressure  111.38959
+   2952 2956 2960 2964 2968 2934 face 2 pressure 111.38959
+c
+loading test
+ nonlinear
+c step 1-20 unit 0.00575080  $ delta ki = 1.0 ksi-sqrt(in) on linear model
+  step 1-20 unit 0.0057508
+  step 21-100 unit 0.0028754
+c
+ nonlinear analysis parameters
+  solution technique direct sparse 
+  maximum iterations 6
+  minimum iterations 2
+  nonconvergent solutions stop
+  convergence test norm residual tolerance 0.05
+  time step 1.0E+06
+  adaptive solution on
+  batch messages on
+  cpu time limit off
+  extrapolate off
+  show details on
+  material messages off
+  bbar stabilization factor 0.0000
+c
+  compute displacements for loading test for  step 1
+  *input from file get_output
+  *input from file domains_all
+   output patran formatted displacements
+
+  compute displacements for loading test for step 2
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 3
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 4
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 5
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 6
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 7
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 8
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 9
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 10
+  *input domains_all
+  *input get_output
+  output patran formatted nodal displacement
+  output patran formatted nodal stresses
+c
+  compute displacements for loading test for step 11
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 12
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 13
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 14
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 15
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 16
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 17
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 18
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 19
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 20
+  *input domains_all
+  *input get_output
+c  output patran formatted displacements
+  save to file 'fl_res_mises_1'
+c
+  compute displacements for loading test for step 21
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 22
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 23
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 24
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 25
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 26
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 27
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 28
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 29
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 30
+  *input domains_all
+  *input get_output
+  output patran formatted nodal displacement
+  output patran formatted nodal stresses
+c
+  compute displacements for loading test for step 31
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 32
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 33
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 34
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 35
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 36
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 37
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 38
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 39
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 40
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 41
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 42
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 43
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 44
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 45
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 46
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 47
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 48
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 49
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 50
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 51
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 52
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 53
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 54
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 55
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 56
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 57
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 58
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 59
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 60
+  *input domains_all
+  *input get_output
+  output patran formatted nodal displacement
+  output patran formatted nodal stresses
+c
+  compute displacements for loading test for step 61
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 62
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 63
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 64
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 65
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 66
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 67
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 68
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 69
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 70
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 71
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 72
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 73
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 74
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 75
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 76
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 77
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 78
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 79
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 80
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 81
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 82
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 83
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 84
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 85
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 86
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 87
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 88
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 89
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 90
+  *input domains_all
+  *input get_output
+  compute displacements for loading test for step 91
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 92
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 93
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 94
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 95
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 96
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 97
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 98
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 99
+  *input domains_all
+  *input get_output
+c
+  compute displacements for loading test for step 100
+  *input domains_all
+  *input get_output
+  output patran formatted nodal displacement
+  output patran formatted nodal stresses
+ stop

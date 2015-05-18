@@ -1,0 +1,9 @@
+c
+c        LLD
+c
+ output eformat displacements 13060 13059 13055
+c
+c        forces at nodes with imposed displacements
+c
+ output totals only reactions 27041-27046
+c

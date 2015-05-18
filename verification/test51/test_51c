@@ -1,0 +1,148 @@
+c
+c            shear xz patch test for tet10 elements
+c            --------------------------------------
+c
+c            1 x 1 x 1 cube mesh
+c
+c            internal nodes are moved to make some element edges curved
+c
+c            displacement boundary conditions just to prevent rbm
+c                    applied on x = 0
+c
+c            Loadings: (applied with face tractions)
+c             o  x, z tractions on faces x=0, x=1, z=0, z=1 to impose unit
+c                   xz shear stress
+c
+c            Analysis can be run with small or large displacements, with
+c            linear or nonlinear material.
+c
+c            Comment/Uncomment the desired material response
+c
+c            Comment/Uncomment the desired element response
+c
+c            Note:
+c
+c               the 5 point integration order provides additional
+c               significant figures than the 4 point rule (the 4 point
+c               rule is ok if element edges are straight)
+c
+c
+structure patch
+c
+material default
+    properties mises  e 30000 nu 0.3 yld_pt 60.0 n_power 10
+c material default
+c    properties linear e 30000 nu 0.3
+c
+c
+number of nodes       34
+number of elements       11
+c
+coordinates
+      1  0.469840616E+00  0.424494058E+00  0.511210680E+00
+      2  0.234920308E+00  0.212247029E+00  0.255605340E+00
+      3  0.234920308E+00  0.712247014E+00  0.255605340E+00
+      4  0.334920317E+00  0.212247029E+00  0.755605340E+00
+      5  0.734920323E+00  0.212247029E+00  0.755605340E+00
+      6  0.734920323E+00  0.712247014E+00  0.755605340E+00
+      7  0.734920323E+00  0.312247038E+00  0.255605340E+00
+      8  0.234920308E+00  0.712247014E+00  0.755605340E+00
+      9  0.000000000E+00  0.500000000E+00  0.500000000E+00
+     10  0.000000000E+00  0.500000000E+00  0.000000000E+00
+     11  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     12  0.000000000E+00  0.000000000E+00  0.000000000E+00
+     13  0.000000000E+00  0.100000000E+01  0.500000000E+00
+     14  0.000000000E+00  0.100000000E+01  0.100000000E+01
+     15  0.000000000E+00  0.500000000E+00  0.100000000E+01
+     16  0.000000000E+00  0.000000000E+00  0.100000000E+01
+     17  0.000000000E+00  0.000000000E+00  0.500000000E+00
+     18  0.100000000E+01  0.500000000E+00  0.500000000E+00
+     19  0.100000000E+01  0.000000000E+00  0.500000000E+00
+     20  0.100000000E+01  0.000000000E+00  0.100000000E+01
+     21  0.100000000E+01  0.000000000E+00  0.000000000E+00
+     22  0.100000000E+01  0.500000000E+00  0.100000000E+01
+     23  0.100000000E+01  0.100000000E+01  0.100000000E+01
+     24  0.100000000E+01  0.100000000E+01  0.500000000E+00
+     25  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     26  0.100000000E+01  0.500000000E+00  0.000000000E+00
+     27  0.500000000E+00  0.000000000E+00  0.500000000E+00
+     28  0.500000000E+00  0.000000000E+00  0.100000000E+01
+     29  0.500000000E+00  0.000000000E+00  0.000000000E+00
+     30  0.500000000E+00  0.100000000E+01  0.500000000E+00
+     31  0.500000000E+00  0.100000000E+01  0.000000000E+00
+     32  0.500000000E+00  0.100000000E+01  0.100000000E+01
+     33  0.500000000E+00  0.500000000E+00  0.000000000E+00
+     34  0.500000000E+00  0.500000000E+00  0.100000000E+01
+elements
+     1-11 type tet10 linear material default order 5pt_rule short
+c     1-11 type tet10 nonlinear material default order 5pt_rule short
+c
+incidences
+       1      16      11       1      12       9       3       4      17,
+      10       2
+       2      20      16      23       1      28      34      22       5,
+       4       6
+       3      11      23       1      21      30       6       3      33,
+      18       7
+       4      21      16      20       1      27      28      19       7,
+       4       5
+       5      21      12      16       1      29      17      27       7,
+       2       4
+       6      14      11       1      16      13       3       8      15,
+       9       4
+       7       1      23      20      21       6      22       5       7,
+      18      19
+       8      21       1      11      12       7       3      33      29,
+       2      10
+       9      11      25      23      21      31      24      30      33,
+      26      18
+      10      16      14      23       1      15      32      34       4,
+       8       6
+      11       1      23      11      14       6      30       3       8,
+      32      13
+c
+blocking  automatic
+c
+constraints
+       9      u    0.000000E+00
+      10      u    0.000000E+00
+      11      u    0.000000E+00
+      12      u    0.000000E+00 v 0
+      13      u    0.000000E+00
+      14      u    0.000000E+00      v    0.000000E+00      w    0.000000E+00
+      15      u    0.000000E+00
+      16      u    0
+      17      u    0.000000E+00
+c
+ loading shear_xz
+  element loads
+    7 9 face 3 tz 1.0
+    1 face 2 tz -1.0
+    6 face 2 tz -1.0
+    2 face 1 tx 1.0
+    10 face 1 tx 1.0
+    8 face 4 tx -1.0
+    9 face 2 tx -1.0
+
+ loading patch
+  nonlinear
+   step 1 shear_xz 33
+   step 2-20 shear_xz 1.25
+c
+  solution analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 1
+   convergence test norm res tol 0.05 maximum residual tol 0.5
+   time step  1.0e10
+   trace solution on
+   adaptive solution on
+   batch messages off
+   bbar stabilization factor 0.0
+c
+  compute displacements for loading patch step 18
+  output displacements for nodes 20 21 23 25
+  output patran binary displacements
+  output stresses 1-11
+c
+stop

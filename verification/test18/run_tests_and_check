@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#**************************************************************
+#*                                                            *
+#*      cleanup_files                                         *
+#*                                                            *
+#**************************************************************
+
+function cleanup_files {
+#
+/bin/rm -f  *_out 
+/bin/rm -f  *~ >& /dev/null
+/bin/rm -f energy  >& /dev/null
+/bin/rm -f *_db >& /dev/null
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      run_and_compare                                       *
+#*                                                            *
+#**************************************************************
+
+function run_and_compare {
+#
+echo "  ... running test_18a..."
+"$warp3d_exe" $num_threads  < test_18a > test_18a_out
+echo "  ... running test_18b..."
+"$warp3d_exe"  $num_threads < test_18b > test_18b_out
+echo "  ... running test_18c..."
+"$warp3d_exe"  $num_threads  < test_18e > test_18e_out
+#
+echo "  ... WARP3D jobs completed..."
+#
+perl check_18a.perl
+perl check_18b.perl
+perl check_18e.perl
+#
+cleanup_files
+#
+}
+
+
+#**************************************************************
+#*                                                            *
+#*      main programs                                         *
+#*                                                            *
+#**************************************************************
+#
+echo " "; echo " ";
+#
+machine=`uname`
+echo ">> machine id: " $machine
+num_threads=$NUM_THREADS
+cleanup_files
+#
+if [ "$MACHINE_TYPE" = '0' ]; then
+   echo -e "   OSX and Linux verification..."
+   warp3d_exe="$WARP3D_EXE"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '1' ]; then
+   echo -e "\n Windows 32-bit verification..."
+   warp3d_exe="$WARP3D_EXE_32"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '2' ]; then
+   echo -e "   Windows verification..."
+   warp3d_exe="$WARP3D_EXE_64"
+   run_and_compare
+fi
+#
+#
+echo -e "\n>>> All done with test_18 ...\n\n"
+exit

@@ -1,0 +1,36 @@
+#!/bin/csh
+#
+set mess = "fixes for new history data structure"
+cvs commit -m "$mess" mm04.f
+cvs commit -m "$mess" dicmj.f
+cvs commit -m "$mess" mod_eleblocks.f
+cvs commit -m "$mess" rstgp1.f
+cvs commit -m "$mess" recstr.f
+cvs commit -m "$mess" mm08.f
+cvs commit -m "$mess" mm07.f
+cvs commit -m "$mess" mm06.f
+cvs commit -m "$mess" mm05.f
+cvs commit -m "$mess" mm03p.f
+cvs commit -m "$mess" kill_element.f
+cvs commit -m "$mess" cnst4.f
+cvs commit -m "$mess" chkcrack.f
+cvs commit -m "$mess" mm03.f
+cvs commit -m "$mess" gpifv1.f
+cvs commit -m "$mess" rknifv.f
+cvs commit -m "$mess" rplstr.f
+cvs commit -m "$mess" gtmat1.f
+cvs commit -m "$mess" rknstr.f
+cvs commit -m "$mess" rstgp1s.f
+cvs commit -m "$mess" tanstf.f
+cvs commit -m "$mess" include_sig_up
+cvs commit -m "$mess" mm02.f
+cvs commit -m "$mess" oudups.f
+cvs commit -m "$mess" oustr.f
+cvs commit -m "$mess" mm01.f
+cvs commit -m "$mess" scstr.f
+cvs commit -m "$mess" gastr.f
+cvs commit -m "$mess" gastr.f
+cvs commit -m "$mess" gptns1.f
+cvs commit -m "$mess" cnst3.f
+cvs commit -m "$mess" cnst2.f
+cvs commit -m "$mess" include_tan_ek

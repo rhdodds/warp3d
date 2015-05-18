@@ -1,0 +1,14 @@
+c
+c      restarts the analysis for testing piston loading
+c      on simple tet model from step 21. Computes 
+c      agina the response trhu step 31.
+c      demonstrates the save/restart capabilies with the 
+c      table and piston loading commands
+c
+restart from file 'step_21.restart'
+c 
+ compute displacements for loading test step 31
+ output displacements 1 5 7-12 14-15 30-31 33
+ output velocities 1 5 7-12 14-15 30-31 33
+c 
+stop

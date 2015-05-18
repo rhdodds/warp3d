@@ -1,0 +1,106 @@
+c
+c
+c
+c 3D CVN, Plane-Sided, 8-node bricks
+c
+c     14 Element Layers through the 1/2 thickness:
+c        W = B  = 0.394 in
+c        a      = 0.197 in
+c        Span   = 1.576 in
+c
+c     Plane Sided
+c     Displacement Control
+c     Large Strain theory (Ri=6.e-5 in)
+c
+c     Non-linear material:
+c
+c         E = 30000 ksi
+c     sig_o = 60.   ksi
+c         n = 10
+c
+c     Input from the following files:
+c         coordinates.inp
+c         incidences.inp
+c         values_to_output
+c         domain_define
+c
+c     Finite strain solution runs to step 70.
+c
+c     J-avg = 0.246 kip-in/in**2, M-avg = 49
+c
+c     Small-strain solution runs to much larger deformations
+c
+structure pcvn
+c
+material steel
+  properties  mises  e 30000.  nu 0.3  yld_pt 60.  n_power 10,
+          rho  0.0
+c
+number of nodes  22140 elements 19334
+c
+elements
+ 1-19334  type l3disop  nonlinear material steel,
+     order 2x2x2 bbar center_output short
+*input from 'coordinates.inp'
+*input from 'incidences.inp'
+*input from 'constraints.inp'
+c
+blocking automatic
+c
+ loading disp_ctrl
+  nonlinear
+   step 1-150 constraints  0.0002  $ delta K = 0.46 for linear-elastic
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   trace solution on
+   minimum iterations 2
+   maximum iterations 4
+   convergence test norm res tol 0.005  $ v. tight
+   time step 1.0e06
+   extrapolate on
+   nonconvergent solution stop
+   consistent q off
+   adaptive on
+   bbar stabilization factor 0.02 $ needed
+   batch messages on
+c
+c
+ compute displacements for loading disp_ctrl for step 10
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 20
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 30
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 40
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 45
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 50
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 55
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 60
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 65
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 70
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 80
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 90
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 100
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 110
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 120
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 130
+  *input 'domain_define'
+ compute displacements for loading disp_ctrl for step 140
+  *input 'domain_define'
+stop  
+
+
+

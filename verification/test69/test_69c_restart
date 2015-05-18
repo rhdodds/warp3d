@@ -1,0 +1,50 @@
+c 
+c Simple example to illustrate/test use of the cohesive zone
+c material model and the interface elements.
+c
+c ** this input file tests restart from part_one ** 
+c
+ restart from file "restart_ppr_test_db"
+c
+compute displacements for loading test step 13
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+c
+compute displacements for loading test step 14
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+c
+compute displacements for loading test step 15
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+c
+compute displacements for loading test step 16
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+c
+compute displacements for loading test step 17
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+c
+compute displacements for loading test step 18
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+c
+compute displacements for loading test step 19
+output wide displacements for nodes  71 55, 83 64, 65 49, 68 52
+output wide displacements for nodes 1-16
+output wide reactions for nodes 1-16
+output wide stresses  7 52 9 54
+stop

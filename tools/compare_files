@@ -1,0 +1,10 @@
+#!/bin/csh
+#
+set file_list = `ls *`
+#
+foreach file ( $file_list )
+  echo " "
+  echo '>> processing file: '$file
+  echo " "
+  diff -C 5 -b $file $1/$file
+end

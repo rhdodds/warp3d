@@ -1,0 +1,150 @@
+
+Last Update: February 8, 2015
+-----------------------------
+
+Python 2.7.x is required for warp3d2exii
+
+warp3d2exII is a stand-alone Python program (see also last Section here).
+(a copy is also named pat2xii to reain the older naming for a while longer)
+
+warp3d2exii reads in:
+
+  1) a flat model description file and flat results files
+  
+  or
+  
+  2) a MSC Patran neutral file and flat results files
+
+And generates an Exodus II (.exo) file.
+
+The Exodus II format is compatible with 
+Paraview, a free post-processing visualization software, and many other pre-
+and post- processing software packages (e.g. Cubit).
+
+The "flat" result files were a new feature of WARP3D starting at 
+release 17.5.3.
+
+The "flat" model description file was a new feature of WARP3D starting at 
+release 17.5.5.
+
+Flat results files are produced with the WARP3D commands of the form
+
+  output flat text displacements ...
+  output flat text compressed stresses strains displacements ...
+  output flat stream displacements ...
+  output flat text element states
+  
+  See Section 2.12.4 of the WARP3D User Manual for more details.
+  
+The flat model description file is generated with input
+commands of the form
+
+  output model flat patran convention file <file name>  
+
+================================================================================
+Using the program 
+================================================================================
+
+warp3d2exii is a Python program - it is Python source code executed by
+your runtime Python environment.
+
+The code is located at:
+
+  $WAR3D_HOME/warp3d2exii/warp3d2exii
+
+This is a command-line program. The program will prompt to enter 
+the following information:
+
+1) The filename (and path) for the new Exodus II file.  For example:
+
+      /path/to/file/filename-of-exodus-file
+
+   warp3d2exii overwrites an existing file with no warning and
+   automatically appends .exo to the end of the name if not
+   already included.
+
+2) The path and filename to the flat model description file or
+   the Patran neutral file.  For example:
+
+      /path/to/file/flat_model_file.text
+      /path/to/file/neutralfile.out
+
+3) The path to the directory containing the flat results files.
+   Example
+
+      /path/to/results
+
+4) warp3d2exii parses the contents of the directory name entered in
+   step 3 and looks for flat results files.
+   
+5) warp3d2exii then asks if you want to input the path to a "time map" file.
+   This is used mostly for making movies of the results in ParaView.
+   WARP3D does not keep track of the actual time value at which each 
+   load step occurs (i.e. it does not track tn+1 = tn + dt).  
+   
+   To use the actual time data in Paraview, you must create a 
+   file of <n> positive real numbers, each number on its own line, 
+   where <n> is the number of load steps
+   in your analysis and the real number on line <i> corresponds 
+   to the physical time of load step <i>. 
+   
+   A yes (y) answer to the prompt
+
+   is then followed by a request to enter the path to 
+   the time map file, for example:
+
+      /path/to/file/timemap
+
+6) warp3d2exii executes to completion without further user 
+   interaction.
+   
+   
+Efficiency:
+
+   Reading of a flat model description file is very fast.   
+   Reading of a Patran neutral file is quite slow for a large model.
+   
+   Reading of flat results files, especially stream format, is very fast.
+   
+   Writing of the final .exo file is reasonably fast at this point. 
+   warp3d2exii issues a message when it finishes and closes the .exo file.
+   A very large .exo file (multi GBs) may requires several minutes
+   to write to disk.
+
+
+================================================================================
+Python Requirements for warp3d2exii
+================================================================================
+
+warp3d2exii is built and tested on Python 2.7 on Windows, Linux and Mac OS X.
+
+You will need a working Python environment to use warp3d2exii (in a
+Bash shell for Linux and OS X and in the command prompt for
+Windows)
+
+The fortranformat (free) package may need to be included in your Python
+environment. Install it if needed using a Bash shell command (Linux, OS X)
+
+     %  easy_install fortranformat
+     
+Use sudo easy_install  ... if needed.
+
+Python environments
+-------------------
+
+We can recommend highly the free Python environment
+for Linux, Windows and Mac OS X available from
+
+   Enthought Scientific Computing Solutions   www.enthought.com
+    Products -> Enthought Python Distribution (EPD) EPD Free
+
+EPD Free is a hassle free approach to install a modern 
+Python environment -- especially on Windows and 
+Mac OS X where installation of all components is otherwise
+a challenge. 
+
+Under Windows, the EPD becomes the default Python under the command
+prompt.  The easy_install command is also available to obtain
+the fortranformat package.
+
+

@@ -1,0 +1,166 @@
+#!/bin/csh
+#
+#	dep_check
+#
+#	     This program runs through a source code directory, checking all
+#	     the dependencies in the code sections with the Makefile. Checks
+#            both $add include files and module dependencies.  
+#
+#	     Assumptions:
+#		- code uses $add to include a common file 
+#               - all modules are defined in source code files beginning
+#                    with "mod_"
+#	        - makefile has a seperate instruction set for each
+#		     code file, and the first line of the instruction
+#                    set begins with "$(ODIR)/filename$O" 
+#               - the program strip_make must be available either in the
+#                    current directory or in ../tools
+#
+#	     Written by Arne Gullerud, 7/31/96
+#            Last modified:  2/28/98 AG
+#
+#
+echo " --- Dependency Checker ----- "
+echo " "
+echo " Please input name of Makefile:"
+set real_makefile = ($<)
+if (! -e $real_makefile) then
+   echo ">>> ERROR: cannot find file $real_makefile"
+   exit 1
+endif
+echo " "
+#
+#      run strip_make on the Makefile.  This makes sure that all line 
+#      continuations conducted through a \ character are all on one line
+#      to simplify this script.  Quit if we can't find strip_make.
+#
+if ( -e strip_make) then
+   set stripper = "strip_make"
+else if ( -e "../tools/strip_make") then
+   set stripper = "../tools/strip_make"
+else
+    echo ">>> ERROR: cannot find strip_make.  Make sure strip_make is"
+    echo ">>>        either in the current directory or in ../tools"
+    exit 1
+endif
+set makefile = "make_check.$$"
+$stripper < $real_makefile > $makefile
+#
+#        find all code files
+#
+set files = `ls | grep -v filt_ | grep '\.f$' | grep -v filter`
+#
+#        loop over files
+#
+foreach file ($files)
+#
+#          if source code file starts with mod_ , we assume it is a 
+#          module source code file, and thus we skip it. Also skip if
+#          code file not referenced in Makefile.
+#
+  if ( `echo $file | grep -c "^mod_"` == 1 ) then
+     echo ">>> skipping file $file -- assuming its a module file."
+     echo " "
+     goto next
+  endif 
+  if ( `grep -c " $file " $makefile` == 0 ) goto next
+#
+#          construct list of dependencies in source code file.  
+#             - Find all $adds for include files and add to list. 
+#             - For modules, find all referenced modules, then find 
+#                   what module code files define the modules and add that 
+#                   list.
+#
+  @ count = 0
+  set list = `grep -in '$add' $file | awk '{print $2}'`
+#
+  set use_list = `grep -i '^      use ' $file | awk '{print $2}' | sed -e 's/\,//'`
+
+#   echo ">> module reference list..."
+#   foreach ii ($use_list)
+#      echo $ii
+#   end
+  foreach use_item ($use_list)
+    foreach mod_file ( `ls mod_*.f`)
+      if ( `grep -c $use_item $mod_file` != 0 ) then
+         set list = "$list $mod_file"
+      endif
+    end
+  end
+  set good_list = ' '
+#
+#	   sort list -- exclude repeated entries
+#
+  foreach entry ($list)
+     set include
+     foreach gentry ($good_list)
+        if ($entry == $gentry) unset include
+     end
+     if ($?include) then
+        set good_list = "$good_list $entry"
+     endif	
+  end
+#
+#	   add param_def to list if common.main is included
+#
+  foreach entry ($good_list)
+     if ($entry == 'common.main') then
+	set good_list = "$good_list param_def"
+     endif	
+  end
+#  echo ">> good list.."
+#  foreach ii ($good_list)
+#     echo $ii
+#  end
+#
+#	   find dependency list in Makefile
+#
+  set make_list = `grep -i " $file " $makefile | grep ':' | sed -e 's/\$(ODIR)\/[a-z_0-9(\$]*O[) ]*:[ ]*[a-z_0-9]*\.f//'`
+#
+#	   now check the actual dependencies against the Makefile 
+#	   dependencies -- shows missing dependencies
+#
+  foreach real_dep ($good_list)
+     set bad
+     foreach make_dep ($make_list)
+        if ($make_dep == $real_dep) unset bad
+     end
+     if ($?bad) then
+	@ count = $count + 1
+	if ($count == 1) echo ">>>> Problem with Makefile parameters for => $file <="
+	echo "  WARNING: $real_dep is missing."
+     endif
+   end
+#
+#	   now check the Makefile dependencies against the actual
+#	   dependencies -- shows erroneous dependencies
+#
+  foreach make_dep ($make_list)
+     set bad
+     foreach real_dep ($good_list)
+        if ($make_dep == $real_dep) unset bad
+     end
+     if ($?bad) then
+	@ count = $count + 1
+	if ($count == 1) echo ">>>> Problem with Makefile parameters for => $file <="
+        echo "  WARNING: $make_dep is not needed."
+     endif
+   end
+#
+   if ($count > 0) then
+      echo " "
+      echo "  actual dependencies: $good_list"
+      echo "  makefile dependencies: $make_list"
+      echo " "
+   endif
+#
+#
+  next:   
+end
+echo ">>> Finished"
+#
+#      remove temporary modified makefile
+#
+\rm $makefile
+
+

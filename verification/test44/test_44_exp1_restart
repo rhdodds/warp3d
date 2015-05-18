@@ -1,0 +1,8 @@
+c
+ restart from file "exp1.db"
+
+ compute displacements loading pull_top step 200
+   output displacements for nodes 15 16 14 13 3 4 2 1
+   output displacements for nodes 1866 1868 1867 1865 1874 1873 1872 1871
+   output totals only reactions 981 982
+stop
