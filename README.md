@@ -15,6 +15,8 @@ Most WARP3D users will never need to use this web site (GitHub).
 If you want to have the most up-to-date source code, documentation, etc. you may clone this repository. This will not include ready-to-run executables.
 You will need to have the (free) git software for distributed source control management tool. git runs on all platforms.
 To create a clone of the current development (but working) WARP3D system version, use the following command (in a bash shell on Linux and OS X). Choose any name you want for the directory to hold the clone (below uses warp3d)
-git clone https://github.com/rhdodds@gmail.com/warp3d
+
+% git clone https://github.com/rhdodds/warp3d  <name for your copy of repository>
+
 
 Follow the step-by-step instructions to rebuild WARP3D executable(s) on a platform provided in the files README_for_xxxx (where xxxx is the platform).
