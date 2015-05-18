@@ -1,0 +1,110 @@
+c
+c    Small-Scale Yielding Boundary Layer Analysis
+c    ============================================
+c
+c    3-D model w/ 1 layer of 20-node hex elements
+c    Plane strain boundary conditions
+c    Model units set up for: kips, inches
+c
+c    Model features:
+c    ===============
+c      -  outer radius is 10 in.
+c      -  18 element rays in circumferential direction
+c      -  collapsed elements at tip with mid-side nodes in 1/2
+c         position
+c      -  tip constraints permit blunting deformations
+c      -  radius of first few rings at tip
+c             ring 1: 0.0000200 in.
+c             ring 2: 0.0000424 in. 
+c             ring 3: 0.0000672 in.
+c             ring 4: 0.0000950 in.
+c      -  model thickness: 0.00025 in.
+c
+c    Material:
+c    =========
+c      - deformation plasticity
+c      - E=30,000 ksi, nu=0.3
+c      - yield stress=60 ksi, hardening exponent=10  
+c      - small-strain formulation 
+c
+c    Loading:
+c    ========
+c      - remote KI displacement field imposed on outer circular boundary
+c      - maximum KI = 70 ksi x sqrt(in.)
+c      - 70 load steps of delta KI = 1.0
+c
+c    Output:
+c    =======
+c      - every 10 load steps
+c      - get domain integral estimate for J
+c      - Patran nodal displacement and stress files
+c
+c    Mesh Info:
+c    ==========
+c      - crack front elements: 1783-1800
+c      - 2nd ring of elements: 1765-1782
+c      - pinned nodes at front: 12596, 12592, 12595
+c      
+c
+structure ssy
+material steel
+ properties deformation  e 30000 nu 0.3  yld_pt 60  n_power 10.0
+number of nodes  13193 elements   1800
+coordinates
+*echo off
+*input from 'test_58.coordinates'
+*echo on
+c
+elements
+ 1-1800 type q3disop linear material steel,
+  order 2x2x2 nodpts short
+c
+*input from 'test_58.incid_and_blocking'
+c 
+constraints
+*echo off
+*input from 'test_58.constraints'
+*echo on
+c
+ output model flat patran convention text file "ssy_model_flat"
+c
+loading ssy
+ nonlinear
+  step 1-70 constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 2
+   convergence test norm res tol .01 
+   adaptive on
+   time step 10000000
+   nonconvergent solutions stop
+   trace solution on
+c
+output commands use file "test_58_get_output" steps 10-70 by 10
+
+compute displacements for loading ssy  step 10 
+ *input from 'test_58.domain'
+c
+compute displacements for loading ssy  step 20 
+ *input from 'test_58.domain'
+c
+compute displacements for loading ssy  step 30 
+ *input from 'test_58.domain'
+c
+compute displacements for loading ssy  step 40 
+ *input from 'test_58.domain'
+c
+compute displacements for loading ssy  step 50 
+ *input from 'test_58.domain'
+c
+compute displacements for loading ssy  step 60 
+ *input from 'test_58.domain'
+c
+compute displacements for loading ssy  step 70 
+ *input from 'test_58.domain'
+c
+stop
+
+

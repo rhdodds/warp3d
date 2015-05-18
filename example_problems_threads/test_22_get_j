@@ -1,0 +1,24 @@
+c
+c
+output eformat reactions for nodes 969,973,1043,1059,
+     1137,1141,1207
+output displacements for nodes 969,973,1043,1059,1137,1141,1207
+c
+c
+domain one
+ symmetric
+ front nodes 1044 1043 linear verify
+ normal plane nx 0 ny 1 nz 0
+ print totals
+ function type a
+ q-values 1043, 1044, 377 378 469 ,
+  470 547 548 549 550 551 552 553 554 555 556 633 634 691 692 761 ,
+  762 763 764 783 784 785 786 787 788 789 790 791 792 793 794 795 796 ,
+  797 798 859 860 873 874 927 928 929 930 931 932 933 934 1.0
+c
+  elements 402,459,403,460,577,453,340,390,287,341,391,450,252,342,251,
+         389,249,185,64,271,112,171,228,329,268,102
+c
+ ignore crack face loading $ needed for killed elements
+c 
+ compute domain integral

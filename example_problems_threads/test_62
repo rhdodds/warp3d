@@ -1,0 +1,181 @@
+c --------------------------------------------------------------------
+c
+c    modified boundary-layer model with applied T-stress and
+c    zero stress-intensity factors
+c
+c    exercises the J-integral and Interaction Integral code
+c
+c    material is linear elastic, homogenous, isotropic
+c
+c    --model w/ 1 layer of 8-node brick elements
+c    --40 sectors and 50 circular rings
+c    --crack-tip elements are 0.000434 units in dimension
+c    --radius of mesh is 10.0 units
+c    --thickness of mesh is 1.0
+c
+c    --displacement constraints imposed on boundary
+c      correspond to plane-stress conditions
+c    --remote displacements impose T11 = 1.0 ksi
+c
+c    J values and KI, KII, and KIII should all be zero.
+c    T11 should equal 1.0 (the applied T-stress) and T33 should be
+c    zero
+c
+c --------------------------------------------------------------------
+c
+c
+structure modified_blm
+c 
+c 
+material steel
+    properties linear e 30000 nu 0.3
+c 
+number of nodes     4102
+number of elements     2000
+c
+elements
+   1 - 2000 type l3disop linear material steel,
+   order 2x2x2 bbar center_output short
+*input from file "test_62_incid_coords"
+blocking   $    scalar
+       1     128       1
+       2     128     129
+       3     128     257
+       4     128     385
+       5     128     513
+       6     128     641
+       7     128     769
+       8     128     897
+       9     128    1025
+      10     128    1153
+      11     128    1281
+      12     128    1409
+      13     128    1537
+      14     128    1665
+      15     128    1793
+      16      80    1921
+*echo on
+c
+c constrain crack-front nodes
+c
+constraints
+    4101  u 0 v 0
+    4102  u 0 v 0 w 0
+c
+c       Applied T increment thru displacements on outer boundary
+c       K increment = 0
+c
+*echo off
+       1  u  -0.3333E-03    v   0.8742E-11
+       2  u  -0.3333E-03    v   0.8742E-11
+       3  u  -0.3292E-03    v   0.1564E-04
+       4  u  -0.3292E-03    v   0.1564E-04
+       5  u  -0.3170E-03    v   0.3090E-04
+       6  u  -0.3170E-03    v   0.3090E-04
+       7  u  -0.2970E-03    v   0.4540E-04
+       8  u  -0.2970E-03    v   0.4540E-04
+       9  u  -0.2697E-03    v   0.5878E-04
+      10  u  -0.2697E-03    v   0.5878E-04
+      11  u  -0.2357E-03    v   0.7071E-04
+      12  u  -0.2357E-03    v   0.7071E-04
+      13  u  -0.1959E-03    v   0.8090E-04
+      14  u  -0.1959E-03    v   0.8090E-04
+      15  u  -0.1513E-03    v   0.8910E-04
+      16  u  -0.1513E-03    v   0.8910E-04
+      17  u  -0.1030E-03    v   0.9511E-04
+      18  u  -0.1030E-03    v   0.9511E-04
+      19  u  -0.5214E-04    v   0.9877E-04
+      20  u  -0.5214E-04    v   0.9877E-04
+      21  u   0.2041E-19    v   0.1000E-03
+      22  u   0.2041E-19    v   0.1000E-03
+      23  u   0.5214E-04    v   0.9877E-04
+      24  u   0.5214E-04    v   0.9877E-04
+      25  u   0.1030E-03    v   0.9511E-04
+      26  u   0.1030E-03    v   0.9511E-04
+      27  u   0.1513E-03    v   0.8910E-04
+      28  u   0.1513E-03    v   0.8910E-04
+      29  u   0.1959E-03    v   0.8090E-04
+      30  u   0.1959E-03    v   0.8090E-04
+      31  u   0.2357E-03    v   0.7071E-04
+      32  u   0.2357E-03    v   0.7071E-04
+      33  u   0.2697E-03    v   0.5878E-04
+      34  u   0.2697E-03    v   0.5878E-04
+      35  u   0.2970E-03    v   0.4540E-04
+      36  u   0.2970E-03    v   0.4540E-04
+      37  u   0.3170E-03    v   0.3090E-04
+      38  u   0.3170E-03    v   0.3090E-04
+      39  u   0.3292E-03    v   0.1564E-04
+      40  u   0.3292E-03    v   0.1564E-04
+      41  u   0.3333E-03    v  -0.0000E+00
+      42  u   0.3333E-03    v  -0.0000E+00
+      43  u   0.3292E-03    v  -0.1564E-04
+      44  u   0.3292E-03    v  -0.1564E-04
+      45  u   0.3170E-03    v  -0.3090E-04
+      46  u   0.3170E-03    v  -0.3090E-04
+      47  u   0.2970E-03    v  -0.4540E-04
+      48  u   0.2970E-03    v  -0.4540E-04
+      49  u   0.2697E-03    v  -0.5878E-04
+      50  u   0.2697E-03    v  -0.5878E-04
+      51  u   0.2357E-03    v  -0.7071E-04
+      52  u   0.2357E-03    v  -0.7071E-04
+      53  u   0.1959E-03    v  -0.8090E-04
+      54  u   0.1959E-03    v  -0.8090E-04
+      55  u   0.1513E-03    v  -0.8910E-04
+      56  u   0.1513E-03    v  -0.8910E-04
+      57  u   0.1030E-03    v  -0.9511E-04
+      58  u   0.1030E-03    v  -0.9511E-04
+      59  u   0.5214E-04    v  -0.9877E-04
+      60  u   0.5214E-04    v  -0.9877E-04
+      61  u   0.2041E-19    v  -0.1000E-03
+      62  u   0.2041E-19    v  -0.1000E-03
+      63  u  -0.5214E-04    v  -0.9877E-04
+      64  u  -0.5214E-04    v  -0.9877E-04
+      65  u  -0.1030E-03    v  -0.9511E-04
+      66  u  -0.1030E-03    v  -0.9511E-04
+      67  u  -0.1513E-03    v  -0.8910E-04
+      68  u  -0.1513E-03    v  -0.8910E-04
+      69  u  -0.1959E-03    v  -0.8090E-04
+      70  u  -0.1959E-03    v  -0.8090E-04
+      71  u  -0.2357E-03    v  -0.7071E-04
+      72  u  -0.2357E-03    v  -0.7071E-04
+      73  u  -0.2697E-03    v  -0.5878E-04
+      74  u  -0.2697E-03    v  -0.5878E-04
+      75  u  -0.2970E-03    v  -0.4540E-04
+      76  u  -0.2970E-03    v  -0.4540E-04
+      77  u  -0.3170E-03    v  -0.3090E-04
+      78  u  -0.3170E-03    v  -0.3090E-04
+      79  u  -0.3292E-03    v  -0.1564E-04
+      80  u  -0.3292E-03    v  -0.1564E-04
+      81  u  -0.3333E-03    v   0.8742E-11
+      82  u  -0.3333E-03    v   0.8742E-11
+*echo on
+c
+ loading t_stress
+  nonlinear
+    step 1 constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   minimum iterations 1
+   maximum iterations 1
+   convergence test norm res tol 0.005 max res tol 0.05  $ v. tight
+   time step 1.0e10
+   trace solution on
+c
+ compute displacements for loading t_stress step 1
+c
+c
+c  output formatted stresses for elements all
+c  output patran binary stresses
+c  output patran binary displacements
+c
+c
+   domain one
+      normal plane nx 0.0 ny 1.0 nz 0.0
+      front nodes 4102 4101 l3disop verify
+      q-values automatic rings 1-10
+      plane stress output for interaction integral
+      function type d
+  compute domain interaction integrals
+c
+stop

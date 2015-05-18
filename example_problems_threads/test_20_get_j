@@ -1,0 +1,44 @@
+c
+c
+c             for bob's homogeneous material mesh with
+c             holes patched and nodes optimized - big elements at
+c             load point 
+c
+domain one
+ symmetric
+ front nodes 2649 2650 linear verify
+ normal plane nx 0 ny 0 nz 1
+ print totals
+ function type a
+ q-values 2649 2650, 
+  1505  1506  1615  1616  1731  1732  1737  1738,
+  1829  1830  1839  1840  1847  1848  1849  1850,
+  1851  1852  1855  1856  1859  1860  1943  1944,
+  1945  1946 1.0
+ elements 853 857 861 1061 1057 1055 1044 1045 1037,
+          1034 1210 1208 1206 1204 1202
+ ignore crack face loading $ needed for killed elements
+c 
+ compute domain integral
+c
+c
+domain two
+ symmetric
+ front nodes 2649 2650 linear verify
+ normal plane nx 0 ny 0 nz 1
+ print totals
+ function type a
+ q-values 2649 2650, 
+  1459  1460  1571  1572  1579  1580  1581  1582,
+  1627  1628  1719  1720  1733  1734  1823  1824,
+  1835  1836  1889  1890  1941  1942  1985  1986,
+  2047  2048  2069  2070  2071  2072  2073  2074,
+  2075  2076  2077  2078  2091  2092  2143  2144,
+  2145  2146  2147  2148  2151  2152  2153  2154,
+  2161  2162  2163  2164  2165  2166  2167  2168,
+  2169  2170 1.0
+ elements  344 343 355 751 769 787 811-828,
+           804 786 768 843 830 829
+ ignore crack face loading $ needed for killed elements
+c 
+ compute domain integral

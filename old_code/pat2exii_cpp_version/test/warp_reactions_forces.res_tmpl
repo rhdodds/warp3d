@@ -1,0 +1,13 @@
+/* warp3d template for nodal internal forces result file */
+/* date created:  10-4-95  R. Dodds                      */
+/* date modified: 10-4-95                                */
+
+KEYLOC = 0
+
+TYPE = vector
+COLUMN = 1, 2, 3
+PRI = Int Forces
+SEC = Trans
+CTYPE = global
+
+TYPE = END

@@ -1,0 +1,50 @@
+  FILE:  mesh3d_scpcell.in
+  =====  In-put-data for the mesh-generating program mesh3d_scpcell.f
+
+  NAME
+  PROGRAM            (ABAQUS WARP3D or PATRAN)
+  DATE               (ex. sept. 30, 1996 960930 Europe;  093096 USA)
+  ncell   D     eta_n   eta_tI   eta_tII   ncdI    ncdII
+  p_lcx1  p_lcx2  p_alfac
+  mr      sfred   sfred_type  mv     sjred_type
+  m1      m2
+  mb      nb      mbtype      mb_bias
+  lt      lred    rtype
+  etyp
+  t    w    c    a
+  Y0    Z10    Z20
+  Y1    Z11    Z21
+  Y2    Z12    Z22
+  -      -      -
+  -      -      -
+  -      -      -
+  -      -      -
+  Ynla  Z1nla  Z2nla
+
+
+*INDATA
+gr
+WARP3D               PATRAN     
+970309
+ ncell=40  D=0.2  eta_n=0.5 necb = 3
+ eta_tI=1.5 eta_tII=18.0  ncdI=4  ncdII=10
+ p_lcxI=2.0   p_lcxII=4.0    p_alfac=0.45
+ mr=8   sfred=4   sfred_type=2  mv=4  sjred_type=2
+ m_I=4  m_II=6
+ mb=7   nb=8   mbtype=1  mb_bias=1.4
+ lt=12  lred=8  rtype=2
+ etyp=8
+ t=50.0    w=150.0    c=50.0    a=25.0
+ 0.00    0       50.0
+ 2.00    0       50.0
+ 4.00    0       50.0
+ 8.00    0       50.0
+ 12.0    0       50.0
+ 30.0    0       50.0
+ 50.0    0       50.0
+ 75.0    0       50.0
+ 100.0   0       50.0
+ 150.0   0       50.0
+ 200.0   0       50.0
+ 300.0   0       50.0
+ 500.0   0       50.0

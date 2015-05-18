@@ -1,0 +1,6 @@
+!
+    output displacements 5377
+    output reactions "top-nodes"
+    output flat stream displacements
+    output flat stream nodal stresses stresses
+!

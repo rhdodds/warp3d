@@ -1,0 +1,181 @@
+c
+c      restart the cyclinder model with mesh tieing.
+c      make a patran file of results
+c      compute J and K values using domain integrals
+c
+c
+restart from "cylinder.db"
+compute displacements for loading pull step 2
+c 
+  output patran formatted displacements
+c 
+ domain J1                 $ phi =   0.0000,  free external surface
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      31   2681     32    q3disop verify
+  q-values automatic rings    1-5
+  function type a
+  plane stress output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J3                 $ phi =   0.1963
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      31   2681     32   2826     33    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J5                 $ phi =   0.3927
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      32   2826     33   2914     34    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J7                 $ phi =   0.5890
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      33   2914     34   3002     35    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J9                 $ phi =   0.7854
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      34   3002     35   3090     36    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J11                $ phi =   0.9817
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      35   3090     36   3178     37    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J13                $ phi =   1.1781
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      36   3178     37   3266     38    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J15                $ phi =   1.3744
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      37   3266     38   3354     39    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J17                $ phi =   1.5708
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      38   3354     39  11456   8336    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J19                $ phi =   1.7671
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes      39  11456   8336  11371   8335    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J21                $ phi =   1.9635
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8336  11371   8335  11283   8334    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J23                $ phi =   2.1598
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8335  11283   8334  11195   8333    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J25                $ phi =   2.3562
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8334  11195   8333  11107   8332    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  print totals
+  compute domain interaction integral
+
+
+ domain J27                $ phi =   2.5525
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8333  11107   8332  11019   8331    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J29                $ phi =   2.7489
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8332  11019   8331  10931   8330    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J31                $ phi =   2.9452
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8331  10931   8330  10786   8329    q3disop verify
+  q-values automatic rings    1-5
+  function type b
+  plane strain output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+
+ domain J33                $ phi =   3.1416, external surface of cylinder
+  normal plane  nx -1.0 ny  0.0 nz  0.0
+  front nodes    8330  10786   8329    q3disop verify
+  q-values automatic rings    1-5
+  function type c
+  plane stress output for interaction integrals
+  print totals
+  compute domain interaction integral
+
+stop
+

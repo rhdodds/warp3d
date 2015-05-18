@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Check environment variable
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# cd here
+cd $WARP3D_HOME/mesh_generators
+
+# Simple script to clean directories for linux or mac
+dir="8to20 add_elm mesh_cell mesh_plot mesh_scp mesh_ssy mesh_ssy2_ts pipe_mesh_gen"
+
+for d in $dir
+do
+      cd $d
+      rm -f *.mod
+      rm -f *.o
+      cd ..
+done

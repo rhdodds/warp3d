@@ -1,0 +1,14 @@
+#!/bin/csh
+#
+#          Compile Patran-to-Interleaf translator
+#
+#          usage: compile_patint
+#
+echo ">> begin compiling..."
+f77 +DA1.1 -v  +E1 -o  patint.go patint.f hpux_get_env.c 
+echo ">> finished compiling & binding..."
+#
+echo ">> cleaning up temporary files..."
+/bin/rm *bak *.o >& /dev/null
+echo ">> all done"
+

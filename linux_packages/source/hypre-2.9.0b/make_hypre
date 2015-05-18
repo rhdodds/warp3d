@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Note: This file is not part of the hypre distribution provided by the hypre
+# development group at Lawrence Livermore National Laboratory.  It is
+# provided by the authors of WARP3D to aid users in compiling the hypre
+# library on their system.
+
+# It will compile a hybrid version of hypre with Intel MPI and the Intel
+# compilers.  Along the way it fixes a couple of bugs (one having to do
+# with the hypre makefile, the other a compiler bug as of 14.0.0)
+
+# Check to make sure WARP3D_HOME is set
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# Change these if required
+MCC=mpiicc
+MCX=mpiicpc
+MFT=mpiifort
+
+CFLAGS="-openmp -O3 -ip -mt_mpi -D_GNU_SOURCE -I${MKLROOT}/include"
+CXXFLAGS="-openmp -O3 -ip -mt_mpi -D_GNU_SOURCE -I${MKLROOT}/include"
+FFLAGS="-openmp -O3 -ip -mt_mpi -D_GNU_SOURCE -I${MKLROOT}/include"
+
+cd $WARP3D_HOME/linux_packages/source/hypre-2.9.0b/src
+make clean
+
+CC=${MCC} CXX=${MCX} F77=${MFT} CFLAGS=${CFLAGS} CXXFLAGS=${CXXFLAGS} FFLAGS=${FFLAGS} LDFLAGS="-lpthread -lm" ./configure --prefix=${WARP3D_HOME}/linux_packages --with-openmp --with-blas --with-lapack --with-blas-lib-dirs=${MKLROOT}/lib/intel64 --with-blas-libs="mkl_intel_lp64 mkl_core mkl_intel_sequential" --with-lapack-lib-dirs=${MKLROOT}/lib/intel64 --with-lapack-libs="mkl_intel_lp64 mkl_core mkl_intel_sequential"
+cd FEI_mv/fei-hypre
+${MCC} -O0 -openmp -D_GNU_SOURCE -I${MKLROOT}/include -mt_mpi -DHAVE_CONFIG_H -DHAVE_SUPERLU -DBOOL_NOT_SUPPORTED -DHAVE_MLI -I../.. -I/home/mark/warp3d/warp3d-dev/linux_packages/source/hypre-2.9.0b/src/FEI_mv/fei-base -I. -I./../.. -I./../../IJ_mv -I./../../utilities -I./../../multivector -I./../../krylov -I./../../parcsr_mv -I./../../parcsr_ls -I./../../seq_mv -I./../../distributed_matrix -I./../../distributed_ls -I./../fei-base -I./../SuperLU/SRC   -I../ml/src/Include -c HYPRE_LSI_schwarz.c
+cd ../..
+cd blas
+make
+cd ..
+cd lapack
+make
+cd ..
+make
+make install

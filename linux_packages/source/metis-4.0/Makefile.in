@@ -1,0 +1,4 @@
+CC = icc 
+OPTFLAGS = -O2 
+AR = ar rv 
+RANLIB = ranlib

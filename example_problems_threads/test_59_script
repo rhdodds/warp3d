@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+#
+#   process results of test_59a and test_59b to create
+#   data files of strains and stresses in 2 columns
+#
+#   write a logos input file that reads the data files
+#   and makes a nice plot
+#
+#
+#   warp3d output file names are test_59.out_a and test_59.out_b
+#   The output command in the warp3d run
+#   uses the "noheader" option to simplify processing here.
+#
+/bin/rm z* >& /dev/null
+/bin/rm \#* >& /dev/null 
+/bin/rm test_59_logos_data_a  >& /dev/null
+/bin/rm test_59_logos_data_b  >& /dev/null
+/bin/rm test_59_logos_input_file   >& /dev/null
+#
+#
+#              test_59a
+cp test_59.out_a zzout
+#
+#    keep only the strain stress outpout lines
+#
+grep '1       1' zzout > zqout
+#
+#
+#     keep the odd lines (strains), even lines (stresses)
+#
+sed -n '1~2p' zqout >zzstrains   #  remove the even lines
+sed -n '2~2p' zqout >zzstresses  #  remove the odd lines
+#
+cut -c24-37 zzstrains >z1
+cut -c24-37 zzstresses >z2
+paste z1 z2 >test_59_logos_data_a
+#
+#                    test_59b
+#
+/bin/rm z* >& /dev/null
+/bin/rm \#* >& /dev/null
+cp test_59.out_b zzout
+#
+#    keep only the strain stress outpout lines
+#
+grep '1       1' zzout > zqout
+#
+#
+#     keep the odd lines (strains), even lines (stresses)
+#
+sed -n '1~2p' zqout >zzstrains   #  remove the even lines
+sed -n '2~2p' zqout >zzstresses  #  remove the odd lines
+#
+cut -c24-37 zzstrains >z1
+cut -c24-37 zzstresses >z2
+paste z1 z2 >test_59_logos_data_b
+
+#
+#   write a logos input file to plot the results
+#
+cat > test_59_logos_input_file <<!!limitstring
+c   
+c    logos input file to plot computed stress-strain
+c    cycles of the cyclic plasticity model for
+c    test_59a and test_59b. The nonlinear_kinematic
+c    option and the generalized_plasticity option have
+c    parameter values that provide comparatively equal fits
+c    to cyclic test data from NASA (Doug Wells) for an
+c    Inconel 718 material at room temperature
+c   
+echo off
+font 1
+paper size 11.0 8.5
+clip soft 2.0 10.0 1.5 7.5
+map x -2 2 y -1.5 1.5
+divi x  8 5  y 6 5
+format x 1 y 1
+char size .14 .667 20 
+tic size .08 .04
+pen color yellow
+line thickness 2
+origin x 0 y 0
+draw x reflect
+draw y reflect
+char size .20 .667 0
+subscript size 0.15
+pen color cyan
+xlabel 'Axial Strain (x100)'
+ylabel 'Axial Stress (GPa)'
+pen color yellow
+line thickness 2
+frame
+line thickness 1
+pen color magenta
+c
+data from file 'test_59_logos_data_a' columns 2
+column 1 * 100 is x
+column 2 * 1.0  is y
+plot x y connect
+c
+data from file 'test_59_logos_data_b' columns 2
+column 1 * 100 is x
+column 2 * 1.0  is y
+symbol ftriangle size 0.10
+pen color green
+line type 2
+plot x y connect
+c
+pen color yellow
+line type 1
+c
+character size 0.13 0.667 0
+legend at 7.1 2.0
+line type 1 pen color magenta 'generalized_plasticity option'
+line type 2 pen color green 'nonlinear_hardening option'
+end
+c
+pen color yellow
+c
+character size 0.10 0.667 0
+legend at 2.1 5.1
+'1 Element Model'
+"Symmetric cycles to fixed axial strain"
+end
+c
+character size 0.13 0.667 0
+label start at 2.1 7.2,
+'Parameters to match tests
+label start at 2.1 7.0 'of an Inconel 718 @ Rm. Temp.'
+c
+!!limitstring
+#
+#     cleanup
+#
+#
+/bin/rm z* >& /dev/null
+/bin/rm \#* >& /dev/null

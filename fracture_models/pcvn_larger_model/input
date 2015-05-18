@@ -1,0 +1,146 @@
+c
+c
+c    Static analysis, 3D PCVN, 0.4T, Plane Sided with V-notch, EPFM analysis
+c    units inches, kips. Model is set-up for threaded execution on
+c    Linux or Windows
+c
+c     1/4 symmetric, 20-node hex element model
+c     Finite root radius for finite-strain analysis if desired.
+c     Initial root radius = 0.492 mils
+c
+c     Refined 3D block of elements in crack region connected to
+c     remainder of model with mesh-tieing.
+c
+c     14pt integration used to minize potential zero energy modes.
+c     
+c     16 Element Layers through the 1/2 thickness in the crack area:
+c     8  Element Layers through the 1/2 thickness in the rest area:
+c
+c        W=B  = 10 mm   = 0.3937 in
+c        a    = 0.5W
+c        Span = 55 mm   = 2.1653
+c
+c     Non-linear material:    
+c         E      = 206.844 GPa   = 30,000 ksi
+c         sig_ys = 413.688 MPa   = 60 ksi
+c         n      = 10
+c         mises plasticity
+c
+c     Load control. Pressure applied over rectangular area to simulate
+c     contact area of a loading roller.
+c
+c     Input from the following files:
+c         coordinates
+c         incid_and_blocking
+c         constraints
+c         domain_define
+c         mesh_tieing
+c	  get_output
+c
+c    J-integral computed at each corner node along crack front and the
+c    front average value.
+c
+structure pcvn 
+c 
+material specimen 
+   properties mises e 30000  nu 0.3,
+   yld_pt 60.0 n_power 10.0 rho  0.0
+c
+material end_roller  $ linear elastic
+   properties mises  e 30000  nu 0.3,
+   yld_pt 60.0e10 n_power 10.0 rho  0.0
+c 
+number of nodes  96317 elements 21701
+c
+*input from 'coordinates'
+c
+elements
+c
+c           elements at end roller -- linear elastic
+c
+  1 13 25 37 49 61 73 85 2676 2748 2820 2892 2964 3036 3108 3180,
+  type q3disop linear material end_roller,
+     order '14pt_rule' center_output short    
+c  
+c          all other elements
+c
+  2-12 14-24 26-36 38-48 50-60 62-72 74-84 86-2675 2677-2747,
+  2749-2819 2821-2891 2893-2963 2965-3035 3037-3107,
+  3109-3179 3181-21701  type q3disop  linear material specimen,
+   order '14pt_rule' center_output short  
+c
+*input from 'incid_and_blocking'
+c 
+*input from file 'mesh_tieing'
+*input from 'constraints'
+c
+loading unit  $ imposes 1.0 kip load on model
+  element loads
+    1905 1906  1907  1908 1909 1910  1913  1914,
+    1915 1916  1917  1918 1921 1922  1923  1924,
+    1925 1926 face 2 pressure 111.38959
+c
+loading test
+  nonlinear
+    step 1-50 unit 0.00575080  $ delta ki = 1.0 ksi-sqrt(in) on linear model
+c
+ nonlinear analysis parameters
+    solution technique direct sparse 
+    maximum iterations 8
+    minimum iterations 2
+    minimum iterations 1
+    nonconvergent solutions stop
+    convergence test norm residual tolerance 0.005
+    time step 1.0E+06
+    adaptive solution oF
+    batch messages on
+    cpu time limit off
+    extrapolate off
+    bbar stabilization factor 0.0
+c 
+   compute displacements for loading test step   5
+   *input from file get_output
+   *input from file domains_all
+    output patran formatted displacements
+c 
+   compute displacements for loading test step   10
+   *input from file get_output 
+   *input from file domains_all 
+c
+   compute displacements for loading test step   15
+   *input from file get_output 
+   *input from file domains_all 
+    output patran formatted displacements
+c
+   compute displacements for loading test step   20
+   *input from file get_output 
+   *input from file domains_all 
+c
+   compute displacements for loading test step   25
+   *input from file get_output 
+   *input from file domains_all 
+c
+   compute displacements for loading test step   30
+   *input from file get_output 
+   *input from file domains_all 
+    output patran formatted displacements
+c
+   compute displacements for loading test step   35
+   *input from file get_output 
+   *input from file domains_all 
+c
+   compute displacements for loading test step   40
+   *input from file get_output 
+   *input from file domains_all 
+c
+   compute displacements for loading test step   45
+   *input from file get_output 
+   *input from file domains_all 
+c
+   compute displacements for loading test step   50
+   *input from file get_output 
+   *input from file domains_all 
+    output patran formatted displacements
+c
+ save to file "pcvn_step_100"
+stop

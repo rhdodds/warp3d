@@ -1,0 +1,17 @@
+c     
+c       Ninteenth layer from the center plane
+c
+domain dnr_019
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 18   8365  8366  8367  8368  8369  8370  8371  8372,
+             8373  8374  8375  8376  8377  8378  8379  8380  8381
+   node set 19   8857  8858  8859  8860  8861  8862  8863  8864,
+             8865  8866  8867  8868  8869  8870  8871  8872  8873
+   node set 20   9349  9350  9351  9352  9353  9354  9355  9356,
+             9357  9358  9359  9360  9361  9362  9363  9364  9365
+   front node sets  18  19  20 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

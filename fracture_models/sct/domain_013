@@ -1,0 +1,17 @@
+c     
+c       Thirteenth layer from the center plane
+c
+domain dnr_013
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 12   5413  5414  5415  5416  5417  5418  5419  5420,
+             5421  5422  5423  5424  5425  5426  5427  5428  5429
+   node set 13   5905  5906  5907  5908  5909  5910  5911  5912,
+             5913  5914  5915  5916  5917  5918  5919  5920  5921
+   node set 14   6397  6398  6399  6400  6401  6402  6403  6404,
+             6405  6406  6407  6408  6409  6410  6411  6412  6413
+   front node sets  12  13  14 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

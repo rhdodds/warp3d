@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Simple (hopefully) script to compile everything for Linux 64.
+
+
+# Check environment variable
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# cd here
+cd $WARP3D_HOME/mesh_generators
+
+# Ask for compiler
+read -p "Fortran compiler: " comp
+
+# Compile
+dir="8to20 add_elm mesh_plot mesh_ssy mesh_ssy2_ts"
+suffix=".osx"
+
+for d in $dir
+do
+      echo "Compiling $d"
+      cd $d
+      $comp *.f -o $d$suffix
+      cd ..
+done
+
+# Now for the special ones
+echo "Compiling pipe_mesh_gen"
+cd pipe_mesh_gen
+make -f make_unix f77=$comp f90=$comp
+mv pipe_mesh_gen pipe_mesh_gen$suffix
+cd ..
+
+echo "Compiling mesh_scp"
+cd mesh_scp
+make -f makefile_unix F90=$comp
+mv mesh_scp mesh_scp$suffix
+cd ..
+
+echo "Compiling mesh_cell"
+cd mesh_cell
+make -f makefile_unix F77=$comp
+mv mesh_cell mesh_cell$suffix
+cd ..

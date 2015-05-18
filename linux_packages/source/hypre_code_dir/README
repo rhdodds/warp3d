@@ -1,0 +1,18 @@
+Structure HYPRE solver code:
+
+1) Start with NASA VSR format assembled stiffness matrix, load/residual vector, empty solution vector, and itype.
+2) Call existing subroutine (map_vss_mkl) to convert VSR to CSR.
+3) Call my subroutine to convert symmetric struct to non-symmetric.
+
+Case (itype = 1)
+4) Allocate for local (distributed to procs) stiffness structures.
+5) Send out all of our stiffness matrix and soln/rhs vector data to procs (in contiguous blocks of rows).
+Case (itype = 2 )
+4-5) Send out k_indices and rhs to procs (structs already allocated).
+Case (itype = 3)
+4) Deallocate local (processor) stiffness structs.
+5) Exit
+
+6) Insert our local processor data to HYPRE structs.
+7) Solve the system using some HYPRE method.
+8) Gather the local part of the solution vector to the root process.

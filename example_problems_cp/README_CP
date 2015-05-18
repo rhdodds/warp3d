@@ -1,0 +1,42 @@
+Last Updated:JUne 4, 2013
+
+This directory contains several example input files demonstrating various
+features of the crystal plasticity (CP) model.
+
+1. The hardening_and_temperature directory contains models which show the effect of
+   rate and temperature on the CP model hardening formulation.  These models
+   also demonstrate how to construct reduced, homogenized polycrystal models where
+   each material point contains many different crystal orientations (reduced via
+   the Taylor approximation).  These examples use the empirical Stage IV hardening
+   option.
+
+   The input file "hardening_stages.input" shows the various stages
+   of work hardening a polycrystal undergoes in uniaxial tension.
+   The plot "hardening_plot.svg" shows these hardening stages graphically.
+
+   The files "isothermal_600K.input," "isothermal_RT.input," and
+   "cottrel_stokes.input" represent a homogenized polycrystal in isothermal tension
+   at two temperatures and in a combined isothermal loading, unloading, cooling,
+   isothermal loading history representing a Cottrel-Stokes test.  Results of
+   all three models are summarized in the plot "cs_plot.svg."  These
+   input files demonstrate the effect of temperature on the
+   hardening formulation. They also show the effect of strain rate,
+   as changing the load step without carefully (correspondingly) changing the time
+   step results in an abrupt transition in strain rate, causing a small "jog" in
+   the stress-strain response (labeled on graph).
+
+2. Files in the size_effect directory demonstrate non-homogenized CPFEM models
+   and the geometric Stage IV hardening option. These two models
+   are identical "cubes of cubic grains," where the only difference
+   between the models is the grain size.  With a non-gradient-enhanced model the
+   response of the two models as they are deformed in tension to some common
+   level of strain is identical. However, the gradient Stage IV hardening
+   introduces a size-effect, where the model with smaller grain sizes (and hence
+   steeper grain gradients) shows more hardening than the model with larger grains.
+   This can be viewed as a physical Hall-Petch-type effect.
+
+3. The model in the mpi_restart directory demonstrates running
+   the crystal plasticity model in parallel with MPI domain decomposition.  It also
+   demonstrates that the restart capability of WARP3D works with the CP material
+   model, including restarts of unhomogenized models where the angles are input
+   from a separate flat file.

@@ -1,0 +1,164 @@
+c
+c             upper half of a single-edge tension specimen with
+c             uniform (mode I) crack-face loading.
+c
+c                specimen height:               4.0
+c                specimen width:                1.0
+c                specimen thickness:            0.1
+c                crack length / specimen width: 0.4
+c
+c             the mesh has one element through the thickness, and uses
+c             8-noded brick elements.
+c
+c             this problem demonstrates WARP3D's crack-face loading
+c             capabilities.
+c
+c             the domain integral and interaction integral techniques
+c             use an approximate integration scheme to account for
+c             crack-face tractions. if the crack-face traction is
+c             uniform, users may invoke an exact integration scheme
+c             for the crack-face traction integral in the interaction
+c             integral scheme. this requires a command in the domain
+c             definition.
+c
+c             the first domain definition uses approximate methods,
+c             and the second domain definition employs the exact
+c             procedure.
+c
+c             there are 10 elements surrounding the crack tip. the
+c             faces of these crack-tip elements are collapsed, but
+c             maintain distinct node numbering, as opposed to
+c             assigning the same node number to all nodes occupying
+c             the same position in space.
+c
+c             plane strain conditions are applied to the model,   
+c             and symmetry conditions are applied at y = 0.
+c
+c             a K-equivalent remote load can be applied to the model
+c             by uncommenting one line.
+c
+c             >>>>because symmetry permits analysis of one half of
+c                 the specimen, interaction integral results are only
+c                 valid for mode-I. values of J calculated from
+c                 stress intensity factors are also not valid.
+c
+c             >>>>T-stress results for crack-face loading conditions
+c                 have not been verified.
+c 
+structure set_specimen
+ material homogeneous
+    properties linear_elastic e 30000 nu 0.3 alpha 0.0 rho 0.0
+number of nodes 1144 elements  508
+elements
+ 1-508 type l3disop linear material homogeneous,
+                     order 2x2x2 bbar center_output short
+*input from file "test_64_incid_coords"
+c
+blocking   $ scalar
+       1     128       1
+       2     128     129
+       3     128     257
+       4     124     385
+c
+constraints
+*echo off
+  931  932  933  934  935  936  937  938,
+  941  942  945  946  949  950  951  952,
+  953  954  955  956  957  958 1117 1118,
+ 1119 1120 1121 1122 1123 1124  v = 0.0
+c
+c nodes at edge of ligament
+c    931 u 0.0 v 0.0
+c    932 u 0.0 v 0.0
+c
+c
+c crack-tip node at z = 0.00
+c node 1123 is at theta=0
+c
+   1123 u 0.0 v 0.0
+c
+c crack-tip node at z = 0.10
+c node 1124 is at theta=0.0
+c
+   1124 u 0.0 v 0.00
+c
+c these nodes are also on crack front
+c
+ 1125 1126 1127 1128 1129 1130 1131 1132,
+ 1133 1134 1135 1136 1137 1138 1139 1140,
+ 1141 1142 1143 1144 u = 0.0 v = 0.0
+*echo on
+c
+c apply plane-strain conditions
+c
+ all w = 0.0
+c
+ loading unit_stress $ on crack face elements
+  element loads
+         1 face 4 pressure        1.000
+        11 face 4 pressure        1.000
+        21 face 4 pressure        1.000
+        31 face 4 pressure        1.000
+        41 face 4 pressure        1.000
+        51 face 4 pressure        1.000
+        61 face 4 pressure        1.000
+        71 face 4 pressure        1.000
+        72 face 4 pressure        1.000
+        73 face 4 pressure        1.000
+        74 face 4 pressure        1.000
+        87 face 6 pressure        1.000
+c
+c remote loading in tension
+c (uncomment the following line to apply equivalent remote loading)
+c       499-508 face 5 pressure  -1.000
+c
+ loading axial_tension
+  nonlinear
+    step 1 unit_stress 1.0
+c 
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 1
+   minimum iterations 1
+   convergence test norm res tol 0.05 maximum residual tol 0.5
+   time step  1.0e10
+   trace solution on
+   linear stiffness iteration one off
+c
+ compute displacements for loading axial_tension step 1
+c
+c domain-integral calculations for approximate integration
+c of crack-face integral (dm8) in the interaction integral
+c   
+   domain one
+        symmetry
+        normal plane ny 1.0
+        front nodes 1123 1124 l3disop verify
+        q-values automatic rings 1-10
+        j to k
+        function type d
+	plane strain output for interaction integral
+	output packet j i
+   compute domain interaction integrals
+c
+c
+c exact integration of crack-face integral (dm8)
+c in the interaction integral procedure
+c   
+   domain one
+        symmetry
+        normal plane ny 1.0
+        front nodes 1123 1124 l3disop verify
+        q-values automatic rings 1-10
+        j to k
+        function type d
+	plane strain output for interaction integral
+	crack face tractions ty = 1.0
+	output packet j i
+   compute domain interaction integrals
+c
+c output patran neutral
+c output patran binary nodal displacements
+c output patran binary element stresses 
+c 
+stop

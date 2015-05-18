@@ -1,0 +1,130 @@
+
+  Here are several files to examine:
+
+    test_1  : nonlinear analysis of a simple cantilever beam modeled
+              with a few brick elements. by forcing a reduced limit on
+              the number of newton iterations, the example illustrates
+              the automatic, adaptive load stepping.
+    test_18 : plane-strain model of an SE(B) specimen with extensive
+              ductile crack growth using the Gurson model and element
+              extinction. various sub-problems (a,b,c,d,e) exercise
+              analysis restart, various rate dependent response models
+    test_24 : hollow sphere under internal pressure. illustrates use
+              of non-global constraints
+    test_28 : small model of a DCB to illustrate crack growth
+              using ctoa controlled node release
+    test_38 : small model illustrating growth at multiple crack fronts
+              using ctoa and node release
+    test_14 : model of a concrete bridge with solution using the PCG solver
+    test_4  : simple linear elastic, dynamic analysis of impact load
+              on a M(T) specimen
+    test_34*: exercises of 20-node brick element with various element
+              loads, temperatures, J-integrals
+    test_40 : modeling of residual stresses in the seam weld of a
+              pipe using the eigenstrain technique (implemented with
+              anisotropic thermal expansion coefficients)
+    test_41 : crushing of a cylindrical pipe in a rigid box using a
+              rigid punch. extensive using of contact, adaptive solutions,
+              changing constraints, load step sizes, etc.
+    test_42 : large deformation rolling of a steel bar. extensive use
+              of rigid contact, load step size changes, etc.
+    test_43 : analysis of a C(T) specimen using rigid contact to model
+              the pin-in-hole and crack closure on the symmetry plane.
+    test_44 : analysis of crack growth in a C(T) specimen using interface
+              elements and cohesive material model (1 layer thick model)
+              all elements have large displacement option. sub-problems
+              use the simple exponential, cohesive option and the PPR
+              option
+    test_45 : SE(B) single-layer model w/o crack growth. has high-rate
+              loading with segmental, rate-dependent stress-strain curves
+    test_46 : cyclic-thermo plasticity with kinematic hardening
+    test_47 : cyclic-thermo plasticity with kinematic hardening
+    test_48 : tensile panel with functionally graded material. material
+              properties specified at model nodes. includes elastic-
+              plastic response and thermo-mechanical loading
+    test_49 : computation of J-integral for a cracked panel with crack
+              face loading, remote loading, unique crack tip nodes
+              and repeated nodes (multiple models)
+    test_50 : Mode I fatigue crack growth for a crack at a hole. plane
+              strain model. crack growth by user request releases.
+              one element per load cycle.
+    test_51 : various patch tests for tet elements
+    test_52 : test to verify tet10 elements do not volumetric lock
+              under extensive plastic deformation
+    test_53 : tests of tet elements using functionally graded materials
+    test_54 : test J integral computation for a single-edge notch
+              tensile panel with FGM material properties. problem 54_b
+              has whole model rotated to verify J-integrals with
+              constraints in alternate coordinate systems
+    test_55 : verify deformation dependent element loads. thin walled
+              internal cylinder subjected to internal pressure.
+              demonstrates load step size effect in such models.
+    test_56 : verify extended deformation plasticity model for functionally
+              graded materials and imposed thermal loading. model for
+              a long bar w/o a crack
+    test_57 : plane-strain, ssy model with finite strains. uses the
+              mises_hydrogen plasticity model.
+    test_58 : 1 layer model of small-scale yielding boundary layer
+              configuration. 20-node bricks. small-strain theory,
+              power-law model, deformation plasticity, T-stress=0
+              loading
+    test_59 : 1 element model to exercise the cyclic plasticity
+              material in uniaxial loading. two input files:
+              59a and 59b use the two options - generalized_
+              plasticity and nonlinear_hardening. Material
+              parameters are set to match test data for an
+              Inconel 718 steel. test_59_script reads output files
+              and creates a Logos input file to plot results.
+    test_60 : cyclic loading of a notched tensile bar. uses the
+              advanced cyclic model with nonlinear_hardening and
+              generalized_plasticity options. input files are
+              test_60a and test_60b. There is also a results
+              processing script.
+    test_61 : M(T) specimen with linear-elastic FGM. Inclined crack.
+              Remote tensile loading, 20-node bricks. Uses interaction
+              integrals to compute mixed-mode SIFs
+    test_62 : modified boundary layer model. Only has an applied T-stress.
+              Plane stress, 8-node bricks. Linear-elastic, homogeneous
+              material. Uses interaction integral to compute T-stress.
+              Model has 180-degree segment of boundary layer
+    test_63 : 360-degree boundary layer model, 1 element thick (8-node
+              bricks). Linear-elastic, isotropic material. Plane strain.
+              Displacements impose mode I, II and III loading with no
+              T-stress. Uses interaction integrals to extract mixed-
+              mode SIFs.
+    test_64 : Mode I model for SE(T). Crack face loading. Linear-elastic,
+              homogeneous material. Plane strain, 8-node bricks, 1 element
+              over thickness. USes interaction integrals to extract SIF
+              and demonstrates use of exact integration of face
+              traction contributions.
+    test_65 : 3-D solid cube (50x50x50) with a buried elliptical
+              crack. Subject to crack face shear traction loading to
+              induce Mode II and Mode III response. Linear-elastic,
+              homogeneous material. Uses interaction integrals to
+              extract mixed-mode SIFs at every corner node around the
+              entire elliptical crack.
+    test_66 : simple illustration of mesh tieing capabilities
+    test_67 : more complex example for mesh-tieing. couple two
+              cylinder models with different mesh refinement.
+              model has geometric nonlinearity
+    test_69 : illustrations of using the various options of the cohesive
+              material models. In the full: models, to linear-elastic
+              (solid) blocks are connected over a slanted surface via
+              a layer of interface-cohesive elements. The various
+              subproblems employ different cohesive formulations,
+              small-large displacements, loading-unloading and
+              test of analysis restart. The symmetric
+              submodels test various cohesive options - boundary conditions
+              must be carefully imposed. Other subproblems exercise a
+              a mesh of only interface elements to study combinations
+              of normal and shear loading.
+    test_70 : exercise the GP cyclic plasticity model with temperature
+              dependent material properties. Cube subjected to various
+              loading (mechanical + temperature) histories.
+    test_71 : exercise the piston theory loading for unsteady aerodynamic
+              pressures on deforming surfaces of solid elements
+    test_73 : a bilinear plasticty model is included in the umats.f
+              distrubuted with the src code. This example exercises the
+              bilinear umat.
+    test_74   exercise crystal plasticity model
+

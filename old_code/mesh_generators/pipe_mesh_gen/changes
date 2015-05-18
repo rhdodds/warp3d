@@ -1,0 +1,76 @@
+
+September 20, 1998 (made by R. Dodds)
+-------------------------------------
+
+  1) created make files for HP workstations and Windows 95, NT4.0
+      
+               make_plate3d.hp
+                 
+               make_plate3d.w95
+
+  2) fixed fortran errors in plate_wrp.f
+     the digital fortran compiler complained about a missing ,
+     in the formats that have the sequence:  t1i6
+     which should be: t1, i6
+
+  3) modified the main program: platemain.f
+     to ask the user for the input data file. checks for file
+     existence, prints message to user then calls plate1 as before.
+
+  4) ran several example problems most of which bomded with invalid
+     math opereators for meshes with 20 node bricks.
+
+  5) fixed following in plate_wrp.f
+
+        o  made the block size 128 rather than 32 (no machine
+           needs small blocks for 8 node bricks)
+        o  added *echo off right before the coordinates
+        o  incserted single comment lines in warp input file to
+           improve readability
+        o  added additional commands emitted into warp input file
+           in the nonlinear solution sections. this makes user
+           aware that these commands are available and can be
+           modified.
+        o  fixed a syntax problem in the emitted 'front nodes'
+           command for domain integrals. changed the l3disop word
+           to the correct word 'linear'.
+
+        Sept. 28, 1998
+
+        o  routine  wrp_write_pressure. format 102 is 
+           incorrect. it fails to leave a space between the
+           element number and the keyword 'face. it also
+           needs to use i6 format for the element number.
+        o  modified the 'output' commands put into input file
+           to generate patran binary displacements, stress and
+           eformat output of a few reactions, displacements
+
+October 11, 1998 (made by R. Dodds)
+-------------------------------------
+
+  1) file plate1.f, routine plate1. 
+
+      at the bottom of this subroutine there are a sequence of
+      'dellocate' statements executed. for generation of pipe elbows,
+      one or more of the arrays to be deallocated was never allocated in
+      the first place. The fixe is to convert all the deallocate
+      statements to the form:
+ 
+         if ( allocated( var ) ) deallocate( var )
+
+      The HP runtime environment complained about deallocating of 
+      unallocated arrays.
+
+
+November 11, 1999 (made by R. Dodds)
+------------------------------------
+   
+   1) incorporated all new changes in source code from Jonas
+   2) lots of small bug fixes
+   3) increased capability to hanle larger models, larger R/t
+      ratios
+   4) single Unix makefile include (easy to change for each Unix)
+   5) modified makefile for Windows 98, NT 4.0
+
+
+

@@ -1,0 +1,17 @@
+c     
+c       Eighteenth layer from the center plane
+c
+domain dnr_018
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 17   7873  7874  7875  7876  7877  7878  7879  7880,
+             7881  7882  7883  7884  7885  7886  7887  7888  7889
+   node set 18   8365  8366  8367  8368  8369  8370  8371  8372,
+             8373  8374  8375  8376  8377  8378  8379  8380  8381
+   node set 19   8857  8858  8859  8860  8861  8862  8863  8864,
+             8865  8866  8867  8868  8869  8870  8871  8872  8873
+   front node sets  17  18  19 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

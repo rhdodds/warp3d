@@ -1,0 +1,11 @@
+StatusFlag = 1
+PATRAN
+*ANALYSIS   type=2  eqsolver=1
+*MATERIAL   no=2
+            E=200.0e9  ny=0.30
+*GEOMETRY   TGE=201 Rc=1.0  L=2.0  t=0.2  (cyl)
+*CRACK      TCR=2   a=0.05    c=0.20 keyhole=0
+*LOAD       TBC=1 ux=0.001 uy=0 uz=0      tx=0 ty=0 tz=0
+*MESH       etyp=8 mr=10 mf=18
+
+

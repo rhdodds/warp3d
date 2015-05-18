@@ -1,0 +1,224 @@
+c
+c   ***  CRACK GROWTH ANALYSIS  ***
+c
+c  surface cracked plate --- combined tension and bending
+c   t = 50 mm, W = 151.75 mm, c = 49 mm, a = 21.43 mm
+c  (one quarter of the plate is modelled)
+c
+c   8-node element
+c     Displacement Control
+c     Static Loading
+c     1120 (28*40) cells
+c     De = 0.5D = 0.15 mm
+c
+c     Input from the following files:
+c         SCT_IX.crd
+c         SCT_IX_cl.elm
+c         SCT_IX_rg.elm
+c         SCT_IX_001.const
+c         SCT_IX_00x.prdsp
+c         domain_0xx
+c         domain_define
+c
+c
+c      model is set up to run threads only
+c
+structure surface_crack
+c
+material gurson_layer
+ properties gurson  e  500.00 nu  .300 yld_pt    1.00 n_power  10.00,
+ killable  f_0 0.001  q1 1.25 q2 1.0 q3 1.5625  rho 0.0
+c
+c
+material el_pl
+ properties mises e  500.00 nu  .300  yld_pt 1.0  n_power 10.000 ,
+                   rho 0.0
+c
+number of nodes   15617
+number of elements  13614
+c
+coordinates
+*echo off
+*input from 'SCT_IX.crd'
+*echo on
+c
+elements
+   1-1120     type l3disop   nonlinear   material gurson_layer   ,
+              order 2x2x2    bbar    center_output  short
+c
+   1121-13614 type l3disop   nonlinear   material el_pl   ,
+              order 2x2x2    bbar    center_output  short
+c
+incidences
+*echo off
+*input from 'SCT_IX_cl.elm'
+*input from 'SCT_IX_rg.elm'
+*echo on
+c
+blocking   $    vectorized
+*echo off
+     1   128     1
+     2   128   129
+     3   128   257
+     4   128   385
+     5   128   513
+     6   128   641
+     7   128   769
+     8   128   897
+     9    24  1025
+    10    24  1049
+    11    24  1073
+    12    24  1097
+    13   128  1121
+    14   128  1249
+    15   128  1377
+    16   128  1505
+    17   128  1633
+    18   128  1761
+    19   128  1889
+    20   128  2017
+    21   128  2145
+    22   128  2273
+    23   128  2401
+    24   128  2529
+    25   128  2657
+    26   128  2785
+    27   128  2913
+    28   128  3041
+    29   128  3169
+    30   128  3297
+    31   128  3425
+    32   128  3553
+    33   128  3681
+    34   128  3809
+    35   128  3937
+    36   128  4065
+    37   128  4193
+    38   128  4321
+    39   128  4449
+    40   128  4577
+    41   128  4705
+    42   128  4833
+    43   128  4961
+    44   128  5089
+    45   128  5217
+    46   128  5345
+    47   128  5473
+    48   128  5601
+    49   128  5729
+    50   128  5857
+    51   128  5985
+    52   128  6113
+    53   128  6241
+    54   128  6369
+    55   128  6497
+    56   128  6625
+    57   128  6753
+    58   128  6881
+    59   128  7009
+    60   128  7137
+    61   128  7265
+    62   128  7393
+    63   128  7521
+    64   128  7649
+    65   128  7777
+    66   128  7905
+    67   128  8033
+    68   128  8161
+    69   128  8289
+    70   128  8417
+    71   128  8545
+    72   128  8673
+    73   128  8801
+    74   128  8929
+    75   128  9057
+    76   128  9185
+    77   128  9313
+    78   128  9441
+    79   128  9569
+    80   128  9697
+    81   128  9825
+    82   128  9953
+    83   128 10081
+    84   128 10209
+    85   128 10337
+    86   128 10465
+    87   128 10593
+    88   128 10721
+    89   128 10849
+    90   128 10977
+    91   128 11105
+    92   128 11233
+    93   128 11361
+    94   128 11489
+    95   128 11617
+    96   128 11745
+    97   128 11873
+    98   128 12001
+    99   128 12129
+   100   128 12257
+   101   128 12385
+   102   128 12513
+   103   128 12641
+   104   128 12769
+   105   128 12897
+   106   118 13025
+   107   101 13143
+   108    85 13244
+   109    73 13329
+   110    65 13402
+   111    54 13467
+   112    41 13521
+   113    27 13562
+   114    21 13589
+   115     5 13610
+*echo on
+c
+c     step cases:
+c
+c         displacement increments
+c
+loading predisp
+    nonlinear
+    steps  1-1000  constraints 1.0
+c
+constraints
+*echo off
+*input from 'SCT_IX_001.const'
+*input from 'SCT_IX_001.prdsp'
+c  *input from 'SCT_IX_002.prdsp'
+*echo on
+c
+c    solution paramters
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   trace solution on
+   minimum iterations 2
+   maximum iterations 4
+   convergence test norm res tol 0.005  $ v. tight
+   time step 1.0e06
+   extrapolate on
+   nonconvergent solution stop
+   consistent q off
+   adaptive on
+   bbar stabilization factor 0.0
+c
+c
+crack growth parameters
+   critical porosity 0.2
+   type of crack growth gurson
+   print status on order 1-1120
+   force release type traction
+   cell height  .15000000E-03
+   release fraction 0.10
+   crack plane normal y coordinate 0.0
+   automatic load reduction on maximum porosity change 0.05
+c
+c    start the analysis
+c
+compute displacements for load predisp steps 50
+*input from 'domain_define'
+c
+stop
+

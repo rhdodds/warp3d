@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Check env variable
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# cd in
+cd $WARP3D_HOME/linux_packages/source/mpi_code_dir
+
+printf " > Copying dummy MPI code files into src for threads-ony WARP3D...\n"
+
+       \rm ../../../src/mpi_code.f ../../../src/mod_local_stiffness.f ../../../src/distributed_assembly.f ../../../src/mpi_handle_slaves.f
+       \cp ./mpi_code_dummy.f ../../../src/mpi_code.f
+printf "       mpi_code.f copied\n"
+            
+       \cp ./mod_local_stiffness_dummy.f ../../../src/mod_local_stiffness.f
+printf "       mod_local_stiffness.f copied\n"
+
+       \cp ./distributed_assembly_dummy.f ../../../src/distributed_assembly.f
+printf "       distributed_assembly.f copied\n"
+
+       \cp ./mpi_handle_slaves_dummy.f ../../../src/mpi_handle_slaves.f
+printf "       mpi_handle_slaves.f copied\n"
+            
+            

@@ -1,0 +1,150 @@
+c
+c     1st domain is on the crack end at the flat (outside)
+c     surface.
+c
+c     last domain is at the intersection with the hole
+c
+c 
+c     J-integral evaluations
+c     # crack nodes =  33
+c 
+*echo on
+domain J1                 $ phi =   0.0000
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  tangent vector tx 0 ty -1.0 tz 0.0 $ correct tangent
+  symmetric
+  front nodes     145  10288    248    q3disop verify
+  q-values automatic rings    1-  8
+  function type a
+  print totals
+  compute domain integral
+domain J3                 $ phi =   0.0655
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     145  10288    248  10255    247    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J5                 $ phi =   0.1309
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     248  10255    247  10205    146    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J7                 $ phi =   0.1963
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     247  10205    146  11075    554    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J9                 $ phi =   0.2618
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     146  11075    554  11045    553    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J11                $ phi =   0.3272
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     554  11045    553  10995    147    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J13                $ phi =   0.3927
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     553  10995    147  11607    148    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J15                $ phi =   0.5890
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     147  11607    148  11799    149    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J17                $ phi =   0.7854
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     148  11799    149  11991    150    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J19                $ phi =   0.9817
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     149  11991    150  12183    151    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J21                $ phi =   1.1781
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     150  12183    151  12483   1078    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J23                $ phi =   1.2436
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     151  12483   1078  12453   1077    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J25                $ phi =   1.3090
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes    1078  12453   1077  12403    152    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J27                $ phi =   1.3744
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes    1077  12403    152  13137   1314    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J29                $ phi =   1.4399
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes     152  13137   1314  13107   1313    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J31                $ phi =   1.5053
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+  front nodes    1314  13107   1313  13057    153    q3disop verify
+  q-values automatic rings    1-  8
+  function type b
+  print totals
+  compute domain integral
+domain J33                $ phi =   1.5708
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  tangent vector tx -1.0 ty 0.0 tz 0.0
+  symmetric
+  front nodes    1313  13057    153    q3disop verify
+  q-values automatic rings    1-  8
+  function type c
+  print totals
+  compute domain integral
+c

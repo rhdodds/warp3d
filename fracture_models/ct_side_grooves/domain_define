@@ -1,0 +1,33 @@
+c
+c
+c
+c  Domain definitions for CT Side-grooved example
+c
+c  Crack front has initial notch root radius of 0.1 mils
+c
+c     
+c       J on center plane of specimen
+c
+domain inner
+ symmetric
+c 
+ node set   1   23632     23631      23628     23623 ,
+     23616     23607      23596     23583 ,
+     23568     23551      23532     23511,
+     23488     23463     23436     23407  , 
+     23376     23360     23344 
+c 
+ node set   2   23630      23629      23627      23622, 
+     23615      23606      23595      23582 ,
+     23567      23550      23531      23510 ,
+     23487      23462      23435      23406 ,
+     23375      23359      23343 
+c 
+c 
+ front node sets 1 2 linear 
+ function type a 
+ normal plane nx 0.0 ny 1.0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 30 35 40
+ compute domain integral

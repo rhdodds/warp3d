@@ -1,0 +1,195 @@
+
+-------------------------------
+
+
+1. Demoflag    =1 graphics files only ;  =0 (graphics + FEA in-put deck)
+   StatusFlag  =1 generate a status file .sta ;  =0 (no status file)
+
+2. in-put deck for :  ABAQUS  WARP3D  PATRAN  FEMAP
+
+3. *ANALYSIS   type=<1,2,3>
+
+             type  =1 Linear elastic 
+                   =2 deformation  plasticity
+                   =3 incremental elastic-plastic
+
+             type = 1
+               ABAQUS: single node at each point on the crack front
+                       which prevents blunting
+               WARP3D: multiple, coincident nodes at each front
+                       location but w displ. for all is constrained.
+               PATRAN: multiple, coincident nodes at each front
+                       location but w displ. for all is constrained.
+
+            type = 2, 3
+               ABAQUS: multiple coincident nodes at each point on the crack
+                       front. the tip can blunt.
+               WARP3D: multiple, coincident nodes at each front
+                       location. tip can blunt
+               PATRAN: multiple, coincident nodes at each front
+                       location. tip can blunt
+
+4. *MATERIAL   no=
+               E=  ny=
+
+    material properties  - goes together with the "type" of analysis
+    "no" defines the number of material parameters given on the next line
+
+    if type=1     no=2
+                  E= Young's modulus  ny= Poisson's ratio
+
+    if type=2     no=5   (for ABAQUS)
+                  E= Young's modulus  ny= Poisson's ratio
+                  S0= yield stress  n= hardening exponent
+                  alpha= Ramberg-Osgood scale factor
+
+                  no=4   (for WARP3D)
+                  E= Young's modulus  ny= Poisson's ratio
+                  S0= yield stress  n= hardening exponent
+
+    if type=3     no = 2 + 2*k     (k = # of points in stress-strain curve)
+                  E  ny  S1 e1,  S2 e2, ...,  Sk ek
+
+                 use as many lines as necessary
+                 Note that:   e = total strain (WARP3D)
+                              e = plastic strain (ABAQUS)
+
+                 
+5. *GEOMETRY 
+
+  flat plate: TGE=101 W= L= t=
+            (the only case when the parameter TCR is actually used)
+ 
+         W  = plate width
+         L  = length of plate
+         t  = thickness of plate
+
+  cylinder: TGE= Rc= L=  t=
+            (TCR no meaning in this case)
+
+      TGE:  =201 (Internal Axial Crack)
+            =202 (External Axial Crack)
+            =203 (Internal Circumferential Crack)
+            =204 (External Circumferential Crack)
+
+         Rc = internal radius of cylinder
+         L  = length of cylinder
+         t  = thickness of cylinder
+
+  pipe elbow:
+
+   - pipe   TGE= Rc=   t=    Rp=   phi_o=
+            (TCR no meaning in this case, set it =1)
+
+      TGE:  =301 (Top Internal Axial Crack)
+            =302 (Top External Axial Crack)
+            =303 (Top Internal Circumferential Crack)
+            =304 (Top External Circumferential Crack)
+            =305 (Bottom Internal Axial Crack)
+            =306 (Bottom External Axial Crack)
+            =307 (Bottom Internal Circumferential Crack)
+            =308 (Bottom External Circumferential Crack)
+
+         Rc    = internal radius of cylinder
+         t     = thickness of cylinder
+         Rp    = centerline radius of elbow
+         phi_o = angle turned by elbow (rads)
+
+
+ 
+6. *CRACK   TCR=  a=    c= keyhole= 
+            
+            TCR=1 (embedded elliptical crack)
+            TCR=2,3 (semi-elliptical)
+            TCR=4 (edge)
+             a = crack depth
+             c = half the surface crack length
+            Use TCR=1 for cylinder and pipe elbow configuration
+            keyhole = 0  sharp crack tip
+            keyhole = 1  sharp crack tip replaced with a keyhole
+
+7. *LOAD   TBC = 1  prescribed displacement on remote boundaries
+
+           TBC = 2  prescribed tractions on remote boundaries AND
+                    internal pressure = p_int (optional)
+                    (defined as normal force and bending moment)
+
+           TBC = 3  prescribed tractions on crack face
+
+           the required input for the different cases are
+
+           if TBC = 1:    TBC  U_x  U_y  U_z   Phi_x  Phi_y  Phi_z
+           if TBC = 2:    TBC  F_x  F_y  F_z   M_x  M_y  M_z  p_int
+           if TBC = 3:    TBC  p_0  P_1  P_2   p_3  q_1  q_2  q_3
+
+    Positive directions of displacements and forces follows naturally
+    from the GLOBAL coordinate system defined for each geometry. Consider
+    TGE=101, here a negative F_z will cause a positive normal stress on
+    the remote boundary which tends to open the crack. Also note that
+    even if all components must be given (except p_int if TBC=2) only
+    a few of them will be used as defined for the different TGE-cases.
+
+        TBC=1 ux= uy= uz= tx= ty= tz=
+               (only ux &  tz  may differ from zero)
+
+        Imposes uniform axial displacement at end of pipe opposite the
+        crack. symmetry boundary conditions on other faces of
+        model
+
+
+        TBC=2 Fx=0  Fy=0  Fz=0   Mx=0 My=0 Mz=0  INTPRESS=
+               (only Fx, Mz &  INTPRESS may differ from zero)
+
+        Fx defines a total force applied in the global X-direction
+        on far end of pipe. The force is converted to a corresponding
+        uniform X-traction using the actual end are of pipe, i.e.,
+        wall thickness * pi * diameter @ mid-thickness.
+        The traction is then converted to equivalent forces applied to 
+        nodes on the remote end. 
+        ** This is total force applied over the full
+        end of the pipe. If Fx=1000, then 500 is applied over the
+        180-degree symmetric end of the model. **
+
+        Mz is a global moment applied to the remote end where
+        the moment acts around the global Z-axis. The moment is 
+        generated by equivalent nodal forces applied over nodes on the
+        remote end. Mz is imposed by X-direction equivalent 
+        forces. 
+        ** This is total moment applied over the full
+        end of the pipe. If Mz=1000, then 500 is applied over the
+        180-degree symmetric end of the model. **
+
+        INTPRESS defines the internal pressure loading.
+          -> for internal cracks, the pressure is also applied
+             to the crack faces
+          -> the load generator also puts a net axial force on the
+             end of the pipe in the global X-direction equal to the
+             the pressure * inside end area of the pipe. This force
+             is added to the Fx axial force specified above. 
+        
+       TBC=3 p0=  p1=  p2=  p3=  q1=  q2=  q3=
+
+       pressure loads applied to the face
+        The "p" and "q" are for the cubic function of the crack face traction:
+          The pressure into the crack face, P, is:
+                 P(eta,zeta) = pz + p1*eta + p2*eta^2 +
+                               p3*eta^3 + q1*zeta + q2*zeta^2
+                               + q3*zeta^3
+          where eta is in the crack depth direction, and zeta is along the
+          crack surface; p0 is the constant value.
+        For example, if the crack face traction varies only on the crack depth,
+        set the q1,q2,q3 to zero, or if the traction varies only along
+        the crack width, set p1,p2,p3 to zero.  If the crack face traction
+        is constant set p0=constant value and p1,p2,p3,q1,q2,q3
+        all to zero.
+
+*MESH   etyp= mr= mf=
+        only etyp=8 currently works
+        mr=5 default (no. elements in r)
+        mf=10 default (no. elements in theta)
+
+  Note that if a keyhole is used mr may be increased in order to decrease
+  the keyhole radius. If mf is increased the whole mesh in the model
+  will be refined.
+
+--------------------------------------

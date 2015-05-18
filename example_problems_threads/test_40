@@ -1,0 +1,113 @@
+c
+structure pipe_weld
+c
+c
+material weld
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0E+20,
+               tan_e 400 beta 0.00
+material pipe
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0E+20,
+               tan_e 500 beta 0.00
+c
+c
+number of nodes   8076
+number of elements  3692
+c
+* input from file 'test_40.coordinates'
+c
+elements
+c   for config number   2
+            1 -   1164 type l3disop linear material pipe,
+                       order 2x2x2 bbar center_output short
+c   for config number  92
+         1165 -   2444 type l3disop linear material pipe,
+                       order 2x2x2 bbar center_output short
+c   for config number   1
+         2445 -   3692 type l3disop linear material weld,
+                       order 2x2x2 bbar center_output short
+c
+* input from file 'test_40.incidences'
+c
+blocking   $    scalar
+       1     128       1
+       2     128     129
+       3     128     257
+       4     128     385
+       5     128     513
+       6     128     641
+       7     128     769
+       8     128     897
+       9     128    1025
+      10      12    1153
+      11     128    1165
+      12     128    1293
+      13     128    1421
+      14     128    1549
+      15     128    1677
+      16     128    1805
+      17     128    1933
+      18     128    2061
+      19     128    2189
+      20     128    2317
+      21     128    2445
+      22     128    2573
+      23     128    2701
+      24     128    2829
+      25     128    2957
+      26     128    3085
+      27     128    3213
+      28     128    3341
+      29     128    3469
+      30      96    3597
+c
+loading set_01
+  nodal loads
+   615     force_x       .000000E+00
+   1-8076  temperature   .100000E+01
+c
+* echo off
+* input from 'test_40.thermal'
+c
+* input from file 'test_40.const'
+c
+ loading test
+  nonlinear
+    step 1 set_01 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate on
+c
+c
+ compute displacements for loading test step 1
+ output displacements 1281 5 6115
+c
+ output patran binary displacements
+ output patran binary stresses
+c
+stop
+
+
+
+
+
+
+
+
+
+
+
+

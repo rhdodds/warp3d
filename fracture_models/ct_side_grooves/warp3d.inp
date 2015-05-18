@@ -1,0 +1,128 @@
+c
+c
+c
+c        3D CT specimen, 20% (10% + 10%) side groove
+c        a = 1.18 in, B = 0.95 in, W = 1.9 in, H = 3.4 in.
+c        a/W = 0.6
+c
+c        15 layers through half thickness. focused mesh for
+c        non-growth analysis. initially blunted tip to support
+c        finite strain computations
+c
+c
+c    8-node element
+c
+c     Displacement Control (top of hole, all nodes over thickness)
+c     Static Loading
+c     Large Strain theory (root radius at tip = 0.1 mils)
+c
+c     Non-linear material:
+c         E      = 29085   ksi
+c         sig_ys = 43.6275 ksi
+c         stress-strain curve
+c
+c     Input from the following files:
+c         coordinates
+c         incid_and_blocking
+c         constraints
+c
+c     Model is loaded by imposed displacements (v) at top
+c     of hole for loading pins. Pins are not modeled.
+c     The same v displacement is imposed at each top of hole
+c     node over the thickness.
+c
+c     Elements around the top of hole are defined to have a
+c     material that remains linear elastic.
+c
+c     The top of hole step loading of 0.1 mils imposes
+c     a LEFM KI of 0.903 ksi-in**5 at the center of the
+c     model (z=0 midplane). The pin-loading for this displacement
+c     is 77.88 lbf.
+c
+c     The 2-D analytical SIF is 0.901 using a thickness of sqrt(B*Bnet)
+c
+c     At step 100, the centerplane J is 0.224 kip-in/in**2
+c     The blunted rho is ~ 8 x the initial rho
+c     The CTOD is ~1.8 mils
+c
+c
+c     *** Model is set up to run 2 way parallel using either ***
+c     *** sparse solvers or hypre     ***
+c
+c     solution computed for 1 load step using displacement
+c     increment applied in full analysis of load-displacement curve
+c
+c
+structure ct_3d_side_grooved
+c
+stress-strain curve 1
+      .15E-02          43.6275,
+      .193812E-02      44.25,
+      .747201E-02      45.37,
+      .173486E-01      54.96,
+      .271287E-01      62.10,
+      .464064E-01      72.99,
+      .653195E-01      80.09,
+      .838815E-01      85.67,
+      .120003          91.90,
+      .163394          96.85,
+   100.163394          5898.16
+c
+c
+c use linear elastic material at the loading region
+c
+material simple_linear
+   properties linear_elastic e 29085.  nu 0.3  rho  0.0
+c
+material steel $ A515
+   properties  mises  e 29085  nu 0.3  yld_pt 43.6275  curve 1,
+               rho  0.0
+c
+number of nodes  23632 elements 20595
+c
+*input from 'coordinates'
+c
+elements
+c
+  1-20565  type l3disop  nonlinear material steel,
+           order 2x2x2  bbar center_output short
+c
+c            use linear elastic elements at top of
+c            pin where displacements are imposed.
+c
+  20566-20595 type l3disop  linear material simple_linear,
+           order 2x2x2  center_output short
+c
+c
+*input from 'incid_and_blocking
+*input from 'constraints'
+c
+ loading test
+  nonlinear
+    step 1-100 constraints 1.0  $Kj 0.9 - 90 ksi sqrt(in)
+c
+ nonlinear analysis parameters
+   solution technique sparse iterative
+   trace solution on
+   minimum iterations 2
+   maximum iterations 4
+   convergence test norm res tol 0.005  $ v. tight
+   time step 1.0e06
+   extrapolate on
+   nonconvergent solution stop
+   consistent q off
+   adaptive on
+   bbar stabilization factor 0.0
+c
+  compute displacements for loading test for step 100
+c
+ *input domain_define
+c
+  output patran formatted displacements
+  output patran formatted stresses
+c
+  output reactions 305   308    311    314,
+   317    320    323    326    329    332    335    338,
+   341    344    347    348
+
+stop

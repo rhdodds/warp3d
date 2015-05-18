@@ -1,0 +1,389 @@
+c
+c  Cyclic loading of a notched round bar
+c  -------------------------------------
+c
+c  cyclic plasticity model: nonlinear_hardening option
+c
+c   put output on test_60_a_out
+c   use script: test_60_script to process
+c
+c  Axi-symmetric model of a small notch tensile specimen.
+c  This is the 0.25" diameter specimen with 0.004 in. elements in
+c  the notch region. The model is set up with square elements for
+c  the lower row of 0.004 in. size elements. The transformation
+c  matrix is for a 1 degree rotation about the axis of revolution.
+c  This was accomplished by sweeping the a 2-D model of 4-node elements
+c  in Patran about the Y-axis. However, Patran would not allow a zero
+c  radius for nodes during this process. Nodes on the axis were
+c  made to have r=0.00001 in. After sweeping about the Z-axis,
+c  the nodes were reset to r=0.0. For the 8-node Warp3D elements 
+c  with a face collapsed to a line on r=0, there are 8 unique 
+c  node ids.
+c
+c  Model is top-half, axisymmetric
+c  Full bar dimensions:
+c    Height:           2.00 in.
+c    Outside diameter: 0.50 in.
+c    Throat diameter:  0.25 in.
+c    Slot height:      0.50 in.
+c
+c  the material response follows the cyclic plasticity model with
+c  nonlinear_hardening option. this model exhibits ratcheting and
+c  mean stress effects under repeated load cycles.
+c
+c  here we cycle between fixed, non-symmetric remote displacements
+c
+c  1st half-cycle:  delta = +0.0030 in.
+c  unload to:       delta = -0.0045 in.
+c  re-load to:      delta = +0.0030 in.
+c   .
+c   .
+c   .
+c
+structure notched_bar
+c
+ material steel
+    properties cyclic nonlinear_hardening e 30000 nu 0.3,
+          yld_pt 60 q_u 0 b_u 0.0  h_u 30000,
+          gamma_u 735 sig_tol 0.001
+c 
+number of nodes    916
+number of elements   405
+c
+*echo off
+elements
+c
+  1-405 type l3disop  nonlinear material steel,
+            order 2x2x2 bbar center_output short
+*input test_60_coord_incid
+c
+blocking
+     1    128     1
+     2    128    129
+     3    128    257
+     4     21    385
+c
+constraints
+c
+c           constraints on theta = 1 degree face of model to
+c           enforce axisymmetric deformation.
+c
+transformation matrix 459-516 519-549 551 552 554-605 607-741 751-846,
+		      848-853 855-860 862-867 869-874 876-881 883-888,
+		      890-895 897-902 904-909 911-916,
+   row_1   0.999847695 0.0 -0.017452406,
+   row_2   0.0         1.0  0.0,
+   row_3   0.017452406 0.0  0.999847695
+c
+c 
+c             imposed axial displacements on remote end
+c
+   452 453 454 455 456 457 458,  
+   910 911 912 913 914 915 916  v 0.500000E-04   
+c
+     1      v    0.0      w    0.0  
+     2      w    0.0  
+     3      w    0.0  
+     4      v    0.0      w    0.0  
+     5      w    0.0  
+     6      w    0.0  
+     7      v    0.0      w    0.0  
+     8      w    0.0  
+     9      w    0.0  
+    10      v    0.0      w    0.0  
+    11      w    0.0  
+    12      w    0.0  
+    13      v    0.0      w    0.0  
+    14      w    0.0  
+    15      w    0.0  
+    16      v    0.0      w    0.0  
+    17      w    0.0  
+    18      w    0.0  
+    19      v    0.0      w    0.0  
+    20      w    0.0  
+    21      w    0.0  
+    22      v    0.0      w    0.0  
+    23      w    0.0  
+    24      w    0.0  
+    25      v    0.0      w    0.0  
+    26      w    0.0  
+    27      w    0.0  
+    28      v    0.0      w    0.0  
+    29      w    0.0  
+    30      w    0.0  
+    31      v    0.0      w    0.0  
+    32      w    0.0  
+    33      w    0.0  
+    34      v    0.0      w    0.0  
+    35      w    0.0  
+    36      w    0.0  
+    37      v    0.0      w    0.0  
+    38      w    0.0  
+    39      w    0.0  
+    40      v    0.0      w    0.0  
+    41      w    0.0  
+    42      w    0.0  
+    43      v    0.0      w    0.0  
+    44      w    0.0  
+    45      w    0.0  
+    46      v    0.0      w    0.0  
+    47      w    0.0  
+    48      w    0.0  
+    49      v    0.0      w    0.0  
+    50      w    0.0  
+    51      w    0.0  
+    52      v    0.0      w    0.0  
+    53      w    0.0  
+    54      w    0.0  
+    55      v    0.0      w    0.0  
+    56      w    0.0  
+    57      w    0.0  
+    58      v    0.0      w    0.0  
+    59      w    0.0  
+    60      w    0.0  
+    61      v    0.0      w    0.0  
+    62      w    0.0  
+    63      w    0.0  
+    64      v    0.0      w    0.0  
+    65      w    0.0  
+    66      w    0.0  
+    67      v    0.0      w    0.0  
+    68      w    0.0  
+    69      w    0.0  
+    70      v    0.0      w    0.0  
+    71      w    0.0  
+    72      w    0.0  
+    73      v    0.0      w    0.0  
+    74      w    0.0  
+    75      w    0.0  
+    76      v    0.0      w    0.0  
+    77      w    0.0  
+    78      w    0.0  
+    79      v    0.0      w    0.0  
+    80      w    0.0  
+    81      w    0.0  
+    82      v    0.0      w    0.0  
+    83      w    0.0  
+    84      w    0.0  
+    85      v    0.0      w    0.0  
+    86      w    0.0  
+    87      w    0.0  
+    88      u    0.0      v    0.0      w    0.0  
+    89      u    0.0      w    0.0  
+    90      u    0.0      w    0.0  
+    91      v    0.0      w    0.0  
+c
+  92   93  94   95  96   97  98   99,
+ 100  101 102  103 104  105 106  107,
+ 108  109 110  111 112  113 114  115,
+ 116  117 118  119 120  121 122  123,
+ 124  125 126  127 128  129,
+ 130  131  w  0.0  
+ 132  u  0.0  w  0.0  
+c
+ 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148,
+ 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164,
+ 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180,
+ 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196,
+ 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212,
+ 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228,
+ 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244,
+ 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260,
+ 261 262 263 264 265 266 267 268 269 270 271 272 273 274 275 276,
+ 277 278 279 280 281 282  w  0.0  
+c
+ 283 284 285 286 287 288 289 290 291 292 u 0 w 0
+c
+ 293 294 295 296 297 298 299 300 301 302 303 304 305 306 307 308,
+ 309 310 311 312 313 314 315 316 317 318 319 320 321 322 323 324,
+ 325 326 327 328 329 330 331 332 333 334 335 336 337 338 339 340,
+ 341 342 343 344 345 346 347 348 349 350 351 352 353 354 355 356,
+ 357 358 359 360 361 362 363 364 365 366 367 368 369 370 371 372,
+ 373 374 375 376 377 378 379 380 381 382 383 384 385 386, 
+ 387 388  w  0.0  
+c
+   389      u    0.0      w    0.0  
+   390      w    0.0  
+   391      w    0.0  
+   392      w    0.0  
+   393      w    0.0  
+   394      w    0.0  
+   395      w    0.0  
+   396      u    0.0      w    0.0  
+   397      w    0.0  
+   398      w    0.0  
+   399      w    0.0  
+   400      w    0.0  
+   401      w    0.0  
+   402      w    0.0  
+   403      u    0.0      w    0.0  
+   404      w    0.0  
+   405      w    0.0  
+   406      w    0.0  
+   407      w    0.0  
+   408      w    0.0  
+   409      w    0.0  
+   410      u    0.0      w    0.0  
+   411      w    0.0  
+   412      w    0.0  
+   413      w    0.0  
+   414      w    0.0  
+   415      w    0.0  
+   416      w    0.0  
+   417      u    0.0      w    0.0  
+   418      w    0.0  
+   419      w    0.0  
+   420      w    0.0  
+   421      w    0.0  
+   422      w    0.0  
+   423      w    0.0  
+   424      u    0.0      w    0.0  
+   425      w    0.0  
+   426      w    0.0  
+   427      w    0.0  
+   428      w    0.0  
+   429      w    0.0  
+   430      w    0.0  
+   431      u    0.0      w    0.0  
+   432      w    0.0  
+   433      w    0.0  
+   434      w    0.0  
+   435      w    0.0  
+   436      w    0.0  
+   437      w    0.0  
+   438      u    0.0      w    0.0  
+   439      w    0.0  
+   440      w    0.0  
+   441      w    0.0  
+   442      w    0.0  
+   443      w    0.0  
+   444      w    0.0  
+   445      u    0.0      w    0.0  
+   446      w    0.0  
+   447      w    0.0  
+   448      w    0.0  
+   449      w    0.0  
+   450      w    0.0  
+   451      w    0.0  
+   452      u    0.0       w    0.0  
+   453      w    0.0  
+   454      w    0.0  
+   455      w    0.0  
+   456      w    0.0  
+   457      w    0.0  
+   458      w    0.0  
+   459      v    0.0      w    0.0  
+   460      v    0.0      w    0.0  
+   461      w    0.0  
+   462      w    0.0  
+   463      v    0.0      w    0.0  
+   464      w    0.0  
+   465      v    0.0      w    0.0  
+   466      w    0.0  
+   467      v    0.0      w    0.0  
+   468      w    0.0  
+   469      v    0.0      w    0.0  
+   470      w    0.0  
+   471      v    0.0      w    0.0  
+   472      w    0.0  
+   473      v    0.0      w    0.0  
+   474      w    0.0  
+   475      v    0.0      w    0.0  
+   476      w    0.0  
+   477      v    0.0      w    0.0  
+   478      w    0.0  
+   479      v    0.0      w    0.0  
+   480      w    0.0  
+   481      v    0.0      w    0.0  
+   482      w    0.0  
+   483      v    0.0      w    0.0  
+   484      w    0.0  
+   485      v    0.0      w    0.0  
+   486      w    0.0  
+   487      v    0.0      w    0.0  
+   488      w    0.0  
+   489      v    0.0      w    0.0  
+   490      w    0.0  
+   491      v    0.0      w    0.0  
+   492      w    0.0  
+   493      v    0.0      w    0.0  
+   494      w    0.0  
+   495      v    0.0      w    0.0  
+   496      w    0.0  
+   497      v    0.0      w    0.0  
+   498      w    0.0  
+   499      v    0.0      w    0.0  
+   500      w    0.0  
+   501      v    0.0      w    0.0  
+   502      w    0.0  
+   503      v    0.0      w    0.0  
+   504      w    0.0  
+   505      v    0.0      w    0.0  
+   506      w    0.0  
+   507      v    0.0      w    0.0  
+   508      w    0.0  
+   509      v    0.0      w    0.0  
+   510      w    0.0  
+   511      v    0.0      w    0.0  
+   512      w    0.0  
+   513      v    0.0      w    0.0  
+   514      w    0.0  
+   515      v    0.0      w    0.0  
+   516      w    0.0  
+   517      v    0.0      w    0.0  
+   518      w    0.0  
+   519      v    0.0      w    0.0
+c
+ 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535,  
+ 536 537 538 539 540 541 542 543 544 545 546 547 548 549 550 551,
+ 552 553 554 555 556 557 558 559 560 561 562 563 564 565 566 567,
+ 568 569 570 571 572 573 574 575 576 577 578 579 580 581 582 583,
+ 584 585 586 587 588 589 590 591 592 593 594 595 596 597 598 599,
+ 600 601 602 603 604 605 606 607 608 609 610 611 612 613 614 615,
+ 616 617 618 619 620 621 622 623 624 625 626 627 628 629 630 631,
+ 632 633 634 635 636 637 638 639 640 641 642 643 644 645 646 647,
+ 648 649 650 651 652 653 654 655 656 657, 
+ 658 659 660 661 662 663 664 665 666 667 668 669 670 671 672 673, 
+ 674 675 676 677 678 679 680 681 682 683 684 685 686 687 688 689,
+ 690 691 692 693 694 695 696 697 698 699 700 701 702 703 704 705,
+ 706 707 708 709 710 711 712 713 714 715 716 717 718 719 720 721,
+ 722 723 724 725 726 727 728 729 730 731 732 733 734 735 736 737,
+ 738 739 740 741 742 743 744 745 746 747 748 749 750 751 752 753,
+ 754 755 756 757 758 759 760 761 762 763 764 765 766 767 768 769,
+ 770 771 772 773 774 775 776 777 778 779 780 781 782 783 784 785,
+ 786 787 788 789 790 791 792 793 794 795 796 797 798 799 800 801,
+ 802 803 804 805 806 807 808 809 810 811 812 813 814 815 816 817,
+ 818 819 820 821 822 823 824 825 826 827 828 829 830 831 832 833,
+ 834 835 836 837 838 839 840 841 842 843 844 845 846 847 848 849,
+ 850 851 852 853 854 855 856 857 858 859 860 861 862 863 864 865,
+ 866 867 868 869 870 871 872 873 874 875 876 877 878 879 880 881,
+ 882 883 884 885 886 887 888 889 890 891 892 893 894 895 896 897,
+ 898 899 900 901 902 903 904 905 906 907 908 909 910 911 912 913,
+ 914 915 916 w 0.0  
+c 
+*echo on
+c
+ loading pull 
+  nonlinear
+    step    1-60 constraints  1.0
+    step  61-150 constraints -1.0
+    step 151-240 constraints  1.0
+    step 241-330 constraints -1.0
+    step 331-420 constraints  1.0
+    step 421-510 constraints -1.0
+    step 511-600 constraints  1.0
+    step 601-690 constraints -1.0
+    step 691-780 constraints  1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   maximum iterations 8
+   minimum iterations 1
+   convergence test norm res tol .0001 max res load tol 0.001
+   adaptive on
+   extrapolate on
+   material messages off
+   batch messages off
+c
+*input from file test_60_commands
+stop

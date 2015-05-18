@@ -1,0 +1,442 @@
+c
+c
+c 10 element double cantilever with crack growth by node release
+c	
+c	This input file demonstrates:
+c	   - the overshoot control mechanism, which detects potential
+c	        overshooting of the critical release angle and reduces
+c	        the global loading to minimize the error.
+c	   - the automatic load reduction mechanism, which detects
+c	        if the size of the load steps is too large (number
+c	        of steps between consecutive releases is too small).
+c	        If so, it reduces the global loading in half.
+c
+c	Model consists of ten cubical elements in a row in the x 
+c	direction. Half of the model is unconstrained, the other 
+c	half is constrained in the y direction; loading is displacement
+c	control in the y direction on the two top nodes at the free end.
+c	The load step size changes at several critical locations to 
+c	check if the resizing algorithms can negotiate various user changes.  
+c       Also, at step 17, the load size is doubled, which triggers the 
+c	load reduction mechanism.
+c 
+structure test_ctoa
+c 
+c 
+material steel
+    properties mises e 30000 nu 0.3 yld_pt 60.0 n_power 10
+c 
+c 
+number of nodes     44
+number of elements    10
+c
+coordinates
+     1   .000000000E+00   .000000000E+00   .000000000E+00
+     2   .100000000E+01   .000000000E+00   .000000000E+00
+     3   .200000000E+01   .000000000E+00   .000000000E+00
+     4   .300000000E+01   .000000000E+00   .000000000E+00
+     5   .400000000E+01   .000000000E+00   .000000000E+00
+     6   .500000000E+01   .000000000E+00   .000000000E+00
+     7   .600000000E+01   .000000000E+00   .000000000E+00
+     8   .700000000E+01   .000000000E+00   .000000000E+00
+     9   .800000000E+01   .000000000E+00   .000000000E+00
+    10   .900000000E+01   .000000000E+00   .000000000E+00
+    11   .100000000E+02   .000000000E+00   .000000000E+00
+    12   .000000000E+00   .100000000E+01   .000000000E+00
+    13   .100000000E+01   .100000000E+01   .000000000E+00
+    14   .200000000E+01   .100000000E+01   .000000000E+00
+    15   .300000000E+01   .100000000E+01   .000000000E+00
+    16   .400000000E+01   .100000000E+01   .000000000E+00
+    17   .500000000E+01   .100000000E+01   .000000000E+00
+    18   .600000000E+01   .100000000E+01   .000000000E+00
+    19   .700000000E+01   .100000000E+01   .000000000E+00
+    20   .800000000E+01   .100000000E+01   .000000000E+00
+    21   .900000000E+01   .100000000E+01   .000000000E+00
+    22   .100000000E+02   .100000000E+01   .000000000E+00
+    23   .000000000E+00   .000000000E+00   .100000000E+01
+    24   .100000000E+01   .000000000E+00   .100000000E+01
+    25   .200000000E+01   .000000000E+00   .100000000E+01
+    26   .300000000E+01   .000000000E+00   .100000000E+01
+    27   .400000000E+01   .000000000E+00   .100000000E+01
+    28   .500000000E+01   .000000000E+00   .100000000E+01
+    29   .600000000E+01   .000000000E+00   .100000000E+01
+    30   .700000000E+01   .000000000E+00   .100000000E+01
+    31   .800000000E+01   .000000000E+00   .100000000E+01
+    32   .900000000E+01   .000000000E+00   .100000000E+01
+    33   .100000000E+02   .000000000E+00   .100000000E+01
+    34   .000000000E+00   .100000000E+01   .100000000E+01
+    35   .100000000E+01   .100000000E+01   .100000000E+01
+    36   .200000000E+01   .100000000E+01   .100000000E+01
+    37   .300000000E+01   .100000000E+01   .100000000E+01
+    38   .400000000E+01   .100000000E+01   .100000000E+01
+    39   .500000000E+01   .100000000E+01   .100000000E+01
+    40   .600000000E+01   .100000000E+01   .100000000E+01
+    41   .700000000E+01   .100000000E+01   .100000000E+01
+    42   .800000000E+01   .100000000E+01   .100000000E+01
+    43   .900000000E+01   .100000000E+01   .100000000E+01
+    44   .100000000E+02   .100000000E+01   .100000000E+01
+c
+elements
+     1 -   10 type l3disop    linear material steel,
+         order 2x2x2 bbar center_output short
+c
+incidences 
+     1    23     1    12    34    24     2    13    35
+     2    24     2    13    35    25     3    14    36
+     3    25     3    14    36    26     4    15    37
+     4    26     4    15    37    27     5    16    38
+     5    27     5    16    38    28     6    17    39
+     6    28     6    17    39    29     7    18    40
+     7    29     7    18    40    30     8    19    41
+     8    30     8    19    41    31     9    20    42
+     9    31     9    20    42    32    10    21    43
+    10    32    10    21    43    33    11    22    44
+c
+c
+blocking   $    scalar
+     1    10     1
+c
+constraints
+     6      v     .000000E+00  
+     7      v     .000000E+00  
+     8      v     .000000E+00  
+     9      v     .000000E+00  
+    10      v     .000000E+00  
+    11      u     .000000E+00 v     .000000E+00      w     .000000E+00  
+    22      u     .000000E+00  
+    28      v     .000000E+00  
+    29      v     .000000E+00  
+    30      v     .000000E+00  
+    31      v     .000000E+00  
+    32      v     .000000E+00  
+    33      u     .000000E+00      v     .000000E+00  
+    44      u     .000000E+00  
+c
+c
+    12,34   v     0.1
+c
+ loading test
+  nonlinear
+    step 1-7    constraints 1.0
+    step 8      constraints 0.5
+    step 9-10   constraints 2.0
+    step 11-16  constraints 1.0
+    step 17-100 constraints 2.0
+c 
+c 
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol .001
+   adaptive on
+   time step 1000000
+   trace solution on
+   extrapolate on
+   consistent q-matrix on
+   bbar stabilization factor 0.0
+   linear stiffness iteration one off 
+c
+c
+ crack growth parameters
+   type of growth node_release
+   crack plane normal y coordinate 0.0
+   angle for release 10
+   angle for initiation 10
+   force release type traction-separation
+   release fraction .2
+   characteristic length 1
+   print status on
+   overshoot control on percent overshoot 2 minimum reduction .01
+   automatic load reduction on minimum steps 9
+c 
+c 
+ compute displacements for loading test step 1
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 2
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 3
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 4
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 5
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 6
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 7
+ output displacements 1-12
+ output reactions 12,34
+c 
+c
+constraints
+     6      v     .000000E+00  
+     7      v     .000000E+00  
+     8      v     .000000E+00  
+     9      v     .000000E+00  
+    10      v     .000000E+00  
+    11      u     .000000E+00 v     .000000E+00      w     .000000E+00  
+    22      u     .000000E+00  
+    28      v     .000000E+00  
+    29      v     .000000E+00  
+    30      v     .000000E+00  
+    31      v     .000000E+00  
+    32      v     .000000E+00  
+    33      u     .000000E+00      v     .000000E+00  
+    44      u     .000000E+00  
+c
+c
+    12,34   v     0.05
+c 
+ compute displacements for loading test step 8
+ output displacements 1-12
+ output reactions 12,34
+c 
+constraints
+     6      v     .000000E+00  
+     7      v     .000000E+00  
+     8      v     .000000E+00  
+     9      v     .000000E+00  
+    10      v     .000000E+00  
+    11      u     .000000E+00 v     .000000E+00      w     .000000E+00  
+    22      u     .000000E+00  
+    28      v     .000000E+00  
+    29      v     .000000E+00  
+    30      v     .000000E+00  
+    31      v     .000000E+00  
+    32      v     .000000E+00  
+    33      u     .000000E+00      v     .000000E+00  
+    44      u     .000000E+00  
+c
+c
+    12,34   v     0.2
+c 
+ compute displacements for loading test step 9
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 10
+ output displacements 1-12
+ output reactions 12,34
+c 
+constraints
+     6      v     .000000E+00  
+     7      v     .000000E+00  
+     8      v     .000000E+00  
+     9      v     .000000E+00  
+    10      v     .000000E+00  
+    11      u     .000000E+00 v     .000000E+00      w     .000000E+00  
+    22      u     .000000E+00  
+    28      v     .000000E+00  
+    29      v     .000000E+00  
+    30      v     .000000E+00  
+    31      v     .000000E+00  
+    32      v     .000000E+00  
+    33      u     .000000E+00      v     .000000E+00  
+    44      u     .000000E+00  
+c
+c
+    12,34   v     0.1
+c 
+ compute displacements for loading test step 11
+ output displacements 1-12
+ output reactions 12,34
+c
+ compute displacements for loading test step 12
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 13
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 14
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 15
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 16
+ output displacements 1-12
+ output reactions 12,34
+c 
+c 
+constraints
+     6      v     .000000E+00  
+     7      v     .000000E+00  
+     8      v     .000000E+00  
+     9      v     .000000E+00  
+    10      v     .000000E+00  
+    11      u     .000000E+00  v     .000000E+00      w     .000000E+00  
+    22      u     .000000E+00  
+    28      v     .000000E+00  
+    29      v     .000000E+00  
+    30      v     .000000E+00  
+    31      v     .000000E+00  
+    32      v     .000000E+00  
+    33      u     .000000E+00      v     .000000E+00  
+    44      u     .000000E+00  
+c
+c
+    12,34   v     0.20
+c 
+ compute displacements for loading test step 17
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 18
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 19
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 20
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 21
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 22
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 23
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 24
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 25
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 26
+ output displacements 1-12
+c output reactions 12,34
+ 
+ compute displacements for loading test step 27
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 28
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 29
+ output displacements 1-12
+ output reactions 12,34
+ save
+c 
+ compute displacements for loading test step 30
+ output displacements 1-12
+ output reactions 12,34
+c
+ output reactions for nodes 12, 34
+c 
+c 
+ compute displacements for loading test step 31
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 32
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 33
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 34
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 35
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 36
+ output displacements 1-12
+c output reactions 12,34
+ 
+ compute displacements for loading test step 37
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 38
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 39
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 40
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 41
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 42
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 43
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 44
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 45
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 46
+ output displacements 1-12
+c output reactions 12,34
+ 
+ compute displacements for loading test step 47
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 48
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 49
+ output displacements 1-12
+ output reactions 12,34
+c 
+ compute displacements for loading test step 50
+ output displacements 1-12
+ output reactions 12,34
+c
+stop
+
+
+
+
+
+

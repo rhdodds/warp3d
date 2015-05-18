@@ -1,0 +1,647 @@
+c
+c
+ domain J1
+     normal plane nz -1.0
+     front nodes   8668   1249   1171 l3disop verify
+c     parametric angle (2*phi/pi) of node     1249:    0.0000
+     q values automatic rings 1-7
+     function type b
+c     print totals
+c     use 1 point rule
+c     output packet j i
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+c
+ domain J2
+     normal plane nz -1.0
+     front nodes   1249   1171   1093 l3disop verify
+c     parametric angle (2*phi/pi) of node     1171:    1.7039
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J3
+     normal plane nz -1.0
+     front nodes   1171   1093   1015 l3disop verify
+c     parametric angle (2*phi/pi) of node     1093:    4.1752
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J4
+     normal plane nz -1.0
+     front nodes   1093   1015    937 l3disop verify
+c     parametric angle (2*phi/pi) of node     1015:    7.7086
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J5
+     normal plane nz -1.0
+     front nodes   1015    937    859 l3disop verify
+c     parametric angle (2*phi/pi) of node      937:   12.6215
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J6
+     normal plane nz -1.0
+     front nodes    937    859    781 l3disop verify
+c     parametric angle (2*phi/pi) of node      859:   19.1735
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J7
+     normal plane nz -1.0
+     front nodes    859    781    703 l3disop verify
+c     parametric angle (2*phi/pi) of node      781:   27.5363
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J8
+     normal plane nz -1.0
+     front nodes    781    703    625 l3disop verify
+c     parametric angle (2*phi/pi) of node      703:   37.9055
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J9
+     normal plane nz -1.0
+     front nodes    703    625    547 l3disop verify
+c     parametric angle (2*phi/pi) of node      625:   46.8792
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J10
+     normal plane nz -1.0
+     front nodes    625    547    469 l3disop verify
+c     parametric angle (2*phi/pi) of node      547:   54.9722
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J11
+     normal plane nz -1.0
+     front nodes    547    469    391 l3disop verify
+c     parametric angle (2*phi/pi) of node      469:   62.4825
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J12
+     normal plane nz -1.0
+     front nodes    469    391    313 l3disop verify
+c     parametric angle (2*phi/pi) of node      391:   69.5995
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J13
+     normal plane nz -1.0
+     front nodes    391    313    235 l3disop verify
+c     parametric angle (2*phi/pi) of node      313:   76.4549
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+ domain J14
+     normal plane nz -1.0
+     front nodes    313    235    157 l3disop verify
+c     parametric angle (2*phi/pi) of node      235:   81.4687
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J15
+     normal plane nz -1.0
+     front nodes    235    157     79 l3disop verify
+c     parametric angle (2*phi/pi) of node      157:   85.1785
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J16
+     normal plane nz -1.0
+     front nodes    157     79      1 l3disop verify
+c     parametric angle (2*phi/pi) of node       79:   87.9395
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J17
+     normal plane nz -1.0
+     front nodes     79      1   3856 l3disop verify
+c     parametric angle (2*phi/pi) of node        1:   90.0001
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J18
+     normal plane nz -1.0
+     front nodes      1   3856   3934 l3disop verify
+c     parametric angle (2*phi/pi) of node     3856:   92.0605
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J19
+     normal plane nz -1.0
+     front nodes   3856   3934   4012 l3disop verify
+c     parametric angle (2*phi/pi) of node     3934:   94.8215
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J20
+     normal plane nz -1.0
+     front nodes   3934   4012   4090 l3disop verify
+c     parametric angle (2*phi/pi) of node     4012:   98.5313
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J21
+     normal plane nz -1.0
+     front nodes   4012   4090   4168 l3disop verify
+c     parametric angle (2*phi/pi) of node     4090:  103.5451
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J22
+     normal plane nz -1.0
+     front nodes   4090   4168   4246 l3disop verify
+c     parametric angle (2*phi/pi) of node     4168:  110.4005
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+c
+ domain J23
+     normal plane nz -1.0
+     front nodes   4168   4246   4324 l3disop verify
+c     parametric angle (2*phi/pi) of node     4246:  117.5175
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J24
+     normal plane nz -1.0
+     front nodes   4246   4324   4402 l3disop verify
+c     parametric angle (2*phi/pi) of node     4324:  125.0278
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J25
+     normal plane nz -1.0
+     front nodes   4324   4402   4480 l3disop verify
+c     parametric angle (2*phi/pi) of node     4402:  133.1208
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J26
+     normal plane nz -1.0
+     front nodes   4402   4480   4558 l3disop verify
+c     parametric angle (2*phi/pi) of node     4480:  142.0945
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J27
+     normal plane nz -1.0
+     front nodes   4480   4558   4636 l3disop verify
+c     parametric angle (2*phi/pi) of node     4558:  152.4637
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J28
+     normal plane nz -1.0
+     front nodes   4558   4636   4714 l3disop verify
+c     parametric angle (2*phi/pi) of node     4636:  160.8265
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J29
+     normal plane nz -1.0
+     front nodes   4636   4714   4792 l3disop verify
+c     parametric angle (2*phi/pi) of node     4714:  167.3785
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+c
+ domain J30
+     normal plane nz -1.0
+     front nodes   4714   4792   4870 l3disop verify
+c     parametric angle (2*phi/pi) of node     4792:  172.2914
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J31
+     normal plane nz -1.0
+     front nodes   4792   4870   4948 l3disop verify
+c     parametric angle (2*phi/pi) of node     4870:  175.8248
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J32
+     normal plane nz -1.0
+     front nodes   4870   4948   5026 l3disop verify
+c     parametric angle (2*phi/pi) of node     4948:  178.2961
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J33
+     normal plane nz -1.0
+     front nodes   4948   5026  12122 l3disop verify
+c     parametric angle (2*phi/pi) of node     5026:  180.0000
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J34
+     normal plane nz -1.0
+     front nodes   5026  12122  12044 l3disop verify
+c     parametric angle (2*phi/pi) of node    12122:  181.7039
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J35
+     normal plane nz -1.0
+     front nodes  12122  12044  11966 l3disop verify
+c     parametric angle (2*phi/pi) of node    12044:  184.1752
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J36
+     normal plane nz -1.0
+     front nodes  12044  11966  11888 l3disop verify
+c     parametric angle (2*phi/pi) of node    11966:  187.7086
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J37
+     normal plane nz -1.0
+     front nodes  11966  11888  11810 l3disop verify
+c     parametric angle (2*phi/pi) of node    11888:  192.6215
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J38
+     normal plane nz -1.0
+     front nodes  11888  11810  11732 l3disop verify
+c     parametric angle (2*phi/pi) of node    11810:  199.1735
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J39
+     normal plane nz -1.0
+     front nodes  11810  11732  11654 l3disop verify
+c     parametric angle (2*phi/pi) of node    11732:  207.5363
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J40
+     normal plane nz -1.0
+     front nodes  11732  11654  11576 l3disop verify
+c     parametric angle (2*phi/pi) of node    11654:  217.9055
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J41
+     normal plane nz -1.0
+     front nodes  11654  11576  11498 l3disop verify
+c     parametric angle (2*phi/pi) of node    11576:  226.8792
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J42
+     normal plane nz -1.0
+     front nodes  11576  11498  11420 l3disop verify
+c     parametric angle (2*phi/pi) of node    11498:  234.9722
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J43
+     normal plane nz -1.0
+     front nodes  11498  11420  11342 l3disop verify
+c     parametric angle (2*phi/pi) of node    11420:  242.4825
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J44
+     normal plane nz -1.0
+     front nodes  11420  11342  11264 l3disop verify
+c     parametric angle (2*phi/pi) of node    11342:  249.5995
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J45
+     normal plane nz -1.0
+     front nodes  11342  11264  11186 l3disop verify
+c     parametric angle (2*phi/pi) of node    11264:  256.4549
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J46
+     normal plane nz -1.0
+     front nodes  11264  11186  11108 l3disop verify
+c     parametric angle (2*phi/pi) of node    11186:  261.4687
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J47
+     normal plane nz -1.0
+     front nodes  11186  11108  11030 l3disop verify
+c     parametric angle (2*phi/pi) of node    11108:  265.1785
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J48
+     normal plane nz -1.0
+     front nodes  11108  11030   7498 l3disop verify
+c     parametric angle (2*phi/pi) of node    11030:  267.9395
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J49
+     normal plane nz -1.0
+     front nodes  11030   7498   7576 l3disop verify
+c     parametric angle (2*phi/pi) of node     7498:  269.9999
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J50
+     normal plane nz -1.0
+     front nodes   7498   7576   7654 l3disop verify
+c     parametric angle (2*phi/pi) of node     7576:  272.0605
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J51
+     normal plane nz -1.0
+     front nodes   7576   7654   7732 l3disop verify
+c     parametric angle (2*phi/pi) of node     7654:  274.8215
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J52
+     normal plane nz -1.0
+     front nodes   7654   7732   7810 l3disop verify
+c     parametric angle (2*phi/pi) of node     7732:  278.5313
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J53
+     normal plane nz -1.0
+     front nodes   7732   7810   7888 l3disop verify
+c     parametric angle (2*phi/pi) of node     7810:  283.5451
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+c
+ domain J54
+     normal plane nz -1.0
+     front nodes   7810   7888   7966 l3disop verify
+c     parametric angle (2*phi/pi) of node     7888:  290.4005
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J55
+     normal plane nz -1.0
+     front nodes   7888   7966   8044 l3disop verify
+c     parametric angle (2*phi/pi) of node     7966:  297.5175
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J56
+     normal plane nz -1.0
+     front nodes   7966   8044   8122 l3disop verify
+c     parametric angle (2*phi/pi) of node     8044:  305.0278
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J57
+     normal plane nz -1.0
+     front nodes   8044   8122   8200 l3disop verify
+c     parametric angle (2*phi/pi) of node     8122:  313.1208
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J58
+     normal plane nz -1.0
+     front nodes   8122   8200   8278 l3disop verify
+c     parametric angle (2*phi/pi) of node     8200:  322.0945
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J59
+     normal plane nz -1.0
+     front nodes   8200   8278   8356 l3disop verify
+c     parametric angle (2*phi/pi) of node     8278:  332.4637
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J60
+     normal plane nz -1.0
+     front nodes   8278   8356   8434 l3disop verify
+c     parametric angle (2*phi/pi) of node     8356:  340.8265
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J61
+     normal plane nz -1.0
+     front nodes   8356   8434   8512 l3disop verify
+c     parametric angle (2*phi/pi) of node     8434:  347.3785
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+ domain J62
+     normal plane nz -1.0
+     front nodes   8434   8512   8590 l3disop verify
+c     parametric angle (2*phi/pi) of node     8512:  352.2914
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J63
+     normal plane nz -1.0
+     front nodes   8512   8590   8668 l3disop verify
+c     parametric angle (2*phi/pi) of node     8590:  355.8248
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c
+ domain J64
+     normal plane nz -1.0
+     front nodes   8590   8668   1249 l3disop verify
+c     parametric angle (2*phi/pi) of node     8668:  358.2961
+     q values automatic rings 1-7
+     function type b
+     plane strain output for interaction integral
+     crack face tractions tx = 1.0
+     compute domain interaction integrals
+c

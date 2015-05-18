@@ -1,0 +1,29 @@
+
+This is a simple f77 program to make PostScript files of different
+views of the generated meshes produced by the mesh_scp and mesh_cell
+programs.
+
+To compile mesh_plot:
+
+          f77 mesh_plot.f  <other compiler options>
+
+To use mesh_plot:
+
+  1) build the finite element model using the mesh_scp or mesh_cell
+     program
+  2) in the file you use to make the model, mesh_scp and mesh_cell
+     create files with the names .._1.dat .._1.inf, .._2.dat .._2.inf
+     thru .._5.inf .._5.dat
+     These files contain data used by mesh_plot to create a PostScript
+     file for a view (1 of 5 views) of the model.
+  3) Copy the mesh_plot executable file and the Mesh_plot.stub
+     file from the mesh_plot directory (this directory) to the file
+     used to build the model.
+  4) invoke the mesh_plot executable. the program asks for a
+     a plot file name (prefix only). It wants one of the .._# file
+     names witout the .inf or .dat extension.
+  5) the program generates a .._#.ps file for the view of the model
+  6) look at the PostScript file using Ghostview, print it or
+     convert to a pdf then view it.
+  7) repeat 4-6 for each of the 5 views.
+

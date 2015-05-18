@@ -1,0 +1,17 @@
+c     
+c       Twentyth layer from the center plane
+c
+domain dnr_020
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 19   8857  8858  8859  8860  8861  8862  8863  8864,
+             8865  8866  8867  8868  8869  8870  8871  8872  8873
+   node set 20   9349  9350  9351  9352  9353  9354  9355  9356,
+             9357  9358  9359  9360  9361  9362  9363  9364  9365
+   node set 21   9841  9842  9843  9844  9845  9846  9847  9848,
+             9849  9850  9851  9852  9853  9854  9855  9856  9857
+   front node sets  19  20  21 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

@@ -1,0 +1,109 @@
+c
+c
+c       Nasa MT, 12" wide (full width), with out-of-plane bending allowed
+c       (caused by large negative T-stress). 1/4 symmetric model.
+c
+c       crack growth using nonlinear (large displ) interface elements
+c       Mode I growth over the thickness which can develop
+c       tunneling.
+c
+c       initial a/w = 0.5. Crack plane element size = 0.01"
+c       full thickness is 2.3 mm. 2W=300 mm (12 in), 2a=150 mm (6 in.)
+c
+c       4, 8-node bricks over the thickness that transtion immediately 
+c       to 4 and then 2 20-node bricks over the thickness to better model the
+c       out-of-plane bending. crack plane has 4, 8-node interface
+c       elements over the thickness with a nonlinear cohesive material
+c       model. the simple exponential model and the PPR model are defined
+c       for use. the PPR model properties make it match very closely the
+c       exponential response.
+c
+c       background material is Al-2024T3 with segmental stress-strain
+c       curve for L orientation
+c
+c       loading by remotely imposed axial displacements.
+c       input is setup for 2000 uniform load steps. adaptive crack growth
+c       reduces-increases the step sizes during the solutions.
+c
+c       the compute-output comamnd file stops analysis at 200 load steps 
+c       for this example. 200 steps kills about 28 interface-cohesive elements
+c
+c       full details in the paper:
+c         Ductile Tearing in This AL Panels: Experiments and Analyses Using
+c         Large Displacement, 3-D Surface Cohesive Elements
+c         By S. Roychowdhury, Run Roy and Robert Dodds
+c         EFM, Vol. 69, pp 983-1002, 2002.
+c
+structure nasa_mt
+c
+stress-strain curve 1 $ 2024-T3 at rm temp
+   .481837E-02  .502415E+02
+   .148886E-01  .573475E+02
+   .392207E-01  .650000E+02
+   .953102E-01  .753500E+02
+   .148420E+00  .823600E+02
+   .182322E+00  .852000E+02
+   .241591E+01  .153520E+03
+c
+material al2024t3
+    properties mises e 10352 nu 0.3 yld_pt 50 curve 1
+c
+c          total fracture energy: exp(1) * sig-peak * delta-peak = 0.1076
+c          For Mode I symmetric FE model, input delta-crit as 
+c          1/2 of total value. The fracture energy in the model will be
+c          0.05384. Kc = 35 ksi (in)^1/2 based on full fracture energy.
+c
+material exp_model
+    properties cohesive exp1_intf,
+      delta_peak 0.0001467219099 sig_peak  135 beta 0.0 killable
+c
+material ppr_model
+ properties cohesive ppr,
+    sig_peak 135 tau_peak 135 G_normal 0.053840,
+    G_shear  0.053840 shape_normal 7.0 shape_shear 7.0,
+    ratio_normal 0.1 ratio_shear 0.1,
+    killable $ do not make these too small !
+c
+number of nodes 28380 elements    12513
+elements
+      1 -   8336 type l3disop    nonlinear material al2024t3,
+                 order 2x2x2 bbar center_output short
+   8337 -   8936 type ts12isop   nonlinear material al2024t3,
+                 order 2x2x2 bbar center_output short
+   8937 -  11669 type q3disop    nonlinear material al2024t3,
+                 order 2x2x2 bbar center_output short
+  11670 -  12513 type inter_8    nonlinear material exp_model,
+                 order 2x2gs surface top
+
+*input mt_cohes_coord_incid
+*input mt_cohes_blocking
+*input mt_cohes_constraints
+c
+ loading test
+   nonlinear
+     steps 1-2000 constraints 5.0 
+c
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   adaptive solution on
+   maximum iterations 10
+   minimum iterations 2
+   convergence test norm res tol 0.001 max resid tol 0.1
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+   consistent q-matrix on
+   bbar stabilization factor 0.0
+   batch messages on
+c
+  crack growth parameters
+      type of crack growth cohesive
+c      critical effective cohesive displacement multiplier  5.74386 $ for exp model
+      ppr displacement fracture for extinction 0.8  $ for ppr model
+      print status on order elements 11670  - 12513
+      force release type steps
+      release steps 5
+      adaptive load control on maximum relative displacement change 0.20
+c
+*input mt_cohes_compute_output
+stop

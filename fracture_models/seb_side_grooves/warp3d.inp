@@ -1,0 +1,75 @@
+c
+c
+c
+c    3D SE(B), 1.25T, 20% (10% + 10%) side groove
+c
+c     14 Element Layers through the 1/2 thickness:
+c        W=B  = 31.8e-3 m
+c        a    = 0.5W
+c        Span = 4W
+c
+c     Displacement Control
+c     Static Loading
+c     Large Strain theory (Ri=1.e-4 in =2.54e-6 m)
+c
+c     Non-linear material:
+c         E      = 200 GPa
+c         sig_ys = 400    MPa
+c         n      = 10
+c
+c     Input from the following files:
+c         coordinates
+c         incid_and_blocking
+c         constraints
+c
+c
+c     *** Model is set up to run 2 way parallel using either ***
+c     *** sparse solvers or hypre     ***
+c
+c     solution computed for 10 load step using displacement
+c     increment applied in full analysis of load-displacement curve
+c
+c
+structure seb_3d
+c
+c
+material steel $ A533B
+   properties  mises  e 200.0e9  nu 0.3  yld_pt 400.0e6  n_power 10.0,
+               rho  0.0
+c
+ number of nodes  19935
+ number of elements 17318
+c
+*input from 'coordinates'
+c
+elements
+  1-17318  type l3disop  nonlinear material steel,
+           order 2x2x2 bbar center_output short
+c
+*input from 'incid_and_blocking'
+*input from 'constraints'
+c
+c
+ loading test
+  nonlinear
+    step 1-20 constraints 1.0
+c
+c
+c    solution paramters
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   trace solution on
+   minimum iterations 2
+   maximum iterations 4
+   convergence test norm res tol 0.005  $ v. tight
+   time step 1.0e06
+   extrapolate on
+   nonconvergent solution stop
+   consistent q off
+   adaptive on
+   bbar stabilization factor 0.0
+   sparse stiffness output off  binary file 'eqns_file'
+c
+  compute displacements for loading test for step 10
+stop

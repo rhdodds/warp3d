@@ -1,0 +1,10 @@
+c
+c
+c   restart the 4 cpu job to solve step 3
+c
+restart from file 'restart_4.db'
+c
+ compute displacements for loading test step  3
+ output patran formatted displacements stresses
+c
+stop

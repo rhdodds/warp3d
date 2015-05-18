@@ -1,0 +1,1088 @@
+
+Summary of Recently Added or Modified Features in WARP3D
+========================================================
+
+Last update of this file: November 19, 2012
+
+For more detail, refer to the general README file.
+
+==========================================================================
+
+                      ****  Update Features/Fixes  ****
+
+November 19, 2012 (still V17.3.2)
+---------------------------------
+
+
+ o Added capability to output current temperatures
+   at nodes and at nodes of elements.
+
+   Useful when many load steps impose variable magnitude
+   temperature increments to track current temperatures.
+
+   Output command modified to provide hardcopy (formatted)
+   temperatures, Patran compatible result files for temperatures,
+   and new packets (29, 30) for temperatures.
+
+   Examples:
+
+    output temperatures nodes 1-00
+    output temperatures elements 50-100
+    output patran binary temperatures $ nodes only
+    output packet temperatures nodes 10-2 by -2
+
+
+October 3, 2012 (V17.3.2)
+-------------------------
+
+ o New feature: automatic blocking option. Until now, users
+   were required to specify the assignment of elements to blocks in the
+   input file.
+
+   The new "automatic" option for the blocking command computes
+   the assignment of elements to blocks for threads-only parallel
+   execution with the sparse direct or sparse iterative solver.
+
+   The command has the form
+
+      blocking ( automatic ) (size = <integr> ) (display)
+
+    Examples:
+
+      blocking automatic
+      blocking automatic display
+      blocking automatic size = 64 display
+
+    The default block size is the maximum size defined in the
+    param_def file in the src directory (set currently to 128).
+
+    For threads-only execution, we expect users will always choose
+    this option.
+
+    Threads-only execution is available on Windows, Linux and Mac OS
+    versions of WARP3D.
+
+    For MPI+threads execution available on Linux, users must continue
+    to provide assignments of elements to blocks and blocks to domains.
+
+    The EBE preconditioned conjugate gradient solver requires
+    "vectorized" blocking in threads-only execution. The
+    automatic blocking option does not produce "vectorized"
+    blocking. Users will need to continue providing the block
+    assignments.
+
+ o New feature: non-threaded UMAT routines. WARPP3D expects user-provided
+   UMAT and supporting routines to be written in a thread-safe
+   form. If this cannot be done, WARP3D must execute blocks
+   of elements referencing the UMAT in a separate serial
+   (1 thread) loop.
+
+   The nonlinear analysis parameters has a new option to
+   request this feature
+
+      nonlinear analysis parameters
+         ...
+         ...
+         threads for umat 1
+         ...
+   Where the default number of threads for executing the UMAT is
+   the number of threads assigned to WARP3D.
+
+   See additional discussion in Appendix J, Section 8.
+
+
+
+
+September 16, 2012 (V17.3.1)
+------------------------
+
+ o A user_nodal_loads routine may not be defined in the umats.f file.
+   The model input requests use of the routine rather than using
+   sometines lengthy definition of nodal forces and temperatures.
+
+ o The UMAT interface and crystal plasticty model(s) require the
+   deformation gradients [F] at material points. A mean-dilatation approach
+   is now used to form [F] for the 8-node hex element.
+
+ o Displacement extrapolation now verifies the proportionality of the
+   incremental loading ofor the current step with the prior step.
+   If not proportional, the extrapolation using a single
+   scale factor on the displacement vector is incorrect. The
+   soltuion procedures temporaily suspend extrapolation for the
+   step.
+
+July 6,2012 (V17.3)
+------------------------
+
+ o WARP3D now fully supports UMAT routines developed originally to interact
+   with Abaqus (Standard). The calling sequence has a few additional
+   parameters at the end to pass WARP3D specific information that the UMAT
+   developer may wish to have. But otherwise, an existing UMAT runs "as is"
+   when included in a build of WARP3D. This capability runs on Linux, Windows and
+   Mac OSX. To compile/link the UMAT to WARP3D, the computer must have the Intel
+   Fortran Compser XE software installed. See WARP3D USER Manual and the
+   README fiel for each specific platform.
+
+ o A major, internal change in the solution process and data structure
+   has been implemented to better support the imposition of non-zero
+   displacements and non-zero temperatures in a load step.
+   The WARP3D input commands are not affected by this change.
+   Our testing reveals generally better convergence rates of the global
+   Newton iterations (often much better) and less path dependence in
+   some analyses with extensive material damage (e.g. the Gurson model).
+
+ o The driver/setup for the hypre solver in MPI + OpenMP execution now includes
+   a stiffness assembly process that is distributed across the MPI ranks. This reduces
+   memory use on rank 0 and provides some increased efficiency. No changes
+   were made in the user input commands to invoke the hypre solver.
+
+ o Additional conssitency checks have been added throughout the code during the
+   implementation of the changes above. These checks verify the status of internal
+   variables and arrays at various points in the solution for increased code reliability.
+
+January 10, 2012 (V17.2)
+------------------------
+
+ o A new feature to define "named" lists of nodes and elements.
+   Several convenient means to construct the lists are available,
+   e.g., list of all nodes on a cylindrical surface, on a plane, etc.
+   Named lists may be used in all WARP3D input commands where ever
+   an <integer list> is required. See new manua section at end of Chapter 2.
+
+ o Lines beginning with # or ! are now also treated as comment lines. Lines
+   beginneing with c or C followed by a space continue to be treated as
+   comment lines. Blanks lines are are ignored by the input translators.
+
+ o A convenicence feature to simplify use of Abaqus-based input.
+   WARP3D and Abaqus hex-8 and hex-20 elements have the same node numbering
+   scheme (so do tet elements). For face loadings, WARP3D faces
+   1-3 and 6 are the same as in Abaqus. Faces (4,5) in WARP3D are
+   numebred (5,4) in Abaqus. The "face" loading input commands
+   in WARP3D now have an optional keyword "abaqus" after the word
+   "face". WARP3D converts Abaqus face numbers into WARP3D face numbers.
+
+   Also include the "abaqus" option after the keyowrd face in the
+   "surface" command to provide the same convenience.
+
+ o The "verification" directory continues to expand with test problems
+   to reflect new code features.
+
+
+December 13, 2011 (V17.1)
+-------------------------
+
+A number of new features, fixes, updates.
+
+ o We've moved the WARP3D distrubution to the Google Code projects
+   http://code.google.com/p/warp3d/
+   and adopted the NCSA Open Source License. These steps make the code
+   now "completely" open source with no restrictions on use, modification
+   or re-distrubition.
+
+ o A new feature called "tables" implemented with the Table command.
+   See Section 2.14 of the User Guide. General capability now
+   and for future to define large 2D tables of floating point
+   data values for use in various aspects of model definition.
+   For now, tables are used to define parameters for "piston"
+   loading on surfaces of solid elements.
+
+ o Piston theory loadings for surfaces of solid elements. In research
+   work for Air Force projects, we need to define unsteady pressures
+   on the surface of solid elements that model airfoils subjected to
+   high Mach number flight. Piston theory provides a simplified
+   (quasi-1D) model to estimate local pressures (center of element surface)
+   for the current velocity of the surface and orientation relative
+   to airflow direction. The piston pressures are time varying and
+   strongly depedent upon instantateous motion of the element surface.
+   The availability of piston loadings can eliminate costly &
+   inconvenient coupling/iterations between structural analysis and
+   separate loading programs in large-scale simulation work.
+   See Section 2.14 (table command) and the loading sections for
+   hex and tet elements in Chapter 3.
+
+ o Element loadings now processed in parallel. At the beginning of each load
+   (time step), the equivalent nodal forces must be computed for the
+   defined pressures, tractions, body forces etc. defined on elements
+   in the model. This computational process is now executed in thread
+   parallel.
+
+ o The model solution time is now output with messages issued about
+   completion of the solution for loads steps. Model solution
+   time the integral of the user-specified time increment, dt, specified
+   in nonlinear solution parameters.
+
+ o Various messages issued during solution displayed the cpu time consumed
+   by the code to that point in execution. With nearly all analyses
+   running now in parallel, these messages have been changed to display
+   elapsed wall-clock time since the start of execution.
+
+ o The verification directory continues to expand with an increased number
+   of analyses that exercise capabilities in the code and to compare
+   analysis results with known correct values from earlier code versions.
+   Use the run... Bash shell scripts to get started using features
+   of this very convenient directory.
+
+
+
+
+August 24, 2011 (V17.0)
+-----------------------
+
+There are many updates and improvements in this version.
+We prepared a separate file: README_major_updates_v17.
+
+December 16, 2010 (V16.3.1)
+---------------------------
+
+ o Add the Paulino-Park-Roesler nonlinear, mixed-mode formulation
+   to the cohesive material model. This formulation correctly models
+   mixed-mode traction-separation and supports independent
+   control of the initial (linear) stiffness
+   Section 3.8 of User Manual on the "cohesive" material model
+   completely re-written (reference to journal paper on the PPR
+   model included).
+
+ o Driver code to run the PARDISO sparse direct solver (i.e., the Intel
+   MKL) solver completely re-written to leverage their new interface.
+   We now have initial capabilities to use the PARDISO Krylov-subspace
+   iterative solver as a replacement for the PARDISO direct solver.
+   More testing is underway to determine if this should become
+   a widely used option. The command to select the iterative solver
+   is: solution technique direct sparse iterative (See User Guide,
+   Section 2.10.1)
+
+ o The binary packets capability has been updated to include new
+   data to support the PPR cohesive capability. Packet types 7, 10
+   updated. Appendix F has been updated to reflect these changes.
+
+ o Manual Section 3.3 on Interface elements for use with the cohesive
+   material models has been re-written for improved clarity.
+
+ o Crack growth processors for models with cohesive elements are updated
+   to correctly
+
+July 10, 2010 (V16.2.7)
+-----------------------
+
+ o New feature added to domain integral input and computation.
+   Users may now specify the tangent vector to the crack front
+   at the node where the J-value is computed. This
+   removes domain dependence of J-values observed when the
+   crack front mesh forms a kink angle, for example, at
+   symmetry planes and the free surface. At interior nodes
+   along the front, the current procedure of automatic computation
+   of the tangent vector is fine. See updated manual section 4.4.
+
+   Update test files: fracture_models/SCT/domain_001, domain_021
+                                     /corner_at_hole/get_j_values
+
+   Fixed longstanding bug of using wmpi_send_flag in J-integral code. Deleted
+   use and replaced with standard wmpi_redlog. Enabled restoration of -O2
+   levels in didriv.f and dicmj.f on Linux.
+
+February 22, 2010 (V16.2.6)
+---------------------------
+
+ o Additional checking of domain definitions added to
+   input routines. Now look for repeated nodes in the
+   front node sets for finite strain computations
+
+ o Additional error cehcking added for "patwarp"
+   translator code.
+
+ o Intel ifort compiler change on Windows (to .054) required
+   mods to threaded version of assem-by-row. Compiler handling of
+   thread-private variables now handled directly by our code.
+
+January 14, 2010 (v16.2.5)
+--------------------------
+
+ o A bug was found and fixed for : Gurson cell element extinction using
+   a specified number of load steps to release the forces element nodes
+   when the element is killed.
+
+   The code was reducing the forces every iteration instead of every step.
+   This now fixed.
+
+   In prior code versions, adaptive load stepping triggered by
+   large porosity changes was permitted during the process of releasing
+   forces on killed elements. This has been turned-off.
+
+   The growth by element extinction code provides the capability to
+   decrease the user specified load step sizes to control the porosity
+   changes between load steps. When the load step size has been reduced by
+   this process, and the porosity changes remain low, the code will start to
+   ramp up the loads in steps to increase the porosity changes dureing load steps.
+   The manual syasy the multipler is 2.0 on the rate of increase in oad steps size.
+   The code has been using 4.0 - not 2.0. The 2.0 value has been re-instated
+   in the code.
+
+December 30, 2009 (v16.2.4)
+---------------------------
+
+ o A new direction "verification" added at highest level of distribution
+   directory. Has a bash shell script to assist in running example
+   analyses after installation.
+
+   See the "verification" section of the main README file.
+
+
+December 13, 2009 (v16.2.4)
+--------------------------
+
+ o The initial port to Mac OS X (Intel hardware) is complete. The code is up and
+   running with threads. patwarp w/o Metis is also running. Initial testing shows the
+   code is stable. Further testing in progress.
+
+ o The Mac version runs from the Terminal program (bash shell) almost identical to the
+   Linux version.
+
+ o New files in src, patwarp and READMEs in distribution level. New directories for
+   the object code and executables have mac_os_x in names.
+
+ o A sample bash script for Mac OS is included in the top level distribution
+   directory.
+
+
+December 5, 2009 (v16.2.3)
+--------------------------
+
+ o The PCG solver now runs thread parallel for the threads only
+   and MPI+threads versions. Windows (trheads only). Linux (threads only
+   and  MPI+threads).
+
+ o The interactive input questions for patwarp have been
+   updated to correctly reflect blocking requirements with these
+   new features:
+      PCG in threads only: vectorized blocking req'd
+      PCG in MPI+trheads: scalar blocking req'd (eventually will
+        require vectorized as well)
+
+ o Manual Sections updated: 2.6 (blocking), 2.10 (equation solvers),
+   7.1, 7.2, 7.6 (parallel execution)
+   Appendix C (parwarp)
+
+
+November 24, 2009 (v16.2.2)
+---------------------------
+
+ o All element computations based on "blocks" now executes in fully parallel
+   model using threads on Windows and Linux systems. The threaded execution of
+   blocks also applies to MPI based executions on Linux systems.
+
+September 29, 2009 (v16.2.1)
+----------------------------
+
+ o Much of the asembly process has been made to execute in thread
+   parallel. The equilibrium equations are assembled equation-by-
+   equation in WARP3D. This makes possible the independent assembly
+   of rows via threads. Repeated Newton iterations with the
+   same mesh structure (i.e., between crack growth increments) thus
+   benefits from this efficiency enhancement.
+
+September 17 , 2009 (v16.2.0)
+-----------------------------
+
+ o Updated mm05.f (cyclic plasticity) model to include
+   a new option: generalized_plascity - this option provides
+   for a user-specified non-zero terminal slope of the uniaxial
+   cyclic response.
+   The earlier model had only a Frederick-Armstrong behvior which
+   provided nonlinear kinematic hardening with zero terminal slope
+   in uniaxial loading.
+   Section 3.10 of user manual replaced with updated version
+   test_59 and test_60 problem sets in example_problems_serial
+   now replaced with several test problems for options
+   of the updated cyclic plasticty model.
+
+ o The Windows and Linux versions now use thread-based
+   parallel exeuction to process blocks of elements for stiffness,
+   strain, stress and internal forces. The effectiveness of parallel
+   execution is very high since each thread processes an entire block.
+
+ o Windows versions are now provided/supported for 32 and 64 bit hardware.
+   The Linux code supports only 64-bit hardware and in threaded-only and
+   MPI + threads versions.
+
+
+July 8, 2009 (v16.1.2)
+-----------------------
+
+ o Increased the number of front nodes allowed in the definition
+   of a domain for domain integral computations. Now = 200 nodes.
+   Number of front node "sets" for domain definition with an initially
+   blunted tip also increased to 200. Added additional checking code to
+   prevent overlows of these lists.
+
+   Included mm09.f as an additional UMAT set-up for user defined
+   material consitutive model. mm08 also provides the same capability.
+   mm09.f will soon be replaced by an anisotropic plasticity model
+   for aluminum alloys.
+
+
+June 28, 2009 (v16.1.1)
+-----------------------
+
+ o Intel released a new F90 compiler version 11.1.038 and a new
+   version of the MKL library 10.2 update 1.
+   The MKL update (1) fixes several annoying bugs that WARP3D
+   found in the previous release, (2) now runs theraded parallel
+   during the reordering process and all during out-opf-core
+   solutions. 10.2 continues the success in reducing memory
+   use of the Paradiso solver in MKL.
+
+
+June 15, 2009 (v16.1)
+---------------------
+
+ o The MPI code now is MPI + OpenMP + MKL
+   sparse solver. The user sets the number of MPI processes,
+   the number of OpenMP threads per MPI process and the
+   number of threads on root process for the MKL sprase solver
+   when it is used.
+
+   The sample warp_script_mpi_linux sets up to run a job in
+   this mode
+
+   Over the coming year, most of the key computations sections will
+   have the OpenMP "turned on" to process blocks of
+   elements with threads.
+
+   MPI still has Linux only support.
+
+ o The prior version called "serial" actually was threaded parallel
+   but only in the sparse solvers. OpenMP is being used now gradually
+   to prcess blocks of elements with threads in addition to the
+   sparse solvers running in parallel.
+
+   We now call this version the "omp" version.
+
+
+April 15, 2009 (v16.0)
+----------------------
+
+ o Support now for 64-bit Windows (XP/Vista/Windows 7)
+ o Drop support for all 32-bit Linux
+ o Drop support for all Unix systems
+ o Maintain support for SGI Altix (really Linux)
+ o Linux/Windows systems now use the Intel F-90 compiler 11.0
+ o Linux/Windows systems now use teh Intel MKL sparse solver library
+ o Out-of-core sparse solvers now available on Linux and Windows
+
+
+March 19, 2008 (v15.9)
+----------------------
+
+ o Changed build process for SGI Altix supercomputers. User can now choose
+   whether Intel Math Kernel Library is installed. If so, code links
+   dynamically with current MKL version on the machine. If not, build script
+   links with distributed MKL libraries (which may or may not be compatible
+   with the system).
+
+ o Minor bug fixes implemented.
+
+
+
+April 1, 2007 (v15.8)
+---------------------
+
+ o Support for outdated computer platforms removed. WARP3D now supports
+   execution only on the following platforms:
+
+   - HP Itanium-2 and Higher Systems Running HPUX 11.xx
+   - SGI Altix Systems Running SGI Linux
+   - AMD64 and Intel EM64T Systems Running Linux
+   - Intel IA-32 and AMD Systems Running Linux
+   - Intel IA-32 and AMD Systems Running Win2k/WinXP
+
+ o Changed the build process for Windows computers. The build process on
+   Windows uses a new "Makewarp.bat" batch file. Support for building
+   WARP3D on Windows with UNIX-like toolkits (MKS and Cygwin) has been
+   removed.
+
+
+January 9, 2007
+---------------
+
+ o Added a new script to build WARP3D executables, "Makewarp.bash". This
+   script, which uses bash (shell) syntax, replaces "Makewarp.ksh" which used
+   outdated k-shell syntax.
+ o Increased hard-coded limits on automatic domains for I-integral
+   calculations.
+
+
+June 20, 2006
+-------------
+
+ o New "convert" high-level command converts the binary packet file
+   to an ASCII-formatted text file for increased portability between
+   computer architectures.
+ o Code streamlining - removed obsolete CRAY architecture support and
+   corresponding BCS solver support.
+
+
+February 27, 2006
+-----------------
+
+ o Complete port to AMD64 (Intel EM64T) machines running Linux. Includes
+   serial, MPI-parallel and fast sparse solver from Intel.
+ o Changed Windows compiler from the obsolete Compaq Visual Fortran 90
+   compiler to the Intel Fortran Compiler v9.0.
+ o In addition to the MKS toolkit, users can now use the freely available
+   Cygwin toolkit to compile WARP3D on WinXP/Win2k. Users must still have
+   the Intel Fortran compiler 9.0 and the Intel Math Kernel Library 7.0
+   in order to compile via Cygwin and run WARP3D on Windows.
+
+
+November 3, 2005
+----------------
+
+ o Complete port to SGI's new "Altix" Itanium-2 based supercomputer that
+   runs Linux (includes serial, MPI-parallel and fast sparse solvers from
+   Intel)
+ o A number of small fixes to eliminate infrequent errors in the
+   the compiling script
+ o Fix for packet 28 (I integrals) in the binary packets system
+ o Patches in scripts to install sparse solver to make install
+   process more robust
+ o Array sizing problem in patwarp for v. large models
+ o Correct handling of interface-cohesive elements in Patran result files
+
+
+September 12, 2005
+------------------
+
+ o SGI has a new series of multi-processor computers built
+   using the Itanium-2 processors (same as HP). The OS is SGI's
+   version of Linux. The Intel compilers and MKL libraries for
+   Itanium are used to build the WARP3D executables.
+
+
+May 1, 2005
+-----------
+
+ o The first version of WARP3D for Linux is now included in the
+   standard distribution. The Linux version is built using the
+   Intel Fortran compiler (8.0) and the Intel MKL (7) math
+   library. This initial Linux version supports single and multiple
+   cpu computers in 32-bit mode (IA-32). The sparse direct solver from
+   the Intel MKL library runs in parallel if the machine has multiple
+   and/or dual core cpus. The remainder of WARP3D runs in serial mode.
+   The Linux version running PCs is *very* fast.
+
+March 16, 2005
+--------------
+
+ o The J-integral code to support temperature dependent nmaterial
+   properties has now been implemented. Several other bugs with
+   temperature dependent solutions have been resolved. All code
+   for temperature dependent material properties has now
+   been through more complete verifiication.
+   in the newly rele
+
+
+September 30, 2004
+------------------
+
+ o Windows PC version. We have replaced the sparse (direct) solver in the
+   CXML library (from Compaq-Digital) with the Paradiso sparse solver
+   in the newly released Intel Math Kernel Library (7.). For larger
+   sets of equations (>20,000), the MKL library is a factor of 3 faster
+   during factorization. Memory usage does not change compared to
+   the CXML solver
+
+ o A number of bugs in the initial realease of the mesh-tieing
+   capabilities have been fixed
+
+
+March 20, 2004
+--------------
+
+ o User defined multi-point constraints (MPCs) are implemented. Supported by
+   all sparse direct solvers
+
+ o Mesh-tieing via MPCs. Users define pairs of surfaces made up of
+   element faces. WARP3D automatically constructs all the MPCs to
+   "tie" the meshes together. Pair surfaces must have compatible
+   geometry but the meshes on each side may differ topologically,
+   including mixes of hex-tet elements. Resulting MPCs supported by
+   all sparse direct solvers.
+
+ o Advanced cyclic plastcity model based on the Frederick-Armstrong
+   formulation that offers combined (nonlinear) isotropic and kinematic
+   hardening
+
+ o All new domain interaction integrals to compute SIFs and T-stresses
+   for linear-elastic materials (homogenous and FGMs). Especially powerful
+   for 3-D mixed-mode crack loading.
+
+ o Continued redesign of internal data structures to reduce virtual address
+   space during solutions
+
+ o Our "patwarp" translator program to convert Patran neutral files
+   for a FE model now support MPC equations create in the Patran model
+
+ o Refer to Revision History pages at beginning of User Manual for
+   specific locations in updated manual that describe the new features.
+
+
+June 18, 2003
+-------------
+
+ o New material model, mises_hydrogen, is now available in the code.
+   This model extends the mises model to include the effects of
+   solute hydrogen on the flow properties. See new Section 3.9 of the
+   User Manual for a complete description. The model was implemented
+   by Dr. Yueming Liang.
+
+ o Fixed a bug in the J-computation for face loading on collapsed
+   crack front elements
+
+ o Added the "validation" report (pdf format) on J computation in
+   WARP3D from Structural Reliability Technology (Boulder, CO) to the
+   standard distribution
+
+ o Additional parameter passed to material model routines to indicate
+   if associated elements are killed
+
+
+May 28, 2003
+------------
+
+ o The IBM SP-x version has been upgraded to compile-load in 64-bit
+   mode. This removes the 2 GB address space limit.
+
+ o Other minor bug fixes throughout (see fix_update_log directory).
+
+
+October 7, 2002
+---------------
+
+ o HP Itanium 2 systems running HP-UX 11.x are now supported. The
+   Makewarp.ksh in the src distribution directory offers to build
+   WARP3D on this platform. MPI parallel execution and MLIB sparse
+   solver are supported. pat_combine and patwarp build for this
+   platform as well.
+
+July 1, 2002
+-------------
+
+ o  Support for HP-UX 10.x systems has been dropped.
+
+ o  The deformation plasticity model has been enhanced to support
+    (1) functionally graded linear and nonlinear materials, (2) imposed
+    thermal loadings. Section 3.4 re-written to describe new features
+
+ o  The code to process crack face tractions for J-integral
+    computations has been improved: (1) both +,- faces can
+    be loaded, (2) thermal + face loading can now be modeled,
+    (3) J-values are now more accurate
+
+ o  An new option has been added in crack growth by node release. This
+    feature supports release at crack fronts on demand by the user
+    without an actual CTOA criterion. This enables more convenient
+    analyses of fatigue crack growth, for example, where no real
+    CTOA criterion is needed. Manual Section 5.3 discusses this
+    new feature.
+
+ o  The processing of deformation dependent element loads has been
+    corrected (face tractions, face pressures). Manual Section 1.6
+    has anew discussion.
+
+ o  A summary of actual applied loading defintions is now printed after
+    each load step. The crack growth processors often change the
+    amplitudes of the user specified loading patterns in load steps.
+    The new table shows the accumulated multiplier values actually
+    used through a load step.
+
+ o  Nine new packet types have been added to the binary packet file
+    system. The new packets support output of crack growth information.
+    See Appendix F.
+
+March 1, 2002
+-------------
+
+ o  Tetrahedral elements (tet4 and tet10) are available for general
+    use. See manual section 3.2.
+
+ o  Patwarp supports the tet elements including loads applied
+    to surfaces of tet elements. See manual Appendix C.
+
+ o  The modeling capabilities for FGMs have been extended to include
+    elastic-plastic response. The "bilinear", "mises" and "gurson" material
+    models support this new capability. See manual Sections 2.2, 3.5 and
+    3.6.
+
+ o  The J-integral procedures now recognize functionally graded materials
+    and compute the additional terms required for path independence.
+    New manual section 4.5 and updated section 4.4.
+
+ o  All linear displacement elements now have temperatures and
+    FGM properties averaged to define constant values within
+    elements. This helps prevent shear locking.
+
+ o  Mises equivalent stress and strain values in Patran result
+    files are now more consistent (computed once nodal average
+    values of the components are obtained).
+
+ o  The WSSMP sparse solver from the Univ. of Minn. and IBM Research
+    Labs is now supported in WARP3D. This solver is very fast on
+    RISC_6000 and SP-x computers. See the new ibm_solver_dir for all
+    details.
+
+ o  We have extensively modified the data structures used for storage
+    of loading definitions. This enables definitions of hundreds of
+    loading conditions without excessive memory allocation. The
+    virtual address size at program startup has been reduced by 20 MB.
+
+ o  We've included a new directory (pat_movie) that contains detailed
+    instructions and a program to automate the process of making
+    movies of WARP3D results using Patran.
+
+
+April 21, 2001
+--------------
+
+ o  Two new interface elements for fracture modeling are now available.
+    They are trint6 (linear triangle) and trint12 (quadratic triangle).
+    Both elements are isoparametric, support large displacements and use
+    the cohesive material model. See Section 3.2.
+
+ o  A new feature to better handle normal compression in the
+    interface-cohesive elements is now implemented. The user can set the
+    compressive normal stiffness independent of the tensile stiffness.
+    See Section 3.7
+
+ o  Some bugs were fixed in the interpolation of FGM material properties
+    specified at model nodes.
+
+ o  A bug was fixed in patwarp which falsely indicated an error for transition
+    elements.
+
+March 15, 2001
+-------------
+
+ o  Compaq/Dec has provided us with an early release of
+    their sparse direct solver for W95/98/NT/2000 computers.
+    The solver is included in the supplied executable
+    for these platforms. The CXML solver provides
+    4-5 x better performance on large models than the
+    generic sparse solver. For both the PC and Alpha
+    CXML solvers, we have switched to use the
+    L-D-L(T) factorization (rather than Choleski) to
+    allow indefinite matrices (negatives on diagonal).
+    This can occur with the Gurson material model.
+
+ o  The number of loading conditions (or patterns) has
+    been increased to 200.
+
+ o  J-integral computations with crack face loadings now work
+    properly with collapsed front elements with unique nodes
+    (keyhole model) and repeated nodes (used for linear analysis).
+
+ o  HP has provided us with an early release of their new MLIB
+    solver for HP-UX 11.x computers (single and multi-processor).
+    This solver provides additional speed ups compared to
+    the previous version for serial and much improved
+    parallel performance.
+
+ o  We have implemented our first general capabilities
+    to support functionally graded materials for linear
+    analyses. Material property values E, nu, rho and alpha
+    may be specified at model nodes. Elements interpolate
+    material data from nodal values.
+
+ o  The bilinear plasticity model for cyclic plasticity
+    has been enhanced. All aspects of the material response
+    may vary with temperature. The code uses a newly devloped
+    closed form algorithm to resolve the temperature
+    dependent consistency equation (very fast).
+
+ o  We have implemented a new scheme for output to simplify
+    post-processing. The concept uses "packets" of output
+    written to an unformatted, sequential file similar to the
+    packets concept used in Patran neutral files. Some
+    15 packet types now exist with more added frequently.
+    A sample F-90 program is supplied to illustrate reading/
+    processing binary packet files.
+
+
+The new features are supported on all platforms and run
+fully in parallel.
+
+
+Novemmber 10, 2000
+------------------
+
+ o A new, faster sparse direct solver is now automatically included
+   in the PC version. This solver is part of the Compaq-Dec "CXML"
+   product for Wintel platforms. The solver is selected inside a
+   WARP3D input file using: solution technique direct sparse pc
+
+ o The bilinear and mises material models have been re-vamped to
+   correctly handle temperature dependent response of the
+   modulus, poisson's ratio, hardening characteristics, yield stress
+   and isotropic thermal expansion. The stressupdating algorithms are
+   very robust in the presence of temperature dependent response.
+   Section 3.4 of the user Guide has been greatly expanded to describe
+   the thermoplasticity formulation and numerical implementation.
+
+ o We have been planning the implmentation of a new type of
+   output capability in WARP3D. The purpose is to make
+   development of user customized post-processing programs to
+   search through computed results much easier.
+
+   This new capability creates (at the user's request) a binary
+   file comprised of self-contained "packets" of
+   output information. The concept follows closely the design
+   of Patran's neutral file for analysis models.
+
+   We plan to implement 20 or so packet "types" initially
+   with various kinds of information in each packet.
+
+   The packets have different formats except for the first
+   file record for all packets. The first file record
+   is identical for all packets and has this information:
+
+       <packet type> <no. addtl records> <step> <iter>
+
+   The uniform header record for all packets includes the number
+   of subsequent file records for the packet. This enables
+   post-processing programs to simply skip over
+   the packets in which they have no interest or cannot
+   process. New types of packets can be added at any time
+   without affecting the performance of any older
+   post-processing programs which read the packets file.
+
+   As a specific example, packet type 001 stores the computed
+   displacements for one or more nodes. In this case, the
+   number of additional file records for the packet given
+   in the header record represents the number of nodes
+   at which displacements are provided. Each "dta" record for the
+   packet contains:  <node no.> <u> <v> <w>
+
+   The user controls the creation of a binary packets file
+   with the new command provide in the "nonlinear solution
+   parameters", i.e.,
+
+      nonlinear solution parameters
+       .
+       .
+         binary packets on file 'weld_model.packets'
+
+
+   where the user specifies the packet file name to b
+   used. All packet output is terminated using the off
+   option in the command:
+
+   The binary packets file is always opened in 'append'
+   mode when the ..packets on .. command is given
+   and during analysis restart (the restart file retains
+   the packets file name and the on/off flag.
+
+   The initial implementation provided with these fixes
+   inclues command parsing, new variables in the main
+   module for the packet file name/device number, saving
+   packet file id in the restart file, re-opening the
+   packets file during restart and output o a few packet
+   types in the code during analyses.
+
+
+September 18, 2000
+------------------
+
+ o  New, very fast serial and parallel sparse solvers are now
+    included in the Dec-Alpha version. Dec just recently released a
+    sparse solver library (CXML) for Alphas and WARP3D now uses that
+    serial and parllel solver. WARP3D now runs serial, MPI only and
+    mixed MPI and thread parallel on Alphas. The Makewarp.ksh
+    script guides you to include the CXML solvers.
+
+ o  Several data structures have been revamped in the code allowing
+    an increase to 100 in the number of loading cases or patterns.
+
+ o  Final versions of the makefiles to build WARP3D on HP-UX 11.x
+    systems are now included. The HP (MLIB) sparse solver for
+    11.x systems is now used supporting parallel execution on
+    11.x computers. The Makewarp.ksh script guides you to include the
+    HP (MLIB) sparse solver in the building process.
+
+ o  The following manual sections have been revised:
+
+         1.1, 2.8, 2.10, 3.2, 7.1, 7.2, 7.6, 7.8
+         header pages at front of document including the toc
+
+May 12, 2000
+------------
+
+ o  new nonlinear material modeling capability for solid elements
+      a) temperature dependent modulus, poisson ratio, alpha and
+         flow curves for use with bilinear, mises and gurson
+         plastcity models
+      b) general strain-rate dependent flow curves for use with
+         mises and gurson material model.
+
+      See sections 2.2, 3.3-3.6 of manual for new features.
+      look at test problems test_18a,b,c,d,e for examples of
+      crack growth analyses using materials with new temperature
+      and strain-rate dependent properties
+
+ o  the interface elements (8-node) introduced in the previous
+    release to support general 3-D, mixed-mode crack growth
+    now have geometric nonlinear capability. See manual Secton 3.2.
+
+ o  beta release of makefiles and building procedure for HP-UX
+    11.0 to support parallel (J) series workstations
+
+ o  Exemplar computers deleted from supported list.
+
+ o  Consdierable cleanup and reorganization fo code that drives
+    material models
+
+March 1, 2000
+-------------
+
+ o  first implementation of interface elements and associated
+    linear/nonlinear cohesive constitutive models. these features
+    add a new class of crack growth modeling capability
+    see section 3.2, 3.7 and 5.4 of User Guide for the new features
+
+ o  simplified input of nodal constraints for all nodes that lie
+    on a specified plane in the model. se Section 2.7 for description of
+    new features of the constraints input
+
+ o  initial conditions present in the model at time = 0 may be specified
+    for the nodes. displacements, velocities and temperatures may be
+    prescribed.
+
+ o  improvements in the energy output file. energy in killed elements now
+    listed separately. interface-cohesive element contributions included.
+
+
+August 18, 1999
+---------------
+
+ o   Major cleanup of Patwarp completed by Jason Petti. The user
+     interface is now more consistent, uses better default values,
+     and asks fewer questions.
+
+ o   Bugs have been fixed in the routines to build Patran result
+     files when using parallel execution. Using 32 cpus, for example,
+     the patran nodal stress file for a load (time) step is built
+     as 32 separate files then combined into a ingle file by the
+     pat_combine program. This process has been substantially
+     improved. Patran result files for serial and parallel execution
+     are now in agreement.
+
+ o   Makefiles have been updated to support MPI based parallel execution
+     on Dec Alpha Servers and Clusters.
+
+
+June 28 1999
+------------
+
+
+ o  This version of WARP3D provides a highly efficient, parallel
+    implementation of the Hughes-Winget (EBE) precondiitoner
+    using MPI. With this task completed, the parallel version of
+    WARP3D using MPI is effectively finished. All parts of the
+    main computation loop now run parallel via MPI. We continue to
+    improve parallel performance by tuning communication stratagies.
+
+ o  The Hughes-Winget preconditioner no longer requires "vectorized"
+    element numbering for serail or MPI analyses.
+
+ o  The thread-based, (sparse) direct solver provided by SGI and
+    by HP can now be used in the same run with the MPI version
+    of WARP3D. WARP3D
+    suspends execution of the "worker" MPI processes while the threaded
+    solver process executes in parallel. The worker processes resume
+    computation when the threaded solver completes. This process is
+    crucial to efficient operation on computers with a small number of
+    processors (otherwise the MPI workers continue to use cpu resources
+    while waiting).
+
+ o  A complete new adaptive procedure has been implemented to control the
+    load step sizes during crack growth analyses with the Gurson model.
+    The adaptive procedure limits the level of porosity increase over
+    each load step to a user prescribed % of the critical (fe) value.
+    This new feature greatly simplifies crack growth analyses.
+
+ o  Output values and formatting at the beginning of each load step
+    in a Gurson crack growth analysis has been improved siginifcantly.
+
+ o  Anisotropic thermal expansion coefficients can now be specified
+    outside of the material definitions. This was implemented to support
+    our growing use of eigenstrain methods to model residual stresses in
+    welds. The eigenstrains are imposed through anisotropic thermal
+    expansion coefficients and a uniform temperature change on the model.
+
+ o  The assmembled stiffness matrix in the format commonly used by
+    sparse direct solvers can now be output to support exploration
+    of new solvers.
+
+ o  During parallel execution, partial Patran result files are now
+    written by each processor. This eliminates the communication
+    to bring all results back to the root process for output. The
+    partial result files are combined back into a single result
+    file for each type of result for each load step using
+    the new program pat_combine provided in this distribution.
+
+ o  Constraints may now be specified as a loading "pattern" in
+    nonlinear analyses. The requirement for a "dummy" loading pattern
+    to accomplish displacement control loading has been eliminated - yeah !
+
+ o  The example problems directory is now separated into 2 directories;
+    one for serial problems and one for parallel problems.
+
+ o  Hex elements collased into wedges with repeated node numbers
+    in the incidences are now properly included in the solution.
+
+ o  The following manual sections have been updated:
+
+        All Preface pages
+        1.2,
+        2.4,5,6,9,11,12
+        4.1,2,3,4
+        3.3
+        All section of Chp. 5
+        All of Chp. 7
+        Appendix C
+        New Appendix E
+
+
+
+
+October 3,1998
+----------------
+
+ o  This version of WARP3D provides parallel execution through
+    the message-passing protocol MPI. By using MPI, this parallel
+    implementation is portable to most parallel platforms.  In most
+    of the code, a partial data decomposition is used, where element
+    data is distributed among processors, while most nodal
+    data remains on the root processor.  Execution
+    follows a master-slave approach, where the root processor
+    drives the solution process and calls slave processors in regions
+    where parallel execution is supported.  All element operations,
+    including element stiffness calculations and stress-strain resolution,
+    are conducted in parallel, while most vector operations are
+    serial. The conjugate gradient solver operates completely in
+    parallel, with full data decomposition.  In this version,
+    only the diagonal preconditioner operates in parallel. The
+    other solvers execute in serial; WARP3D gathers the element
+    data back to the root processor before calling the solver.
+    The SGI sparse solver still operates in parallel, but all data
+    must be gathered back to the root processor before the
+    solver is called.
+
+    Only one source code is need for both serial and MPI parallel
+    versions.  The key MPI routines and the MPI version of the
+    LNPCG solver are stored in mpi_code_dir, along with scripts
+    which install the proper code files into the source directory.
+    Information about compiling parallel and serial versions is
+    contained in the src/README file and in mpi_code_dir/README.
+    More details about the parallel implementation and how
+    to run WARP3D in parallel are provided in chapter 7 of the
+    users manual.
+

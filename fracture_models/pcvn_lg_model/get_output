@@ -1,0 +1,12 @@
+c
+c
+   output displacement node 32 16031 281 $ Load_line point
+ output packets displacements 32 16031 281 
+c
+c
+c
+ output totals only reactions    11   12  169  170  171  172  173,
+  174  175 7215 7222 7227 7232 7237 7242 7247 7252
+ output packets totals only reactions    11   12  169  170  171  172  173,
+  174  175 7215 7222 7227 7232 7237 7242 7247 7252
+c

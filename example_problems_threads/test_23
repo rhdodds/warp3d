@@ -1,0 +1,220 @@
+c
+c
+c
+c   a test of warp3d CTOA crack growth modeling for aluminum check case
+c
+c   uses information from Jim C. Newman, Jr., which is described
+c   in NASA TM 107662 by Jim C. Newman, Jr., D.S. Dawicke,
+c   and C.A. Bigelow, "Finite-Element Analyses and Fracture Simulation
+c   in Thin-Sheet Aluminum 2024-T3 Alloy"
+c
+c   center panel with 4 in. center crack: corrected size to:
+c   1/4 symmetry model of 11.8" wide x 24" high x 0.090 in the
+c   LaRC panel tests loaded by end displacement
+c   plane stress solution
+c
+c   model uses a 0.01875 in. size elements along the
+c   crack plane. (same as Newman's analysis)
+c
+c   large displacements, large strain option
+c
+ structure panel
+c
+c  Piecewise-linear stress strain model w/ LaRC data.
+c  run with this or with the power-law mode.
+c
+  stress-strain curve 1
+      0.00482 50.24, 0.01489 57.35, 0.03922 65.00,
+      0.09531 75.35, 0.14842 82.36, 10000 1000000
+c
+  material al2024_t3
+c    properties mises e 10427.0 nu 0.30 n_power 6.7 yld_pt 50.24
+   properties mises e 10427.0 nu 0.30 curve 1 rho 0.0
+c
+ number of nodes   2720
+ number of elements  1263
+c
+ *input from test_23_coords      $ a file of all nodes
+c
+ elements
+  1-1263  type l3disop nonlinear material al2024_t3,
+          order 2x2x2 bbar center_output
+c
+ *input from test_23_incids  $ a file of all element connectivity
+c
+ blocking automatic
+c
+c    read in symmetry constraints
+c
+ *input from test_23_cons
+c
+c      imposed uniform extension across remote end. large steps
+c      to blunt tip. reduce once crack starts growing.
+c
+   1-12  v  0.00165
+c
+ loading extension
+   nonlinear
+    step 1-1000 constraints 1.0
+c
+  nonlinear analysis parameters $ really tight tolerances
+     solution technique direct sparse
+     maximum iterations 10
+     minimum iterations 2
+     extrapolate on               $ until crack growth
+     adaptive solution on
+     material messages off
+     batch messages on
+     convergence test norm residual load tol .005 max resid tol 0.1
+     nonconvergent solutions continue
+c
+  crack growth parameters
+     type of crack growth node_release
+     crack plane normal y coordinate 0.0
+     angle for release 6.1
+     angle for initiation 15.
+     force release type steps
+     release steps 5
+     print status on
+c
+   compute displacements for loading extension step 10
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 20
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+c
+  nonlinear analysis parameters
+   maximum iterations 5
+   minimum iterations 2
+   extrapolate off $  i.e., predict off] to start solution
+   adaptive solution on $ to do Newton sub-iterations if needed
+c
+c
+c       reduce size of extension increments at remote end
+c       for continued crack growth
+c
+  *input from test_23_cons
+   1-12  v  0.00010
+
+   compute displacements for loading extension step 30
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 40
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 50
+   output displacements for nodes 131
+
+   compute displacements for loading extension step 60
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 70
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 80
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+c
+   compute displacements for loading extension step 90
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 100
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   save step_100
+
+   compute displacements for loading extension step 110
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 120
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 130
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 140
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 150
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 160
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 170
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 180
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 190
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 200
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   save step_200
+
+   compute displacements for loading extension step 210
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 220
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 230
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 245
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+   save step_245
+
+   compute displacements for loading extension step 250
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+   save step_250
+c
+   compute displacements for loading extension step 260
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 270
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 280
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+   save step_280
+
+   compute displacements for loading extension step 290
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   compute displacements for loading extension step 300
+   output displacements for nodes 131
+   output reactions for nodes 1-12
+
+   save step_300
+stop

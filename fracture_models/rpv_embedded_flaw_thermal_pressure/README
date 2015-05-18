@@ -1,0 +1,49 @@
+
+
+    nonlinear analysis of RPV under complex thermo-pressure
+    transient.
+
+    research work and model described in:
+
+    Cleavage fracture modeling of pressure vessels under
+    transient thermo-mechanical loading
+
+    by Xudong Qian, Robert H. Dodds Jr., Shengjun Yin,
+       Richard Bass
+
+    Engineering Fracture Mechanics. Vol. 75, pp 4167-4189 (2008)
+
+    A533B vessel with austenitic stainless steel cladding.
+    Axial oriented embedded, elliptical flaw located near clad-base
+    interface.
+
+    2a = 17 mm ( 0.67 in )
+    2c = 102 mm ( 4.0 in )
+    d = 2 mm ( 0.079 in )
+         [ distance from clad-base interface to edge of flaw]
+
+
+    Solution units: kips, in, temps in F
+
+    Stress free temperature: 288 F
+
+    Temperature dependent material properties for base and clad
+
+    Vessel geometry, properties from generic RPV.
+    Pressure-temperature for a Pressurized-Thermal-Shock
+       from break in coolant line
+
+    Analysis using 1000 load steps to drive 250 mins
+    of the transient event
+
+    Virtual memory size ~ 8 GB
+    Estimated wall time for 1000 steps on 8-core MacPro
+    (mid-2009):  14 hours running 8 threads
+
+    input files make use of *input from ... inside other
+    *input from .. for simplicity
+
+
+    main input file is rpv_ref.inp
+
+

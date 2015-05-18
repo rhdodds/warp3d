@@ -1,0 +1,9 @@
+#!/bin/csh
+#
+#   run warp3d example problems
+#
+set list = "out_test_* "  
+foreach file ( $list )
+ echo 'File: '$file
+ grep 'solution timings' $file
+end

@@ -1,0 +1,210 @@
+c
+c
+c        very axial large extension of a single elastic-plastic element
+c        (8-node brick) followed by a rigid 90-degree 
+c        rotation (counterclockwise)
+c        about Z. This makes the initial Cauchy sigma-xx stress
+c        and the logarithmic eps-xx strain change completely to 
+c        sigma-yy and eps-yy. All other stresses = 0.0
+c
+c        the initial axial extension is imposed by a pressure
+c        over the right end. the pressure is chosen to
+c        extend the initial 10 in. long bar by 3 in. over
+c        50 uniform load steps. warp3d re-computes equivalent
+c        nodal forces for the pressure load at each step using
+c        the updated element geometry. note the small descrepancy
+c        between the total applied pressure at step 50 and the
+c        sig-x (Cauchy) stress at 50. This is the descretization effect
+c        of holding the equivalent loads fixed over each step even though 
+c        the geometry changes -- here the area over which the end pressure
+c        acts decreaes during each step. Using another 50 steps
+c        to reach 3.0 in extension would further reduce this 
+c        approximation.
+c
+c        now we hold the end pressure fixed and rotate the elongated
+c        bar by 90-degrees, counterclockwise around the Z-axis using
+c        only 3 load steps of 30-degree rotation each. a program was
+c        written (see below) to compute the delta u and delta v
+c        displacements for each node using the deformed (x,y)
+c        coordinates at step 50.
+c
+c        the strains just change by the rigid rotation. eps-xx becomes
+c        eps-yy. 
+c
+c        the initial X-only Cauchy stress becomes a Y-only Cauchy stress 
+c        at step 53 following the 90-degree rotation.
+c
+c        the warp3d large displacment algorithms use a polar
+c        decomposition of the deformation gradient to find the
+c        relative rotation over a load step. this makes the
+c        solution here insensitive to the load step size used
+c        for the rigid body rotation. 1 step for the 90-degree
+c        rotation yields the same solution
+c
+c        Note that the residual forces in tests 51-53 are essentially
+c        zero for iteration 1 (as they should be from the rigid body
+c        rotation).
+c
+c
+structure bar
+c 
+material steel
+  properties bilinear e 10000  nu 0.3 tan_e 100 yld_pt 24.0
+c 
+number of nodes 8 elements     1
+c
+coordinates $ 10 x 1 x 1 bar
+  1  0 0 0
+  2  10 0 0
+  4  10 1 0
+  3  0 1 0 
+c
+  5 0 0 1
+  6 10 0 1
+  8 10 1 1
+  7 0 1 1
+c
+elements
+  1 type l3disop  nonlinear  material steel bbar center_output
+c
+incidences 
+c          1     2     3     4     5     6     7     8  (local enodes)
+     1     5     1     3     7     6     2     4     8
+c
+blocking
+     1     1     1
+c
+ loading end_press
+   element loads
+    1 face 2 pressure -1.0
+c
+ constraints
+     plane x=0 symmetry
+     plane y=0 symmetry
+     plane z=0 symmetry
+c 
+ loading test
+  nonlinear
+    step 1-50 end_press 0.990015 constraints 0.0 $ only symmetry
+    step 51 52 53 constraints 1.0
+c 
+ nonlinear analysis parameters
+  solution technique direct sparse
+  maximum iterations 10
+  convergence test norm res tol 0.0001
+  time step 1000000
+  trace solution on 
+  extrapolate off   
+  minimum iterations 1
+  consistent q-matrix on
+  adaptive solution on
+c 
+ compute displacements for loading test step 50
+ output wide precision displacements 1 2 4 3 5 6 8 7
+ output stresses 1 strains 1
+c
+c        1st rigid rotation of 30-degrees 
+c
+constraints
+     1      u     .000000E+00      v     .000000E+00  w     .000000E+00 
+     2      w     .000000E+00 
+     3      w     .000000E+00 
+     4      w     .000000E+00 
+     5      u     .000000E+00      v     .000000E+00 
+     2 6 u   -1.74166936749790       v    6.49999856948852     
+     4 8 u   -2.18063748950336       v    6.38237741569415     
+     3 7 u   -0.438968122005462      v   -0.117621153794370     
+c
+ compute displacements for loading test step 51
+c
+c        2nd rigid rotation of 30-degrees 
+c
+constraints
+     1      u     .000000E+00      v     .000000E+00  w     .000000E+00 
+     2      w     .000000E+00 
+     3      w     .000000E+00 
+     4      w     .000000E+00 
+     5      u     .000000E+00      v     .000000E+00 
+     2 6 u   -4.75832920199062        v    4.75832920199062     
+     4 8 u   -5.07967617020172        v    4.43698223377953     
+     3 7 u   -0.321346968211092       v   -0.321346968211092     
+c
+ compute displacements for loading test step 52
+c
+c        3rd rigid rotation of 30-degrees -- total = 90-degrees 
+c
+constraints
+     1      u     .000000E+00      v     .000000E+00  w     .000000E+00 
+     2      w     .000000E+00 
+     3      w     .000000E+00 
+     4      w     .000000E+00 
+     5      u     .000000E+00      v     .000000E+00 
+     2 6 u   -6.49999856948853       v    1.74166936749790     
+     4 8 u   -6.61761972328289       v    1.30270124549244     
+     3 7 u  -0.117621153794370       v  -0.438968122005462     
+c
+ compute displacements for loading test step 53
+ output displacements 1 2 4 3 5 6 8 7
+ output stresses 1 strains 1
+c 
+stop
+c
+c
+c        program to compute displacement increments to impose
+c        the 3 rotations of 30-degrees each.
+c
+      implicit double precision (a-h,o-z)
+c
+      double precision lbar
+      dimension x0(3), y0(3)
+      lbar = 10.0 + 2.9999974935015459
+      hbar = 1.0 -0.1220637512347598
+      pi = 4.0 * atan(1.0d00)
+      x0(1) = lbar
+      y0(1) = 0.0
+      x0(2) = lbar
+      y0(2) = hbar
+      x0(3) = 0.0
+      y0(3) = hbar
+
+      d_rot_angle = 30.0 * pi / 180.0
+      rot_angle = 0.0
+c
+      do k = 1, 3
+      do i = 1, 3
+      
+      dx0 = x0(i)
+      dy0 = y0(i)
+      rbar = sqrt( dx0*dx0 + dy0*dy0 )
+      theta_0 = atan( dy0/dx0 )
+      theta_now = theta_0 + rot_angle
+      xbar = rbar * cos( theta_now )
+      ybar = rbar * sin( theta_now )
+      xbar_new = rbar * cos( theta_now + d_rot_angle )
+      ybar_new = rbar * sin( theta_now + d_rot_angle )
+      du = xbar_new - xbar
+      dv = ybar_new - ybar
+      if ( i .eq. 1 ) then
+         write(*,*) ' 2 6 u ', du,' v ', dv
+         write(*,*) 'xb, yb: ', xxbar_new, ybar_new
+      end if
+      if ( i .eq. 2 ) then
+         write(*,*) ' 4 8 u ', du,' v ', dv
+      end if
+      if ( i .eq. 3 ) then
+         write(*,*) ' 3 7 u ', du,' v ', dv
+      end if
+
+       
+      end do
+      rot_angle = rot_angle + d_rot_angle
+      end do      
+      stop
+      end
+
+
+
+
+
+
+

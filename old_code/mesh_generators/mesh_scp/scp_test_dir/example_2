@@ -1,0 +1,50 @@
+  FILE:  example_2
+  =====  Contains in-put data for the mesh-generating 
+         program Mesh3d_scp.f
+
+         builds surface crack model in uniform thickness
+         plate. the crack front has a small root radius.
+
+  NAME 
+  PROGRAM (ABAQUS, ADINA, WARP3D or PATRAN)
+  DATE    (ex. sept. 30, 1994 940930 Europe or 093094 USA)
+  MR    MF        MV      SFRED
+  M1    M2        NA      NATYP   OMEGA
+  MB    NB        ZB_XW   RATE_B
+  LT    LRED      RTYPE
+  ETYP  EL_CH_ZS  SLICE
+  R1    R2        ETA     MY
+  RN    RZERO     QUATERPNT
+  T     W         C       A 
+  Y0    Z10    Z20
+  Y1    Z11    Z21
+  -     -      -
+  -     -      -
+  Ynla  Z1nla  Z2nla
+
+*INDATA
+test
+PATRAN
+980312
+MR=16         MF=8         MV=3         SFRED=0
+M_I=4         M_II=6       NA=12        NATYP=3      OMEGA=0.95
+MB=4          NB=8         ZB_XW=1      RATE_B=1.4
+LT=13         LRED=7       RTYPE=2
+ETYP=8        EL_CH_ZS=2   SLICE=0
+R_I=10.E-2    R_II=15.E-2  ETA=62.5     MY=1.4
+RN=1.E-4      RZERO=0      ELAST=0 
+T=10.E-1      W=30.E-1    C=9.E-1   A=6.E-1
+   0.0        0.       10.E-1
+   3.6E-2     0.       10.E-1
+   7.6E-2     0.       10.E-1
+  11.8E-2     0.       10.E-1
+  18.4E-2     0.       10.E-1
+  33.6E-2     0.       10.E-1
+  57.8E-2     0.       10.E-1
+  10.0E-1     0.       10.E-1 
+  16.0E-1     0.       10.E-1
+  25.0E-1     0.       10.E-1
+  34.0E-1     0.       10.E-1
+  42.0E-1     0.       10.E-1
+  53.0E-1     0.       10.E-1
+  60.0E-1     0.       10.E-1

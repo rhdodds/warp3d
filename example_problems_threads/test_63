@@ -1,0 +1,83 @@
+c --------------------------------------------------------------------
+c
+c    full (360-degree) 3-D boundary-layer model with sharp crack tip
+c
+c    linear-elastic, homogeneous, isotropic material
+c
+c    exercises J-integral and Interaction Integral code
+c
+c    --model w/ 1 layer of 8-node brick elements
+c    --40 sectors and 50 circular rings
+c    --crack-tip elements are 0.000434 units in dimension
+c    --radius of mesh is 10.0 units
+c    --thickness of mesh is 1.0
+c
+c    --plane-strain displacement constraints for modes I and II
+c    --mode III displacement constraints
+c    --displacements applied to all nodes:
+c               KI   = 1.0 ksi sqrt(in)
+c               KII  = 1.0 ksi sqrt(in)
+c               KIII = 1.0 ksi sqrt(in)
+c               T11  = 0.0 ksi
+c
+c --------------------------------------------------------------------
+c
+c
+material steel
+    properties linear e 30000 nu 0.3
+structure blm
+number of nodes 4102 elements  2000
+elements
+ 1-2000 type l3disop linear material steel order 2x2x2,
+             bbar center_output short
+*input from file "test_63_incid_coords"
+  blocking   $    scalar
+       1     128       1
+       2     128     129
+       3     128     257
+       4     128     385
+       5     128     513
+       6     128     641
+       7     128     769
+       8     128     897
+       9     128    1025
+      10     128    1153
+      11     128    1281
+      12     128    1409
+      13     128    1537
+      14     128    1665
+      15     128    1793
+      16      80    1921
+*echo on
+c 
+c constrain crack-front nodes
+c
+*input from file "test_63_constraints"
+*echo on
+ loading blm
+  nonlinear
+    step 1 constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   minimum iterations 1
+   maximum iterations 1
+   convergence test norm res tol 0.005 max res tol 0.05  $ v. tight
+   time step 1.0e10
+   trace solution on
+c
+   compute displacements for loading blm step 1
+c
+c   output formatted stresses for elements all
+c   output patran binary stresses
+c   output patran binary displacements
+c
+   domain one
+        normal plane nx 0.0 ny 1.0 nz 0.0
+        front nodes 4102 4101 l3disop verify
+        q-values automatic rings 1-10
+        plane strain output for interaction integral
+        function type d
+   compute domain interaction integrals
+c
+stop

@@ -1,0 +1,109 @@
+
+README file for program 8to20.f
+
+This program does three things:
+1. generates a mesh of 20-noded bricks from a mesh of 8-noded bricks.
+2. can condense numbering of coincident crack-front nodes.
+3. can create 1/4-point nodes in elements adjavent to the crack front.
+
+8to20.f currently handles symmetric finite element meshes with
+sharp crack fronts, i.e. crack fronts modeled with collapsed element
+faces. The code identifies the crack front by searching for nodes
+that occupy the same position in space, and for nodes that appear
+more than once on an element.
+
+In a mesh with closed crack faces, nodes on opposite crack faces
+occupy the same position in space. This current code must be modified
+in order to handle this case (see below).
+
+
+To compile:
+Compile as a typical FORTRAN90 file. On UNIX platforms, for example,
+type:
+
+> f90 8to20.f90 -o 8to20.exe
+
+where 8to20.exe is the name given to the executable. Typing the name
+of the executable runs the program.
+
+To run the program:
+From the current directory, type the path of the executable. The 
+program will prompt the user for the following information:
+
+1. "number of elements:"
+
+	Number of elements in finite element mesh.
+
+2. "number of nodes:"
+
+	Number of nodes in finite element mesh.
+
+3. "name of coordinates file:"
+
+	After exporting a neutral file from PATRAN, run patwarp
+	and select the option to store coordinates, constraint
+	and incidences information in separate files. The format
+	of the coordinates file readable by 8to20.f90 matches
+	the *.coordinates file output by patwarp, so at this
+	prompt, type the full name of this *.coordinates file
+
+4. "name of incidences file:"
+	
+	The format of the incidences file readable by 8to20.f90
+	matches the *.incid_and_blocking file produced by patwarp
+	when coordinates, constraints and blocking are placed in
+	separate files. At this prompt, type the name of this
+	*.incid_and_blocking file.
+
+5. "condense numbering of coincident nodes?"
+
+	If unique node numbering is used for coincident crack-front
+	nodes, a "1" here will cause 8to20.f90 to reassign node
+	numbers of coincident crack-front nodes. The smallest node
+	number in a group of coincident nodes will be assigned to all
+	nodes in that group. This means that several nodes listed in
+	*.coordinates will no longer be listed in *.incid_and_blocking.
+	Therefore, all numbering in *.coordinates and
+	*.incid_and_blocking is shifted to eliminate gaps. This is
+	necessary because WARP3D will not process meshes with numbering
+	gaps.
+
+        For a mesh that models closed (touching) crack faces, the user
+        must insert a few lines of code to prevent the coincident nodes
+        on opposing crack faces to become joined. See code in subroutine
+        find_cf_nodes for an example of how to make this change.
+
+	Axisymmetrical meshes may also have collapsed elements along
+        the axis of symmetry. Patran makes these elements "wedge"
+        elements, which have only 6 nodes. The columns of
+        *.incid_and_blocking that contain nodes on the axis of symmetry
+        must be duplicated in order to make them hexagonal elements with
+        8 nodes. The user must insert a few lines of code into 8to20.f90
+        in order to ensure that coincident nodes on the axis of symmetry
+        are not counted as crack-front nodes, or else 1/4-point nodes
+        will be assigned to them. See code in subroutine find_cf_nodes
+        for an example of how to make this change.
+
+
+6. "create 1/4-point nodes?"
+
+	If the user selects "yes", 1/4-point nodes will be created in
+	elements adjacent to the crack front.
+
+
+After running:
+
+8to20.f90 will output two files: "new.coordinates" and
+"new.incid_and_blocking." Run WARP3D using these new files, and
+changing the element type to quadratic (l3disop to q3disop). Cause
+WARP3D to output a new patran neutral file by inserting the following
+command after all mesh data has been read:
+
+output patran neutral
+stop
+
+Import this neutral file into a new PATRAN file where you can optimize
+node numbering, apply constraints and boundary conditions etc. Output
+another neutral file with the final mesh + boundary conditions, and
+then run patwarp again to generate a new WARP3D input file.
+

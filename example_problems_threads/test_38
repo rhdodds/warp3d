@@ -1,0 +1,754 @@
+c
+c
+c     multiply-cracked specimen using crack growth by node release with
+c     a constant front.
+c
+c
+c   This is a simple quarter symmetric model of a specimen with two square
+c   holes, with edge cracks on the inside edge of each hole.  Under applied
+c   loading, these cracks grow towards each other, eventually joining ,
+c   leaving only the outside ligaments supporting the increased load.  There
+c   are three elements through the thickness.
+c
+c         ^     ^     ^    ^
+c         |     |     |    |
+c       ----------------------
+c       |                    |
+c       |   ---        ---   |
+c       |   | |--    --| |   |
+c       |   ---        ---   |
+c       |                    |
+c       ----------------------
+c         |     |     |    |
+c         V     V     V    V
+c
+c   Crack growth is by node release, using a constant crack front.  In this
+c   case, the growth of a crack front depends on the CTOA defined at a
+c   master node on the front.  The original master nodes for the crack fronts
+c   are user-specified in the crack growth paramemters section.  Using this
+c   method, the crack fronts always remain straight during the analysis.
+c   The CTOA is calculated at the distance from the master node as
+c   specified in the release angle and initial angle definition in the
+c   crack growth parameters.
+c
+structure msd
+c
+c
+material al
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0e20
+c
+c
+number of nodes    232
+number of elements   114
+c
+coordinates
+*echo off
+     1   .300000000E+01   .000000000E+00   .300000000E+01
+     2   .300000000E+01   .437113812E-07   .200000000E+01
+     3   .300000000E+01   .874227695E-07   .100000000E+01
+     4   .300000000E+01   .131134158E-06   .573205618E-14
+     5   .200000000E+01  -.437113812E-07   .300000000E+01
+     6   .200000000E+01   .000000000E+00   .200000000E+01
+     7   .999999940E+00  -.874227766E-07   .300000000E+01
+     8   .000000000E+00  -.131134158E-06   .300000000E+01
+     9   .999999940E+00  -.437113918E-07   .200000000E+01
+    10   .000000000E+00  -.874227766E-07   .200000000E+01
+    11   .200000000E+01   .437113883E-07   .100000000E+01
+    12   .200000000E+01   .874227766E-07   .382137093E-14
+    13   .999999940E+00  -.355271368E-14   .100000000E+01
+    14   .000000000E+00  -.437113883E-07   .100000000E+01
+    15   .999999940E+00   .437113847E-07   .191068525E-14
+    16   .000000000E+00   .000000000E+00   .000000000E+00
+    17   .300000000E+01   .100000000E+01   .300000000E+01
+    18   .300000000E+01   .100000000E+01   .200000000E+01
+    19   .300000000E+01   .100000012E+01   .100000000E+01
+    20   .300000000E+01   .100000012E+01   .437113918E-07
+    21   .300000000E+01   .200000024E+01   .874227837E-07
+    22   .200000000E+01   .100000000E+01   .300000000E+01
+    23   .200000000E+01   .100000000E+01   .200000000E+01
+    24   .200000000E+01   .100000012E+01   .100000000E+01
+    25   .200000000E+01   .100000012E+01   .437113918E-07
+    26   .199999988E+01   .200000000E+01   .874227766E-07
+    27   .999999881E+00   .999999881E+00   .300000000E+01
+    28  -.437113883E-07   .999999881E+00   .300000000E+01
+    29   .999999881E+00   .999999940E+00   .200000000E+01
+    30   .999999881E+00   .999999940E+00   .100000000E+01
+    31  -.437113883E-07   .999999940E+00   .200000000E+01
+    32  -.437113883E-07   .999999940E+00   .100000000E+01
+    33   .999999881E+00   .100000000E+01   .437113883E-07
+    34  -.437113883E-07   .100000000E+01   .437113883E-07
+    35   .999999881E+00   .200000000E+01   .874227766E-07
+    36  -.874227766E-07   .200000000E+01   .874227766E-07
+    37   .300000000E+01   .200000000E+01   .300000000E+01
+    38   .300000000E+01   .200000024E+01   .200000000E+01
+    39   .300000000E+01   .200000024E+01   .100000012E+01
+    40   .199999988E+01   .199999988E+01   .300000000E+01
+    41   .999999881E+00   .199999988E+01   .300000000E+01
+    42  -.874227766E-07   .199999988E+01   .300000000E+01
+    43   .199999988E+01   .199999988E+01   .200000000E+01
+    44   .199999988E+01   .200000000E+01   .100000012E+01
+    45   .999999881E+00   .199999988E+01   .200000000E+01
+    46   .999999881E+00   .200000000E+01   .100000012E+01
+    47  -.874227766E-07   .199999988E+01   .200000000E+01
+    48  -.874227766E-07   .200000000E+01   .100000012E+01
+    49   .299999976E+01   .300000000E+01   .300000024E+01
+    50   .299999976E+01   .300000024E+01   .200000024E+01
+    51   .299999976E+01   .300000024E+01   .100000012E+01
+    52   .199999988E+01   .299999976E+01   .300000024E+01
+    53   .999999821E+00   .299999976E+01   .300000024E+01
+    54  -.131134158E-06   .299999976E+01   .300000024E+01
+    55   .199999988E+01   .300000000E+01   .200000024E+01
+    56   .199999988E+01   .300000000E+01   .100000012E+01
+    57   .999999821E+00   .300000000E+01   .200000024E+01
+    58  -.131134158E-06   .300000000E+01   .200000024E+01
+    59   .999999821E+00   .300000000E+01   .100000012E+01
+    60  -.131134158E-06   .300000000E+01   .100000012E+01
+    61   .299999976E+01   .399999976E+01   .300000024E+01
+    62   .299999976E+01   .400000000E+01   .200000024E+01
+    63   .299999976E+01   .400000000E+01   .100000012E+01
+    64   .299999976E+01   .400000000E+01   .174845553E-06
+    65   .199999988E+01   .399999976E+01   .300000024E+01
+    66   .999999762E+00   .399999976E+01   .300000024E+01
+    67  -.174845553E-06   .399999976E+01   .300000024E+01
+    68   .199999988E+01   .400000000E+01   .200000024E+01
+    69   .199999988E+01   .400000000E+01   .100000012E+01
+    70   .199999988E+01   .400000000E+01   .174845553E-06
+    71   .999999762E+00   .400000000E+01   .200000024E+01
+    72  -.174845553E-06   .400000000E+01   .200000024E+01
+    73   .999999762E+00   .400000000E+01   .100000012E+01
+    74  -.174845553E-06   .400000000E+01   .100000012E+01
+    75   .999999702E+00   .400000000E+01   .174845553E-06
+    76  -.174845553E-06   .400000000E+01   .174845553E-06
+    77   .299999976E+01   .500000000E+01   .300000024E+01
+    78   .299999976E+01   .500000000E+01   .200000024E+01
+    79   .299999976E+01   .500000000E+01   .100000012E+01
+    80   .299999976E+01   .500000000E+01   .218556949E-06
+    81   .199999976E+01   .500000000E+01   .300000024E+01
+    82   .999999642E+00   .500000000E+01   .300000024E+01
+    83  -.218556949E-06   .500000000E+01   .300000024E+01
+    84   .199999976E+01   .500000000E+01   .200000024E+01
+    85   .199999976E+01   .500000000E+01   .100000012E+01
+    86   .199999976E+01   .500000000E+01   .218556949E-06
+    87   .999999642E+00   .500000000E+01   .200000024E+01
+    88  -.218556949E-06   .500000000E+01   .200000024E+01
+    89   .999999642E+00   .500000000E+01   .100000012E+01
+    90   .999999642E+00   .500000000E+01   .218556949E-06
+    91  -.218556949E-06   .500000000E+01   .100000012E+01
+    92  -.218556949E-06   .500000000E+01   .218556949E-06
+    93   .299999976E+01   .600000000E+01   .300000024E+01
+    94   .299999976E+01   .600000000E+01   .200000024E+01
+    95   .299999976E+01   .600000000E+01   .100000024E+01
+    96   .299999976E+01   .600000000E+01   .262268316E-06
+    97   .199999976E+01   .600000000E+01   .300000024E+01
+    98   .999999642E+00   .600000000E+01   .300000024E+01
+    99  -.262268316E-06   .600000000E+01   .300000024E+01
+   100   .199999976E+01   .600000000E+01   .200000024E+01
+   101   .199999976E+01   .600000000E+01   .100000024E+01
+   102   .199999976E+01   .600000000E+01   .262268316E-06
+   103   .999999642E+00   .600000000E+01   .200000024E+01
+   104  -.262268316E-06   .600000000E+01   .200000024E+01
+   105   .999999642E+00   .600000000E+01   .100000024E+01
+   106   .999999642E+00   .600000000E+01   .262268316E-06
+   107  -.262268316E-06   .600000000E+01   .100000024E+01
+   108  -.262268316E-06   .600000000E+01   .262268316E-06
+   109   .299999976E+01   .700000000E+01   .300000024E+01
+   110   .299999976E+01   .700000000E+01   .200000024E+01
+   111   .299999976E+01   .700000000E+01   .100000024E+01
+   112   .299999976E+01   .700000000E+01   .305979711E-06
+   113   .199999964E+01   .700000000E+01   .300000024E+01
+   114   .999999583E+00   .700000000E+01   .300000024E+01
+   115  -.305979711E-06   .700000000E+01   .300000024E+01
+   116   .199999964E+01   .700000000E+01   .200000024E+01
+   117   .199999964E+01   .700000000E+01   .100000024E+01
+   118   .199999964E+01   .700000000E+01   .305979711E-06
+   119   .999999583E+00   .700000000E+01   .200000024E+01
+   120  -.305979711E-06   .700000000E+01   .200000024E+01
+   121   .999999583E+00   .700000000E+01   .100000024E+01
+   122   .999999583E+00   .700000000E+01   .305979711E-06
+   123  -.305979711E-06   .700000000E+01   .100000024E+01
+   124  -.305979711E-06   .700000000E+01   .305979711E-06
+   125   .299999976E+01   .800000000E+01   .300000024E+01
+   126   .299999976E+01   .800000000E+01   .200000024E+01
+   127   .299999976E+01   .800000000E+01   .100000024E+01
+   128   .299999976E+01   .800000000E+01   .349691106E-06
+   129   .199999964E+01   .800000000E+01   .300000024E+01
+   130   .199999964E+01   .800000000E+01   .200000024E+01
+   131   .999999523E+00   .800000000E+01   .300000024E+01
+   132  -.349691106E-06   .800000000E+01   .300000024E+01
+   133   .199999964E+01   .800000000E+01   .100000024E+01
+   134   .199999964E+01   .800000000E+01   .349691106E-06
+   135   .999999523E+00   .800000000E+01   .200000024E+01
+   136  -.349691106E-06   .800000000E+01   .200000024E+01
+   137   .999999523E+00   .800000000E+01   .100000024E+01
+   138   .999999523E+00   .800000000E+01   .349691106E-06
+   139  -.349691106E-06   .800000000E+01   .100000024E+01
+   140  -.349691106E-06   .800000000E+01   .349691106E-06
+   141   .299999952E+01   .900000000E+01   .300000048E+01
+   142   .299999952E+01   .900000000E+01   .200000048E+01
+   143   .299999952E+01   .900000000E+01   .100000036E+01
+   144   .299999952E+01   .900000000E+01   .393402502E-06
+   145   .299999952E+01   .100000000E+02   .437113897E-06
+   146   .199999964E+01   .900000000E+01   .300000048E+01
+   147   .199999964E+01   .900000000E+01   .200000048E+01
+   148   .199999964E+01   .900000000E+01   .100000036E+01
+   149   .199999964E+01   .900000000E+01   .393402502E-06
+   150   .199999952E+01   .100000000E+02   .437113897E-06
+   151   .999999464E+00   .900000000E+01   .300000048E+01
+   152  -.393402502E-06   .900000000E+01   .300000048E+01
+   153   .999999464E+00   .900000000E+01   .200000048E+01
+   154   .999999464E+00   .900000000E+01   .100000036E+01
+   155  -.393402502E-06   .900000000E+01   .200000048E+01
+   156   .999999464E+00   .900000000E+01   .393402502E-06
+   157  -.393402502E-06   .900000000E+01   .100000036E+01
+   158   .999999464E+00   .100000000E+02   .437113897E-06
+   159  -.393402502E-06   .900000000E+01   .393402502E-06
+   160  -.437113897E-06   .100000000E+02   .437113897E-06
+   161   .299999952E+01   .100000000E+02   .300000048E+01
+   162   .299999952E+01   .100000000E+02   .200000048E+01
+   163   .299999952E+01   .100000000E+02   .100000048E+01
+   164   .199999952E+01   .100000000E+02   .300000048E+01
+   165   .999999523E+00   .100000000E+02   .300000048E+01
+   166  -.437113897E-06   .100000000E+02   .300000048E+01
+   167   .199999952E+01   .100000000E+02   .200000048E+01
+   168   .199999952E+01   .100000000E+02   .100000048E+01
+   169   .999999523E+00   .100000000E+02   .200000048E+01
+   170   .999999523E+00   .100000000E+02   .100000048E+01
+   171  -.437113897E-06   .100000000E+02   .200000048E+01
+   172  -.437113897E-06   .100000000E+02   .100000048E+01
+   173   .299999952E+01   .110000000E+02   .300000048E+01
+   174   .299999952E+01   .110000000E+02   .200000048E+01
+   175   .299999952E+01   .110000000E+02   .100000048E+01
+   176   .199999952E+01   .110000000E+02   .300000048E+01
+   177   .999999464E+00   .110000000E+02   .300000048E+01
+   178  -.480825293E-06   .110000000E+02   .300000048E+01
+   179   .299999952E+01   .120000000E+02   .300000048E+01
+   180   .299999952E+01   .130000000E+02   .300000048E+01
+   181   .299999929E+01   .140000000E+02   .300000072E+01
+   182   .199999952E+01   .110000000E+02   .200000048E+01
+   183   .199999952E+01   .110000000E+02   .100000048E+01
+   184   .999999464E+00   .110000000E+02   .200000048E+01
+   185  -.480825293E-06   .110000000E+02   .200000048E+01
+   186   .999999464E+00   .110000000E+02   .100000048E+01
+   187  -.480825293E-06   .110000000E+02   .100000048E+01
+   188   .299999952E+01   .120000000E+02   .200000048E+01
+   189   .299999952E+01   .130000000E+02   .200000048E+01
+   190   .299999929E+01   .140000000E+02   .200000072E+01
+   191   .299999952E+01   .120000000E+02   .100000048E+01
+   192   .299999952E+01   .120000000E+02   .524536631E-06
+   193   .299999952E+01   .130000000E+02   .100000060E+01
+   194   .299999929E+01   .140000000E+02   .100000060E+01
+   195   .299999952E+01   .130000000E+02   .568248026E-06
+   196   .299999929E+01   .140000000E+02   .611959422E-06
+   197   .199999952E+01   .120000000E+02   .300000048E+01
+   198   .199999952E+01   .120000000E+02   .200000048E+01
+   199   .199999952E+01   .120000000E+02   .100000048E+01
+   200   .199999952E+01   .120000000E+02   .524536631E-06
+   201   .999999404E+00   .120000000E+02   .300000048E+01
+   202  -.524536631E-06   .120000000E+02   .300000048E+01
+   203   .199999940E+01   .130000000E+02   .300000048E+01
+   204   .199999940E+01   .140000000E+02   .300000072E+01
+   205   .999999404E+00   .120000000E+02   .200000048E+01
+   206  -.524536631E-06   .120000000E+02   .200000048E+01
+   207   .199999940E+01   .130000000E+02   .200000048E+01
+   208   .199999940E+01   .140000000E+02   .200000072E+01
+   209   .999999404E+00   .120000000E+02   .100000048E+01
+   210  -.524536631E-06   .120000000E+02   .100000048E+01
+   211   .999999404E+00   .120000000E+02   .524536631E-06
+   212  -.524536631E-06   .120000000E+02   .524536631E-06
+   213   .199999940E+01   .130000000E+02   .100000060E+01
+   214   .199999940E+01   .140000000E+02   .100000060E+01
+   215   .199999940E+01   .130000000E+02   .568248026E-06
+   216   .199999940E+01   .140000000E+02   .611959422E-06
+   217   .999999344E+00   .130000000E+02   .300000048E+01
+   218  -.568248026E-06   .130000000E+02   .300000048E+01
+   219   .999999344E+00   .140000000E+02   .300000072E+01
+   220  -.611959422E-06   .140000000E+02   .300000072E+01
+   221   .999999344E+00   .130000000E+02   .200000048E+01
+   222   .999999344E+00   .130000000E+02   .100000060E+01
+   223   .999999344E+00   .130000000E+02   .568248026E-06
+   224  -.568248026E-06   .130000000E+02   .200000048E+01
+   225   .999999344E+00   .140000000E+02   .200000072E+01
+   226  -.568248026E-06   .130000000E+02   .100000060E+01
+   227   .999999344E+00   .140000000E+02   .100000060E+01
+   228  -.568248026E-06   .130000000E+02   .568248026E-06
+   229   .999999344E+00   .140000000E+02   .611959422E-06
+   230  -.611959422E-06   .140000000E+02   .200000072E+01
+   231  -.611959422E-06   .140000000E+02   .611959422E-06
+   232  -.611959422E-06   .140000000E+02   .100000060E+01
+*echo on
+c
+elements
+ 1-114 type l3disop  linear material al,
+          order 2x2x2 bbar center_output short
+c
+incidences
+*echo off
+     1   223   229   231   228   222   227   232   226
+     2   222   227   232   226   221   225   230   224
+     3   221   225   230   224   217   219   220   218
+     4   215   216   229   223   213   214   227   222
+     5   195   196   216   215   193   194   214   213
+     6   213   214   227   222   207   208   225   221
+     7   207   208   225   221   203   204   219   217
+     8   193   194   214   213   189   190   208   207
+     9   189   190   208   207   180   181   204   203
+    10   211   223   228   212   209   222   226   210
+    11   209   222   226   210   205   221   224   206
+    12   205   221   224   206   201   217   218   202
+    13   200   215   223   211   199   213   222   209
+    14   192   195   215   200   191   193   213   199
+    15   199   213   222   209   198   207   221   205
+    16   198   207   221   205   197   203   217   201
+    17   191   193   213   199   188   189   207   198
+    18   188   189   207   198   179   180   203   197
+    19   186   209   210   187   184   205   206   185
+    20   184   205   206   185   177   201   202   178
+    21   183   199   209   186   182   198   205   184
+    22   182   198   205   184   176   197   201   177
+    23   175   191   199   183   174   188   198   182
+    24   174   188   198   182   173   179   197   176
+    25   170   186   187   172   169   184   185   171
+    26   169   184   185   171   165   177   178   166
+    27   168   183   186   170   167   182   184   169
+    28   167   182   184   169   164   176   177   165
+    29   163   175   183   168   162   174   182   167
+    30   162   174   182   167   161   173   176   164
+    31   154   157   172   170   156   159   160   158
+    32   153   155   171   169   154   157   172   170
+    33   151   152   166   165   153   155   171   169
+    34   148   154   170   168   149   156   158   150
+    35   143   148   168   163   144   149   150   145
+    36   147   153   169   167   148   154   170   168
+    37   146   151   165   164   147   153   169   167
+    38   142   147   167   162   143   148   168   163
+    39   141   146   164   161   142   147   167   162
+    40   137   139   157   154   138   140   159   156
+    41   135   136   155   153   137   139   157   154
+    42   131   132   152   151   135   136   155   153
+    43   133   137   154   148   134   138   156   149
+    44   127   133   148   143   128   134   149   144
+    45   130   135   153   147   133   137   154   148
+    46   129   131   151   146   130   135   153   147
+    47   126   130   147   142   127   133   148   143
+    48   125   129   146   141   126   130   147   142
+    49   121   123   139   137   122   124   140   138
+    50   119   120   136   135   121   123   139   137
+    51   114   115   132   131   119   120   136   135
+    52   117   121   137   133   118   122   138   134
+    53   111   117   133   127   112   118   134   128
+    54   116   119   135   130   117   121   137   133
+    55   113   114   131   129   116   119   135   130
+    56   110   116   130   126   111   117   133   127
+    57   109   113   129   125   110   116   130   126
+    58   105   107   123   121   106   108   124   122
+    59   103   104   120   119   105   107   123   121
+    60    98    99   115   114   103   104   120   119
+    61   101   105   121   117   102   106   122   118
+    62    95   101   117   111    96   102   118   112
+    63   100   103   119   116   101   105   121   117
+    64    97    98   114   113   100   103   119   116
+    65    94   100   116   110    95   101   117   111
+    66    93    97   113   109    94   100   116   110
+    67    89    91   107   105    90    92   108   106
+    68    87    88   104   103    89    91   107   105
+    69    82    83    99    98    87    88   104   103
+    70    85    89   105   101    86    90   106   102
+    71    79    85   101    95    80    86   102    96
+    72    84    87   103   100    85    89   105   101
+    73    81    82    98    97    84    87   103   100
+    74    78    84   100    94    79    85   101    95
+    75    77    81    97    93    78    84   100    94
+    76    73    74    91    89    75    76    92    90
+    77    71    72    88    87    73    74    91    89
+    78    66    67    83    82    71    72    88    87
+    79    69    73    89    85    70    75    90    86
+    80    63    69    85    79    64    70    86    80
+    81    68    71    87    84    69    73    89    85
+    82    65    66    82    81    68    71    87    84
+    83    62    68    84    78    63    69    85    79
+    84    61    65    81    77    62    68    84    78
+    85    59    73    74    60    57    71    72    58
+    86    57    71    72    58    53    66    67    54
+    87    56    69    73    59    55    68    71    57
+    88    55    68    71    57    52    65    66    53
+    89    51    63    69    56    50    62    68    55
+    90    50    62    68    55    49    61    65    52
+    91    45    57    58    47    41    53    54    42
+    92    43    55    57    45    40    52    53    41
+    93    38    50    55    43    37    49    52    40
+    94    29    45    47    31    27    41    42    28
+    95     9    29    31    10     7    27    28     8
+    96    23    43    45    29    22    40    41    27
+    97    18    38    43    23    17    37    40    22
+    98     6    23    29     9     5    22    27     7
+    99     2    18    23     6     1    17    22     5
+   100    46    59    60    48    45    57    58    47
+   101    44    56    59    46    43    55    57    45
+   102    39    51    56    44    38    50    55    43
+   103    24    44    46    30    23    43    45    29
+   104    11    24    30    13     6    23    29     9
+   105    30    46    48    32    29    45    47    31
+   106    19    39    44    24    18    38    43    23
+   107    25    26    35    33    24    44    46    30
+   108    13    30    32    14     9    29    31    10
+   109     3    19    24    11     2    18    23     6
+   110    33    35    36    34    30    46    48    32
+   111    20    21    26    25    19    39    44    24
+   112    15    33    34    16    13    30    32    14
+   113     4    20    25    12     3    19    24    11
+   114    12    25    33    15    11    24    30    13
+*echo on
+c
+c
+blocking   $    scalar
+     1   114     1
+c
+loading set_01
+  nodal loads
+    61 force_z    .100000E+01
+    65 force_z    .100000E+01
+    66 force_z    .100000E+01
+    67 force_z    .100000E+01
+   161 force_z    .100000E+01
+   164 force_z    .100000E+01
+   165 force_z    .100000E+01
+   166 force_z    .100000E+01
+c
+constraints
+     1      v     .000000E+00
+     2      v     .000000E+00
+     3      v     .000000E+00
+     4      v     .000000E+00      w     .000000E+00
+     5      v     .000000E+00
+     6      v     .000000E+00
+     7      v     .000000E+00
+     8      u     .000000E+00      v     .000000E+00
+     9      v     .000000E+00
+    10      u     .000000E+00      v     .000000E+00
+    11      v     .000000E+00
+    12      v     .000000E+00      w     .000000E+00
+    13      v     .000000E+00
+    14      u     .000000E+00      v     .000000E+00
+    15      v     .000000E+00      w     .000000E+00
+    16      u     .000000E+00      v     .000000E+00  w  .000000E+00
+    20      w     .000000E+00
+    21      w     .000000E+00
+    25      w     .000000E+00
+    26      w     .000000E+00
+    28      u     .000000E+00
+    31      u     .000000E+00
+    32      u     .000000E+00
+    33      w     .000000E+00
+    34      u     .000000E+00      w     .000000E+00
+    35      w     .000000E+00
+    36      u     .000000E+00      w     .000000E+00
+    42      u     .000000E+00
+    47      u     .000000E+00
+    48      u     .000000E+00
+    54      u     .000000E+00
+    58      u     .000000E+00
+    60      u     .000000E+00
+    67      u     .000000E+00
+    72      u     .000000E+00
+    74      u     .000000E+00
+    76      u     .000000E+00
+    80      w     .000000E+00
+    83      u     .000000E+00
+    86      w     .000000E+00
+    88      u     .000000E+00
+    90      w     .000000E+00
+    91      u     .000000E+00
+    92      u     .000000E+00      w     .000000E+00
+    96      w     .000000E+00
+    99      u     .000000E+00
+   102      w     .000000E+00
+   104      u     .000000E+00
+   106      w     .000000E+00
+   107      u     .000000E+00
+   108      u     .000000E+00      w     .000000E+00
+   112      w     .000000E+00
+   115      u     .000000E+00
+   118      w     .000000E+00
+   120      u     .000000E+00
+   122      w     .000000E+00
+   123      u     .000000E+00
+   124      u     .000000E+00      w     .000000E+00
+   128      w     .000000E+00
+   132      u     .000000E+00
+   134      w     .000000E+00
+   136      u     .000000E+00
+   138      w     .000000E+00
+   139      u     .000000E+00
+   140      u     .000000E+00      w     .000000E+00
+   144      w     .000000E+00
+   149      w     .000000E+00
+   152      u     .000000E+00
+   155      u     .000000E+00
+   156      w     .000000E+00
+   157      u     .000000E+00
+   159      u     .000000E+00      w     .000000E+00
+   160      u     .000000E+00
+   166      u     .000000E+00
+   171      u     .000000E+00
+   172      u     .000000E+00
+   178      u     .000000E+00
+   181      v     .000000E+00
+   185      u     .000000E+00
+   187      u     .000000E+00
+   190      v     .000000E+00
+   192      w     .000000E+00
+   194      v     .000000E+00
+   195      w     .000000E+00
+   196      v     .000000E+00      w     .000000E+00
+   200      w     .000000E+00
+   202      u     .000000E+00
+   204      v     .000000E+00
+   206      u     .000000E+00
+   208      v     .000000E+00
+   210      u     .000000E+00
+   211      w     .000000E+00
+   212      u     .000000E+00      w     .000000E+00
+   214      v     .000000E+00
+   215      w     .000000E+00
+   216      v     .000000E+00      w     .000000E+00
+   218      u     .000000E+00
+   219      v     .000000E+00
+   220      u     .000000E+00      v     .000000E+00
+   223      w     .000000E+00
+   224      u     .000000E+00
+   225      v     .000000E+00
+   226      u     .000000E+00
+   227      v     .000000E+00
+   228      u     .000000E+00      w     .000000E+00
+   229      v     .000000E+00      w     .000000E+00
+   230      u     .000000E+00      v     .000000E+00
+   231      u     .000000E+00      v     .000000E+00  w .000000E+00
+   232      u     .000000E+00      v     .000000E+00
+*echo on
+c
+c
+c
+ loading test
+  nonlinear
+    step 1-100 set_01 100.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+c
+c
+ crack growth parameters
+   type of crack growth node_release
+   crack plane normal z coordinate 0.0
+   master list 159 92
+   number of nodes through thickness 4
+   automatic load reduction on minimum steps 6
+   overshoot control on percent 5
+   constant front growth on
+   force release type traction-separation
+   release fraction .3
+   characteristic length 1.0
+   angle for release 10.0 distance .75
+   angle for initiation 10.0 distance .75
+   print status on crack front nodes crack plane nodes
+c
+
+c
+ compute displacements for loading test step 1
+c output patran binary displacements
+c
+ compute displacements for loading test step 2
+c output patran binary displacements
+c
+ compute displacements for loading test step 3
+c output patran binary displacements
+c
+ compute displacements for loading test step 4
+c output patran binary displacements
+c
+ compute displacements for loading test step 5
+c output patran binary displacements
+c
+ compute displacements for loading test step 6
+c output patran binary displacements
+c
+ compute displacements for loading test step 7
+c output patran binary displacements
+c
+ compute displacements for loading test step 8
+c output patran binary displacements
+c
+ compute displacements for loading test step 9
+c output patran binary displacements
+c
+ compute displacements for loading test step 10
+c output patran binary displacements
+c
+ compute displacements for loading test step 11
+c output patran binary displacements
+c
+ compute displacements for loading test step 12
+c output patran binary displacements
+c
+ compute displacements for loading test step 13
+c output patran binary displacements
+c
+ compute displacements for loading test step 14
+c output patran binary displacements
+c
+ compute displacements for loading test step 15
+c output patran binary displacements
+c
+ compute displacements for loading test step 16
+c output patran binary displacements
+c
+ compute displacements for loading test step 17
+c output patran binary displacements
+c
+ compute displacements for loading test step 18
+c output patran binary displacements
+c
+ compute displacements for loading test step 19
+c output patran binary displacements
+c
+ compute displacements for loading test step 20
+c output patran binary displacements
+c
+ compute displacements for loading test step 21
+c output patran binary displacements
+c
+ compute displacements for loading test step 22
+c output patran binary displacements
+c
+ compute displacements for loading test step 23
+c output patran binary displacements
+c
+ compute displacements for loading test step 24
+c output patran binary displacements
+c
+ compute displacements for loading test step 25
+c output patran binary displacements
+c
+ compute displacements for loading test step 26
+c output patran binary displacements
+c
+ compute displacements for loading test step 27
+c output patran binary displacements
+c
+ compute displacements for loading test step 28
+c output patran binary displacements
+c
+ compute displacements for loading test step 29
+c output patran binary displacements
+c
+ compute displacements for loading test step 30
+c output patran binary displacements
+c
+ compute displacements for loading test step 31
+c output patran binary displacements
+c
+ compute displacements for loading test step 32
+c output patran binary displacements
+c
+ compute displacements for loading test step 33
+c output patran binary displacements
+c
+ compute displacements for loading test step 34
+c output patran binary displacements
+c
+ compute displacements for loading test step 35
+c output patran binary displacements
+c
+ compute displacements for loading test step 36
+c output patran binary displacements
+c
+ compute displacements for loading test step 37
+c output patran binary displacements
+c
+ compute displacements for loading test step 38
+c output patran binary displacements
+c
+ compute displacements for loading test step 39
+c output patran binary displacements
+c
+ compute displacements for loading test step 40
+c output patran binary displacements
+c
+ compute displacements for loading test step 41
+c output patran binary displacements
+c
+ compute displacements for loading test step 42
+c output patran binary displacements
+c
+ compute displacements for loading test step 43
+c output patran binary displacements
+c
+ compute displacements for loading test step 44
+c output patran binary displacements
+c
+ compute displacements for loading test step 45
+c output patran binary displacements
+c
+ compute displacements for loading test step 46
+c output patran binary displacements
+c
+ compute displacements for loading test step 47
+c output patran binary displacements
+c
+ compute displacements for loading test step 48
+c output patran binary displacements
+c
+c stop
+c
+ compute displacements for loading test step 49
+c output patran binary displacements
+c
+ compute displacements for loading test step 50
+c output patran binary displacements
+c
+ compute displacements for loading test step 51
+c output patran binary displacements
+c
+ compute displacements for loading test step 52
+c output patran binary displacements
+c
+ compute displacements for loading test step 53
+c output patran binary displacements
+c
+ compute displacements for loading test step 54
+c output patran binary displacements
+c
+ compute displacements for loading test step 55
+c output patran binary displacements
+c
+ compute displacements for loading test step 56
+c output patran binary displacements
+c
+ compute displacements for loading test step 57
+c output patran binary displacements
+c
+ compute displacements for loading test step 58
+c output patran binary displacements
+c
+ compute displacements for loading test step 59
+c output patran binary displacements
+c
+ compute displacements for loading test step 60
+c output patran binary displacements
+ output displacements 141, 151, 161, 195, 216
+c
+stop
+

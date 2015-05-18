@@ -1,0 +1,9 @@
+
+input files to test MPI version of warp3d with various solvers.
+
+the problem is a 3-D cantilever beam. the input files define
+a model with 1, 2, 4 or 8 domains for parallel processing.
+
+the 4 cpu model is broken into 2 runs to verify restart for
+mpi jobs
+

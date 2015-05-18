@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Check env variable
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# cd in
+cd $WARP3D_HOME/linux_packages/source/mpi_code_dir
+
+printf " > Copying dummy MPI code files into src for threads-ony WARP3D...\n"
+
+       \rm ../../../src/mpi_code.f ../../../src/mpi_lnpcg.f
+       \cp ./mpi_code_dummy.f ../../../src/mpi_code.f
+printf "       mpi_code.f copied\n"
+            
+       \cp ./mpi_lnpcg_dummy.f ../../../src/mpi_lnpcg.f
+printf "       mpi_lnpcg.f copied\n"
+            
+       for file in `ls ./lnpcg_ser`
+        do
+          \rm ../../../src/$file
+          \cp ./lnpcg_ser/$file ../../../src/$file
+       done
+printf "       threads-only version of lnpcg copied\n\n"
+            

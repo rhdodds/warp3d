@@ -1,0 +1,70 @@
+#---------------------------------------------------------------
+#
+#  Generic Unix Makefile for compiling and linking mesh3d_scp.f
+#
+#  A mesh generating program for semi elliptical surface cracks
+#
+#          March  4, 1996   /Jonas Faleskog
+#          July  28, 1998   /R. Dodds
+#
+#---------------------------------------------------------------
+#
+#   set location of f77 compiler and any compiler
+#   options you want
+#
+FOPT1= -O0 
+F77= /opt/fortran/bin/f77
+#
+#
+#  Link the object files
+#
+OBJ =	main.o    nodn.o \
+        coord1.o  coord2.o \
+        coord3.o  plot.o \
+        elem.o    sort.o \
+        feminp.o  nset.o
+#
+mesh_cell : $(OBJ)
+	$(F77) -C -o $@ $(OBJ)
+#
+#  Files containing definitions of global arrays
+#
+ele_com = common_eln.f
+nod_com = common_nod.f
+#
+#  Compile the source files
+#
+main.o:   main.f $(ele_com)  $(nod_com)
+	$(F77) $(FOPT1) -c $*.f
+#
+nodn.o:    nodn.f
+	$(F77) $(FOPT1) -c $*.f
+#
+coord1.o:  coord1.f  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+coord2.o:  coord2.f  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+coord3.o:  coord3.f  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+plot.o:    plot.f  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+elem.o:    elem.f  $(ele_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+sort.o:    sort.f  $(ele_com)  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+feminp.o:  feminp.f  $(ele_com)  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+#
+nset.o:    nset.f  $(ele_com)  $(nod_com)
+	$(F77) $(FOPT1)  -c $*.f
+
+
+
+
+

@@ -1,0 +1,110 @@
+
+Last Update: Oct. 19, 2011
+--------------------------
+
+pat2exII is a stand-alone converter which reads in a MSC Patran neutral file and a
+set of Patran compatible results files (with associated result header files)
+and writes out an Exodus II file.  The Exodus II format is compatible with 
+Paraview, a free post-processing visualization software, and many other pre-
+and post- processing software packages (e.g. Cubit).
+
+
+================================================================================
+Using the program (precompiled exectuables)
+================================================================================
+
+The precompiled executables are located in the run_linux_em64t and
+run_mac_os_x directories.
+
+This is a pat2exII is a command-line program.
+
+The program will prompt you to enter the following:
+
+1) The filename (and path) you want for the new Exodus II file.  For example:
+
+      /path/to/file/filename-of-exodus-file
+
+   note the converter will overwrite an existing file with no warning and
+   automatically append .exo to the end of the name you specify.
+
+2) The path and filename to the Patran neutral file.  For example:
+
+      /path/to/file/neutralfile.out
+
+3) The path to the directory containing your binary and/or formatted results
+   files.  For example if your w******* files are in /path/to/results then:
+
+      /path/to/results
+
+4) The program parses the contents of the directory you entered in step
+   3, looking for Patran compatible results files.  It now needs the Patran
+   "template" files corresponding to the types of results files your analysis
+   outputs. The template files provide a symbolic name to each result value for a node
+   or element. The easiest way to provide these is to use the built-in templates,
+   which match the templates provided with patran_templates directory
+   in the WARP3D distribution.  To use the built-in templates, simply type
+
+      y
+
+   when prompted with "Would you like to use the default templates...".
+   
+   If you have non-standard results files, you may need to manually input the path
+   to each template file.  To enable this option enter
+   
+      n
+
+   when asked if you would like to use the default templates.
+
+   The program will request the path and filename to the template file for each
+   type of result file in your results directory.  For example, say the path to
+   your installation of WARP3D is /path/to/warp3d.  If you have nodal
+   displacement results files present in the directory you entered in step 3,
+   the program will ask for you to:
+
+      "Input path to template file for results files with prefix wn*d"
+
+   and you would enter
+
+      /path/to/warp3d/patran_templates/warp_displ.res_tmpl
+
+   and so on for the rest of your results files.
+
+   Again, in nearly all situations users can simply select the built-in default
+   templates and skip this step.
+
+5) The program will now ask if you want to input the path to a "time map" file.
+   This is primarily used for making movies of the results.
+   WARP3D does not keep track of the actual time value at which each load step
+   occurs at (i.e. it does not track tn+1 = tn + dt).  If you want to use the
+   actual time data in Paraview you must create a file of <n> positive real
+   numbers, each number on its own line, where <n> is the number of load steps
+   in your analysis and the real number on line <i> corresponds to the physical
+   time of load step <i>.  For an example, see test/timemap.  If you select
+
+      y
+
+   you will be prompted to enter the path to the time map file, for example:
+
+      /path/to/file/timemap
+
+   if you select
+
+      n
+
+   the program will continue without prompting you for a time map.
+
+6) Now the program will process your results data (this can take a some time
+   if you have many load steps in your analysis) and write out the Exodus II
+   file.
+
+
+================================================================================
+Compiling the program
+================================================================================
+
+Precompiled executables for Linux and Mac OS X are included with 
+the full distribution downloads, found on WARP3D's Google Code site.  
+Compiling from source is unnecessary.
+
+If you would like to compile a version of pat2exII from source, refer to the
+operating system specific READMEs found in this directory.

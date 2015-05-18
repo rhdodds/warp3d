@@ -1,0 +1,21 @@
+
+
+These programs create SSY models with blunt notches.  Output is in the form
+of a complete set of warp3d input files.  Input to the programs is through 
+input files; the supplied examples have comments to guide the creation of 
+new files.  mesh_ssy2_ts allows specification of a T stress, while the
+other does not.
+
+the programs 
+
+mesh_ssy.f
+mesh_ssy2_ts.f
+
+are just simple f77 code.
+
+the *.exe files are executables for Windows 95, 98, NT 4.0 in case
+you have no access to the Digital Fortran compiler.
+
+The generated Warp3D input files can be run thru WARP3D to
+create a Patran neutral file.
+

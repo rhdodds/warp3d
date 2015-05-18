@@ -1,0 +1,109 @@
+c
+c
+c	Input Parameters for 3D/2D SSY "Half Moon" with Notch Model
+c              Loading: Mode-I plane-stress or plane-strain
+c
+c        Note(1):  Input lines will be ignored when:
+c                   1) first character in line is 'c' or 'C'
+c                   2) first 20 chracaters are blank
+c        Note(2):  All numeric input is in free format
+c
+c     Rn - root notch radius    l1, l2 - length of elemnts 1 and 2 in r-dir
+c
+c           Rn   l1  l2
+c
+    0.001  0.004 0.004
+c
+c     num_r - number of line segments in the r-dir that will
+c             be generated (aside from (l1+l2) )
+c
+   4
+c
+c     R(k) (k=1,num_r) -- line length in the r-dir
+c     mr(k) (k=1,num_r) -- Number of elements for each line segment
+c     biase(k)  --  geometric series mesh grading biase :
+c                           a(n+1)/a(n) = biase
+c
+c         Note:  The first Segment R(1) includes: ( Rn + l1 + l2 )
+c
+c         R(k)   mr(k)  biase(k)
+c
+          0.20    33    1.03
+	  5.8     26    1.2
+         94.0     20    1.14
+        900.0     20    1.145
+c
+c
+c
+c   mteta - total number of elements circumfrentially 
+c   mteta_r (input) - number of elements cicumfruntially
+c                     in the first quadrant
+c   mteta_l (input) - number of elements cicumfruntially
+c         
+c       mtetal_r  mteta_l
+c
+      8  8
+c
+c    num_layers - number of elements through the thickness ( z-direction )
+c
+      1
+c
+c     t(k) - Z-ccord of surface k ; where k = 1, num_layers+1;
+c            it is recomended that Z coordinate be negative;
+c            this is in order to follow the definition of free
+c            and symmetry surfaces for constrains (See bellow)
+c
+c
+        0.0
+       -0.01
+c
+c
+c                              WARP3D
+c
+c     Input warp structure nmae (xxx)
+c     This will generate the following files:
+c       xxx.inp  - warp input file
+c       xxx.crd  - coordinates file
+c       xxx.elm  - elements id file
+c       xxx.const -  applied displacement constriants
+c       xxx.output - output requests at specified intervals
+c       xxx.domain - J integral domain and output definitions
+c
+   ssy_2dm1_tsm1
+c
+c   Input w boundary conditions on the two surfaces/faces (Z=0 and Z=B or B/2)
+c     Boundary_flag = 0  --- Apply w=0 constrain
+c     Boundary_flag = 1  --- Traction Free Surface ( NO W constraints are applied )
+c
+c      Note: for plane-strain case w=0 constraint should be applied on booth faces
+c
+c Input:  iw_face1   iw_face2
+c
+    0  0
+c
+c    Input:  ple, num_steps, num_output
+c       ple     -- (Integer) flag:  =1 - plane strain .else.  plane stress
+c       num_steps- Number of solution steps
+c       num_output-Interval of load steps Number for warp files output and calc. J
+c
+      1  200  2
+c
+c	Input: E, nu, sig0
+c
+c                E       -- Young's Modulus
+c                nu      -- Piosson's Ratio
+c                sig0    -- Yield stress
+c                n_power -- Power Law Hardening Exponent
+c
+     30000.0  0.3  30.0 5.0
+c
+c	Input: applied_J, T/Sig0
+c	Where:
+c               applied_J -- Increment of J value if the material were elastic
+c               applied_K -- will be calculated from applied_J for pl-e or pl-s
+c               T_ratio  --- T/Sig0 ratio
+c
+c       J_total = applied_J * (num_steps)**2
+c
+   0.0001  -1.0
+

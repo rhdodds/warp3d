@@ -1,0 +1,558 @@
+c
+c     This model demonstrates some of the thermal-cyclic behavior the MTS 
+c     hardening law can represent.  In this case, this input file and two
+c     other related input files demonstrate a model of a Cottrell-Stokes
+c     experiment:
+c
+c           Isothermal (600K) loading to some stress level
+c           Isothermal (partial) unloading
+c           Cooling to RT
+c           Isothermal (RT) loading to a higher stress level
+c
+c     This loading/temperature pattern is applied to a homogenized (100 random
+c     orientations), single-element model in cottrell_stokes.input.
+c
+c     The other two files (isothermal_RT.input, isothermal_600K.input) model
+c     an isothermal, uniaxial tension test at the two temperatures, for
+c     comparison.  In the isothermal tests, we use empirical hardening to 
+c     provide numerical stability to the models.  Otherwise, the 600K model
+c     saturates, causes the global Newton iterations to fail to converge.
+c
+c     Note the small "jogs" in the stress strain curve in the C-S model where
+c     we change the load step.  These jogs result from a jump in the strain 
+c     rate, despite our attempts to correct the time step.
+c
+c     A plot comparing these three models is cs_plot.svg.  Interesting behavior
+c     is labeled on that plot.
+c
+c
+structure test_isothermal
+c
+crystal 1
+      properties slip_type fcc elastic_type cubic,
+      e 76362.3 nu 0.422 mu 93950.1,
+      T_0 4775.7 harden_n 20,
+      mu_0 89827.0 D_0 1517059,
+      theta_0 415.0,
+      b 1.5E-4 boltz 1.3806E-11,
+      tau_a 0.0,
+      tau_hat_y 412.0 g_0_y 2.348 q_y 3.538 p_y 0.928,
+      eps_dot_0_y 1.2E15,
+      tau_hat_v 180.0 g_0_v 2.271 q_v 0.344 p_v 0.00340,
+      eps_dot_0_v 8.8E6,
+      hardening mts k_0 10.0
+c
+c 100 random orientations
+c
+material hx_cp
+      properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
+      n_crystals 100 angle_type degrees, 
+      crystal_input single crystal_type 1,
+      orientation_input file filename 'angles',
+      debug off tolerance 1.0E-10
+c
+c
+number of nodes 8
+number of elements 1
+
+coordinates
+      1     0.0   0.0   0.0
+      2     1.0   0.0   0.0
+      3     1.0   1.0   0.0
+      4     0.0   1.0   0.0
+      5     0.0   0.0   1.0
+      6     1.0   0.0   1.0
+      7     1.0   1.0   1.0
+      8     0.0   1.0   1.0
+
+elements
+      1     type l3disop nonlinear material hx_cp,
+                 order 2x2x2 center_output
+
+incidences
+      1     1     2     3     4     5     6     7     8
+
+blocking
+      1     1     1
+
+constraints
+      plane x = 0.0 u = 0.0
+      plane y = 0.0 v = 0.0
+      plane z = 0.0 w = 0.0
+
+initial conditions
+ temperatures
+  nodes 1-8 temperature 293.0
+
+loading tractions
+  element loads
+    1 face 5 pressure = -1.00
+
+loading dummy
+  nodal loads
+    1 force_x 0.0
+
+loading cool
+ nodal loads
+  1-8 temperature -207.0
+
+loading test
+ nonlinear
+  steps 1-75 tractions 10.0
+
+c
+nonlinear analysis parameters
+   solution technique asymmetric iterative
+   assembly asymmetric on
+   maximum iterations 100
+   minimum iterations 1
+   convergence test norm res tol 0.05
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   consistent q-matrix off
+   time step 1.0
+   extrapolate on
+c 
+ compute displacements for loading test step 1
+c 
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 2
+c 
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 3
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 4
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 5
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 6
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 7
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 8
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 9
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 10
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 11
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 12
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 13
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 14
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 15
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 16
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 17
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 18
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 19
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c 
+ compute displacements for loading test step 20
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 21
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 22
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 23
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 24
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 25
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 26
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 27
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 28
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 29
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 30
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ nonlinear analysis parameters
+  time step 0.1
+c
+ compute displacements for loading test step 31
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 32
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 33
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 34
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 35
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 36
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 37
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 38
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 39
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 40
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 41
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 42
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 43
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 44
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 45
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 46
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 47
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 48
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 49
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 50
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 51
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 52
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 53
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 54
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 55
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 56
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 57
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 58
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 59
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 60
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 61
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 62
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 63
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 64
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 65
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 66
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 67
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 68
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 69
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 70
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 71
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 72
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 73
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+stop
+

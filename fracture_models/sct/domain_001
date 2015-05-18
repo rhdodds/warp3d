@@ -1,0 +1,16 @@
+c     
+c       Center plane of specimen
+c
+domain dnr_001
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   tangent vector tx 1 ty 0 tz 0 $ define correct tangent
+   node set  1      1     2     3     4     5     6     7     8,
+                9    10    11    12    13    14    15    16    17
+   node set  2    493   494   495   496   497   498   499   500,
+              501   502   503   504   505   506   507   508   509
+   front node sets   1   2 linear
+   q-values automatic rings 15-24 
+   function type a
+   print totals
+   compute domain integral

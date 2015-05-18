@@ -1,0 +1,59 @@
+#---------------------------------------------------------------
+#
+#  Generic Unix Makefile for compiling and linking mesh3d_scp.f
+#
+#  A mesh generating program for semi elliptical surface cracks
+#
+#          July 2002
+#
+#---------------------------------------------------------------
+#
+#  define location of f90 compiler and the compile
+#  options needed
+#
+FOPT1=	-O2
+FOPT0=	-O2
+F90  =  /opt/fortran90/bin/f90
+#
+#
+#  Link the object files
+#
+OBJ =	main.o  nodn.o \
+        coord.o plot.o \
+        elem.o  sort.o \
+        nset.o  feminp.o
+#
+mesh_scp : $(OBJ)
+	$(F90)  -o $@ $(OBJ)
+#
+#  Files containing definitions of global arrays
+#
+ele_com = mesh3d_scp_common_eln.f
+nod_com = mesh3d_scp_common_nod.f
+#
+#  Compile the source files
+#
+main.o:   main.f $(ele_com) $(nod_com)
+	$(F90) $(FOPT1) -c $*.f
+#
+nodn.o:    nodn.f
+	$(F90) $(FOPT1) -c $*.f
+#
+coord.o:   coord.f $(nod_com)
+	$(F90) $(FOPT1) -c $*.f
+#
+plot.o:    plot.f $(nod_com)
+	$(F90) $(FOPT0) -c $*.f
+#
+elem.o:    elem.f $(ele_com)
+	$(F90) $(FOPT1) -c $*.f
+#
+sort.o:    sort.f $(ele_com) $(nod_com)
+	$(F90) $(FOPT1) -c $*.f
+#
+nset.o:    nset.f $(nod_com)
+	$(F90) $(FOPT1) -c $*.f
+#
+feminp.o:  feminp.f $(ele_com) $(nod_com)
+	$(F90) $(FOPT1) -c $*.f
+

@@ -1,0 +1,17 @@
+c     
+c       Third layer from the center plane
+c
+domain dnr_003
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set  2    493   494   495   496   497   498   499   500,
+              501   502   503   504   505   506   507   508   509
+   node set  3    985   986   987   988   989   990   991   992,
+              993   994   995   996   997   998   999  1000  1001
+   node set  4   1477  1478  1479  1480  1481  1482  1483  1484,
+             1485  1486  1487  1488  1489  1490  1491  1492  1493
+   front node sets   2   3   4 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

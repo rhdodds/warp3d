@@ -1,0 +1,120 @@
+#---------------------------------------------------------------
+#
+#  Unix Makefile for compiling and linking plate3d.f
+#
+#  this example is for HP 10.20 and up
+#  the Fortran code is very generic. Any decent F-90 compiler
+#  should handle this without any problem.
+#
+#  the build requires an f90 compiler. can use combinations of
+#  f77 and f90 if you desire. or just use f90 for all code if you
+#  trust your f90 compiler.
+#
+#  set the compiler names an options you want for your unix platform
+#  just use the default compiler options in most cases
+#
+#  A mesh generating program for semi elliptical surface cracks
+#  in pipes
+#
+#          November 8, 1999
+#          November 2001
+#---------------------------------------------------------------
+#
+#
+#  set compiler names and options
+#
+f77 = /opt/fortran/bin/f77  +T +E1 +E4 +U77 -V 
+f90 = /opt/fortran90/bin/f90 +U77 +fp_exception -v 
+O = .o
+F77OPT = -O2
+F90OPT = -O2
+LOPT = 
+#
+#  Link the object files
+#
+OBJ =	platemain$(O)  plate1$(O)  plate2$(O)  plate3$(O)  plate4$(O) \
+        plate5$(O)  plate6$(O)   plate7$(O)   plate_nset$(O)  \
+        plate_crdtransf$(O)  plate_surface$(O)  plate_graph$(O) \
+        plate_abq$(O)  plate_wrp$(O)  plate_wrpdsp$(O)  plate_wrptrc$(O) \
+        plate_patran$(O)   plate_femap$(O) \
+        appendFile$(O)   ToUpper$(O)   writeDate$(O)
+#
+plate3d.x : $(OBJ)
+	$(f90) $(LOPT)  \
+	$(OBJ)   -o pipe_mesh_gen
+	chmod ugo+rx  ./pipe_mesh_gen
+#
+#  Files containing definitions of global arrays
+#
+ele_com = plate_common_eln.f
+nod_com = plate_common_nod.f
+#
+#  Compile the source files
+#
+platemain$(O): platemain.f $(ele_com) $(nod_com)
+	$(f90) $(F90OPT) -c $*.f
+#
+plate1$(O):    plate1.f $(ele_com) $(nod_com)
+	$(f90)  $(F90OPT) -c $*.f
+#
+plate2$(O):    plate2.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate3$(O):    plate3.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate4$(O):    plate4.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate5$(O):    plate5.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate6$(O):    plate6.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate7$(O):    plate7.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_nset$(O):    plate_nset.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_crdtransf$(O):    plate_crdtransf.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_surface$(O):    plate_surface.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_graph$(O):    plate_graph.f $(ele_com) $(nod_com)
+	$(f77)  $(F77OPT) -c $*.f
+#
+plate_abq$(O):    plate_abq.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_wrp$(O):    plate_wrp.f $(ele_com) $(nod_com)
+	$(f90)  $(F90OPT) -c $*.f
+#
+plate_wrpdsp$(O):    plate_wrpdsp.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_wrptrc$(O):    plate_wrptrc.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+plate_patran$(O):    plate_patran.f $(ele_com) $(nod_com)
+	$(f90)  $(F90OPT) -c $*.f
+#
+plate_femap$(O):    plate_femap.f $(ele_com) $(nod_com)
+	$(f77) $(F77OPT) -c $*.f
+#
+appendFile$(O):    appendFile.f
+	$(f90)  $(F90OPT) -c $*.f
+#
+ToUpper$(O):    ToUpper.f
+	$(f90)  $(F90OPT) -c $*.f
+#
+writeDate$(O):    writeDate.f
+	$(f90)  $(F90OPT) -c $*.f
+
+
+
+
+

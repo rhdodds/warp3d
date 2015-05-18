@@ -1,0 +1,9 @@
+#!/bin/ksh
+#
+#
+#          used to build KTH mesh generator on W95/NT computers
+#          Digital Visual Fortran compiler & MKS Toolkit
+#          required.
+#
+#
+df *.obj  -link -stack:90000000 -out:meshgen_windows.exe

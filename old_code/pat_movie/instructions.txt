@@ -1,0 +1,410 @@
+                 WARP3D To PATRAN Animation Utility: User's Guide
+
+
+
+PROGRAM PURPOSE:
+
+The WARP3D to PATRAN Animation Utility (a C++ program) creates a PATRAN session
+file based on user input obtained through a text-based question/answer interface.
+Running the session file in PATRAN generates an MPEG movie file animating 
+WARP3D results or a series of TIF image files illustrating WARP3D results.
+
+
+
+CHOOSING BETWEEN MPEG MOVIES AND TIFF IMAGES:
+
+The user choses to create an animated .mpg movie or a series of .tif
+image files.  
+
+MPEG movies normally play at the rate of 30 frames per second.  Therefore, the 
+number of frames created directly influences the playing time of the movie.  
+Some MPEG players provide an option to reduce the frame display rate.  In this
+utility program, the WARP3D results files designated by the user become key 
+frames for creating the PATRAN animation.  When the number of frames desired for
+the movie is greater than the number of key frames available from results files,
+PATRAN interpolates linearly between key frames to create the animation.  For 
+best results, the number of requested movie frames should be one less than an 
+integer multiple of the number of PATRAN results files available.  The MPEG 
+movie created during the PATRAN job is named after the PATRAN database.  
+Indicators such as "fringe" (if a stress or strain fringe is created) or 
+"deformation" (if a deformation is animated) also appear in the MPEG name.  To 
+signal PATRAN that MPEG recording is complete, the user must hit the UNDO button 
+when the PATRAN command line reads:
+        $# Session file stopped playing (level 1)
+
+TIFF files store a single image from the PATRAN viewport.  However, the companion
+tif_to_gif C-Shell program binds the tif files into a single animated gif movie.
+A single TIFF file is created for each WARP3D results file designated by the user.
+The TIFF files are created in the sequence *_1.tif, *_2.tif, etc., where * 
+represents a user input default name.  If TIFF files of the same name already 
+exist in the directory, PATRAN begins the numbering sequence from the last 
+pre-existing file.
+
+
+
+PRIOR TO RUNNING THIS UTILITY PROGRAM:
+
+Before running this utility program, follow the steps below:
+1) Note the location of the WARP3D template files used for importing WARP3D 
+   results into PATRAN.  These templates are usually stored in your 
+   /<PATRAN>/res_templates/ directory.  The file path is requested as input
+   by this utility program.
+2) Change to the directory that stores the WARP3D produced results files for
+   post processing.
+3) Start PATRAN in this directory.
+4) Open the appropriate PATRAN database for the model.
+5) Scale/translate/rotate the model as you wish it to appear in the movie.
+
+
+
+EXECUTING THIS UTILITY PROGRAM:
+
+Build the executable for the program.  Name it movie.go.  Run movie.go in the
+directory that contains the PATRAN results files and answer the questions as 
+they appear.  If a results file at a required load/time step does not exist, 
+the program terminates without writing a session file to create the movie.  
+Otherwise, the session file is stored in *.ses.01, where * indicates a user 
+designated name selected during the input process.  Make sure to read each 
+question fully before responding.  If an error occurs in the input process, 
+use Ctrl-X to stop execution and try again.
+
+Remember, if creating an MPEG movie, the user must hit UNDO when the session
+file completes playing.  This action signals PATRAN to finish MPEG encoding.
+
+
+
+TIPS AND HINTS:
+
+1) Users should notice the commands that PATRAN executes.  Many aspects
+   of PATRAN's command language are easily understood.  For example, "@" in
+   a session file indicates that the command is continued on the next line.
+   Spacing is also very important, especially spaces that precede filenames. 
+   A rudimentary understanding of PATRAN commands allows the user to
+   troubleshoot small problems, toggle settings, and even extend the 
+   capabilities of this utility program.  
+
+2) Animated gifs play in Internet Explorer, Netscape Navigator, or 
+   Microsoft PowerPoint.  ImageMagick and other gif-viewing packages are 
+   available on many UNIX machines.
+
+3) MPEG movies play in Internet Explorer or PowerPoint by using Window's
+   MediaPlayer.  Occassionally, MediaPlayer fails to recognize an MPEG
+   movie.  One way to alleviate this problem is to size the PATRAN viewport 
+   and re-record the MPEG at the "default" size.  Enter the following 
+   command to size the viewport:
+       ga_viewport_size_set("default_viewport",5.964382,6.311515,1)
+
+4) Animated gifs often appear choppy because there is no interpolation
+   between frames.  Creating a smaller viewport window improves the 
+   appearance and greatly reduces the file size of the finished product.
+   Try reducing the viewport window to three or four inches on a side.
+
+5) Each time a session file created with this program is played, the
+   specified results files are imported into PATRAN.  You may edit the
+   session file in any text editor and remove the import commands to avoid 
+   having several copies of each result file stored in your PATRAN
+   database.  Removing these commands also saves time during execution of
+   the session file.  Each file imported requires two commands of the
+   following type:
+
+      resold_import_results( "/finite/webe00002",  "E", 1E-06, @
+      "/apps/msc/patran90/res_templates/warp_elem_" // "strain.res_tmpl" )
+
+      uil_app_results2.set_update_display(  )
+
+   This example imports webe00002, the element strains for load step two
+   of an analysis.  The filenames change according to the number and type 
+   of results.  Look for similar commands in your session file and delete
+   them each time they occur. 
+
+6) When deformations are post-processed, the PATRAN model displayed in the 
+   viewport should change color.  If this color change does not occur, then 
+   there is an error in the session file.  Check that the structure name you 
+   provided matches that of the WARP3D input file which created the results 
+   and is no more than eight alpha-numeric characters long.  Do not rename 
+   WARP3D results files, as this creates a mismatch between the filename and
+   the PATRAN-read load step.
+   
+
+EXAMPLES:
+
+Two transcripts illustrating use of the utility program to create PATRAN 
+session files are included in this help file.
+
+The first of these transcripts is presented below.  The PATRAN session file 
+created by this set of inputs records a series of TIFF files detailing the
+deformation of a WARP3D model, named microcrack in the present example.  A
+custom load step list is used to import results files wnbd00002, wnbd00004,
+wnbd00008, wnbd00012, wnbd00020, wnbd00022, wnbd00024, wnbd00028, wnbd00032,
+and wnbd00040.
+
+*******************************************************************************
+TIFF FILES OF DEFORMED SHAPE: TRANSCRIPT BEGINS
+
+Welcome to the WARP3D To PATRAN Animation Utility.
+
+This program creates a PATRAN session file.  When played, this session
+file drives the execution of PATRAN to read WARP3D results files and to create
+either a series of image (.tif) files or an animated (.mpg) movie.  If
+desired, TIFF files can be subsequently converted to an animated (.gif) movie
+using the C-shell program, tif_to_gif, which accompanies this utility program.
+
+Do you wish to create an MPEG movie or a series of TIFF image files?
+Please select an output format from the options below.
+   1) A series of TIFF image files. (One image file per result file.)
+   2) An animated MPEG movie.
+Output Format: 1
+
+
+You have selected to create a series of .tif files.
+One image will be created for each specified WARP3D result file.
+These images may be bound afterward into an animated (.gif) file using
+the tif_to_gif conversion program.
+
+You will be asked to select a default name for the series of tif
+files.  The .tif extension will be added automatically.  This
+extension will be preceded by a number indicating the placement of
+an image file in the results sequence.  That is, files will be named
+*_1.tif, *_2.tif, etc., where * indicates the default name.
+Please enter a name for the tif files now.
+File name for *.tifs: deformed_shape
+
+
+What type of results are you post-processing?
+Please select an option from the following menu: 
+   1) Deformed shapes.
+   2) Stress fringes.
+   3) Strain fringes.
+   4) Stress fringes on deformed shapes.
+   5) Strain fringes on deformed shapes.
+Option:  1
+
+
+Deformation Options: 
+
+Please choose a deformation scale:
+   1) Model Scale.
+   2) True Scale.
+Deformation Scale: 2
+
+What scale factor do you wish to use?
+Scale Factor: 1
+
+
+Please enter the location of the WARP3D template files.
+The WARP3D template files are most often located in your
+/<PATRAN>/res_templates/ directory.  (Do not include template name.)
+Template Location:  /apps/msc/patran2000/res_templates/
+
+
+Please enter the name of the structure as defined in the WARP3D
+input file.  (No more than eight characters.)
+Structure: microcra
+
+
+Before continuing, check that the WARP3D results files you wish to use
+are already in the current directory.
+
+This utility has several methods of selecting which WARP3D results files
+will be used.  Which method would you prefer to use?
+1) Custom load step list (increments between load steps are not constant).
+2) Constant load step list (increments between load steps are constant).
+3) Automatic load step list (program will select all WARP3D results files 
+   of specified type in the current directory; not to exceed 10,000 files).
+Load Step List: 1
+
+
+Custom load step lists require you to enter the load steps corresponding
+to the WARP3D results files to be displayed.  A cyclic ability has been
+added to simplify this process where possible.  For instance, load steps
+1, 3, 8, 10 might form the first load cycle, and steps 21, 23, 28, 30 might
+form the second.  You have the ability to enter only the first cycle and
+the program will calculate the second, and any subsequent, cycle(s).
+
+How many cycles?
+Cycles: 2
+
+How many files per cycle?
+Files Per Cycle: 5
+
+How many load steps between cycles? (20 in above example)
+Cycle Increment: 20
+
+Please enter the load steps in the first cycle now.
+Record 1: 2
+Record 2: 4
+Record 3: 8
+Record 4: 12
+Record 5: 20
+
+
+Please enter a name for the PATRAN session file to be created.
+(The extension *.ses.01 will be added automatically.)
+Session Name: tif_movie
+
+
+This completes the user inputs.  Please wait a few moments
+while your session file is generated.
+
+Program Completed.
+If successful, session file stored in tif_movie.ses.01.
+
+TIFF FILES OF DEFORMED SHAPE: TRANSCRIPT ENDS
+*******************************************************************************
+
+
+The following sample transcript illustrates the utility program's MPEG 
+capabilities.  The session file generated from these inputs records a .mpg 
+movie displaying the Von Mises stress over the deformed shape of a WARP3D 
+model named ssy.  A constant load step list selects results files wnbd00002,
+wnbd00012, wnb00022, wnbd00032, wnbd00042, and the corresponding stress 
+results.  The movie contains nineteen frames of these five load steps.  PATRAN 
+linearly interpolates four times between each load step to create the 
+animation.
+
+*******************************************************************************
+MPEG MOVIE OF STRESS FRINGE ON DEFORMED SHAPE: TRANSCRIPT BEGINS
+
+Welcome to the WARP3D To PATRAN Animation Utility.
+
+This program creates a PATRAN session file.  When played, this session
+file drives the execution of PATRAN to read WARP3D results files and to create
+either a series of image (.tif) files or an animated (.mpg) movie.  If
+desired, TIFF files can be subsequently converted to an animated (.gif) movie
+using the C-shell program, tif_to_gif, which accompanies this utility program.
+
+Do you wish to create an MPEG movie or a series of TIFF image files?
+Please select an output format from the options below.
+   1) A series of .tif image files. (One image file per result file.)
+   2) An animated .mpg movie.
+Output Format: 2
+
+
+You have chosen to create a .mpg movie.
+
+WARP3D results files become key frames of the movie.  If you
+select a number of frames higher than the number of results
+files, PATRAN interpolates linearly between results files
+to create the extra frames.  For this reason, animations
+should contain an integer multiple of the number of WARP3D
+results files being animated.  The movie will play at 30 frames
+per second.
+How many frames do you want in the movie?
+Frames: 19
+
+
+What type of results are you post-processing?
+Please select an option from the following menu: 
+   1) Deformed shapes.
+   2) Stress fringes.
+   3) Strain fringes.
+   4) Stress fringes on deformed shapes.
+   5) Strain fringes on deformed shapes.
+Option:  4
+
+
+Deformation Options: 
+
+Please choose a deformation scale:
+   1) Model Scale.
+   2) True Scale.
+Deformation Scale: 2
+
+
+What scale factor do you wish to use?
+Scale Factor: 1
+
+
+Stress Fringe Options: 
+
+What stress component do you wish to display?
+Please select an option from the following menu: 
+   1) Sigma X.
+   2) Sigma Y.
+   3) Sigma Z.
+   4) Tau XY.
+   5) Tau XZ.
+   6) Tau YZ.
+   7) Von Mises Stress.
+   8) Work Density.
+   9) C1-Material model dependent value.
+  10) C2-Material model dependent value.
+  11) C3-Material model dependent value.
+Option:  7
+
+
+What fringe style do you prefer?
+   1) Continuous.
+   2) Discrete/Smooth.
+Option:  1
+
+
+Select an edge display option for the stress fringe.
+   1) Element Edges.
+   2) Free Edges.
+   3) No edges.
+Edge Display: 1
+
+
+Will you be using nodal or element results?
+   1) Nodal.
+   2) Element.
+Option:  2
+
+
+How many colors do you wish to appear in the spectrum?
+(No more than sixteen.  No less than three.)
+Number of Colors: 14
+
+To create an appropriate range, please enter the maximum
+and minumum stress values now.
+Maximum Stress: 120
+Minumum Stress: 0
+
+
+Please enter the location of the WARP3D template files.
+The WARP3D template files are most often located in your
+/<PATRAN>/res_templates/ directory.  (Do not include template name.)
+Template Location:  /apps/msc/patran2000/res_templates/
+
+
+Please enter the name of the structure as defined in the WARP3D
+input file.  (No more than eight characters.)
+Structure: microcra
+
+
+Please provide the beginning load step, the ending load step, and the increment
+between steps now.  (Enter only integer values.)
+Starting step:  2
+Final step:  42
+Step increment:  10
+
+
+Please enter a name for the PATRAN session file to be created.
+(The extension *.ses.01 will be added automatically.)
+Session Name: movie
+
+
+This completes the user inputs.  Please wait a few moments
+while your session file is generated.
+
+Program Completed.
+If successful, session file stored in movie.ses.01.
+
+
+
+Before continuing, check that the WARP3D results files you wish to use
+are already in the current directory.
+
+This utility has several methods of selecting which WARP3D results files
+will be used.  Which method would you prefer to use?
+1) Custom load step list (increments between load steps are not constant).
+2) Constant load step list (increments between load steps are constant).
+3) Automatic load step list (program will select all WARP3D results files 
+   of specified type in the current directory; not to exceed 10,000 files).
+Load Step List: 2
+
+
+
+MPEG MOVIE OF STRESS FRINGE ON DEFORMED SHAPE: TRANSCRIPT ENDS
+*********************************************************************************

@@ -1,0 +1,12 @@
+c
+c
+* input from 'rpv_ref.domain_define'
+c
+   output patran binary nodal displacements
+   output patran binary nodal stress
+c   output patran binary nodal reactions
+   output patran binary element stresses
+   output patran binary element strains
+c   output patran eformat  nodal stress
+c   output patran eformat  nodal strains
+c   output patran eformat  nodal displacements

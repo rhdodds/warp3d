@@ -1,0 +1,20 @@
+This directory contains 2 example input files for the mesh_scp program:
+
+   example_1 and example_2
+
+The mesh_scp program prompts the user for the name of the
+input file. 
+
+The program builds files with the following names:
+
+     domain_###   : input commands to compute J-integral at some
+                    point on the crack front
+     patran.out.1 : Patran neutral file for the model
+     *.crd        : nodal coordinates
+     *.elm        : incidences (element connectivities)
+     *.warp_input : main warp3d input file. uses *input from <file>
+                    commands to have warp3d read from the other files
+     *.cnst       : constraints that make some dof = 0
+     *.prdsp      : constraints that enforce remote displacements 
+     
+

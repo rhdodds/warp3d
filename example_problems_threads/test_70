@@ -1,0 +1,716 @@
+c
+c
+c
+c
+structure warp3d_model
+c
+ stress-strain curve 1 temperature   70 e 29900 nu 0.32 alpha 7.7e-6,
+     gp_sigma_0 31.3 gp_h_u 1580 gp_beta_u 16.6 gp_delta_u 17700
+ stress-strain curve 2 temperature  400 e 28600 nu 0.32 alpha 8.0e-6,
+     gp_sigma_0 28.8 gp_h_u 1250 gp_beta_u 15.4 gp_delta_u 25600
+ stress-strain curve 3 temperature  800 e 27300 nu 0.32 alpha 8.2e-6,
+     gp_sigma_0 27.9 gp_h_u  830 gp_beta_u 13.3 gp_delta_u 16500
+ stress-strain curve 4 temperature 1000 e 26500 nu 0.32 alpha 8.4e-6,
+     gp_sigma_0 27.0 gp_h_u  750 gp_beta_u 12.1 gp_delta_u 27500
+ stress-strain curve 5 temperature 1200 e 25200 nu 0.32 alpha 8.6e-6,
+     gp_sigma_0 25.5 gp_h_u  730 gp_beta_u 12.0 gp_delta_u 35000
+ stress-strain curve 6 temperature 1400 e 23400 nu 0.32 alpha 8.8e-6,
+     gp_sigma_0 24.2 gp_h_u  700 gp_beta_u 11.8 gp_delta_u 16700
+ stress-strain curve 7 temperature 1600 e 22200 nu 0.32 alpha 8.9e-6,
+     gp_sigma_0 14.0 gp_h_u  670 gp_beta_u 11.3 gp_delta_u 19500
+ stress-strain curve 8 temperature 1800 e 18400 nu 0.32 alpha 9.1e-6,
+     gp_sigma_0  9.1 gp_h_u  650 gp_beta_u  5.4 gp_delta_u  5660
+ stress-strain curve 9 temperature 2000 e 12600 nu 0.32 alpha 9.2e-6,
+     gp_sigma_0  3.1 gp_h_u  630 gp_beta_u  3.6 gp_delta_u  3450
+c
+ material gp_hastelloy_x
+   properties cyclic generalized_plasticity curves 1-9,
+     rho 7.7e-7 gp_tau 0.05 sig_tol 0.001
+
+c
+c
+c
+number of nodes       81
+number of elements        8
+c
+coordinates
+*echo off
+      1  0.000000000E+00  0.000000000E+00  0.000000000E+00
+      2  0.250000000E+00  0.000000000E+00  0.000000000E+00
+      3  0.500000000E+00  0.000000000E+00  0.000000000E+00
+      4  0.750000000E+00  0.000000000E+00  0.000000000E+00
+      5  0.100000000E+01  0.000000000E+00  0.000000000E+00
+      6  0.000000000E+00  0.166666672E+00  0.000000000E+00
+      7  0.442307711E+00  0.230769232E+00  0.000000000E+00
+      8  0.000000000E+00  0.333333343E+00  0.000000000E+00
+      9  0.100000000E+01  0.333333343E+00  0.000000000E+00
+     10  0.192307696E+00  0.397435904E+00  0.000000000E+00
+     11  0.384615392E+00  0.461538464E+00  0.000000000E+00
+     12  0.692307711E+00  0.564102590E+00  0.000000000E+00
+     13  0.000000000E+00  0.666666687E+00  0.000000000E+00
+     14  0.100000000E+01  0.666666687E+00  0.000000000E+00
+     15  0.317307711E+00  0.730769217E+00  0.000000000E+00
+     16  0.100000000E+01  0.833333373E+00  0.000000000E+00
+     17  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     18  0.125000000E+00  0.100000000E+01  0.000000000E+00
+     19  0.250000000E+00  0.100000000E+01  0.000000000E+00
+     20  0.625000000E+00  0.100000000E+01  0.000000000E+00
+     21  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     22  0.000000000E+00  0.000000000E+00  0.250000000E+00
+     23  0.500000000E+00  0.000000000E+00  0.250000000E+00
+     24  0.100000000E+01  0.000000000E+00  0.250000000E+00
+     25  0.000000000E+00  0.333333343E+00  0.294871807E+00
+     26  0.384615392E+00  0.461538464E+00  0.312130183E+00
+     27  0.100000000E+01  0.666666687E+00  0.339743584E+00
+     28  0.000000000E+00  0.100000000E+01  0.384615392E+00
+     29  0.250000000E+00  0.100000000E+01  0.384615392E+00
+     30  0.100000000E+01  0.100000000E+01  0.384615392E+00
+     31  0.000000000E+00  0.000000000E+00  0.500000000E+00
+     32  0.250000000E+00  0.000000000E+00  0.500000000E+00
+     33  0.500000000E+00  0.000000000E+00  0.500000000E+00
+     34  0.750000000E+00  0.000000000E+00  0.500000000E+00
+     35  0.100000000E+01  0.000000000E+00  0.500000000E+00
+     36  0.000000000E+00  0.166666672E+00  0.544871807E+00
+     37  0.442307711E+00  0.230769232E+00  0.562130213E+00
+     38  0.000000000E+00  0.333333343E+00  0.589743614E+00
+     39  0.100000000E+01  0.333333343E+00  0.589743614E+00
+     40  0.192307696E+00  0.397435904E+00  0.607002020E+00
+     41  0.384615392E+00  0.461538464E+00  0.624260366E+00
+     42  0.692307711E+00  0.564102590E+00  0.651873767E+00
+     43  0.000000000E+00  0.666666687E+00  0.679487228E+00
+     44  0.100000000E+01  0.666666687E+00  0.679487228E+00
+     45  0.317307711E+00  0.730769217E+00  0.696745574E+00
+     46  0.100000000E+01  0.833333373E+00  0.724358976E+00
+     47  0.000000000E+00  0.000000000E+00  0.750000000E+00
+     48  0.500000000E+00  0.000000000E+00  0.750000000E+00
+     49  0.100000000E+01  0.000000000E+00  0.750000000E+00
+     50  0.000000000E+00  0.100000000E+01  0.769230783E+00
+     51  0.125000000E+00  0.100000000E+01  0.769230783E+00
+     52  0.250000000E+00  0.100000000E+01  0.769230783E+00
+     53  0.625000000E+00  0.100000000E+01  0.769230783E+00
+     54  0.100000000E+01  0.100000000E+01  0.769230783E+00
+     55  0.000000000E+00  0.333333343E+00  0.794871807E+00
+     56  0.384615392E+00  0.461538464E+00  0.812130213E+00
+     57  0.100000000E+01  0.666666687E+00  0.839743614E+00
+     58  0.000000000E+00  0.100000000E+01  0.884615421E+00
+     59  0.250000000E+00  0.100000000E+01  0.884615421E+00
+     60  0.100000000E+01  0.100000000E+01  0.884615421E+00
+     61  0.000000000E+00  0.000000000E+00  0.100000000E+01
+     62  0.250000000E+00  0.000000000E+00  0.100000000E+01
+     63  0.500000000E+00  0.000000000E+00  0.100000000E+01
+     64  0.750000000E+00  0.000000000E+00  0.100000000E+01
+     65  0.100000000E+01  0.000000000E+00  0.100000000E+01
+     66  0.000000000E+00  0.166666672E+00  0.100000000E+01
+     67  0.442307711E+00  0.230769232E+00  0.100000000E+01
+     68  0.000000000E+00  0.333333343E+00  0.100000000E+01
+     69  0.100000000E+01  0.333333343E+00  0.100000000E+01
+     70  0.192307696E+00  0.397435904E+00  0.100000000E+01
+     71  0.384615392E+00  0.461538464E+00  0.100000000E+01
+     72  0.692307711E+00  0.564102590E+00  0.100000000E+01
+     73  0.000000000E+00  0.666666687E+00  0.100000000E+01
+     74  0.100000000E+01  0.666666687E+00  0.100000000E+01
+     75  0.317307711E+00  0.730769217E+00  0.100000000E+01
+     76  0.100000000E+01  0.833333373E+00  0.100000000E+01
+     77  0.000000000E+00  0.100000000E+01  0.100000000E+01
+     78  0.125000000E+00  0.100000000E+01  0.100000000E+01
+     79  0.250000000E+00  0.100000000E+01  0.100000000E+01
+     80  0.625000000E+00  0.100000000E+01  0.100000000E+01
+     81  0.100000000E+01  0.100000000E+01  0.100000000E+01
+*echo on
+c
+c
+elements
+c   for config number   0
+c            1 - 8 type q3disop    linear material gp_hastelloy_x,
+c                  order 2x2x2 no_bbar center_output short
+            1 - 4 type q3disop    linear material gp_hastelloy_x,
+                  order 2x2x2 no_bbar center_output short
+            5 - 8 type q3disop    linear material gp_hastelloy_x,
+                  order 2x2x2 no_bbar center_output short
+c
+incidences
+*echo off
+       1       1       3      11       8      31      33      41      38,
+       2       7      10       6      32      37      40      36      22,
+      23      26      25
+       2       3       5      14      11      33      35      44      41,
+       4       9      12       7      34      39      42      37      23,
+      24      27      26
+       3       8      11      19      17      38      41      52      50,
+      10      15      18      13      40      45      51      43      25,
+      26      29      28
+       4      11      14      21      19      41      44      54      52,
+      12      16      20      15      42      46      53      45      26,
+      27      30      29
+       5      31      33      41      38      61      63      71      68,
+      32      37      40      36      62      67      70      66      47,
+      48      56      55
+       6      33      35      44      41      63      65      74      71,
+      34      39      42      37      64      69      72      67      48,
+      49      57      56
+       7      38      41      52      50      68      71      79      77,
+      40      45      51      43      70      75      78      73      55,
+      56      59      58
+       8      41      44      54      52      71      74      81      79,
+      42      46      53      45      72      76      80      75      56,
+      57      60      59
+*echo on
+c
+c
+c
+*echo off
+blocking $ scalar
+c
+       1       4       1
+       2       4       5
+c
+*echo on
+c
+*echo off
+constraints
+c      Constraints for nrmxx nrmyy nrmzz
+c       plane x = 0 u = 0.0 verify
+c       plane y = 0 v = 0.0 verify
+c       plane z = 0 w = 0.0 verify
+c
+c      Constraints for shrxy shryz MA2
+       plane y = 0 fixed verify
+c
+c      Constraints for shrxz
+c       plane y = 0 v = 0.0 verify
+c       3 23 33 48 63 w 0.0
+c       31-35 u 0.0
+c
+c
+c
+*echo on
+c
+initial conditions
+   temperatures
+     nodes 1-81 temperature 70.0
+c
+loading uptemp
+   nodal loads
+     all temperature 19.3
+c
+loading dummy
+   nodal loads
+     41 force_x 0.0
+c
+c Defn. x = +1 surface
+c 2 4 6 8 face 5 tractions ...
+c
+c Defn. x = -1 surface
+c 1 3 5 7 face 6 tractions ...
+c
+c Defn. y = +1 surface
+c 3 4 7 8 face 4 tractions ...
+c
+c Defn. y = -1 surface
+c 1 2 5 6 face 3 tractions ...
+c
+c Defn. z = +1 surface
+c 5-8     face 2 tractions ...
+c
+c Defn. z = -1 surface
+c 1-4     face 1 tractions ...
+c
+c ccccccccccccccccccccccccccccccccccccccccccccccc
+c
+c Normal tractions for xx, yy, and zz
+c
+loading nrmxx
+ element loads
+  2 4 6 8 face 5 tractions tx  1.0
+c
+loading nrmyy
+ element loads
+  3 4 7 8 face 4 tractions ty  1.0
+c
+loading nrmzz
+ element loads
+  5 6 7 8 face 2 tractions tz  1.0
+c
+c Shear tractions for xy, yz, xz
+c
+loading shrxy
+ element loads
+  3 4 7 8 face 4 tractions tx  0.57735
+  2 4 6 8 face 5 tractions ty  0.57735
+  1 3 5 7 face 6 tractions ty -0.57735
+c
+loading shryz
+ element loads
+  3 4 7 8 face 4 tractions tz  0.57735
+  5 6 7 8 face 2 tractions ty  0.57735
+  1 2 3 4 face 1 tractions ty -0.57735
+c
+loading shrxz
+ element loads
+  2 4 6 8 face 5 tractions tz  0.57735
+  1 3 5 7 face 6 tractions tz -0.57735
+  5 6 7 8 face 2 tractions tx  0.57735
+  1 2 3 4 face 1 tractions tx -0.57735
+c
+ loading unit_pull
+   nodal loads
+     81 force_x 1.0 force_y 1.0 force_z 1.0
+c
+c cccccccccccccccccccccccccccccccccccccccccccc
+c
+c loading TRXX
+c  nonlinear
+c   steps    1 -  100   shrxz  0.375  uptemp -1.0
+c   steps  101 -  200   shrxz -0.750  uptemp  2.0
+c   steps  201 -  300   shrxz  0.750  uptemp -2.0
+c   steps  301 -  400   shrxz -0.750  uptemp  2.0
+c   steps  401 -  500   shrxz  0.750  uptemp -2.0
+c   steps  501 -  600   shrxz -0.750  uptemp  2.0
+c   steps  601 -  700   shrxz  0.750  uptemp -2.0
+c   steps  701 -  800   shrxz -0.750  uptemp  2.0
+c   steps  801 -  900   shrxz  0.750  uptemp -2.0
+c   steps  901 - 1000   shrxz -0.750  uptemp  2.0
+c   steps 1001 - 1100   shrxz  0.750  uptemp -2.0
+c   steps 1101 - 1200   shrxz -0.750  uptemp  2.0
+c
+ loading MA2
+  nonlinear
+    steps   1 - 100 shrxy   1.0
+    steps       101 shrxy   0.200533 shryz   3.148929 uptemp 0.25
+    steps       102 shrxy   0.101154 shryz   3.161519 uptemp 0.25
+    steps       103 shrxy   0.001182 shryz   3.170965 uptemp 0.25
+    steps       104 shrxy  -0.099283 shryz   3.177244 uptemp 0.25
+    steps       105 shrxy  -0.200140 shryz   3.180333 uptemp 0.25
+    steps       106 shrxy  -0.301289 shryz   3.180214 uptemp 0.25
+    steps       107 shrxy  -0.402625 shryz   3.176871 uptemp 0.25
+    steps       108 shrxy  -0.504048 shryz   3.170294 uptemp 0.25
+    steps       109 shrxy  -0.605453 shryz   3.160472 uptemp 0.25
+    steps       110 shrxy  -0.706736 shryz   3.147401 uptemp 0.25
+    steps       111 shrxy  -0.807794 shryz   3.131079 uptemp 0.25
+    steps       112 shrxy  -0.908521 shryz   3.111508 uptemp 0.25
+    steps       113 shrxy  -1.008813 shryz   3.088691 uptemp 0.25
+    steps       114 shrxy  -1.108565 shryz   3.062637 uptemp 0.25
+    steps       115 shrxy  -1.207673 shryz   3.033358 uptemp 0.25
+    steps       116 shrxy  -1.306032 shryz   3.000868 uptemp 0.25
+    steps       117 shrxy  -1.403538 shryz   2.965185 uptemp 0.25
+    steps       118 shrxy  -1.500088 shryz   2.926332 uptemp 0.25
+    steps       119 shrxy  -1.595578 shryz   2.884334 uptemp 0.25
+    steps       120 shrxy  -1.689906 shryz   2.839218 uptemp 0.25
+    steps       121 shrxy  -1.782969 shryz   2.791016 uptemp 0.25
+    steps       122 shrxy  -1.874668 shryz   2.739764 uptemp 0.25
+    steps       123 shrxy  -1.964901 shryz   2.685499 uptemp 0.25
+    steps       124 shrxy  -2.053571 shryz   2.628263 uptemp 0.25
+    steps       125 shrxy  -2.140579 shryz   2.568102 uptemp 0.25
+    steps       126 shrxy  -2.225829 shryz   2.505063 uptemp 0.25
+    steps       127 shrxy  -2.309225 shryz   2.439198 uptemp 0.25
+    steps       128 shrxy  -2.390675 shryz   2.370560 uptemp 0.25
+    steps       129 shrxy  -2.470085 shryz   2.299208 uptemp 0.25
+    steps       130 shrxy  -2.547367 shryz   2.225202 uptemp 0.25
+    steps       131 shrxy  -2.622431 shryz   2.148605 uptemp 0.25
+    steps       132 shrxy  -2.695190 shryz   2.069484 uptemp 0.25
+    steps       133 shrxy  -2.765561 shryz   1.987908 uptemp 0.25
+    steps       134 shrxy  -2.833460 shryz   1.903950 uptemp 0.25
+    steps       135 shrxy  -2.898807 shryz   1.817685 uptemp 0.25
+    steps       136 shrxy  -2.961524 shryz   1.729189 uptemp 0.25
+    steps       137 shrxy  -3.021536 shryz   1.638544 uptemp 0.25
+    steps       138 shrxy  -3.078769 shryz   1.545832 uptemp 0.25
+    steps       139 shrxy  -3.133152 shryz   1.451139 uptemp 0.25
+    steps       140 shrxy  -3.184617 shryz   1.354552 uptemp 0.25
+    steps       141 shrxy  -3.233100 shryz   1.256162 uptemp 0.25
+    steps       142 shrxy  -3.278537 shryz   1.156060 uptemp 0.25
+    steps       143 shrxy  -3.320869 shryz   1.054342 uptemp 0.25
+    steps       144 shrxy  -3.360038 shryz   0.951103 uptemp 0.25
+    steps       145 shrxy  -3.395992 shryz   0.846443 uptemp 0.25
+    steps       146 shrxy  -3.428679 shryz   0.740461 uptemp 0.25
+    steps       147 shrxy  -3.458052 shryz   0.633260 uptemp 0.25
+    steps       148 shrxy  -3.484066 shryz   0.524944 uptemp 0.25
+    steps       149 shrxy  -3.506680 shryz   0.415618 uptemp 0.25
+    steps       150 shrxy  -3.525858 shryz   0.305389 uptemp 0.25
+    steps       151 shrxy  -3.541563 shryz   0.194365 uptemp 0.25
+    steps       152 shrxy  -3.553766 shryz   0.082656 uptemp 0.25
+    steps       153 shrxy  -3.562438 shryz  -0.029628 uptemp 0.25
+    steps       154 shrxy  -3.567556 shryz  -0.142374 uptemp 0.25
+    steps       155 shrxy  -3.569098 shryz  -0.255470 uptemp 0.25
+    steps       156 shrxy  -3.567049 shryz  -0.368802 uptemp 0.25
+    steps       157 shrxy  -3.561395 shryz  -0.482257 uptemp 0.25
+    steps       158 shrxy  -3.552127 shryz  -0.595718 uptemp 0.25
+    steps       159 shrxy  -3.539237 shryz  -0.709072 uptemp 0.25
+    steps       160 shrxy  -3.522725 shryz  -0.822201 uptemp 0.25
+    steps       161 shrxy  -3.502591 shryz  -0.934991 uptemp 0.25
+    steps       162 shrxy  -3.478841 shryz  -1.047325 uptemp 0.25
+    steps       163 shrxy  -3.451483 shryz  -1.159086 uptemp 0.25
+    steps       164 shrxy  -3.420529 shryz  -1.270160 uptemp 0.25
+    steps       165 shrxy  -3.385998 shryz  -1.380430 uptemp 0.25
+    steps       166 shrxy  -3.347907 shryz  -1.489780 uptemp 0.25
+    steps       167 shrxy  -3.306282 shryz  -1.598097 uptemp 0.25
+    steps       168 shrxy  -3.261150 shryz  -1.705264 uptemp 0.25
+    steps       169 shrxy  -3.212541 shryz  -1.811170 uptemp 0.25
+    steps       170 shrxy  -3.160491 shryz  -1.915700 uptemp 0.25
+    steps       171 shrxy  -3.105038 shryz  -2.018744 uptemp 0.25
+    steps       172 shrxy  -3.046225 shryz  -2.120190 uptemp 0.25
+    steps       173 shrxy  -2.984097 shryz  -2.219929 uptemp 0.25
+    steps       174 shrxy  -2.918704 shryz  -2.317852 uptemp 0.25
+    steps       175 shrxy  -2.850098 shryz  -2.413852 uptemp 0.25
+    steps       176 shrxy  -2.778336 shryz  -2.507825 uptemp 0.25
+    steps       177 shrxy  -2.703478 shryz  -2.599666 uptemp 0.25
+    steps       178 shrxy  -2.625587 shryz  -2.689273 uptemp 0.25
+    steps       179 shrxy  -2.544730 shryz  -2.776547 uptemp 0.25
+    steps       180 shrxy  -2.460977 shryz  -2.861389 uptemp 0.25
+    steps       181 shrxy  -2.374400 shryz  -2.943704 uptemp 0.25
+    steps       182 shrxy  -2.285076 shryz  -3.023397 uptemp 0.25
+    steps       183 shrxy  -2.193085 shryz  -3.100378 uptemp 0.25
+    steps       184 shrxy  -2.098509 shryz  -3.174556 uptemp 0.25
+    steps       185 shrxy  -2.001433 shryz  -3.245846 uptemp 0.25
+    steps       186 shrxy  -1.901946 shryz  -3.314164 uptemp 0.25
+    steps       187 shrxy  -1.800139 shryz  -3.379428 uptemp 0.25
+    steps       188 shrxy  -1.696106 shryz  -3.441560 uptemp 0.25
+    steps       189 shrxy  -1.589943 shryz  -3.500485 uptemp 0.25
+    steps       190 shrxy  -1.481749 shryz  -3.556129 uptemp 0.25
+    steps       191 shrxy  -1.371627 shryz  -3.608424 uptemp 0.25
+    steps       192 shrxy  -1.259679 shryz  -3.657302 uptemp 0.25
+    steps       193 shrxy  -1.146012 shryz  -3.702702 uptemp 0.25
+    steps       194 shrxy  -1.030735 shryz  -3.744562 uptemp 0.25
+    steps       195 shrxy  -0.913957 shryz  -3.782827 uptemp 0.25
+    steps       196 shrxy  -0.795791 shryz  -3.817444 uptemp 0.25
+    steps       197 shrxy  -0.676351 shryz  -3.848363 uptemp 0.25
+    steps       198 shrxy  -0.555754 shryz  -3.875538 uptemp 0.25
+    steps       199 shrxy  -0.434116 shryz  -3.898927 uptemp 0.25
+    steps       200 shrxy  -0.311557 shryz  -3.918492 uptemp 0.25
+    steps       201 shrxy  -0.188197 shryz  -3.934198 uptemp 0.25
+    steps       202 shrxy  -0.064158 shryz  -3.946013 uptemp 0.25
+    steps       203 shrxy   0.060437 shryz  -3.953910 uptemp 0.25
+    steps       204 shrxy   0.185465 shryz  -3.957867 uptemp 0.25
+    steps       205 shrxy   0.310799 shryz  -3.957864 uptemp 0.25
+    steps       206 shrxy   0.436316 shryz  -3.953885 uptemp 0.25
+    steps       207 shrxy   0.561888 shryz  -3.945920 uptemp 0.25
+    steps       208 shrxy   0.687388 shryz  -3.933960 uptemp 0.25
+    steps       209 shrxy   0.812690 shryz  -3.918003 uptemp 0.25
+    steps       210 shrxy   0.937666 shryz  -3.898049 uptemp 0.25
+    steps       211 shrxy   1.062188 shryz  -3.874103 uptemp 0.25
+    steps       212 shrxy   1.186128 shryz  -3.846173 uptemp 0.25
+    steps       213 shrxy   1.309359 shryz  -3.814274 uptemp 0.25
+    steps       214 shrxy   1.431755 shryz  -3.778422 uptemp 0.25
+    steps       215 shrxy   1.553186 shryz  -3.738638 uptemp 0.25
+    steps       216 shrxy   1.673528 shryz  -3.694947 uptemp 0.25
+    steps       217 shrxy   1.792655 shryz  -3.647379 uptemp 0.25
+    steps       218 shrxy   1.910441 shryz  -3.595967 uptemp 0.25
+    steps       219 shrxy   2.026762 shryz  -3.540748 uptemp 0.25
+    steps       220 shrxy   2.141495 shryz  -3.481765 uptemp 0.25
+    steps       221 shrxy   2.254519 shryz  -3.419061 uptemp 0.25
+    steps       222 shrxy   2.365712 shryz  -3.352687 uptemp 0.25
+    steps       223 shrxy   2.474956 shryz  -3.282696 uptemp 0.25
+    steps       224 shrxy   2.582132 shryz  -3.209144 uptemp 0.25
+    steps       225 shrxy   2.687125 shryz  -3.132094 uptemp 0.25
+    steps       226 shrxy   2.789821 shryz  -3.051609 uptemp 0.25
+    steps       227 shrxy   2.890106 shryz  -2.967759 uptemp 0.25
+    steps       228 shrxy   2.987872 shryz  -2.880615 uptemp 0.25
+    steps       229 shrxy   3.083009 shryz  -2.790252 uptemp 0.25
+    steps       230 shrxy   3.175412 shryz  -2.696751 uptemp 0.25
+    steps       231 shrxy   3.264978 shryz  -2.600194 uptemp 0.25
+    steps       232 shrxy   3.351605 shryz  -2.500668 uptemp 0.25
+    steps       233 shrxy   3.435195 shryz  -2.398261 uptemp 0.25
+    steps       234 shrxy   3.515653 shryz  -2.293067 uptemp 0.25
+    steps       235 shrxy   3.592886 shryz  -2.185181 uptemp 0.25
+    steps       236 shrxy   3.666804 shryz  -2.074702 uptemp 0.25
+    steps       237 shrxy   3.737321 shryz  -1.961733 uptemp 0.25
+    steps       238 shrxy   3.804352 shryz  -1.846379 uptemp 0.25
+    steps       239 shrxy   3.867818 shryz  -1.728746 uptemp 0.25
+    steps       240 shrxy   3.927641 shryz  -1.608946 uptemp 0.25
+    steps       241 shrxy   3.983747 shryz  -1.487091 uptemp 0.25
+    steps       242 shrxy   4.036067 shryz  -1.363297 uptemp 0.25
+    steps       243 shrxy   4.084535 shryz  -1.237682 uptemp 0.25
+    steps       244 shrxy   4.129086 shryz  -1.110366 uptemp 0.25
+    steps       245 shrxy   4.169663 shryz  -0.981470 uptemp 0.25
+    steps       246 shrxy   4.206209 shryz  -0.851120 uptemp 0.25
+    steps       247 shrxy   4.238675 shryz  -0.719442 uptemp 0.25
+    steps       248 shrxy   4.267011 shryz  -0.586563 uptemp 0.25
+    steps       249 shrxy   4.291174 shryz  -0.452614 uptemp 0.25
+    steps       250 shrxy   4.311127 shryz  -0.317725 uptemp 0.25
+    steps       251 shrxy   4.326832 shryz  -0.182029 uptemp 0.25
+    steps       252 shrxy   4.338260 shryz  -0.045660 uptemp 0.25
+    steps       253 shrxy   4.345383 shryz   0.091247 uptemp 0.25
+    steps       254 shrxy   4.348179 shryz   0.228555 uptemp 0.25
+    steps       255 shrxy   4.346629 shryz   0.366129 uptemp 0.25
+    steps       256 shrxy   4.340721 shryz   0.503829 uptemp 0.25
+    steps       257 shrxy   4.330444 shryz   0.641519 uptemp 0.25
+    steps       258 shrxy   4.315793 shryz   0.779058 uptemp 0.25
+    steps       259 shrxy   4.296768 shryz   0.916308 uptemp 0.25
+    steps       260 shrxy   4.273372 shryz   1.053130 uptemp 0.25
+    steps       261 shrxy   4.245614 shryz   1.189384 uptemp 0.25
+    steps       262 shrxy   4.213506 shryz   1.324932 uptemp 0.25
+    steps       263 shrxy   4.177066 shryz   1.459633 uptemp 0.25
+    steps       264 shrxy   4.136315 shryz   1.593349 uptemp 0.25
+    steps       265 shrxy   4.091278 shryz   1.725943 uptemp 0.25
+    steps       266 shrxy   4.041987 shryz   1.857276 uptemp 0.25
+    steps       267 shrxy   3.988476 shryz   1.987213 uptemp 0.25
+    steps       268 shrxy   3.930784 shryz   2.115617 uptemp 0.25
+    steps       269 shrxy   3.868956 shryz   2.242354 uptemp 0.25
+    steps       270 shrxy   3.803038 shryz   2.367290 uptemp 0.25
+    steps       271 shrxy   3.733083 shryz   2.490294 uptemp 0.25
+    steps       272 shrxy   3.659149 shryz   2.611234 uptemp 0.25
+    steps       273 shrxy   3.581294 shryz   2.729983 uptemp 0.25
+    steps       274 shrxy   3.499585 shryz   2.846413 uptemp 0.25
+    steps       275 shrxy   3.414090 shryz   2.960398 uptemp 0.25
+    steps       276 shrxy   3.324883 shryz   3.071817 uptemp 0.25
+    steps       277 shrxy   3.232039 shryz   3.180547 uptemp 0.25
+    steps       278 shrxy   3.135642 shryz   3.286470 uptemp 0.25
+    steps       279 shrxy   3.035774 shryz   3.389471 uptemp 0.25
+    steps       280 shrxy   2.932526 shryz   3.489434 uptemp 0.25
+    steps       281 shrxy   2.825989 shryz   3.586251 uptemp 0.25
+    steps       282 shrxy   2.716260 shryz   3.679812 uptemp 0.25
+    steps       283 shrxy   2.603437 shryz   3.770012 uptemp 0.25
+    steps       284 shrxy   2.487625 shryz   3.856750 uptemp 0.25
+    steps       285 shrxy   2.368929 shryz   3.939926 uptemp 0.25
+    steps       286 shrxy   2.247459 shryz   4.019444 uptemp 0.25
+    steps       287 shrxy   2.123328 shryz   4.095213 uptemp 0.25
+    steps       288 shrxy   1.996652 shryz   4.167144 uptemp 0.25
+    steps       289 shrxy   1.867550 shryz   4.235150 uptemp 0.25
+    steps       290 shrxy   1.736143 shryz   4.299152 uptemp 0.25
+    steps       291 shrxy   1.602556 shryz   4.359071 uptemp 0.25
+    steps       292 shrxy   1.466916 shryz   4.414833 uptemp 0.25
+    steps       293 shrxy   1.329352 shryz   4.466368 uptemp 0.25
+    steps       294 shrxy   1.189997 shryz   4.513610 uptemp 0.25
+    steps       295 shrxy   1.048984 shryz   4.556499 uptemp 0.25
+    steps       296 shrxy   0.906450 shryz   4.594975 uptemp 0.25
+    steps       297 shrxy   0.762533 shryz   4.628986 uptemp 0.25
+    steps       298 shrxy   0.617373 shryz   4.658483 uptemp 0.25
+    steps       299 shrxy   0.471112 shryz   4.683421 uptemp 0.25
+    steps       300 shrxy   0.323893 shryz   4.703761 uptemp 0.25
+    steps       301 shrxy   0.175861 shryz   4.719467 uptemp 0.25
+    steps       302 shrxy   0.027162 shryz   4.730507 uptemp 0.25
+    steps       303 shrxy  -0.122056 shryz   4.736855 uptemp 0.25
+    steps       304 shrxy  -0.271646 shryz   4.738490 uptemp 0.25
+    steps       305 shrxy  -0.421458 shryz   4.735395 uptemp 0.25
+    steps       306 shrxy  -0.571343 shryz   4.727556 uptemp 0.25
+    steps       307 shrxy  -0.721150 shryz   4.714968 uptemp 0.25
+    steps       308 shrxy  -0.870728 shryz   4.697626 uptemp 0.25
+    steps       309 shrxy  -1.019927 shryz   4.675533 uptemp 0.25
+    steps       310 shrxy  -1.168595 shryz   4.648696 uptemp 0.25
+    steps       311 shrxy  -1.316581 shryz   4.617126 uptemp 0.25
+    steps       312 shrxy  -1.463735 shryz   4.580839 uptemp 0.25
+    steps       313 shrxy  -1.609906 shryz   4.539858 uptemp 0.25
+    steps       314 shrxy  -1.754944 shryz   4.494207 uptemp 0.25
+    steps       315 shrxy  -1.898699 shryz   4.443918 uptemp 0.25
+    steps       316 shrxy  -2.041024 shryz   4.389026 uptemp 0.25
+    steps       317 shrxy  -2.181771 shryz   4.329573 uptemp 0.25
+    steps       318 shrxy  -2.320793 shryz   4.265601 uptemp 0.25
+    steps       319 shrxy  -2.457946 shryz   4.197163 uptemp 0.25
+    steps       320 shrxy  -2.593085 shryz   4.124311 uptemp 0.25
+    steps       321 shrxy  -2.726068 shryz   4.047106 uptemp 0.25
+    steps       322 shrxy  -2.856756 shryz   3.965610 uptemp 0.25
+    steps       323 shrxy  -2.985010 shryz   3.879893 uptemp 0.25
+    steps       324 shrxy  -3.110693 shryz   3.790026 uptemp 0.25
+    steps       325 shrxy  -3.233671 shryz   3.696086 uptemp 0.25
+    steps       326 shrxy  -3.353812 shryz   3.598156 uptemp 0.25
+    steps       327 shrxy  -3.470987 shryz   3.496320 uptemp 0.25
+    steps       328 shrxy  -3.585068 shryz   3.390669 uptemp 0.25
+    steps       329 shrxy  -3.695932 shryz   3.281297 uptemp 0.25
+    steps       330 shrxy  -3.803457 shryz   3.168301 uptemp 0.25
+    steps       331 shrxy  -3.907524 shryz   3.051784 uptemp 0.25
+    steps       332 shrxy  -4.008019 shryz   2.931852 uptemp 0.25
+    steps       333 shrxy  -4.104830 shryz   2.808614 uptemp 0.25
+    steps       334 shrxy  -4.197847 shryz   2.682183 uptemp 0.25
+    steps       335 shrxy  -4.286966 shryz   2.552677 uptemp 0.25
+    steps       336 shrxy  -4.372084 shryz   2.420216 uptemp 0.25
+    steps       337 shrxy  -4.453106 shryz   2.284923 uptemp 0.25
+    steps       338 shrxy  -4.529935 shryz   2.146925 uptemp 0.25
+    steps       339 shrxy  -4.602483 shryz   2.006353 uptemp 0.25
+    steps       340 shrxy  -4.670664 shryz   1.863340 uptemp 0.25
+    steps       341 shrxy  -4.734394 shryz   1.718021 uptemp 0.25
+    steps       342 shrxy  -4.793598 shryz   1.570534 uptemp 0.25
+    steps       343 shrxy  -4.848201 shryz   1.421022 uptemp 0.25
+    steps       344 shrxy  -4.898134 shryz   1.269628 uptemp 0.25
+    steps       345 shrxy  -4.943334 shryz   1.116498 uptemp 0.25
+    steps       346 shrxy  -4.983740 shryz   0.961779 uptemp 0.25
+    steps       347 shrxy  -5.019298 shryz   0.805624 uptemp 0.25
+    steps       348 shrxy  -5.049956 shryz   0.648182 uptemp 0.25
+    steps       349 shrxy  -5.075669 shryz   0.489609 uptemp 0.25
+    steps       350 shrxy  -5.096396 shryz   0.330061 uptemp 0.25
+    steps       351 shrxy  -5.112101 shryz   0.169693 uptemp 0.25
+    steps       352 shrxy  -5.122754 shryz   0.008664 uptemp 0.25
+    steps       353 shrxy  -5.128327 shryz  -0.152866 uptemp 0.25
+    steps       354 shrxy  -5.128802 shryz  -0.314737 uptemp 0.25
+    steps       355 shrxy  -5.124160 shryz  -0.476788 uptemp 0.25
+    steps       356 shrxy  -5.114392 shryz  -0.638857 uptemp 0.25
+    steps       357 shrxy  -5.099492 shryz  -0.800781 uptemp 0.25
+    steps       358 shrxy  -5.079459 shryz  -0.962398 uptemp 0.25
+    steps       359 shrxy  -5.054298 shryz  -1.123545 uptemp 0.25
+    steps       360 shrxy  -5.024019 shryz  -1.284060 uptemp 0.25
+    steps       361 shrxy  -4.988637 shryz  -1.443778 uptemp 0.25
+    steps       362 shrxy  -4.948172 shryz  -1.602539 uptemp 0.25
+    steps       363 shrxy  -4.902649 shryz  -1.760179 uptemp 0.25
+    steps       364 shrxy  -4.852100 shryz  -1.916538 uptemp 0.25
+    steps       365 shrxy  -4.796558 shryz  -2.071456 uptemp 0.25
+    steps       366 shrxy  -4.736066 shryz  -2.224772 uptemp 0.25
+    steps       367 shrxy  -4.670669 shryz  -2.376329 uptemp 0.25
+    steps       368 shrxy  -4.600419 shryz  -2.525969 uptemp 0.25
+    steps       369 shrxy  -4.525370 shryz  -2.673538 uptemp 0.25
+    steps       370 shrxy  -4.445585 shryz  -2.818879 uptemp 0.25
+    steps       371 shrxy  -4.361128 shryz  -2.961843 uptemp 0.25
+    steps       372 shrxy  -4.272072 shryz  -3.102279 uptemp 0.25
+    steps       373 shrxy  -4.178491 shryz  -3.240037 uptemp 0.25
+    steps       374 shrxy  -4.080466 shryz  -3.374974 uptemp 0.25
+    steps       375 shrxy  -3.978082 shryz  -3.506944 uptemp 0.25
+    steps       376 shrxy  -3.871429 shryz  -3.635808 uptemp 0.25
+    steps       377 shrxy  -3.760601 shryz  -3.761428 uptemp 0.25
+    steps       378 shrxy  -3.645696 shryz  -3.883667 uptemp 0.25
+    steps       379 shrxy  -3.526819 shryz  -4.002394 uptemp 0.25
+    steps       380 shrxy  -3.404076 shryz  -4.117479 uptemp 0.25
+    steps       381 shrxy  -3.277579 shryz  -4.228798 uptemp 0.25
+    steps       382 shrxy  -3.147444 shryz  -4.336227 uptemp 0.25
+    steps       383 shrxy  -3.013790 shryz  -4.439647 uptemp 0.25
+    steps       384 shrxy  -2.876741 shryz  -4.538943 uptemp 0.25
+    steps       385 shrxy  -2.736425 shryz  -4.634005 uptemp 0.25
+    steps       386 shrxy  -2.592972 shryz  -4.724725 uptemp 0.25
+    steps       387 shrxy  -2.446517 shryz  -4.810998 uptemp 0.25
+    steps       388 shrxy  -2.297199 shryz  -4.892727 uptemp 0.25
+    steps       389 shrxy  -2.145157 shryz  -4.969816 uptemp 0.25
+    steps       390 shrxy  -1.990537 shryz  -5.042175 uptemp 0.25
+    steps       391 shrxy  -1.833485 shryz  -5.109718 uptemp 0.25
+    steps       392 shrxy  -1.674153 shryz  -5.172363 uptemp 0.25
+    steps       393 shrxy  -1.512692 shryz  -5.230034 uptemp 0.25
+    steps       394 shrxy  -1.349259 shryz  -5.282658 uptemp 0.25
+    steps       395 shrxy  -1.184011 shryz  -5.330170 uptemp 0.25
+    steps       396 shrxy  -1.017109 shryz  -5.372506 uptemp 0.25
+    steps       397 shrxy  -0.848714 shryz  -5.409609 uptemp 0.25
+    steps       398 shrxy  -0.678992 shryz  -5.441428 uptemp 0.25
+    steps       399 shrxy  -0.508107 shryz  -5.467916 uptemp 0.25
+    steps       400 shrxy  -0.336229 shryz  -5.489030 uptemp 0.25
+    steps       401 shrxy  -0.163525 shryz  -5.504736 uptemp 0.25
+    steps       402 shrxy   0.009834 shryz  -5.515001 uptemp 0.25
+    steps       403 shrxy   0.183676 shryz  -5.519800 uptemp 0.25
+    steps       404 shrxy   0.357828 shryz  -5.519113 uptemp 0.25
+    steps       405 shrxy   0.532117 shryz  -5.512925 uptemp 0.25
+    steps       406 shrxy   0.706370 shryz  -5.501228 uptemp 0.25
+    steps       407 shrxy   0.880412 shryz  -5.484016 uptemp 0.25
+    steps       408 shrxy   1.054068 shryz  -5.461292 uptemp 0.25
+    steps       409 shrxy   1.227164 shryz  -5.433064 uptemp 0.25
+    steps       410 shrxy   1.399524 shryz  -5.399343 uptemp 0.25
+    steps       411 shrxy   1.570975 shryz  -5.360149 uptemp 0.25
+    steps       412 shrxy   1.741342 shryz  -5.315505 uptemp 0.25
+    steps       413 shrxy   1.910452 shryz  -5.265441 uptemp 0.25
+    steps       414 shrxy   2.078133 shryz  -5.209992 uptemp 0.25
+    steps       415 shrxy   2.244213 shryz  -5.149198 uptemp 0.25
+    steps       416 shrxy   2.408520 shryz  -5.083106 uptemp 0.25
+    steps       417 shrxy   2.570887 shryz  -5.011766 uptemp 0.25
+    steps       418 shrxy   2.731146 shryz  -4.935236 uptemp 0.25
+    steps       419 shrxy   2.889129 shryz  -4.853577 uptemp 0.25
+    steps       420 shrxy   3.044674 shryz  -4.766858 uptemp 0.25
+    steps       421 shrxy   3.197618 shryz  -4.675151 uptemp 0.25
+    steps       422 shrxy   3.347801 shryz  -4.578534 uptemp 0.25
+    steps       423 shrxy   3.495064 shryz  -4.477090 uptemp 0.25
+    steps       424 shrxy   3.639254 shryz  -4.370907 uptemp 0.25
+    steps       425 shrxy   3.780217 shryz  -4.260078 uptemp 0.25
+    steps       426 shrxy   3.917804 shryz  -4.144702 uptemp 0.25
+    steps       427 shrxy   4.051868 shryz  -4.024881 uptemp 0.25
+    steps       428 shrxy   4.182265 shryz  -3.900723 uptemp 0.25
+    steps       429 shrxy   4.308856 shryz  -3.772341 uptemp 0.25
+    steps       430 shrxy   4.431502 shryz  -3.639850 uptemp 0.25
+    steps       431 shrxy   4.550071 shryz  -3.503373 uptemp 0.25
+    steps       432 shrxy   4.664434 shryz  -3.363035 uptemp 0.25
+    steps       433 shrxy   4.774464 shryz  -3.218966 uptemp 0.25
+    steps       434 shrxy   4.880040 shryz  -3.071299 uptemp 0.25
+    steps       435 shrxy   4.981045 shryz  -2.920173 uptemp 0.25
+    steps       436 shrxy   5.077365 shryz  -2.765729 uptemp 0.25
+    steps       437 shrxy   5.168891 shryz  -2.608112 uptemp 0.25
+    steps       438 shrxy   5.255519 shryz  -2.447472 uptemp 0.25
+    steps       439 shrxy   5.337149 shryz  -2.283960 uptemp 0.25
+    steps       440 shrxy   5.413687 shryz  -2.117733 uptemp 0.25
+    steps       441 shrxy   5.485042 shryz  -1.948950 uptemp 0.25
+    steps       442 shrxy   5.551128 shryz  -1.777771 uptemp 0.25
+    steps       443 shrxy   5.611867 shryz  -1.604362 uptemp 0.25
+    steps       444 shrxy   5.667183 shryz  -1.428890 uptemp 0.25
+    steps       445 shrxy   5.717005 shryz  -1.251525 uptemp 0.25
+    steps       446 shrxy   5.761271 shryz  -1.072438 uptemp 0.25
+    steps       447 shrxy   5.799921 shryz  -0.891805 uptemp 0.25
+    steps       448 shrxy   5.832900 shryz  -0.709801 uptemp 0.25
+    steps       449 shrxy   5.860163 shryz  -0.526605 uptemp 0.25
+    steps       450 shrxy   5.881665 shryz  -0.342397 uptemp 0.25
+    steps       451 shrxy   5.897370 shryz  -0.157357 uptemp 0.25
+    steps       452 shrxy   5.907248 shryz   0.028332 uptemp 0.25
+    steps       453 shrxy   5.911272 shryz   0.214485 uptemp 0.25
+    steps       454 shrxy   5.909425 shryz   0.400919 uptemp 0.25
+    steps       455 shrxy   5.901691 shryz   0.587447 uptemp 0.25
+    steps       456 shrxy   5.888063 shryz   0.773884 uptemp 0.25
+    steps       457 shrxy   5.868540 shryz   0.960043 uptemp 0.25
+    steps       458 shrxy   5.843125 shryz   1.145738 uptemp 0.25
+    steps       459 shrxy   5.811829 shryz   1.330782 uptemp 0.25
+    steps       460 shrxy   5.774667 shryz   1.514989 uptemp 0.25
+    steps       461 shrxy   5.731660 shryz   1.698172 uptemp 0.25
+    steps       462 shrxy   5.682838 shryz   1.880146 uptemp 0.25
+    steps       463 shrxy   5.628233 shryz   2.060726 uptemp 0.25
+    steps       464 shrxy   5.567885 shryz   2.239728 uptemp 0.25
+    steps       465 shrxy   5.501838 shryz   2.416969 uptemp 0.25
+    steps       466 shrxy   5.430146 shryz   2.592269 uptemp 0.25
+    steps       467 shrxy   5.352863 shryz   2.765446 uptemp 0.25
+    steps       468 shrxy   5.270053 shryz   2.936322 uptemp 0.25
+    steps       469 shrxy   5.181785 shryz   3.104721 uptemp 0.25
+    steps       470 shrxy   5.088132 shryz   3.270469 uptemp 0.25
+    steps       471 shrxy   4.989174 shryz   3.433393 uptemp 0.25
+    steps       472 shrxy   4.884995 shryz   3.593323 uptemp 0.25
+    steps       473 shrxy   4.775688 shryz   3.750092 uptemp 0.25
+    steps       474 shrxy   4.661347 shryz   3.903535 uptemp 0.25
+    steps       475 shrxy   4.542074 shryz   4.053491 uptemp 0.25
+    steps       476 shrxy   4.417975 shryz   4.199800 uptemp 0.25
+    steps       477 shrxy   4.289162 shryz   4.342309 uptemp 0.25
+    steps       478 shrxy   4.155750 shryz   4.480864 uptemp 0.25
+    steps       479 shrxy   4.017863 shryz   4.615317 uptemp 0.25
+    steps       480 shrxy   3.875625 shryz   4.745525 uptemp 0.25
+    steps       481 shrxy   3.729168 shryz   4.871345 uptemp 0.25
+    steps       482 shrxy   3.578627 shryz   4.992641 uptemp 0.25
+    steps       483 shrxy   3.424142 shryz   5.109281 uptemp 0.25
+    steps       484 shrxy   3.265858 shryz   5.221137 uptemp 0.25
+    steps       485 shrxy   3.103921 shryz   5.328085 uptemp 0.25
+    steps       486 shrxy   2.938485 shryz   5.430005 uptemp 0.25
+    steps       487 shrxy   2.769707 shryz   5.526783 uptemp 0.25
+    steps       488 shrxy   2.597745 shryz   5.618311 uptemp 0.25
+    steps       489 shrxy   2.422764 shryz   5.704482 uptemp 0.25
+    steps       490 shrxy   2.244930 shryz   5.785198 uptemp 0.25
+    steps       491 shrxy   2.064414 shryz   5.860365 uptemp 0.25
+    steps       492 shrxy   1.881390 shryz   5.929894 uptemp 0.25
+    steps       493 shrxy   1.696032 shryz   5.993700 uptemp 0.25
+    steps       494 shrxy   1.508521 shryz   6.051707 uptemp 0.25
+    steps       495 shrxy   1.319038 shryz   6.103841 uptemp 0.25
+    steps       496 shrxy   1.127768 shryz   6.150036 uptemp 0.25
+    steps       497 shrxy   0.934896 shryz   6.190232 uptemp 0.25
+    steps       498 shrxy   0.740611 shryz   6.224373 uptemp 0.25
+    steps       499 shrxy   0.545103 shryz   6.252410 uptemp 0.25
+    steps       500 shrxy   0.348565 shryz   6.274299 uptemp 0.25
+c
+c cccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 25
+   minimum iterations 3
+   convergence norm residual tol 1.0e-6
+   time step 1.0e10
+   trace solution off
+   adaptive solution on
+   batch messages off
+   extrapolate off
+   material messages off
+   show details off
+c
+compute displacements for loading MA2 step 100
+ output displacements 7 20 39 56 72
+ output noheader strain 1-8 stress 1-8
+c
+compute displacements for loading MA2 step 200
+ output displacements 7 20 39 56 72
+ output noheader strain 1-8 stress 1-8
+c
+compute displacements for loading MA2 step 300
+ output displacements 7 20 39 56 72
+ output noheader strain 1-8 stress 1-8
+c
+compute displacements for loading MA2 step 400
+ output displacements 7 20 39 56 72
+ output noheader strain 1-8 stress 1-8
+c
+compute displacements for loading MA2 step 500
+ output displacements 7 20 39 56 72
+ output noheader strain 1-8 stress 1-8
+c
+ stop
+

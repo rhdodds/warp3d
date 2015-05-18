@@ -1,0 +1,151 @@
+/* warp3d template for element stress result file */
+/* date created:  10-4-95  R. Dodds               */
+/* date modified: 10-4-95                         */
+
+KEYLOC = 0
+
+/* Stress */
+
+TYPE = scalar
+COLUMN = 1
+PRI = Stress
+SEC = sigma-xx
+
+TYPE = scalar
+COLUMN = 2
+PRI = Stress
+SEC = sigma-yy
+
+TYPE = scalar
+COLUMN = 3
+PRI = Stress
+SEC = sigma-zz
+
+TYPE = scalar
+COLUMN = 4
+PRI = Stress
+SEC = tau-xy
+
+TYPE = scalar
+COLUMN = 5
+PRI = Stress
+SEC = tau-yz
+
+TYPE = scalar
+COLUMN = 6
+PRI = Stress
+SEC = tau-xz
+
+/* work density, mises, material dependent values */
+
+TYPE = scalar
+COLUMN = 7
+PRI = Stress
+SEC = work density
+
+TYPE = scalar
+COLUMN = 8
+PRI = Stress
+SEC = von mises stress
+
+TYPE = scalar
+COLUMN = 9
+PRI = Stress
+SEC = C1-Mat val (m strain)
+
+TYPE = scalar
+COLUMN = 10
+PRI = Stress
+SEC = C2-Mat val (m stress)
+
+TYPE = scalar
+COLUMN = 11
+PRI = Stress
+SEC = C3-Mat val (f)
+
+/* stress invariants */
+
+TYPE = scalar
+COLUMN = 12
+PRI = Stress
+SEC = stress invariant 1
+
+TYPE = scalar
+COLUMN = 13
+PRI = Stress
+SEC = stress invariant 2
+
+TYPE = scalar
+COLUMN = 14
+PRI = Stress
+SEC = stress invariant 3
+
+/* prinicpal stresses */
+
+TYPE = scalar
+COLUMN = 15
+PRI = Stress
+SEC = principal (Minimum)
+
+TYPE = scalar
+COLUMN = 16
+PRI = Stress
+SEC = principal (Inter) 
+
+TYPE = scalar
+COLUMN = 17
+PRI = Stress
+SEC = principal (Maximum)
+
+/* Stress dir cosines */
+TYPE = scalar
+COLUMN = 18
+PRI = Stress dir cosine
+SEC = l1
+
+TYPE = scalar
+COLUMN = 19
+PRI = Stress dir cosine
+SEC = m1
+
+TYPE = scalar
+COLUMN = 20
+PRI = Stress dir cosine
+SEC = n1
+
+TYPE = scalar
+COLUMN = 21
+PRI = Stress dir cosine
+SEC = l2
+
+TYPE = scalar
+COLUMN = 22
+PRI = Stress dir cosine
+SEC = m2
+
+TYPE = scalar
+COLUMN = 23
+PRI = Stress dir cosine
+SEC = n2
+
+TYPE = scalar
+COLUMN = 24
+PRI = Stress dir cosine
+SEC = l3
+
+TYPE = scalar
+COLUMN = 25
+PRI = Stress dir cosine
+SEC = m3
+
+TYPE = scalar
+COLUMN = 26
+PRI = Stress dir cosine
+SEC = n3
+
+TYPE = END
+
+
+
+
+

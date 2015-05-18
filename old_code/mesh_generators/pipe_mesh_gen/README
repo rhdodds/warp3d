@@ -1,0 +1,46 @@
+
+
+This directory holds the source for pipe_mesh_gen, a mesh generator
+written by Jonas Faleskog. The program builds focused crack front
+models for (1) rectangular prisms containing embedded, surface
+and corner cracks, (2) cylinders containing internal/external, axial/
+circumferential surface flaws, (3) elbows containing internal/external, axial/
+circumferential surface flaws.
+
+The program builds Patran neutral files, WARP3D input files and
+ABAQUS input files. All loadings, displacement boundary conditions and
+commands to get J computed along the crack front are included in the
+generated input files.
+
+This is a cool program !
+
+
+Pertinent files:
+
+README                   -- this file
+make_unix                -- makefile for compiling the code on Unix
+                            platforms
+make_windows             -- makefile for compiling the code on Windows
+                            OSs for Intel computers
+meshgen.run              -- the executable made by makefile on Unix
+                            (not included in distribution)
+meshgen_windows.exe      -- executable for Windows OSs running on Intel
+                            PCs (included in distribution)
+manual.pdf               -- Adobe PDF file for the User Manual
+
+During execution the program makes lots of files. I strongly
+recommend that you create a fresh directory, copy the example
+input file there and run the code while in that directory.
+
+To run the mesh generator, create an input file with the format described
+in the manual, then type 
+
+        meshgen.run        (on Unix)
+        meshgen_windows.exe  (on Windows - Intel)
+
+Example input files are in the ../pipe_test_dir directory
+
+The code asks for the input file and creates an input
+file for one of several finite element programs (specified in the input file).
+
+

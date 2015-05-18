@@ -1,0 +1,623 @@
+c     Crack front domain calculations
+c          number of cracks =   1
+c        number of contours =  20
+c 
+c     J-integral evaluations
+c              crack number =   1
+c     number of crack nodes =  61
+c 
+domain J1  $ phi =  -1.5708
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   1 to   3
+c  
+  node set    1  596 599 602 603 606 607 610 611, 
+ 613 615 618 619 622 623 628 629 630
+  node set    2 598 601 605 609 614 617 621 626 627 
+  node set    3 636 637 749 751 846 848 931 933, 
+ 934 936 1015 1017 1019 1021 1068 1069 1076
+  front node sets     1    2    3    q3disop verify
+  q-values automatic rings    1-31
+  function type a
+  print totals
+  compute domain integral
+domain J3  $ phi =  -1.4422
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   1 to   5
+c  
+  node set    1  596 599 602 603 606 607 610 611, 
+ 613 615 618 619 622 623 628 629 630
+  node set    2 598 601 605 609 614 617 621 626 627 
+  node set    3 636 637 749 751 846 848 931 933, 
+ 934 936 1015 1017 1019 1021 1068 1069 1076
+  node set    4 638 750 847 932 937 1016 1020 1074 1075 
+  node set    5 710 711 815 817 904 906 981 983,
+ 995 997 1047 1050 1054 1057 1066 1067 1073
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J5  $ phi =  -1.3114
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   3 to   7
+c  
+  node set    1 636 637 749 751 846 848 931 933, 
+ 934 936 1015 1017 1019 1021 1068 1069 1076
+  node set    2 638 750 847 932 937 1016 1020 1074 1075 
+  node set    3 710 711 815 817 904 906 981 983,
+ 995 997 1047 1050 1054 1057 1066 1067 1073
+  node set    4 712 816 905 982 998 1049 1056 1071 1072 
+  node set    5 718 719 823 825 912 914 987 990, 
+ 1002 1004 1046 1048 1053 1055 1060 1061 1070
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J7  $ phi =  -1.1759
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   5 to   9
+c  
+  node set    1 710 711 815 817 904 906 981 983,
+ 995 997 1047 1050 1054 1057 1066 1067 1073
+  node set    2 712 816 905 982 998 1049 1056 1071 1072 
+  node set    3 718 719 823 825 912 914 987 990, 
+ 1002 1004 1046 1048 1053 1055 1060 1061 1070
+  node set    4 720 824 913 989 1005 1032 1036 1042 1043 
+  node set    5 726 727 831 833 918 921 986 988, 
+ 1000 1003 1030 1031 1034 1035 1039 1040 1041
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J9  $ phi =  -1.0321
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   7 to  11
+c  
+  node set    1 718 719 823 825 912 914 987 990, 
+ 1002 1004 1046 1048 1053 1055 1060 1061 1070
+  node set    2 720 824 913 989 1005 1032 1036 1042 1043 
+  node set    3 726 727 831 833 918 921 986 988, 
+ 1000 1003 1030 1031 1034 1035 1039 1040 1041
+  node set    4 728 832 920 979 994 1009 1013 1027 1028 
+  node set    5 734 735 837 840 917 919 977 978, 
+ 992 993 1007 1008 1011 1012 1024 1025 1026
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J11  $ phi =  -0.8746
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from   9 to  13
+c  
+  node set    1 726 727 831 833 918 921 986 988, 
+ 1000 1003 1030 1031 1034 1035 1039 1040 1041
+  node set    2 728 832 920 979 994 1009 1013 1027 1028 
+  node set    3 734 735 837 840 917 919 977 978, 
+ 992 993 1007 1008 1011 1012 1024 1025 1026
+  node set    4 736 839 910 956 960 964 968 974 975 
+  node set    5 740 742 836 838 908 909 954 955, 
+ 958 959 962 963 966 967 971 972 973
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J13  $ phi =  -0.6927
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  11 to  15
+c  
+  node set    1 734 735 837 840 917 919 977 978, 
+ 992 993 1007 1008 1011 1012 1024 1025 1026
+  node set    2 736 839 910 956 960 964 968 974 975 
+  node set    3 740 742 836 838 908 909 954 955, 
+ 958 959 962 963 966 967 971 972 973
+  node set    4 743 829 902 925 929 941 945 951 952
+  node set    5 738 741 827 828 900 901 923 924, 
+ 926 928 939 940 943 944 948 949 950
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J15  $ phi =  -0.4559
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  13 to  17
+c  
+  node set    1 740 742 836 838 908 909 954 955, 
+ 958 959 962 963 966 967 971 972 973
+  node set    2 743 829 902 925 929 941 945 951 952
+  node set    3 738 741 827 828 900 901 923 924, 
+ 926 928 939 940 943 944 948 949 950
+  node set    4 732 821 875 879 883 887 891 897  898
+  node set    5 730 731 819 820 873 874 877 878, 
+ 881 882 885 886 889 890 894 895 896
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J17  $ phi =  -0.4172
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  15 to  19
+c  
+  node set    1 738 741 827 828 900 901 923 924, 
+ 926 928 939 940 943 944 948 949 950
+  node set    2 732 821 875 879 883 887 891 897  898
+  node set    3 730 731 819 820 873 874 877 878, 
+ 881 882 885 886 889 890 894 895 896
+  node set    4 724 813 844 852 856 860 864 870 871 
+  node set    5 722 723 811 812 842 843 850 851, 
+ 854 855 858 859 862 863 867 868 869
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J19  $ phi =  -0.3751
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  17 to  21
+c  
+  node set    1 730 731 819 820 873 874 877 878, 
+ 881 882 885 886 889 890 894 895 896
+  node set    2 724 813 844 852 856 860 864 870 871 
+  node set    3 722 723 811 812 842 843 850 851, 
+ 854 855 858 859 862 863 867 868 869
+  node set    4 716 782 786 790 794 798 802 808 809 
+  node set    5 714 715 780 781 784 785 788 789,
+ 792 793 796 797 800 801 805 806 807
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J21  $ phi =  -0.3290
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  19 to  23
+c  
+  node set    1 722 723 811 812 842 843 850 851, 
+ 854 855 858 859 862 863 867 868 869
+  node set    2 716 782 786 790 794 798 802 808 809 
+  node set    3 714 715 780 781 784 785 788 789,
+ 792 793 796 797 800 801 805 806 807
+  node set    4 708 746 754 758 763 766 770 776 777 
+  node set    5 705 707 745 747 753 755 757 759, 
+ 760 762 765 767 769 771 774 775 778 
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J23  $ phi =  -0.2784
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  21 to  25
+c  
+  node set    1 714 715 780 781 784 785 788 789,
+ 792 793 796 797 800 801 805 806 807
+  node set    2 708 746 754 758 763 766 770 776 777 
+  node set    3 705 707 745 747 753 755 757 759, 
+ 760 762 765 767 769 771 774 775 778 
+  node set    4 673 677 681 685 689 693 697 703 704 
+  node set    5 671 672 675 676 679 680 683 684, 
+ 687 688 691 692 695 696 700 701 702
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J25  $ phi =  -0.2180
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  23 to  27
+c  
+  node set    1 705 707 745 747 753 755 757 759, 
+ 760 762 765 767 769 771 774 775 778 
+  node set    2 673 677 681 685 689 693 697 703 704 
+  node set    3 671 672 675 676 679 680 683 684, 
+ 687 688 691 692 695 696 700 701 702
+  node set    4 634 642 646 650 654 658 662 668 669 
+  node set    5 632 633 640 641 644 645 648 649, 
+ 652 653 656 657 660 661 665 666 667
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J27  $ phi =  -0.1511
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  25 to  29
+c  
+  node set    1 671 672 675 676 679 680 683 684, 
+ 687 688 691 692 695 696 700 701 702
+  node set    2 634 642 646 650 654 658 662 668 669 
+  node set    3 632 633 640 641 644 645 648 649, 
+ 652 653 656 657 660 661 665 666 667
+  node set    4 564 568 572 576 580 584 588 594 595
+  node set    5 562 563 566 567 570 571 574 575, 
+ 578 579 582 583 586 587 591 592 593
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J29  $ phi =  -0.0775
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  27 to  31
+c  
+  node set    1 632 633 640 641 644 645 648 649, 
+ 652 653 656 657 660 661 665 666 667
+  node set    2 564 568 572 576 580 584 588 594 595
+  node set    3 562 563 566 567 570 571 574 575, 
+ 578 579 582 583 586 587 591 592 593
+  node set    4 529 533 537 541 545 549 553 559  560
+  node set    5 527 528 531 532 535 536 539 540, 
+ 543 544 547 548 551 552 556 557 558
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J31  $ phi =   0.0000
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  29 to  33
+c  
+  node set    1 562 563 566 567 570 571 574 575, 
+ 578 579 582 583 586 587 591 592 593
+  node set    2 529 533 537 541 545 549 553 559  560
+  node set    3 527 528 531 532 535 536 539 540, 
+ 543 544 547 548 551 552 556 557 558
+  node set    4 494 498 502 506 510 514 518 524 525 
+  node set    5 492 493 496 497 500 501 504 505, 
+ 508 509 512 513 516 517 521 522 523
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J33  $ phi =   0.0775
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  31 to  35
+c  
+  node set    1 527 528 531 532 535 536 539 540, 
+ 543 544 547 548 551 552 556 557 558
+  node set    2 494 498 502 506 510 514 518 524 525 
+  node set    3 492 493 496 497 500 501 504 505, 
+ 508 509 512 513 516 517 521 522 523
+  node set    4 459 463 467 471 475 479 483 489 490 
+  node set    5 456 458 461 462 465 466 469 470, 
+ 472 474 477 478 481 482 486 487 488
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J35  $ phi =   0.1511
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  33 to  37
+c  
+  node set    1 492 493 496 497 500 501 504 505, 
+ 508 509 512 513 516 517 521 522 523
+  node set    2 459 463 467 471 475 479 483 489 490 
+  node set    3 456 458 461 462 465 466 469 470, 
+ 472 474 477 478 481 482 486 487 488
+  node set    4 424 428 432 436 440 444 448 454 455
+  node set    5 421 423 426 427 430 431 434 435, 
+ 437 439 442 443 446 447 451 452 453
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J37  $ phi =   0.2180
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  35 to  39
+c  
+  node set    1 456 458 461 462 465 466 469 470, 
+ 472 474 477 478 481 482 486 487 488
+  node set    2 424 428 432 436 440 444 448 454 455
+  node set    3 421 423 426 427 430 431 434 435, 
+ 437 439 442 443 446 447 451 452 453
+  node set    4 389 392 396 401 404 408 412 418 419 
+  node set    5 387 388 391 393 395 397 399 400, 
+ 403 405 407 409 411 413 416 417 420
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J39  $ phi =   0.2784
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  37 to  41
+c  
+  node set    1 421 423 426 427 430 431 434 435, 
+ 437 439 442 443 446 447 451 452 453
+  node set    2 389 392 396 401 404 408 412 418 419 
+  node set    3 387 388 391 393 395 397 399 400, 
+ 403 405 407 409 411 413 416 417 420
+  node set    4 354 357 361 366 369 373 377 383 384 
+  node set    5 352 353 356 358 360 362 364 365, 
+ 368 370 372 374 376 378 381 382 385
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J41  $ phi =   0.3290
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  39 to  43
+c  
+  node set    1 387 388 391 393 395 397 399 400, 
+ 403 405 407 409 411 413 416 417 420
+  node set    2 354 357 361 366 369 373 377 383 384 
+  node set    3 352 353 356 358 360 362 364 365, 
+ 368 370 372 374 376 378 381 382 385
+  node set    4 319 322 326 331 334 338 342 348 349 
+  node set    5 317 318 321 323 325 327 329 330, 
+ 333 335 337 339 341 343 346 347 350
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J43  $ phi =   0.3751
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  41 to  45
+c  
+  node set    1 352 353 356 358 360 362 364 365, 
+ 368 370 372 374 376 378 381 382 385
+  node set    2 319 322 326 331 334 338 342 348 349 
+  node set    3 317 318 321 323 325 327 329 330, 
+ 333 335 337 339 341 343 346 347 350
+  node set    4 284 287 291 296 299 303 307 313 314 
+  node set    5 282 283 286 288 290 292 294 295, 
+ 298 300 302 304 306 308 311 312 315
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J45  $ phi =   0.4172
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  43 to  47
+c  
+  node set    1 317 318 321 323 325 327 329 330, 
+ 333 335 337 339 341 343 346 347 350
+  node set    2 284 287 291 296 299 303 307 313 314 
+  node set    3 282 283 286 288 290 292 294 295, 
+ 298 300 302 304 306 308 311 312 315
+  node set    4 249 253 257 261 265 269 273 279 280 
+  node set    5  246 248 251 252 255 256 258 260, 
+ 263 264 267 268 271 272 276 277 278
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J47  $ phi =   0.4559
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  45 to  49
+c  
+  node set    1 282 283 286 288 290 292 294 295, 
+ 298 300 302 304 306 308 311 312 315
+  node set    2 249 253 257 261 265 269 273 279 280 
+  node set    3  246 248 251 252 255 256 258 260, 
+ 263 264 267 268 271 272 276 277 278
+  node set    4 214 217 221 226 229 233 237 243 244 
+  node set    5 212 213 216 218 220 222 224 225, 
+ 228 230 232 234 236 238 241 242 245
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J49  $ phi =   0.6927
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  47 to  51
+c  
+  node set    1  246 248 251 252 255 256 258 260, 
+ 263 264 267 268 271 272 276 277 278
+  node set    2 214 217 221 226 229 233 237 243 244 
+  node set    3 212 213 216 218 220 222 224 225, 
+ 228 230 232 234 236 238 241 242 245
+  node set    4 179 182 186 191 194 198 202 208 209 
+  node set    5 177 178 181 183 185 187 189 190, 
+ 193 195 197 199 201 203 206 207 210
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J51  $ phi =   0.8746
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  49 to  53
+c  
+  node set    1 212 213 216 218 220 222 224 225, 
+ 228 230 232 234 236 238 241 242 245
+  node set    2 179 182 186 191 194 198 202 208 209 
+  node set    3 177 178 181 183 185 187 189 190, 
+ 193 195 197 199 201 203 206 207 210
+  node set    4 144 147 151 156 159 163 167 173 174 
+  node set    5 142 143 146 148 150 152 154 155, 
+ 158 160 162 164 166 168 171 172 175
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J53  $ phi =   1.0321
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  51 to  55
+c  
+  node set    1 177 178 181 183 185 187 189 190, 
+ 193 195 197 199 201 203 206 207 210
+  node set    2 144 147 151 156 159 163 167 173 174 
+  node set    3 142 143 146 148 150 152 154 155, 
+ 158 160 162 164 166 168 171 172 175
+  node set    4 109 112 116 121 124 128 132 138 139 
+  node set    5 107 108 111 113 115 117 119 120, 
+ 123 125 127 129 131 133 136 137 140
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J55  $ phi =   1.1759
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  53 to  57
+c  
+  node set    1 142 143 146 148 150 152 154 155, 
+ 158 160 162 164 166 168 171 172 175
+  node set    2 109 112 116 121 124 128 132 138 139 
+  node set    3 107 108 111 113 115 117 119 120, 
+ 123 125 127 129 131 133 136 137 140
+  node set    4 74 78 82 86 90 94 98 104 105
+  node set    5 71 73 76 77 80 81 83 85, 
+ 88 89 92 93 96 97 101 102 103
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J57  $ phi =   1.3114
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  55 to  59
+c  
+  node set    1 107 108 111 113 115 117 119 120, 
+ 123 125 127 129 131 133 136 137 140
+  node set    2 74 78 82 86 90 94 98 104 105
+  node set    3 71 73 76 77 80 81 83 85, 
+ 88 89 92 93 96 97 101 102 103
+  node set    4 39 42 46 51 54 58 62 68 69 
+  node set    5 37 38 41 43 45 47 49 50, 
+ 53 55 57 59 61 63 66 67 70
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J59  $ phi =   1.4422
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  57 to  61
+c  
+  node set    1 71 73 76 77 80 81 83 85, 
+ 88 89 92 93 96 97 101 102 103
+  node set    2 39 42 46 51 54 58 62 68 69 
+  node set    3 37 38 41 43 45 47 49 50, 
+ 53 55 57 59 61 63 66 67 70
+  node set    4 1 5 9 13 17 21 25 29 30
+  node set    5  3 4 7 8 11 12 15 16, 
+ 19 20 23 24 27 28 33 34 35
+  front node sets     1    2    3    4    5    q3disop verify
+  q-values automatic rings    1-31
+  function type b
+  print totals
+  compute domain integral
+domain J61  $ phi =   1.5708
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  symmetric
+c  
+c     Node sets for the initial radius blunt crack
+c     crack nodes from  59 to  61
+c  
+  node set    1 37 38 41 43 45 47 49 50, 
+ 53 55 57 59 61 63 66 67 70
+  node set    2 1 5 9 13 17 21 25 29 30
+  node set    3  3 4 7 8 11 12 15 16, 
+ 19 20 23 24 27 28 33 34 35
+  front node sets     1    2    3    q3disop verify
+  q-values automatic rings    1-31
+  function type c
+  print totals
+  compute domain integral
+c 

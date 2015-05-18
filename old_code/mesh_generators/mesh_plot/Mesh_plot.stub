@@ -1,0 +1,98 @@
+%! PS-Adobe-1.0
+%%Creator: 
+%%Title: 
+%%CreationDate: 
+%%Pages: 1
+%%EndComments
+/m { moveto } def
+/l { lineto } def
+/centertop    % x y string | -
+              %places a string centered but below (x,y)
+{ dup 4 1 roll stringwidth
+  pop 2 div 
+  3 -1 roll exch sub   
+  exch fontsize 2 div sub   % reducing the height by 2 seems to
+  moveto                    % give nice looking results
+  show } def   
+                                                                   
+ /centercenter    % x y string | -
+              %places a string centered but below (x,y)
+{ dup 4 1 roll stringwidth
+  pop 2 div
+  3 -1 roll exch sub
+  exch fontsize 4 div sub moveto
+  show } def                                                                     
+ /centerbottom    % x y string | -
+              %places a string centered but below (x,y)
+{ dup 4 1 roll stringwidth
+  exch 2 div
+  3 1 roll sub
+  3 1 roll sub exch moveto
+  show } def                                                                    
+                                                                                
+                                                                                
+/rightcenter  % x y string | -
+              % places a string to the left of (x,y)
+{ dup 4 1 roll stringwidth
+  pop
+  3 -1 roll exch sub
+  exch fontsize 4 div sub moveto
+  show } def                                                                    
+
+/rightbottom  % x y string | -
+              % places a string to the left of and above (x,y)
+{ dup 4 1 roll stringwidth
+  pop
+  3 -1 roll exch sub
+  exch moveto
+  show } def 
+                    
+/leftcenter  % x y string | -
+             % places a string to the right of (x,y)
+{ 3 1 roll fontsize 4 div sub
+  moveto
+  show } def
+
+/righttop  % x y string | -
+              % places a string to the left of and below (x,y)
+{ dup 4 1 roll stringwidth
+  pop
+  3 -1 roll exch sub
+  exch fontsize sub moveto
+  show } def 
+  
+/lefttop  % x y string | -
+              % places a string to the left of (x,y)
+{ 3 1 roll
+  fontsize sub 
+  moveto
+  show } def
+
+/leftbottom   % x y string | -
+              % places a string to the left of (x,y)
+{ 3 1 roll
+  moveto
+  show } def
+
+/cross     % x y | -
+           % places a hair cross att (x,y)
+{ 2 copy moveto 
+  2 copy 2 copy
+  -10 -10 rmoveto
+  20  20  rlineto
+  -10 -10 rmoveto
+  -10 +10 rmoveto
+  +20 -20 rlineto
+  stroke } def
+
+/cross     % x y | -
+           % places a hair cross att (x,y)
+{ 2 copy moveto 
+  2 copy 2 copy
+  -10 -10 rmoveto
+  20  20  rlineto
+  -10 -10 rmoveto
+  -10 +10 rmoveto
+  +20 -20 rlineto
+  stroke } def
+

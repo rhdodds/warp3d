@@ -1,0 +1,133 @@
+
+
+Finite element models for 3-D fracture analyses
+-----------------------------------------------
+
+This directory contains ready-to-run WARP3D input files for
+standard fracture specimens. Some models are all set up for
+finite strain solutions and some are setup for crack growth.
+Most have additional commands included to extract J-integral values.
+They are set up for a variety of parallel execution (domain
+decomposition for a set number of processors). All input files
+can be run in threaded execution.
+
+   ct_side_grooves1 -- C(T) specimen with 10% (ea. side) side-grooves, no growth,
+                       focused mesh, 2 way MPI parallel
+
+   sct        -- surface crack tension specimen, no growth, focused mesh,
+                 4 way parallel
+
+   sct_growth -- surface crack tension specimen, cell mesh along
+                 front for crack growth. Has 50 load steps.
+
+   sct_growth_complete -- same as above but with 200 load steps for
+                 full crack growth analysis. extracts J on remote domains
+                  at point of max crack depth
+
+   pcvn_sg_large_model -- very fined model of PCVN specimen. Model has
+                  side grooves, no crack groth, domain integral evaulations 
+                  across front. 20 node bricks.
+
+   seb        -- plane-sided SE(B)  specimen, no growth, focused mesh,
+                 2 way parallel 
+
+   seb_side_grooves  -- SE(B) specimen with 10% (ea. side) side-grooves, no growth,
+                 focused mesh, 2 way parallel
+
+   seb_one_layer -- shallow crack SE(B) with one layer of 8-node elements
+                 and plane-strain constraints. Finite deformation, mises
+                 plasticity, J-computation. Runs very fast. *** Good beginning
+                 example problem ***. Has lots of comments.
+
+   ssy_growth -- input file (not directory). 1 layer plane-strain,
+                 semi-circular boundary layer model subjected to remote
+                 Ki field (T=0). model has cells along crack plane
+                 to support crack growth using gurson constitutive
+                 model and element death. runs very quickly. 
+                 R-goes flat, lots of elements killed.
+
+   ssy3d_large -- very large SSY model in 3D. 444,000 nodes 104150 elements
+                 20-node elements, small-strains, power-law mises, no crack growth.
+                 Run-time virtual size: 34 GB. Woking set 25GB.
+
+   ssy        -- simple 1 layer, plane-strain model of the SSY
+                 boundary layer problem. no gcrack growth. has initial
+                 notch root radius for finite strain analysis.
+
+   ct_ctoa     -- 3-D crack growth via critical CTOA. 2-layers of
+                 elements over half-thickness. out-of-plane displacements
+                 prevented. enforced uniform growth along front.
+                 models tearing in very thin Al material.
+
+
+   mt_cohes   -- 3-D crack growth model using interface-cohesive 
+                 elements. out-of-plane displacements due to the
+                 negative T-stress. Uses the simpler, 2 parameter
+                 exponential model.
+
+  pressure_vessel -- very large model of a bullet shaped pressure 
+                      vessel with a nozzle. 20-node brick elements.
+                      no crack in model, internal pressure loading.   
+                      linear elastic analysis. 
+
+   welded_beam... -- large model of a welded connection between a
+                     steel beam and steel column used in buildings.
+                     model contains a crack across the beam flange.
+                     dynamic analyis, set up for 4 way parallel
+                     execution.
+                     
+
+     mt_half -- 1/2 symmetric model of an M(T) specimen. 20-node bricks
+              with collapsed front elements. element have repeated
+              nodes. remote axial loading and crack face loading.
+              linear elastic material. the model has +,- crack faces.
+
+   ssy_sharp -- 1 layer, plane strain model of the SSY boundary layer
+                model with fouced, collapsed elements at tip. For
+                small strain analysis. accompanying F-90 program
+                writes displacements to apply K-T field on outer
+                circular boundary. Model is set up with T=0 loading.
+
+   corner_at_hole -- flat plate with a circular hole. corner crack
+                     at hole. remote tension loading. deformation
+                     plasticity. 10 load steps. get J at each location
+                     on crack front at each load step. 
+                     at step 10 the model is approaching limit load.
+                     model is set up for serial + threaded
+                     parallel direct solver. 
+                     model uses 20-node brick elements.
+
+   shuttle_bolt -- fracture analysis of explosive bolt used to
+                   connect Space Shuttle SRBs and external tank.
+                   surface crack at root of notch in hollow
+                   cylibrical bolt. static remote axial loading.
+
+   ssy_3d_fatigue  --  3D SSY boundary layer model. 5 layers across
+                       half thickness. set up to run 1 full load
+                       cycle with a crack growth (by node release)
+                       at peak load on the first half-cycle.
+                       model uses 8-node bricks, small displacement.
+                       bilinear, kinematic hardening model.
+                       mesh is set up for at least 50 (uniform) 
+                       increments of growth across the front.
+                       ** this is a directory **
+
+   buried_circular_flaw -- linear-elastic analysis. show equivalence of
+                       J-values from remote tensile loading and
+                       crack face loading.   
+
+   buried_flaw --  linear-elastic analysis of buried flaw with almost periodic 
+                   boundary conditions. flaw is circular and located at mid-height of plate.
+                   20 node-brick mesh. collapsed elements along front. front
+                   elements have repeated nodes and mid-side radial nodes moved
+                   to 1/4 pt. location for linear elastic analysis
+                   remote uniform axial load or uniform crack face load available.
+                   
+  cylinder_mesh_tied --  linear-elastic analysis of pipe with mesh
+                          contructed with extensive tied-mesh capability
+
+  shuttle_bolt -- nonlinear analysis of notched, hollow cyclinder.
+
+
+  
+

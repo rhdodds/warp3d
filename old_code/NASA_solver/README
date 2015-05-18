@@ -1,0 +1,72 @@
+
+NASA Sparse Solver
+------------------
+
+WARP3D offers a very fast, sparse solver derived from
+a public domain code VSS developed and distributed by the
+Computational Structural Mechanics Branch of the NASA-Langley
+Research Center.
+We have significantly modified the source code originally
+obtained from NASA to make it conform to our software standards
+and to adapt it to Unix workstations, NT and W95 and to the WARP3D
+software architecture. Nevertheless, we feel compelled to
+ask that you comply with the NASA requirement that you request
+and are authorized to receive the VSS fast solver. (Access to
+VSS source code is restricted to U.S. Citizens and 
+Permanent residents with a "Green Card") 
+
+To legally use the sparse solver in WARP3D, you must request
+approval in writing from NASA-Langley. In most cases, this is
+simply a formality. The procedure to obtain permission is
+given below. 
+
+The script "Makewarp.ksh" in the src directory asks the user whether
+this solver should be installed when building WARP3D, and automatically  
+installs or un-installs the solver as per the user's specifications. 
+To install the NASA solver into WARP3D manually, use the following steps:
+
+  o cd to the "nasa_solver_dir" directory in the WARP3D distribution
+  o run the C-shell script:  install_sparse_solver
+  o run the makefile for your computer: makefile -f Makefile.#####
+
+If you wish to manually un-install the sparse solver:
+
+  o cd to the "nasa_solver_dir" directory in the WARP3D distribution
+  o run the C-shell script:  uninstall_sparse_solver
+  o run the makefile for your computer: makefile -f Makefile.#####
+
+Procedure to Obtain NASA Approval:
+----------------------------------
+The point of contact at NASA is:
+
+      Dr. Olaf Storaasli
+      O.O.Storaasli@larc.nasa.gov
+      http://olaf.larc.nasa.gov/
+      (good info on their web page)
+
+You may FAX your request to: 804-864-8912 (or 7792). Questions may
+be addressed to the Branch Secretary, Lani Baals (804-864-2906) or
+to Olaf at (804-864-2927)
+
+In in a typical request letter, you must:
+
+  o  Indicate that you wish to use the derived sparse solver
+     as implemented in WARP3D.
+
+  o  Agree to provide feedback to NASA on the performance of the solvers
+     for your applications (we have already provided extensive
+     feedback to NASA about performance so this may not really
+     be necessary.)
+
+  o  Agree not to make the NASA code available to foreign nationals. 
+
+  o  Agree not to release NASA code to others outside your organization
+     without prior NASA approval (this is part of the WARP3D
+     License agreement as well).
+
+
+
+
+
+
+

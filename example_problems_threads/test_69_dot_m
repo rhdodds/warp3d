@@ -1,0 +1,76 @@
+     clear all;
+     sig_peak = 5.0; 
+     delta_peak = 0.1359141;
+     beta = 1.0;
+     Gamma_exp1 = exp(1.0) *sig_peak * delta_peak
+#
+     delta_max =50*delta_peak;
+     n_points = 500;
+     dx = delta_max / n_points;
+     ratio = 1.0 / delta_peak;
+     x(1) = 0.0; y(1) = 0.0; sum = 0.0;
+     for i = 2:n_points,
+        x(i) = x(i-1) + dx;
+        ratio = 1.0 / delta_peak;
+        y(i)= exp(1.0) * sig_peak * (ratio*x(i)) * exp( -ratio*x(i));
+        sum = sum + dx * ( y(i) + y(i-1) ) *0.5;
+     end
+#
+     printf("\ncomputed gamma for exp1_intf: %10.4f\n",sum);
+      plot(x,y)
+      axis([0;2;0;6])
+      xlabel('\delta')
+      ylabel('Tn')
+      title('exp1_intf model')
+      grid on
+      
+#
+      printf( "\n\n>>> starting PPR:\n");
+      reply = input('Hit Enter to continue...', 's');
+      Tnp = 5.0
+      Ttp = 5.0
+      Gamma_n = 1.85
+      Gamma_t = 1.85
+      alpha = 7.0
+      beta = 7.0
+      lambda_n = 0.1
+      lambda_t = 0.1
+#
+      m = alpha * (alpha-1)*lambda_n**2 / (1-alpha*lambda_n**2)
+      n = beta * (beta-1)*lambda_t**2 / (1-beta*lambda_t**2)
+#
+      t1 = (Gamma_n/Tnp)*alpha*lambda_n*(1-lambda_n)**(alpha-1)
+      t2 = (alpha/m+1)*(alpha*lambda_n/m + 1)**(m-1)
+      delta_n = t1* t2
+#      
+      t1 = (Gamma_t/Ttp)*beta*lambda_t*(1-lambda_t)**(beta-1)
+      t2 = (beta/n + 1)*(beta*lambda_t/n + 1)**(n-1)
+      delta_t = t1* t2
+#
+      Gamma_n_bar = -Gamma_n *(alpha/m)**m
+      Gamma_t_bar = (beta/n)**n
+#
+     n_points = 1000;
+     dx = delta_n / n_points;
+     x(1) = 0.0; y(1) = 0.0; sum=0.0;
+     for i = 2:n_points,
+        x(i) = x(i-1) + dx;
+        Dn = x(i);
+      A = m * (1-Dn/delta_n)**alpha * ( m/alpha + Dn/delta_n)**(m-1);
+      B = alpha * (1-Dn/delta_n)**(alpha-1) * ( m/alpha + Dn/delta_n)**m;
+      Tn = (Gamma_n_bar/delta_n) * ( A-B);
+      y(i) = Tn;
+      sum = sum + dx * ( y(i) + y(i-1) ) *0.5;
+     end
+#
+     printf("\ncomputed Gamma_n for PPR: %10.4f\n",sum);
+#
+      hold on;
+      plot(x,y,"1");
+      axis([0;2;0;6]);
+      xlabel("X");
+      ylabel("Tn");
+      title("Exp1 & PPR model")
+      grid on
+      print -dps x.ps
+      hold off

@@ -1,0 +1,142 @@
+c
+c
+c       larger, more complex test of mesh tieing
+c       ----------------------------------------
+c
+c    Consider a right circular cylinder
+c      Outside diameter: 15.24 in.
+c      Wall thickness:   1.27 in.
+c      Total length:     76.2 in.
+c      Generator axis:   global X-axis
+c
+c    Model has two, equal length parts of 38.1 in. The "left" portion (A)
+c    spans X=0 to X=38.1 in. and has 2, 20-node (hex) elements over
+c    the thickness.
+c
+c    The "right" portion (B) spans X=38.1 in. to X=76.2 in. and has 5
+c    20-node (hex) elements over the thickness.
+c
+c    Parts A and B are connected with mesh-tieing to deomstrate its
+c    use and correct implementation.
+c
+c    To make the model even more challenging for the mesh-tie code,
+c    Part B is "rotated" around X=0 axis relative to Part A such than
+c    no nodes on the "mated" ends of A and B are coincident.
+c
+c    The end X=76.2 in. has axial displacements constrained (u=0) and
+c    1 node with w = 0 and 1 node with v=0 to prevent rigid body motion.
+c    The choice of the v=0 and w=0 nodes must be done to not disturb
+c    the simple elongation and radial contraction deformation of the
+c    cylinder.
+c
+c    The X=0 end of the cyclinder has a uniform tensile stress applied over
+c    the thickness.
+c
+c    Run a simple linear-elastic solution for 2 load steps to insure
+c    the mesh-tieing does not cause residual loads.
+c
+c    Look at computed axial stresses in Patran to show that
+c    only very small disturbancs in the uniform axial stress occur
+c    just right at the interface and immediately die out.
+c
+structure tied_cylinder
+c
+c 
+number of nodes    10392	elements     2016
+material steel
+  properties bilinear e 30000.0 nu 0.3 yld_pt 60.0 tan_e 300
+elements
+   1-2016 type q3disop nonlinear material steel order 2x2x2 short
+c
+*input from file "test_67_coord_incid"
+c
+blocking   $    scalar
+*echo off
+       1     128       1
+       2     128     129
+       3     128     257
+       4     128     385
+       5     128     513
+       6     128     641
+       7     128     769
+       8     128     897
+       9     128    1025
+      10     128    1153
+      11     128    1281
+      12     128    1409
+      13     128    1537
+      14     128    1665
+      15     128    1793
+      16      96    1921
+*echo on
+c 
+c    no axial displacement on X=76.2 plane + minimum constraints
+c    to eliminate rigid body motions
+c
+constraints
+  plane x=76.2 symmetry
+    4275      w    0
+    4298      v    0
+c
+c     surfaces for tieing togther the two cylinders
+c
+surface coarse_end
+        67  68  69  70  71  72 139 140 141, 
+       142 143 144 499 500 501 502 503 504,
+       571 572 573 574 575 576 face 3 
+c
+       211 212 213 214 215 216 283 284 285,
+       286 287 288 355 356 357 358 359 360, 
+       427 428 429 430 431 432 face 6 
+c
+surface fine_end
+       577  578  579  580  581  582  649  650  651,
+       652  653  654  721  722  723  724  725  726,
+       793  794  795  796  797  798  865  866  867, 
+       868  869  870 1657 1658 1659 1660 1661 1662,
+      1729 1730 1731 1732 1733 1734 1801 1802 1803,
+      1804 1805 1806 1873 1874 1875 1876 1877 1878,
+      1945 1946 1947 1948 1949 1950 face 4 
+c
+       937  938  939  940  941  942 1009 1010 1011,
+      1012 1013 1014 1081 1082 1083 1084 1085 1086, 
+      1153 1154 1155 1156 1157 1158 1225 1226 1227,
+      1228 1229 1230 1297 1298 1299 1300 1301 1302,
+      1369 1370 1371 1372 1373 1374 1441 1442 1443, 
+      1444 1445 1446 1513 1514 1515 1516 1517 1518,
+      1585 1586 1587 1588 1589 1590 face 5 
+c
+tie mesh cylinder
+  tolerance 0.1 adjust on
+	master coarse_end  slave fine_end
+c
+loading unit_end $ tensile stress on X=0 end 
+  element loads
+         1   2   3   4   5   6  73  74  75  76  77  78,
+       433 434 435 436 437 438 505 506 507 508 509 510 face 4 pressure       -1.000
+c
+       145 146 147 148 149 150 217 218 219 220 221 222, 
+       289 290 291 292 293 294 361 362 363 364 365 366 face 5 pressure       -1.000
+c
+ loading test
+  nonlinear
+    step 1 2 unit_end 10.0
+c 
+c     require minimum 2 newton iterations to make sure mesh-tie
+c     processing does not generate residual forces
+c 
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   maximum iterations 5
+   minimum iterations 2 
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   time step 1.0e06
+   trace solution on
+c 
+ compute displacements for loading test step 2
+c 
+ output patran formatted displacements
+ output patran formatted stresses
+c 
+stop

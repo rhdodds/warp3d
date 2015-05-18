@@ -1,0 +1,4 @@
+
+this directory contains a sequence of analyses for a 3-d cantilever
+beam. the input files are set up to use various domain decompositions and
+solver combinations.

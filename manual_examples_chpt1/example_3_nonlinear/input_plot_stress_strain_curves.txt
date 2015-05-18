@@ -1,0 +1,7 @@
+#
+#      stress vs. plastic strain curves for 20C, 250C 400C
+#      for base (cols 1-3) and clad (cols 4-6)
+#
+
+     0.0 473.0 433.0  412.0 312. 264. 233.
+     3.0 630.0 620. 560. 610. 437. 386.

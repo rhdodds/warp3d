@@ -1,0 +1,205 @@
+c
+  compute displacements for loading pull steps 10
+   output displacements for nodes 15 16 14 13 3 4 2 1
+   output displacements for nodes 1866 1868 1867 1865 1874 1873 1872 1871
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 20
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 30
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 40
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 50
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 60
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 70
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 80
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 90
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 100
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 110 
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 120
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 130
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 140
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 150
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 160
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 170
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 180
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 190
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 200
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+  compute displacements for loading pull steps 210 
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 220
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 230
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 240
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 250
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 260
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 270
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 280
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 290
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 300
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+  compute displacements for loading pull steps 310 
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 320
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 330
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 340
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 350
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 360
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 370
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 380
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 390
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 400
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+  compute displacements for loading pull steps 410 
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 420
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 430
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 440
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 450
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 460
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 470
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 480
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 490
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+ compute displacements for loading pull steps 500
+   output patran binary displacements
+   output patran binary element stresses
+   output totals only reactions 981 982
+stop
+

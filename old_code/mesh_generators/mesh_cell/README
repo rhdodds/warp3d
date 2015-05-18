@@ -1,0 +1,57 @@
+
+
+This directory holds the source for mesh3d_scpcell, a mesh generator
+written by Jonas Faleskog which generates finite element models of
+surface crack specimen.  The resulting mesh contains a crack front
+modelled using computational cells.
+
+Some minor modifications were made by Rami Haj-Ali, including 
+user specification of element block size.
+
+Pertinent files:
+
+README                   -- this file
+makefile_unix            -- makefile for compiling the code on Unix
+                            platforms
+makefile_windows         -- makefile for compiling the code on Windows
+                            OSs runnin on Intel PCs
+scpcell.run              -- the executable made by makefile on Unix
+                            (not included in distribution)
+spccell_windows.exe      -- executable for Windows OSs running on
+                            Intel PCs (included in distribution)
+manual.ps                -- manual for this program (PostScript)
+manual.pdf               -- Adobe PDF file for the User Manual
+
+During execution the program makes lots of files. I strongly
+recommend that you create a fresh directory, copy the example
+input file there and run the code while in that directory.
+
+
+
+
+To run the mesh generator, create an input file with the format described
+in the manual, then type in a shell window
+
+        scpcell.run          (on Unix)
+        scpcell_windows.exe  (on Windows)
+
+Example input files are in the ../cell_test_dir directory
+
+The code asks for the input file and creates an input
+file for one of several finite element programs (specified in the input file).
+
+
+Changes made by Bob (July 1998):
+--------------------------------
+
+1) update commands output for the warp3d input file to 
+   reflect recent changes in warp3d.
+2) make the code ask for the input file name rather than
+   forcing the name to have a certain form.
+
+Changes made by Bob (November 2001):
+-----------------------------------
+
+Updated makefile for Windows on Intel PCs
+
+

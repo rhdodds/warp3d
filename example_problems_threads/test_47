@@ -1,0 +1,1997 @@
+
+c
+c           example analysis for cyclic, thermo-plasticity
+c           ----------------------------------------------
+c
+c           a cube is subjected to a combination of cyclic
+c           mechanical and thermal loading for 3 full cycles.
+c
+c           the material has E, nu, yield stess and plastic
+c           pardening modulus that all vary strongly with temperature
+c
+c           the thermal expansion coefficent is invariant of temperature
+c
+c           the initial (reference) temperature is has a strong
+c           spatial variation in x, y, z (at 0,0,0 the initial
+c           temp is zero. at 1,1,1 the initial temperature is 50)
+c
+c           the temperature in each cycle increases in the same
+c           spatial pattern as the reference temperature. the corner
+c           temps at the maximum point in the cycle are 500 at
+c           (1,1,1) and 0 at (0,0,0). The temperature at the end of
+c           each cycle is the reference temperature again.
+c
+c           the mechanical loading is a uniform (axial) Y-direction
+c           extension imposed through displacements + a shearing
+c           type displacement applied to the top surface of the cube
+c           (to make all stresses, strains non-zero).
+c
+c           the mechanical loads ramp up to their max values and back
+c           to zero in each cycle.
+c
+c           100 steps are used to execute a full load cycle (50 up
+c           and 50 down)
+c
+c           the material model is kinematic hardening where the
+c           modulus, yield stress and plastic hardening slope
+c           decrease rapidly with increasing temperature.
+c
+c           the computed results for the stresses should
+c           stabilized (shakedown) after one full cyle. Cycles
+c           2 and 3 should have the same response, i.e.,
+c           steps 151, 251 should be the same; steps 200 and 300
+c           should be the same.
+c
+c           analysis can be run with or without geometrically
+c           nonlinear effects
+c
+c           the analysis can also be run with the bilinear model
+c           & isotropic hardening (beta=1.0)
+c
+c           the mode can also be run with the mises model which
+c           only has isotropic hardening
+c
+c
+c  material at temp = 0, yield = 200, H' = 5000
+c
+stress-strain curve 1 temperature 0   e 0.20E6 nu 0.2 alpha 0.0003
+ 0.0  200.0,
+ 10   50200.0
+c
+c
+c  material at temp = 300, yield = 100, H' = 1
+c
+c
+stress-strain curve 2 temperature 300 e 0.15E6 nu 0.3 alpha 0.0003
+ 0.0  100.0,
+ 10.0 110.0
+c
+c   material at temp = 550, yield = 50, H' = 0.1
+c
+stress-strain curve 3 temperature 550 e 0.10E6 nu 0.4 alpha 0.0003
+ 0.0  50.,
+ 10   51.0
+c
+material steel
+    properties bilinear curves  1-3  beta 0.0 rho 0.0
+c    properties bilinear curves  1-3  beta 1.0 rho 0.0
+c    properties mises curves  1-3 rho 0.0
+
+structure bar
+c
+number of nodes      125
+number of elements       64
+c
+coordinates
+*echo off
+      1  0.000000000E+00  0.000000000E+00  0.000000000E+00
+      2  0.250000000E+00  0.000000000E+00  0.000000000E+00
+      3  0.500000000E+00  0.000000000E+00  0.000000000E+00
+      4  0.750000000E+00  0.000000000E+00  0.000000000E+00
+      5  0.100000000E+01  0.000000000E+00  0.000000000E+00
+      6  0.000000000E+00  0.250000000E+00  0.000000000E+00
+      7  0.250000000E+00  0.250000000E+00  0.000000000E+00
+      8  0.500000000E+00  0.250000000E+00  0.000000000E+00
+      9  0.750000000E+00  0.250000000E+00  0.000000000E+00
+     10  0.100000000E+01  0.250000000E+00  0.000000000E+00
+     11  0.000000000E+00  0.500000000E+00  0.000000000E+00
+     12  0.250000000E+00  0.500000000E+00  0.000000000E+00
+     13  0.500000000E+00  0.500000000E+00  0.000000000E+00
+     14  0.750000000E+00  0.500000000E+00  0.000000000E+00
+     15  0.100000000E+01  0.500000000E+00  0.000000000E+00
+     16  0.000000000E+00  0.750000000E+00  0.000000000E+00
+     17  0.250000000E+00  0.750000000E+00  0.000000000E+00
+     18  0.500000000E+00  0.750000000E+00  0.000000000E+00
+     19  0.750000000E+00  0.750000000E+00  0.000000000E+00
+     20  0.100000000E+01  0.750000000E+00  0.000000000E+00
+     21  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     22  0.250000000E+00  0.100000000E+01  0.000000000E+00
+     23  0.500000000E+00  0.100000000E+01  0.000000000E+00
+     24  0.750000000E+00  0.100000000E+01  0.000000000E+00
+     25  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     26  0.000000000E+00  0.000000000E+00  0.250000000E+00
+     27  0.250000000E+00  0.000000000E+00  0.250000000E+00
+     28  0.500000000E+00  0.000000000E+00  0.250000000E+00
+     29  0.750000000E+00  0.000000000E+00  0.250000000E+00
+     30  0.100000000E+01  0.000000000E+00  0.250000000E+00
+     31  0.000000000E+00  0.250000000E+00  0.250000000E+00
+     32  0.250000000E+00  0.250000000E+00  0.250000000E+00
+     33  0.500000000E+00  0.250000000E+00  0.250000000E+00
+     34  0.750000000E+00  0.250000000E+00  0.250000000E+00
+     35  0.100000000E+01  0.250000000E+00  0.250000000E+00
+     36  0.000000000E+00  0.500000000E+00  0.250000000E+00
+     37  0.250000000E+00  0.500000000E+00  0.250000000E+00
+     38  0.500000000E+00  0.500000000E+00  0.250000000E+00
+     39  0.750000000E+00  0.500000000E+00  0.250000000E+00
+     40  0.100000000E+01  0.500000000E+00  0.250000000E+00
+     41  0.000000000E+00  0.750000000E+00  0.250000000E+00
+     42  0.250000000E+00  0.750000000E+00  0.250000000E+00
+     43  0.500000000E+00  0.750000000E+00  0.250000000E+00
+     44  0.750000000E+00  0.750000000E+00  0.250000000E+00
+     45  0.100000000E+01  0.750000000E+00  0.250000000E+00
+     46  0.000000000E+00  0.100000000E+01  0.250000000E+00
+     47  0.250000000E+00  0.100000000E+01  0.250000000E+00
+     48  0.500000000E+00  0.100000000E+01  0.250000000E+00
+     49  0.750000000E+00  0.100000000E+01  0.250000000E+00
+     50  0.100000000E+01  0.100000000E+01  0.250000000E+00
+     51  0.000000000E+00  0.000000000E+00  0.500000000E+00
+     52  0.250000000E+00  0.000000000E+00  0.500000000E+00
+     53  0.500000000E+00  0.000000000E+00  0.500000000E+00
+     54  0.750000000E+00  0.000000000E+00  0.500000000E+00
+     55  0.100000000E+01  0.000000000E+00  0.500000000E+00
+     56  0.000000000E+00  0.250000000E+00  0.500000000E+00
+     57  0.250000000E+00  0.250000000E+00  0.500000000E+00
+     58  0.500000000E+00  0.250000000E+00  0.500000000E+00
+     59  0.750000000E+00  0.250000000E+00  0.500000000E+00
+     60  0.100000000E+01  0.250000000E+00  0.500000000E+00
+     61  0.000000000E+00  0.500000000E+00  0.500000000E+00
+     62  0.250000000E+00  0.500000000E+00  0.500000000E+00
+     63  0.500000000E+00  0.500000000E+00  0.500000000E+00
+     64  0.750000000E+00  0.500000000E+00  0.500000000E+00
+     65  0.100000000E+01  0.500000000E+00  0.500000000E+00
+     66  0.000000000E+00  0.750000000E+00  0.500000000E+00
+     67  0.250000000E+00  0.750000000E+00  0.500000000E+00
+     68  0.500000000E+00  0.750000000E+00  0.500000000E+00
+     69  0.750000000E+00  0.750000000E+00  0.500000000E+00
+     70  0.100000000E+01  0.750000000E+00  0.500000000E+00
+     71  0.000000000E+00  0.100000000E+01  0.500000000E+00
+     72  0.250000000E+00  0.100000000E+01  0.500000000E+00
+     73  0.500000000E+00  0.100000000E+01  0.500000000E+00
+     74  0.750000000E+00  0.100000000E+01  0.500000000E+00
+     75  0.100000000E+01  0.100000000E+01  0.500000000E+00
+     76  0.000000000E+00  0.000000000E+00  0.750000000E+00
+     77  0.250000000E+00  0.000000000E+00  0.750000000E+00
+     78  0.500000000E+00  0.000000000E+00  0.750000000E+00
+     79  0.750000000E+00  0.000000000E+00  0.750000000E+00
+     80  0.100000000E+01  0.000000000E+00  0.750000000E+00
+     81  0.000000000E+00  0.250000000E+00  0.750000000E+00
+     82  0.250000000E+00  0.250000000E+00  0.750000000E+00
+     83  0.500000000E+00  0.250000000E+00  0.750000000E+00
+     84  0.750000000E+00  0.250000000E+00  0.750000000E+00
+     85  0.100000000E+01  0.250000000E+00  0.750000000E+00
+     86  0.000000000E+00  0.500000000E+00  0.750000000E+00
+     87  0.250000000E+00  0.500000000E+00  0.750000000E+00
+     88  0.500000000E+00  0.500000000E+00  0.750000000E+00
+     89  0.750000000E+00  0.500000000E+00  0.750000000E+00
+     90  0.100000000E+01  0.500000000E+00  0.750000000E+00
+     91  0.000000000E+00  0.750000000E+00  0.750000000E+00
+     92  0.250000000E+00  0.750000000E+00  0.750000000E+00
+     93  0.500000000E+00  0.750000000E+00  0.750000000E+00
+     94  0.750000000E+00  0.750000000E+00  0.750000000E+00
+     95  0.100000000E+01  0.750000000E+00  0.750000000E+00
+     96  0.000000000E+00  0.100000000E+01  0.750000000E+00
+     97  0.250000000E+00  0.100000000E+01  0.750000000E+00
+     98  0.500000000E+00  0.100000000E+01  0.750000000E+00
+     99  0.750000000E+00  0.100000000E+01  0.750000000E+00
+    100  0.100000000E+01  0.100000000E+01  0.750000000E+00
+    101  0.000000000E+00  0.000000000E+00  0.100000000E+01
+    102  0.250000000E+00  0.000000000E+00  0.100000000E+01
+    103  0.500000000E+00  0.000000000E+00  0.100000000E+01
+    104  0.750000000E+00  0.000000000E+00  0.100000000E+01
+    105  0.100000000E+01  0.000000000E+00  0.100000000E+01
+    106  0.000000000E+00  0.250000000E+00  0.100000000E+01
+    107  0.250000000E+00  0.250000000E+00  0.100000000E+01
+    108  0.500000000E+00  0.250000000E+00  0.100000000E+01
+    109  0.750000000E+00  0.250000000E+00  0.100000000E+01
+    110  0.100000000E+01  0.250000000E+00  0.100000000E+01
+    111  0.000000000E+00  0.500000000E+00  0.100000000E+01
+    112  0.250000000E+00  0.500000000E+00  0.100000000E+01
+    113  0.500000000E+00  0.500000000E+00  0.100000000E+01
+    114  0.750000000E+00  0.500000000E+00  0.100000000E+01
+    115  0.100000000E+01  0.500000000E+00  0.100000000E+01
+    116  0.000000000E+00  0.750000000E+00  0.100000000E+01
+    117  0.250000000E+00  0.750000000E+00  0.100000000E+01
+    118  0.500000000E+00  0.750000000E+00  0.100000000E+01
+    119  0.750000000E+00  0.750000000E+00  0.100000000E+01
+    120  0.100000000E+01  0.750000000E+00  0.100000000E+01
+    121  0.000000000E+00  0.100000000E+01  0.100000000E+01
+    122  0.250000000E+00  0.100000000E+01  0.100000000E+01
+    123  0.500000000E+00  0.100000000E+01  0.100000000E+01
+    124  0.750000000E+00  0.100000000E+01  0.100000000E+01
+    125  0.100000000E+01  0.100000000E+01  0.100000000E+01
+*echo on
+c
+elements
+   all type l3disop linear  material steel short bbar
+c
+incidences
+*echo off
+       1       1       2       7       6      26      27      32      31
+       2       2       3       8       7      27      28      33      32
+       3       3       4       9       8      28      29      34      33
+       4       4       5      10       9      29      30      35      34
+       5       6       7      12      11      31      32      37      36
+       6       7       8      13      12      32      33      38      37
+       7       8       9      14      13      33      34      39      38
+       8       9      10      15      14      34      35      40      39
+       9      11      12      17      16      36      37      42      41
+      10      12      13      18      17      37      38      43      42
+      11      13      14      19      18      38      39      44      43
+      12      14      15      20      19      39      40      45      44
+      13      16      17      22      21      41      42      47      46
+      14      17      18      23      22      42      43      48      47
+      15      18      19      24      23      43      44      49      48
+      16      19      20      25      24      44      45      50      49
+      17      26      27      32      31      51      52      57      56
+      18      27      28      33      32      52      53      58      57
+      19      28      29      34      33      53      54      59      58
+      20      29      30      35      34      54      55      60      59
+      21      31      32      37      36      56      57      62      61
+      22      32      33      38      37      57      58      63      62
+      23      33      34      39      38      58      59      64      63
+      24      34      35      40      39      59      60      65      64
+      25      36      37      42      41      61      62      67      66
+      26      37      38      43      42      62      63      68      67
+      27      38      39      44      43      63      64      69      68
+      28      39      40      45      44      64      65      70      69
+      29      41      42      47      46      66      67      72      71
+      30      42      43      48      47      67      68      73      72
+      31      43      44      49      48      68      69      74      73
+      32      44      45      50      49      69      70      75      74
+      33      51      52      57      56      76      77      82      81
+      34      52      53      58      57      77      78      83      82
+      35      53      54      59      58      78      79      84      83
+      36      54      55      60      59      79      80      85      84
+      37      56      57      62      61      81      82      87      86
+      38      57      58      63      62      82      83      88      87
+      39      58      59      64      63      83      84      89      88
+      40      59      60      65      64      84      85      90      89
+      41      61      62      67      66      86      87      92      91
+      42      62      63      68      67      87      88      93      92
+      43      63      64      69      68      88      89      94      93
+      44      64      65      70      69      89      90      95      94
+      45      66      67      72      71      91      92      97      96
+      46      67      68      73      72      92      93      98      97
+      47      68      69      74      73      93      94      99      98
+      48      69      70      75      74      94      95     100      99
+      49      76      77      82      81     101     102     107     106
+      50      77      78      83      82     102     103     108     107
+      51      78      79      84      83     103     104     109     108
+      52      79      80      85      84     104     105     110     109
+      53      81      82      87      86     106     107     112     111
+      54      82      83      88      87     107     108     113     112
+      55      83      84      89      88     108     109     114     113
+      56      84      85      90      89     109     110     115     114
+      57      86      87      92      91     111     112     117     116
+      58      87      88      93      92     112     113     118     117
+      59      88      89      94      93     113     114     119     118
+      60      89      90      95      94     114     115     120     119
+      61      91      92      97      96     116     117     122     121
+      62      92      93      98      97     117     118     123     122
+      63      93      94      99      98     118     119     124     123
+      64      94      95     100      99     119     120     125     124
+*echo on
+c
+blocking   $    scalar
+       1      64    1    0
+c
+initial conditions
+  temperature
+    1 temperature     0.000
+    2 temperature     0.000
+    3 temperature     0.000
+    4 temperature     0.000
+    5 temperature     0.000
+    6 temperature     0.000
+    7 temperature     0.000
+    8 temperature     0.000
+    9 temperature     0.000
+   10 temperature     0.000
+   11 temperature     0.000
+   12 temperature     0.000
+   13 temperature     0.000
+   14 temperature     0.000
+   15 temperature     0.000
+   16 temperature     0.000
+   17 temperature     0.000
+   18 temperature     0.000
+   19 temperature     0.000
+   20 temperature     0.000
+   21 temperature     0.000
+   22 temperature     0.000
+   23 temperature     0.000
+   24 temperature     0.000
+   25 temperature     0.000
+   26 temperature     0.000
+   27 temperature     0.000
+   28 temperature     0.000
+   29 temperature     0.000
+   30 temperature     0.000
+   31 temperature     0.000
+   32 temperature     0.781
+   33 temperature     1.563
+   34 temperature     2.344
+   35 temperature     3.125
+   36 temperature     0.000
+   37 temperature     1.563
+   38 temperature     3.125
+   39 temperature     4.688
+   40 temperature     6.250
+   41 temperature     0.000
+   42 temperature     2.344
+   43 temperature     4.688
+   44 temperature     7.031
+   45 temperature     9.375
+   46 temperature     0.000
+   47 temperature     3.125
+   48 temperature     6.250
+   49 temperature     9.375
+   50 temperature    12.500
+   51 temperature     0.000
+   52 temperature     0.000
+   53 temperature     0.000
+   54 temperature     0.000
+   55 temperature     0.000
+   56 temperature     0.000
+   57 temperature     1.563
+   58 temperature     3.125
+   59 temperature     4.688
+   60 temperature     6.250
+   61 temperature     0.000
+   62 temperature     3.125
+   63 temperature     6.250
+   64 temperature     9.375
+   65 temperature    12.500
+   66 temperature     0.000
+   67 temperature     4.688
+   68 temperature     9.375
+   69 temperature    14.063
+   70 temperature    18.750
+   71 temperature     0.000
+   72 temperature     6.250
+   73 temperature    12.500
+   74 temperature    18.750
+   75 temperature    25.000
+   76 temperature     0.000
+   77 temperature     0.000
+   78 temperature     0.000
+   79 temperature     0.000
+   80 temperature     0.000
+   81 temperature     0.000
+   82 temperature     2.344
+   83 temperature     4.688
+   84 temperature     7.031
+   85 temperature     9.375
+   86 temperature     0.000
+   87 temperature     4.688
+   88 temperature     9.375
+   89 temperature    14.063
+   90 temperature    18.750
+   91 temperature     0.000
+   92 temperature     7.031
+   93 temperature    14.063
+   94 temperature    21.094
+   95 temperature    28.125
+   96 temperature     0.000
+   97 temperature     9.375
+   98 temperature    18.750
+   99 temperature    28.125
+  100 temperature    37.500
+  101 temperature     0.000
+  102 temperature     0.000
+  103 temperature     0.000
+  104 temperature     0.000
+  105 temperature     0.000
+  106 temperature     0.000
+  107 temperature     3.125
+  108 temperature     6.250
+  109 temperature     9.375
+  110 temperature    12.500
+  111 temperature     0.000
+  112 temperature     6.250
+  113 temperature    12.500
+  114 temperature    18.750
+  115 temperature    25.000
+  116 temperature     0.000
+  117 temperature     9.375
+  118 temperature    18.750
+  119 temperature    28.125
+  120 temperature    37.500
+  121 temperature     0.000
+  122 temperature    12.500
+  123 temperature    25.000
+  124 temperature    37.500
+  125 temperature    50.000
+c
+loading ramp_temp
+ nodal loads
+    1 temperature       0.000
+    2 temperature       0.000
+    3 temperature       0.000
+    4 temperature       0.000
+    5 temperature       0.000
+    6 temperature       0.000
+    7 temperature       0.000
+    8 temperature       0.000
+    9 temperature       0.000
+   10 temperature       0.000
+   11 temperature       0.000
+   12 temperature       0.000
+   13 temperature       0.000
+   14 temperature       0.000
+   15 temperature       0.000
+   16 temperature       0.000
+   17 temperature       0.000
+   18 temperature       0.000
+   19 temperature       0.000
+   20 temperature       0.000
+   21 temperature       0.000
+   22 temperature       0.000
+   23 temperature       0.000
+   24 temperature       0.000
+   25 temperature       0.000
+   26 temperature       0.000
+   27 temperature       0.000
+   28 temperature       0.000
+   29 temperature       0.000
+   30 temperature       0.000
+   31 temperature       0.000
+   32 temperature       0.141
+   33 temperature       0.281
+   34 temperature       0.422
+   35 temperature       0.563
+   36 temperature       0.000
+   37 temperature       0.281
+   38 temperature       0.563
+   39 temperature       0.844
+   40 temperature       1.125
+   41 temperature       0.000
+   42 temperature       0.422
+   43 temperature       0.844
+   44 temperature       1.266
+   45 temperature       1.688
+   46 temperature       0.000
+   47 temperature       0.563
+   48 temperature       1.125
+   49 temperature       1.688
+   50 temperature       2.250
+   51 temperature       0.000
+   52 temperature       0.000
+   53 temperature       0.000
+   54 temperature       0.000
+   55 temperature       0.000
+   56 temperature       0.000
+   57 temperature       0.281
+   58 temperature       0.563
+   59 temperature       0.844
+   60 temperature       1.125
+   61 temperature       0.000
+   62 temperature       0.563
+   63 temperature       1.125
+   64 temperature       1.688
+   65 temperature       2.250
+   66 temperature       0.000
+   67 temperature       0.844
+   68 temperature       1.688
+   69 temperature       2.531
+   70 temperature       3.375
+   71 temperature       0.000
+   72 temperature       1.125
+   73 temperature       2.250
+   74 temperature       3.375
+   75 temperature       4.500
+   76 temperature       0.000
+   77 temperature       0.000
+   78 temperature       0.000
+   79 temperature       0.000
+   80 temperature       0.000
+   81 temperature       0.000
+   82 temperature       0.422
+   83 temperature       0.844
+   84 temperature       1.266
+   85 temperature       1.688
+   86 temperature       0.000
+   87 temperature       0.844
+   88 temperature       1.688
+   89 temperature       2.531
+   90 temperature       3.375
+   91 temperature       0.000
+   92 temperature       1.266
+   93 temperature       2.531
+   94 temperature       3.797
+   95 temperature       5.063
+   96 temperature       0.000
+   97 temperature       1.688
+   98 temperature       3.375
+   99 temperature       5.063
+  100 temperature       6.750
+  101 temperature       0.000
+  102 temperature       0.000
+  103 temperature       0.000
+  104 temperature       0.000
+  105 temperature       0.000
+  106 temperature       0.000
+  107 temperature       0.563
+  108 temperature       1.125
+  109 temperature       1.688
+  110 temperature       2.250
+  111 temperature       0.000
+  112 temperature       1.125
+  113 temperature       2.250
+  114 temperature       3.375
+  115 temperature       4.500
+  116 temperature       0.000
+  117 temperature       1.688
+  118 temperature       3.375
+  119 temperature       5.063
+  120 temperature       6.750
+  121 temperature       0.000
+  122 temperature       2.250
+  123 temperature       4.500
+  124 temperature       6.750
+  125 temperature       9.000
+c
+constraints
+c
+      plane x=0 symmetry verify
+      plane y=0 symmetry verify
+      plane z=0 symmetry verify
+      plane y=1.0 v=0.001 verify
+      125 u 0.00100
+      100 u 0.00075
+       75 u 0.00050
+       50 u 0.00025
+c
+loading test
+  nonlinear
+    step 1-50    ramp_temp   1.0  constraints  1.0
+    step 51-100  ramp_temp  -1.0  constraints -1.0
+    step 101-150 ramp_temp   1.0  constraints  1.0
+    step 151-200 ramp_temp  -1.0  constraints -1.0
+    step 201-250 ramp_temp   1.0  constraints  1.0
+    step 251-300 ramp_temp  -1.0  constraints -1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 2
+   convergence test norm res tol 0.05
+   nonconvergent solutions stop
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   time step 1.0e06
+   trace solution on
+   extrapolate on
+   adaptive on
+c
+c
+c      notes about solution strategy:
+c
+c      when the load reverses at steps 51, 101, 151, 201, 251,
+c      we turn off displacement extrapolation and request use
+c      of the linear stiffness on iteration one of the
+c      step which triggers the reversal.
+c
+c      this enables convergence of the newton iterations. alternatively,
+c      we could define a small load step at each reversal to get
+c      the solution turned around.
+c
+c      node 125 is at (1,1,1) on the cube. element 64 is the
+c      only element incidnet on that node.
+c
+ compute displacements for loading test step 50
+ output displacements 125
+ output stresses 64
+ output strains 64
+c
+ nonlinear analysis parameters
+   linear stiffness for iteration one on
+   extrapolate off
+ compute displacements for loading test step 51
+
+nonlinear analysis parameters
+   linear stiffness for iteration one off
+   extrapolate on
+ compute displacements for loading test step 100
+ output displacements 125
+ output stresses 64
+ output strains 64
+
+nonlinear analysis parameters
+   linear stiffness for iteration one on
+   extrapolate off
+ compute displacements for loading test step 101
+
+nonlinear analysis parameters
+   linear stiffness for iteration one off
+    extrapolate on
+compute displacements for loading test step 150
+ output displacements 125
+ output stresses 64
+ output strains 64
+
+nonlinear analysis parameters
+   linear stiffness for iteration one on
+   extrapolate off
+ compute displacements for loading test step 151
+
+nonlinear analysis parameters
+   linear stiffness for iteration one off
+    extrapolate on
+compute displacements for loading test step 200
+ output displacements 125
+ output stresses 64
+ output strains 64
+
+nonlinear analysis parameters
+   linear stiffness for iteration one on
+   extrapolate off
+ compute displacements for loading test step 201
+
+nonlinear analysis parameters
+   linear stiffness for iteration one off
+   extrapolate on
+ compute displacements for loading test step 250
+ output displacements 125
+ output stresses 64
+ output strains 64
+
+nonlinear analysis parameters
+   linear stiffness for iteration one on
+   extrapolate off
+ compute displacements for loading test step 251
+
+nonlinear analysis parameters
+   linear stiffness for iteration one off
+   extrapolate on
+ compute displacements for loading test step 300
+ output displacements 125
+ output stresses 64
+ output strains 64
+stop
+
+
+*************************   Abaqus Input file for This Problem    ********
+
+*HEADING
+**PREPRINT,HISTORY=NO,ECHO=no,MODEL=NO,CONTACT=NO
+*NODE, SYSTEM=R, NSET=NALL
+       1,            0.,            0.
+       2,          0.25,            0.
+       3,           0.5,            0.
+       4,          0.75,            0.
+       5,            1.,            0.
+       6,            0.,          0.25
+       7,          0.25,          0.25
+       8,           0.5,          0.25
+       9,          0.75,          0.25
+      10,            1.,          0.25
+      11,            0.,           0.5
+      12,          0.25,           0.5
+      13,           0.5,           0.5
+      14,          0.75,           0.5
+      15,            1.,           0.5
+      16,            0.,          0.75
+      17,          0.25,          0.75
+      18,           0.5,          0.75
+      19,          0.75,          0.75
+      20,            1.,          0.75
+      21,            0.,            1.
+      22,          0.25,            1.
+      23,           0.5,            1.
+      24,          0.75,            1.
+      25,            1.,            1.
+      26,            0.,            0.,          0.25
+      27,          0.25,            0.,          0.25
+      28,           0.5,            0.,          0.25
+      29,          0.75,            0.,          0.25
+      30,            1.,            0.,          0.25
+      31,            0.,          0.25,          0.25
+      32,          0.25,          0.25,          0.25
+      33,           0.5,          0.25,          0.25
+      34,          0.75,          0.25,          0.25
+      35,            1.,          0.25,          0.25
+      36,            0.,           0.5,          0.25
+      37,          0.25,           0.5,          0.25
+      38,           0.5,           0.5,          0.25
+      39,          0.75,           0.5,          0.25
+      40,            1.,           0.5,          0.25
+      41,            0.,          0.75,          0.25
+      42,          0.25,          0.75,          0.25
+      43,           0.5,          0.75,          0.25
+      44,          0.75,          0.75,          0.25
+      45,            1.,          0.75,          0.25
+      46,            0.,            1.,          0.25
+      47,          0.25,            1.,          0.25
+      48,           0.5,            1.,          0.25
+      49,          0.75,            1.,          0.25
+      50,            1.,            1.,          0.25
+      51,            0.,            0.,           0.5
+      52,          0.25,            0.,           0.5
+      53,           0.5,            0.,           0.5
+      54,          0.75,            0.,           0.5
+      55,            1.,            0.,           0.5
+      56,            0.,          0.25,           0.5
+      57,          0.25,          0.25,           0.5
+      58,           0.5,          0.25,           0.5
+      59,          0.75,          0.25,           0.5
+      60,            1.,          0.25,           0.5
+      61,            0.,           0.5,           0.5
+      62,          0.25,           0.5,           0.5
+      63,           0.5,           0.5,           0.5
+      64,          0.75,           0.5,           0.5
+      65,            1.,           0.5,           0.5
+      66,            0.,          0.75,           0.5
+      67,          0.25,          0.75,           0.5
+      68,           0.5,          0.75,           0.5
+      69,          0.75,          0.75,           0.5
+      70,            1.,          0.75,           0.5
+      71,            0.,            1.,           0.5
+      72,          0.25,            1.,           0.5
+      73,           0.5,            1.,           0.5
+      74,          0.75,            1.,           0.5
+      75,            1.,            1.,           0.5
+      76,            0.,            0.,          0.75
+      77,          0.25,            0.,          0.75
+      78,           0.5,            0.,          0.75
+      79,          0.75,            0.,          0.75
+      80,            1.,            0.,          0.75
+      81,            0.,          0.25,          0.75
+      82,          0.25,          0.25,          0.75
+      83,           0.5,          0.25,          0.75
+      84,          0.75,          0.25,          0.75
+      85,            1.,          0.25,          0.75
+      86,            0.,           0.5,          0.75
+      87,          0.25,           0.5,          0.75
+      88,           0.5,           0.5,          0.75
+      89,          0.75,           0.5,          0.75
+      90,            1.,           0.5,          0.75
+      91,            0.,          0.75,          0.75
+      92,          0.25,          0.75,          0.75
+      93,           0.5,          0.75,          0.75
+      94,          0.75,          0.75,          0.75
+      95,            1.,          0.75,          0.75
+      96,            0.,            1.,          0.75
+      97,          0.25,            1.,          0.75
+      98,           0.5,            1.,          0.75
+      99,          0.75,            1.,          0.75
+     100,            1.,            1.,          0.75
+     101,            0.,            0.,            1.
+     102,          0.25,            0.,            1.
+     103,           0.5,            0.,            1.
+     104,          0.75,            0.,            1.
+     105,            1.,            0.,            1.
+     106,            0.,          0.25,            1.
+     107,          0.25,          0.25,            1.
+     108,           0.5,          0.25,            1.
+     109,          0.75,          0.25,            1.
+     110,            1.,          0.25,            1.
+     111,            0.,           0.5,            1.
+     112,          0.25,           0.5,            1.
+     113,           0.5,           0.5,            1.
+     114,          0.75,           0.5,            1.
+     115,            1.,           0.5,            1.
+     116,            0.,          0.75,            1.
+     117,          0.25,          0.75,            1.
+     118,           0.5,          0.75,            1.
+     119,          0.75,          0.75,            1.
+     120,            1.,          0.75,            1.
+     121,            0.,            1.,            1.
+     122,          0.25,            1.,            1.
+     123,           0.5,            1.,            1.
+     124,          0.75,            1.,            1.
+     125,            1.,            1.,            1.
+**
+**
+*ELEMENT,TYPE=C3D8  ,ELSET=eall
+       1,       1,       2,       7,       6,      26,      27,
+      32,      31
+       2,       2,       3,       8,       7,      27,      28,
+      33,      32
+       3,       3,       4,       9,       8,      28,      29,
+      34,      33
+       4,       4,       5,      10,       9,      29,      30,
+      35,      34
+       5,       6,       7,      12,      11,      31,      32,
+      37,      36
+       6,       7,       8,      13,      12,      32,      33,
+      38,      37
+       7,       8,       9,      14,      13,      33,      34,
+      39,      38
+       8,       9,      10,      15,      14,      34,      35,
+      40,      39
+       9,      11,      12,      17,      16,      36,      37,
+      42,      41
+      10,      12,      13,      18,      17,      37,      38,
+      43,      42
+      11,      13,      14,      19,      18,      38,      39,
+      44,      43
+      12,      14,      15,      20,      19,      39,      40,
+      45,      44
+      13,      16,      17,      22,      21,      41,      42,
+      47,      46
+      14,      17,      18,      23,      22,      42,      43,
+      48,      47
+      15,      18,      19,      24,      23,      43,      44,
+      49,      48
+      16,      19,      20,      25,      24,      44,      45,
+      50,      49
+      17,      26,      27,      32,      31,      51,      52,
+      57,      56
+      18,      27,      28,      33,      32,      52,      53,
+      58,      57
+      19,      28,      29,      34,      33,      53,      54,
+      59,      58
+      20,      29,      30,      35,      34,      54,      55,
+      60,      59
+      21,      31,      32,      37,      36,      56,      57,
+      62,      61
+      22,      32,      33,      38,      37,      57,      58,
+      63,      62
+      23,      33,      34,      39,      38,      58,      59,
+      64,      63
+      24,      34,      35,      40,      39,      59,      60,
+      65,      64
+      25,      36,      37,      42,      41,      61,      62,
+      67,      66
+      26,      37,      38,      43,      42,      62,      63,
+      68,      67
+      27,      38,      39,      44,      43,      63,      64,
+      69,      68
+      28,      39,      40,      45,      44,      64,      65,
+      70,      69
+      29,      41,      42,      47,      46,      66,      67,
+      72,      71
+      30,      42,      43,      48,      47,      67,      68,
+      73,      72
+      31,      43,      44,      49,      48,      68,      69,
+      74,      73
+      32,      44,      45,      50,      49,      69,      70,
+      75,      74
+      33,      51,      52,      57,      56,      76,      77,
+      82,      81
+      34,      52,      53,      58,      57,      77,      78,
+      83,      82
+      35,      53,      54,      59,      58,      78,      79,
+      84,      83
+      36,      54,      55,      60,      59,      79,      80,
+      85,      84
+      37,      56,      57,      62,      61,      81,      82,
+      87,      86
+      38,      57,      58,      63,      62,      82,      83,
+      88,      87
+      39,      58,      59,      64,      63,      83,      84,
+      89,      88
+      40,      59,      60,      65,      64,      84,      85,
+      90,      89
+      41,      61,      62,      67,      66,      86,      87,
+      92,      91
+      42,      62,      63,      68,      67,      87,      88,
+      93,      92
+      43,      63,      64,      69,      68,      88,      89,
+      94,      93
+      44,      64,      65,      70,      69,      89,      90,
+      95,      94
+      45,      66,      67,      72,      71,      91,      92,
+      97,      96
+      46,      67,      68,      73,      72,      92,      93,
+      98,      97
+      47,      68,      69,      74,      73,      93,      94,
+      99,      98
+      48,      69,      70,      75,      74,      94,      95,
+     100,      99
+      49,      76,      77,      82,      81,     101,     102,
+     107,     106
+      50,      77,      78,      83,      82,     102,     103,
+     108,     107
+      51,      78,      79,      84,      83,     103,     104,
+     109,     108
+      52,      79,      80,      85,      84,     104,     105,
+     110,     109
+      53,      81,      82,      87,      86,     106,     107,
+     112,     111
+      54,      82,      83,      88,      87,     107,     108,
+     113,     112
+      55,      83,      84,      89,      88,     108,     109,
+     114,     113
+      56,      84,      85,      90,      89,     109,     110,
+     115,     114
+      57,      86,      87,      92,      91,     111,     112,
+     117,     116
+      58,      87,      88,      93,      92,     112,     113,
+     118,     117
+      59,      88,      89,      94,      93,     113,     114,
+     119,     118
+      60,      89,      90,      95,      94,     114,     115,
+     120,     119
+      61,      91,      92,      97,      96,     116,     117,
+     122,     121
+      62,      92,      93,      98,      97,     117,     118,
+     123,     122
+      63,      93,      94,      99,      98,     118,     119,
+     124,     123
+      64,      94,      95,     100,      99,     119,     120,
+     125,     124
+****************************************************************************
+**
+*SOLID SECTION,ELSET=EALL,MATERIAL=steel
+*MATERIAL,NAME=steel
+*elastic
+.20e6,   .20,   0.0
+.15e6,   .30,   300.0
+.10e6,   .40,   550.0
+*plastic,hardening=kinematic
+200.0,   0.0,      0.0
+50200.0, 10.0,     0.0
+100.0, 0.0,      300.0
+110.0, 10.0,    300.0
+ 50.0, 0.0,      550.0
+ 51.0, 10.0,    550.0
+*expansion, zero=0
+0.0003, 0.
+0.0003, 300.0
+0.0003, 550.0
+*****************************************************************************
+**
+*RESTART,WRITE,FREQ=500
+*INITIAL CONDITIONS, TYPE=TEMPERATURE
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     0.781
+   33,     1.563
+   34,     2.344
+   35,     3.125
+   36,     0.000
+   37,     1.563
+   38,     3.125
+   39,     4.688
+   40,     6.250
+   41,     0.000
+   42,     2.344
+   43,     4.688
+   44,     7.031
+   45,     9.375
+   46,     0.000
+   47,     3.125
+   48,     6.250
+   49,     9.375
+   50,    12.500
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,     1.563
+   58,     3.125
+   59,     4.688
+   60,     6.250
+   61,     0.000
+   62,     3.125
+   63,     6.250
+   64,     9.375
+   65,    12.500
+   66,     0.000
+   67,     4.688
+   68,     9.375
+   69,    14.063
+   70,    18.750
+   71,     0.000
+   72,     6.250
+   73,    12.500
+   74,    18.750
+   75,    25.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,     2.344
+   83,     4.688
+   84,     7.031
+   85,     9.375
+   86,     0.000
+   87,     4.688
+   88,     9.375
+   89,    14.063
+   90,    18.750
+   91,     0.000
+   92,     7.031
+   93,    14.063
+   94,    21.094
+   95,    28.125
+   96,     0.000
+   97,     9.375
+   98,    18.750
+   99,    28.125
+  100,    37.500
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,     3.125
+  108,     6.250
+  109,     9.375
+  110,    12.500
+  111,     0.000
+  112,     6.250
+  113,    12.500
+  114,    18.750
+  115,    25.000
+  116,     0.000
+  117,     9.375
+  118,    18.750
+  119,    28.125
+  120,    37.500
+  121,     0.000
+  122,    12.500
+  123,    25.000
+  124,    37.500
+  125,    50.000
+*****************************************************************************
+*NSET, NSET=bottom
+    1,    2,    3,
+    4,    5,   26,   27,
+   28,   29,   30,   51,
+   52,   53,   54,   55,
+   76,   77,   78,   79,
+   80,  101,  102,  103,
+  104,  105
+**
+*NSET, NSET=left
+   1,   6,  11,  16,  21,  26,  31,  36,
+  41,  46,  51,  56,  61,  66,  71,  76,
+  81,  86,  91,  96, 101, 106, 111, 116,
+ 121
+**
+*nset,nset=top
+  21,  22,  23,  24,
+  25,  46,  47,  48,  49,
+  50,  71,  72,  73,
+  74,  75,  96,  97,
+  98,  99, 100, 121,
+ 122, 123, 124, 125
+**
+*NSET, NSET=back
+  1,  2,  3,  4,  5,  6,  7,  8,
+  9, 10, 11, 12, 13, 14, 15, 16,
+ 17, 18, 19, 20, 21, 22, 23, 24,
+ 25
+*nset,nset=corner
+125
+**
+*elset,elset=edge
+64
+**
+******************Start Step 1 -----------------------------------
+*STEP,AMPLITUDE=RAMP,INC=50
+Step 1: T= reference -> 500
+*STATIC,DIRECT
+0.02, 1., 0.02
+*BOUNDARY,OP=NEW
+** <node #>,<1st dof>,<last dof>,<displacement value>
+ bottom, YSYMM
+ top,    2, 2, 0.05
+ left,   XSYMM
+ back,   ZSYMM
+ 125,1,1,0.0500
+ 100,1,1,0.0375
+  75,1,1,0.0250
+  50,1,1,0.0125
+*temperature
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     7.813
+   33,    15.625
+   34,    23.438
+   35,    31.250
+   36,     0.000
+   37,    15.625
+   38,    31.250
+   39,    46.875
+   40,    62.500
+   41,     0.000
+   42,    23.438
+   43,    46.875
+   44,    70.313
+   45,    93.750
+   46,     0.000
+   47,    31.250
+   48,    62.500
+   49,    93.750
+   50,   125.000
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,    15.625
+   58,    31.250
+   59,    46.875
+   60,    62.500
+   61,     0.000
+   62,    31.250
+   63,    62.500
+   64,    93.750
+   65,   125.000
+   66,     0.000
+   67,    46.875
+   68,    93.750
+   69,   140.625
+   70,   187.500
+   71,     0.000
+   72,    62.500
+   73,   125.000
+   74,   187.500
+   75,   250.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,    23.438
+   83,    46.875
+   84,    70.313
+   85,    93.750
+   86,     0.000
+   87,    46.875
+   88,    93.750
+   89,   140.625
+   90,   187.500
+   91,     0.000
+   92,    70.313
+   93,   140.625
+   94,   210.938
+   95,   281.250
+   96,     0.000
+   97,    93.750
+   98,   187.500
+   99,   281.250
+  100,   375.000
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,    31.250
+  108,    62.500
+  109,    93.750
+  110,   125.000
+  111,     0.000
+  112,    62.500
+  113,   125.000
+  114,   187.500
+  115,   250.000
+  116,     0.000
+  117,    93.750
+  118,   187.500
+  119,   281.250
+  120,   375.000
+  121,     0.000
+  122,   125.000
+  123,   250.000
+  124,   375.000
+  125,   500.000
+*node print,freq=50,nset=corner
+u
+*el print,freq=50,elset=edge
+s,pemag,peeq
+*el print,freq=50,elset=edge
+e
+*END STEP
+
+******************Start Step 2 -----------------------------------
+*step, amplitude=ramp, inc=50
+Step 2: T= 500 -> reference
+*STATIC,DIRECT
+0.02, 1., 0.02
+*BOUNDARY,OP=NEW
+** <node #>,<1st dof>,<last dof>,<displacement value>
+ bottom, YSYMM
+ top,    2, 2, 0.0
+ left,   XSYMM
+ back,   ZSYMM
+ 125,1,1,0.0
+ 100,1,1,0.0
+  75,1,1,0.0
+  50,1,1,0.0
+
+*temperature
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     0.781
+   33,     1.563
+   34,     2.344
+   35,     3.125
+   36,     0.000
+   37,     1.563
+   38,     3.125
+   39,     4.688
+   40,     6.250
+   41,     0.000
+   42,     2.344
+   43,     4.688
+   44,     7.031
+   45,     9.375
+   46,     0.000
+   47,     3.125
+   48,     6.250
+   49,     9.375
+   50,    12.500
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,     1.563
+   58,     3.125
+   59,     4.688
+   60,     6.250
+   61,     0.000
+   62,     3.125
+   63,     6.250
+   64,     9.375
+   65,    12.500
+   66,     0.000
+   67,     4.688
+   68,     9.375
+   69,    14.063
+   70,    18.750
+   71,     0.000
+   72,     6.250
+   73,    12.500
+   74,    18.750
+   75,    25.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,     2.344
+   83,     4.688
+   84,     7.031
+   85,     9.375
+   86,     0.000
+   87,     4.688
+   88,     9.375
+   89,    14.063
+   90,    18.750
+   91,     0.000
+   92,     7.031
+   93,    14.063
+   94,    21.094
+   95,    28.125
+   96,     0.000
+   97,     9.375
+   98,    18.750
+   99,    28.125
+  100,    37.500
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,     3.125
+  108,     6.250
+  109,     9.375
+  110,    12.500
+  111,     0.000
+  112,     6.250
+  113,    12.500
+  114,    18.750
+  115,    25.000
+  116,     0.000
+  117,     9.375
+  118,    18.750
+  119,    28.125
+  120,    37.500
+  121,     0.000
+  122,    12.500
+  123,    25.000
+  124,    37.500
+  125,    50.000
+*node print,freq=50,nset=corner
+u
+*el print,freq=50,elset=edge
+s,pemag,peeq
+*END STEP
+******************Start Step 3 -----------------------------------
+*STEP,AMPLITUDE=RAMP,INC=50
+Step 1: T= reference -> 500
+*STATIC,DIRECT
+0.02, 1., 0.02
+*BOUNDARY,OP=NEW
+** <node #>,<1st dof>,<last dof>,<displacement value>
+ bottom, YSYMM
+ top,    2, 2, 0.05
+ left,   XSYMM
+ back,   ZSYMM
+ 125,1,1,0.0500
+ 100,1,1,0.0375
+  75,1,1,0.0250
+  50,1,1,0.0125
+*temperature
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     7.813
+   33,    15.625
+   34,    23.438
+   35,    31.250
+   36,     0.000
+   37,    15.625
+   38,    31.250
+   39,    46.875
+   40,    62.500
+   41,     0.000
+   42,    23.438
+   43,    46.875
+   44,    70.313
+   45,    93.750
+   46,     0.000
+   47,    31.250
+   48,    62.500
+   49,    93.750
+   50,   125.000
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,    15.625
+   58,    31.250
+   59,    46.875
+   60,    62.500
+   61,     0.000
+   62,    31.250
+   63,    62.500
+   64,    93.750
+   65,   125.000
+   66,     0.000
+   67,    46.875
+   68,    93.750
+   69,   140.625
+   70,   187.500
+   71,     0.000
+   72,    62.500
+   73,   125.000
+   74,   187.500
+   75,   250.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,    23.438
+   83,    46.875
+   84,    70.313
+   85,    93.750
+   86,     0.000
+   87,    46.875
+   88,    93.750
+   89,   140.625
+   90,   187.500
+   91,     0.000
+   92,    70.313
+   93,   140.625
+   94,   210.938
+   95,   281.250
+   96,     0.000
+   97,    93.750
+   98,   187.500
+   99,   281.250
+  100,   375.000
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,    31.250
+  108,    62.500
+  109,    93.750
+  110,   125.000
+  111,     0.000
+  112,    62.500
+  113,   125.000
+  114,   187.500
+  115,   250.000
+  116,     0.000
+  117,    93.750
+  118,   187.500
+  119,   281.250
+  120,   375.000
+  121,     0.000
+  122,   125.000
+  123,   250.000
+  124,   375.000
+  125,   500.000
+*node print,freq=50,nset=corner
+u
+*el print,freq=50,elset=edge
+s,pemag,peeq
+*el print,freq=50,elset=edge
+e
+*END STEP
+******************Start Step 4 -----------------------------------
+*step, amplitude=ramp, inc=50
+Step 2: T= 500 -> refernce
+*STATIC,DIRECT
+0.02, 1., 0.02
+*BOUNDARY,OP=NEW
+** <node #>,<1st dof>,<last dof>,<displacement value>
+ bottom, YSYMM
+ top,    2, 2, 0.0
+ left,   XSYMM
+ back,   ZSYMM
+ 125,1,1,0.0
+ 100,1,1,0.0
+  75,1,1,0.0
+  50,1,1,0.0
+
+*temperature
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     0.781
+   33,     1.563
+   34,     2.344
+   35,     3.125
+   36,     0.000
+   37,     1.563
+   38,     3.125
+   39,     4.688
+   40,     6.250
+   41,     0.000
+   42,     2.344
+   43,     4.688
+   44,     7.031
+   45,     9.375
+   46,     0.000
+   47,     3.125
+   48,     6.250
+   49,     9.375
+   50,    12.500
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,     1.563
+   58,     3.125
+   59,     4.688
+   60,     6.250
+   61,     0.000
+   62,     3.125
+   63,     6.250
+   64,     9.375
+   65,    12.500
+   66,     0.000
+   67,     4.688
+   68,     9.375
+   69,    14.063
+   70,    18.750
+   71,     0.000
+   72,     6.250
+   73,    12.500
+   74,    18.750
+   75,    25.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,     2.344
+   83,     4.688
+   84,     7.031
+   85,     9.375
+   86,     0.000
+   87,     4.688
+   88,     9.375
+   89,    14.063
+   90,    18.750
+   91,     0.000
+   92,     7.031
+   93,    14.063
+   94,    21.094
+   95,    28.125
+   96,     0.000
+   97,     9.375
+   98,    18.750
+   99,    28.125
+  100,    37.500
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,     3.125
+  108,     6.250
+  109,     9.375
+  110,    12.500
+  111,     0.000
+  112,     6.250
+  113,    12.500
+  114,    18.750
+  115,    25.000
+  116,     0.000
+  117,     9.375
+  118,    18.750
+  119,    28.125
+  120,    37.500
+  121,     0.000
+  122,    12.500
+  123,    25.000
+  124,    37.500
+  125,    50.000
+*node print,freq=50,nset=corner
+u
+*el print,freq=50,elset=edge
+s,pemag,peeq
+*END STEP
+******************Start Step 5 -----------------------------------
+*STEP,AMPLITUDE=RAMP,INC=50
+Step 1: T= reference -> 500
+*STATIC,DIRECT
+0.02, 1., 0.02
+*BOUNDARY,OP=NEW
+** <node #>,<1st dof>,<last dof>,<displacement value>
+ bottom, YSYMM
+ top,    2, 2, 0.05
+ left,   XSYMM
+ back,   ZSYMM
+ 125,1,1,0.0500
+ 100,1,1,0.0375
+  75,1,1,0.0250
+  50,1,1,0.0125
+*temperature
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     7.813
+   33,    15.625
+   34,    23.438
+   35,    31.250
+   36,     0.000
+   37,    15.625
+   38,    31.250
+   39,    46.875
+   40,    62.500
+   41,     0.000
+   42,    23.438
+   43,    46.875
+   44,    70.313
+   45,    93.750
+   46,     0.000
+   47,    31.250
+   48,    62.500
+   49,    93.750
+   50,   125.000
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,    15.625
+   58,    31.250
+   59,    46.875
+   60,    62.500
+   61,     0.000
+   62,    31.250
+   63,    62.500
+   64,    93.750
+   65,   125.000
+   66,     0.000
+   67,    46.875
+   68,    93.750
+   69,   140.625
+   70,   187.500
+   71,     0.000
+   72,    62.500
+   73,   125.000
+   74,   187.500
+   75,   250.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,    23.438
+   83,    46.875
+   84,    70.313
+   85,    93.750
+   86,     0.000
+   87,    46.875
+   88,    93.750
+   89,   140.625
+   90,   187.500
+   91,     0.000
+   92,    70.313
+   93,   140.625
+   94,   210.938
+   95,   281.250
+   96,     0.000
+   97,    93.750
+   98,   187.500
+   99,   281.250
+  100,   375.000
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,    31.250
+  108,    62.500
+  109,    93.750
+  110,   125.000
+  111,     0.000
+  112,    62.500
+  113,   125.000
+  114,   187.500
+  115,   250.000
+  116,     0.000
+  117,    93.750
+  118,   187.500
+  119,   281.250
+  120,   375.000
+  121,     0.000
+  122,   125.000
+  123,   250.000
+  124,   375.000
+  125,   500.000
+*node print,freq=50,nset=corner
+u
+*el print,freq=50,elset=edge
+s,pemag,peeq
+*el print,freq=50,elset=edge
+e
+*END STEP
+******************Start Step 6 -----------------------------------
+*step, amplitude=ramp, inc=50
+Step 2: T= 500 -> refernce
+*STATIC,DIRECT
+0.02, 1., 0.02
+*BOUNDARY,OP=NEW
+** <node #>,<1st dof>,<last dof>,<displacement value>
+ bottom, YSYMM
+ top,    2, 2, 0.0
+ left,   XSYMM
+ back,   ZSYMM
+ 125,1,1,0.0
+ 100,1,1,0.0
+  75,1,1,0.0
+  50,1,1,0.0
+
+*temperature
+    1,     0.000
+    2,     0.000
+    3,     0.000
+    4,     0.000
+    5,     0.000
+    6,     0.000
+    7,     0.000
+    8,     0.000
+    9,     0.000
+   10,     0.000
+   11,     0.000
+   12,     0.000
+   13,     0.000
+   14,     0.000
+   15,     0.000
+   16,     0.000
+   17,     0.000
+   18,     0.000
+   19,     0.000
+   20,     0.000
+   21,     0.000
+   22,     0.000
+   23,     0.000
+   24,     0.000
+   25,     0.000
+   26,     0.000
+   27,     0.000
+   28,     0.000
+   29,     0.000
+   30,     0.000
+   31,     0.000
+   32,     0.781
+   33,     1.563
+   34,     2.344
+   35,     3.125
+   36,     0.000
+   37,     1.563
+   38,     3.125
+   39,     4.688
+   40,     6.250
+   41,     0.000
+   42,     2.344
+   43,     4.688
+   44,     7.031
+   45,     9.375
+   46,     0.000
+   47,     3.125
+   48,     6.250
+   49,     9.375
+   50,    12.500
+   51,     0.000
+   52,     0.000
+   53,     0.000
+   54,     0.000
+   55,     0.000
+   56,     0.000
+   57,     1.563
+   58,     3.125
+   59,     4.688
+   60,     6.250
+   61,     0.000
+   62,     3.125
+   63,     6.250
+   64,     9.375
+   65,    12.500
+   66,     0.000
+   67,     4.688
+   68,     9.375
+   69,    14.063
+   70,    18.750
+   71,     0.000
+   72,     6.250
+   73,    12.500
+   74,    18.750
+   75,    25.000
+   76,     0.000
+   77,     0.000
+   78,     0.000
+   79,     0.000
+   80,     0.000
+   81,     0.000
+   82,     2.344
+   83,     4.688
+   84,     7.031
+   85,     9.375
+   86,     0.000
+   87,     4.688
+   88,     9.375
+   89,    14.063
+   90,    18.750
+   91,     0.000
+   92,     7.031
+   93,    14.063
+   94,    21.094
+   95,    28.125
+   96,     0.000
+   97,     9.375
+   98,    18.750
+   99,    28.125
+  100,    37.500
+  101,     0.000
+  102,     0.000
+  103,     0.000
+  104,     0.000
+  105,     0.000
+  106,     0.000
+  107,     3.125
+  108,     6.250
+  109,     9.375
+  110,    12.500
+  111,     0.000
+  112,     6.250
+  113,    12.500
+  114,    18.750
+  115,    25.000
+  116,     0.000
+  117,     9.375
+  118,    18.750
+  119,    28.125
+  120,    37.500
+  121,     0.000
+  122,    12.500
+  123,    25.000
+  124,    37.500
+  125,    50.000
+*node print,freq=50,nset=corner
+u
+*el print,freq=50,elset=edge
+s,pemag,peeq
+*END STEP

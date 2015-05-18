@@ -1,0 +1,17 @@
+c     
+c       Sixth layer from the center plane
+c
+domain dnr_006
+   symmetric
+   normal plane nx 0   ny -1.0  nz 0
+   node set  5   1969  1970  1971  1972  1973  1974  1975  1976,
+             1977  1978  1979  1980  1981  1982  1983  1984  1985
+   node set  6   2461  2462  2463  2464  2465  2466  2467  2468,
+             2469  2470  2471  2472  2473  2474  2475  2476  2477
+   node set  7   2953  2954  2955  2956  2957  2958  2959  2960,
+             2961  2962  2963  2964  2965  2966  2967  2968  2969
+   front node sets   5   6   7 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

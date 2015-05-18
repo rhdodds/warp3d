@@ -1,0 +1,96 @@
+!
+structure holes
+! 
+ stress-strain curve 1   $ E / sig-o = 500
+    0.002 1.0,    
+    0.007 1.17,
+    0.013 1.30,
+    0.023 1.42
+    0.033 1.52,
+    0.043 1.57,
+    0.063 1.66,
+    0.124 1.84,
+    0.204 1.97,
+    50.0   33
+ 
+# 
+ material a533b
+    properties mises e 500 nu 0.3 curve 1 rho 0.0
+ 
+number of nodes 41647 elements 5800
+c
+elements
+  1-5800 type q3disop nonlinear material a533b,
+       order 2x2x2 bbar center_output short
+c 
+*input from 'coordinates.inp'
+*input from 'incidences.inp'
+blocking automatic 
+c
+output model flat patran convention text,
+   file "model_description_flat"
+c
+constraints
+ plane z = 0 w = 0
+ plane z = 0.1 w = 0
+ plane x = -0.6 u = 0
+ plane x = 1.0 u = 0
+ plane y = -1.0 v = 0
+ plane y = 1.0 v = 0
+c
+ plane y = 1.0 v = 0.004   $ nominal gross strain = yield 
+c 
+loading unit_pressure_holes
+ element loads
+   1   16   31   46   61   76   91  106, 
+  121  136  151  166  181  196  211  226, 
+  241  256  271  286  2101  2116  2131  2146, 
+  2161  2176  2191  2206   2221  2236  2251  2266, 
+  2281  2296  2311  2326   2341  2356  2371  2386, 
+  3551  3566  3581  3596   3611  3626  3641  3656, 
+  3671  3686  3701  3716   3731  3746  3761  3776, 
+  3791  3806  3821  3836   4351  4366  4381  4396, 
+  4411  4426  4441  4456   4471  4486  4501  4516, 
+  4531  4546  4561  4576   4591  4606  4621  4636 face 6 pressure 1.0
+c
+  651  652  653  654  655  656  657  658,
+  659  660  801  802  803  804  805  806,
+  807  808  809  810  1451  1452  1453  1454, 
+  1455  1456  1457  1458  1459  1460  1601  1602, 
+  1603  1604  1605  1606  1607  1608  1609  1610,
+  2901  2902  2903  2904  2905  2906  2907  2908, 
+  2909  2910  3051  3052  3053  3054  3055  3056, 
+  3057  3058  3059  3060  5001  5002  5003  5004, 
+  5005  5006  5007  5008  5009  5010  5151  5152, 
+  5153  5154  5155  5156  5157  5158  5159  5160 face 3 pressure 1.0
+c 
+ loading test
+  nonlinear
+    step 1-75 constraints 0.25
+    step 76-200 constraints 0.1
+c  
+ nonlinear analysis parameters
+   solution technique sparse direct
+   maximum iterations 5 $  newton iterations
+   minimum iterations 2
+   convergence test norm res tol 0.005 $ tight
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages on
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate on
+   display tied mesh mpcs off
+
+c
+list "top-nodes" y = 1.0
+c
+output commands file "get_results.inp" steps 10-200 by 10
+compute displacements loading test step 200 
+save to file 'solution_at_step_200.db'
+stop

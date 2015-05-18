@@ -1,0 +1,7 @@
+c
+c          restart of problem 10. tests restart features
+c          with crack growth using traction-separation law.
+c
+restart from file 'beam_db'
+compute displacements for loading bend step 31-50
+stop

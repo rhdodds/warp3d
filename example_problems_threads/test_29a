@@ -1,0 +1,78 @@
+c
+c    thermal gradient applied to se(t) specimen -- thermoplasticity
+c    ==============================================================          
+c 
+c            W=2 in,  H/2=4 in, B=0.001 in, a/W=0.14
+c 
+c    nonlinear material, finite strain displacements, bbar.
+c    model has one-layer of elements with w=0 constraints everywhere
+c    to impose plane-strain conditions. the far end has 
+c    rotation suppressed.
+c
+c    crack plane region is modeled with square elements for
+c    simplicity.
+c
+c    loading is an imposed linear gradient over W. -100 on
+c    left edge (cmod edge) and +100 on right edge.
+c
+c    material is simple mises plasticity with linear hardening.
+c
+c    temperature gradient is imposed over 20 steps.
+c    plastic deformation is extensive due to restrained
+c    bending deformations
+c
+c    subsequent variations of this problem use temperature dependent
+c    material properties.
+c 
+structure set
+c 
+c 
+material steel
+    properties bilinear e 30000 nu 0.3 yld_pt 60.0,
+               tan_e 200 alpha 1.0e-04
+c 
+c 
+number of nodes   1572
+number of elements   717
+c
+*input from test_29_common 
+c
+initial conditions
+   temperatures
+       1-1572 temperature 0
+c
+*echo on
+c 
+ loading test
+  nonlinear
+    step 1-20 temp_grad  0.05
+c 
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on 
+   extrapolate on
+c 
+c 
+ compute displacements for loading test step 20
+ output displacements 1-8
+ output stresses 1
+ output strains 1
+c 
+ output patran binary displacements
+ output patran binary strains
+ output patran binary stresses
+save to file 'thermal.warp'
+c 
+stop

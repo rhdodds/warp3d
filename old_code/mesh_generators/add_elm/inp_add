@@ -1,0 +1,40 @@
+C 
+C         Typical input file for add_elm program
+C
+C       1)The FE model must be presmatic in shape in order to properly
+C      locate the elements and nodes on the desired edge.
+C 
+C 2) The elements must be 8-node brick (3D) elements
+C 
+C     ixyz= (1,2 or 3 ) the coord direction needed for extending the mesh
+C 
+        3
+C 
+C      input xyzi and xyzf -  The initial existing coordinate and the new final coord
+C  
+       0.5   1.0 
+C   
+C      input the biase-mesh grading and the number of layers or elements to be added
+C  
+        1.000  1   
+C  
+C      input 'xxx' string  file name for xxx.crd and xxx.elm input files
+C            file for warp or abaqus  - have to have the above extentions
+C        NOTE: ( Do not use taps in the character input lines )
+C 
+          nasa2
+c 
+c 	a flag for outputing new nodal sets and boundary conditions
+c 
+c          flag=0/*  (no/yes)
+	  1
+c    
+c        read old nodal sets from abaqus file_name:
+c           Remmember to mark number of nodes in each node set before
+c           its defintion.
+c                      
+nasa2_aba.inp
+c 
+c     new nodal sets file ...
+c  
+nsets_out

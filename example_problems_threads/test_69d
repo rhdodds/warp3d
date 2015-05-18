@@ -1,0 +1,335 @@
+c 
+c Simple example to illustrate/test use of the cohesive zone
+c material model and the interface elements
+c in a ** symmetric ** model
+c
+c This example drives the cohesive-interface elements in near 
+c constant shear and/or normal modes
+c
+c The axial (w) displacements of this model for axial traction
+c loading should be 1/2 of those for test_69b. The energy file
+c vlaues should be 1/2 of the test_69b
+c 
+c model is a rectangular prism of size (x,y,z) = (1,1,1) connected
+c to the z = 0.0 plane by a 3x3 plane of 8-node interface elements
+c
+c elements 1-27 are a cube of hex elems (linear elastic material)
+c elements 28-36 are the interface elements
+c
+c Boundary conditions:
+c    interface element nodes on Z = 0 have w = 0
+c    all nodes on the X = 0 plane have u = 0
+c    all nodes along line 0 <= X <= 1.0, Y = 1.0, Z = 0 have v = 0
+c
+c Two loadings are defined for use in analysis:
+c  
+c   1) Uniform normal traction in +Z direction applied over the Z=+1.0
+c      end of the solid elements
+c
+c   2) a "shear" tractions (+Z-dir) on the Y=0.0 and (-Z-dir) on 
+c      Y=1.0 surfaces.on the Z=1.0 surface traction in -Y is 
+c      applied. On Z=0 surface (nodes of interface elements on 
+c      symmetry plane), nodal forces in +Y-dir impose shear traction. 
+c      This combination of surface loads produces a very nearly constant
+c      tau_yz = -1.0 over the entire model. 
+c
+c      The model does not achieve "exact" constant tau-yz and no other
+c      stresses. there apparently remains a small 
+c      "cantilever" effect which generates small, non-zero values of 
+c       sig-xx, yy, zz. However, tau-xy and tau-xz are vanishingly small.
+c
+c       In another example problem, the solid elements are removed from this
+c       example leaving only the 3x3 mesh of interface elements. These elements
+c       exhibit pure shear response when loaded with nodal forces in +Y direction
+c       on the +Z (top) face of the cohesive elements.
+c
+c
+c  **NOTE**
+c
+c     This is the symmetric model version of the similar test
+c     problem that considers only axial (normal) loading on a "full"
+c     FE model w/o taking into account symmetry.
+c
+c     Here only 1/2 the number of solid elements is included.
+c     The interface elements are incident on the symmetry plane (Z=0)
+c     rather than being connected between solid elements on each surface.
+c 
+c     The cohesive stiffness values for the linear-elastic option
+c     are ** doubled ** to reflect that only half of the interface 
+c     elements is being modeled. The doubling of stiffnesses makes 
+c     this symmetric model predict the same (remote) displacements 
+c     as the full model under uniform axial (remote) traction in +Z. 
+c     The stored energy of solid elements + cohesive elements in 
+c     the symmetric model is then 1/2 of the energy in the full model.
+c
+c     For the exp1_intf option, the specified peak traction is 
+c     unchanged by the symmetry plane. However, the specified peak 
+c     displacement should have 50% of the full value (i.e., the value 
+c     used in a model that does not take advantage of the symmetry).
+c
+c     For the PPR option, the specified peak traction is unchanged by the
+c     symmetry plane. However, the specified fracture energies should
+c     have 50% of the full value (i.e., the value used in a model that 
+c     does not take advantage of the symmetry).
+c
+c     The material property values set here for the exp1_intf and ppr
+c     optiuons are chosen explicitly to provide near identical traction-
+c     separation curves for axial (normal traction) loading.
+c
+c     Also for the PPR, be careful in setting the specified 
+c     values of the properties ratio_normal and ratio_shear
+c     which set the value of peak displacement as a fraction of
+c     the displacement when traction degrade to zero. Small values
+c     (e.g. 0.001) lead to excessively high stiffness levels early in the
+c     loading history - if the surrounding solid elements have markedly
+c     smaller stiffnesses, solution of the euilibrium equations
+c     introduces much error and the Newton iterations diverge.
+c
+c This example can be run with small or large displacements for the
+c axial loading.
+c
+c The large displacement solution for the shear loading has
+c convergence issues from interpenetration caused by the slight
+c bending.
+c
+structure solid
+c
+ material solid
+  properties linear_elastic  e 200 nu 0.3 
+c
+ material exp1_matl $ exponential option
+  properties cohesive exp1_intf,
+    sig_peak 5.0 delta_peak 0.067957046 beta 1.0
+c
+ material ppr_matl  $  PPR option
+  properties cohesive ppr,
+    sig_peak 5.0 tau_peak 5.0 G_normal 0.925,
+    G_shear 0.925 shape_normal 7.0 shape_shear 7.0,
+    ratio_normal 0.1 ratio_shear 0.1 killable
+c
+ material linear_matl $ linear-elastic option
+   properties cohesive linear_intf,
+    debug stiffn 400 stifft 400 stiffs 400 
+c
+number of nodes 80 elements 36
+c
+coordinates
+*echo off
+      1  0.000000000E+00  0.100000000E+01  0.100100005E+01
+      2  0.333333343E+00  0.100000000E+01  0.100100005E+01
+      3  0.666666687E+00  0.100000000E+01  0.100100005E+01
+      4  0.100000000E+01  0.100000000E+01  0.100100005E+01
+      5  0.000000000E+00  0.666666687E+00  0.100100005E+01
+      6  0.000000000E+00  0.333333343E+00  0.100100005E+01
+      7  0.000000000E+00  0.000000000E+00  0.100100005E+01
+      8  0.333333343E+00  0.666666687E+00  0.100100005E+01
+      9  0.666666687E+00  0.666666687E+00  0.100100005E+01
+     10  0.100000000E+01  0.666666687E+00  0.100100005E+01
+     11  0.333333343E+00  0.333333343E+00  0.100100005E+01
+     12  0.333333343E+00  0.000000000E+00  0.100100005E+01
+     13  0.666666687E+00  0.333333343E+00  0.100100005E+01
+     14  0.100000000E+01  0.333333343E+00  0.100100005E+01
+     15  0.666666687E+00  0.000000000E+00  0.100100005E+01
+     16  0.100000000E+01  0.000000000E+00  0.100100005E+01
+     17  0.000000000E+00  0.100000000E+01  0.667666733E+00
+     18  0.000000000E+00  0.666666687E+00  0.667666733E+00
+     19  0.000000000E+00  0.333333343E+00  0.667666733E+00
+     20  0.000000000E+00  0.000000000E+00  0.667666733E+00
+     21  0.333333343E+00  0.100000000E+01  0.667666733E+00
+     22  0.666666687E+00  0.100000000E+01  0.667666733E+00
+     23  0.100000000E+01  0.100000000E+01  0.667666733E+00
+     24  0.000000000E+00  0.100000000E+01  0.334333360E+00
+     25  0.000000000E+00  0.100000000E+01  0.999990501E-10
+     26  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     27  0.333333343E+00  0.666666687E+00  0.667666733E+00
+     28  0.666666687E+00  0.666666687E+00  0.667666733E+00
+     29  0.100000000E+01  0.666666687E+00  0.667666733E+00
+     30  0.333333343E+00  0.333333343E+00  0.667666733E+00
+     31  0.333333343E+00  0.000000000E+00  0.667666733E+00
+     32  0.666666687E+00  0.333333343E+00  0.667666733E+00
+     33  0.100000000E+01  0.333333343E+00  0.667666733E+00
+     34  0.666666687E+00  0.000000000E+00  0.667666733E+00
+     35  0.100000000E+01  0.000000000E+00  0.667666733E+00
+     36  0.000000000E+00  0.666666687E+00  0.334333360E+00
+     37  0.000000000E+00  0.333333343E+00  0.334333360E+00
+     38  0.000000000E+00  0.000000000E+00  0.334333360E+00
+     39  0.000000000E+00  0.666666687E+00  0.999990501E-10
+     40  0.000000000E+00  0.666666687E+00  0.000000000E+00
+     41  0.000000000E+00  0.333333343E+00  0.999990501E-10
+     42  0.000000000E+00  0.000000000E+00  0.999990501E-10
+     43  0.000000000E+00  0.333333343E+00  0.000000000E+00
+     44  0.000000000E+00  0.000000000E+00  0.000000000E+00
+     45  0.333333343E+00  0.100000000E+01  0.334333360E+00
+     46  0.333333343E+00  0.666666687E+00  0.334333360E+00
+     47  0.333333343E+00  0.333333343E+00  0.334333360E+00
+     48  0.333333343E+00  0.000000000E+00  0.334333360E+00
+     49  0.666666687E+00  0.100000000E+01  0.334333360E+00
+     50  0.100000000E+01  0.100000000E+01  0.334333360E+00
+     51  0.666666687E+00  0.666666687E+00  0.334333360E+00
+     52  0.100000000E+01  0.666666687E+00  0.334333360E+00
+     53  0.333333343E+00  0.100000000E+01  0.999990501E-10
+     54  0.333333343E+00  0.100000000E+01  0.000000000E+00
+     55  0.333333343E+00  0.666666687E+00  0.999990501E-10
+     56  0.333333343E+00  0.666666687E+00  0.000000000E+00
+     57  0.666666687E+00  0.333333343E+00  0.334333360E+00
+     58  0.100000000E+01  0.333333343E+00  0.334333360E+00
+     59  0.666666687E+00  0.000000000E+00  0.334333360E+00
+     60  0.100000000E+01  0.000000000E+00  0.334333360E+00
+     61  0.333333343E+00  0.333333343E+00  0.999990501E-10
+     62  0.333333343E+00  0.000000000E+00  0.999990501E-10
+     63  0.333333343E+00  0.333333343E+00  0.000000000E+00
+     64  0.333333343E+00  0.000000000E+00  0.000000000E+00
+     65  0.666666687E+00  0.100000000E+01  0.999990501E-10
+     66  0.100000000E+01  0.100000000E+01  0.999990501E-10
+     67  0.666666687E+00  0.100000000E+01  0.000000000E+00
+     68  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     69  0.666666687E+00  0.666666687E+00  0.999990501E-10
+     70  0.666666687E+00  0.333333343E+00  0.999990501E-10
+     71  0.666666687E+00  0.000000000E+00  0.999990501E-10
+     72  0.100000000E+01  0.666666687E+00  0.999990501E-10
+     73  0.100000000E+01  0.333333343E+00  0.999990501E-10
+     74  0.666666687E+00  0.666666687E+00  0.000000000E+00
+     75  0.666666687E+00  0.333333343E+00  0.000000000E+00
+     76  0.100000000E+01  0.000000000E+00  0.999990501E-10
+     77  0.666666687E+00  0.000000000E+00  0.000000000E+00
+     78  0.100000000E+01  0.666666687E+00  0.000000000E+00
+     79  0.100000000E+01  0.000000000E+00  0.000000000E+00
+     80  0.100000000E+01  0.333333343E+00  0.000000000E+00
+*echo on
+c
+c    for large displacement solution, the 'top' surface of the interface
+c    elements is connected to the solid elements
+c
+elements
+  1-27 type l3disop nonlinear material solid center_output,
+       short order 2x2x2
+  28-36 type inter_8 nonlinear material ppr_matl,
+        order '2x2gs' surface 'top' $ top of interface elements is 
+c                                     connected to adjacent solid elements
+c
+incidences 
+*echo off
+       1      39      55      53      25      36      46      45      24
+       2      55      69      65      53      46      51      49      45
+       3      36      46      45      24      18      27      21      17
+      28      74      78      68      67      69      72      66      65
+       5      69      72      66      65      51      52      50      49
+       6      46      51      49      45      27      28      22      21
+       7      18      27      21      17       5       8       2       1
+       8      51      52      50      49      28      29      23      22
+       9      27      28      22      21       8       9       3       2
+      10      28      29      23      22       9      10       4       3
+      29      75      80      78      74      70      73      72      69
+      12      70      73      72      69      57      58      52      51
+      13      19      30      27      18       6      11       8       5
+      14      57      58      52      51      32      33      29      28
+      15      30      32      28      27      11      13       9       8
+      16      32      33      29      28      13      14      10       9
+      30      77      79      80      75      71      76      73      70
+      18      71      76      73      70      59      60      58      57
+      19      20      31      30      19       7      12      11       6
+      20      59      60      58      57      34      35      33      32
+      21      31      34      32      30      12      15      13      11
+      22      34      35      33      32      15      16      14      13
+      23      42      62      61      41      38      48      47      37
+      24      62      71      70      61      48      59      57      47
+      25      41      61      55      39      37      47      46      36
+      26      61      70      69      55      47      57      51      46
+      27      38      48      47      37      20      31      30      19
+       4      48      59      57      47      31      34      32      30
+      11      37      47      46      36      19      30      27      18
+      17      47      57      51      46      30      32      28      27
+      31      44      64      63      43      42      62      61      41
+      32      64      77      75      63      62      71      70      61
+      33      43      63      56      40      41      61      55      39
+      34      63      75      74      56      61      70      69      55
+      35      40      56      54      26      39      55      53      25
+      36      56      74      67      54      55      69      65      53
+*echo on
+c
+constraints $ cannot use z=0 symm since all nodes on interface elems
+c   have Z-coords less than the search tolerance. Just give node list.
+  25 54 67 68 v = 0 $ X >=0, Y = 1, Z = 0
+  26 40 43 44 54 56 63 64 67 68 74 75 77 78 79 80 w = 0 $ Z = 0 plane
+  plane x = 0 symmetry
+c
+blocking 
+       1     27    1
+       2     9    28
+c 
+loading unit_axial_z $ in case other loads are needed
+  element loads
+   7 9 10 13 15 16 19 21 22  face 2 pressure -1.0
+c
+loading unit_shear_yz $ (imposes a very near tau_yz = -1.0)
+   element loads
+         1 face 4    tz -1.0
+         2 face 4    tz -1.0
+         3 face 4    tz -1.0
+         5 face 4    tz -1.0
+         6 face 4    tz -1.0
+         7 face 4    tz -1.0
+         7 face 2    ty -1.0
+         8 face 4    tz -1.0
+         9 face 4    tz -1.0
+         9 face 2    ty -1.0
+        10 face 4    tz -1.0
+        10 face 2    ty -1.0
+        13 face 2    ty -1.0
+        15 face 2    ty -1.0
+        16 face 2    ty -1.0
+        18 face 3    tz 1.0
+        19 face 3    tz 1.0
+        19 face 2    ty -1.0
+        20 face 3    tz 1.0
+        21 face 3    tz 1.0
+        21 face 2    ty -1.0
+        22 face 3    tz 1.0
+        22 face 2    ty -1.0
+        23 face 3    tz 1.0
+        24 face 3    tz 1.0
+        27 face 3    tz 1.0
+        28 face 3    tz 1.0
+    nodal loads $ impose unit traction in +Y on Z=0 plane
+     74   78   68   67  force_y 0.027777777
+     75   80   78   74  force_y 0.027777777  
+     77   79   80   75  force_y 0.027777777  
+     44   64   63   43  force_y 0.027777777  
+     64   77   75   63  force_y 0.027777777  
+     43   63   56   40  force_y 0.027777777  
+     63   75   74   56  force_y 0.027777777  
+     40   56   54   26  force_y 0.027777777  
+     56   74   67   54  force_y 0.027777777    
+*echo on
+c
+loading test
+  nonlinear
+   steps 1-3 unit_shear_yz 0.0 unit_axial_z 1.65
+c
+nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 8
+   minimum iterations 1 
+   convergence test norm res tol 0.0001 $ very tight
+   time step  1.0e6
+   trace solution on    
+   adaptive solution off 
+   batch messages off
+   extrapolate off        
+   material messages off
+   show details on     
+   consistent q-matrix off
+c
+ crack growth parameters $ to get status after each step
+c                          nogrowth occurs
+   type of crack growth cohesive
+   ppr displacement fracture for extinction 0.9
+   print status on order elements 28-36
+   force release type steps
+   release steps 5
+c
+compute displacements for loading test step 3
+output wide displacements for nodes 44 42, 26 25, 79 76 68 66
+output wide displacements for nodes 1-16
+output wide stresses  7 22 
+stop

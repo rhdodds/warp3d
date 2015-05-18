@@ -1,0 +1,46 @@
+c
+c        Output Loadline Displacement Throught the Thickness
+c
+c
+   output displacement node  722 2198 3674 5150 6626 8102 9578,
+                           11054 12530 14006 15482 16958 18434,
+                           19910 21386
+
+c
+c        Output Loadline Velocity Throught the Thickness
+c
+c
+   output velocity node  722 2198 3674 5150 6626 8102 9578,
+                           11054 12530 14006 15482 16958 18434,
+                           19910 21386
+c
+c        Output CMOD Values throught the Thickness
+c
+   output displacement node 936 2412 3888 5364 6840 8316 9792,
+                          11268 12744 14220 15696 17172 18648,
+                          20124 21600
+c
+c        Output Reaction Forces at the Support Point
+c
+   output reactions node  1333 2809 4285 5761 7237, 
+                                8713, 10189 11665 13141,
+                                14617 16093 17569 19045,
+                                20521 21997
+c
+c       Output Reaction Forces at the Loading Point
+c
+   output reactions node 759  2235   3711  5187  6663  8139,
+                              9615  11091 12567 14043 15519,
+                             16995  18471 19947 21423
+c
+c        Output displacement stress and strain files
+c
+   output patran formatted displ strains 
+   output patran formatted element stresses
+c
+c        Output J-values
+c
+*input from 'domain_define'
+c
+
+

@@ -1,0 +1,342 @@
+c
+*echo on
+surface master_top
+  element surfaces
+  2814-2821 by 1 face 2
+  2785-2799 by 1 face 3
+  2809-2813 by 1 face 3
+  2800-2808 by 1 face 5
+c
+surface master_bot
+  element surfaces
+  2844-2855 by 1 face 2 
+  2868-2887 by 1 face 2
+  2908-2912 by 1 face 2
+  2834 face 3
+  2829-2833 by 2 face 5
+c
+c NOTE that the Abaqus face 4 has been set at Warp3D face 5
+surface master_back
+  element surfaces
+  1249-2671 by 18 face 6
+c
+c NOTE that the Abaqus face 5 has been set at Warp3D face 4
+surface slave_top
+ element surfaces
+ 14148 face 3
+ 14174 face 3
+ 14175 face 3
+ 14176 face 3
+ 14758 face 3
+ 14759 face 3
+ 14760 face 3
+ 14761 face 3
+ 14762 face 3
+ 14763 face 3
+ 14764 face 3
+ 14765 face 3
+ 14766 face 3
+ 14767 face 3
+ 14768 face 3
+ 14769 face 3
+ 14770 face 3
+ 14771 face 3
+ 14772 face 3
+ 14878 face 3
+ 14879 face 3
+ 14880 face 3
+ 14881 face 3
+ 14882 face 3
+ 14883 face 3
+ 14884 face 3
+ 14885 face 3
+ 14886 face 3
+ 14887 face 3
+ 14888 face 3
+ 14889 face 3
+ 14890 face 3
+ 14891 face 3
+ 14892 face 3
+ 14998 face 3
+ 14999 face 3
+ 15000 face 3
+ 15001 face 3
+ 15002 face 3
+ 15003 face 3
+ 15004 face 3
+ 15005 face 3
+ 15006 face 3
+ 15007 face 3
+ 15008 face 3
+ 15009 face 3
+ 15010 face 3
+ 15011 face 3
+ 15012 face 3
+ 14165 face 5
+ 14173 face 5
+ 15118-15147 by 1 face 2
+surface slave_bot
+ element surfaces
+ 3337 face 5
+ 3396 face 5
+ 3404 face 5
+ 3412 face 5
+ 3338 face 3
+ 3339 face 3
+ 3413 face 2
+ 3414 face 2
+ 3415 face 2
+ 3416 face 2
+ 3417 face 2
+ 3418 face 2
+ 3419 face 2
+ 3420 face 2
+ 3421 face 2
+ 3422 face 2
+ 3423 face 2
+ 3424 face 2
+ 3425 face 2
+ 3426 face 2
+ 3427 face 2
+ 3428 face 2
+ 3429 face 2
+ 3430 face 2
+ 3431 face 2
+ 3432 face 2
+ 3433 face 2
+ 3434 face 2
+ 3435 face 2
+ 3436 face 2
+ 3437 face 2
+ 3438 face 2
+ 3439 face 2
+ 3440 face 2
+ 3441 face 2
+ 3442 face 2
+ 3443 face 2
+ 3444 face 2
+ 3445 face 2
+ 3446 face 2
+ 3447 face 2
+ 3448 face 2
+ 3449 face 2
+ 3450 face 2
+ 3451 face 2
+ 3452 face 2
+ 3453 face 2
+ 3454 face 2
+ 3455 face 2
+ 3456 face 2
+ 3457 face 2
+ 3773 face 2
+ 3774 face 2
+ 3775 face 2
+ 3776 face 2
+ 3777 face 2
+ 3778 face 2
+ 3779 face 2
+ 3780 face 2
+ 3781 face 2
+ 3782 face 2
+ 3783 face 2
+ 3784 face 2
+ 3785 face 2
+ 3786 face 2
+ 3787 face 2
+ 3788 face 2
+ 3789 face 2
+ 3790 face 2
+ 3791 face 2
+ 3792 face 2
+ 3793 face 2
+ 3794 face 2
+ 3795 face 2
+ 3796 face 2
+ 3797 face 2
+ 3798 face 2
+ 3799 face 2
+ 3800 face 2
+ 3801 face 2
+ 3802 face 2
+surface slave_back
+ element surfaces
+ 6938 face 2
+ 6939 face 2
+ 6940 face 2
+ 6941 face 2
+ 6942 face 2
+ 6943 face 2
+ 6944 face 2
+ 6945 face 2
+ 6946 face 2
+ 6947 face 2
+ 6948 face 2
+ 6949 face 2
+ 6950 face 2
+ 6951 face 2
+ 6952 face 2
+ 6953 face 2
+ 6954 face 2
+ 6955 face 2
+ 6956 face 2
+ 6957 face 2
+ 6958 face 2
+ 6959 face 2
+ 6960 face 2
+ 6961 face 2
+ 6962 face 2
+ 6963 face 2
+ 6964 face 2
+ 6965 face 2
+ 6966 face 2
+ 6967 face 2
+ 6968 face 2
+ 6969 face 2
+ 6970 face 2
+ 6971 face 2
+ 6972 face 2
+ 6973 face 2
+ 6974 face 2
+ 6975 face 2
+ 6976 face 2
+ 6977 face 2
+ 6978 face 2
+ 6979 face 2
+ 6980 face 2
+ 6981 face 2
+ 6982 face 2
+ 7298 face 2
+ 7299 face 2 
+ 7300 face 2
+ 7322 face 2
+ 7323 face 2
+ 7338 face 2
+ 7339 face 2
+ 7340 face 2
+ 7341 face 2
+ 7342 face 2
+ 7343 face 2
+ 7344 face 2
+ 7345 face 2
+ 7346 face 2
+ 7347 face 2
+ 7348 face 2
+ 7349 face 2
+ 7350 face 2
+ 7351 face 2
+ 7352 face 2
+ 7353 face 2
+ 7354 face 2
+ 7355 face 2
+ 7356 face 2
+ 7357 face 2
+ 7358 face 2
+ 7359 face 2
+ 7360 face 2
+ 7361 face 2
+ 7362 face 2
+ 7363 face 2
+ 7364 face 2
+ 7365 face 2
+ 7366 face 2
+ 7367 face 2
+ 8143 face 2
+ 8144 face 2
+ 8159 face 2
+ 8160 face 2
+ 8161 face 2
+ 8162 face 2
+ 8163 face 2
+ 8164 face 2
+ 8165 face 2
+ 8166 face 2
+ 8167 face 2
+ 8168 face 2
+ 8169 face 2
+ 8170 face 2
+ 8171 face 2
+ 8172 face 2
+ 8173 face 2
+ 8174 face 2
+ 8175 face 2
+ 8176 face 2
+ 8177 face 2
+ 8178 face 2
+ 8179 face 2
+ 8180 face 2
+ 8181 face 2
+ 8182 face 2
+ 8183 face 2
+ 8184 face 2
+ 8185 face 2
+ 8186 face 2
+ 8187 face 2
+ 8188 face 2
+ 8399 face 2
+ 8400 face 2
+ 8401 face 2
+ 8402 face 2
+ 8403 face 2
+ 8404 face 2
+ 8405 face 2
+ 8406 face 2
+ 8407 face 2
+ 8408 face 2
+ 8409 face 2
+ 8410 face 2
+ 8411 face 2
+ 8412 face 2
+ 8413 face 2
+ 8414 face 2
+ 8415 face 2
+ 8416 face 2
+ 8417 face 2
+ 8418 face 2
+ 8419 face 2
+ 8420 face 2
+ 8421 face 2
+ 8422 face 2
+ 8423 face 2
+ 8424 face 2
+ 8425 face 2
+ 8426 face 2
+ 8427 face 2
+ 8428 face 2
+ 8429 face 2
+ 8430 face 2
+ 8431 face 2
+ 8432 face 2
+ 8433 face 2
+ 8434 face 2
+ 8435 face 2
+ 8436 face 2 
+ 8437 face 2
+ 8438 face 2
+ 8439 face 2
+ 8440 face 2
+ 8441 face 2
+ 8442 face 2
+ 8443 face 2
+ 8759 face 2
+ 8760 face 2
+ 8761 face 2
+c
+c
+c
+c  NOTE that the Abaqus face 4 has been set at Warp3D face 5
+c
+
+c
+c Define the tied contact pair between the mesh surfaces
+c
+tie mesh pair_1
+  tolerance 0.01 adjust
+  master master_top slave slave_top
+tie mesh pair_2
+  tolerance 0.01 adjust
+  master master_bot slave slave_bot
+tie mesh pair_3
+  tolerance 0.01 adjust
+  master master_back slave slave_back
+c
+*echo off

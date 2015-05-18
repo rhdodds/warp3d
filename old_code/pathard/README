@@ -1,0 +1,22 @@
+ Patran5 (Patran6) to InterLeaf conversion program
+ -------------------------------------------------
+
+ This directory contains patint, a program that takes a PatranHard file from 
+ Patran 5(or 6) and converts it into an Interleaf document.
+
+ In this Directory:
+	README			This file
+	compile_patint		script to compile patint
+	patint.f		main patint code
+	hpux_get_env.c		c code for reading environment variables
+	patint.go 		patint executable
+	pathard_advice_ps.tar.Z a postscript version of the patint
+				help document, outlining what options 
+				are required in Patran5 to create 
+				proper interleaf plots. file is compressed
+				and tar-red.
+
+ Please address any questions or problems with this code to Arne Gullerud,
+ arne@uiuc.edu.
+
+

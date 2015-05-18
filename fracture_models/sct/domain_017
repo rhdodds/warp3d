@@ -1,0 +1,17 @@
+c     
+c       Seventeenth layer from the center plane
+c
+domain dnr_017
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 16   7381  7382  7383  7384  7385  7386  7387  7388,
+             7389  7390  7391  7392  7393  7394  7395  7396  7397
+   node set 17   7873  7874  7875  7876  7877  7878  7879  7880,
+             7881  7882  7883  7884  7885  7886  7887  7888  7889
+   node set 18   8365  8366  8367  8368  8369  8370  8371  8372,
+             8373  8374  8375  8376  8377  8378  8379  8380  8381
+   front node sets  16  17  18 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

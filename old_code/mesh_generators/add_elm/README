@@ -1,0 +1,17 @@
+
+add_elm -- takes a prismatic finite element model and adds layers of elements
+	on one edge, allowing the model to be extended and arbitrary distance
+	with the same mesh configuration on the extended side.  Reads an
+	input file, and example of which is the file inp_add in this 
+	directory, which is commented as to what input is required.
+
+Just use the f90 command for your computer system to compile the
+code. it is vanilla f77 code.
+
+
+the *.exe file is the executable for Windows OSs in INTEL PCs
+for those users without the Digital Fortran compiler
+
+
+
+

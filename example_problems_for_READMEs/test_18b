@@ -1,0 +1,58 @@
+c
+c
+c    ductile crack growth in a shallow notch se(b)
+c    ============================================                       
+c 
+c            W=2 in,  span/2=4 in, B=0.001 in, a/W=0.15
+c            uses crack growth by element extinction
+c 
+c    nonlinear material, large displacements, bbar,
+c    large amounts of ductile crack growth with the Gurson-
+c    Tvergaard material model. the finite element model
+c    has one-layer of elements with w=0 constraints everywhere
+c    to impose plane-strain conditions.
+c
+c    computational "cell" size is D=200 um. due to symmetry then
+c    the elements in the Gurson layer are 100 um x 100 um in size. 
+c
+c    we intentionally use large increments of imposed displacements
+c    at the load point to create severe conditions for the
+c    material model integration schemes and the adaptive solution
+c    procedures. approximately 14 elements are killed in the first
+c    40 load steps. After step ~30 lots of adaptive solutions are
+c    present due to negative deformation jacobians in near tip 
+c    elements, strain increments > 100 * eps-0 in near-tip
+c    elements, integration failure in the material model.
+c
+c    the algorithms are designed to do whatever adaptivity
+c    is required to push forward with the solution. the user
+c    can then re-analyze the model with a much more realistic
+c    (smaller) load step size.
+c
+c    J-integral values are computed occasionally during loading.
+c
+c    a restart file is also written along the way after every
+c    10 or so load increments.
+c
+c    here we employ catastrophic, strain-controlled nucleation
+c    to smoothly relax stresses in elements just prior to 
+c    actually killing them.
+c
+c    the material in linear + power law with n=10, E/sig-0=500,
+c    nu=0.3. initial porosity in the cell is 0.005.
+c    
+
+ restart from file 'seb_db'
+   compute displacements for loading bend step 40
+   *input test_18_get_j
+   save to file 'seb_db'
+c
+   compute displacements for loading bend step 50
+   *input test_18_get_j
+   save to file 'seb_db'
+c
+   compute displacements for loading bend step 60
+   *input test_18_get_j
+   save to file 'seb_db'
+  stop
+

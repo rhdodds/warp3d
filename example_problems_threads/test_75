@@ -1,0 +1,115 @@
+c
+c        Example analysis of Euler type column buckling with
+c        large displacements
+c
+c        Thin rectangular cross section 0.1 in. x 0.3 in.
+c        10 inches long. Fixed at base.
+c
+c        Axial compressive tractions with small side load to
+c        trigger increased lateral displacements as axial load approaches
+c        Euler load.
+c
+c        Theoretical Pcr = 0.0185 kips w L= 20 since
+c        model is top half-length of the column.
+c
+c        Max vertical load here is 0.0165 kips at which point the lateral 
+c        displacement reaches 0.346 in.
+c
+c        Initial lateral displacement for trigger load in step 1: 0.0435 in. 
+c 
+c        WARP3D includes the "initial stress stiffness" [K-sigma]. 
+c
+c        Testing shows these type of problems fail to converge when the [K-sigma]
+c        term is omitted.
+c 
+structure column
+c 
+ material steel
+   properties bilinear e 30000 nu 0.3 yld_pt 60.0e10
+c 
+number of nodes 4221 elements 2400
+c
+elements
+ 1-2400 type l3disop nonlinear material steel,
+   order 2x2x2 bbar center_output short
+c 
+*input from 'test_75.coords'
+*input from 'test_75.incid'
+blocking automatic
+c
+loading top
+ element loads
+  399    400  799    800 1199   1200 1599   1600, 
+  1999   2000 2399   2400 face 3 traction ty -1.0
+c
+ loading side
+  element loads
+     400  800 1200 1600,
+    2000 2400 face 6 traction tx 66.66
+c
+constraints
+   plane y = 0  fixed
+c 
+ loading test
+  nonlinear
+    step 1 side 0.0001
+    step 2-5 top 0.1
+    step 6 top 0.1
+    step 7 top 0.05
+c 
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   maximum iterations 5 $  newton iterations
+   minimum iterations 1
+   convergence test norm res tol 0.001
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate on
+   display tied mesh mpcs off
+c 
+list 'bottom' y = 0
+c
+ compute displacements for loading test step 1
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c
+ compute displacements for loading test step 2
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c 
+ compute displacements for loading test step 3
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c 
+ compute displacements for loading test step 4
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c 
+ compute displacements for loading test step 5
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c 
+ compute displacements for loading test step 6
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c 
+ compute displacements for loading test step 7
+ output reactions totals 'bottom'
+ output displacements 4219 2410 601
+ output stresses 2231
+c
+stop

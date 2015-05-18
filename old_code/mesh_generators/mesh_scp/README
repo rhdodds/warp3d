@@ -1,0 +1,70 @@
+
+
+This directory holds a 2001 version of mesh3d_scp, the mesh generator
+written by Jonas Faleskog, with additional changes and additions by
+Rami Haj-Ali and Bob Dodds in July 1998. Makefiles were updated
+in July 2002.
+
+Important files:
+----------------
+README -- this file
+
+makefile_unix    -- makefile for the code (type make -f makefile_unix to
+	            compile the code). may need to edit this
+                    file set compiler name, options, etc. Any decent
+                    Fortran 90 compiler should handle the code.
+
+makefile_windows -- makefile for the code for Windows OSs on Intel PCs.
+                    PC must have the Digital Fortran Compiler and the
+                    Mortice Kern Systms toolkit installed to build the code
+                    on Windows. (MKS provides a K-shell + the Unix make
+                    command).
+
+mesh3d_scp.run  -- the executable code for Unix (not included in distribution)
+
+mesh3d_scp_windows.exe -- the executable code for Windows on Intel.
+
+manual.ps  -- a PostScript file for the User manual
+manual.pdf -- Adobe PDF file for the User Manual
+
+To run the mesh generator, create an input file with the format described
+in the manual, then in a shell window type 
+
+	mesh3d_scp.run            on Unix
+        mesh3d_scp_windows.exe    on Windows PCs
+
+Example input files are in the ../scp_test_dir directory
+
+The code asks for the input file and creates an input
+file for one of several finite element programs (specified in the input file).
+
+
+Changes made by Rami:
+---------------------
+
+1) change to the creation of the first two rings:
+	The distribution of elements near the crack tip is different.  
+	The radial distance for the first two rings is 12% of the distance
+	between the crack tip and the region where the rings begin the
+	transition out of the tubular region (the rings get 6% each). 
+	The rest of the rings in the tublar region fit in the remaining 88%,
+	roughly evenly spaced, I believe.
+
+Changes made by Bob (July 1998):
+--------------------------------
+
+1) update commands output for the warp3d input file to 
+   reflect recent changes in warp3d.
+2) make the code ask for the input file name rather than
+   forcing the name to have a certain form.
+
+Changes made by Bob (July 2002):
+-----------------------------------
+
+1) updated makefile for Windows OSs. uses Digital Visual Fortran
+   (Version 6.3B) and Mortice Kern Systems toolkit (to provide make
+   program).
+
+2) updated makefile for Unix to use f90 compiler
+
+

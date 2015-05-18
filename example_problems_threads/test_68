@@ -1,0 +1,67 @@
+c
+c
+c   Fairly substantial problem for timing parallel executions.
+c   About 330K equations.
+c
+c   20-node hex elements that model a solid bar with holes.
+c   Various surface pressure loadings to twist and bend the bar.
+c
+c   Steel properties: 70 ksi yield, low hardening rate, regular mass,
+c   large displacement formulation.
+c
+c   Time steps from impact to quasi-static.
+c
+c   Impact delta-t:  10**(-0.5)
+c                    The PCG solver with HW pre-conditioner
+c                    is faster than the MKL sparse direct solver.
+c
+c   At increasingly larger delta-t, the PCG solver convergence rate
+c   slows down.
+c
+c   Run this problem with threads for parallel scaling studies.
+c
+c
+structure holey_bar
+c
+material steel
+    properties bilinear e 30000 nu 0.3 yld_pt 70 rho 7.0e-07,
+               tan_e 100 alpha 1.0e-06
+number of nodes   110469 elements  24450
+*input from 'test_68.coordinates'
+elements
+  1-24450 type q3disop nonlinear material steel,
+          order 2x2x2 bbar center_output short
+*input from 'test_68.incid_and_blocking'
+*input from 'test_68.loading'
+*input from 'test_68.constraints'
+c
+c      yielding starts at step 5 for loading with
+c      delta-t = 10**(-5)
+c
+ loading test
+  nonlinear
+    step 1 total 5.0
+    step 2 total 5.5
+    step 3-5 total 5.5
+    step 6-10 total 0.5
+c
+ nonlinear analysis parameters
+  solution technique direct sparse iterative
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.05
+   nonconvergent solutions stop
+   adaptive off
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e-5
+   trace solution on
+   extrapolate off
+   display tied mesh mpcs off
+c
+ compute displacements for loading test step 1-10
+stop

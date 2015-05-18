@@ -1,0 +1,50 @@
+c
+c        Output Loadline Displacement Throught the Thickness set-1
+c
+c
+   output displacement node  2642 2641
+c
+c        Output Loadline Displacement Throught the Thickness set-2
+c
+c
+   output displacement node  2412 2411
+c
+c        Output CMOD Values throught the Thickness
+c
+   output displacement node  1478 1477
+c
+c        Output Reaction Forces at the Support Point
+c
+   output reactions node  2063 2064
+c
+c       Output Reaction Forces at the Loading Point
+c
+   output reactions node  2646 2645
+c
+c        Output displacement stress and strain files
+c
+c   output patran binary nodal displacements
+c   output patran binary element strains
+c   output patran binary element stresses
+c
+c        Output J-values
+c
+domain thr_avg
+ symmetric
+c 
+ node set   1    1   3   5   7   9   11   13   15   17  19,
+                 21   23   25   27   29   31   33
+c 
+ node set   2    2   4   6   8   10   12   14   16  18  20,
+                 22   24   26   28   30   32   34
+c
+ front nodes sets 1-2 linear
+ function type d
+ normal plane nx 0 ny 1.0 nz 0
+ print totals
+ ignore crack face loading
+ q-values automatic rings 40-49
+ compute domain integral
+c
+
+

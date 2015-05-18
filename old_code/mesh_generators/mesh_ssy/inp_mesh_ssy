@@ -1,0 +1,96 @@
+c
+c
+c	Input Parameters for 3D/2D SSY "Half Moon" with Notch Model
+c              Loading: Mode-I plane-stress or plane-strain
+c
+c        Note(1):  Input lines will be ignored when:
+c                   1) first character in line is 'c' or 'C'
+c                   2) first 20 chracaters are blank
+c        Note(2):  All numeric input is in free format
+c
+c     Rn - root notch radius    l1, l2 - length of elemnts 1 and 2 in r-dir
+c
+c           Rn   l1  l2
+c
+   0.001  0.002 0.004
+c
+c     num_r - number of line segments in the r-dir that will
+c             be generated (aside from (l1+l2) )
+c
+   4
+c
+c     R(k) (k=1,num_r) -- line length in the r-dir
+c     mr(k) (k=1,num_r) -- Number of elements for each line segment
+c     biase(k)  --  geometric series mesh grading biase :
+c                           a(n+1)/a(n) = biase
+c
+c         R(k)   mr(k)  biase(k)
+c
+          1.0     20    1.2
+          2.0     10    1.2
+          5.0      5    1.0
+         10.0      5    1.0
+c
+c   mtheta - number of elements circumfrentially ( Must be even !!!! )
+c
+      18
+c
+c    num_layers - number of elements through the thickness ( z-direction )
+c
+      1
+c
+c     t(k) - Z-ccord of surface k ; where k = 1, num_layers+1;
+c            it is recomended that Z coordinate be negative;
+c            this is in order to follow the definition of free
+c            and symmetry surfaces for constrains (See bellow)
+c
+      0.0
+     -0.1
+c     -0.2
+c     -0.3
+c     -0.4
+c
+c
+c                              WARP3D
+c
+c     Input warp structure nmae (xxx)
+c     This will generate the following files:
+c       xxx.inp  - warp input file
+c       xxx.crd  - coordinates file
+c       xxx.elm  - elements id file
+c       xxx.const -  applied displacement constriants
+c       xxx.output - output requests at specified intervals
+c       xxx.domain - J integral domain and output definitions
+c
+  ssy_pstrain
+c
+c   Input w boundary conditions on the two surfaces/faces (Z=0 and Z=B or B/2)
+c     Boundary_flag = 0  --- Apply w=0 constrain
+c     Boundary_flag = 1  --- Traction Free Surface ( NO W constraints are applied )
+c
+c      Note: for plane-strain case w=0 constraint should be applied on booth faces
+c
+c Input:  iw_face1   iw_face2
+c
+    0  0
+c
+c    Input:  ple, num_steps, num_output
+c       ple     -- (Integer) flag:  =1 - plane strain .else.  plane stress
+c       num_steps- Number of solution steps
+c       num_output-Interval of load steps Number for warp files output and calc. J
+c
+      1  70  5
+c
+c	Input: E, nu, sig0
+c
+c                E       -- Young's Modulus
+c                nu      -- Piosson's Ratio
+c                sig0    -- Yield stress
+c
+     30000.0  0.3  60.0
+c
+c	Input: j increment per step
+c	Where:
+c
+     0.00003033333
+

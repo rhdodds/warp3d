@@ -1,0 +1,160 @@
+c
+c Restart with this file to continue the basic MPI example.
+c
+ restart from file 'restart.restart'
+c
+c
+ compute displacements for loading test step 26
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 27
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 28
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 29
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 30
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ nonlinear analysis parameters
+  time step 0.1
+c
+ compute displacements for loading test step 31
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 32
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 33
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 34
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 35
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 36
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 37
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 38
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 39
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 40
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 41
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 42
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 43
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 44
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 45
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 46
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 47
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 48
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 49
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+ compute displacements for loading test step 50
+c
+ output stresses 1
+ output strains 1
+ output displacements 5 6 7 8
+c
+stop

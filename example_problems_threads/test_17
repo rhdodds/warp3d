@@ -1,0 +1,640 @@
+c
+c              fe-analysis of single element using gurson model
+c              ------------------------------------------------
+c
+c        bbar, uniaxial strain (eps-x is only non-zero strain)
+c
+c        e = 30000, nu = 0.3, sigma_o = 60.0, n = 10
+c        f0 = 0.002, nucleation
+c
+c        q1 = 1.25, q2 = 1.0, q3 = 1.57
+c
+c
+structure unit_cell
+c
+material steel
+    properties  gurson  e 30000  nu 0.3  yld_pt 60.0  n_power 10,
+         f_0 0.002  q1 1.25  q2 1.0  q3 1.57  rho 0.0 nucleation,
+         e_n 0.4  s_n 0.1  f_n 0.04
+c
+number of nodes     8
+number of elements  1
+c
+c
+elements
+     1 type l3disop nonlinear  material steel,
+         center_output short
+c
+coordinates
+  1  0 0 1
+  2  0 0 0
+  3  0 1 0
+  4  0 1 1
+  5  1 0 1
+  6  1 0 0
+  7  1 1 0
+  8  1 1 1
+c
+incidences
+     1   1-8
+c
+blocking
+     1     1     1
+c
+loading unit
+nodal loads
+    5-8  force_y 0.0
+c
+constraints
+     1-4  u 0
+     1-8 v 0
+     1-8 w 0
+     5-8 u 0.001
+c
+loading axial
+  nonlinear
+    step 1-500 unit 1.0
+c
+c
+  nonlinear analysis parameters
+   solution technique direct sprase
+   maximum iterations 5
+   convergence test norm res tol .01
+   time step 1000000
+   trace solution on
+   extrapolate on
+c
+c
+   compute displacements for loading axial step   1
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   2
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   3
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   4
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   5
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   6
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   7
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   8
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step   9
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  10
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  11
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  12
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  13
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  14
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  15
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  16
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  17
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  18
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  19 -  22
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  23 -  26
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  27 -  30
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  31 -  34
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  35 -  38
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  39 -  42
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  43 -  46
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  47 -  50
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  51 -  54
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  55 -  58
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  59 -  62
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  63 -  66
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  67 -  70
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  71 -  74
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  75 -  78
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  79 -  82
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  83 -  86
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  87 -  90
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  91 -  94
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  95 -  98
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step  99 - 102
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 103 - 106
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 107 - 110
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 111 - 114
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 115 - 118
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 119 - 122
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 123 - 126
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 127 - 130
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 131 - 134
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 135 - 138
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 139 - 142
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 143 - 146
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 147 - 150
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 151 - 154
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 155 - 158
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 159 - 162
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 163 - 166
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 167 - 170
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 171 - 174
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 175 - 178
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 179 - 182
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 183 - 186
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 187 - 190
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 191 - 194
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 195 - 198
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 199 - 202
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 203 - 206
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 207 - 210
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 211 - 214
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 215 - 218
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 219 - 222
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 223 - 226
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 227 - 230
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 231 - 234
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 235 - 238
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 239 - 242
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 243 - 246
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 247 - 250
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 251 - 254
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 255 - 258
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 259 - 262
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 263 - 266
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 267 - 270
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 271 - 274
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 275 - 278
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 279 - 282
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 283 - 286
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 287 - 290
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 291 - 294
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 295 - 298
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 299 - 302
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 303 - 306
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 307 - 310
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 311 - 314
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 315 - 318
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 319 - 322
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 323 - 326
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 327 - 330
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 331 - 334
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 335 - 338
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 339 - 342
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 343 - 346
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 347 - 350
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 351 - 354
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 355 - 358
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 359 - 362
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 363 - 366
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 367 - 370
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 371 - 374
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 375 - 378
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 379 - 382
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 383 - 386
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 387 - 390
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 391 - 394
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 395 - 398
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+   compute displacements for loading axial step 399 - 402
+   output displacements 5 6 7 8
+   output stresses 1
+   output strains 1
+c
+c
+stop
+

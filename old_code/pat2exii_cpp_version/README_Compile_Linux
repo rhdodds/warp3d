@@ -1,0 +1,47 @@
+
+Last Update: Oct. 19, 2011
+--------------------------
+
+
+Note: Precompiled executables are included with downloadable distribution, found on
+WARP3D's Google Code site.  Compiling from source is unnecessary if you have 
+the exectuables.
+
+================================================================================
+Linux Compilation
+================================================================================
+
+For Linux we provide precompiled, static versions of all the libraries pat2exII
+requires. To install them automatically to the $WARP3D_HOME/pat2exII/lib
+directory, go to your WARP3D_HOME directory and run the script
+"install_libs_from_remote", for example:
+
+      cd $WARP3D_HOME
+      ./install_libs_from_remote
+
+Once you have done that:
+
+1) Enter the pat2exII directory in the WARP3D source.
+
+2) Copy configurations/Makefile.inc.linux to ./Makefile.inc
+
+3) Run make.
+
+      make
+
+4) Check to make sure everything compiled correctly.
+
+      make check
+
+   If the check succeeds, a file called ./testex.exo will be created and you will
+   receive no errors from the pat2exII executable.
+
+5) To install to $WARP3D_HOME/run_linux_em64t run:
+
+      make install
+
+6) If you want to clean the pat2exII compile directories (of all object and
+   executable files) run:
+
+      make clean
+

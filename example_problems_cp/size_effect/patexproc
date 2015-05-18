@@ -1,0 +1,8 @@
+results
+fromwarp.out
+.
+n
+/home/mark/warp3d/warp3d-dev/patran_templates/warp_elem_mm10.res_tmpl
+/home/mark/warp3d/warp3d-dev/patran_templates/warp_displ.res_tmpl
+/home/mark/warp3d/warp3d-dev/patran_templates/warp_node_strain.res_tmpl
+/home/mark/warp3d/warp3d-dev/patran_templates/warp_node_stress.res_tmpl

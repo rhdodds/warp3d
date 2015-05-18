@@ -1,0 +1,18 @@
+# Makefile definitions for patran to EXODUSII converter
+
+# Programs
+CXX = g++
+LD = g++
+
+# Flags
+CXXFLAGS = -c -g -O2
+
+# Includes
+INCLUDE = -I../include
+
+# Libraries
+LIBS = -lnetcdf -lexoIIv2c
+
+# Other
+EXE = pat2exII.mac
+INSTDIR = ../run_mac_os_x

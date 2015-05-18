@@ -1,0 +1,85 @@
+c
+c  test of Interaction Integrals for mixed-mode
+c  loading of a buried elliptical crack in an "infinite" body.
+c
+c  material is linear-elastic, homogeneous and isotropic
+c
+c  Model:
+c    o  comprises a 3-D cube of dimension 50 x 50 x 50 centered
+c       on the global origin
+c
+c  Crack:
+c    o  crack plane lies in the global X-Y plane.
+c    o  major axis of the ellipse coincides with the global X axis
+c    o  minor axis of the ellipse coincides with the global Y axis
+c    o  elliptical crack has size:  2a=5.0, 2c=2.0
+c
+c  Loading:
+c    o  crack-face tractions provide the loading, which
+c       induces mixed-mode loading in mode II and mode III.
+c       for the interaction integral, exact numerical integration
+c       is invoked for the crack-face traction term.
+c    o  an alternate loading condition applies tension in global
+c       Z-direction over the (+,-) Z ends of the cube
+c
+c  Constraints:
+c    o  displacement boundary constraints are the minimum to prevent
+c       rigid body motion
+c
+c  Elements:
+c    o  the mesh is made of 8-node bricks with B-bar
+c
+c  Crack Driving Forces
+c    o  J-domain and interaction integrals are computed at each corner
+c       node along the entire elliptical crack front.
+c
+structure ellipse
+material steel
+  properties linear_elastic  e 200.0E+11  nu  0.3
+number of nodes 27760 elements 26504
+elements
+ 1-26504 type l3disop linear material steel,
+              order 2x2x2 bbar center_output short
+*input from file "test_65_incid_coords"
+c *input from file "test_65_blocking"
+blocking automatic
+*echo on
+c
+ constraints
+  12301  u = 0.0  v = 0.0  w = 0.0   $ -25, -25, 0
+   8853           v = 0.0  w = 0.0   $  25, -25, 0
+   1447                    w = 0.0   $  25,  25, 0
+   5217  u = 0.0           w = 0.0   $ -25,  25, 0
+c
+c   14348  u = 0.0  v = 0.0  w = 0.0   $ -25, -25, -25.224045
+c   11015           v = 0.0  w = 0.0   $  25, -25, -25.224045
+c    3839                    w = 0.0   $  25,  25, -25.224045
+c    7481  u = 0.0           w = 0.0   $ -25,  25, -25.224045
+c
+c
+c  define two loadings to choose from:
+c         - remote tension
+c         - crack face shear
+c
+*input from file "test_65_face_loads"
+c
+ loading test
+  nonlinear
+    step 1 face_shear 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   minimum iterations 1
+   maximum iterations 1
+   convergence test norm res tol 0.005 max res tol 0.05
+   time step 1.0e10
+   trace solution on
+   nonconvergent solution stop
+c
+ compute displacements for loading test step 1
+c
+ output patran binary nodal displacements
+c
+*input from file "test_65_get_domain"
+c
+stop

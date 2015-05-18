@@ -1,0 +1,101 @@
+# --------------------------------------------------------------------
+#     This program converts tifs to gifs, then binds gifs in one file.
+#     Written by Breanna Bailey.
+#     Last updated 9-20-01
+#  
+#     Variables:
+#        counter = integer counter
+#        minimum = number of last tif
+#        maximum = number of last tif (usually number of tifs)
+#        names = variable to hold tif names for convert command
+#        pause = number of seconds to pause between frames
+#        prefix = prefix of tif files (ie, movie in movie_1.tif)
+#        animated = prefix of final, bound, animated gif file
+#        underscore = _; used to separate names
+# 
+# --------------------------------------------------------------------
+echo " "
+echo " "
+echo " "
+echo "WELCOME to the TIF to GIF Translator, a companion program"
+echo "to the WARP3D to PATRAN Animation Utility."
+echo " "
+echo "This C Shell script converts a series of individual TIFF image"
+echo "files into GIFFs and binds the GIFFs into a single animated file"
+echo "of multiple images.  Animated GIFF files are viewable using"
+echo "Microsoft Internet Explorer, Netscape Navigator, or Microsoft"
+echo "PowerPoint."
+
+echo "The TIFF files to be converted should have the same prefix and"
+echo "should be in sequential order.  For example, this directory"
+echo "should contain files movie_1.tif, movie_2.tif, ... movie_n.tif."
+echo " "
+echo " "
+echo -n "Please enter the TIFF image prefix (ie, movie in above example): "
+set prefix = $<
+echo " "
+echo -n "Please enter the number of the first TIFF file to convert: "
+@ minimum = $<
+echo " "
+echo -n "Please enter the number of the last TIFF file to convert: "
+@ maximum = $< 
+echo " "
+echo -n "What do you want the animated GIFF file to be called? "
+set animated = $<
+echo " "
+
+@ pause = 0
+echo -n "Do you wish to add a delay between frames? (Enter y/n.) "
+if ( $< == y ) then
+	echo -n "Please enter the delay in milliseconds: " 
+	@ pause = $<
+endif
+
+echo " " 
+echo "Please wait a few moments while the program executes."
+echo " "
+
+@ counter = $minimum
+set names = ' '
+set underscore = "_"
+
+while ( $counter <= $maximum )
+	convert $prefix$underscore$counter.tif $prefix$underscore$counter.gif
+        set names = ( $names $prefix$underscore$counter.gif )
+	@ counter++
+end
+
+convert -adjoin $names $animated.gif
+convert -delay $pause $animated.gif $animated.gif
+
+echo "Conversion completed.  Animated GIFF file should be stored in"
+echo $animated".gif if successful."
+
+echo " "
+echo "Do you wish to delete original TIFF files?"
+echo -n "(Enter y/n.) "
+if ( $< == y ) then
+	@ counter = $minimum
+	while ( $counter <= $maximum )
+		rm $prefix$underscore$counter.tif
+		@ counter++
+	end
+endif
+
+echo " "
+echo "Do you wish to delete intermediate GIFF files?"
+echo -n "(Enter y/n.) "
+if ( $< == y ) then
+	@ counter = $minimum
+	while ( $counter <= $maximum )
+		rm $prefix$underscore$counter.gif
+		@ counter++
+	end
+endif
+
+
+echo " "
+echo "Program finished."
+echo " "
+echo " "
+

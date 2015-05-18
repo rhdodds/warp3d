@@ -1,0 +1,9 @@
+StatusFlag = 1
+PATRAN
+*ANALYSIS   type=2 numLoadStep=1
+*MATERIAL   no=2
+            E=30000   ny=0.30
+*GEOMETRY   TGE=101  W=10  L=20  t=1
+*CRACK      TCR=4  a=.25  c=1.0 keyhole=0
+*LOAD       TBC=2  Fx=0  Fy=0 Fz=100  Mz=0 My=0 Mz=0  pint=0.0
+*MESH       etyp=8 mr=5 mf=10

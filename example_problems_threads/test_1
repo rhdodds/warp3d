@@ -1,0 +1,145 @@
+!
+!              static small cantilever beam analysis
+!
+!           nonlinear material, large displacements, bbar,
+!           adaptive load steps
+!
+!           tests 2_a and 2_b repeat this same analysis using
+!           a restart. run test_2_a then test_2_b.
+!
+!
+structure cantilever
+!
+material a515_grade_70_steel
+    properties mises  e 30000 nu 0.3 yld_pt 60.0 n_power 10.,
+                       rho 1.0
+!
+number of nodes 54 elements 20
+!
+elements
+   1-20 type l3disop nonlinear  material  a515_grade_70_steel,
+                 order 2x2x2  short  bbar
+*echo off
+coordinates
+     1     .000000e+00     .000000e+00     .000000e+00
+     2     .000000e+00     .000000e+00    -.500000e+00
+     3     .000000e+00     .000000e+00    -.100000e+01
+     4     .000000e+00     .500000e+00     .000000e+00
+     5     .000000e+00     .500000e+00    -.500000e+00
+     6     .000000e+00     .500000e+00    -.100000e+01
+     7     .000000e+00     .100000e+01     .000000e+00
+     8     .000000e+00     .100000e+01    -.500000e+00
+     9     .000000e+00     .100000e+01    -.100000e+01
+    10     .200000e+01     .000000e+00     .000000e+00
+    11     .200000e+01     .000000e+00    -.500000e+00
+    12     .200000e+01     .000000e+00    -.100000e+01
+    13     .200000e+01     .500000e+00     .000000e+00
+    14     .200000e+01     .500000e+00    -.500000e+00
+    15     .200000e+01     .500000e+00    -.100000e+01
+    16     .200000e+01     .100000e+01     .000000e+00
+    17     .200000e+01     .100000e+01    -.500000e+00
+    18     .200000e+01     .100000e+01    -.100000e+01
+    19     .400000e+01     .000000e+00     .000000e+00
+    20     .400000e+01     .000000e+00    -.500000e+00
+    21     .400000e+01     .000000e+00    -.100000e+01
+    22     .400000e+01     .500000e+00     .000000e+00
+    23     .400000e+01     .500000e+00    -.500000e+00
+    24     .400000e+01     .500000e+00    -.100000e+01
+    25     .400000e+01     .100000e+01     .000000e+00
+    26     .400000e+01     .100000e+01    -.500000e+00
+    27     .400000e+01     .100000e+01    -.100000e+01
+    28     .600000e+01     .000000e+00     .000000e+00
+    29     .600000e+01     .000000e+00    -.500000e+00
+    30     .600000e+01     .000000e+00    -.100000e+01
+    31     .600000e+01     .500000e+00     .000000e+00
+    32     .600000e+01     .500000e+00    -.500000e+00
+    33     .600000e+01     .500000e+00    -.100000e+01
+    34     .600000e+01     .100000e+01     .000000e+00
+    35     .600000e+01     .100000e+01    -.500000e+00
+    36     .600000e+01     .100000e+01    -.100000e+01
+    37     .800000e+01     .000000e+00     .000000e+00
+    38     .800000e+01     .000000e+00    -.500000e+00
+    39     .800000e+01     .000000e+00    -.100000e+01
+    40     .800000e+01     .500000e+00     .000000e+00
+    41     .800000e+01     .500000e+00    -.500000e+00
+    42     .800000e+01     .500000e+00    -.100000e+01
+    43     .800000e+01     .100000e+01     .000000e+00
+    44     .800000e+01     .100000e+01    -.500000e+00
+    45     .800000e+01     .100000e+01    -.100000e+01
+    46     .100000e+02     .000000e+00     .000000e+00
+    47     .100000e+02     .000000e+00    -.500000e+00
+    48     .100000e+02     .000000e+00    -.100000e+01
+    49     .100000e+02     .500000e+00     .000000e+00
+    50     .100000e+02     .500000e+00    -.500000e+00
+    51     .100000e+02     .500000e+00    -.100000e+01
+    52     .100000e+02     .100000e+01     .000000e+00
+    53     .100000e+02     .100000e+01    -.500000e+00
+    54     .100000e+02     .100000e+01    -.100000e+01
+!
+incidences
+     1    10     1     4    13    11     2     5    14
+     2    28    19    22    31    29    20    23    32
+     3    46    37    40    49    47    38    41    50
+     4    11     2     5    14    12     3     6    15
+     5    29    20    23    32    30    21    24    33
+     6    47    38    41    50    48    39    42    51
+     7    13     4     7    16    14     5     8    17
+     8    31    22    25    34    32    23    26    35
+     9    49    40    43    52    50    41    44    53
+    10    14     5     8    17    15     6     9    18
+    11    32    23    26    35    33    24    27    36
+    12    50    41    44    53    51    42    45    54
+    13    19    10    13    22    20    11    14    23
+    14    37    28    31    40    38    29    32    41
+    15    20    11    14    23    21    12    15    24
+    16    38    29    32    41    39    30    33    42
+    17    22    13    16    25    23    14    17    26
+    18    40    31    34    43    41    32    35    44
+    19    23    14    17    26    24    15    18    27
+    20    41    32    35    44    42    33    36    45
+!
+blocking automatic
+!
+loading unit
+  nodal loads
+    46 48 52 54    force_y 0.0625
+    47 49 51 53    force_y 0.125
+    50 force_y 0.25 
+!
+constraints
+    plane x=0 u=0
+     2  w 0
+     4  v 0
+     5  v 0 w 0
+     6  v 0
+     8  w 0
+!
+ loading end_shear $ yielding starts in step 2
+  nonlinear
+    step 1  unit 2.0
+    step 2  unit 1.0
+    step 3-7  unit 0.2
+!
+ output model flat patran convention text file "cantilever_model"
+!
+*echo on
+  nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.05 maximum residual tol 0.5
+   time step  1.0e10
+   trace solution on 
+   linear stiffness iteration one off
+   adaptive solution on
+   batch messages off
+   bbar stabilization factor 0.0
+   extrapolate on
+   binary packets on file 'packets.tst'
+!
+output commands use file "test_1_get_output" steps all
+compute displacements for loading end_shear step 7
+! 
+save to file 'test_1_after_step_7.db'
+!
+stop

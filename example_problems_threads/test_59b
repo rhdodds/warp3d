@@ -1,0 +1,671 @@
+c
+c      test of material model "cyclic" with the nonlinear_hardening
+c      option (formerly the Frederick-Armstrong option).
+c
+c      Single element under uniaxial
+c      loading for one full cycle. Model has nonlinear kinematic
+c      hardening coupled with isotropic hardening. 
+c
+c      the material properties are those calibrated to make the model 
+c      provide a best prediction for an Inconel 718 tested
+c      by Doug Wells at NASA-Marshall
+c
+c      Units:   GPa and meters
+c
+c      look at test_59_script for a simple way to process results of
+c      this run.
+c
+structure patch
+ material inconel_fa
+    properties cyclic nonlinear_hardening e 185 nu 0.3,
+               yld_pt 0.674 q_u 0,
+               b_u 1.0  h_u 412.5,
+               gamma_u 735 sig_tol 0.0001
+c
+number of nodes 8 elements 1
+coordinates
+   1  1.0  1.0 0.0
+   2  0.0  1.0 0.0
+   3  1.0  0.0 0.0
+   4  0.0  0.0 0.0
+   5  1.0  1.0 1.0
+   6  0.0  1.0 1.0
+   7  1.0  0.0 1.0
+   8  0.0  0.0 1.0
+elements
+ 1 type l3disop linear material inconel_fa bbar,
+    center_output short
+incidences 
+ 1    1 2 4 3 5 6 8 7
+blocking 
+  1  1  1
+constraints
+  1 3 5 7 u 1.0
+  2 4 u 0.0
+  6 u 0.0 w 0.0
+  8 u 0.0 v 0.0 w 0.0
+loading test
+  nonlinear
+c
+c         one complete, displacement controlled cycle
+c           steps 1-50 dummy 1.0  constraints 0.0002
+c           steps 51-150 dummy 1.0 constraints -0.0002
+c           steps 151 -200 dummy 1.0 constraints 0.0002 
+c         loading that corresponds to test data from nasa 
+c         ( 1st 200 steps only )
+c
+    step   1   constraints  -0.0000148
+    step   2   constraints   0.0001771
+    step   3   constraints   0.0003177
+    step   4   constraints   0.0004646
+    step   5   constraints   0.0005207
+    step   6   constraints   0.0005856
+    step   7   constraints   0.0006025
+    step   8   constraints   0.0006093
+    step   9   constraints   0.000622
+    step   10  constraints   0.0006126
+    step   11  constraints   0.0006597
+    step   12  constraints   0.0007107
+    step   13  constraints   0.0008485
+    step   14  constraints   0.0008499
+    step   15  constraints   0.0005317
+    step   16  constraints   0.0003301
+    step   17  constraints   0.0003092
+    step   18  constraints   0.0003192
+    step   19  constraints   0.0002945
+    step   20  constraints   0.0001981
+    step   21  constraints   0.0001552
+    step   22  constraints   0.0001849
+    step   23  constraints   0.0001715
+    step   24  constraints   0.0000688
+    step   25  constraints   0.00003
+    step   26  constraints   0.0000191
+    step   27  constraints  -0.0000313
+    step   28  constraints  -0.0000238
+    step   29  constraints  -0.0000981
+    step   30  constraints  -0.000114
+    step   31  constraints  -0.0001652
+    step   32  constraints  -0.0001938
+    step   33  constraints  -0.0002364
+    step   34  constraints  -0.0002615
+    step   35  constraints  -0.0003209
+    step   36  constraints  -0.0003383
+    step   37  constraints  -0.0003524
+    step   38  constraints  -0.0003637
+    step   39  constraints  -0.0004009
+    step   40  constraints  -0.0004518
+    step   41  constraints  -0.0004525
+    step   42  constraints  -0.0004545
+    step   43  constraints  -0.0004947
+    step   44  constraints  -0.0004993
+    step   45  constraints  -0.0005053
+    step   46  constraints  -0.0005219
+    step   47  constraints  -0.0004981
+    step   48  constraints  -0.0004964
+    step   49  constraints  -0.0005466
+    step   50  constraints  -0.0006396
+    step   51  constraints  -0.000638
+    step   52  constraints  -0.0007378
+    step   53  constraints  -0.0007644
+    step   54  constraints  -0.0008182
+    step   55  constraints  -0.0007933
+    step   56  constraints  -0.0007397
+    step   57  constraints  -0.0007174
+    step   58  constraints  -0.0006877
+    step   59  constraints  -0.0006849
+    step   60  constraints  -0.0006134
+    step   61  constraints  -0.0006006
+    step   62  constraints  -0.0005958
+    step   63  constraints  -0.0004983
+    step   64  constraints  -0.0004756
+    step   65  constraints  -0.0003762
+    step   66  constraints  -0.0003706
+    step   67  constraints  -0.0003456
+    step   68  constraints  -0.0002751
+    step   69  constraints  -0.0003026
+    step   70  constraints  -0.0002081
+    step   71  constraints  -0.0001913
+    step   72  constraints  -0.0001435
+    step   73  constraints  -0.0001388
+    step   74  constraints  -0.0000598
+    step   75  constraints  -0.000052
+    step   76  constraints   0.0000031
+    step   77  constraints  -0.0000228
+    step   78  constraints   0.0000674
+    step   79  constraints   0.0000726
+    step   80  constraints   0.0001332
+    step   81  constraints   0.0001476
+    step   82  constraints   0.0001916
+    step   83  constraints   0.0002084
+    step   84  constraints   0.0002794
+    step   85  constraints   0.0002958
+    step   86  constraints   0.0003362
+    step   87  constraints   0.0003464
+    step   88  constraints   0.0003882
+    step   89  constraints   0.0003819
+    step   90  constraints   0.0004197
+    step   91  constraints   0.0004807
+    step   92  constraints   0.0004988
+    step   93  constraints   0.000477
+    step   94  constraints   0.0005246
+    step   95  constraints   0.0005832
+    step   96  constraints   0.0005763
+    step   97  constraints   0.0005483
+    step   98  constraints   0.0005202
+    step   99  constraints   0.0005334
+    step  100  constraints   0.000591
+    step  101  constraints   0.0006306
+    step  102  constraints   0.0007041
+    step  103  constraints   0.0007193
+    step  104  constraints   0.0007708
+    step  105  constraints   0.0007824
+    step  106  constraints   0.0007299
+    step  107  constraints   0.0008298
+    step  108  constraints   0.0007157
+    step  109  constraints   0.0006082
+    step  110  constraints   0.0005287
+    step  111  constraints   0.00052
+    step  112  constraints   0.0004994
+    step  113  constraints   0.0005338
+    step  114  constraints   0.0005008
+    step  115  constraints   0.0004368
+    step  116  constraints   0.0003513
+    step  117  constraints   0.000339
+    step  118  constraints   0.0003357
+    step  119  constraints   0.0002996
+    step  120  constraints   0.0002326
+    step  121  constraints   0.0001409
+    step  122  constraints   0.0001693
+    step  123  constraints   0.0001184
+    step  124  constraints   0.0001121
+    step  125  constraints   0.0000588
+    step  126  constraints   0.0000449
+    step  127  constraints  -0.0000233
+    step  128  constraints  -0.0000876
+    step  129  constraints  -0.000064
+    step  130  constraints  -0.0001326
+    step  131  constraints  -0.0001451
+    step  132  constraints  -0.0002152
+    step  133  constraints  -0.0002022
+    step  134  constraints  -0.0002916
+    step  135  constraints  -0.0003156
+    step  136  constraints  -0.0003463
+    step  137  constraints  -0.0003872
+    step  138  constraints  -0.0003781
+    step  139  constraints  -0.000405
+    step  140  constraints  -0.0003979
+    step  141  constraints  -0.0004594
+    step  142  constraints  -0.0004719
+    step  143  constraints  -0.0004621
+    step  144  constraints  -0.0005316
+    step  145  constraints  -0.0004936
+    step  146  constraints  -0.0005124
+    step  147  constraints  -0.0005419
+    step  148  constraints  -0.0004879
+    step  149  constraints  -0.0005341
+    step  150  constraints  -0.000627
+    step  151  constraints  -0.0006504
+    step  152  constraints  -0.0007381
+    step  153  constraints  -0.0007615
+    step  154  constraints  -0.0007651
+    step  155  constraints  -0.0007925
+    step  156  constraints  -0.0007302
+    step  157  constraints  -0.0007155
+    step  158  constraints  -0.0006963
+    step  159  constraints  -0.000667
+    step  160  constraints  -0.0006654
+    step  161  constraints  -0.0006429
+    step  162  constraints  -0.0005426
+    step  163  constraints  -0.000454
+    step  164  constraints  -0.0004657
+    step  165  constraints  -0.0004015
+    step  166  constraints  -0.0003514
+    step  167  constraints  -0.0003379
+    step  168  constraints  -0.0002932
+    step  169  constraints  -0.0002646
+    step  170  constraints  -0.0002323
+    step  171  constraints  -0.0002159
+    step  172  constraints  -0.0001227
+    step  173  constraints  -0.0001295
+    step  174  constraints  -0.0000598
+    step  175  constraints  -0.0000668
+    step  176  constraints  -0.0000107
+    step  177  constraints   0.0000042
+    step  178  constraints   0.0000216
+    step  179  constraints   0.0000824
+    step  180  constraints   0.0001473
+    step  181  constraints   0.0001503
+    step  182  constraints   0.0001842
+    step  183  constraints   0.0002328
+    step  184  constraints   0.000263
+    step  185  constraints   0.0003164
+    step  186  constraints   0.0003115
+    step  187  constraints   0.0003936
+    step  188  constraints   0.0003576
+    step  189  constraints   0.0003759
+    step  190  constraints   0.0004404
+    step  191  constraints   0.0004507
+    step  192  constraints   0.0005032
+    step  193  constraints   0.0004783
+    step  194  constraints   0.0005479
+    step  195  constraints   0.0005299
+    step  196  constraints   0.0005906
+    step  197  constraints   0.0005794
+    step  198  constraints   0.0005351
+    step  199  constraints   0.0004742
+    step  200  constraints   0.0006169
+c
+  solution analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 4   $ guarantee very small residuals
+   convergence test norm res tol 0.001  maximum residual tol 0.001
+   time step  1.0e10
+   trace solution off     $ reduce output volume
+   adaptive solution off  $ never needed in this solution
+   batch messages off
+   extrapolate off        $ small strain analysis - not needed
+   material messages off
+   show details off       $ reduce output messages 
+c
+compute displacements for loading test step 1
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 2
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 3
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 4
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 5
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 6
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 7
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 8
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 9
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 10
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 11
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 12
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 13
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 14
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 15
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 16
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 17
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 18
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 19
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 20
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 21
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 22
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 23
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 24
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 25
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 26
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 27
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 28
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 29
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 30
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 31
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 32
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 33
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 34
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 35
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 36
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 37
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 38
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 39
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 40
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 41
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 42
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 43
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 44
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 45
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 46
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 47
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 48
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 49
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 50
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 51
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 52
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 53
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 54
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 55
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 56
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 57
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 58
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 59
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 60
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 61
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 62
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 63
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 64
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 65
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 66
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 67
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 68
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 69
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 70
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 71
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 72
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 73
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 74
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 75
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 76
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 77
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 78
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 79
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 80
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 81
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 82
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 83
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 84
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 85
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 86
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 87
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 88
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 89
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 90
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 91
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 92
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 93
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 94
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 95
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 96
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 97
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 98
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 99
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 100
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 101
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 102
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 103
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 104
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 105
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 106
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 107
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 108
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 109
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 110
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 111
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 112
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 113
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 114
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 115
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 116
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 117
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 118
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 119
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 120
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 121
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 122
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 123
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 124
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 125
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 126
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 127
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 128
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 129
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 130
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 131
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 132
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 133
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 134
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 135
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 136
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 137
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 138
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 139
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 140
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 141
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 142
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 143
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 144
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 145
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 146
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 147
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 148
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 149
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 150
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 151
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 152
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 153
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 154
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 155
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 156
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 157
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 158
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 159
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 160
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 161
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 162
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 163
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 164
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 165
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 166
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 167
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 168
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 169
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 170
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 171
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 172
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 173
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 174
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 175
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 176
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 177
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 178
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 179
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 180
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 181
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 182
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 183
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 184
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 185
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 186
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 187
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 188
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 189
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 190
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 191
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 192
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 193
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 194
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 195
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 196
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 197
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 198
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 199
+output wide noheader strains 1 stresses 1
+compute displacements for loading test step 200
+output wide noheader strains 1 stresses 1
+stop

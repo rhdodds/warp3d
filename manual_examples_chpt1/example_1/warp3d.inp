@@ -1,0 +1,72 @@
+!
+ structure bar
+! 
+ material metal
+  properties bilinear e 30000 nu 0.3,
+     yld_pt 1.0e2 alpha 1.0e-06 rho 0.0
+!
+ number of nodes 12 elements 2
+!
+ elements
+ 1-2 type l3disop linear material metal,
+     order 2x2x2 bbar short
+!
+ coordinates
+      1  0.0 0.0 0.0
+      2  1.0 0.0 0.0
+      3  0.0 1.0 0.0
+      4  1.0 1.0 0.0
+      5  0.0 2.0 0.0
+      6  1.0 2.0 0.0
+      7  0.0 0.0 1.0
+      8  1.0 0.0 1.0
+      9  0.0 1.0 1.0
+     10  1.0 1.0 1.0
+     11  0.0 2.0 1.0
+     12  1.0 2.0 1.0
+! 
+ incidences 
+   1     1   2   4   3   7   8  10   9
+   2     3   4   6   5   9  10  12  11
+!
+ blocking automatic
+!
+ constraints
+    1 2 7 8 u 0 v 0 w 0
+!
+ loading top_pressure
+  element loads
+      2 face 4 pressure -1.0
+!
+ loading top_torque
+  nodal loads
+     5 6 force_x -0.5
+     11 12 force_x 0.5     
+!
+ loading temp_grad
+  nodal loads
+     5 6 11 12 temperature 1.0
+     3 4 9 10 temperature 0.5
+     1 2  7 8 temperature 0.0
+!
+ loading test  
+  nonlinear
+    step 1 top_pressure 10
+    step 2 top_torque -2
+    step 3 temp_grad 500
+    
+nonlinear analysis parameters
+   solution technique sparse direct 
+   maximum iterations 1 $ newton
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   time step 1.0
+! 
+ compute displacements for loading test,
+   step 3
+ output displacements 5 6 11 12
+ output wide stresses 1 2
+ output reactions 1 2 7 8
+!
+ save to file "simple.save"
+stop

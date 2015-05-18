@@ -1,0 +1,149 @@
+c 
+c Simple example to illustrate/test use of the cohesive zone
+c material model and the interface elements.
+c
+c Model has only interface-cohesive elements (type: trint6).
+c ---------------------------------------------------------
+c
+c This example drives the cohesive-interface elements in 
+c combined constant shear (+Y) and normal traction (+Z)
+c 
+c Model is a 1 in. x 1 in. mesh of 8, 6-node interface
+c elements connected to a Z = 0 symmetry plane.
+c
+c The interface elements have a very small thickness for convenience
+c that does not affect the computed results.
+c
+c Interface element nodes on Z = 0 are constrained to have v = 0 
+c and w = 0. the v = 0 is req'd for shear Y loading. 
+c The w = 0 is req'd for normal Z loading. Both sets of constraints
+c are applied.
+c
+c set u = 0 on X = 0 nodes to eliminate rigid translation
+c
+c two sets of nodal loads are defined to impose (1) a uniform
+c normal traction in +Z-direction, (2) a uniform shear 
+c traction in the +Y-direction. 
+c
+c normal and shear loadings are combined in this example.
+c
+c Large displacement analysis does not apply since there
+c no adjacent solid elements to change the shape of the cohesive
+c surfaces.
+c
+structure solid
+c
+ material exp1_matl $ exponential option
+  properties cohesive exp1_intf,
+    sig_peak 5.0 delta_peak 0.067957046 beta 1.0
+c
+material ppr_mat  $  PPR option
+ properties cohesive ppr,
+    sig_peak 5.0 tau_peak 5.0 G_normal 1.85,
+    G_shear 1.85 shape_normal 7.0 shape_shear 7.0,
+    ratio_normal 0.1 ratio_shear 0.1 
+c
+ material linear_matl $ linear-elastic option for testing 
+   properties cohesive linear_intf,
+       stiffn 200 stifft 200 stiffs 200 
+c
+number of nodes 18 elements 8
+c
+coordinates
+  1   0.0   0.0     0.0
+  2   0.5   0.0     0.0
+  3   1.0   0.0     0.0
+  4   0.0   0.5     0.0
+  5   0.5   0.5     0.0
+  6   1.0   0.5     0.0
+  7   0.0   1.0     0.0
+  8   0.5   1.0     0.0
+  9   1.0   1.0     0.0
+c
+  10   0.0   0.0     0.001
+  11   0.5   0.0     0.001
+  12   1.0   0.0     0.001
+  13   0.0   0.5     0.001
+  14   0.5   0.5     0.001
+  15   1.0   0.5     0.001
+  16   0.0   1.0     0.001
+  17   0.5   1.0     0.001
+  18   1.0   1.0     0.001
+c
+elements
+  1-8 type trint6 linear material ppr_mat order '3pt_rule'
+c
+incidences 
+       1  1 2 4 10 11 13   
+       2  4 2 5 13 11 14    
+       3  2 3 5 11 12 14   
+       4  5 3 6 14 12 15      
+       5  4 5 7 13 14 16   
+       6  7 5 8 16 14 17    
+       7  5 6 8 14 15 17   
+       8  8 6 9 17 15 18   
+c
+blocking $ use 2 block for testing parallel
+       1       4       1
+       2       4       5
+c
+constraints
+  plane z=0 w 0  $ if interface elements made thinner, the search will think
+c                      their nodes are also on z=0
+  plane z=0 v 0
+  plane x=0 symmetry
+c
+loading unit_normal_z
+   nodal loads
+      10 11 13 force_z 0.041666666667  
+      13 11 14 force_z 0.041666666667    
+      11 12 14 force_z 0.041666666667   
+      14 12 15 force_z 0.041666666667   
+      13 14 16 force_z 0.041666666667   
+      16 14 17 force_z 0.041666666667    
+      14 15 17 force_z 0.041666666667   
+      17 15 18 force_z 0.041666666667  
+c 
+loading unit_shear_y
+   nodal loads
+      10 11 13 force_y 0.041666666667  
+      13 11 14 force_y 0.041666666667    
+      11 12 14 force_y 0.041666666667   
+      14 12 15 force_y 0.041666666667   
+      13 14 16 force_y 0.041666666667   
+      16 14 17 force_y 0.041666666667    
+      14 15 17 force_y 0.041666666667   
+      17 15 18 force_y 0.041666666667   
+c
+loading test
+  nonlinear
+   steps 1 2 unit_shear_y 2.4
+   steps 3 4 unit_normal_z 2.4
+c
+nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1 
+   convergence test norm res tol 0.001 
+   time step  1.0e6
+   trace solution on    
+   adaptive solution off 
+   batch messages off
+   extrapolate off        
+   material messages off
+   show details on     
+   consistent q-matrix off
+c
+c
+ crack growth parameters $ to get status after each step
+c                          no growth occurs
+   type of crack growth cohesive
+   ppr displacement fracture for extinction 0.99
+   adaptive load control on maximum relative displacement change 0.20
+   print status on order elements 1-9
+   force release type steps
+   release steps 5
+c
+compute displacements for loading test step 4
+output wide displacements for nodes 10-18
+stop

@@ -1,0 +1,79 @@
+c
+c 
+c     Simple example to demonstrate use of mesh tieing facilities.
+c     ============================================================
+c
+c     Model has 2, 8-node hex elements along the global X-axis.
+c     The X=1.0 faces of the 2 elements are tied together.
+c     A uniform global X force is applied on X=2 plane
+c     The X=0 plane is fixed.
+c
+c     u for nodes 13-16 should be equal (X=2 plane)
+c     w for nodes 14 15 should be equal
+c     v for nodes 13 14 should be equal
+c
+c     Run for 2 load steps and force multiple iterations per step.
+c     This checks handling of residual loads in presence of lagrange
+c     multipliers from MPCS to enforce mes-tieing.
+c
+structure two_blocks
+number of nodes 16 elements 2
+material steel
+    properties linear e 30000 nu 0.3
+elements
+ 1-2 type l3disop linear material steel order 2x2x2 bbar short
+coordinates
+      1  0 0 0
+      2  0 0 1
+      3  0 1 1
+      4  0 1 0
+      5  1 0 0
+      6  1 0 1
+      7  1 1 1
+      8  1 1 0
+      9  1 0 0
+     10  1 0 1
+     11  1 1 1
+     12  1 1 0
+     13  2 0 0 
+     14  2 0 1
+     15  2 1 1
+     16  2 1 0
+incidences 
+  1   2   1   4   3   6   5   8   7
+  2  10   9  12  11  14  13  16  15
+blocking 
+  1  2 1
+surface  mstr_elem
+  element  surface
+    1      face 2
+surface  slve_elem
+    2      face 1
+c
+tie mesh  pair
+  master mstr_elem  slave slve_elem
+c
+loading unit_pull_x  
+  nodal loads
+       13-16 force_x 0.25
+constraints
+  1-4 u 0.0 v 0.0 w 0.0
+c 
+ loading pull
+  nonlinear
+    step 1-2 unit_pull_x 100
+c 
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   display tied mesh mpcs off
+   maximum iterations 5
+   minimum iterations 2
+   convergence test norm res tol 0.01
+   time step 1.0e06
+   trace solution on
+c 
+ compute displacements for loading pull step 2
+ output displacements 13-16
+ output stresses 1-2
+c
+stop

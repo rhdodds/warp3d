@@ -1,0 +1,91 @@
+c
+*echo on
+surface master_top
+  element surfaces
+    3278-3530 by 36 face 3
+    3251 face 5
+    3268 face 5
+    3287 face 5
+    3304 face 5
+    3323 face 5
+    3340 face 5
+    3359 face 5
+    3376 face 5
+    3395 face 5
+    3412 face 5
+    3431 face 5
+    3448 face 5
+    3467 face 5
+    3484 face 5
+    3503 face 5
+    3520 face 5
+    3279-3531 by 36 face 4
+    3252 face  6
+    3255 face  6
+    3257 face  6
+    3258 face  6
+    3288 face  6
+    3291 face  6
+    3293 face  6
+    3294 face  6
+    3324 face  6
+    3327 face  6
+    3329 face  6
+    3330 face  6
+    3360 face  6
+    3363 face  6
+    3365 face  6
+    3366 face  6
+    3396 face  6
+    3399 face  6
+    3401 face  6
+    3402 face  6
+    3432 face  6
+    3435 face  6
+    3437 face  6
+    3438 face  6 
+    3468 face  6
+    3471 face  6
+    3473 face  6
+    3474 face  6
+    3504 face  6
+    3507 face  6
+    3509 face  6
+    3510 face  6
+c
+surface master_bot
+  element surfaces
+    2041-2096 by 1 face 1
+c
+surface master_back
+  element surfaces
+    433-512 by 1 face 2
+c
+surface slave_top
+ element surfaces
+   13827-13931 by 1 face 1
+c
+surface slave_bot
+ element surfaces
+   7422-8254 by 8 face 6
+c
+surface slave_back
+ element surfaces
+    8997-9101 by 1 face 1
+    12259-13091 by 8 face 5
+c
+c Define the tied contact pair between the mesh surfaces
+c
+tie mesh pair_1
+  tolerance 0.01 adjust
+  master master_top slave slave_top
+c
+tie mesh pair_2
+  tolerance 0.01 adjust
+  master master_bot slave slave_bot
+c
+tie mesh pair_3
+  tolerance 0.01 adjust
+  master master_back slave slave_back
+c
+*echo off

@@ -1,0 +1,188 @@
+c
+c              impact small cantilever beam analysis (model 1)
+c              -----------------------------------------------
+c
+c           nonlinear material, large displacements, bbar
+c
+c
+c
+c
+structure beam
+c
+material steela
+    properties bilinear  e 30000 nu 0.3 yld_pt 60.0 tan_e 1000.,
+     beta 1.0 rho 27.29275e-07
+material steelb 
+    properties bilinear  e 30000 nu 0.3 yld_pt 60.0 tan_e 1000.,
+     beta 1.0 rho 7.29275e-07
+material steelc 
+    properties bilinear  e 30000 nu 0.3 yld_pt 60.0 tan_e 1000.,
+     beta 1.0 rho 50.29275e-07
+c
+number of nodes 54 elements 20
+c
+elements
+ 1-3  type  l3disop  nonlinear material steela,
+    order 2x2x2 center_output  short 
+ 4-6 type  l3disop  nonlinear material steelb,
+    order 2x2x2 center_output  short 
+ 7-9 type  l3disop  nonlinear material steelc,
+    order 2x2x2 center_output  short 
+ 10-12  type  l3disop  nonlinear material steela,
+    order 2x2x2 center_output  short 
+ 13-14 type  l3disop  nonlinear material steelb,
+    order 2x2x2 center_output  short 
+ 15-16 type  l3disop  nonlinear material steelc,
+    order 2x2x2 center_output  short 
+ 17-18 type  l3disop  nonlinear material steela,
+    order 2x2x2 center_output  short 
+ 19-20 type  l3disop  nonlinear material steelb,
+    order 2x2x2 center_output  short 
+c
+coordinates
+     1     .000000e+00     .000000e+00     .000000e+00
+     2     .000000e+00     .000000e+00    -.500000e+00
+     3     .000000e+00     .000000e+00    -.100000e+01
+     4     .000000e+00     .500000e+00     .000000e+00
+     5     .000000e+00     .500000e+00    -.500000e+00
+     6     .000000e+00     .500000e+00    -.100000e+01
+     7     .000000e+00     .100000e+01     .000000e+00
+     8     .000000e+00     .100000e+01    -.500000e+00
+     9     .000000e+00     .100000e+01    -.100000e+01
+    10     .200000e+01     .000000e+00     .000000e+00
+    11     .200000e+01     .000000e+00    -.500000e+00
+    12     .200000e+01     .000000e+00    -.100000e+01
+    13     .200000e+01     .500000e+00     .000000e+00
+    14     .200000e+01     .500000e+00    -.500000e+00
+    15     .200000e+01     .500000e+00    -.100000e+01
+    16     .200000e+01     .100000e+01     .000000e+00
+    17     .200000e+01     .100000e+01    -.500000e+00
+    18     .200000e+01     .100000e+01    -.100000e+01
+    19     .400000e+01     .000000e+00     .000000e+00
+    20     .400000e+01     .000000e+00    -.500000e+00
+    21     .400000e+01     .000000e+00    -.100000e+01
+    22     .400000e+01     .500000e+00     .000000e+00
+    23     .400000e+01     .500000e+00    -.500000e+00
+    24     .400000e+01     .500000e+00    -.100000e+01
+    25     .400000e+01     .100000e+01     .000000e+00
+    26     .400000e+01     .100000e+01    -.500000e+00
+    27     .400000e+01     .100000e+01    -.100000e+01
+    28     .600000e+01     .000000e+00     .000000e+00
+    29     .600000e+01     .000000e+00    -.500000e+00
+    30     .600000e+01     .000000e+00    -.100000e+01
+    31     .600000e+01     .500000e+00     .000000e+00
+    32     .600000e+01     .500000e+00    -.500000e+00
+    33     .600000e+01     .500000e+00    -.100000e+01
+    34     .600000e+01     .100000e+01     .000000e+00
+    35     .600000e+01     .100000e+01    -.500000e+00
+    36     .600000e+01     .100000e+01    -.100000e+01
+    37     .800000e+01     .000000e+00     .000000e+00
+    38     .800000e+01     .000000e+00    -.500000e+00
+    39     .800000e+01     .000000e+00    -.100000e+01
+    40     .800000e+01     .500000e+00     .000000e+00
+    41     .800000e+01     .500000e+00    -.500000e+00
+    42     .800000e+01     .500000e+00    -.100000e+01
+    43     .800000e+01     .100000e+01     .000000e+00
+    44     .800000e+01     .100000e+01    -.500000e+00
+    45     .800000e+01     .100000e+01    -.100000e+01
+    46     .100000e+02     .000000e+00     .000000e+00
+    47     .100000e+02     .000000e+00    -.500000e+00
+    48     .100000e+02     .000000e+00    -.100000e+01
+    49     .100000e+02     .500000e+00     .000000e+00
+    50     .100000e+02     .500000e+00    -.500000e+00
+    51     .100000e+02     .500000e+00    -.100000e+01
+    52     .100000e+02     .100000e+01     .000000e+00
+    53     .100000e+02     .100000e+01    -.500000e+00
+    54     .100000e+02     .100000e+01    -.100000e+01
+c
+c
+incidences
+     1    10     1     4    13    11     2     5    14
+     2    28    19    22    31    29    20    23    32
+     3    46    37    40    49    47    38    41    50
+     4    11     2     5    14    12     3     6    15
+     5    29    20    23    32    30    21    24    33
+     6    47    38    41    50    48    39    42    51
+     7    13     4     7    16    14     5     8    17
+     8    31    22    25    34    32    23    26    35
+     9    49    40    43    52    50    41    44    53
+    10    14     5     8    17    15     6     9    18
+    11    32    23    26    35    33    24    27    36
+    12    50    41    44    53    51    42    45    54
+    13    19    10    13    22    20    11    14    23
+    14    37    28    31    40    38    29    32    41
+    15    20    11    14    23    21    12    15    24
+    16    38    29    32    41    39    30    33    42
+    17    22    13    16    25    23    14    17    26
+    18    40    31    34    43    41    32    35    44
+    19    23    14    17    26    24    15    18    27
+    20    41    32    35    44    42    33    36    45
+c
+blocking
+     1     3     1
+     2     3     4
+     3     3     7
+     4     3    10
+     5     2    13
+     6     2    15
+     7     2    17
+     8     2    19
+c
+constraints
+     1 u 0 
+     2 u 0 w 0
+     3 u 0
+     4 u 0 v 0
+     5 u 0 v 0 w 0
+     6 u 0 v 0
+     7 u 0
+     8 u 0 w 0
+     9 u 0 
+c
+c
+loading unit_rise
+  nodal loads
+    46 48 52 54    force_y 0.0625
+    47 49 51 53    force_y 0.125
+    50 force_y 0.25 
+c
+ loading end_shear $ yielding starts in step 2
+  nonlinear
+    steps 1-40 unit_rise 0.1 constraints 1.0
+    steps 41-120 constraints 1.0 $ free vibration
+c
+  nonlinear analysis parameters
+c   solution technique direct sparse
+c   solution technique direct iterative
+c   solution technique asymmetric direct
+   solution technique asymmetric iterative
+   minimum iterations 1
+   maximum iterations 10
+   convergence test norm res tol 0.05 max res tol 0.5
+   time step 0.25e-04
+   extrapolate off
+   trace solution on
+c
+   compute displacements for loading end_shear step 120
+   output displacements 50
+   output wide stresses 10
+   output wide strains 10
+   
+   stop
+   compute displacements for loading end_shear step 21-40
+   output displacements 50
+   output wide stresses 10
+   output wide strains 10
+   compute displacements for loading end_shear step 41-60
+   output displacements 50
+   output stresses 10
+   output strains 10
+   compute displacements for loading end_shear step 61-80
+   output displacements 50
+   output stresses 10
+   output strains 10
+   compute displacements for loading end_shear step 81-120
+   output displacements 50
+   output stresses 10
+   output strains 10
+stop

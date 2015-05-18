@@ -1,0 +1,99 @@
+c
+c
+c surface crack plate --- bolt loaded
+c -----------------------------------
+c
+c         tension loading of surface crack plate w/o crack growth
+c         crack front has a notch root radius
+c
+c        t = 1 in = 25.4 mm
+c        W = 2t
+c        a = 0.25 in = 6.35 mm
+c        c = 3a
+c
+c
+c    8-node element
+c
+c     Displacement Control
+c     Static Loading
+c     Large Strain theory (Ri=1.e-4 in = 2.54e-3 mm)
+c
+c     Non-linear material:
+c         E      = 200.54 GPa
+c         sig_ys = 280.756 MPa
+c         stress-strain curve
+c
+c     Input from the following files:
+c         coordinates
+c         incid_and_blocking
+c         constraints
+c         domain_0xx
+c         domain_define
+c
+c     *** Model is set up to run 4 way parallel using either ***
+c     *** sparse solvers or hypre     ***
+c
+c     solution computed for 10 load steps using displacement
+c     increment applied in full analysis of load-displacement curve
+c
+structure surface_crack
+c
+c
+stress-strain curve 1
+      .14E-02          280.756,
+      .193812E-02      283.934,
+      .747201E-02      293.151,
+      .173486E-01      367.621,
+      .271287E-01      417.284,
+      .464064E-01      491.131,
+      .653195E-01      538.782,
+      .838815E-01      575.870,
+      .120003          620.374,
+      .163394          649.509,
+   100.163394          40649.509
+c
+material steel $ A515
+   properties  mises  e 200.54e3  nu 0.3  yld_pt 280.756  curve 1,
+               rho  0.0
+c
+c
+number of nodes  25642
+number of elements 22814
+c
+*input from 'coordinates'
+c
+elements
+  1-22814  type l3disop  nonlinear material steel,
+           order 2x2x2  bbar center_output short
+c
+*input from 'incid_and_blocking'
+*input from 'constraints'
+c
+ loading test
+  nonlinear
+    step 1-10  constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   trace solution on
+   minimum iterations 2
+   maximum iterations 4
+   convergence test norm res tol 0.005  $ v. tight
+   time step 1.0e06
+   extrapolate on
+   nonconvergent solution stop
+   consistent q off
+   adaptive on
+   bbar stabilization factor 0.0
+c
+  compute displacements for loading test for step 10
+c
+c         get J values at all nodes along crack front.
+c         get patran result file(s) for post-processing
+c
+  *input from 'domain_define'
+  output patran binary displacements
+  output patran binary stresses
+c
+c
+stop

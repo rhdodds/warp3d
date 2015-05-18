@@ -1,0 +1,23 @@
+c
+c              static small cantilever beam analysis
+c
+c           nonlinear material, large displacements, bbar,
+c           viscoplasticity, adaptive load steps
+c
+c           run this job after test_2_a.  results should
+c           match those of test_1
+c
+c
+   restart from file 'cantilever_db'
+   compute displacements for loading end_shear step 6-7
+   output displacements 50
+   output wide eformat stresses 10 12
+   output wide stresses 3 5
+   output wide eformat strains 10 12
+   output wide strains 3 5
+   output patran binary displacements stresses strains
+save
+c
+stop
+
+

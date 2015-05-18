@@ -1,0 +1,191 @@
+c
+c
+c        nonlinear analysis of RPV under complex thermo-pressure
+c        transient.
+c
+c        research work and model described in:
+c
+c        Cleavage fracture modeling of pressure vessels under
+c        transient thermo-mechanical loading
+c
+c        by Xudong Qian, Robert H. Dodds Jr., Shengjun Yin,
+c           Richard Bass
+c
+c        Engineering Fracture Mechanics. Vol. 75, pp 4167-4189 (2008)
+c
+c        A533B vessel with austenitic stainless steel cladding.
+c        Axial oriented embedded, elliptical flaw located near clad-base
+c        interface.
+c
+c        2a = 17 mm ( 0.67 in )
+c        2c = 102 mm ( 4.0 in )
+c        d = 2 mm ( 0.079 in )
+c             [ distance from clad-base interface to edge of flaw]
+c
+c
+c        Solution units: kips, in, temps in F
+c
+c        Stress free temperature: 288 F
+c
+c        Temperature dependent material properties for base and clad
+c
+c        Vessel geometry, properties from generic RPV.
+c        Pressure-temperature for a Pressurized-Thermal-Shock
+c           from break in coolant line
+c
+c        Analysis using 1000 load steps to drive 250 mins
+c        of the transient event
+c
+c        Virtual memory size ~ 8 GB
+c        Estimated wall time for 1000 steps on 8-core MacPro
+c        (mid-2009):  14 hours running 8 threads
+c
+c        input files make use of *input from ... inside other
+c        *input from .. for simplicity
+c
+c
+structure rpv_ref
+c
+material dummy_base  $ if temp invariant props wanted
+  properties linear_elastic e 28000.  nu 0.3  rho  0.0 alpha 13.99E-6
+c
+c
+material dummy_cladding $ if temp invariant props wanted
+  properties linear_elastic e 22800.  nu 0.3  rho  0.0 alpha 17.01E-6
+c
+*input from 'rpv_ref.curveBase'
+material A533B_steel
+  properties mises curves 1
+c
+*input from 'rpv_ref.curveCladding'
+material austenitic_cladding
+  properties mises curves 6
+c
+number nodes 92239 elements 20800
+elements
+c            -- base --
+ 1-18960 type q3disop nonlinear material A533B_steel,
+       order 2x2x2 bbar center_output short
+c            -- clad --
+ 18961-20800 type q3disop nonlinear material austenitic_cladding,
+      order 2x2x2 bbar center_output short
+c
+coordinates
+*echo off
+   *input from 'rpv_ref.coords'
+incidences
+*echo off
+   *input from 'rpv_ref.incidences'
+blocking automatic
+c
+initial conditions $ stress free temp
+  temperatures
+  nodes all temperature 286.222
+c
+loading unit_int_press $ internal surface
+  element loads
+    *input from 'rpv_ref.pressure'
+c
+c      18 profiles of temperature over wall thickness
+c      at times into transient.
+c
+*echo off
+c
+loading Temp1
+ nodal loads
+  *input from 'rpv_ref.temp1'
+c
+loading Temp2
+ nodal loads
+  *input from 'rpv_ref.temp2'
+c
+loading Temp3
+ nodal loads
+  *input from 'rpv_ref.temp3'
+c
+loading Temp4
+ nodal loads
+  *input from 'rpv_ref.temp4'
+c
+loading Temp5
+ nodal loads
+  *input from 'rpv_ref.temp5'
+c
+loading Temp6
+ nodal loads
+  *input from 'rpv_ref.temp6'
+c
+loading Temp7
+ nodal loads
+  *input from 'rpv_ref.temp7'
+c
+loading Temp8
+ nodal loads
+  *input from 'rpv_ref.temp8'
+c
+loading Temp9
+ nodal loads
+  *input from 'rpv_ref.temp9'
+c
+loading Temp10
+ nodal loads
+  *input from 'rpv_ref.temp10'
+c
+loading Temp11
+ nodal loads
+  *input from 'rpv_ref.temp11'
+c
+loading Temp12
+ nodal loads
+  *input from 'rpv_ref.temp12'
+c
+loading Temp13
+ nodal loads
+  *input from 'rpv_ref.temp13'
+c
+loading Temp14
+ nodal loads
+  *input from 'rpv_ref.temp14'
+c
+loading Temp15
+ nodal loads
+  *input from 'rpv_ref.temp15'
+c
+loading Temp16
+ nodal loads
+  *input from 'rpv_ref.temp16'
+c
+loading Temp17
+ nodal loads
+  *input from 'rpv_ref.temp17'
+c
+loading Temp18
+ nodal loads
+  *input from 'rpv_ref.temp18'
+c
+*input from 'rpv_ref.constraints' $ mainly symmetry BCs
+c
+ loading test
+  nonlinear
+    *input from 'rpv_ref.define_steps'  $ define 1000 steps
+c
+ nonlinear analysis parameters
+   solution technique direct sparse $ might try sparse direct
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.001 $ v. tight
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   time step 1.0e06
+   trace solution on
+   extrapolate on  $ helps for geo nonlinear analysis
+   display tied mesh mpcs off
+c
+*input from 'rpv_ref.drive_and_results' $ drive steps and request output
+stop

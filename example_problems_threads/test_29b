@@ -1,0 +1,75 @@
+c
+c    thermal gradient applied to se(t) specimen -- thermoplasticity
+c    ==============================================================          
+c 
+c            W=2 in,  H/2=4 in, B=0.001 in, a/W=0.14
+c 
+c     bilinear plasticity with temperature dependent elastic,
+c     thermal and flow properties. 
+c
+c     see test_29a for more description of problem.
+c
+c     initial uniform temperature is 300 degrees
+c 
+structure set
+c
+ stress-strain curve 1 temperature 100 e 30000 nu 0.3 alpha 0.0001
+   0.0   80,   $ these are plastic strain vs. stress values
+   1.0  380    $ the first point must have zero plastic strain...
+c
+  stress-strain curve 2 temperature 300 e 28000 nu 0.28 alpha 0.0002
+   0.0   70,
+   1.0  270
+c
+stress-strain curve 3 temperature 500  e 25000 nu 0.25 alpha 0.0003
+   0.0   60,
+   1.0  160
+c 
+material steel
+    properties bilinear curves 1-3
+c    properties mises  curves 1-3
+c 
+number of nodes   1572
+number of elements   717
+c
+*input from test_29_common
+c
+initial conditions
+   temperatures
+       1-1572 temperature 300
+c
+*echo on
+c 
+ loading test
+  nonlinear
+    step 1-20 temp_grad  0.05
+c 
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions continue
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on 
+   extrapolate off
+c 
+c 
+ compute displacements for loading test step 20
+ output displacements 1-8
+ output stresses 107
+ output strains 107
+c 
+c output patran binary displacements
+c output patran binary strains
+c output patran binary stresses
+csave to file 'thermal.warp'
+c 
+stop

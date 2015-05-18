@@ -1,0 +1,32 @@
+                      TIF To GIF Translator: User's Guide
+
+
+PROGRAM PURPOSE:
+
+The TIF to GIF Translator (a C Shell script) uses the ImageMagick conversion 
+program to create an animated GIFF file from a collection of individual TIFF 
+image files illustrating WARP3D results.  An animated GIFF file may be viewed 
+using a web browser, such as Netscape Navigator, or it may be embedded into a 
+Microsoft PowerPoint presentation.  This translator is a companion program
+to the WARP3D to PATRAN Animation Utility.
+
+
+
+HOW THE PROGRAM WORKS:
+
+The user first runs the WARP3D to PATRAN Animation Utility and plays the 
+resulting session file in PATRAN that generates a series of TIFF image files.
+These TIFF files should have the same prefix and appear in sequential order 
+(ie, movie_1.tif, movie_2.tif, ..., movie_n.tif).  This program first converts
+the TIFF files into GIFF files of the same name(s).  These GIFF files are then
+bound into a single, multi-image (animated) GIFF file.  The user has the option
+to put a few seconds of delay time between images as well as to delete the 
+intermediate GIFF files.
+
+
+
+EXECUTING THIS UTILITY PROGRAM:
+
+Run the script tif_to_gif and answer the questions as they appear.  If the
+program completes successfully, the animated gif file is stored in *.gif, 
+where * represents a user designated name.

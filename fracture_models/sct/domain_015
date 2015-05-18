@@ -1,0 +1,17 @@
+c     
+c       Fifteenth layer from the center plane
+c
+domain dnr_015
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 14   6397  6398  6399  6400  6401  6402  6403  6404,
+             6405  6406  6407  6408  6409  6410  6411  6412  6413
+   node set 15   6889  6890  6891  6892  6893  6894  6895  6896,
+             6897  6898  6899  6900  6901  6902  6903  6904  6905
+   node set 16   7381  7382  7383  7384  7385  7386  7387  7388,
+             7389  7390  7391  7392  7393  7394  7395  7396  7397
+   front node sets  14  15  16 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

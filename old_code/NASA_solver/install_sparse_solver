@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Check for env. variable
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# cd here
+cd $WARP3D_HOME/nasa_solver_dir
+
+
+\cp nasa_sparse_adj.f        ../src/sparse_adj.f     
+printf "       sparse_adj.f copied\n"
+        
+\cp nasa_sparse_check.f      ../src/sparse_check.f      
+printf "       sparse_check.f copied\n"
+            
+\cp nasa_sparse_factor.f     ../src/sparse_factor.f     
+printf "       sparse_factor.f copied\n"
+            
+\cp nasa_sparse_fill.f       ../src/sparse_fill.f       
+printf "       sparse_fill.f copied\n"
+            
+\cp nasa_sparse_loadpass.f   ../src/sparse_loadpass.f   
+printf "       sparse_loadpass.f copied\n"
+            
+\cp nasa_sparse_reorder_a.f  ../src/sparse_reorder_a.f  
+printf "       sparse_reorder.f copied\n"
+            
+\cp nasa_sparse_reorder_b.f  ../src/sparse_reorder_b.f  
+printf "       sparse_reorder_b.f copied\n"
+            
+\cp nasa_sparse_sym_fact.f   ../src/sparse_sym_fact.f   
+printf "       sparse_fact.f copied\n\n"
+
+

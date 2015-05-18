@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Check for env. variable
+[ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
+
+# cd here
+cd $WARP3D_HOME/nasa_solver_dir
+
+printf "\n>> Uninstalling the NASA-VSS Sparse Solver System From\n"
+printf ">> WARP3D Source Code...\n\n"
+
+printf " > Copying files named dummy_sparse_*.f into sparse_*.f...\n"
+
+\cp dummy_sparse_adj.f        ../src/sparse_adj.f     
+printf "       dummy_sparse_adj.f copied\n"
+       
+\cp dummy_sparse_check.f      ../src/sparse_check.f      
+printf "       dummy_sparse_check.f copied\n"
+           
+\cp dummy_sparse_factor.f     ../src/sparse_factor.f     
+printf "       dummy_sparse_factor.f copied\n"
+      
+\cp dummy_sparse_fill.f       ../src/sparse_fill.f       
+printf "       dummy_sparse_fill.f copied\n"
+       
+\cp dummy_sparse_loadpass.f   ../src/sparse_loadpass.f   
+printf "       dummy_sparse_loadpass.f copied\n"
+
+\cp dummy_sparse_reorder_a.f  ../src/sparse_reorder_a.f  
+printf "       dummy_sparse_reorder.f copied\n"
+  
+\cp dummy_sparse_reorder_b.f  ../src/sparse_reorder_b.f  
+printf "       dummy_sparse_reorder_b.f copied\n"
+          
+\cp dummy_sparse_sym_fact.f   ../src/sparse_sym_fact.f   
+printf "       dummy_sparse_fact.f copied\n\n"
+
+

@@ -1,0 +1,137 @@
+c
+c SSY 3D Boundary Layer Model for Crack Growth Analysis
+c =====================================================
+c
+c  1/4 of the ssy boundary layer model (making use of
+c  symmetry planes through the thickness and about the
+c  crack plane)
+c
+c  Small, uniform elements in xy plane at and ahead of
+c  crack tip for crack growth applications
+c  Model units set up for: kN, mm
+c
+c  Crack growth by node release with enforced release.
+c  Solution includes reverse loading
+c  back to KI remote of zero with contact conditions on
+c  crackplane to prevent interpenetration.
+c
+c
+c Model features
+c ==============
+c - 8 node brick elements
+c - 5 element layers in z-direction, with thicknesses of
+c   0.25(adjacent to center symmetry plane), 0.15, 0.05,
+c   0.03 and 0.02 (free surface)
+c - outer radius = 100 mm
+c - thickness = 1 mm
+c - element size ahead of crack front = 0.01 (in x and y direction)
+c
+c Material:
+c =========
+c - bilinear elastic-plasticity (kinematic hardening)
+c - E = 185 GPa (kN/mm^2), nu = 0.3
+c - yield stress = 1.0 GPa
+c - tangent modulus = 38 GPa
+c
+c Loading:
+c ========
+c - remote KI displacement field imposed on outer circular boundary
+c - maximum KI = 2 GPa x sqrt(mm)
+c - 50 load steps of delta KI = 0.04
+c - At peak load, grow crack front by 1 element in +x direction
+c - 50 unloading steps with delta KI = -0.04
+c
+c Output:
+c =======
+c - displacements of crack plane nodes output at step 50
+c - Patran nodal displacement and stress files at steps 50 and 100
+c
+c Mesh Info:
+c ==========
+c - crack tip initially located at x=-0.42, y=0 (nodes 6325, 6326,
+c   6327, 6328, 6329, 6330)
+c
+structure ssy3d_5L
+c
+ material steel
+    properties bilinear e 185.0 nu 0.3 yld_pt 1.0 tan_e 38.0 beta 0.0
+c
+number of nodes 10722 elements    8490
+c
+*input from 'coordinates'
+c
+elements
+  1-8490 type l3disop linear material steel,
+        order 2x2x2 bbar center_output short
+c
+*input from 'incid_and_blocking'
+c
+c constraints for symmetry and crack plane
+*input from 'constraints'
+c
+c input imposed displacements for KI field
+*input from 'k_field_displacements'
+c
+ loading ssy
+  nonlinear
+  steps   1-50 constraints 0.04
+  steps   51-100 constraints -0.04
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 4
+   convergence test norm res tol 0.0005 max res tol 0.005
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   time step 1.0e06
+   trace solution on
+   extrapolate off     $ recommended for growing crack
+c
+ crack growth parameters
+  type of crack growth node_release
+  crack plane normal y coordinate 0.0
+  constant front growth on
+  master node list 6325
+  number of nodes along front 6
+  angle for release 100.0 distance 0.01
+  angle for initiation 100.0 distance 0.01
+  characteristic length 0.01
+  force release type steps
+  release steps 5
+  print status on    $ crack front nodes crack plane nodes
+c
+  contact surface
+   surface 1 plane
+   point -150.0 0.0 -5.0
+   point -150.0 0.0  5.0
+   point  150.0 0.0 -5.0
+   stiffness 18.5e4
+c
+ compute displacements for loading ssy step 50
+c
+ *input from file 'displacement_request_list'
+ output patran formatted displacements
+ output patran formatted stresses
+c
+c grow crack front by one element in +x direction
+crack growth parameters
+   enforce node release next step
+c
+ compute displacements for loading ssy step 100
+c
+ output patran formatted displacements
+ output patran formatted stresses
+c
+c write a restart file
+save to file 'step100.restart'
+c
+ stop
+c
+

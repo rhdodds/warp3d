@@ -1,0 +1,168 @@
+
+Last Update: Oct. 19, 2011
+--------------------------
+
+Note: Precompiled executables are included with downloadable distribution, found on
+WARP3D's Google Code site.  Compiling from source is unnecessary if you have 
+the exectuables.
+
+================================================================================
+Mac Compilation (about a 30 min process)
+================================================================================
+
+You will need to install the following free packages:
+
+hdf (version 5)
+netcdf (version 4)
+cmake (version 2.8)
+exodus (version 5.14)
+
+This guide assumes you want to install the packages to /usr/local and assumes a
+you are using the BASH shell in the Terminal program.  
+
+** You will need "root" access to install the above libraries **
+
+1) Create a working directory to hold the compressed package files and their
+   compilation directories.  In this example we refer to ~/src.  So, for
+   example:
+      
+      mkdir ~/src
+      cd ~/src
+
+2) hdf5
+
+      a) Download the most recent SOURCE gzipped hdf5 package (listed under All
+         Platforms) from:
+
+            http://www.hdfgroup.org/HDF5/release/obtain5.html
+
+         to ~/src.  Extract the .tar.gz using:
+   
+            tar xvzf ____.tar.gz
+
+         (where ____ is the name of the most current hdf5 packages) and enter
+         the directory.
+
+      b) Run (takes about 5 minutes)
+
+            ./configure --prefix=/usr/local && make
+
+      c) Run 
+
+            sudo make install
+
+3) netcdf4
+
+      a) Download the top-listed, gzipped NetCDF C/C++/Fortran stable release
+         source package from:
+
+            http://www.unidata.ucar.edu/downloads/netcdf/index.jsp
+
+         Extract the .tar.gz as above and enter the directory.
+
+      b) Run (takes about 2 minutes)
+
+            ./configure --prefix=/usr/local && make
+
+      c) Run
+
+            sudo make install
+
+4) cmake
+
+      a) Obtain the most recent gzipped SOURCE version of cmake from:
+
+            http://www.cmake.org/cmake/resources/software.html
+         
+         The correct package should be listed under Platform -> Unix/Linux
+         Source.
+
+         Extract the .tar.gz as above and enter the directory
+
+      b) Run (takes several minutes)
+
+            ./bootstrap --prefix=/usr/local
+
+      c) Run (takes several minutes)
+
+            make
+
+      d) Run
+
+            sudo make install
+
+5) exodusII
+
+      a) Obtain the most recent version of exodusII from:
+
+            http://sourceforge.net/projects/exodusii/
+
+         Click on the green download button on that page to obtain the
+         .tar.bz2 file.
+
+         Extract the bzipped file with:
+         
+            tar xvjf _____.tar.bz2
+
+         and enter the directory.  Then enter the "exodus" directory:
+
+            cd exodus
+
+      b) Run 
+
+            ccmake .
+
+      c) Make sure that the netCDF library was located correctly.
+
+      d) Type
+
+            c
+
+         then (again)
+
+            c
+    
+         then
+
+            g
+
+      e) Run
+
+            make
+
+      f) Run
+      
+            sudo make install
+
+If step 5-f completed successfully you have correctly installed the required
+libraries.  Return to the WARP3D source directory ($WARP3D_HOME) to compile
+the pat2exII converter program.
+
+6) pat2exII
+
+      a) Enter the pat2exII directory in the WARP3D source.
+
+            cd $WARP3D_HOME/pat2exII
+
+      b) Copy configurations/Makefile.inc.mac to ./Makefile.inc
+
+      c) Run
+
+            make
+
+      d) You can run 
+
+            make check
+
+         to ensure the program pat2exII works.  It should generate a
+         ./testex.exo file and give no errors during the conversion process.
+
+      e) To install the program to the $WARP3D_HOME/run_mac_os_x directory
+         type:
+
+            make install
+
+      f) If you want to clean up the pat2exII directory of all object and 
+         executable files, run:
+            
+            make clean

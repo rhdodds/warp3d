@@ -1,0 +1,346 @@
+*echo off
+c
+c Simple example to illustrate/test use of the cohesive zone
+c material model and the interface elements.
+c
+c model is 2 (mostly) rectangular prisms of size (x,y,z) =
+c (1,1,1) connected on a twisted surface to invoke true 3D behavior.
+c
+c elements 1-27 are in cube incident on Z=0 plane
+c elements 28-54 are next cube over z=1.0 to z=2.0
+c elements 55-63 are the interface elements defined
+c on the slanted surface which has an x*y geometry.
+c
+c cohesive elements are attached to these solid elements:
+c    cohesive   bottom solid   top solid
+c         55        28            19
+c         56        29            20
+c         57        30            21
+c         58        31            22
+c         59        32            23
+c         60        33            24
+c         61        34            25
+c         62        35            26
+c         63        36            27
+c
+c model nodes 1-16 are located on the plane z = 2.0
+c (the remote end)
+c
+c Elements 1-54 are linear elastic, 8-node solids
+c
+c Two loadings are defined for use in testing:
+c
+c   1) axial (tensile) traction in the Z-direction.
+c      X=0, Y=0, Z=0 are symmetry planes. max axial load is
+c      limited by the strength of the cohesive surface.
+c
+c   2) imposed displacements (w) on the remote end. this case
+c      drives the cohesive elements beyond peak load to
+c      greatly degraded stresses.The imposed displacements can be
+c      cycled to test loading-unloading response
+c
+c The material property values set here for the exp1_intf and ppr
+c options are chosen specifically to provide near identical traction-
+c separation curves for axial (normal traction) loading.
+c
+c Also for the PPR, be careful in setting the specified
+c values for properties ratio_normal and ratio_shear
+c which set the value of peak displacement as a fraction of
+c the displacement when traction degrade to zero. Small values
+c (e.g. 0.001) lead to excessively high stiffness levels early in the
+c loading history - if the surrounding solid elements have markedly
+c smaller stiffnesses, solution of the equilibrium equations
+c introduces much error and the Newton iterations diverge.
+c
+c this model can be run with small or large displacements
+c
+c we mark the interface-cohesive elements as killable to
+c have their status output after each load step. elements
+c are not actually killed at the loading levels in this example.
+c
+*echo on
+structure slant_surface
+c
+material solid
+ properties bilinear e 200.0 nu 0.3 yld_pt 60.0 tan_e 300
+
+c
+material ppr_matl  $ matches v. closely exp1_matl
+ properties cohesive ppr,
+    sig_peak 5.0 tau_peak 5.0 G_normal 1.85,
+    G_shear 1.85 shape_normal 7.0 shape_shear 7.0,
+    ratio_normal 0.1 ratio_shear 0.1,
+    killable $ do not make these too small !
+c
+material exp1_matl
+ properties cohesive exp1_intf,
+     sig_peak 5.0 delta_peak 0.1359141 beta 1.0 killable
+C
+material linear_matl  $ not used but available for checking
+ properties cohesive linear_intf,
+    stiffn 100 stifft 100 stiffs 100
+c
+number of nodes  128 elements       63
+c
+elements
+  1-54 type l3disop nonlinear material solid center_output,
+          short order 2x2x2
+  55-63 type inter_8 nonlinear material ppr_matl order '2x2gs'
+c
+c
+coordinates
+*echo off
+     1   0.0000000000   1.0000000000   2.0000000000
+     2   0.3333333430   1.0000000000   2.0000000000
+     3   0.6666666870   1.0000000000   2.0000000000
+     4   1.0000000000   1.0000000000   2.0000000000
+     5   0.0000000000   0.6666666870   2.0000000000
+     6   0.0000000000   0.3333333430   2.0000000000
+     7   0.0000000000   0.0000000000   2.0000000000
+     8   0.3333333430   0.6666666870   2.0000000000
+     9   0.6666666870   0.6666666870   2.0000000000
+    10   1.0000000000   0.6666666870   2.0000000000
+    11   0.3333333430   0.3333333430   2.0000000000
+    12   0.3333333430   0.0000000000   2.0000000000
+    13   0.6666666870   0.3333333430   2.0000000000
+    14   1.0000000000   0.3333333430   2.0000000000
+    15   0.6666666870   0.0000000000   2.0000000000
+    16   1.0000000000   0.0000000000   2.0000000000
+    17   0.0000000000   1.0000000000   1.6766667400
+    18   0.3333333430   1.0000000000   1.6766667400
+    19   0.6666666870   1.0000000000   1.6766667400
+    20   1.0000000000   1.0000000000   1.6766667400
+    21   0.0000000000   0.6666666870   1.6766667400
+    22   0.0000000000   0.3333333430   1.6766667400
+    23   0.0000000000   0.0000000000   1.6766667400
+    24   0.3333333430   0.6666666870   1.6766667400
+    25   0.6666666870   0.6666666870   1.6766667400
+    26   1.0000000000   0.6666666870   1.6766667400
+    27   0.3333333430   0.3333333430   1.6766667400
+    28   0.3333333430   0.0000000000   1.6766667400
+    29   0.6666666870   0.3333333430   1.6766667400
+    30   1.0000000000   0.3333333430   1.6766667400
+    31   0.6666666870   0.0000000000   1.6766667400
+    32   1.0000000000   0.0000000000   1.6766667400
+    33   0.0000000000   1.0000000000   1.3433333600
+    34   0.3333333430   1.0000000000   1.3433333600
+    35   0.6666666870   1.0000000000   1.3433333600
+    36   1.0000000000   1.0000000000   1.3433333600
+    37   0.0000000000   0.6666666870   1.3433333600
+    38   0.0000000000   0.3333333430   1.3433333600
+    39   0.0000000000   0.0000000000   1.3433333600
+    40   0.3333333430   0.6666666870   1.3433333600
+    41   0.6666666870   0.6666666870   1.3433333600
+    42   1.0000000000   0.6666666870   1.3433333600
+    43   0.3333333430   0.3333333430   1.3433333600
+    44   0.3333333430   0.0000000000   1.3433333600
+    45   0.6666666870   0.3333333430   1.3433333600
+    46   1.0000000000   0.3333333430   1.3433333600
+    47   0.6666666870   0.0000000000   1.3433333600
+    48   1.0000000000   0.0000000000   1.3433333600
+    49   0.0000000000   1.0000000000   0.8499999940
+    50   0.3333333430   1.0000000000   0.7999999906
+    51   0.6666666870   1.0000000000   0.7499999870
+    52   1.0000000000   1.0000000000   0.6999999881
+    53   0.0000000000   0.6666666870   0.8999999930
+    54   0.0000000000   0.3333333430   0.9499999966
+    55   0.0000000000   0.0000000000   1.0000000000
+    56   0.3333333430   0.6666666870   0.8499999895
+    57   0.6666666870   0.6666666870   0.7999999860
+    58   1.0000000000   0.6666666870   0.7499999870
+    59   0.3333333430   0.3333333430   0.8999999931
+    60   0.3333333430   0.0000000000   0.9499999966
+    61   0.6666666870   0.3333333430   0.8499999895
+    62   1.0000000000   0.3333333430   0.7999999906
+    63   0.6666666870   0.0000000000   0.8999999930
+    64   1.0000000000   0.0000000000   0.8499999940
+    65   0.0000000000   1.0000000000   0.8499999940
+    66   0.3333333430   1.0000000000   0.7999999906
+    67   0.6666666870   1.0000000000   0.7499999870
+    68   1.0000000000   1.0000000000   0.6999999881
+    69   0.0000000000   0.6666666870   0.8999999930
+    70   0.0000000000   0.3333333430   0.9499999966
+    71   0.0000000000   0.0000000000   1.0000000000
+    72   0.0000000000   1.0000000000   0.6666666870
+    73   0.0000000000   1.0000000000   0.3333333430
+    74   0.0000000000   1.0000000000   0.0000000000
+    75   0.3333333430   0.6666666870   0.8499999895
+    76   0.6666666870   0.6666666870   0.7999999860
+    77   1.0000000000   0.6666666870   0.7499999870
+    78   0.3333333430   0.3333333430   0.8999999931
+    79   0.3333333430   0.0000000000   0.9499999966
+    80   0.6666666870   0.3333333430   0.8499999895
+    81   1.0000000000   0.3333333430   0.7999999906
+    82   0.6666666870   0.0000000000   0.8999999930
+    83   1.0000000000   0.0000000000   0.8499999940
+    84   0.3333333430   1.0000000000   0.6666666870
+    85   0.6666666870   1.0000000000   0.6666666870
+    86   1.0000000000   1.0000000000   0.6666666870
+    87   0.3333333430   1.0000000000   0.3333333430
+    88   0.3333333430   1.0000000000   0.0000000000
+    89   0.6666666870   1.0000000000   0.3333333430
+    90   1.0000000000   1.0000000000   0.3333333430
+    91   0.6666666870   1.0000000000   0.0000000000
+    92   1.0000000000   1.0000000000   0.0000000000
+    93   0.0000000000   0.6666666870   0.6666666870
+    94   0.3333333430   0.6666666870   0.6666666870
+    95   0.6666666870   0.6666666870   0.6666666870
+    96   1.0000000000   0.6666666870   0.6666666870
+    97   0.3333333430   0.3333333430   0.6666666870
+    98   0.0000000000   0.3333333430   0.6666666870
+    99   0.3333333430   0.0000000000   0.6666666870
+   100   0.0000000000   0.0000000000   0.6666666870
+   101   0.0000000000   0.6666666870   0.3333333430
+   102   0.0000000000   0.6666666870   0.0000000000
+   103   0.3333333430   0.6666666870   0.3333333430
+   104   0.3333333430   0.6666666870   0.0000000000
+   105   0.6666666870   0.3333333430   0.6666666870
+   106   1.0000000000   0.3333333430   0.6666666870
+   107   0.6666666870   0.0000000000   0.6666666870
+   108   1.0000000000   0.0000000000   0.6666666870
+   109   0.6666666870   0.6666666870   0.3333333430
+   110   1.0000000000   0.6666666870   0.3333333430
+   111   0.6666666870   0.6666666870   0.0000000000
+   112   1.0000000000   0.6666666870   0.0000000000
+   113   0.0000000000   0.3333333430   0.3333333430
+   114   0.0000000000   0.0000000000   0.3333333430
+   115   0.0000000000   0.3333333430   0.0000000000
+   116   0.0000000000   0.0000000000   0.0000000000
+   117   0.3333333430   0.3333333430   0.3333333430
+   118   0.6666666870   0.3333333430   0.3333333430
+   119   1.0000000000   0.3333333430   0.3333333430
+   120   0.6666666870   0.0000000000   0.3333333430
+   121   0.3333333430   0.0000000000   0.3333333430
+   122   0.3333333430   0.3333333430   0.0000000000
+   123   0.6666666870   0.3333333430   0.0000000000
+   124   1.0000000000   0.0000000000   0.3333333430
+   125   1.0000000000   0.3333333430   0.0000000000
+   126   0.3333333430   0.0000000000   0.0000000000
+   127   1.0000000000   0.0000000000   0.0000000000
+   128   0.6666666870   0.0000000000   0.0000000000
+*echo on
+incidences
+*echo off
+       1     116     126     122     115     114     121     117     113
+       2     126     128     123     122     121     120     118     117
+       3     128     127     125     123     120     124     119     118
+       4     115     122     104     102     113     117     103     101
+       5     122     123     111     104     117     118     109     103
+       6     123     125     112     111     118     119     110     109
+       7     102     104      88      74     101     103      87      73
+       8     104     111      91      88     103     109      89      87
+       9     111     112      92      91     109     110      90      89
+      10     114     121     117     113     100      99      97      98
+      11     121     120     118     117      99     107     105      97
+      12     120     124     119     118     107     108     106     105
+      13     113     117     103     101      98      97      94      93
+      14     117     118     109     103      97     105      95      94
+      15     118     119     110     109     105     106      96      95
+      16     101     103      87      73      93      94      84      72
+      17     103     109      89      87      94      95      85      84
+      18     109     110      90      89      95      96      86      85
+      19     100      99      97      98      71      79      78      70
+      20      99     107     105      97      79      82      80      78
+      21     107     108     106     105      82      83      81      80
+      22      98      97      94      93      70      78      75      69
+      23      97     105      95      94      78      80      76      75
+      24     105     106      96      95      80      81      77      76
+      25      93      94      84      72      69      75      66      65
+      26      94      95      85      84      75      76      67      66
+      27      95      96      86      85      76      77      68      67
+      28      55      60      59      54      39      44      43      38
+      29      60      63      61      59      44      47      45      43
+      30      63      64      62      61      47      48      46      45
+      31      54      59      56      53      38      43      40      37
+      32      59      61      57      56      43      45      41      40
+      33      61      62      58      57      45      46      42      41
+      34      53      56      50      49      37      40      34      33
+      35      56      57      51      50      40      41      35      34
+      36      57      58      52      51      41      42      36      35
+      37      39      44      43      38      23      28      27      22
+      38      44      47      45      43      28      31      29      27
+      39      47      48      46      45      31      32      30      29
+      40      38      43      40      37      22      27      24      21
+      41      43      45      41      40      27      29      25      24
+      42      45      46      42      41      29      30      26      25
+      43      37      40      34      33      21      24      18      17
+      44      40      41      35      34      24      25      19      18
+      45      41      42      36      35      25      26      20      19
+      46      23      28      27      22       7      12      11       6
+      47      28      31      29      27      12      15      13      11
+      48      31      32      30      29      15      16      14      13
+      49      22      27      24      21       6      11       8       5
+      50      27      29      25      24      11      13       9       8
+      51      29      30      26      25      13      14      10       9
+      52      21      24      18      17       5       8       2       1
+      53      24      25      19      18       8       9       3       2
+      54      25      26      20      19       9      10       4       3
+c
+c                inter_8 interface elements
+c
+      55      71      79      78      70      55      60      59      54
+      56      79      82      80      78      60      63      61      59
+      57      82      83      81      80      63      64      62      61
+      58      70      78      75      69      54      59      56      53
+      59      78      80      76      75      59      61      57      56
+      60      80      81      77      76      61      62      58      57
+      61      69      75      66      65      53      56      50      49
+      62      75      76      67      66      56      57      51      50
+      63      76      77      68      67      57      58      52      51
+*echo on
+c
+blocking automatic
+c
+constraints
+  plane z=0 symmetry
+  plane x=0 symmetry
+  plane y=0 symmetry
+c  1-16 w = 1.0  $ comment this line remove for loading by axial tractions
+c
+loading unit_axial_z
+  element loads
+   46-54 face 2 pressure -1.0
+c
+loading test
+  nonlinear
+c
+c     use steps 1-10 for traction load control
+c
+ step 1-10 unit_axial_z 0.5  $ peak traction is 5.0 load almost to peak
+c
+c     use these steps for displacement control loading w/ cycling
+c
+c  step 1-7 constraints 0.05 $ drives response well beyond peak
+c  step 8 9 10 constraints -0.05 $ reverse loading for some steps
+c  step 11-19 constraints 0.05 $ resume and beyond prior max loading
+c
+nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 1
+   convergence test norm res tol 0.0001 $ really tight for checking !!!
+   time step  0.1
+   trace solution on
+   adaptive solution off
+   batch messages off
+   extrapolate off
+   material messages off
+   show details on
+   consistent q-matrix off
+c
+ crack growth parameters  $ just so we can get cohesive status
+   type of crack growth cohesive
+   ppr displacement fracture for extinction 0.99
+   print status on order elements 55-63
+   force release type steps
+   release steps 5
+c
+list 'fixed-end' z=0   $  defining node sets
+list 'loaded-end' z=2.0
+c
+compute displacements for loading test step 10
+output wide displacements for nodes 'loaded-end'
+output wide reactions for nodes 'fixed-end'
+output wide stresses  7 52 9 54
+c
+stop    $  at this point for load control

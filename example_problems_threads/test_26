@@ -1,0 +1,120 @@
+c
+c
+c
+c  aluminum 2219-T87, middle crack panel. under displacement control
+c  loading, drive crack extension using element extinction coupled
+c  with the stress-modified critical strain model.
+c
+c  the 1/4 symmetry model of 10" x 20" tests
+c  has crack element size of 0.0195313 in. (1 ele. thru .080" thk.)         
+c  geometric nonlinear analysis.
+c
+c
+c  crack extends by 27 elements (cells) in 150 load steps.
+c
+ structure mt_panel
+c
+  stress-strain curve 2
+      0.004774 50.24, 0.00767 55.42, 0.01686 60.00,
+      0.02956 65.41, 0.04688 70.22, 0.0676 72.76, 0.1133 76.16,
+      10000 1000
+c
+   material al2219_T87
+    properties mises e 10524. nu 0.32 curve 2 rho 0.0
+c
+   material void_strip
+   properties mises e 10524 nu 0.32 curve 2 rho 0.0  killable
+c
+number of nodes   4294
+number of elements  1995
+c
+*input from test_26_coords 
+c
+elements
+  1-203  type l3disop nonlinear material void_strip,
+               order 2x2x2 bbar center_output
+  204-1995 type l3disop nonlinear material al2219_T87,
+               order 2x2x2 bbar  center_output
+c
+*input from test_26_incid
+c
+c
+blocking   $    vectorized
+     1    99     1
+     2    98   100
+     3     6   198
+     4   128   204
+     5   128   332
+     6   128   460
+     7   128   588
+     8   128   716
+     9   128   844
+    10   128   972
+    11   128  1100
+    12   128  1228
+    13   128  1356
+    14   128  1484
+    15   125  1612
+    16   115  1737
+    17    77  1852
+    18    33  1929
+    19    21  1962
+    20    11  1983
+    21     2  1994
+c
+c
+*input from test_26_cons $ sym. bc file of all non-loading disp.
+c
+c      imposed uniform extension across remote end. large steps
+c      to blunt tip. reduce once crack starts growing.
+c      loading displacement constraints follow
+c
+   1-10  v  0.001
+c
+ loading disp_ctrl
+   nonlinear
+    step 1-1000 constraints 1.0
+c 
+  nonlinear analysis parameters
+     solution technique direct sparse 
+     maximum iterations 8
+     minimum iterations 2
+     extrapolate on
+     adaptive solution on 
+     material messages off
+     batch messages off
+     convergence test norm residual load tol 0.005
+     nonconvergent solutions stop
+     consistent q-matrix on
+     bbar stabilization factor 0.0
+     linear stiffness iteration one on $ helps convergence at high loads
+c  
+   crack growth parameters
+      type of crack growth smcs
+      crack plane normal y coordinate 0.0
+      force release type traction-separation
+      cell height 0.0195313
+      release fraction 0.1
+      print status on order  1-203
+      kill sequentially on order 37 135 36 134 35 133 34
+      alpha 0.16
+      beta 1.5
+c
+   compute displacements for loading disp_ctrl step 5
+     output reactions 1-10
+   compute displacements for loading disp_ctrl step 10
+c
+*input from test_26_cons
+c
+c   loading displacement constraints follow
+   1-10  v  0.0003
+c
+   compute displacements for loading disp_ctrl step 150
+stop
+
+
+
+
+
+
+

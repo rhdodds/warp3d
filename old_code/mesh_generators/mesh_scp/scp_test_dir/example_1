@@ -1,0 +1,51 @@
+  FILE:  example_1
+  =====  Contains in-put data for the mesh-generating 
+         program Mesh3d_scp.f
+
+         builds a "sharp" crack front model of surface crack.
+         remote end ballons in size (thickness) and creates
+         additional eccentricity of loading.
+
+  NAME 
+  PROGRAM (ABAQUS, ADINA, WARP3D or PATRAN)
+  DATE    (ex. sept. 30, 1994 940930 Europe or 093094 USA)
+  MR    MF        MV      SFRED
+  M1    M2        NA      NATYP   OMEGA
+  MB    NB        ZB_XW   RATE_B
+  LT    LRED      RTYPE
+  ETYP  EL_CH_ZS  SLICE
+  R1    R2        ETA     MY
+  RN    RZERO     QUATERPNT
+  T     W         C       A 
+  Y0    Z10    Z20
+  Y1    Z11    Z21
+  -     -      -
+  -     -      -
+  Ynla  Z1nla  Z2nla
+
+*INDATA
+test
+PATRAN
+980306
+MR=9          MF=8         MV=3         SFRED=0
+M_I=4         M_II=6       NA=12        NATYP=3      OMEGA=0.95
+MB=4          NB=8         ZB_XW=1      RATE_B=1.4
+LT=13         LRED=7       RTYPE=2
+ETYP=8        EL_CH_ZS=2   SLICE=0
+R_I=5.E-3     R_II=8.8E-3  ETA=62.5     MY=1.4
+RN=1.E-4      RZERO=1      ELAST=0 
+T=50.E-3      W=156.E-3    C=44.45E-3   A=20.25E-3
+ 0.0        0.       50.E-3
+ 1.80E-3    0.       50.E-3
+ 3.78E-3    0.       50.E-3
+ 5.9E-3     0.       50.E-3
+ 9.2E-3     0.       50.E-3
+ 16.8E-3    0.       50.E-3
+ 28.9E-3    0.       50.E-3
+ 50.0E-3    0.       50.E-3
+ 80.0E-3    0.       50.E-3
+ 125.E-3  -12.5E-3   57.5E-3
+ 170.E-3  -25.E-3    65.E-3
+ 210.E-3  -25.E-3    65.E-3
+ 265.E-3  -25.E-3    65.E-3
+ 320.E-3  -25.E-3    65.E-3

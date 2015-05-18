@@ -1,0 +1,9 @@
+ output displacements 'top_nodes'
+ output reactions totals only nodes 'bottom_nodes'
+ output wide stresses 425 420
+ output flat stream displacements
+ output flat stream stresses
+ output patran formatted displacements
+ output patran formatted stresses
+ output patran formatted strains
+         

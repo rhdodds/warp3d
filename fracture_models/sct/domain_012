@@ -1,0 +1,17 @@
+c     
+c       Twelveth layer from the center plane
+c
+domain dnr_012
+   symmetric
+   normal plane nx 0  ny -1.0  nz 0
+   node set 11   4921  4922  4923  4924  4925  4926  4927  4928,
+             4929  4930  4931  4932  4933  4934  4935  4936  4937
+   node set 12   5413  5414  5415  5416  5417  5418  5419  5420,
+             5421  5422  5423  5424  5425  5426  5427  5428  5429
+   node set 13   5905  5906  5907  5908  5909  5910  5911  5912,
+             5913  5914  5915  5916  5917  5918  5919  5920  5921
+   front node sets  11  12  13 linear
+   q-values automatic rings 15-24
+   function type b
+   print totals
+   compute domain integral

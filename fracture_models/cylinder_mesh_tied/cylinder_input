@@ -1,0 +1,192 @@
+c
+c
+c     complex example of mesh tieing in a cracked cyclinder
+c     =====================================================
+c
+c     Units:  kips, in.
+c
+c     Geometry:
+c      o  wall thickness 1.0 in.
+c      o  length 21.0 in.
+c      o  generator axis: global X-axis
+c      o  internal radius 9.0 in.
+c      o  external, circumferential surface crack (semi-elliptical)
+c      o  depth a 0.5 in.
+c      o  length 2c 1.0 in.
+c
+c     Material:
+c      o  linear-elastic, isotropic
+c
+c     Model:
+c      o entire cyclinder modeled
+c      o 20 node hex elements, 2x2x2 integration
+c      o refined crack region connected to topologically mismatched
+c        coarse mesh region on 4 surfaces using mesh tieing
+c      o model can be run (i.e. is not singular) w/o mesh tieing if 
+c        desired to study performance
+c      o X=0 plane constraint to u=0, minumim of other nodes
+c        constrained to prevent rigid body motion
+c
+c     Crack:
+c      o mesh has collapsed hex-20 elements along front
+c      o mid-side nodes re-positioned at 1/4 pt location on edge
+c      o elements have repeated nodes in the incidences to model
+c        linear-elastic singularity
+c        
+c      
+structure vessel
+number of nodes 35378 elements 7504
+material mat1
+  properties  mises e 30000 nu 0.3 yld_pt 100.0e10  n_power   10
+material mat2
+  properties  mises e 30000 nu 0.3 yld_pt 100.0e10  n_power   10
+elements
+c    
+c           elements in the refined crack region
+c
+  1-6864 type q3disop linear material mat1,
+                   order 2x2x2  center_output short     
+c
+c           elements in remainder of cylinder tied to crack region
+c
+  6865-7504 type q3disop linear material mat2,
+                   order 2x2x2 center_output short  
+c
+*echo off
+*input from file "incid_coords"
+blocking   $    scalar
+       1     128       1
+       2     128     129
+       3     128     257
+       4     128     385
+       5     128     513
+       6     128     641
+       7     128     769
+       8     128     897
+       9     128    1025
+      10     128    1153
+      11     128    1281
+      12     128    1409
+      13     128    1537
+      14     128    1665
+      15     128    1793
+      16     128    1921
+      17     128    2049
+      18     128    2177
+      19     128    2305
+      20     128    2433
+      21     128    2561
+      22     128    2689
+      23     128    2817
+      24     128    2945
+      25     128    3073
+      26     128    3201
+      27     128    3329
+      28     128    3457
+      29     128    3585
+      30     128    3713
+      31     128    3841
+      32     128    3969
+      33     128    4097
+      34     128    4225
+      35     128    4353
+      36     128    4481
+      37     128    4609
+      38     128    4737
+      39     128    4865
+      40     128    4993
+      41     128    5121
+      42     128    5249
+      43     128    5377
+      44     128    5505
+      45     128    5633
+      46     128    5761
+      47     128    5889
+      48     128    6017
+      49     128    6145
+      50     128    6273
+      51     128    6401
+      52     128    6529
+      53     128    6657
+      54     128    6785
+      55     128    6913
+      56     128    7041
+      57     128    7169
+      58     128    7297
+      59      80    7425
+c 
+ *input from file "mesh_tieing"
+c
+*echo on
+loading unit_axial_stress
+ element loads
+  7249  7250  7251  7252  7253  7254  7255  7256,
+  7257  7258  7259  7260  7261  7262  7263  7264,
+  7265  7266  7267  7268  7269  7270  7271  7272,
+  7273  7274  7275  7276  7277  7278  7279  7280,
+  7377  7378  7379  7380  7381  7382  7383  7384,
+  7385  7386  7387  7388  7389  7390  7391  7392,
+  7393  7394  7395  7396  7397  7398  7399  7400,
+  7401  7402  7403  7404  7405  7406  7407,
+  7408 face 6 pressure -1.0
+c
+constraints
+ 31451 31452 31453 31475 31476 31477 31478 31479,
+ 31480 31481 31482 31483 31484 31485 31486 31487,
+ 31488 31489 31490 31491 31492 31493 31494 31495,
+ 31496 31497 31498 31499 31500 31501 31502 31503,
+ 31504 31505 31506 31508 31509 31510 31511 31544,
+ 31545 31546 31547 31569 31570 31571 31638 31735,
+ 31736 31737 u 0.0
+ 31762  u 0.0 v 0.0 w 0.0
+ 31857 u 0.0 v 0.0
+ 31763 31764 31765 31766 31767 31768 31769 31770,
+ 31771 31772 31773 31774 31775 31776 31777 31778,
+ 31779 31780 31781 31782 31783 31784 31785 31786,
+ 31787 31788 31789 31790 31791 31792 31793 31794,
+ 31795 31796 31797 31798 31800 31801 31825 31826,
+ 31827 31828 31829 31830 32575 32576 32577 32579,
+ 32580 32581 32583 32584 32585 32653 32654 32655,
+ 32656 32657 32658 32659 32660 32661 32663 32664,
+ 32666 32667 32669 32670 32672 32673 32675 32676,
+ 32677 32678 32679 32681 32682 32683 32684 32686,
+ 32687 32689 32690 32691 32693 32694 32695 32697,
+ 32698 32700 32701 32703 32704 32705 32707 32708,
+ 32709 32711 32713 32714 32716 32717 32719 32720,
+ 32722 32724 32726 32727 32729 32730 32732 32734,
+ 32735 32737 32738 32740 32741 32743 32744 32745,
+ 32753 32755 32857 32858 32860 33091 33092 33093,
+ 33356 33357 33358 33359 33361 33362 33364 33365,
+ 33437 33438 33439 33440 33441 33442 33443 33444,
+ 33445 33446 33447 33448 33449 33450 33451 33452,
+ 33453 33454 33455 33456 33457 33458 33459 33460,
+ 33461 33462 33464 33465 33466 33467 33469 33470,
+ 33472 33473 33474 33475 33477 33478 33479 33481,
+ 33482 33484 33486 33488 33490 33492 33493 33495,
+ 33497 33498 33500 33502 33503 33505 33507 33508,
+ 33510 33511 33513 33514 33516 33517 33519 33520,
+ 33597 33599 33601 33603 u 0.0
+
+*echo on
+ loading pull
+  nonlinear
+    step 1 2 unit_axial_stress 50
+c 
+ nonlinear analysis parameters
+   display tied mesh mpcs off
+   solution technique direct sparse 
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions continue
+   time step 1.0e06
+   trace solution on
+c 
+c    compute step 1 and make a restart file.
+c    J and K values computed in restart
+c    (this tests lots of the code!)
+c
+ compute displacements for loading pull step 1
+  save to "cylinder.db"
+c
+stop

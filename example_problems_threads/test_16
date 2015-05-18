@@ -1,0 +1,118 @@
+c
+c
+c ONE BLOCK
+c
+c	This is a test of pressure loading for a geometrically nonlinear
+c       case.  The top four nodes of a cube are warped by 10% in different
+c       directions, and then pressure loads are applied to all faces
+c	except for the bottom face.  Previously, this test case was run
+c	with debug flags on inside elem_load.f in the get_norm2 routine;
+c	this confirmed that the face normals for geometrically nonlinear
+c	problems were being calculated correctly.  Thus as long as the
+c	answers from this problem are the same as from the HP version,
+c	then the normals are being calculated correctly.
+c
+c	Material is linear_elastic.  10 steps are used to move the
+c	originally cubic element into its deformed configuration, then
+c	the pressure loads are applied in the 11th step.
+c
+structure warp3d_model
+c
+c
+material default
+    properties linear_elastic e 1.0 nu 0.0
+c
+c
+number of nodes      8
+number of elements     1
+c
+coordinates
+     1   .000000000E+00   .000000000E+00   .000000000E+00
+     2   .100000000E+01   .000000000E+00   .000000000E+00
+     3   .100000000E+01   .100000000E+01   .000000000E+00
+     4   .000000000E+00   .100000000E+01   .000000000E+00
+     5   .000000000E+00   .000000000E+00   .100000000E+01
+     6   .100000000E+01   .000000000E+00   .100000000E+01
+     7   .100000000E+01   .100000000E+01   .100000000E+01
+     8   .000000000E+00   .100000000E+01   .100000000E+01
+c
+elements
+c   for config number   1
+              1 type l3disop nonlinear material default no_bbar
+c
+incidences
+     1     5     1     4     8     6     2     3     7
+c
+c
+blocking
+     1     1     1
+c
+constraints
+     1 2 5 6 u 0.0 v 0.0 w 0.0
+
+c
+     4  u -.01 v  .01 w  .01
+     7  u  .01 v -.01 w  .01
+     3  u -.01 v  .01 w -.01
+     8  u  .01 v -.01 w -.01
+c
+c
+c
+ loading dummy
+   nodal loads
+     1 force_y 0.0
+c
+ loading set_02
+  element loads
+     1  face 1 pressure 1.1 face 2 pressure 2.3 face 4 pressure 3.5 ,
+                face 5 pressure -.98 face 6 pressure 2.6
+c
+ loading load
+  nonlinear
+    steps 1-10 dummy 1.0
+    step    11 set_02 .01
+c
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   convergence test norm res tol .01
+   adaptive off
+   time step 100000
+   trace solution on
+   extrapolate off
+   material messages on
+c
+c
+ compute displacements for loading load step 1
+ output displacements 1-8
+ output stresses strains 1
+ output patran formatted displacements
+c
+ compute displacements for loading load step 2-10
+ output displacements 1-8
+ output stresses strains 1
+ output patran formatted displacements
+c
+constraints
+     1      u     .000000E+00      v     .000000E+00      w 0.0
+     2      v     .000000E+00      w     .000000E+00
+     5      u     .000000E+00      v     .000000E+00
+     6      v     .000000E+00
+c
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   convergence test norm res tol .01
+   adaptive off
+   time step 100000
+   trace solution on
+   extrapolate off
+   material messages on
+c
+ compute displacements for loading load step 11
+ output displacements 1-8
+ output stresses strains 1
+ output patran formatted displacements
+c
+stop
