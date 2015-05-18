@@ -1,6 +1,5 @@
 # warp3d
-Open Source Static and Dynamic Nonlinear Analysis of Solids
-For Windows, Linux and Mac OS X Computers
+Open Source Static and Dynamic Nonlinear Analysis of Solids:  Windows, Linux and Mac OS X Computers
 
 WARP3D is under continuing development as a research code for the solution of large-scale, 3-D solid models subjected to static and dynamic loads. The capabilities of the code focus on fatigue & fracture analyses primarily in metals. WARP3D runs on laptops-to-supercomputers and can analyze models with several million nodes and elements.
 
