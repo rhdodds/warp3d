@@ -1,0 +1,119 @@
+c
+c           declaration of data structure used to communicate between
+c           WARP3D and the user_solution_params routine
+c
+c           See Section 2.10 of User Manual for more details. The
+c           variables below have 1-to-1 correspondence with 
+c           user input commands.
+c
+      integer, parameter :: h_prec = selected_real_kind(12)
+c      
+      type :: solution_parameters
+c      
+       real (h_prec)  :: simulation_time
+       real (h_prec)  :: time_step 
+       real (h_prec)  :: newmark_beta
+c       
+       integer :: maximum_iterations ! global Newton
+       integer :: minimum_iterations ! global Newton
+       logical :: nonconvergent_solutions_flag ! .true. = halt
+       logical :: adaptive_solution ! .true. = on
+       logical :: extrapolate_solution ! .true. = on
+       real (h_prec) :: extrapolate_multiplier ! normally not
+c                                                set by user       
+c       
+       logical :: convergence_test_1 ! .true. = on
+       real (h_prec) :: convergence_test_1_tolerance
+       logical :: convergence_test_2 ! .true. = on
+       real (h_prec) :: convergence_test_2_tolerance
+       logical :: convergence_test_3 ! .true. = on
+       real (h_prec) :: convergence_test_3_tolerance
+       logical :: convergence_test_4 ! .true. = on
+       real (h_prec) :: convergence_test_4_tolerance
+c       
+       logical :: k_linear_iteration_1_all_steps
+       logical :: k_linear_iteration_1_next_step_only
+c       
+       logical :: batch_messages ! .true. = on
+       real    :: wall_time_limit_seconds ! = 0 no limit
+       logical :: material_messages ! .true. = on
+       logical :: trace_solution ! .true. = on
+c
+       real (h_prec) :: bbar_stabiliation_factor
+       logical :: consistent_q_matrix ! .true. = on
+c
+       real (h_prec) :: reset_load_reduction_factor 
+      end type
+
+      
+      type :: step_definition
+        real (h_prec) :: constraints_multiplier
+        integer :: number_load_patt
+        integer :: load_patt_nums(10) 
+        real (h_prec) :: load_patt_multipliers(10)
+        character(len=8) :: load_patt_ids(10)
+      end type
+
+      
+c  number_load_patt:  the number of loading patterns defined
+c                     for next load (time) step. Does not include 
+c                     constraints in the list
+c  load_patt_nums:    internal (integer) numbers for loading
+c                     patterns
+c  load_patt_ids:     corresponding 8-char name the user gave the
+c                     loading pattern in input
+c  load_patt_multipliers: 
+c
+c       The user routine may change the number_load_patt,
+c       load_patt_nums,  load_patt_multipliers but
+c       load_patt_ids. But load_patt_nums and ids must be
+c       consistent with input data.
+c     
+c
+c      
+c    where are variables in WARP3D system ? (for documentation)
+c      
+c    time_step      dt  common.main
+c      
+c    newmark_beta    nbeta  common.main
+c      
+c    maximum_iterations    mxiter common.main
+c      
+c    minimum_iterations    mniter   common.main
+c    
+c    nonconvergent_solutions_flag    halt  common.main
+c    
+c    adaptive_solution        adaptive_flag  common.main
+c    
+c    extrapolate_solution     predct   common.main
+c    
+c    extrapolate_multiplier    prdmlt   common.main
+c    
+c    convergence_test_1    testyp=1, convrg(1) common.main  (norm displ)
+c    convergence_test_1_tolerance       tol(1) common.main
+c    
+c    convergence_test_2    testyp=2, convrg(2) common.main (norm residual)
+c    convergence_test_2_tolerance    tol(2)    common.main 
+c    
+c    convergence_test_3    testyp=3, convrg(3) common.main (max displ)
+c    convergence_test_3_tolerance    tol(3)    common.main 
+c    
+c    convergence_test_4    testyp=4, convrg(4) common.main  (max residual)
+c    convergence_test_4_tolerance    tol(4)    common.main 
+c    
+c    k_linear_iteration_1_all_steps    lnkit1    common.main
+c    k_linear_iteration_1_next_step_only linstf_nxt_step  common.main
+c    
+c    
+c    batch_messages batch_messages  common.main
+c    wall_time_limit_seconds  time_limit common.main  (need to call step_time option 4)
+c    material_messages   signal_flag   common.main
+c    trace_solution      trace(1)  common.main
+c
+c    bbar_stabiliation_factor    eps_bbar    common.main
+c    consistent_q_matrix         qbar_flag   common.main
+c
+c    reset_load_reduction_factor    perm_load_fact   mod damage_data  (see insave_value)
+c
+c      
+c

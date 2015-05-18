@@ -1,0 +1,200 @@
+c
+$add param_def
+c
+c
+c#######################################################################
+c#######################################################################
+c
+c
+      common/dvsoln/ u(mxdof), v(mxdof), a(mxdof), du(mxdof),
+     & idu(mxdof), load(mxdof),
+     & res(mxdof), ifv(mxdof), c(mxncor)
+c
+      common/lsoln/ temperatures
+c=======================================================================
+c
+      common/dsgenr/ dt,nbeta,stplen,aparm,bparm,cparm,eparm,fparm,
+     & emax,fmax,prdmlt,total_mass,ext_work,beta_fact,
+     & total_model_time, eps_bbar
+c
+c
+c#######################################################################
+c#######################################################################
+c
+c
+      common/rmgenr/ props(mxelpr,mxel),
+     & times(mxtim,2),strtm, time_limit,
+     & user_cnstrn_stp_factors(mxstep),
+     & actual_cnstrn_stp_factors(mxstep)
+c
+c
+c#######################################################################
+c#######################################################################
+c
+c
+      common/lvgenr/ stpchk(mxstep), trace(ntrc), convrg(10),
+     &               lcnvrg(10)
+c
+c=======================================================================
+c
+      common/lsgenr/ prnres,updstf,nostif,halt,lkcomp,
+     & linstf_nxt_step,linmas,newstf,tkcomp,newcns,accsol,predct,
+     & zrocon, newtrn,newmas,lnkit1,incflg,ifvcmp,cnldcp,prlres,
+     & input_ok, adaptive_flag, new_constraints, batch_messages,
+     & signal_flag, scalar_blocking, growth_k_flag,
+     & qbar_flag, solver_out_of_core, show_details, new_analysis_param,
+     & sparse_stiff_output, sparse_stiff_binary, solver_threads,
+     & sparse_research, solver_mkl_iterative
+c
+c
+c#######################################################################
+c#######################################################################
+c
+c
+      common/cvgenr/ lodnam(mxlc), lodtyp(mxlc), matnam(mxmat),
+     & elelib(mxlbel), snames(mxstc)
+c
+c=======================================================================
+c
+      common/csgenr/ stname, lsldnm, solver_scr_dir,
+     &               sparse_stiff_file_name
+c
+c
+c#######################################################################
+c#######################################################################
+c
+c
+      common/dconverge/ tol(mxcvtests), sum_ifv, sum_loads
+      common/iconverge/ num_term_ifv, num_term_loads
+c
+c
+c#######################################################################
+c=======================================================================
+c
+      common/enrgy/ internal_energy, plastic_work, killed_ele_pls_work,
+     &              killed_ele_int_work
+c
+c=======================================================================
+c
+c
+      common/ivmaps/ dstmap(mxnod), gpmap(mxtgp),
+     & cstmap(mxdof), cp(mxedof), dcp(mxedof), icp(mxutsz,2)
+c
+c=======================================================================
+c
+      common/ivlsts/ matlst(mxmat), lodlst(mxlc),
+     & prslst(mxlsz), plrlst(mxlsz)
+c
+c=======================================================================
+c
+      common/ivgenr/ stprng(mxlc), state(mxtgp), bits(31)
+c
+c=======================================================================
+c
+      common/immaps/ outmap(mxlbel,mxelmp), elblks(0:3,mxnmbl)
+c
+c=======================================================================
+c
+      common/isheds/ mathed,csthed,lodhed
+c
+c=======================================================================
+c
+      common/istops/ inctop,crdtop
+c
+c=======================================================================
+c
+      common/issizs/ noelem,nonode,nummat,nogp,numcol,
+     & nodof,nlibel,numlod,nprs,nplrs,numstc,nelblk,numgrp,
+     & lgnmcn,mxiter,mniter,lgoump,mxlitr
+c
+c=======================================================================
+c
+      common/isgenr/ in,out,histep,lowstp,ltmstp,restrt,
+     & force_k_update, num_warn, num_error, num_fatal,
+     & solver_flag, old_solver_flag, solver_memory
+c
+c======================================================================
+c
+      common/scaling/ scaling_adapt, scaling_factor
+c
+c======================================================================
+c
+      common/intmpi/ myid, numprocs, MPI_VAL, blk_ptr_head,
+     &		     MPI_DOF_LOCAL, num_dof_local, proc_pids,
+     &               douextdb
+c
+      common /logmpi/ root_processor, slave_processor, use_mpi
+c
+      common /intomp/ num_threads
+c
+c
+c
+c#######################################################################
+c#######################################################################
+c
+c
+      dimension iprops(mxelpr,mxel)
+      dimension blk_ptr_head(0:max_procs - 1),
+     &     MPI_DOF_LOCAL(0:max_procs-1), num_dof_local(0:max_procs-1),
+     &     proc_pids(1:max_procs-1)
+c
+c
+      real props, times, strtm, time_limit,
+     &     user_cnstrn_stp_factors, actual_cnstrn_stp_factors
+c
+c
+#dbl      double precision
+#sgl      real
+     &    u,v,a,du,idu,load,res,ifv,
+     &    c
+c
+      logical temperatures
+c
+#dbl      double precision
+#sgl      real
+     &       internal_energy, plastic_work, killed_ele_pls_work,
+     &       killed_ele_int_work
+c
+#dbl      double precision
+#sgl      real
+     &       dt,nbeta,stplen,aparm,bparm,cparm,eparm,fparm,
+     &       emax,fmax,prdmlt, total_mass, ext_work, beta_fact,
+     &       total_model_time, eps_bbar
+
+c
+#dbl      double precision
+#sgl      real
+     &       tol,ltol,sum_ifv,sum_loads
+c
+#dbl      double precision
+#sgl      real
+     &       scaling_adapt, scaling_factor
+c
+c
+      logical stpchk, trace, convrg, lcnvrg, lprops(mxelpr,mxel)
+c
+      logical prnres,updstf,nostif,halt,lkcomp,linmas,
+     &    linstf_nxt_step, newstf,tkcomp,newcns,prlres,accsol,predct,
+     &    zrocon, newtrn,newmas,lnkit1,incflg,ifvcmp,cnldcp,
+     &    input_ok, adaptive_flag, new_constraints, batch_messages,
+     &    signal_flag, scalar_blocking, growth_k_flag, qbar_flag,
+     &    solver_out_of_core, show_details, new_analysis_param,
+     &    sparse_stiff_output, sparse_stiff_binary, sparse_research,
+     &    solver_mkl_iterative
+c
+      logical root_processor, slave_processor, use_mpi
+c
+      logical use_omp
+c
+      character*8 lodnam, lodtyp, elelib, snames, stname,
+     &            lsldnm
+      character*24 matnam
+c
+      character*80 solver_scr_dir, sparse_stiff_file_name
+c
+      equivalence (props,iprops), (props,lprops)
+
+
+
+
+

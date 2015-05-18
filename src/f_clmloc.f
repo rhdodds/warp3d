@@ -1,0 +1,14 @@
+      INTEGER FUNCTION CLMLOC(COL)
+      IMPLICIT INTEGER (A-Z)
+C
+      STPOS= 0
+      DO 10 I= 1,COL-1
+         STPOS= STPOS+COL-I
+ 10   CONTINUE  
+C
+      CLMLOC= STPOS
+C
+C
+      RETURN
+      END
+

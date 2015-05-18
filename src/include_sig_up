@@ -1,0 +1,169 @@
+c
+c              declaration of local arrays to be allocated on the
+c              stack for strain-stress updating. this
+c              enables blocks of elements to be processed
+c              in parallel.
+c
+      integer, parameter :: h_prec = selected_real_kind(12)
+c
+c           Secondary type for CP crystal properties
+      type :: crystal_properties
+            double precision, dimension(6,6) :: init_elast_stiff
+            double precision, dimension(3) :: init_angles
+            double precision, dimension(3,3) :: rotation_g
+            double precision, dimension(6,max_slip_sys) :: ms
+            double precision, dimension(3,max_slip_sys) :: qs
+            double precision, dimension(3,max_slip_sys) :: ns
+            double precision :: rateN, tauHat_y, Go_y, burgers,
+     &            p_v, q_v, p_y, q_y,
+     &            boltzman, theta_o, eps_dot_o_y,
+     &            mu_o, D_o, eps_dot_o_v,
+     &            tau_a, t_o,  tauHat_v, Go_v,
+     &            k_o, tau_y, tau_v, voche_m, u1, u2, u3, u4,
+     &            u5, u6
+            integer :: nslip, h_type
+      end type
+c
+      type :: nonlinear_sigeps_work
+c
+       real (h_prec), allocatable :: ce_0(:,:)                ! (mxvl,mxecor)
+       real (h_prec), allocatable :: ce_n(:,:)                ! (mxvl,mxecor)
+       real (h_prec), allocatable :: ce_mid(:,:)              ! (mxvl,mxecor)
+       real (h_prec), allocatable :: ce_n1(:,:)               ! (mxvl,mxecor)
+       real (h_prec), allocatable :: trnmte(:,:,:)            ! (mxvl,mxedof,mxndof)
+       real (h_prec), allocatable :: det_j(:,:)               ! (mxvl,mxgp)
+       real (h_prec), allocatable :: det_j_mid(:,:)           ! (mxvl,mxgp)
+       real (h_prec) :: weights(mxgp)
+       real (h_prec), allocatable :: nxi(:,:)                 ! (mxndel,mxgp)
+       real (h_prec), allocatable :: neta(:,:)                ! (mxndel,mxgp)
+       real (h_prec), allocatable :: nzeta(:,:)               ! (mxndel,mxgp)
+       real (h_prec), allocatable :: gama(:,:,:,:)            ! (mxvl,3,3,mxgp)
+       real (h_prec), allocatable :: gama_mid(:,:,:,:)        ! (mxvl,3,3,mxgp)
+       real (h_prec), allocatable :: fn(:,:,:)                ! (mxvl,3,3)
+       real (h_prec), allocatable :: fn1(:,:,:)               ! (mxvl,3,3)
+       real (h_prec), allocatable :: dfn1(:)	              ! (mxvl)
+       real (h_prec), allocatable :: vol_block(:,:,:)         ! (mxvl,8,3) )
+       real (h_prec), allocatable :: volume_block(:)          ! (mxvl)
+       real (h_prec), allocatable :: volume_block_0(:)        ! (mxvl)
+       real (h_prec), allocatable :: volume_block_n(:)        ! (mxvl)
+       real (h_prec), allocatable :: volume_block_n1(:)       ! (mxvl)
+       real (h_prec), allocatable :: jac(:,:,:)               ! (mxvl,3,3)
+       real (h_prec), allocatable :: b(:,:,:)                 ! (mxvl,mxedof,nstr)
+       real (h_prec), allocatable :: ue(:,:)                  ! (mxvl,mxedof)
+       real (h_prec), allocatable :: due(:,:)                 ! (mxvl,mxedof)
+       real (h_prec), allocatable :: uenh(:,:)                ! (mxvl,mxedof)
+       real (h_prec), allocatable :: uen1(:,:)                ! (mxvl,mxedof)
+       real (h_prec), allocatable :: urcs_blk_n(:,:,:)        ! (mxvl,nstrs,mxgp)
+       real (h_prec), allocatable :: urcs_blk_n1(:,:,:)       ! (mxvl,nstrs,mxgp)
+       real (h_prec), allocatable :: rot_blk_n1(:,:,:)        ! (mxvl,9,mxgp)
+       real (h_prec), allocatable :: rtse(:,:,:)              ! (mxvl,nstr,mxgp)
+       real (h_prec), allocatable :: elem_hist1(:,:,:), elem_hist(:,:,:)
+       real (h_prec), allocatable :: ddtse(:,:,:)             ! (mxvl,nstr,mxgp)
+       real (h_prec), allocatable :: strain_n(:,:,:)          ! (mxvl,nstr,mxgp)
+       real (h_prec), allocatable :: dtemps_node_blk(:,:)     ! (mxvl,mxndel)
+       real (h_prec), allocatable :: temps_ref_node_blk(:,:)  ! (mxvl,mxndel)
+       real (h_prec), allocatable :: temps_node_blk(:,:)      ! (mxvl,mxndel)
+       real (h_prec), allocatable :: temps_node_ref_blk(:,:)  ! (mxvl,mxndel)
+       real (h_prec), allocatable :: cohes_temp_ref(:)        ! (mxvl)
+       real (h_prec), allocatable :: cohes_dtemp(:)           ! (mxvl)
+       real (h_prec), allocatable :: cohes_temp_n(:)          ! (mxvl)
+       real (h_prec), allocatable :: nu_vec(:)                ! (mxvl)
+       real (h_prec), allocatable :: beta_vec(:)              ! (mxvl)
+       real (h_prec), allocatable :: h_vec(:)                 ! (mxvl)
+       real (h_prec), allocatable :: e_vec(:)                 ! (mxvl)
+       real (h_prec), allocatable :: sigyld_vec(:)            ! (mxvl)
+       real (h_prec), allocatable :: alpha_vec(:,:)           ! (mxvl,6)
+       real (h_prec), allocatable :: e_vec_n(:)               ! (mxvl)
+       real (h_prec), allocatable :: nu_vec_n(:)              ! (mxvl)
+       real (h_prec), allocatable :: gp_sig_0_vec(:)          ! (mxvl)
+       real (h_prec), allocatable :: gp_sig_0_vec_n(:)        ! (mxvl)
+       real (h_prec), allocatable :: gp_h_u_vec(:)            ! (mxvl)
+       real (h_prec), allocatable :: gp_h_u_vec_n(:)          ! (mxvl)
+       real (h_prec), allocatable :: gp_beta_u_vec(:)         ! (mxvl)
+       real (h_prec), allocatable :: gp_beta_u_vec_n(:)       ! (mxvl)
+       real (h_prec), allocatable :: gp_delta_u_vec(:)        ! (mxvl)
+       real (h_prec), allocatable :: gp_delta_u_vec_n(:)      ! (mxvl)
+       real (h_prec), allocatable :: alpha_vec_n(:,:)         ! (mxvl,6)
+       real (h_prec), allocatable :: h_vec_n(:)               ! (mxvl)
+       real (h_prec), allocatable :: n_power_vec(:)           ! (mxvl)
+       real (h_prec), allocatable :: f0_vec(:)                ! (mxvl)
+       real (h_prec), allocatable :: eps_ref_vec(:)           ! (mxvl)
+       real (h_prec), allocatable :: m_power_vec(:)           ! (mxvl)
+       real (h_prec), allocatable :: q1_vec(:)                ! (mxvl)
+       real (h_prec), allocatable :: q2_vec(:)                ! (mxvl)
+       real (h_prec), allocatable :: q3_vec(:)                ! (mxvl)
+       real (h_prec), allocatable :: nuc_s_n_vec(:)           ! (mxvl)
+       real (h_prec), allocatable :: nuc_e_n_vec(:)           ! (mxvl)
+       real (h_prec), allocatable :: nuc_f_n_vec(:)           ! (mxvl)
+
+c
+       real (h_prec), allocatable :: eps_curve(:)             ! (max_seg_points)
+       real (h_prec), allocatable :: shape(:,:)               ! (mxndel,mxgp)
+       real (h_prec), allocatable :: characteristic_length(:) ! (mxvl)
+       real (h_prec), allocatable :: intf_prp_block(:,:)      ! (mxvl,50)
+       real (h_prec), allocatable :: cohes_rot_block(:,:,:)   ! (mxvl,3,3)
+       real (h_prec), allocatable :: enode_mat_props(:,:,:)   ! (mxndel,mxvl,mxndpr)
+       real (h_prec), allocatable :: tan_e_vec(:)             ! (mxvl)
+       real (h_prec), allocatable :: fgm_flags(:,:)           ! (mxvl,mxndpr)
+       real (h_prec), allocatable :: mm05_props(:,:)          ! (mxvl,10)
+       real (h_prec), allocatable :: mm06_props(:,:)          ! (mxvl,5)
+       real (h_prec), allocatable :: mm07_props(:,:)          ! (mxvl,10)
+       real (h_prec), allocatable :: umat_props(:,:)          ! (mxvl,50)
+c
+       real (h_prec), allocatable ::   ! nonlocal cohesive support
+     &            top_surf_solid_stresses_n(:,:),             ! (mxvl,nstrs)
+     &            bott_surf_solid_stresses_n(:,:),            ! (mxvl,nstrs)
+     &            top_surf_solid_eps_n(:,:),                  ! (mxvl,nstr)
+     &            bott_surf_solid_eps_n(:,:),                 ! (mxvl,nstr)
+     &            nonlocal_stvals_bott_n(:,:),                ! (mxvl,nxx)
+     &            nonlocal_stvals_top_n(:,:)                  ! (mxvl,nxx)
+c
+c             where nxx above = nonlocal_shared_state_size
+
+       integer, allocatable :: top_surf_solid_elements(:),    ! (mxvl)
+     &                         bott_surf_solid_elements(:)
+       integer, allocatable :: top_solid_matl(:),             ! (mxvl)
+     &                         bott_solid_matl(:),
+     &                         nstacks(:), nper(:)
+
+c
+       real (h_prec) :: dt, total_model_time, time_n, beta_fact,
+     &   block_energy, eps_bbar, block_plastic_work, step_scale_fact,
+     &   alpha_dmg, ls, ll, lt
+       real (h_prec), dimension(3) :: sv, lv, tv
+c
+       integer :: felem, elem_type, matnum, int_order, mat_type,
+     &            num_enodes, num_enode_dof, totdof,
+     &            num_int_points, span, iter, step, gpn,
+     &            number_points, cohes_type, curve_set_number,
+     &            surface, hist_size_for_blk, iout, blk,
+     &            umat_stress_type, cep_sym_size, num_threads,
+     &            inter_mat, macro_sz, cp_sz 
+c
+       logical, allocatable ::  trne(:,:)                     ! (mxvl,mxndel)
+
+       logical :: geo_non_flg, bbar_flg, trn_e_block,
+     &            trn_e_flags(mxvl),
+     &            first, material_cut_step, signal_flag,
+     &            adaptive_flag, temperatures, lnelas_vec(mxvl),
+     &            nuc_vec(mxvl), nonlinear_flag(mxvl), allow_cut,
+     &            segmental, power_law, temps_node_to_process,
+     &            temperatures_ref, fgm_enode_props, is_cohes_elem,
+     &            linear_displ_elem, adjust_const_elem,
+     &            is_axisymm_elem, killed_status_vec(mxvl),
+     &            block_killed, is_umat, is_solid_matl, is_crys_pls,
+     &            compute_f_bar, compute_f_n, is_cohes_nonlocal,
+     &            is_inter_dmg
+c     Added stuff for CP
+      logical, allocatable :: debug_flag(:)                   ! mxvl
+      double precision, allocatable :: local_tol(:)           ! mxvl
+      integer, allocatable :: ncrystals(:)                    ! mxvl
+      integer, allocatable :: angle_type(:)                   ! mxvl
+      integer, allocatable :: angle_convention(:)             ! mxvl
+      type(crystal_properties), allocatable :: c_props(:,:)   ! mxvl,max_crystals
+
+c
+      end type
+c
+      type (nonlinear_sigeps_work) :: local_work
+

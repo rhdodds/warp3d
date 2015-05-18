@@ -1,0 +1,76 @@
+c
+c              declaration of local arrays to be allocated on the
+c              stack for linear stiffness generation. this
+c              enables blocks of elements to be processed
+c              in parallel.
+c
+      integer, parameter :: h_prec = selected_real_kind(12)
+c
+      type :: linear_ek_work
+c
+#dec        sequence
+#hpu        sequence
+#h11        sequence
+#hpi        sequence
+#r60        sequence
+#sgi        sequence
+       real (h_prec), allocatable :: ce(:,:)
+       real (h_prec), allocatable :: trnmte(:,:,:)
+       real (h_prec), allocatable :: det_jac_block(:,:)
+       real (h_prec), allocatable :: shape(:,:)
+       real (h_prec), allocatable :: nxi(:,:)
+       real (h_prec), allocatable :: neta(:,:)
+       real (h_prec), allocatable :: nzeta(:,:)
+       real (h_prec), allocatable :: gama(:,:,:,:)
+       real (h_prec), allocatable :: vol_block(:,:,:)
+       real (h_prec), allocatable :: jac_block(:,:,:)
+       real (h_prec), allocatable :: b_block(:,:,:)
+       real (h_prec), allocatable :: bt_block(:,:,:)
+       real (h_prec), allocatable :: bd_block(:,:,:)
+       real (h_prec), allocatable :: cep(:,:,:)
+       real (h_prec), allocatable :: elem_hist(:,:,:)
+       real (h_prec), allocatable :: cohes_rot_block(:,:,:)
+       real (h_prec), allocatable :: intf_prp_block(:,:)
+       real (h_prec), allocatable :: temps_node_blk(:,:)
+       real (h_prec), allocatable :: dtemps_node_blk(:,:)
+       real (h_prec), allocatable :: temps_ref_node_blk(:,:)
+       real (h_prec), allocatable :: enode_mat_props(:,:,:)
+       real (h_prec), allocatable :: fgm_flags(:,:)
+       real (h_prec), allocatable :: umat_props(:,:)
+c
+c      Some crystal plasticity things
+       real (h_prec), allocatable :: cp_stiff(:,:,:,:)
+       real (h_prec), allocatable :: cp_g_rot(:,:,:,:)
+       integer, allocatable :: ncrystals(:)
+c
+       real (h_prec) :: characteristic_length(mxvl)
+       real (h_prec) :: e_block(mxvl)
+       real (h_prec) :: nu_block(mxvl)
+       real (h_prec) :: weights(mxgp)
+       real (h_prec) :: volume_block(mxvl)
+c
+       real (h_prec) :: dt, time_n, beta_fact, eps_bbar
+c
+c
+       integer :: felem, blk, elem_type, int_order, mat_type,
+     &            num_enodes, num_enode_dof, totdof,
+     &            num_int_points, span, now_step, now_iter, utsz,
+     &            cp(mxedof), icp(mxutsz,2), hist_size_for_blk,
+     &            cohes_type, iout_local, matnum, cep_sym_size,
+     &            num_threads
+c
+       logical :: geo_non_flg, bbar_flg, trn_e_block,
+     &            trn_e_flags(mxvl),
+     &            temperatures_ref, temperatures,
+     &            temps_node_to_process, segmental,
+     &            fgm_enode_props, is_cohes_elem, linear_displ_elem,
+     &            adjust_const_elem, is_axisymm_elem
+
+      logical, allocatable :: trne(:,:)
+c
+c
+      end type
+c
+      type (linear_ek_work) :: local_work
+
+

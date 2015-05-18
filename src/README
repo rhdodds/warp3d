@@ -1,0 +1,129 @@
+
+
+                     README for WARP3D /src Directory
+                        (Updated May 2014)
+
+
+==========================================================================
+
+
+1. OVERVIEW
+
+This directory contains all the source code and makefiles for
+WARP3D. All source code is in *.f files. Common areas are named
+ "common.....". F90 modules are named "mod...".
+
+We support WARP3D on:
+
+    o Windows 7 (64-bit) [W8 should work]
+    o Linux 64-bit (tested on Ubuntu 12.04, 13.10, RedHat 5.10)
+    o Max OS X Lion 10.9.x
+
+On these platforms, we use the Intel F90 & MKL compiler suite.
+At present, these are at version Intel Fortran COMPOSER XE
+from May 2014. We keep up with all
+releases of the F90 compiler and the MKL library.
+
+See the specific README files for each platform in the top level
+directory.
+
+2. MAXIMUM SIZE OF MODELS
+
+The single file containing parameter definitions for the maximum size
+models analyzed is "param_def". Only this file is changed to increase
+or decrease the maximum problem size. Simply set:
+
+ mxnod=####, mxel=####
+
+"mxnod" to max number of nodes and "mxel" to the max number of elements
+and run the "Makewarp.bash" script to re-compile. Likewise, the maximum "block"
+size for the data structure used throughout WARP3D
+is "mxvl" (usually 64 or 128).
+
+The default version of WARP3D has mxnod and mxel set to more than
+500,000 for most platforms. This should be sufficient for all but a few users.
+
+The "main" program for WARP3D is in the file "main_program.f".
+
+
+==============================================================================
+
+
+2. BUILD/COMPILE PROCESS  ** Important **
+
+Precompiled executables are included for Windows (64-bit),
+64-bit Linux (Intel EM64T and AMD64), and Mac OS X). For other systems, or to
+re-compile the code for any reason, follow the instructions below.
+
+Linux and OS X:
+
+The compile and link process to create a WARP3D executable is performed using
+"makefiles" and the "make" program on Linux & OS X. We provide an interactive
+shell script, "Makewarp.bash", which guides you through the process of 
+selecting options to include and then building the code via makefiles. 
+
+We strongly urge you to use ONLY this approach to build WARP3D - it is 
+very simple and easy! At a shell command prompt, say %, just enter 
+the command "Makewarp.bash".
+
+Windows:
+
+The compile and link process to create a WARP3D executable on Windows is 
+performed using a makefile and the "nmake" utility included in 
+Windows. nmake is installed as a prerequisite to the Intel Visual Fortran 
+Compiler, so if you are planning on re-compiling the code, you already 
+have it installed.
+
+We provide a batch script, "Makewarp.bat", which sets up the proper directories
+and solvers and builds the code via an nmake file. 
+
+We urge you to use ONLY this approach to build WARP3D on Windows - it is
+very simple and easy! Within the command prompt environment that the 
+Intel Fortran Compiler creates (in the "start" menu), just "cd" to 
+the WARP3D "src" directory and enter the command ".\Makewarp.bat".
+
+Using the individual makefiles without proper knowledge can 
+lead to errors in the compiling process. Makefiles for the various 
+platforms and versions (omp, mpi_omp) are all named
+Makefile.xxx.
+
+==============================================================================
+
+
+3. SOURCE CODE MARKUPS
+
+We have only one version of the source code. In various *.f files, you
+will find statements of the form:
+
+#lnx     dibmck = and( bits(bit),mapvec(word) ) .ne. 0
+
+
+This statement is included only in the Linux version. Similarly,
+
+!lnx     ........
+
+means that statement is included in all versions but the Linux version.
+
+To handle single vs. double precision, we use statements of the form:
+
+#sgl      real .....
+
+#dbl      double precision ....
+
+Whenever the make file needs to compile a new *.f file, it first
+invokes a "filter" program in this directory, e.g., filter_linux.exe
+which reads the *.f file and emits a temp.f file properly
+"filtered" for that platform, in this case Linux.
+
+The temp.f file is compiled into temp.o but then is renamed to
+the correct prefix of *.f and moved to the proper ../obj directory.
+
+The makefiles are set up with very fine grained *.f units to enable
+rapid builds and to enable very finely tuned optimization of
+individual routines.
+
+
+==============================================================================
+
+
+END OF README

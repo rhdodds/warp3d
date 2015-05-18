@@ -1,0 +1,90 @@
+c
+c      last modified:  5/12/2015 rhd
+c
+c               increased max no blocks
+c               increased max no. steps.
+c               increased max nod and elements on Windows
+c               added nonlocal_shared_state_size
+c               increased material props to 300
+c               added mxcvtests = 10 
+c
+      integer mxnod,mxel,mxndel, max_threads,
+     &    mxlbel,mxndof,mxgp,nstr,mxstep,mxlc,
+     &    mxmat,mxlsz,mxelmp,mxstmp, mxstc,
+     &    mxoupr,ntrc,mxconn,mxvl,mxnmgp,
+     &    mxblsz,mxnmbl,nparam,mxelpr,vclim,
+     &    mxmtpr,mxsepr,two16,ndim,max_tables,
+     &    mxtim,nstrs,max_procs,mxndpr,max_crystals,max_slip_sys,
+     &    max_uhard
+      integer mxdof, trsz, mxncor, mxcvtests,
+     &  mxecor,mxedof,
+     &  mxtgp, mxndldcm,
+     &  mxtnsz,mxndlm,
+     &  mxutsz, mxnusz, mxoupt,
+     &  max_mpc, max_surfaces, max_tied_sets,
+     &  max_packet_types, max_user_lists,
+     &  nonlocal_shared_state_size
+      integer max_interface_props     
+
+#l64      parameter (mxnod=2000000,mxel=2500000,mxndel=20,max_threads=2048,
+#mac      parameter (mxnod=1000000,mxel=1000000,mxndel=20,max_threads=64,
+!win     &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=30000,mxlc=5000,
+!win     &    mxmat=25,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
+!win     &    mxoupr=30,ntrc=10,mxconn=100,mxvl=128,mxnmgp=10,
+!win     &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
+!win     &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,
+!win     &    mxtim=50,nstrs=9,max_procs=2048,mxndpr=8,max_crystals=1000,
+!win     &    max_slip_sys=12, max_uhard=12)
+c
+#win      parameter (mxnod=1000000,mxel=1000000,mxndel=20,max_threads=64,
+#win     &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=30000,mxlc=5000,
+#win     &    mxmat=25,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
+#win     &    mxoupr=30,ntrc=10,mxconn=50,mxvl=128,mxnmgp=10,
+#win     &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
+#win     &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,
+#win     &    mxtim=50,nstrs=9,max_procs=1024,mxndpr=8,max_crystals=1000,
+#win     &    max_slip_sys=12, max_uhard=12)
+c
+      parameter (mxdof=mxnod*mxndof,
+     &  trsz=mxnod*mxndof,mxncor=3*mxnod,
+     &  mxecor=3*mxndel,mxedof=mxndof*mxndel,
+     &  mxtgp=mxel*mxgp, mxndldcm=mxndof+1,
+     &  mxtnsz=ndim*ndim,mxndlm=(mxnod/31)+1,
+     &  mxutsz=(mxedof*mxedof+mxedof)/2,
+     &  mxnusz=(mxndel*mxndel+mxndel)/2,
+     &  max_mpc=mxnod/10, max_surfaces=100,
+     &  max_tied_sets=100, max_packet_types=200, max_user_lists=100,
+     &  mxcvtests=10)
+c
+      parameter (nonlocal_shared_state_size=12)
+      parameter( max_interface_props=80 )
+c
+c                ****  READ ****
+c
+c        the value of mxoupt must be set to the maximum of
+c        mxndel and mxgp. the fortran standard does not permit
+c        use of an intrinsic function (max) in a parameter
+c        statement -  would be nice !
+c
+c                **** warning ****
+c
+c        look in mod_main.f. the declared sizes of matprp MUST match
+c        the values: mxmtpr x mxmat
+c
+      parameter( mxoupt=mxndel )
+c
+c
+c     Other notes:
+c
+c     mxblsz is used only to size the length of a message vector.
+c            It has nothing to do with the maximum block sizes.
+c
+c     mxvl sets the maximum block size permitted in a model. Many
+c          arrays are created on the stack using thre size of this
+c          variable.
+c
+c     max_threads has no connection to the maximum block size, number of
+c                 domains (with MPI). It allows automatic arrays
+c                 to be created/deleted on the stack where element
+c                 blocks are processed.
+c
