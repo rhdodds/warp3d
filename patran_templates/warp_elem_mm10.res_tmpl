@@ -1,0 +1,199 @@
+/* warp3d template for element material model 10 results */
+/* */
+/* */
+
+KEYLOC = 0
+
+/* hmm */
+
+TYPE = scalar
+COLUMN = 1
+PRI = nslip
+SEC = cast-dble
+
+TYPE = scalar
+COLUMN = 2
+PRI = slip
+SEC = sys-1
+
+TYPE = scalar
+COLUMN = 3
+PRI = slip
+SEC = sys-2
+
+TYPE = scalar
+COLUMN = 4
+PRI = slip
+SEC = sys-3
+
+TYPE = scalar
+COLUMN = 5
+PRI = slip
+SEC = sys-4
+
+TYPE = scalar
+COLUMN = 6
+PRI = slip
+SEC = sys-5
+
+TYPE = scalar
+COLUMN = 7
+PRI = slip
+SEC = sys-6
+
+TYPE = scalar
+COLUMN = 8
+PRI = slip
+SEC = sys-7
+
+TYPE = scalar
+COLUMN = 9
+PRI = slip
+SEC = sys-8
+
+TYPE = scalar
+COLUMN = 10
+PRI = slip
+SEC = sys-9
+
+TYPE = scalar
+COLUMN = 11
+PRI = slip
+SEC = sys-10
+
+TYPE = scalar
+COLUMN = 12
+PRI = slip
+SEC = sys-11
+
+TYPE = scalar
+COLUMN = 13
+PRI = slip
+SEC = sys-12
+
+TYPE = scalar
+COLUMN = 14
+PRI = slip
+SEC = sys-13
+
+TYPE = scalar
+COLUMN = 15
+PRI = slip
+SEC = sys-14
+
+TYPE = scalar
+COLUMN = 16
+PRI = slip
+SEC = sys-15
+
+TYPE = scalar
+COLUMN = 17
+PRI = slip
+SEC = sys-16
+
+TYPE = scalar
+COLUMN = 18
+PRI = slip
+SEC = sys-17
+
+TYPE = scalar
+COLUMN = 19
+PRI = slip
+SEC = sys-18
+
+TYPE = scalar
+COLUMN = 20
+PRI = slip
+SEC = sys-19
+
+TYPE = scalar
+COLUMN = 21
+PRI = slip
+SEC = sys-20
+
+TYPE = scalar
+COLUMN = 22
+PRI = slip
+SEC = sys-21
+
+TYPE = scalar
+COLUMN = 23
+PRI = slip
+SEC = sys-22
+
+TYPE = scalar
+COLUMN = 24
+PRI = slip
+SEC = sys-23
+
+TYPE = scalar
+COLUMN = 25
+PRI = slip
+SEC = sys-24
+
+TYPE = scalar
+COLUMN = 26
+PRI = nye
+SEC = nye-11
+
+TYPE = scalar
+COLUMN = 27
+PRI = nye
+SEC = nye-21
+
+TYPE = scalar
+COLUMN = 28
+PRI = nye
+SEC = nye-31
+
+TYPE = scalar
+COLUMN = 29
+PRI = nye
+SEC = nye-12
+
+TYPE = scalar
+COLUMN = 30
+PRI = nye
+SEC = nye-22
+
+TYPE = scalar
+COLUMN = 31
+PRI = nye
+SEC = nye-32
+
+TYPE = scalar
+COLUMN = 32
+PRI = nye
+SEC = nye-13
+
+TYPE = scalar
+COLUMN = 33
+PRI = nye
+SEC = nye-23
+
+TYPE = scalar
+COLUMN = 34
+PRI = nye
+SEC = nye-33
+
+TYPE = scalar
+COLUMN = 35
+PRI = tau-tilde
+SEC = avg
+
+TYPE = scalar
+COLUMN = 36
+PRI = euler
+SEC = e1
+
+TYPE = scalar
+COLUMN = 37
+PRI = euler
+SEC = e2
+
+TYPE = scalar
+COLUMN = 38
+PRI = euler
+SEC = e3
+
+TYPE = END

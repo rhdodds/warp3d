@@ -1,0 +1,52 @@
+
+README for pat_combine tool in WARP3D
+=====================================
+
+last update: July 1, 2011 (RHD)
+
+This file describes the process to build the executable
+for the program pat_combine. When WARP3D runs parallel suign MPI
+with domain decompostion (via MPI), each process outputs "partial" 
+patran result files for element strains/stresses and nodal strains/stresses. 
+
+Example: an analysis is performed using 32 processors and
+nodal stress output is requested at load step 43, then
+32 "partial" files of results are created with names
+wnbs00043.0000, wnbs00043.0001, .... wnbs00043.0031
+
+Before the results can be read into Patran for post-processing, the 32 files
+must be first "combined" into a single, conventional Patran
+result file named wnbs00043.
+
+The "pat_combine" program performs this operation. pat_combine requires
+no input from the user; it surveys the directory
+in which it is run looking for partial result files of all types.
+It automatically builds the combined results files as needed.
+
+To build the pat_combine program, just run the (Bash) shell script named
+build_linux64 or build_osx (located in this directory).
+
+Supported platforms are: Linux and Mac OS X
+
+The executable file is placed into the appropriate warp3d/run_xx 
+directory.
+
+NOTE:
+=====
+
+The pat_combine program can run in parallel to process files for the load
+steps using OpenMP. To run with parallel, set the environment
+variable for OpenMP to indicate the number of threads (processors)
+the code is allowed to use. For example,
+
+      % setenv OMP_NUM_THREADS 8
+      % ~/warp3d/run_linux_em64t/pat_combine.go
+
+Other tools
+-----------
+
+The compare_formatted.f and comapre_binary.f are simple programs that
+compare two Patran binary or froamtted result files for equality.
+These aere developed and used during testing of pat_combine.f and may
+prove useful for other purposes as well. Just compile with ifort as needed.
+

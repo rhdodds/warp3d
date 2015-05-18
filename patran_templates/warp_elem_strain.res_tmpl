@@ -1,0 +1,120 @@
+/* warp3d template for element strains result file */
+/* date created:  10-4-95  R. Dodds              */
+/* date modified: 10-4-95                        */
+
+KEYLOC = 0
+
+/* Strain components (Warp3d uses engr. shear definitions) */
+
+TYPE = scalar
+COLUMN = 1
+PRI = Strain
+SEC = eps-xx
+TYPE = scalar
+COLUMN = 2
+PRI = Strain
+SEC = eps-yy
+TYPE = scalar
+COLUMN = 3
+PRI = Strain
+SEC = eps-zz
+TYPE = scalar
+COLUMN = 4
+PRI = Strain
+SEC = gam-xy
+TYPE = scalar
+COLUMN = 5
+PRI = Strain
+SEC = gam-yz
+TYPE = scalar
+COLUMN = 6
+PRI = Strain
+SEC = gam-xz
+
+
+/* Effective strains and invariants */
+
+TYPE = scalar
+COLUMN = 7
+PRI = Strain
+SEC = Effective mises strain
+
+TYPE = scalar
+COLUMN = 8
+PRI = Strain
+SEC = invariant 1
+
+TYPE = scalar
+COLUMN = 9
+PRI = Strain
+SEC = invariant 2
+
+TYPE = scalar
+COLUMN = 10
+PRI = Strain
+SEC = invariant 3
+
+/* Principal values */
+
+TYPE = scalar
+COLUMN = 11
+PRI = Strain
+SEC = principal (Minimum)
+
+TYPE = scalar
+COLUMN = 12
+PRI = Strain
+SEC = principal (Inter) 
+
+TYPE = scalar
+COLUMN = 13
+PRI = Strain
+SEC = principal (Maximum)
+
+/* Strain dir cosines */
+TYPE = scalar
+COLUMN = 14
+PRI = Strain dir cosine
+SEC = l1
+
+TYPE = scalar
+COLUMN = 15
+PRI = Strain dir cosine
+SEC = m1
+
+TYPE = scalar
+COLUMN = 16
+PRI = Strain dir cosine
+SEC = n1
+
+TYPE = scalar
+COLUMN = 17
+PRI = Strain dir cosine
+SEC = l2
+
+TYPE = scalar
+COLUMN = 18
+PRI = Strain dir cosine
+SEC = m2
+
+TYPE = scalar
+COLUMN = 19
+PRI = Strain dir cosine
+SEC = n2
+
+TYPE = scalar
+COLUMN = 20
+PRI = Strain dir cosine
+SEC = l3
+
+TYPE = scalar
+COLUMN = 21
+PRI = Strain dir cosine
+SEC = m3
+
+TYPE = scalar
+COLUMN = 22
+PRI = Strain dir cosine
+SEC = n3
+
+TYPE = END

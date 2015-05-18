@@ -1,0 +1,17 @@
+/* warp3d template for nodal temperatures result file */
+/* date created:  10-31-12 R. Dodds                    */
+/* date modified: 10-31-12                              */
+
+KEYLOC = 0
+
+TYPE = scalar
+COLUMN = 1
+PRI = Temperature
+SEC = T
+
+TYPE = scalar
+COLUMN = 2
+PRI = Temperature
+SEC = T - Tref
+
+TYPE = END

@@ -1,0 +1,23 @@
+/* warp3d template for element domains and blocking */
+/* date created:  06-18-02            */
+
+KEYLOC = 0
+
+/* Domains and blocking numbers */
+
+TYPE = scalar
+COLUMN = 1
+PRI = Mesh_data
+SEC = domain number
+
+TYPE = scalar
+COLUMN = 2
+PRI = Mesh_data
+SEC = block number
+
+TYPE = END
+
+
+
+
+
