@@ -1242,7 +1242,7 @@ c     *                      subroutine wmpi_send_analysis           *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 09/27/12 rhd               *
+c     *                   last modified : 06/2/2015 rhd              *
 c     *                                                              *
 c     *       send data from anaylsis parameters to all the MPI      *
 c     *       processors                                             *
@@ -1273,9 +1273,7 @@ c
       call MPI_BCAST(restrt,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(dt,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(nbeta,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
-      call MPI_BCAST(convrg,10,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
-      call MPI_BCAST(lcnvrg,10,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
-      call MPI_BCAST(ltol,10,MPI_VAL,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(convrg,mxcvtests,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(signal_flag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(adaptive_flag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(umat_serial,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
