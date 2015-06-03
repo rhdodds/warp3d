@@ -32,8 +32,7 @@ c#######################################################################
 c#######################################################################
 c
 c
-      common/lvgenr/ stpchk(mxstep), trace(ntrc), convrg(10),
-     &               lcnvrg(10)
+      common/lvgenr/ stpchk(mxstep), trace(ntrc), convrg(10)
 c
 c=======================================================================
 c
@@ -164,14 +163,14 @@ c
 c
 #dbl      double precision
 #sgl      real
-     &       tol,ltol,sum_ifv,sum_loads
+     &       tol,sum_ifv,sum_loads
 c
 #dbl      double precision
 #sgl      real
      &       scaling_adapt, scaling_factor
 c
 c
-      logical stpchk, trace, convrg, lcnvrg, lprops(mxelpr,mxel)
+      logical stpchk, trace, convrg, lprops(mxelpr,mxel)
 c
       logical prnres,updstf,nostif,halt,lkcomp,linmas,
      &    linstf_nxt_step, newstf,tkcomp,newcns,prlres,accsol,predct,

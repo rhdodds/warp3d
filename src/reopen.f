@@ -214,7 +214,7 @@ c
 c
 c                       read logical and character arrays.
 c
-      read(fileno) convrg, trace, lcnvrg          ! short logical vecs
+      read(fileno) convrg, trace                  ! short logical vecs
       call rdbk( fileno, trn, nonode )            ! logical vec
       call rdbk( fileno, stpchk, mxstep )         ! logical vec
       call init_maps( fileno, 3 )

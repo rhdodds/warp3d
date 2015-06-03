@@ -226,7 +226,7 @@ c                       write character variables/arrays directly.
 c                       see some sizes set in main, param_def
 c
 c
-      write(fileno) convrg, trace, lcnvrg          ! short logical vecs
+      write(fileno) convrg, trace                  ! short logical vecs
       call wrtbk( fileno, trn, nonode)             ! logical vec
       call wrtbk( fileno, stpchk, mxstep)          ! logical vec
       call wrtbk( fileno, repeat_incid, noelem )   ! logical vec
