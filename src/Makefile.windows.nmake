@@ -1,8 +1,6 @@
 #
-#    Makefile for WARP3D on systems running Windows XP, Vista, Windows 7
+#    Makefile for WARP3D on systems running Windows 7, 8, 10
 #    on x86 Processors (64-bit mode).
-#
-#    Windows 8 likely will work but has not been tested.
 #
 #    This nmake script is initiated by the the command shell script
 #    Makewarp.bat (which sets the 64-bit mode for use here)
@@ -10,7 +8,7 @@
 #    The Intel Fortran compiler suite is required version 12.1 and higher,
 #    with the MKL library (part of the suite) version 10.x and higher.
 #
-#    Tested with Intel Visual Fortran Version 13.0.2
+#    Tested with Intel Visual Fortran Version 15.x
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
@@ -34,6 +32,7 @@
 #             4/21/2015 remove newmrk.f upcnld.f
 #             5/12/2015 remove outrac.f
 #             5/13/2015 remove ouconv.f
+#             6/2/2015  remove oultrc.f
 #
 #    Use macro on the command line to setup for 64-bit build
 #
@@ -239,7 +238,6 @@ OBJ =	 \
 	$(OD)/oulbta$O	 \
 	$(OD)/oulg1$O	 \
 	$(OD)/oulrlh$O	 \
-	$(OD)/oultrc$O	 \
 	$(OD)/oumkcv$O	 \
 	$(OD)/oundhd$O	 \
 	$(OD)/ounds1$O	 \
@@ -1453,12 +1451,6 @@ $(OD)/oulrlh$O : oulrlh.f common.main \
 	$(F90) /O2 /Qip  /c filt_oulrlh.f
 	$(MVC) filt_oulrlh$O  oulrlh$O
 	$(MVC) oulrlh$O $@
-
-$(OD)/oultrc$O : oultrc.f
-	$(FILTER) < oultrc.f > filt_oultrc.f
-	$(F90) /O2 /Qip  /c filt_oultrc.f
-	$(MVC) filt_oultrc$O  oultrc$O
-	$(MVC) oultrc$O $@
 
 $(OD)/oumkcv$O : oumkcv.f param_def \
                    $(OD)/mod_elblk$O

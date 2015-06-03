@@ -38,7 +38,7 @@
 #              4/21/2015 remove newmrk.f, upcnld.f
 #              5/12/2015 remove outrac.f
 #              5/13/2015 remove ouconv.f
-#
+#              6/2/2015  remove oultrc.f
 # *****************************************************************************
 #
 #                COMPILER parameter is set by the Makewarp.bash
@@ -223,7 +223,7 @@ OBJ =	 \
 	$(OD)/mm08$O	 \
 	$(OD)/mm09$O	 \
 	$(OD)/mm10$O	 \
- 	$(OD)/mm11$O       \
+	$(OD)/mm11$O       \
 	$(OD)/mmnoopt$O	\
 	$(OD)/mpi_code$O	 \
 	$(OD)/mpi_handle_slaves$O \
@@ -254,7 +254,6 @@ OBJ =	 \
 	$(OD)/oulbta$O	 \
 	$(OD)/oulg1$O	 \
 	$(OD)/oulrlh$O	 \
-	$(OD)/oultrc$O	 \
 	$(OD)/oumkcv$O	 \
 	$(OD)/oundhd$O	 \
 	$(OD)/ounds1$O	 \
@@ -1772,14 +1771,6 @@ $(OD)/oulrlh$O : oulrlh.f common.main \
 	$(F90) -O2 -ip  -c filt_oulrlh.f
 	$(MVC) filt_oulrlh$O  oulrlh$O
 	$(MVC) oulrlh$O $@
-
-$(OD)/oultrc$O : oultrc.f
-	$(RMC)  $@
-	$(RMC)  filt_oultrc.f
-	$(FILTER) < oultrc.f > filt_oultrc.f
-	$(F90) -O2 -ip  -c filt_oultrc.f
-	$(MVC) filt_oultrc$O  oultrc$O
-	$(MVC) oultrc$O $@
 
 $(OD)/oumkcv$O : oumkcv.f param_def \
                    $(OD)/mod_elblk$O
