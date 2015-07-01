@@ -4,7 +4,7 @@ c     *                      subroutine ougts1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/30/2014 rhd              *
+c     *                   last modified : 7/1/2015  rhd              *
 c     *                                                              *
 c     *     transfer stresses or strains to simple data structure    *
 c     *     for direct output. Handle transformations for geometric  *
@@ -237,18 +237,22 @@ c
         end do
        end do
 c
-c           Crystal plasticity
+c           Crystal plasticity: c1 -> total work density
+c                               c2 -> plastic work density
+c                               c3 -> accumulated plastic strain
+c                   c1 is same value printed by WARP3D under "energy"
+c                   label of stresses
 c
       case (10 )
-          offset = 84+max_slip_sys
+c      
           do gpn = 1, ngp
               do i = 1, span
-                elestr(i,9,gpn)  = elem_hist(i,offset,gpn)
-                elestr(i,10,gpn) = elem_hist(i,offset+1,gpn)
-                elestr(i,11,gpn) = elem_hist(i,offset+2,gpn)
+                elestr(i,9,gpn)  = urcs_blk_n(i,7,gpn)
+                elestr(i,10,gpn) = urcs_blk_n(i,8,gpn)
+                elestr(i,11,gpn) = urcs_blk_n(i,9,gpn)
               end do
            end do
-c
+ 
       case default
 c
 c                 This is a kluge to avoid a patran bug -- in patran 2.5,
