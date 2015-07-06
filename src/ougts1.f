@@ -4,7 +4,7 @@ c     *                      subroutine ougts1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/1/2015  rhd              *
+c     *                   last modified : 7/6/2015  rhd              *
 c     *                                                              *
 c     *     transfer stresses or strains to simple data structure    *
 c     *     for direct output. Handle transformations for geometric  *
@@ -237,17 +237,19 @@ c
         end do
        end do
 c
-c           Crystal plasticity: c1 -> total work density
+c           Crystal plasticity: c1 -> elastic work density
 c                               c2 -> plastic work density
 c                               c3 -> accumulated plastic strain
-c                   c1 is same value printed by WARP3D under "energy"
+c                   urcs_blk_n(i,7,gpn) enters with total work density.
+c                   that value is printed by WARP3D under "energy"
 c                   label of stresses
 c
       case (10 )
 c      
           do gpn = 1, ngp
               do i = 1, span
-                elestr(i,9,gpn)  = urcs_blk_n(i,7,gpn)
+                elestr(i,9,gpn)  = urcs_blk_n(i,7,gpn) -
+     &                             urcs_blk_n(i,8,gpn)
                 elestr(i,10,gpn) = urcs_blk_n(i,8,gpn)
                 elestr(i,11,gpn) = urcs_blk_n(i,9,gpn)
               end do
