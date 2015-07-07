@@ -31,8 +31,8 @@ c                             3) user
      &                                p_y, q_y, boltz, 
      &                                eps_dot_o_y, t_o,
      &                                theta_o, tau_bar_o,
-     &                                tau_hat_v, g_o_v, theta_f,
-     &                                tau_t, eps_dot_o_v, k_o,
+     &                                tau_hat_v, g_o_v,
+     &                                eps_dot_o_v, k_o,
      &                                mu_o, D_o, tau_y, tau_v,
      &                                voche_m
                   double precision :: u1, u2, u3, u4, u5, u6
@@ -424,7 +424,6 @@ c                 Debug routine, dump the definition to STDOUT
      &                        c_array(num)%mu_o,c_array(num)%t_o,
      &                        c_array(num)%D_o,
      &                        c_array(num)%theta_o,
-     &                        c_array(num)%theta_f, c_array(num)%tau_t,
      &                        c_array(num)%k_o
                   write (*,*) ""
                   write (*,*) c_array(num)%elast_stiff

@@ -158,10 +158,6 @@ c           Read in properties
                      if (.not. numd(c_array(cnum)%theta_o)) then
                            call errmsg(5,dumi,'theta_0',dumr,dumd)
                      end if
-                  elseif ( matchs_exact('theta_f')) then
-                     if (.not. numd(c_array(cnum)%theta_f)) then
-                           call errmsg(5,dumi,'theta_f',dumr,dumd)
-                     end if
                   elseif ( matchs_exact('tau_y')) then
                      if (.not. numd(c_array(cnum)%tau_y)) then
                            call errmsg(5,dumi,'tau_y',dumr,dumd)
