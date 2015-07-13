@@ -1,0 +1,8 @@
+!
+! Restart with this file to continue the basic MPI example.
+!
+ restart from file 'restart.db'
+!
+!
+ compute displacements for loading test step 50
+ stop
