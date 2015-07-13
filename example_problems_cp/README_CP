@@ -1,4 +1,4 @@
-Last Updated:JUne 4, 2013
+Last Updated: July 13, 2015
 
 This directory contains several example input files demonstrating various
 features of the crystal plasticity (CP) model.
@@ -10,15 +10,11 @@ features of the crystal plasticity (CP) model.
    the Taylor approximation).  These examples use the empirical Stage IV hardening
    option.
 
-   The input file "hardening_stages.input" shows the various stages
-   of work hardening a polycrystal undergoes in uniaxial tension.
-   The plot "hardening_plot.svg" shows these hardening stages graphically.
-
-   The files "isothermal_600K.input," "isothermal_RT.input," and
-   "cottrel_stokes.input" represent a homogenized polycrystal in isothermal tension
+   The files "isothermal_600K.inp" "isothermal_RT.inp," and
+   "cottrell_stokes.inp" represent a homogenized polycrystal in isothermal tension
    at two temperatures and in a combined isothermal loading, unloading, cooling,
    isothermal loading history representing a Cottrel-Stokes test.  Results of
-   all three models are summarized in the plot "cs_plot.svg."  These
+   all three models are summarized in the plot "cs_plot.svg/pdf."  These
    input files demonstrate the effect of temperature on the
    hardening formulation. They also show the effect of strain rate,
    as changing the load step without carefully (correspondingly) changing the time
@@ -34,9 +30,11 @@ features of the crystal plasticity (CP) model.
    introduces a size-effect, where the model with smaller grain sizes (and hence
    steeper grain gradients) shows more hardening than the model with larger grains.
    This can be viewed as a physical Hall-Petch-type effect.
+   The simulations generate files needed for ParaView post-processing.
 
 3. The model in the mpi_restart directory demonstrates running
    the crystal plasticity model in parallel with MPI domain decomposition.  It also
    demonstrates that the restart capability of WARP3D works with the CP material
    model, including restarts of unhomogenized models where the angles are input
    from a separate flat file.
+   Results files are generated for post-processing with ParaView.
