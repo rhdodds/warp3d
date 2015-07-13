@@ -1,0 +1,102 @@
+!
+!     A "cube of cubic grains" model designed to demonstrate the size-effect
+!     the gradient hardening term brings into the CP formulation.  The model is
+!     a large cube consisting of 5x5x5 cubic grains each with edge length a.
+!
+!     In this particular model a = 0.001 mm.
+!
+!     The model is loaded in unaxial tension (with symmetry constraints on
+!     three of the model faces) to a large amount of plastic deformation.  
+!     
+!     Plotting the average stress at the final strain level versus the grain
+!     size shows a Hall-Petch-type effect where decreasing the physical size
+!     of the grains increases the stress (and hence smaller grains show
+!     a higher flow stress).
+!
+!     In particular, for a = 0.1 mm at 5% strain sigma_xx_avg = 462.2 MPa
+!     while for a = 0.001 mm sigma_xx_avg = 518.3 MPa.
+!
+!     Flat model and result files are generated for post-processing with ParaView.
+!     The generated model file is "size_0.1.text". Flat results files
+!     of nodal displacements, element stresses and element state variables
+!     are generated every 5 load steps. The "stream" format for files
+!     is used to reduce their size (compared to "text" files).
+!
+!     The Python program  $WARP3D_HOME/warp3d2exii/warp3d2exii will read
+!     these files and produce an Exodus II .exo file to be read 
+!     by ParaView.
+!
+!     This model demonstrates several features/uses of the CP model:
+!      1) A CPFEM model -- each grain is represented by several finite elements,
+!         each material point (Gauss point) models a single crystal orientation.
+!      2) A basic MTS fit -- notice that the shear modulus of the material is
+!         independent of temperature and the hardening properties are
+!         relatively temperature and rate insensitive.
+!      3) The length-scale effects introduced by the geometric hardening model.
+! 
+structure warp3d_model
+!
+crystal 1
+      properties slip_type fcc elastic_type isotropic,
+      e 78811.2 nu 0.33 hardening mts,
+      mu_0 29628.3 D_0 0.0 T_0 204.0 harden_n 20,
+      theta_0 180.0,
+      b 3.5E-7 boltz 1.3806E-20,
+      tau_a 0.0,
+      tau_hat_y 155.0 g_0_y 0.007808 q_y 2.0 p_y 0.5,
+      eps_dot_0_y 1.0E13,
+      tau_hat_v 25.0 g_0_v 0.00488 q_v 2.0 p_v 0.5,
+      eps_dot_0_v 1.0E7, 
+      k_0 10.0  $ geometric hardening
+!
+! Random orientations
+!
+material al_li_cp
+      properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
+      n_crystals 1 angle_type degrees, 
+      crystal_input single crystal_type 1,
+      orientation_input file filename 'angle_input',
+      debug off tolerance 1.0E-10
+! 
+number of nodes 17576 elements 15625
+!
+elements
+  1-15625 type l3disop nonlinear material al_li_cp,
+                       order 2x2x2 bbar 
+*input "coord_grain_size_0.001mm.inp"
+*input "incid.inp"
+*input "loading.inp"
+!
+blocking automatic
+!
+constraints
+ plane x = 0.0 symmetry
+ plane y = 0.0 symmetry
+ plane z = 0.0 symmetry
+ plane x = 0.005 u = 0.0005  $ axial displacement
+! 
+ loading test
+  nonlinear
+    steps 1-100  constraints 0.01
+! 
+ nonlinear analysis parameters
+   solution technique asymmetric iterative
+   assembly asymmetric on
+   maximum iterations 20
+   minimum iterations 1
+   convergence test norm res tol 0.02
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   time step 1.0e06
+   extrapolate off
+! 
+ output model flat patran convention text file "size_0.001mm.text"
+! 
+ output commands use file "get_output.inp" steps 5-100 by 5
+!
+ compute displacements for loading test step 100
+!
+stop
