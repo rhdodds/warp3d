@@ -1,0 +1,132 @@
+!
+!     This model demonstrates some of the thermal-cyclic behavior the MTS 
+!     hardening law can represent.  In this case, this input file and two
+!     other related input files demonstrate a model of a Cottrell-Stokes
+!     experiment:
+!
+!           Isothermal (600K) loading to some stress level
+!           Isothermal (partial) unloading
+!           Cooling to RT
+!           Isothermal (RT) loading to a higher stress level
+!
+!     This loading/temperature pattern is applied to a homogenized (100 random
+!     orientations), single-element model in cottrell_stokes.input.
+!
+!     The other two files (isothermal_RT.input, isothermal_600K.input) model
+!     an isothermal, uniaxial tension test at the two temperatures, for
+!     comparison. 
+!
+!     Note the small "jogs" in the stress strain curve in the C-S model where
+!     we change the load step.  These jogs result from a jump in the strain 
+!     rate, despite our attempts to correct the time step.
+!
+!     A plot comparing these three models is cs_plot.svg.  Interesting behavior
+!     is labeled on that plot.
+!
+!
+structure test_isothermal
+!
+crystal 1
+      properties slip_type fcc elastic_type cubic,
+      e 76362.3 nu 0.422 mu 93950.1  hardening mts,
+      T_0 4775.7 harden_n 20,
+      mu_0 89827.0 D_0 1517059,
+      theta_0 415.0,
+      b 1.5e-4 boltz 1.3806e-11,
+      tau_a 0.0,
+      tau_hat_y 412.0 g_0_y 2.348 q_y 3.538 p_y 0.928,
+      eps_dot_0_y 1.2E15,
+      tau_hat_v 250.0 g_0_v 2.271 q_v 0.344 p_v 0.00340,
+      eps_dot_0_v 8.8e6,
+      k_0 10.0
+!
+! 100 random orientations
+!
+material hx_cp
+      properties cp alpha 1.08e-5 rho 0.0 angle_convention kocks,
+      n_crystals 100 angle_type degrees, 
+      crystal_input single crystal_type 1,
+      orientation_input file filename 'angles',
+      debug off tolerance 1.0e-10
+!
+number of nodes 8 elements 1
+!
+coordinates
+      1     0.0   0.0   0.0
+      2     1.0   0.0   0.0
+      3     1.0   1.0   0.0
+      4     0.0   1.0   0.0
+      5     0.0   0.0   1.0
+      6     1.0   0.0   1.0
+      7     1.0   1.0   1.0
+      8     0.0   1.0   1.0
+!
+elements
+  1 type l3disop nonlinear material hx_cp,
+                 order 2x2x2 center_output
+!
+incidences
+  1 1-8
+!
+blocking automatic
+!
+constraints
+  plane x = 0 symmetry
+  plane y = 0 symmetry
+  plane z = 0 symmetry
+!
+initial conditions
+ temperatures
+  nodes 1-8 temperature 500.0
+!
+loading tractions
+  element loads
+    1 face 5 pressure  -1.00
+!
+loading cool
+ nodal loads
+  1-8 temperature -207.0
+!
+loading test
+ nonlinear
+  steps 1-30 tractions 10.0
+  steps 31-50 tractions 1.0
+  steps 51-120 tractions -1.0
+  steps 121-145 tractions -10.0
+  steps 146-155 cool 0.1
+  steps 156-215 tractions 10.0
+  steps 216-250 tractions 1.0
+!
+nonlinear analysis parameters
+   solution technique asymmetric iterative
+   assembly asymmetric on
+   maximum iterations 100
+   minimum iterations 1
+   convergence test norm res tol 0.075
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   consistent q-matrix off
+   time step 1.0
+   extrapolate on $ needed for the finite-strain effects
+! 
+ output commands use file "get_results.inp" steps all
+!
+ compute displacements for loading test step 30
+!
+ nonlinear analysis parameters
+  time step 0.1
+! 
+ compute displacements for loading test step 120
+!
+ nonlinear analysis parameters
+  time step 1.0
+!
+ compute displacements for loading test step 215
+!
+ nonlinear analysis parameters
+  time step 0.1
+!
+ compute displacements for loading test step 250
+!
+stop
