@@ -4,7 +4,7 @@ c     *                      subroutine incrystal                    *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 3/21/12 mcm                *
+c     *                   last modified : 7/14/2015 rhd              *
 C     *                                                              *
 C     *     this subroutine supervises and conducts the input of the *
 c     *     properties of crystals into the crystal library          *
@@ -174,6 +174,10 @@ c           Read in properties
                      if (.not. numd(c_array(cnum)%voche_m)) then
                            call errmsg(5,dumi,'voche_m',dumr,dumd)
                      end if
+                  elseif ( matchs_exact('voce_m')) then
+                     if (.not. numd(c_array(cnum)%voche_m)) then
+                           call errmsg(5,dumi,'voche_m',dumr,dumd)
+                     end if
                   elseif ( matchs_exact('u_1')) then
                      if (.not. numd(c_array(cnum)%u1)) then
                            call errmsg(5,dumi,'u_1',dumr,dumd)
@@ -205,6 +209,8 @@ c           Read in properties
                            lab = ' '
                            call entits(lab,nc)
                            if (lab(1:nc) .eq. 'voche') then
+                              c_array(cnum)%h_type = 1
+                           elseif (lab(1:nc) .eq. 'voce') then
                               c_array(cnum)%h_type = 1
                            elseif (lab(1:nc) .eq. 'mts') then
                               c_array(cnum)%h_type = 2
