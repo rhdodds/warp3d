@@ -16,7 +16,7 @@ find_line( 1, "  output wide stresses 1025" );
 find_line( 2, "  1025       1 " );
 @parts = split( / +/, $line);
 #
-$answer = "338.005214";
+$answer = "338.049315";
 $partno = 3;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
