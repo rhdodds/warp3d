@@ -23,7 +23,7 @@ c                             1) isotropic
 c                             2) cubic
                   integer :: nslip
                   integer :: h_type
-c                             1) voche
+c                             1) voche or voce
 c                             2) mts
 c                             3) user
                   double precision :: e, nu, mu, harden_n, tau_a,
@@ -34,7 +34,7 @@ c                             3) user
      &                                tau_hat_v, g_o_v,
      &                                eps_dot_o_v, k_o,
      &                                mu_o, D_o, tau_y, tau_v,
-     &                                voche_m
+     &                                voche_m !  yes it is spelled wrong
                   double precision :: u1, u2, u3, u4, u5, u6
                   double precision, dimension(6,6) :: elast_stiff,
      &                                                elast_flex
@@ -99,7 +99,7 @@ c
                   c_array(num)%D_o = 0.0
                   c_array(num)%tau_y = 0.0
                   c_array(num)%tau_v = 0.0
-                  c_array(num)%voche_m = 0.0
+                  c_array(num)%voche_m = 1.0
 
                   c_array(num)%u1 = 0.0
                   c_array(num)%u2 = 0.0
