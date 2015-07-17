@@ -14,7 +14,7 @@ structure warp3d_model
  crystal 1
       properties slip_type fcc elastic_type cubic,
       e 76362.3 nu 0.422 mu 93950.1 hardening mts,
-      T_0 4775.7 harden_n 20,
+      T_0 4775.7 harden_n 20 voce_m 1.0,
       mu_0 89827.0 D_0 1517059,
       theta_0 415.0,
       b 1.5E-4 boltz 1.3806E-11,
