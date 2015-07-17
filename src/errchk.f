@@ -1376,183 +1376,196 @@ c     *                      subroutine chk_crystal                  *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 3/21/12                    *
+c     *                   last modified : 7/17/15 rhd                *
 c     *                                                              *
 c     *   checks a crystal definition for errors                     *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_crystal(cnum)
+      subroutine chk_crystal( cnum )
       use crystal_data, only: c_array
       implicit integer (a-z)
 $add common.main
       integer, intent(in) :: cnum
-
-      if (c_array(cnum)%nu .ge. 0.5) then
+c
+      logical :: ok      
+c
+c
+c             checks common for all hardening models
+c
+      ok = .true.
+      
+      if( c_array(cnum)%nu .ge. 0.5 ) then
             write(out,9002) cnum
-            go to 1001
+            ok = .false.
       end if
-
-      if (c_array(cnum)%e .le. 0.0) then
+c
+      if( c_array(cnum)%e .le. 0.0 ) then
             write(out,9001) cnum, 'e'
-            go to 1001
+            ok = .false.
       end if
-
-      if (c_array(cnum)%nu .le. 0.0) then
+c
+      if( c_array(cnum)%nu .le. 0.0 ) then
             write(out,9001) cnum, 'nu'
-            go to 1001
+            ok = .false.
       end if
-
-      if (c_array(cnum)%mu .le. 0.0) then
+c
+      if( c_array(cnum)%mu .le. 0.0 ) then
             write(out,9001) cnum, 'mu'
-            go to 1001
+            ok = .false.
       end if
-
-      if (c_array(cnum)%harden_n .le. 0.0) then
+c
+      if( c_array(cnum)%harden_n .le. 0.0 ) then
             write(out,9001) cnum, 'harden_n'
-            go to 1001
+            ok = .false.
       end if
+c
+c             checks for the simple Voce model (no rate or 
+c             temperature dependence)
 
-      if (c_array(cnum)%h_type .eq. 1) then
-c           simple voche
-
-      if (c_array(cnum)%k_o .lt. 0.0) then
+      if( c_array(cnum)%h_type .eq. 1 ) then
+c
+         if( c_array(cnum)%k_o .lt. 0.0 ) then
             write (out,9002) cnum, 'k_o'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%theta_o .le. 0.0) then
-            write(out,9001) cnum, 'theta_o'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%tau_y .le. 0.0) then
+            ok = .false.
+         end if
+c
+         if( c_array(cnum)%theta_o .le. 0.0 ) then
+            write(out,9007) cnum, 'theta_o'
+            ok = .false.
+         end if
+c
+        if( c_array(cnum)%tau_y .le. 0.0 ) then
             write(out,9001) cnum, 'tau_y'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%tau_v .le. 0.0) then
+            ok = .false.
+        end if
+c
+        if( c_array(cnum)%tau_v .le. 0.0 ) then
             write(out,9001) cnum, 'tau_v'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%voche_m .le. 0.0) then
-            write(out,9001) cnum, 'voche_m'
-            go to 1001
-      end if
-
-      elseif (c_array(cnum)%h_type .eq. 2) then
-c           MTS
-c     Things that must be greater than zero:
+            ok = .false.
+        end if
+c
+        if( c_array(cnum)%voche_m .lt. 0.0 ) then
+            write(out,9005) cnum, 'voce_m'
+            ok = .false.
+        end if
+c
+      end if        
+c
+c             checks for MTS hardening
+c
+      if( c_array(cnum)%h_type .eq. 2 ) then
+c
+c          properties that must be greater than zero:
 c           tau_hat, g_o, b, p, q, boltz,
 c           eps_do_o, mu_o, t_o, theta_o, tau_o
 c
-c     Handle errors locally
-      if (c_array(cnum)%theta_o .le. 0.0) then
-            write(out,9001) cnum, 'theta_o'
-            go to 1001
+        if( c_array( cnum)%theta_o .le. 0.0 ) then
+              write(out,9001) cnum, 'theta_o'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%k_o .lt. 0.0 ) then
+              write (out,9002) cnum, 'k_o'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%tau_a .lt. 0.0 ) then
+              write(out,9001) cnum, 'tau_a'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%tau_hat_y .le. 0.0 ) then
+              write(out,9001) cnum, 'tau_hat_y'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%g_o_y .le. 0.0 ) then
+              write(out,9001) cnum, 'g_o_y'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%tau_hat_v .le. 0.0 ) then
+              write(out,9001) cnum, 'tau_hat_v'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%g_o_v .le. 0.0 ) then
+              write(out,9001) cnum, 'g_o_v'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%b .le. 0.0 ) then
+              write(out,9001) cnum, 'b'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%p_v .le. 0.0 ) then
+              write(out,9001) cnum, 'p_v'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%q_v .le. 0.0 ) then
+              write(out,9001) cnum, 'q_v'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%p_y .le. 0.0 ) then
+              write(out,9001) cnum, 'p_y'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%q_y .le. 0.0 ) then
+              write(out,9001) cnum, 'q_y'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%boltz .le. 0.0 ) then
+              write(out,9001) cnum, 'boltz'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%eps_dot_o_v .le. 0.0 ) then
+              write(out,9001) cnum, 'eps_dot_o_v'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%eps_dot_o_y .le. 0.0 ) then
+              write(out,9001) cnum, 'eps_dot_o_y'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%mu_o .le. 0.0 ) then
+              write(out,9001) cnum, 'mu_o'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%D_o .lt. 0.0 ) then
+              write(out,9001) cnum, 'D_o'
+              ok = .false.
+        end if
+c
+        if( c_array( cnum)%t_o .le. 0.0 ) then
+              write(out,9001) cnum, 't_o'
+              ok = .false.
+        end if
+c
       end if
-
-      if (c_array(cnum)%k_o .lt. 0.0) then
-            write (out,9002) cnum, 'k_o'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%tau_a .lt. 0.0) then
-            write(out,9001) cnum, 'tau_a'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%tau_hat_y .le. 0.0) then
-            write(out,9001) cnum, 'tau_hat_y'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%g_o_y .le. 0.0) then
-            write(out,9001) cnum, 'g_o_y'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%tau_hat_v .le. 0.0) then
-            write(out,9001) cnum, 'tau_hat_v'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%g_o_v .le. 0.0) then
-            write(out,9001) cnum, 'g_o_v'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%b .le. 0.0) then
-            write(out,9001) cnum, 'b'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%p_v .le. 0.0) then
-            write(out,9001) cnum, 'p_v'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%q_v .le. 0.0) then
-            write(out,9001) cnum, 'q_v'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%p_y .le. 0.0) then
-            write(out,9001) cnum, 'p_y'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%q_y .le. 0.0) then
-            write(out,9001) cnum, 'q_y'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%boltz .le. 0.0) then
-            write(out,9001) cnum, 'boltz'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%eps_dot_o_v .le. 0.0) then
-            write(out,9001) cnum, 'eps_dot_o_v'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%eps_dot_o_y .le. 0.0) then
-            write(out,9001) cnum, 'eps_dot_o_y'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%mu_o .le. 0.0) then
-            write(out,9001) cnum, 'mu_o'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%D_o .lt. 0.0) then
-            write(out,9001) cnum, 'D_o'
-            go to 1001
-      end if
-
-      if (c_array(cnum)%t_o .le. 0.0) then
-            write(out,9001) cnum, 't_o'
-            go to 1001
-      end if
-
-      else
-c           User, just exit
-
-      end if
-
-
-
-      return
-
- 1001 continue
-      call die_gracefully
+c
+c             checks for user hardening
+c
+      if( c_array(cnum)%h_type .eq. 3 ) then
+      end if  
+c
+      if( .not. ok )  call die_gracefully
 
  9001 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
      &            a8, ' must be greater than zero.'/)
- 9002 format(/1x,'>>>> Fatal error in crystal ', i3, '. Nu must be ',
+ 9002 format(/1x,'>>>> Fatal error in crystal ', i3, '. nu must be ',
      &            'less than 0.5.'/)
-
+ 9005 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
+     &            a8, ' must be >= zero.'/)
+ 9007 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
+     &            a8, ' must be > zero (but can be v. small).'/)
+c
       end subroutine
