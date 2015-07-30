@@ -115,7 +115,7 @@ c                      5 - exponential_2 -- not impelemented
 c                      6 - PPR (Park, Paulino, Roesler)
 c                      7 - Cavitation-based cohesive element, referred
 c                          to as Cavit
-c                          Reference: Onck P, Van Der Giessen E.
+c                          Reference: Onck P, Van DerGiessen E.
 c                          Growth of an initially sharp crack by grain
 c                          boundary
 c                          J. Mech. Phys. Solids 1998; 47, 99-139
@@ -828,6 +828,8 @@ c    *             3/5/2015  rhd (add hist 14, 15 values)           *
 c    *             3/10/2015 kbc (1. modify q function              *
 c    *                            2. modify V_dot (VVNT eqns)       *
 c    *                            3. degrade shear visc. with a/b)  *
+c    *             7/21/2015 rhd  fix contact issues. re-design     *
+c    *                            logic of stress updating          *
 c    *                                                              *
 c    *     computes the cohesive traction vector for the            *
 c    *     cavitation-based cohesive zone model (cavit)             *
@@ -872,7 +874,7 @@ c
 c             local variables
 c
       integer :: i, abs_elem, iter_count, iword(2), old_state,
-     &           new_state
+     &           new_state, current_state
 #dbl      double precision ::
 #sgl      real :
      & dword, zero, three, one, toler, six, 
@@ -882,7 +884,7 @@ c
      & sigma_e, sigma_m, term1,term3, fraction,
      & v2_dot, pi, c_0, c_1, c_2, f_0, q,
      & d_strain, c_strain,
-     & delta_c_dot,
+     & delta_c_dot, oldreldis,
      & comp_multiplier, 
      & top_sigma_m, bott_sigma_m, work(6), top_sigma_e, bott_sigma_e,
      & N_n, a_n, b_n, V_n, T_n, ratio_1, ratio_2, f_factor,
@@ -899,9 +901,10 @@ c
 c
       logical :: elem_killed(mxvl), local_debug, converged, 
      & nucleation_active, debug_span_loop,
-     & iterative_solve, run_loop, loading, unloading,
-     & debug_newton
-      logical :: degrade_shear, VVNT, modify_q, include_nucleation
+     & iterative_solve, opening, closing,
+     & debug_newton, open, neutral, penetrated
+      logical :: degrade_shear, VVNT, modify_q, include_nucleation,
+     &           include_cavity_growth  
 c
       data zero, one, three, third, two, half, four,
      &  six, onept5, toler, pi, max_ab_ratio, mark, LNR_toler, 
@@ -912,11 +915,12 @@ c
 c
 c             set options in formulation to include, debug options
 c
-      degrade_shear      = .true.
-      VVNT               = .true.
-      modify_q           = .true.
-      include_nucleation = .true.
-      debug_newton       = .false.
+      degrade_shear         = .true.
+      VVNT                  = .true.
+      modify_q              = .true.
+      include_nucleation    = .true.
+      debug_newton          = .false.
+      include_cavity_growth = .true.
 c      
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 
      &                  ( step .eq. 599 )
@@ -925,8 +929,10 @@ c
 c
       do i = 1, span  ! main loop over all elems in block
 c
-      debug_span_loop = local_debug .and. ( i .eq. 1 )
       abs_elem        = felem + i - 1
+      debug_span_loop = local_debug .and. abs_elem .eq. 3401
+     &                   .and. gpn .eq. 1 
+      debug_span_loop = .false.
 c      
       if( debug_span_loop ) write(iout,9000) felem+i-1, gpn      
 c
@@ -938,8 +944,6 @@ c
       b_n = history(i,3) * props%b_0 !half-spacing between cavities
       V_n = history(i,4) * props%V_0 !cavity volume
       T_n = history(i,5) !prior normal traction stress
-      dword     = history(i,13)
-      old_state = iword(1)
 c
 c             step 2: obtain nonlocal variables passed from creep
 c                     material model (umat at this time)
@@ -968,80 +972,101 @@ c
      &                   reladis(i,3), delrlds(i,3)
       end if  
 c          
-c             step 3: compute normal traction at n+1. run update using
-c                     a state table since there can be various 
-c                     loading/unloading sequences with the material 
-c                     in a number of conditions from prior loading. 
+c             step 3: compute normal traction at n+1. update steps
+c                     based on current state of interface. 
 c
-      run_loop  = .true. ! to continue running over states
-      loading   = delrlds(i,3) .gt. zero
-      unloading = .not. loading
-      new_state = -1  !   for error check if not updated
-      N_new     = N_n
-      a_new     = a_n
-      b_new     = b_n
-      V_new     = V_n
-      T_new     = mark  ! for error checking
+      opening     = delrlds(i,3) .ge. zero
+      closing     = .not. opening
+      open        = reladis(i,3) .gt. zero
+      neutral     = reladis(i,3) .eq. zero
+      penetrated  = reladis(i,3) .lt. zero
+c
+c             set current state before entering update.
+c
+c               state
+c                 1         load(time) step 1
+c                 2         neutral and closing
+c                 3         neutral and opening
+c                 4         penetrated and further closing
+c                 5         penetrated but re-opening
+c                 6         open. either opening/closing.
+c                           has a corner subcase of penetrated at n
+c                           now open at n+1
+c                 7         no cavity growth allowed
+c                -1         logic failed to set a valid current state
+c
+      current_state = -1
+      if( step .eq. 1 ) then
+          current_state = 1
+      elseif( neutral )   then
+          if( closing ) current_state = 2
+          if( opening ) current_state = 3            
+      elseif( penetrated  ) then
+          if( closing ) current_state = 4
+          if( opening ) current_state = 5            
+      elseif( open  ) then
+          current_state = 6
+          if( opening .and. open ) then
+             oldreldis = reladis(i,3) - delrlds(i,3)
+             if( oldreldis .lt. zero ) current_state = 8
+          end if   
+      end if    
+      if( .not. include_cavity_growth ) current_state = 7
+c
       stiff_normal = mark ! for error checking
-      if( debug_span_loop ) write(iout,9220) loading, old_state
+      T_new        = mark ! for error checking
+      new_state    = -1   ! saved in history for possible future use
 c      
-      do while ( run_loop )
-        select case( old_state )
-        case( 0 ) ! first load step
-          if( loading )   old_state = 1
-          if( unloading ) old_state = 2
-          run_loop = .true.
-        case( 1 ) ! old state was loading/unloading with a >= a_0
-          call mm04_cavit_std_update
-          run_loop = .false.
-          cycle
-        case( 2 ) ! was compressive loading with a <= a_0
-          if( unloading ) then  ! continue compressing
+      select case( current_state )
+      case( 1 ) 
+          if( closing ) then
+            new_state = 1
+            call mm04_cavit_update_linear
+          else
             new_state = 2
-            call mm04_cavit_linear_stiff
-            stiff_normal = stiff_linear * props%compression_mult
-            T_new = T_n + stiff_normal * delrlds(i,3)
-            run_loop = .false.
-            if( debug_span_loop ) write(iout,9210)   
-     &                new_state, stiff_linear, stiff_normal, T_new
-            cycle
-          end if
-          old_state = 3 ! separation rate has changed to > 0
-          run_loop = .true.
-          if( debug_span_loop ) write(iout,9240)   
-        case( 3 ) ! was opening from compressive state where
-c                    "a" continues to equal a_0.
-          if( unloading ) then ! reverses back into compression
-            old_state = 2
-            run_loop = .true.
-            if( debug_span_loop ) write(iout,9250)   
-            cycle
-          end if  
-          call mm04_cavit_linear_stiff
-          trial_T_new = T_n + stiff_linear * delrlds(i,3)
-          if( trial_T_new .le. zero ) then  ! still in compression
-               new_state = 3
-               stiff_normal = stiff_linear 
-               T_new = trial_T_new
-               run_loop = .false.
-               cycle  
-          end if 
-          old_state = 1 ! made it back to tension. std update
-          run_loop = .true.
-          if( debug_span_loop ) write(iout,9230)   
-        case default
-             write(iout,*) '*** fatal error mm04 cavit @ 1'
-             call die_abort
-        end select
-      end do  ! over do while for state table    
+            call mm04_cavit_std_update
+          end if   
+      case( 2 ) 
+          new_state = 3
+          call mm04_cavit_update_linear
+      case( 3 ) 
+          new_state = 4
+          call mm04_cavit_std_update
+      case( 4 ) 
+          new_state = 5
+          call mm04_cavit_update_linear
+      case( 5 )
+          new_state = 6
+          call  mm04_cavit_update_linear
+      case( 6 ) 
+          new_state = 7
+          call mm04_cavit_std_update 
+      case( 7 ) 
+          new_state = 8
+          call  mm04_cavit_update_linear
+      case( 8 ) 
+          new_state = 9
+          call  mm04_cavit_update_linear
+      case( -1 ) ! no current state set
+          write(iout,9300) felem+i-1, gpn
+          write(iout,9310) reladis(i,3), delrlds(i,3),
+     &                     opening, closing, neutral, penetrated      
+          write(iout,9320) N_n, a_n, b_n, V_n, T_n,
+     &                  sigma_m, sigma_e, d_strain, c_strain
+          call die_abort
+      case default ! really weird if gets here
+         write(iout,*) '*** fatal error mm04 cavit @ 1'
+         call die_abort
+      end select
 c
-c             step 4: verify completion of state table with a result.
+c             step 4: verify completion of update with a result.
 c                     update stress table and history
 c
       if( new_state .eq. -1 .or. abs(T_new)+one .gt. mark .or.
      &  stiff_normal .le. zero .or. stiff_normal+one .gt. mark ) then
-        write(iout,*) '..Fatal error mm04 cavit ! 2'
-        call die_abort
+          write(iout,9300) felem+i-1, gpn
+          write(iout,*) '..Fatal error mm04 cavit @ 2'
+          call die_abort
       end if 
 c
 c             step 5: compute tangential traction and current
@@ -1097,14 +1122,13 @@ c
      &     /,15x, "T_n, sigma_m, sigma_e:            ",3e14.5,
      &     /,15x, "d_strain, c_strain, reladis(i,3): ",3e14.5,
      &     /,15x, "delrlds(i,3):                     ",e14.5 )   
-9210  format(15x, "new_state                         ",i5,
-     &     /,15x, "K linear, K normal:               ",2e14.5,
-     &     /,15x, "T_new:                            ",e14.5 )
-9220  format(15x, "start state table solution",
-     &     /,15x, "loading, old_state:               ",l3,i5 )
-9230  format(15x, "switch state 3 to 1, loop" )
-9240  format(15x, "switch state 2 to 3, loop" )
-9250  format(15x, "switch state 3 to 2, loop" )
+9300  format('>>>> FATAL ERRROR: element, gpn: ', 2i6 )
+9310  format(15x,'reladis(,3), delrdis(,3): ',2e14.6, 
+     &    /,15x,'opening, closing, neutral, penetrated: ',4l2)
+9320  format(15x,"N_n:                               ",e14.5,
+     &     /,15x, "a_n, b_n, V_n:                    ",3e14.5,
+     &     /,15x, "T_n, sigma_m, sigma_e:            ",3e14.5,
+     &     /,15x, "d_strain, c_strain:               ",3e14.5 )
 c
 c
       contains   !   ....  note this  ....
@@ -1112,15 +1136,45 @@ c     ========
 c
 c    ****************************************************************
 c    *                                                              *
+c    *          subroutines: mm04_cavit_update_linear               *
+c    *                                                              *
+c    *             last modified:  7/21/2015 rhd                    *
+c    *                                                              *
+c    *                                                              *
+c    ****************************************************************
+c
+      subroutine mm04_cavit_update_linear
+      implicit none
+c 
+      call mm04_cavit_linear_stiff  ! stiff at t = 0, rate = 0 
+      stiff_normal = stiff_linear 
+      if( reladis(i,3) .lt. zero ) 
+     &     stiff_normal = stiff_linear * props%compression_mult
+      T_new = stiff_normal * reladis(i,3)
+      N_new = props%N_I
+      a_new = props%a_0
+      b_new = props%b_0
+      V_new = props%V_0  
+c
+      return
+      end   subroutine mm04_cavit_update_linear         
+c
+c    ****************************************************************
+c    *                                                              *
 c    *          subroutines: mm04_cavit_std_update                  *
 c    *                                                              *
 c    *             last modified:  11/20/2014 rhd                   *
 c    *                              3/10/2015 kbc (VVNT, qmod)      *
+c    *                              7/21/2-15 rhd (error check for  *
+c    *                                a < a_0 )                     *
 c    *                                                              *
 c    ****************************************************************
 c
       subroutine mm04_cavit_std_update
       implicit none
+#dbl      double precision, parameter ::
+#sgl      real, parameter ::
+     & local_tol_a_0 = 0.95d0
 c
 c             step 1: compute f, then q(f), then c1.
 c                     c_0, c_1, c_2. these routines will be inlined
@@ -1173,21 +1227,22 @@ c             step 3: update remaining internal state variables and
 c                     update the history vector (see top of mm04)
 c                     V2_dot does not depend on T_new  
 c 
+c                     if we find that a_n < a_0 (within small tol),
+c                     the stress updating/solution process is in
+c                     an inconsistent state.
+c 
       V1_dot = four * pi * props%D * T_new / q_factor
       V_new  = V_n + dtime * (v1_dot + v2_dot)
       a_new  = a_n + dtime*(v1_dot + v2_dot) / 
      &      ( four * pi * a_n**2 * props%hpsi )
 c     
-      if( a_new .le. props%a_0 ) then ! no more closing of cavities
-        N_dot = zero
-        a_new = props%a_0
-        b_new = props%b_0
-        N_new = props%N_I
-        V_new = props%V_0
-        call mm04_cavit_linear_stiff
-        stiff_normal =  props%compression_mult * stiff_linear
-        new_state = 2
-        return
+      if( a_new .lt. local_tol_a_0*props%a_0 ) then
+        write(iout,*) " >> FATAL ERROR: mm04_cavit_std_update @ 1"
+        write(iout,9300) felem+i-1, gpn
+        write(iout,9310) reladis(i,3), delrlds(i,3),
+     &                   opening, closing, neutral, penetrated      
+        write(iout,9320) v1_dot, V_new, a_new
+        call die_abort
       end if     
 c     
 c                     a_new cannot be > (tol) * b_new. set limit
@@ -1231,6 +1286,11 @@ c
      &    /,15x,  "a_new, b_new:                     ",2e14.5,
      &    /,15x,  "N_new, N_dot, nuc active:         ",2e14.5,5x,l1,
      &    /,15x,  "stiff_normal, new_state:          ",e14.5, i5 )
+9300  format('>>>> FATAL ERRROR: element, gpn: ', 2i6 )
+9310  format(15x,'reladis(,3), delrdis(,3): ',2e14.6, 
+     &    /,15x,'opening, closing, neutral, penetrated: ',4l2)
+9320  format(15x, "v1_dot, v2_dot, V_new, a_new:     ",4e14.5)
+
 9800  format('>>>> FATAL ERROR. routine mm04_cavit_sig_update.',
      & /,    '                  iterations in mm04_nr_itr did not',
      & /,    '                  converge. ',
@@ -1328,6 +1388,7 @@ c
      &    /,15x,  "sigma_m, sigma_e,                           ",2e14.5,
      &    /,15x,  "a, b                                        ",2e14.5,
      &    /,15x,  "beta_signed, v_h_term                       ",2E14.5)
+c
       end subroutine mm04_cavit_dV_L_or_H
 c
 c    ****************************************************************
@@ -1408,6 +1469,7 @@ c
      & /,    '                  job terminated.', // )
 9001  format('elm, gpn, f, q_factor:', i4, 1x, i2, 1x, e14.5, 
      &   1x, e14.5)
+c
       end subroutine mm04_cavit_qfactor
 c
 c    ****************************************************************
