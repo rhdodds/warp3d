@@ -3,13 +3,7 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                Last Update: February 8, 2015
-                  -> updated pat2exII/warp3d2exII support program
-                  -> new state variable output
-                  ->user_routines.f split into 4 user_routines_...f files
-
-
-
+                Last Update: July 31, 2015
 
 Contents:
 =========
@@ -41,7 +35,7 @@ distribution in PDF form (the manual directory),
 complete with full bookmarks.
 
 The full distribution: source code, ready-to-run executables,
-re-building scripts for each major platform,
+re-building scripts for each platform,
 updated user manual (pdf) is available on:   www.warp3d.net
 
 This website provides two distribution styles, one oriented towards
@@ -51,7 +45,7 @@ The difference is just in the tools used to compress/uncompress the files.
 Files for Mac OS X / Linux users:
 ---------------------------------
  o  The entire WARP3D distribution is available for download
-    as one (~180 megabyte) .tar.gz file. The most current version
+    as one (~200 megabyte) .tar.gz file. The most current version
     will be shown on the web site. Clicking the link will initiate
     the download.
 
@@ -79,6 +73,8 @@ Files for Mac OS X / Linux users:
 
     Linux -- To unzip and then untar a file named temp.tar.gz:
       tar -xvzpf temp.tar.gz
+      
+    where temp is replace by the actual, downloaded file name.
 
  o  Scan the remainder of this README
 
@@ -87,7 +83,7 @@ Files for Mac OS X / Linux users:
     
  o  The ready-to-run executables for Mac OS X and Linux are included in the
     distribution. No other libraries, compilers, etc. are required (but
-    some configuration is required, see installation instructions).
+    some minor configuration is required, see installation instructions).
 
     The OS X and Linux versions are compiled to run only in 64-bit mode
     on Intel processors: Core 2 Duo and later.
@@ -96,14 +92,13 @@ Files for Mac OS X / Linux users:
 Files for Windows Users:
 ------------------------
  o  The entire WARP3D distribution is available for download as one
-    (~180 megabyte) .zip file called warp3d_distribute_###.zip. Get
-    the highest number available for the most recent version.
+    (~200 megabyte) .zip file called warp3d_distribute_###.zip. 
 
- o  To unzip a file named temp.zip on Windows:
+ o  To unzip a file named (for example) temp.zip on Windows:
       <Right click the file temp.zip and choose Extract All...>
 
  o  The directory, subdirectories and files created by the unzip process can be
-    located whereever you chose. WARP3D does NOT require installation in
+    located where ever you chose. WARP3D does NOT require installation in
     c:\Program Files (for example). The unzip process does NOT create or place
     any files outside of the install directory created by the unzip. The
     (unzip) install process does NOT modify the Windows Registry.
@@ -112,8 +107,8 @@ Files for Windows Users:
     without any system level access. For example, a user can install WARP3D
     with this process in their Documents folder.
 
- o  Examine the README_Windows_Users and the recent_features files. Both can
-    be viewed in WordPad, NoptePad, NotePad++, ....
+ o  Examine the README_Windows_Users - viewable in WordPad, 
+    NotePad, NotePad++, ....
 
  o  The ready-to-run executable for Windows is included
     in the distribution. No other libraries, Intel software, etc. are required.
@@ -187,7 +182,7 @@ running WARP3D.
   The Windows version of WARP3D uses OpenMP (threads) to achieve very efficient
   parallel execution.
 
-  This version executes under Windows XP, Vista, Windows 7 (probably W8, W10).
+  This version executes under Windows 7 (probably W8, W10).
   The executable is built on a W7 SP1 system.
   
   
@@ -201,10 +196,6 @@ running WARP3D.
         Application Failed to Start Properly ...
         
         Renaming libiomp5md.dll to save_libiomp5md.dll fixes the problem.
-
-  Note: on XP the paging file size may need to be increased.
-        Control Panel -> System (icon) -> Performance (tab on top)
-        -> Virtual Memory CHANGE button
 
   run_linux_em64t  (a directory)
   ==============================
@@ -226,7 +217,7 @@ running WARP3D.
   suite installed (which includes the MKL library). To re-build the MPI +
   OpenMP threaded version, the Intel MPI system must be installed.
   
-  The included executables are built on a Red Hat system Ubuntu 14.04 LTS.
+  The included executables are built on Ubuntu 14.04 LTS.
   There are verified to run on RedHat 7.0 (Maipo) but not on earlier versions
   (you will need to re-compile).
 
@@ -235,13 +226,11 @@ running WARP3D.
 
   Pre-compiled executables for WARP3D, patwarp.
 
-  The Intel sparse solver (Pardiso) is included in these executbales - both
-  the direct and iterative options in Pardiso. The direct option will
-  run in an out-of-memory mode if requested by the user. Pardiso runs in
-  parallel using threads if multiple cores are available.
-
   The OS X version of WARP3D uses OpenMP (threads) to achieve very efficient
   parallel execution.
+
+  The Intel sparse solver (Pardiso) is included in these executbales - both
+  the direct and iterative options in Pardiso. 
 
   WARP3D on OS X is an almost statically linked executable. One library
   is dynamically linked: pthreads. This library comes with Mac OS X.
@@ -279,23 +268,24 @@ running WARP3D.
   warp3d2exii (directory)
   ===========
 
-  Contains a Python program to create an ExodusII (.exo) database for
+  Contains a Python (2.7.x or later) program to 
+  create an ExodusII (.exo) database for
   post-processing by ParaView and other programs.
   
   The program is warp3d2exii (formerly named pat2exII)
   
-  warp3d2exII do the following:
+  warp3d2exII does the following:
   
-    1) read flat model description file produced by WARP3D
+    1) reads flat model description file produced by WARP3D
        (see manual Section 2.12)
        
     or
     
-    2) a Patran (text) neutral file for the model written by
+    2) reads a Patran (text) neutral file for the model written by
        WARP3D (see manual Section 2.12)  or some other program.
        
        
-    and WARP3D generated "flat" result files (_text, _stream
+    and then reads WARP3D generated "flat" result files (_text, _stream
     or _text.gz)
 
   The Exodus II database can be used by ParaView to post-process computed
@@ -402,7 +392,8 @@ running WARP3D.
   fracture_models  (a directory)
   ===============
 
-  A set of complete, ready-to-run models for various fracture models.
+  A set of complete, ready-to-run models for various 
+  fracture simulations.
 
   The README file in the directory describes each model.
 
@@ -456,7 +447,7 @@ running WARP3D.
 ==========================================================================
 4.0 SUPPORTED COMPUTER SYSTEMS
 
-   - Windows: 7 (W8, W10likely will work)
+   - Windows: 7 (W8, W10 likely will work)
               64-bit version
               WARP3D uses thread-based, parallel execution.
               executable built using W7-SP1
@@ -471,8 +462,7 @@ running WARP3D.
                   and threads
 
    - OS X: on Intel 64-bit processors (Core 2 Duo and later).
-           The executable is built on 10.10.2.
-           Should run ok on 10.9.x.
+           The executable is built on 10.10.4.
 
 ==========================================================================
 5.0 Changing source code and re-building the executables

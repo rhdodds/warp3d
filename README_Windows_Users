@@ -2,9 +2,8 @@
 
                Highest Level README for Windows Users
 
-                last Update: February 8, 2015 (RHD)
-                             edits, cleanup, clarity
-                             new ifort compiler
+                last Update: July 31, 2015
+                             cleanup
                              continued issues with libiomp5md.dll
 
 ==========================================================================
@@ -12,18 +11,18 @@
 *** NOTES: ***
 
 WARP3D is built for Windows using the Intel Fortran Composer XE 
-Version 15.0.1
+Version 15.0.2
 
 The Intel compiler is * NOT * required on your system to run the executable
 for WARP3D in the distribution.
 
-The compiler is needed only if you intend to modify the source code and
+The compiler is needed only if you intend to modify the source code
 and re-build the executable.
 
 ==========================================================================
 
-Quick Start Using the Ready-to-Run Executables
-----------------------------------------------
+Quick Start Using the Ready-to-Run Executable
+---------------------------------------------
 
 1. We recommend that you scan thru the README file first
    for information on downloading and installing WARP3D for Windows
@@ -45,19 +44,21 @@ Quick Start Using the Ready-to-Run Executables
 
       - System administrator access is not required to
         unzip/install unless the distribution directory is to
-        be located in a system private directory.
+        be located in a system level directory.
 
 2. The WARP3D distribution includes a ready-to-run executable
    (64-bit) located in the run_windows_64 subdirectory.
    This executable has been created and tested on Windows 7 SP1
-   updated thru February 8, 2015. We expect this executable to
-   work on Windows 8.x and 10.x since no special system libraries are used.
+   updated thru the date posted at top of document.
+   We expect this executable to work on Windows 8.x 
+   and 10.x since no special system libraries are used.
 
 3. WARP3D does not have a graphical user interface (GUI). The program
    is initiated from the command line in a shell program.
+   
    On Windows, this will often be the command prompt. We use, and
    highly recommend, the freely available Cygwin environment
-   for Windows which provides provides a bash, csh, and ksh shells that
+   for Windows which provides provides bash, csh, and ksh shells that
    operate as they do on Linux systems (but this not required).
 
 4. The Windows version of WARP3D supports parallel execution thru
@@ -75,14 +76,10 @@ Quick Start Using the Ready-to-Run Executables
         
    Renaming libiomp5md.dll to save_libiomp5md.dll fixes the problem.
 
-   Note: on XP the paging file size may need to be increased.
-        Control Panel -> System (icon) -> Performance (tab on top)
-        -> Virtual Memory CHANGE button
-   
 6. To run WARP3D using the built-in Windows software,
    open a standard command shell using any
    technique you know [on W7, click Start and type
-   the word command in search box. The Command Prompt shell is at top
+   the word command in search box. The Command shell is at top
    of list]. The example below assumes you have installed the WARP3D
    distribution in the directory c:\warp3d  (shortened name from the
    as distributed name warp3d_distribute_...). The example here
@@ -111,8 +108,7 @@ Quick Start Using the Ready-to-Run Executables
    in parallel, e.g., during stiffness and stress updating. In the example
    here it is assumed that the computer has at least 4 cores available
    for executing the WARP3D analysis. We recommend to NOT use the
-   hyper-threading option on newer machines. Just increase the number of
-   thread above for more capable hardware.
+   hyper-threading option on newer machines.
 
    The above command sequence starts WARP3D execution with input
    taken from the file test_18a. All output is sent to the command shell
@@ -153,8 +149,9 @@ Re-Building the Windows Executable for WARP3D
    This software includes the Math Kernel Library (MKL) with the Pardiso solver.
 
 2. To simplify the process of setting up the proper environment and running the
-   Intel compiler, we create a shortcut to a standard Windows command shell
-   on the desktop for convenience. We make one of these with name F90_64.
+   Intel compiler, on our systems we create a shortcut to a 
+   standard Windows command shell on the desktop for convenience. 
+   We make one of these with name F90.
 
    We access Properties of the command shell and set the Target as:
 
@@ -167,12 +164,11 @@ Re-Building the Windows Executable for WARP3D
    or where ever you have have WARP3D installed.
 
 3.  Put your UMAT routine and all support routines it calls into the 
-    four (4) user_routines....f
-    file located in the src directory. Please read the instructions/guidance
-    in comments at the top of the existing user_routines....f file. 
-    Example UMAT routines
-    used to test the UMAT capability in WARP3D are included in the existing
-    user_routines....f files.
+    four (4) user_routines....f  files located in the src directory. 
+    Please read the instructions/guidance
+    in comments at the top of the existing user_routines....f files. 
+    Example UMAT routines used to test the UMAT capability in 
+    WARP3D are included in the distributed user_routines....f files.
 
 4. At the usual prompt in the command shell window, enter the command:
 
@@ -203,6 +199,8 @@ Running Verification Suite of Analyses
    home directory for your system. Example:
 
         export WARP3D_HOME=c:/local_programs/warp3d
+        
+   where c:/local_programs... is replaced by the actual location used.
 
 5. The supplied Bash shell script: warp3d_script_windows may be
    used within a Bash shell window to start execution of WARP3D
@@ -211,6 +209,7 @@ Running Verification Suite of Analyses
 
    where # is replaced by the number of threads for parallel execution.
 
-6. The verification directory file run_tests.bash makes use of the
-   warp3d_script_windows file.
+6.  Run the shell script run_tests.bash and follow the interactive 
+    prompts. The script runs selcted problems an ccheks output for
+    correctness.
 

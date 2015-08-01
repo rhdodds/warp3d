@@ -3,12 +3,12 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: February 8, 2015 (RHD, MM)
+                      Last Update: July 31, 2015
 
 *** LATE BREAKING NEWS ***
 
 The ready-to-run executables included in this distribution were built
-on Ubuntu 14.04 LTS using Intel Composer XE Fortran  15.0.1
+on Ubuntu 14.04 LTS using Intel Composer XE Fortran  15.0.2
 The MPI version is Intel MPI 4.1.3.045.
 
 These executables also run on RedHat 7.0. Re-compiling (really re-linking)
@@ -46,6 +46,7 @@ E. Re-Building the Threads-Only (Type 1)  Executable for WARP3D
    --> Needed to include your UMAT
 F. Re-Building the Hybrid (MPI + Threads) (Type 2) Executable for WARP3D
    --> Needed to include your UMAT
+G. Run Verification Suite   
 
 ===================================================================================
 
@@ -57,9 +58,10 @@ WARP3D has two executables for Linux computers.
 Type 1: executable is warp3d.omp  (for nearly all laptop, desktop, server users)
 
   Parallel execution uses only threads. Most useful for laptops, desktops
-  and small compute servers offering shared-memory style computing. On
+  and compute servers offering shared-memory style computing. On
   traditional computing "clusters," the threads only version runs on just one
-  machine in the cluster.
+  machine in the cluster (but multiple concurrent WARP3D analysis jobs can 
+  of course be run on other machines in the cluster).
 
   This type of parallel execution requires no domain decomposition of
   the finite element mesh. The linear equation solver is Pardiso in the Intel MKL
@@ -94,7 +96,10 @@ Type 2: executable is warp3d.mpi_omp
 
   Linear equation solver: hypre (iterative) which runs on the same
   MPI ranks as WARP3D. Each hypre rank uses the same number of threads
-  as ranks in WARP3D.
+  as ranks in WARP3D. The Pardiso direct and iterative solves may also
+  be used during MPI execution. However, the element stiffness matrices
+  are recovered to the root process, assembled and solved there. MPI
+  ranks 1, 2, 3, ... are suspended while the Pardiso solver runs.
 
   The Intel MPI runtime system must installed on your computer.
   (No Intel Fortran compiler required).
@@ -107,7 +112,7 @@ Type 2: executable is warp3d.mpi_omp
 B.  Installing the precompiled versions of WARP3D
     ---------------------------------------------
 
-1.  We recommend your scan through the README files before proceeding.
+1.  We recommend you scan through the README files before proceeding.
 
 2.  Obtain the WARP3D distribution for Linux/OS X from the WARP3D website:
    
@@ -115,7 +120,7 @@ B.  Installing the precompiled versions of WARP3D
 
 3.  Extract the tarball (for example, use: tar xvzf warp3d.....tar.gz).
 
-4.  This will create a directory called something like "warp3d-17.5.8".
+4.  This will create a directory called something like "warp3d-17.6.0".
 
 5.  Move this directory (which contains the complete WARP3D package) to the
     desired location on your filesystem. Change access permissions as desired.
@@ -133,7 +138,7 @@ B.  Installing the precompiled versions of WARP3D
     Recommendation: set this variable in your ~/.bashrc to avoid having to
     redo this step every time you open a new terminal window.
 
-8.  Modify the variable LD_LIBRARY_PATH to enable the linker to find the
+8.  Modify the variable LD_LIBRARY_PATH that enables the linker to find the
     various external shared libraries. For a bash shell:
 
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WARP3D_HOME/linux_packages/lib
@@ -193,7 +198,7 @@ C.  Quickstart: Precompiled Type-1 threads-only version
     WARP3D proper.  MKL_NUM_THREADS sets the number of threads for the Intel
     Pardiso sparse shared memory solver.  This example assumes
     the hardware supports at least 4 threads (usually a system with
-    at least 4 cores).
+    at least 4 cores). Pardiso will not use hyperthreading even if available.
 
     LD_LIBRARY_PATH was discussed above in section "B".
 
@@ -229,7 +234,7 @@ C.  Quickstart: Precompiled Type-1 threads-only version
 D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
     --------------------------------------------------------------------------
 
-1.  We recommend your scan through the README files.
+1.  We recommend you scan through the README files.
 
 2.  Perform all steps in section "B" to install the precompiled version
     of WARP3D.
@@ -245,7 +250,7 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
        same number of threads/rank.
 
 4.  Example. This model uses 4 domains (MPI ranks=4) with 2 threads
-    per rank.
+    (real cores) per rank.
 
 
     cd $WARP3D_HOME/example_problems_for_READMEs
@@ -253,7 +258,7 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
     export NUM_WARP3D_RANKS=4
     export OMP_NUM_THREADS=2
     export MKL_NUM_THREADS=2
-    ulimit -s 100000
+    ulimit -s 100000      <<<   Some Linux versions will need this
     export MPI_TYPE_MAX=4096
     export I_MPI_PIN_DOMAIN=omp
     export I_MPI_PIN_HOST=1
@@ -311,12 +316,11 @@ Steps:
     This variable is safe to modify in ~/.bashrc
 
 3.  Put your UMAT routine and all support routines it calls into the 
-    four (4) user_routines....f
-    file located in the src directory. Please read the instructions/guidance
-    in comments at the top of the existing user_routines....f file. 
-    Example UMAT routines
-    used to test the UMAT capability in WARP3D are included in the existing
-    user_routines....f files.
+    four (4) user_routines....f  files located in the src directory. 
+    Please read the instructions/guidance
+    in comments at the top of the existing user_routines....f files. 
+    Example UMAT routines used to test the UMAT capability in 
+    WARP3D are included in the distributed user_routines....f files.
 
 4.  Change to the src directory and run the "Makewarp.bash" script.  This
     will interactively guide you through the process of compiling WARP3D.
@@ -345,16 +349,16 @@ To build the hybrid version of WARP3D, this Intel software must be installed:
   1.  A recent version of the Intel Fortran Composer XE system. This package
       includes the Intel Fortran compiler "ifort" and the MKL math library
       (has the Pardiso solver). We work with the most current
-      release (14.x) of the Intel ifort compiler. Older versions should also work,
+      release (15.0.2) of the Intel ifort compiler. Older versions may work,
       though optimization issues may arise. Each release of the compiler
       can require tweaking of optimization levels (-O#) in the makefile. We
       experiment with the key *.f files to obtain correct execution at
       the highest optimization level for this release of the compiler
 
-  2. Intel's MPI distribution (impi). Our processes work correctly with
-     impi 4.0 update 3 and have been tested on Red Hat Enterprise Linux
-     Server release 7.0 and Ubuntu 14.04 LTS. Other MPI distributions,
-     such as the free and open-source OpenMPI may work, but are untested.
+  2.  Intel's MPI distribution (impi). Our processes work correctly with
+      impi 4.0 update 3 and have been tested on Red Hat Enterprise Linux
+      Server release 7.0 and Ubuntu 14.04 LTS. Other MPI distributions,
+      such as the free and open-source OpenMPI may work, but are untested.
 
 Steps:
 
@@ -392,5 +396,22 @@ LD_LIBRARY_PATH variable before running. This *should* switch from the dynamic-l
 versions distributed in the linux_packages/lib directory to the
 versions installed on the local machine.
 
+G.  Run the Verifications Suite of Test Problems
+    --------------------------------------------
 
+1. The directory verification has a number of problems to exercise
+   a broad coverage of the WARP3D code.
 
+2. Once WARP3D is installed and tested, the
+   verification problems may be executed. 
+
+3. The Bash shell script run_tests.bash runs analyses using threads only 
+   parallel execution. The script runs interactively and prompts for
+   various information. After an analysis is completed, the script examines
+   output files to insure the result match know good solutions.
+
+4. The bash shell script run_mpi_tests.bash runs analyses using MPI+threads
+   parallel execution. The script runs interactively and prompts for
+   various information. After an analysis is completed, the script examines
+   output files to insure the result match know good solutions.    
+   

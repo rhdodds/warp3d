@@ -3,7 +3,7 @@
         Highest Level Read Me for (Mac) OS X (Intel64) Users File for WARP3D
         --------------------------------------------------------------------
 
-                      Last Update: February 8, 2015 (RHD)
+                      Last Update: July 31, 2015 (RHD)
 
 ==========================================================================
 
@@ -17,8 +17,8 @@ ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on 10.10.2
-The executable may run on 10.9.x.
+This distribution was built & verified on 10.10.4
+The executable should run on all 10.10.x
 
 ============================================================================
 
@@ -43,7 +43,7 @@ Quick Start Using the Ready-to-Run Executable
         unzip/install unless the distribution directory is to
         be located in a system level directory, e.g., Applications
 
-2. The WARP3D distribution includes a ready-to-run executable (64-bit).
+2. The WARP3D distribution includes a ready-to-run executable.
    This file (warp3d.omp) is located in the run_mac_os_x subdirectory.
 
 3. WARP3D does not have a graphical user interface (GUI). The program
@@ -82,10 +82,10 @@ Quick Start Using the Ready-to-Run Executable
    The above commands set the number of threads = 4 for use by WARP3D and by
    the Intel MKL sparse solver. WARP3D processes blocks of elements
    in parallel, e.g., during stiffness and stress updating. In the example here,
-   it is assumed that the Mac computer has at least 4 cores available
+   it is assumed that the Mac computer has at least 4 (physcial) cores available
    for executing the WARP3D analysis. We recommend to NOT use the
-   hyper-threading option at this point on newer machines. Increase the 
-   number of threads for Mac Pros with more cores.
+   hyper-threading option. Increase the number of threads for
+   Mac Pros with more cores.
 
    The above command sequence starts WARP3D execution with input
    taken from the file test_18a. All output is sent to the Terminal window.
@@ -126,12 +126,12 @@ Quick Start Using the Ready-to-Run Executable
 Re-Building the OS X Executable for WARP3D
 ------------------------------------------
 
-1. The Intel FORTRAN Composer XE  ystem must be installed on OS X.
+1. The Intel FORTRAN Composer XE system must be installed on OS X.
    This software includes the Math Kernel Library (MKL) and the Paradiso solver.
    The "ifort" command must be recognized in a Terminal shell.
 
-   At present, we use Composer XE 2013 which shows version 14.0.3 of ifort.
-   Older versions should also work * BUT *
+   At present, we use Composer XE 2015 which shows version 15.0.1 of ifort.
+   Older versions may also work * BUT *
    optimization issues may arise. With each release of the compiler
    we tweak optimization levels (-O#) in the makefile. We
    experiment with the key *.f files to obtain correct execution at
@@ -146,11 +146,12 @@ Re-Building the OS X Executable for WARP3D
    You will likely want to add this command to your ~/.bash_profile
    so that it will be done automatically at login.
 
-3. Put your UMAT routine and all support routines it calls into the user_routines.f
-   file located in the src directory. Please read the instructions/guidance
-   in comments at the top of the existing user_routines.f file. Example UMAT routines
-   used to test the UMAT capability in WARP3D are included in the existing
-   user_routines.f file.
+3. Put your UMAT routine and all support routines it calls into the 
+   four (4) user_routines....f  files located in the src directory. 
+   Please read the instructions/guidance
+   in comments at the top of the existing user_routines....f files. 
+   Example UMAT routines used to test the UMAT capability in 
+   WARP3D are included in the distributed user_routines....f files.
 
 4. Change to the src directory of the WARP3D distribution and invoke the
    Makewarp.bash script in a Terminal (bash) window. Answer the questions. A
@@ -169,9 +170,13 @@ Running Verification Suite of Analyses
 1. The directory verification has a number of problems to exercise
    a broad coverage of the WARP3D code.
 
-2. Once WARP3D is installed and tested (in Step 5 above), the
-   verification problems may be executed. Run the shell script
-   run_tests.bash and follow the interactive prompts.
+2. Once WARP3D is installed and tested, the
+   verification problems may be executed. 
+
+3. The Bash shell script run_tests.bash runs analyses using threads only 
+   parallel execution. The script runs interactively and prompts for
+   various information. After an analysis is completed, the script examines
+   output files to insure the result match know good solutions.
 
 
 
