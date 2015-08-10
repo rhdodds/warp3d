@@ -13,8 +13,8 @@
 !     of the grains increases the stress (and hence smaller grains show
 !     a higher flow stress).
 !
-!     In particular, for a = 0.1 mm at 5% strain sigma_xx_avg = 462.2 MPa
-!     while for a = 0.001 mm sigma_xx_avg = 518.3 MPa.
+!     In particular, for a = 0.1 mm at 7.5% strain sigma_xx_avg = 47.5 MPa
+!     while for a = 0.001 mm sigma_xx_avg = 71.3 MPa.
 !
 !     Flat model and result files are generated for post-processing with ParaView.
 !     The generated model file is "size_0.1.text". Flat results files
@@ -43,9 +43,9 @@ crystal 1
       theta_0 180.0 voce_m 1.0,
       b 3.5E-7 boltz 1.3806E-20,
       tau_a 0.0,
-      tau_hat_y 155.0 g_0_y 0.007808 q_y 2.0 p_y 0.5,
+      tau_hat_y 15.52 g_0_y 0.007808E6 q_y 2.0 p_y 0.5,
       eps_dot_0_y 1.0E13,
-      tau_hat_v 25.0 g_0_v 0.00488 q_v 2.0 p_v 0.5,
+      tau_hat_v 2.3 g_0_v 0.00488E6 q_v 2.0 p_v 0.5,
       eps_dot_0_v 1.0E7, 
       k_0 10.0  $ geometric hardening
 !
@@ -67,6 +67,10 @@ elements
 *input "incid.inp"
 *input "loading.inp"
 !
+initial conditions
+ temperatures
+  nodes 1-17576 temperature 300.0
+!
 blocking automatic
 !
 constraints
@@ -77,7 +81,7 @@ constraints
 ! 
  loading test
   nonlinear
-    steps 1-100  constraints 0.01
+    steps 1-100  constraints 0.005
 ! 
  nonlinear analysis parameters
    solution technique asymmetric iterative
