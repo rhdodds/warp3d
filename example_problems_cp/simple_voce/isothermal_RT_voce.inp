@@ -1,0 +1,76 @@
+!
+!
+!     one element model to demonstrate the simple Voce hardening
+!     option of the WARP3D crystal plasticity model
+!
+!     simple axial (x) extension to log plastic strain of > 0.2
+!
+structure simple_voce
+!
+crystal 1
+      properties slip_type bcc elastic_type isotropic,
+      e 150000 nu 0.28 hardening voce,
+      harden_n 20 voce_m 5.0,
+      theta_0 400 tau_y 300 tau_v 1200.
+      
+!
+! 100 random orientations
+!
+material hx_cp
+      properties cp alpha 0.0 rho 0.0 angle_convention kocks,
+      n_crystals 100 angle_type degrees, 
+      crystal_input single crystal_type 1,
+      orientation_input file filename 'angles',
+      debug off tolerance 1.0E-10
+!
+number of nodes 8 elements 1
+!
+coordinates
+      1     0.0   0.0   0.0
+      2     1.0   0.0   0.0
+      3     1.0   1.0   0.0
+      4     0.0   1.0   0.0
+      5     0.0   0.0   1.0
+      6     1.0   0.0   1.0
+      7     1.0   1.0   1.0
+      8     0.0   1.0   1.0
+!
+elements
+  1 type l3disop nonlinear material hx_cp,
+                 order 2x2x2 center_output
+!
+incidences
+  1 1-8
+!
+blocking automatic
+!
+constraints
+  plane x = 0 symmetry
+  plane y = 0 symmetry
+  plane z = 0 symmetry
+!
+loading tractions
+  element loads
+    1 face 5 pressure -1.00
+
+loading test
+ nonlinear
+  steps 1-200 tractions 10.0
+!
+nonlinear analysis parameters
+   solution technique asymmetric direct
+   assembly asymmetric on
+   maximum iterations 10
+   minimum iterations 2
+   convergence test norm res tol 0.05
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   consistent q-matrix off
+   time step 1000000.
+   extrapolate on $ needed for the finite-strain effects
+! 
+ output commands use file "get_results.inp" steps all
+!
+ compute displacements for loading test step 145
+stop
