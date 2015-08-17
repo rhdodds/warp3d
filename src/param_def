@@ -34,7 +34,7 @@ c
 !win     &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
 !win     &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,
 !win     &    mxtim=50,nstrs=9,max_procs=2048,mxndpr=8,max_crystals=1000,
-!win     &    max_slip_sys=12, max_uhard=12)
+!win     &    max_slip_sys=12, max_uhard=24)
 c
 #win      parameter (mxnod=1000000,mxel=1000000,mxndel=20,max_threads=64,
 #win     &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=100000,mxlc=5000,
@@ -43,7 +43,7 @@ c
 #win     &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
 #win     &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,
 #win     &    mxtim=50,nstrs=9,max_procs=1024,mxndpr=8,max_crystals=1000,
-#win     &    max_slip_sys=12, max_uhard=12)
+#win     &    max_slip_sys=12, max_uhard=24)
 c
       parameter (mxdof=mxnod*mxndof,
      &  trsz=mxnod*mxndof,mxncor=3*mxnod,

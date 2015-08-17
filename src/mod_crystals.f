@@ -4,7 +4,7 @@ c *    mod_crystals - contains all crystal data, struct for each crystal as  *
 c *                   well as the array of crystals and some helper methods  *
 c *                                                                          *
 c *         written by : mcm                                                 *
-c *         last modified : 3/21/12 mcm
+c *         last modified : 04/01/15 tjt                                     *
 c *                                                                          *
 c ****************************************************************************
 c
@@ -22,6 +22,8 @@ c                             3) single
 c                             1) isotropic
 c                             2) cubic
                   integer :: nslip
+                  integer :: num_hard
+                  logical :: real_tang
                   integer :: h_type
 c                             1) voche or voce
 c                             2) mts
@@ -109,6 +111,8 @@ c
                   c_array(num)%u6 = 0.0
 
                   c_array(num)%h_type = 1
+                  c_array(num)%num_hard = 1
+                  c_array(num)%real_tang = .true.
 
             end subroutine
 c
@@ -300,10 +304,134 @@ c
                         c_array(num)%ni(1,1) = 0.0
                         c_array(num)%ni(1,2) = 1.0
                         c_array(num)%ni(1,3) = 0.0
+                  elseif (c_array(num)%slip_type .eq. 6) then
+                        c_array(num)%nslip = 12
+                        f = 1/dsqrt(2.0D0)
+c                     edge
+                        c_array(num)%bi(1,1)=f
+                        c_array(num)%bi(1,2)=-f
+                        c_array(num)%bi(1,3)=0.d0
+                        
+                        c_array(num)%bi(2,1)=f
+                        c_array(num)%bi(2,2)=0.d0
+                        c_array(num)%bi(2,3)=-f
+                        
+                        c_array(num)%bi(3,1)=0.d0
+                        c_array(num)%bi(3,2)=f
+                        c_array(num)%bi(3,3)=-f
+                        
+                        c_array(num)%bi(4,1)=f
+                        c_array(num)%bi(4,2)=f
+                        c_array(num)%bi(4,3)=0.d0
+                        
+                        c_array(num)%bi(5,1)=f
+                        c_array(num)%bi(5,2)=0.d0
+                        c_array(num)%bi(5,3)=f
+                        
+                        c_array(num)%bi(6,1)=0.d0
+                        c_array(num)%bi(6,2)=f
+                        c_array(num)%bi(6,3)=-f
+                        
+                        c_array(num)%bi(7,1)=f
+                        c_array(num)%bi(7,2)=f
+                        c_array(num)%bi(7,3)=0.d0
+                        
+                        c_array(num)%bi(8,1)=f
+                        c_array(num)%bi(8,2)=0.d0
+                        c_array(num)%bi(8,3)=-f
+                        
+                        c_array(num)%bi(9,1)=0.d0
+                        c_array(num)%bi(9,2)=f
+                        c_array(num)%bi(9,3)=f
+                        
+                        c_array(num)%bi(10,1)=f
+                        c_array(num)%bi(10,2)=-f
+                        c_array(num)%bi(10,3)=0.d0
+                        
+                        c_array(num)%bi(11,1)=f
+                        c_array(num)%bi(11,2)=0.d0
+                        c_array(num)%bi(11,3)=f
+                        
+                        c_array(num)%bi(12,1)=0.d0
+                        c_array(num)%bi(12,2)=f
+                        c_array(num)%bi(12,3)=f
+c                        
+                        f = 1/dsqrt(3.0D0)
+c                edge
+                        c_array(num)%ni(1,1)=f
+                        c_array(num)%ni(1,2)=f
+                        c_array(num)%ni(1,3)=f
+                        
+                        c_array(num)%ni(2,1)=-f
+                        c_array(num)%ni(2,2)=-f
+                        c_array(num)%ni(2,3)=-f
+                        
+                        c_array(num)%ni(3,1)=f
+                        c_array(num)%ni(3,2)=f
+                        c_array(num)%ni(3,3)=f
+                        
+                        c_array(num)%ni(4,1)=f
+                        c_array(num)%ni(4,2)=-f
+                        c_array(num)%ni(4,3)=-f
+                        
+                        c_array(num)%ni(5,1)=-f
+                        c_array(num)%ni(5,2)=f
+                        c_array(num)%ni(5,3)=f
+                        
+                        c_array(num)%ni(6,1)=f
+                        c_array(num)%ni(6,2)=-f
+                        c_array(num)%ni(6,3)=-f
+                        
+                        c_array(num)%ni(7,1)=f
+                        c_array(num)%ni(7,2)=-f
+                        c_array(num)%ni(7,3)=f
+                        
+                        c_array(num)%ni(8,1)=f
+                        c_array(num)%ni(8,2)=-f
+                        c_array(num)%ni(8,3)=f
+                        
+                        c_array(num)%ni(9,1)=-f
+                        c_array(num)%ni(9,2)=f
+                        c_array(num)%ni(9,3)=-f
+                        
+                        c_array(num)%ni(10,1)=-f
+                        c_array(num)%ni(10,2)=-f
+                        c_array(num)%ni(10,3)=f
+                        
+                        c_array(num)%ni(11,1)=-f
+                        c_array(num)%ni(11,2)=-f
+                        c_array(num)%ni(11,3)=f
+                        
+                        c_array(num)%ni(12,1)=f
+                        c_array(num)%ni(12,2)=f
+                        c_array(num)%ni(12,3)=-f
                   else
                         write (out,*) "Error: invalid slip type."
                         call die_gracefully
                   end if
+c
+c ! Allocate number of hardening variables
+                  if (c_array(num)%h_type .eq. 1) then !Voche
+                          c_array(num)%num_hard = 1
+                          c_array(num)%real_tang = .true.
+                  elseif (c_array(num)%h_type .eq. 2) then !MTS
+                          c_array(num)%num_hard = 1
+                          c_array(num)%real_tang = .true.
+                  elseif (c_array(num)%h_type .eq. 3) then !User
+                          c_array(num)%num_hard = 0
+                          c_array(num)%real_tang = .false.
+!                  elseif (c_array(num)%h_type .eq. 4) then !ORNL
+!                          c_array(num)%num_hard = c_array(num)%nslip
+                  elseif (c_array(num)%h_type .eq. 7) then !MRR
+                          c_array(num)%num_hard = c_array(num)%nslip
+                          c_array(num)%real_tang = .true.
+                  else
+                     write(*,101) c_array(num)%h_type
+ 101  format(
+     &      10x,'>> Error: unknown hardening type ', 'i6', '.',
+     &    /,10x, 'Aborting...')
+      call die_gracefully
+                  endif
 c
 c                
                   e = c_array(num)%e
