@@ -386,7 +386,8 @@ c
           call mm04_init( iout, span, felem, props, lprops, iprops,
      &                    local_work%cohes_type,
      &                    local_work%intf_prp_block,
-     &                    matprp(1,local_work%matnum) )
+     &                    matprp(1,local_work%matnum),
+     &                    local_work%cohes_rot_block )
 c
         case ( 5 )
           call setup_mm05_rknstr( span, props, lprops, iprops,
