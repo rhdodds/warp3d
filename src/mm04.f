@@ -22,8 +22,8 @@ c
      4 history1, temp_ref, dtemp, temp_n,
      5 top_surf_elems,
      6 bott_surf_elems, top_surf_stresses_n, bott_surf_stresses_n,
-     7 top_surf_eps_n, bott_surf_eps_n, top_nonlocal_vars,
-     8 bott_nonlocal_vars, top_solid_matl,
+     7 top_surf_eps_n, bott_surf_eps_n, xtop_nonlocal_vars,
+     8 xbott_nonlocal_vars, top_solid_matl,
      9 bott_solid_matl )
 c
       implicit none
@@ -45,7 +45,7 @@ c
      5 top_surf_stresses_n(mxvl,6), bott_surf_stresses_n(mxvl,6),
      6 top_surf_eps_n(mxvl,6), bott_surf_eps_n(mxvl,6),
      7 temp_ref(span), dtemp(span), temp_n(span),
-     8 top_nonlocal_vars(mxvl,*), bott_nonlocal_vars(mxvl,*)
+     8 xtop_nonlocal_vars(mxvl,*), xbott_nonlocal_vars(mxvl,*)
       integer top_surf_elems(span), bott_surf_elems(span),
      1        top_solid_matl(span), bott_solid_matl(span)
       logical nonlocal
@@ -294,7 +294,9 @@ c
      & beta, ds1, ds2, dn, tn_n1, dn_n1, tshear,
      & intfmat(mxvl,3), ppr_support(mxvl,30),
      & top_surf_mean_stress, top_surf_mean_eps,
-     & bott_surf_mean_stress, bott_surf_mean_eps, comp_multiplier
+     & bott_surf_mean_stress, bott_surf_mean_eps, comp_multiplier,
+     & top_nonlocal_vars(mxvl,5), bott_nonlocal_vars(mxvl,5)
+     
        logical elem_killed(mxvl), local_debug
        data zero, e, tol, one, three, forty, initial
      &  / 0.0d0, 2.71828182845904523536d0, 0.1d0, 1.0d0, 3.0d0,
@@ -507,6 +509,10 @@ c
           write(iout,9600)
           call die_abort   
       end if
+      
+      top_nonlocal_vars(1:mxvl,1:5) = 0.0d00
+      bott_nonlocal_vars(1:mxvl,1:5) = 0.0d00
+      
       call mm04_cavit_driver   !  within contains for simplicity
 c
       case default
@@ -640,7 +646,7 @@ c
       if( here_debug ) write(iout,9015)
       call mm04_cavit_sig_update( 
      &     step, iter, span, felem, gpn, iout, mxvl, dtime, nonlocal,
-     &     props, 
+     &     props, intfprps,
      &     trac_n, trac_n1, reladis, delrlds, history, history1,
      &     top_surf_stresses_n, bott_surf_stresses_n,
      &     top_nonlocal_vars, bott_nonlocal_vars, 
@@ -841,7 +847,7 @@ c    ****************************************************************
 c
       subroutine mm04_cavit_sig_update(
      & step, iter, span, felem, gpn, iout, mxvl, dtime, nonlocal,
-     & props,
+     & props, intfprps,
      & trac_n, trac_n1, reladis, delrlds, history, history1,
      & top_surf_stresses_n, bott_surf_stresses_n,
      & top_nonlocal_vars, bott_nonlocal_vars, local_debug,
@@ -854,7 +860,7 @@ c
       integer :: step, iter, span, iout, mxvl, felem, gpn, history_len
 #dbl      double precision ::
 #sgl      real ::
-     1 trac_n(mxvl,*), delrlds(mxvl,*),
+     1 trac_n(mxvl,*), delrlds(mxvl,*), intfprps(mxvl,*),
      2 trac_n1(mxvl,*), reladis(mxvl,*),
      3 history(span,history_len), history1(span,history_len), dtime,
      4 top_surf_stresses_n(mxvl,6), bott_surf_stresses_n(mxvl,6),
@@ -884,9 +890,9 @@ c
      & sigma_e, sigma_m, term1,term3, fraction,
      & v2_dot, pi, c_0, c_1, c_2, f_0, q,
      & d_strain, c_strain,
-     & delta_c_dot, oldreldis,
-     & comp_multiplier, 
-     & top_sigma_m, bott_sigma_m, work(6), top_sigma_e, bott_sigma_e,
+     & delta_c_dot, oldreldis, Tn_solid,
+     & comp_multiplier, top_sigma_e, bott_sigma_e,
+     & top_sigma_m, bott_sigma_m, sig_top(6), sig_bott(6), 
      & N_n, a_n, b_n, V_n, T_n, ratio_1, ratio_2, f_factor,
      & q_factor, Lnr, S, pm, delta_T, T_new, v1_dot, V_new, a_new,
      & N_new, b_new, N_dot, stiff_normal, stiff_shear,
@@ -900,7 +906,7 @@ c
      & external :: mm04_cavit_mises
 c
       logical :: elem_killed(mxvl), local_debug, converged, 
-     & nucleation_active, debug_span_loop,
+     & nucleation_active, debug_span_loop, compute_solid_local,
      & iterative_solve, opening, closing,
      & debug_newton, open, neutral, penetrated
       logical :: degrade_shear, VVNT, modify_q, include_nucleation,
@@ -915,12 +921,13 @@ c
 c
 c             set options in formulation to include, debug options
 c
-      degrade_shear         = .true.
-      VVNT                  = .true.
-      modify_q              = .true.
-      include_nucleation    = .true.
+      degrade_shear         = .false.
+      VVNT                  = .false.
+      modify_q              = .false.
+      include_nucleation    = .false.
       debug_newton          = .false.
-      include_cavity_growth = .true.
+      include_cavity_growth = .false.
+      compute_solid_local   = .true.
 c      
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 
      &                  ( step .eq. 599 )
@@ -930,9 +937,7 @@ c
       do i = 1, span  ! main loop over all elems in block
 c
       abs_elem        = felem + i - 1
-      debug_span_loop = local_debug .and. abs_elem .eq. 3401
-     &                   .and. gpn .eq. 1 
-      debug_span_loop = .false.
+      debug_span_loop = .false. ! abs_elem .eq. 3182
 c      
       if( debug_span_loop ) write(iout,9000) felem+i-1, gpn      
 c
@@ -956,11 +961,12 @@ c
      &                 bott_surf_stresses_n(i,3) ) / three
       sigma_m = half * ( top_sigma_m + bott_sigma_m )
 c
-      work(1:6)    = top_surf_stresses_n(i,1:6)
-      top_sigma_e  = mm04_cavit_mises( work )
-      work(1:6)    = bott_surf_stresses_n(i,1:6)
-      bott_sigma_e = mm04_cavit_mises( work )
+      sig_top(1:6)    = top_surf_stresses_n(i,1:6)
+      top_sigma_e     = mm04_cavit_mises( sig_top )
+      sig_bott(1:6)    = bott_surf_stresses_n(i,1:6)
+      bott_sigma_e = mm04_cavit_mises( sig_bott )
       sigma_e      = half * ( top_sigma_e + bott_sigma_e )
+      if( compute_solid_local ) call mm04_compute_solid_local( i )
 c
       d_strain = half * ( top_nonlocal_vars(i,1) +  ! creep strain rate
      &                    bott_nonlocal_vars(i,1) )
@@ -1091,7 +1097,23 @@ c
       history1(i,2) = a_new / props%a_0
       history1(i,3) = b_new / props%b_0
       history1(i,4) = V_new / props%V_0
-      history1(i,5) = T_new
+      history1(i,5) = Tn_solid !    T_new
+C      if( abs(T_new) .gt. 1000. .and. step .gt. 1) then
+C         write(*,9500) abs_elem, T_new, top_sigma_m , bott_sigma_m,
+C     &        top_sigma_e, bott_sigma_e 
+C         write(*,9510) top_surf_stresses_n(i,1:6),
+C     &       bott_surf_stresses_n(i,1:6)
+C         if( step .eq. 3 ) stop    
+C9500  format(".. big Tn, abs_elem, Tn: ", i6,f10.2,
+C     &  /,10x," top_sigma_m , bott_sigma_m: ",2f10.2,
+C     &  /,10x," top_sigma_e, bott_sigma_e : ",2f10.2 )
+C 9510 format(10x," top stresses: ",6f10.2,
+C     & /, 10x," bottom stresses: ",6f10.2 )     
+C      end if
+       
+c      write(iout,*) "   ... Tnew, Tn_solid: ", T_new, Tn_solid           
+c      if(  abs(Tn_solid)  .gt. 500.d00 ) stop  
+           
       history1(i,6) = stiff_shear
       history1(i,7) = stiff_normal
       iword(1) = new_state; iword(2) = 0
@@ -1133,6 +1155,36 @@ c
 c
       contains   !   ....  note this  ....
 c     ========
+c
+c    ****************************************************************
+c    *                                                              *
+c    *          subroutines: mm04_compute_solid_local               *
+c    *                                                              *
+c    *               last modified:  8/13/2015 rhd                  *
+c    *                                                              *
+c    *                                                              *
+c    ****************************************************************
+c
+      subroutine mm04_compute_solid_local( ie )
+      implicit none
+      integer :: ie
+c
+c             locals
+c
+#dbl      double precision ::
+#sgl      real :
+     & work(6), rotate(3,3)
+c
+      work(1:6) = half * ( sig_top(1:6) + sig_bott(1:6) )
+c      
+      rotate(1:3,1)  = intfprps(ie,51:53)    ! global to local tangent
+      rotate(1:3,2)  = intfprps(ie,54:56)    ! normal. dir 3 is local
+      rotate(1:3,3)  = intfprps(ie,57:59)    ! normal
+c
+      call mm04_tn_solid( rotate, work, Tn_solid, iout, .false. )
+c
+      return
+      end subroutine mm04_compute_solid_local
 c
 c    ****************************************************************
 c    *                                                              *
@@ -1562,6 +1614,11 @@ c
       f_0 = (props%a_0 / props%b_0)**2
       q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
       stiff_linear =  props%b_0**2 * q / ( four * props%D * dtime )
+      if( debug_span_loop ) then
+        write(iout,*) "..... a_0, b_0, f_0, q: ",props%a_0,
+     &        props%b_0, f_0, q
+         write(iout,*) "..... K-linear: " , stiff_linear
+      end if
 c      
       return
       end  subroutine mm04_cavit_linear_stiff      
@@ -1685,7 +1742,7 @@ c    ****************************************************************
 c    *                                                              *
 c    *               subroutine mm04_init                           *
 c    *                                                              *
-c    *                last modified:  2/21/2015 rhd                 *
+c    *                last modified:  8/13/2015 rhd                 *
 c    *                                                              *
 c    *     WARP3D internal routine to help setup mm04               *
 c    *     this subroutine extracts the necessary material          *
@@ -1771,7 +1828,8 @@ c
 c
       subroutine mm04_init( iout, span, first_elem_in_blk,
      &                      props, lprops, iprops,
-     &                      cohes_type, intfprps, matprp )
+     &                      cohes_type, intfprps, matprp,
+     &                      global_to_element_rot )
       implicit none
 c
 $add param_def
@@ -1790,7 +1848,7 @@ c
       real matprp(*)            ! note it is single precision !!!
 #dbl      double precision
 #sgl      real
-     &    intfprps(mxvl,*)
+     &    intfprps(mxvl,*), global_to_element_rot(mxvl,3,3)
 c
 c                     locals
 c
@@ -1879,6 +1937,22 @@ c
           end do
       end if
 c
+c              get global to interface element local rotation
+c              matrix and put in intfprops for mm04 to use
+c              if needed
+c
+      do i = 1, span
+           intfprps(i,51) = global_to_element_rot(i,1,1)
+           intfprps(i,52) = global_to_element_rot(i,2,1)
+           intfprps(i,53) = global_to_element_rot(i,3,1)
+           intfprps(i,54) = global_to_element_rot(i,1,2)
+           intfprps(i,55) = global_to_element_rot(i,2,2)
+           intfprps(i,56) = global_to_element_rot(i,3,2)
+           intfprps(i,57) = global_to_element_rot(i,1,3)
+           intfprps(i,58) = global_to_element_rot(i,2,3)
+           intfprps(i,59) = global_to_element_rot(i,3,3)
+      end do
+c      
       local_debug = intfprps(1,29) .ne. zero
       if ( .not. local_debug ) return
 c
@@ -1901,6 +1975,10 @@ c
           end do
         end if
         write(iout,*) " "
+        write(iout,*) "     .... global -> element local ]R] ...."
+        write(iout,9220) intfprps(i,51), intfprps(i,54), intfprps(i,57)
+        write(iout,9220) intfprps(i,52), intfprps(i,55), intfprps(i,58)
+        write(iout,9220) intfprps(i,53), intfprps(i,56), intfprps(i,59)
       end do
 c
       return
@@ -1908,6 +1986,7 @@ c
  9200 format( "... internal error mm04_init. for element: ", i8,
      &    /,  "    different coehsive option that element 1 of blk" )
  9210 format( ">>>>> FATAL ERROR: job terminated",//)
+ 9220 format(15x,3f10.5)
       end
 c
 c    ****************************************************************
@@ -2690,4 +2769,64 @@ c
 c          
       return
  9010 format(2x,i3,2x,a8,2x,a)      
+      end
+      
+      
+c *******************************************************************
+c *                                                                 *
+c *                 subroutine mm04_tn_solid                        *
+c *                                                                 *
+c *                       written by : rhd                          *
+c *                                                                 *
+c *               last modified : 8/13/2015  (rhd)                  *
+c *                                                                 *
+c *  Compute traction normal to interface from average of solid     *
+c *  element stresses. for nonlocal implementation of cohesive      *
+c *   material model. can be useful for checking                    *
+c *                                                                 *
+c *******************************************************************
+c
+c
+      subroutine mm04_tn_solid( rotate, gsig, tn_solid, iout, debug )
+      implicit none
+c
+      integer :: iout      
+#dbl      double precision :: 
+#sgl      real :
+     & rotate(3,3), gsig(6), tn_solid
+      logical ::   debug
+c
+c                       locals
+c
+#dbl      double precision :: 
+#sgl      real :
+     & nx, ny, nz, tx, ty, tz, tn   
+c
+c      global(1,1) = gsig(1)   !  comments for reference to ordering
+c      global(2,1) = gsig(4) ! xy
+c      global(3,1) = gsig(6) ! xz
+c      global(1,2) = gsig(4)
+c      global(2,2) = gsig(2) 
+c      global(3,2) = gsig(5) ! yz
+c      global(1,3) = gsig(6)
+c      global(2,3) = gsig(5)
+c      global(3,3) = gsig(3)
+c          
+c                       unit normal to interface
+c
+      nx = rotate(3,1); ny = rotate(3,2); nz = rotate(3,3)
+c
+c                       treat solid stresses as acting at point on the
+c                       boundary having (unit) outward
+c                       normal nx i + ny j + nz k
+c                       apply cauchy relation to get traction vector
+c                       on the interface, then dot with normal
+c
+      Tx = gsig(1)*nx + gsig(4)*ny + gsig(6)*nz
+      Ty = gsig(4)*nx + gsig(2)*ny + gsig(5)*nz
+      Tz = gsig(6)*nx + gsig(5)*ny + gsig(3)*nz
+c      
+      Tn_solid = Tx*nx + Ty*ny + Tz*nz
+c
+      return
       end
