@@ -107,7 +107,8 @@ c
      &    call mm04_init( iout, span, felem, props, lprops, iprops,
      &                    local_work%cohes_type,
      &                    local_work%intf_prp_block,
-     &                    matprp(1,matnum)  )
+     &                    matprp(1,matnum),
+     &                    local_work%cohes_rot_block  )
 c
       if( umat_solid ) then    ! Abaqus umat
          do i = 1, span

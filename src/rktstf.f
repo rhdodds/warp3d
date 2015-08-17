@@ -213,7 +213,8 @@ c
      &                      lprops,
      &                      iprops, local_work%cohes_type,
      &                      local_work%intf_prp_block,
-     &                      matprp(1,local_work%matnum) )
+     &                      matprp(1,local_work%matnum),
+     &                      local_work%cohes_rot_block )
          case( 5 )
             call rktstf_set_05( props, iprops, lprops, span,
      &                          local_work )
