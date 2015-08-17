@@ -57,6 +57,8 @@ c           Read in properties
                               c_array(cnum)%slip_type = 2
                         elseif (lab(1:nc) .eq. 'single') then
                               c_array(cnum)%slip_type = 3
+                        elseif (lab(1:nc) .eq. 'roters') then
+                              c_array(cnum)%slip_type = 6
                         else
                               call errmsg(353,dumi,dums,dumr,dumd)
                         end if
@@ -216,6 +218,8 @@ c           Read in properties
                               c_array(cnum)%h_type = 2
                            elseif (lab(1:nc) .eq. 'user') then
                               c_array(cnum)%h_type = 3
+                           elseif (lab(1:nc) .eq. 'roters') then
+                              c_array(cnum)%h_type = 7
                            else
                               call errmsg(364,dumi,dums,dumr,dumd)
                            end if

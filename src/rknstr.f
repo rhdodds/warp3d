@@ -1381,6 +1381,10 @@ c                       into our local structure
                   local_work%c_props(i,c)%k_o = c_array(cnum)%k_o
                   local_work%c_props(i,c)%h_type =
      &                  c_array(cnum)%h_type
+                  local_work%c_props(i,c)%num_hard =
+     &                  c_array(cnum)%num_hard
+                  local_work%c_props(i,c)%real_tang =
+     &                  c_array(cnum)%real_tang
                   local_work%c_props(i,c)%u1 = c_array(cnum)%u1
                   local_work%c_props(i,c)%u2 = c_array(cnum)%u2
                   local_work%c_props(i,c)%u3 = c_array(cnum)%u3
