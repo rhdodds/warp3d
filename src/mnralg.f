@@ -153,14 +153,6 @@ c           in case an adaptive solution is executed for step.
 c
       if( temperatures ) call mnralg_scale_temps( 1, iout )
 c
-c           if the ebe preconditioner is specified, allocate appropriate
-c           variables if it has not already been done.  If another
-c           preconditioner or the direct solver has been specified,
-c           deallocate the ebe variables if they had been previously
-c           allocated.  Tell the slave processors to do the same.
-c
-      call estiff_allocate ( 2 )
-      call wmpi_alert_slaves (33)
 c
 c          initialize solution for this load step  (iter = 0 part)
 c          -------------------------------------------------------
