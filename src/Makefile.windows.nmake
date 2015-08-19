@@ -33,6 +33,7 @@
 #             5/12/2015 remove outrac.f
 #             5/13/2015 remove ouconv.f
 #             6/2/2015  remove oultrc.f
+#             8/19/2015 add /heap-arrays for some *.f
 #
 #    Use macro on the command line to setup for 64-bit build
 #
@@ -1952,13 +1953,13 @@ $(OD)/user_routines_umat$O : user_routines_umat.f
 
 $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f  
 	$(FILTER) < user_routines_other_Abaqus.f > filt_user_routines_other_Abaqus.f
-	$(F90) /O2 /Qip /c filt_user_routines_other_Abaqus.f
+	$(F90) /O2 /Qip /heap-arrays /c filt_user_routines_other_Abaqus.f
 	$(MVC) filt_user_routines_other_Abaqus$O  user_routines_other_Abaqus$O
 	$(MVC) user_routines_other_Abaqus$O $@
 
 $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm
 	$(FILTER) < user_routines_warp3d.f > filt_user_routines_warp3d.f
-	$(F90) /O2 /Qip /c filt_user_routines_warp3d.f
+	$(F90) /O2 /Qip /heap-arrays /c filt_user_routines_warp3d.f
 	$(MVC) filt_user_routines_warp3d$O  user_routines_warp3d$O
 	$(MVC) user_routines_warp3d$O $@
 
