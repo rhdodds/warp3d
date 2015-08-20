@@ -39,6 +39,7 @@
 #              5/12/2015 remove outrac.f
 #              5/13/2015 remove ouconv.f
 #              6/2/2015  remove oultrc.f
+#              8/19/2015 use -heap-arrays on some *.f
 # *****************************************************************************
 #
 #                COMPILER parameter is set by the Makewarp.bash
@@ -2412,7 +2413,7 @@ $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_other_Abaqus.f
 	$(FILTER) < user_routines_other_Abaqus.f > filt_user_routines_other_Abaqus.f
-	$(F90) -O3 -ip -c filt_user_routines_other_Abaqus.f
+	$(F90) -O3 -ip -heap-arrays -c filt_user_routines_other_Abaqus.f
 	$(MVC) filt_user_routines_other_Abaqus$O  user_routines_other_Abaqus$O
 	$(MVC) user_routines_other_Abaqus$O $@
 
@@ -2420,7 +2421,7 @@ $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_warp3d.f
 	$(FILTER) < user_routines_warp3d.f > filt_user_routines_warp3d.f
-	$(F90) -O3 -ip -c filt_user_routines_warp3d.f
+	$(F90) -O3 -ip -heap-arrays -c filt_user_routines_warp3d.f
 	$(MVC) filt_user_routines_warp3d$O  user_routines_warp3d$O
 	$(MVC) user_routines_warp3d$O $@
 
