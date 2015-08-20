@@ -35,7 +35,7 @@ c
      &  zero, start_estiff, end_estiff, omp_get_wtime
       logical local_debug
       data local_debug / .false. /
-      data zero / 0.0 /
+      data zero / 0.0d00 /
 c
 c
 c             For MPI:
@@ -217,26 +217,26 @@ c
       if( local_work%is_cohes_elem ) local_work%cep_sym_size = 6
 c
 c             See if we're actually an interface damaged material
-      if (iprops(42,felem) .ne. -1) then
-            local_work%is_inter_dmg = .true.
-            local_work%inter_mat = iprops(42,felem)
-            local_work%macro_sz = imatprp(132, local_work%inter_mat)
-            local_work%cp_sz = imatprp(133, local_work%inter_mat)
-            tm = local_work%inter_mat
 c
-            local_work%sv(1) = dmatprp(116, tm)
-            local_work%sv(2) = dmatprp(117, tm)
-            local_work%sv(3) = dmatprp(118, tm)
+      local_work%is_inter_dmg = .false.
+      if( iprops(42,felem) .ne. -1 ) then
+        local_work%is_inter_dmg = .true.
+        local_work%inter_mat = iprops(42,felem)
+        local_work%macro_sz = imatprp(132, local_work%inter_mat)
+        local_work%cp_sz = imatprp(133, local_work%inter_mat)
+        tm = local_work%inter_mat
 c
-            local_work%lv(1) = dmatprp(119, tm)
-            local_work%lv(2) = dmatprp(120, tm)
-            local_work%lv(3) = dmatprp(121, tm)
+        local_work%sv(1) = dmatprp(116, tm)
+        local_work%sv(2) = dmatprp(117, tm)
+        local_work%sv(3) = dmatprp(118, tm)
 c
-            local_work%tv(1) = dmatprp(122, tm)
-            local_work%tv(2) = dmatprp(123, tm)
-            local_work%tv(3) = dmatprp(124, tm)
-      else
-            local_work%is_inter_dmg = .false.
+        local_work%lv(1) = dmatprp(119, tm)
+        local_work%lv(2) = dmatprp(120, tm)
+        local_work%lv(3) = dmatprp(121, tm)
+c
+        local_work%tv(1) = dmatprp(122, tm)
+        local_work%tv(2) = dmatprp(123, tm)
+        local_work%tv(3) = dmatprp(124, tm)
       end if
 c
       call chk_killed_blk( blk, local_work%killed_status_vec,
@@ -273,7 +273,7 @@ c
       end if
 c
       call tanstf_allocate( local_work )
-
+c
       call dptstf( span,
      &             edest_blocks(blk)%ptr(1,1),
      &             cdest_blocks(blk)%ptr(1,1),
@@ -317,11 +317,11 @@ c
       nrowek = utsz
       ispan  = span
       if (.not. asymmetric_assembly) then
-      call rktstf( props(1,felem), iprops(1,felem),
+         call rktstf( props(1,felem), iprops(1,felem),
      &             lprops(1,felem), estiff_blocks(blk)%ptr(1,1),
      &             nrowek, ispan, local_work )
       else
-      call rktstf( props(1,felem), iprops(1,felem),
+         call rktstf( props(1,felem), iprops(1,felem),
      &             lprops(1,felem), 
      &             estiff_blocks(blk)%ptr(:,:), 
      &             totdof*totdof, ispan, local_work )
@@ -381,11 +381,12 @@ c     *                subroutine estiff_allocate                    *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                last modified : 12/09/13 mcm                  *
+c     *                last modified : 8/17/2015 rhd                 *
 c     *                                                              *
 c     *     create the blocked data structure for storage of element *
-c     *     stiffness matrices (upper triangle including diagonal).  *
-c     *     also do same for ebe preconditioner for each element     *
+c     *     stiffness matrices                                       *
+c     *        symmetric - upper triangle including diagonal         *
+c     *       asymmetric - lower and upper triangle                  *
 c     *     runs outside any threaded region.                        *
 c     *                                                              *
 c     ****************************************************************
@@ -405,13 +406,14 @@ c            block (dynamically allocated). the arrays are
 c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
-      if ( type .eq. 1 .or. type .eq. 4 ) then
+c            type  = 1, 4 allocate stiffness blocks.
+c            type  = 2 no longer used. old ebe
+c            type =  3 not used
+c            type =  5 deallocate blocks
 c
-c               allocate estiff_blocks -- element stiffnesses
-c               ---------------------------------------------
+      select case ( type ) ! careful. type could be integer constant
+      case ( 1, 4 ) ! symmetric or asymmetric.
 c
-         if (.not. asymmetric_assembly) then ! old code
-
          if ( .not. allocated( estiff_blocks ) ) then
            allocate( estiff_blocks(nelblk), stat=iok )
            if ( iok .ne. 0 ) then
@@ -424,150 +426,39 @@ c
             nullify( estiff_blocks(blk)%ptr )
            end do
          end if
-
+c
+c             MPI:
+c               elblks(2,blk) holds which rank owns the
+c               block.  For worker ranks, if we don't own
+c               the block, don't allocate it.  For root,
+c               allocate everything for type = 4.
+c             for threads only, allocate all blocks
+c             skip blocks if the pointer to them is associated.
 c
          do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything for type = 4.
-c                       if we are using the serial version:
-c                         the serial process is root, so all blocks
-c                         get allocated.
-c                       skip blocks if the pointer to them is associated.
-c
             myblk = myid .eq. elblks(2,blk)
             if ( myid .eq. 0 .and. type .eq. 4 ) myblk = .true.
             if ( .not. myblk ) cycle
             if ( associated(estiff_blocks(blk)%ptr) ) cycle
-c
             felem         = elblks(1,blk)
             num_enodes    = iprops(2,felem)
             num_enode_dof = iprops(4,felem)
             totdof        = num_enodes * num_enode_dof
             span          = elblks(0,blk)
             utsz          = ((totdof*totdof)-totdof)/2 + totdof
-            allocate( estiff_blocks(blk)%ptr(utsz,span),stat=iok )
-            if ( iok .ne. 0 ) then
-               call iodevn( idummy, iout, dummy, 1 )
-               write(iout,9100) iok
-            end if
-         end do
-
-         else ! MCM modification
-
-         if ( .not. allocated( estiff_blocks ) ) then
-           allocate( estiff_blocks(nelblk), stat=iok )
-           if ( iok .ne. 0 ) then
-              call iodevn( idummy, iout, dummy, 1 )
-              write(iout,9100) iok
-              call die_abort
-              stop
-           end if
-           do blk = 1, nelblk
-            nullify( estiff_blocks(blk)%ptr )
-           end do
-         end if
-
-c
-         do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything for type = 4.
-c                       if we are using the serial version:
-c                         the serial process is root, so all blocks
-c                         get allocated.
-c                       skip blocks if the pointer to them is associated.
-c
-            myblk = myid .eq. elblks(2,blk)
-            if ( myid .eq. 0 .and. type .eq. 4 ) myblk = .true.
-            if ( .not. myblk ) cycle
-            if ( associated(estiff_blocks(blk)%ptr) ) cycle
-c
-            felem         = elblks(1,blk)
-            num_enodes    = iprops(2,felem)
-            num_enode_dof = iprops(4,felem)
-            totdof        = num_enodes * num_enode_dof
-            span          = elblks(0,blk)
-            allocate( estiff_blocks(blk)%ptr(totdof*totdof,span),
-     &            stat=iok )
-            if ( iok .ne. 0 ) then
-               call iodevn( idummy, iout, dummy, 1 )
-               write(iout,9100) iok
-            end if
-         end do
-
-         end if
-c
-         return
-      end if
-c
-      if ( type .eq. 2 ) then
-c
-c               allocate pcm_blocks -- preconditioner for each element
-c               ------------------------------------------------------
-c
-         if ( .not. allocated( pcm_blocks ) ) then
-           allocate( pcm_blocks(nelblk),stat=iok )
-           if ( iok .ne. 0 ) then
-             call iodevn( idummy, iout, dummy, 1 )
-             write(iout,9100) iok
-             call die_abort
-             stop
-           end if
-           do blk = 1, nelblk
-             nullify( pcm_blocks(blk)%ptr )
-           end do
-         end if
-c
-         do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it. Same holds
-c                         for the root process
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-            myblk = myid .eq. elblks(2,blk)
-            if ( .not. myblk ) cycle
-            if ( associated(pcm_blocks(blk)%ptr) ) cycle
-c
-            felem         = elblks(1,blk)
-            num_enodes    = iprops(2,felem)
-            num_enode_dof = iprops(4,felem)
-            totdof        = num_enodes * num_enode_dof
-            span          = elblks(0,blk)
-            utsz          = ((totdof*totdof)-totdof)/2 + totdof
-            allocate( pcm_blocks(blk)%ptr(utsz,span),stat=iok )
+            nterms        = utsz
+            if( asymmetric_assembly ) nterms = totdof * totdof
+            allocate( estiff_blocks(blk)%ptr(nterms,span),stat=iok )
             if ( iok .ne. 0 ) then
                call iodevn( idummy, iout, dummy, 1 )
                write(iout,9100) iok
             end if
          end do
 c
-         return
-      end if
-c
-c
-c            deallocate blocks of element stifness matrices. for mpi
-c            execution, we only do this on the root processor where
-c            stiffness for the structure is assembled for sparse
-c            direct solvers.
-c
-      if ( type .eq. 5 ) then
-c
-c               deallocate estiff_blocks -- element stiffnesses
-c               -----------------------------------------------
+      case( 5 ) ! deallocate estiff_blocks
 c
          if ( .not. allocated( estiff_blocks ) ) return
-         if ( myid .ne. 0 ) return
+         if ( myid .ne. 0 ) return ! only do this on root
          do blk = 1, nelblk
             myblk = myid .eq. elblks(2,blk)
             if ( .not. myblk ) cycle
@@ -579,15 +470,21 @@ c
             nullify( estiff_blocks(blk)%ptr )
          end do
 c
-         return
-      end if
+      case default 
+         call iodevn( idummy, iout, dummy, 1 )
+         write(iout,9300) 
+         call die_abort
+      end select
 c
+      return      
 c
  9100 format('>> FATAL ERROR: estiff_allocate, memory allocate failure',
      &  /,   '                status= ',i5,
      &  /,   '                job terminated' )
  9200 format('>> FATAL ERROR: estiff_allocate, memory deallocate',
      &  /,   '                failure. status= ',i5,
+     &  /,   '                job terminated' )
+ 9300 format('>> FATAL ERROR: estiff_allocate, unknown state',
      &  /,   '                job terminated' )
       end
 c     ****************************************************************
@@ -600,7 +497,7 @@ c     *                   last modified : 05/14/12 rhd               *
 c     *                                                              *
 c     *     this subroutine creates a separate copy of element       *
 c     *     data necessary for the tangent stiffness computation of  *
-c     *     each element in a block of similar, non-conflicting      *
+c     *     each element in a block of similar                       *
 c     *     elements. processes only data stored globally in         *
 c     *     blocked data structures.                                 *
 c     *                                                              *
@@ -639,7 +536,7 @@ c
 #dbl      double precision
 #sgl      real
      & zero
-      data zero, local_debug / 0.0, .false. /
+      data zero, local_debug / 0.0d00, .false. /
 c
 c
 c           get data not dependent on material model type first. need
@@ -812,7 +709,7 @@ c     *                  subroutine duptrans                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/10/98                   *
+c     *                   last modified : 08/17/2015 rhd             *
 c     *                                                              *
 c     *     this subroutine creates a separate copy of element       *
 c     *     data necessary to transform displacements from global to *
@@ -832,8 +729,7 @@ c           parameters
 c
 #dbl      double precision
 #sgl      real
-     &  trnmte(mxvl,mxedof,*), zero
-      data zero /0.0/
+     &  trnmte(mxvl,mxedof,3)
 c
 c           for this block of elements, gather the transformation
 c           matrices (3x3) used to rotate between global and constraint
@@ -846,7 +742,7 @@ c
       nnode  = iprops(2,felem)
       ndof   = iprops(4,felem)
       totdof = nnode * ndof
-      trnmte(1:mxvl,1:mxedof,1:3) = zero
+      call tanstf_zero_vector( trnmte, mxvl*mxedof*3 ) 
 c
 c           this code below depends on ndof per node = 3
 c
@@ -929,7 +825,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/21/2014 rhd              *
+c     *                   last modified : 8/17/2015 rhd              *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     element stiffnesses                                      *
@@ -943,13 +839,17 @@ c
 
 $add common.main
 $add include_tan_ek
+#dbl      double precision
+#sgl      real
+     &  zero
+      data zero / 0.0d00 /
 c
 c
 c               history data for block allocated in dptstf_blocks
 c
       allocate( local_work%ce(mxvl,mxecor) )
 c
-      allocate( local_work%trnmte(mxvl,mxedof,mxndof),
+      allocate( 
      1 local_work%det_jac_block(mxvl,mxgp),
      2 local_work%shape(mxndel,mxgp),
      3 local_work%nxi(mxndel,mxgp),
@@ -983,17 +883,18 @@ c
            call die_abort
       end if
 c
-      allocate( local_work%cohes_rot_block(mxvl,3,3),
-     1  local_work%intf_prp_block(mxvl,max_interface_props),
-     2  local_work%temps_node_blk(mxvl,mxndel),
-     3  local_work%dtemps_node_blk(mxvl,mxndel),
-     4  local_work%temps_ref_node_blk(mxvl,mxndel),
-     5  local_work%enode_mat_props(mxndel,mxvl,mxndpr),
-     6  local_work%fgm_flags(mxvl,mxndpr), stat=error )
+      allocate( 
+     1  local_work%temps_node_blk(mxvl,mxndel),
+     2  local_work%dtemps_node_blk(mxvl,mxndel),
+     3  local_work%temps_ref_node_blk(mxvl,mxndel), stat=error )
       if( error .ne. 0 ) then
            write(out,9000) 4
            call die_abort
       end if
+c    
+      allocate( local_work%fgm_flags(mxvl,mxndpr) )
+      if( local_work%fgm_enode_props ) 
+     &   allocate(local_work%enode_mat_props(mxndel,mxvl,mxndpr) )
 c
 c             local cep, i.e, [Dt] must be 6x6 for all
 c             trans[B] [Dt] [B] to work correctly.
@@ -1001,30 +902,45 @@ c             global cep's can be 6x6 or 3x3
 c
       allocate( local_work%cep(mxvl,6,6),
      1  local_work%qn1(mxvl,nstr,nstr),
-     2  local_work%cs_blk_n1(mxvl,nstr),
-     3  local_work%mm05_props(mxvl,10),
-     4  local_work%mm06_props(mxvl,5),
-     5  local_work%mm07_props(mxvl,10), stat=error )
+     2  local_work%cs_blk_n1(mxvl,nstr), stat=error )
       if( error .ne. 0 ) then
            write(out,9000) 5
            call die_abort
       end if
 c
-      local_work%cep = 0.0
-      local_work%qn1 = 0.0
-      local_work%cs_blk_n1 = 0.0
+      local_work%cep = zero
+      local_work%qn1 = zero
+      local_work%cs_blk_n1 = zero
 c
-      allocate( local_work%e_v(mxvl), local_work%beta_v(mxvl),
-     1 local_work%nu_v(mxvl), local_work%sigyld_v(mxvl),
-     2 local_work%n_power_v(mxvl), local_work%f0_v(mxvl),
-     3 local_work%q1_v(mxvl), local_work%q2_v(mxvl),
-     4 local_work%q3_v(mxvl), local_work%nuc_s_n_v(mxvl),
-     5 local_work%nuc_e_n_v(mxvl), local_work%nuc_f_n_v(mxvl),
-     6 local_work%e_block(mxvl), local_work%nu_block(mxvl),
-     7 local_work%weights(mxgp), stat=error )
+      if( local_work%mat_type .eq. 5 )
+     &  allocate( local_work%mm05_props(mxvl,10) )
+      if( local_work%mat_type .eq. 6 )
+     &  allocate( local_work%mm06_props(mxvl,5) )
+      if( local_work%mat_type .eq. 7 )
+     &  allocate( local_work%mm07_props(mxvl,10) )
+c
+      allocate( 
+     a    local_work%e_v(mxvl), 
+     1    local_work%beta_v(mxvl),
+     2    local_work%nu_v(mxvl), 
+     3    local_work%sigyld_v(mxvl),
+     4    local_work%n_power_v(mxvl), 
+     5    local_work%e_block(mxvl),
+     6    local_work%nu_block(mxvl),
+     7    local_work%weights(mxgp), stat=error )
       if( error .ne. 0 ) then
            write(out,9000) 6
            call die_abort
+      end if
+c      
+      if( local_work%mat_type .eq. 3 )  then
+        allocate( local_work%f0_v(mxvl),
+     1            local_work%q1_v(mxvl), 
+     2            local_work%q2_v(mxvl),
+     3            local_work%q3_v(mxvl), 
+     4            local_work%nuc_s_n_v(mxvl),
+     5            local_work%nuc_e_n_v(mxvl),
+     6            local_work%nuc_f_n_v(mxvl) )
       end if
 c
       allocate( local_work%cp(mxedof), local_work%icp(mxutsz,2),
@@ -1034,8 +950,10 @@ c
            call die_abort
       end if
 c
-      allocate( local_work%trn_e_flags(mxvl),
-     1 local_work%trne(mxvl,mxndel), stat=error )
+      allocate( 
+     1  local_work%trn_e_flags(mxvl),
+     2  local_work%trne(mxvl,mxndel),
+     3  local_work%trnmte(mxvl,mxedof,mxndof), stat=error ) 
       if( error .ne. 0 ) then
            write(out,9000) 8
            call die_abort
@@ -1046,7 +964,10 @@ c
       if( local_work%is_cohes_elem ) then
          allocate( local_work%cohes_temp_ref(mxvl),
      1      local_work%cohes_dtemp(mxvl),
-     2      local_work%cohes_temp_n(mxvl), stat=error )
+     2      local_work%cohes_temp_n(mxvl),
+     3      local_work%cohes_rot_block(mxvl,3,3),
+     4      local_work%intf_prp_block(mxvl,max_interface_props),
+     5      stat=error )
          if( error .ne. 0 ) then
            write(out,9000) 9
            call die_abort
@@ -1088,7 +1009,7 @@ c     *                   subroutine tanstf_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 2/28/2013 rhd              *
+c     *                   last modified : 8/17/2015 rhd              *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1103,7 +1024,7 @@ $add include_tan_ek
 c
       deallocate( local_work%ce )
 c
-      deallocate(local_work%trnmte,
+      deallocate(
      1 local_work%det_jac_block,
      2 local_work%shape,
      3 local_work%nxi,
@@ -1137,43 +1058,58 @@ c
            call die_abort
        end if
 c
-      deallocate( local_work%cohes_rot_block,
-     1  local_work%intf_prp_block,
-     2  local_work%temps_node_blk,
-     3  local_work%dtemps_node_blk,
-     4  local_work%temps_ref_node_blk,
-     5  local_work%enode_mat_props,
-     6  local_work%fgm_flags, stat=error )
+      deallocate(
+     1  local_work%temps_node_blk,
+     2  local_work%dtemps_node_blk,
+     3  local_work%temps_ref_node_blk, stat=error )
        if( error .ne. 0 ) then
            write(out,9000) 4
            call die_abort
        end if
-
+c    
+      deallocate( local_work%fgm_flags )
+      if( local_work%fgm_enode_props )
+     &   deallocate( local_work%enode_mat_props )
+c
       deallocate( local_work%cep,
      1  local_work%qn1,
-     2  local_work%cs_blk_n1,
-     3  local_work%mm05_props,
-     4  local_work%mm06_props,
-     5  local_work%mm07_props, stat=error )
+     2  local_work%cs_blk_n1, stat=error )
        if( error .ne. 0 ) then
            write(out,9000) 5
            call die_abort
        end if
+c       
+      if( local_work%mat_type .eq. 5 )
+     &  deallocate( local_work%mm05_props )
+      if( local_work%mat_type .eq. 6 )
+     &  deallocate( local_work%mm06_props )
+      if( local_work%mat_type .eq. 7 )
+     &  deallocate( local_work%mm07_props )
 c
-      deallocate( local_work%e_v, local_work%beta_v,
-     1 local_work%nu_v, local_work%sigyld_v,
-     2 local_work%n_power_v, local_work%f0_v,
-     3 local_work%q1_v, local_work%q2_v,
-     4 local_work%q3_v, local_work%nuc_s_n_v,
-     5 local_work%nuc_e_n_v,
-     6 local_work%nuc_f_n_v,
-     7 local_work%e_block, local_work%nu_block,
-     8 local_work%weights, stat=error )
+      deallocate( 
+     a    local_work%e_v, 
+     1    local_work%beta_v,
+     2    local_work%nu_v, 
+     3    local_work%sigyld_v,
+     4    local_work%n_power_v, 
+     5    local_work%e_block,
+     6    local_work%nu_block,
+     7    local_work%weights, stat=error )
        if( error .ne. 0 ) then
            write(out,9000) 6
            call die_abort
        end if
-c
+c      
+      if( local_work%mat_type .eq. 3 )  then
+        deallocate( local_work%f0_v,
+     1              local_work%q1_v, 
+     2              local_work%q2_v,
+     3              local_work%q3_v, 
+     4              local_work%nuc_s_n_v,
+     5              local_work%nuc_e_n_v,
+     6              local_work%nuc_f_n_v )
+      end if
+
       deallocate( local_work%cp, local_work%icp, stat=error )
       if( error .ne. 0 ) then
            write(out,9000) 7
@@ -1181,7 +1117,7 @@ c
       end if
 c
       deallocate( local_work%trn_e_flags, local_work%trne,
-     &            stat=error )
+     &            local_work%trnmte, stat=error )
        if( error .ne. 0 ) then
            write(out,9000) 8
            call die_abort
@@ -1227,7 +1163,9 @@ c
       if( local_work%is_cohes_elem ) then
          deallocate( local_work%cohes_temp_ref,
      1      local_work%cohes_dtemp,
-     2      local_work%cohes_temp_n, stat=error )
+     2      local_work%cohes_temp_n,
+     3      local_work%cohes_rot_block,
+     4      local_work%intf_prp_block, stat=error )
          if( error .ne. 0 ) then
            write(out,9000) 13
            call die_abort
@@ -1263,31 +1201,6 @@ c
 c
       return
       end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine tanstf_zero_vector_a              *
-c     *                                                              *
-c     *                       written by : mcm                       *
-c     *                                                              *
-c     *                   last modified : 12/09/13                   *
-c     *                                                              *
-c     *     zero a matrix of specified length w/ floating zero       *
-c     *     I do not know why we need this, but for consistency...   *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine tanstf_zero_vector_a( mat, n )
-#dbl      double precision
-#sgl      real
-     &  vec(n,n), zero
-      data zero / 0.0d00 /
-c
-      vec(1:n, 1:n) = zero
-c
-      return
-      end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine tanstf_build_cohes_nonlocal       *

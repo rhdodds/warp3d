@@ -336,11 +336,10 @@ c
          write (out,'("=> Proc",i3," obsolete updpcm")') myid
          goto 9000
 c
-c           do = 33: allocate pcm matrices
+c           do = 33: no longer used
 c
  3300    continue
          if(debug)write (out,'("=> Proc",i3," allo pcm")') myid
-         call estiff_allocate(2)
          goto 9000
 c
 c           do = 34: test stuff
