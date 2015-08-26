@@ -1396,6 +1396,17 @@ c                       into our local structure
                   local_work%c_props(i,c)%tau_v = c_array(cnum)%tau_v
                   local_work%c_props(i,c)%voche_m = 
      &                  c_array(cnum)%voche_m
+c         Solver flags
+                  local_work%c_props(i,c)%solver = c_array(cnum)%solver
+                  local_work%c_props(i,c)%strategy = 
+     &                  c_array(cnum)%strategy
+                  local_work%c_props(i,c)%gpall = c_array(cnum)%gpall
+                  local_work%c_props(i,c)%gpp = c_array(cnum)%gpp
+                  local_work%c_props(i,c)%miter = c_array(cnum)%miter
+                  local_work%c_props(i,c)%atol = c_array(cnum)%atol
+                  local_work%c_props(i,c)%atol1 = c_array(cnum)%atol1
+                  local_work%c_props(i,c)%rtol = c_array(cnum)%rtol
+                  local_work%c_props(i,c)%rtol1 = c_array(cnum)%rtol1
 c                 Call a helper to get the crystal -> reference rotation
                   if (local_work%angle_type(i) .eq. 1) then
                         atype = "degrees"

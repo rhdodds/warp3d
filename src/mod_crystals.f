@@ -23,11 +23,15 @@ c                             1) isotropic
 c                             2) cubic
                   integer :: nslip
                   integer :: num_hard
-                  logical :: real_tang
                   integer :: h_type
 c                             1) voche or voce
 c                             2) mts
 c                             3) user
+c                 Solver flags
+                  logical :: real_tang, solver, strategy, gpall
+                  integer :: miter, gpp
+                  double precision :: atol, atol1, rtol, rtol1
+c                 Material parameters
                   double precision :: e, nu, mu, harden_n, tau_a,
      &                                tau_hat_y, g_o_y, b, p_v, q_v,
      &                                p_y, q_y, boltz, 
@@ -113,6 +117,16 @@ c
                   c_array(num)%h_type = 1
                   c_array(num)%num_hard = 1
                   c_array(num)%real_tang = .true.
+c            Solver parameters
+                  c_array(num)%atol = 1.0d-5
+                  c_array(num)%atol1 = 1.0d-5
+                  c_array(num)%rtol = 5.0d-5
+                  c_array(num)%rtol1 = 1.0d-5
+                  c_array(num)%miter = 30
+                  c_array(num)%solver = .true.
+                  c_array(num)%strategy = .true.
+                  c_array(num)%gpall = .false.
+                  c_array(num)%gpp = 0
 
             end subroutine
 c

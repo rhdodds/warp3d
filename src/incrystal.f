@@ -224,6 +224,72 @@ c           Read in properties
                               call errmsg(364,dumi,dums,dumr,dumd)
                            end if
                      end if
+                  elseif ( matchs_exact('atol')) then
+                     if (.not. numd(c_array(cnum)%atol)) then
+                           call errmsg(5,dumi,'atol',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('atol1')) then
+                     if (.not. numd(c_array(cnum)%atol1)) then
+                           call errmsg(5,dumi,'atol1',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('rtol')) then
+                     if (.not. numd(c_array(cnum)%rtol)) then
+                           call errmsg(5,dumi,'rtol',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('rtol1')) then
+                     if (.not. numd(c_array(cnum)%rtol1)) then
+                           call errmsg(5,dumi,'rtol1',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('miter')) then
+                     if (.not. numi(c_array(cnum)%miter)) then
+                           call errmsg(5,dumi,'miter',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('gpp')) then
+                     if (.not. numi(c_array(cnum)%gpp)) then
+                           call errmsg(5,dumi,'gpp',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('solver')) then
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'solver',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'nr') then
+                              c_array(cnum)%solver = .true.
+                           elseif (lab(1:nc) .eq. 'tr') then
+                              c_array(cnum)%solver = .false.
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
+                  elseif ( matchs_exact('strategy')) then
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'strategy',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'geom') then
+                              c_array(cnum)%strategy = .true.
+                           elseif (lab(1:nc) .eq. 'cubic') then
+                              c_array(cnum)%strategy = .false.
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
+                  elseif ( matchs_exact('gpall')) then
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'gpall',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'on') then
+                              c_array(cnum)%gpall = .true.
+                           elseif (lab(1:nc) .eq. 'off') then
+                              c_array(cnum)%gpall = .false.
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
                   elseif ( endcrd(dum) ) then
                         reading = .false.
                         cycle

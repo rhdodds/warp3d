@@ -22,7 +22,7 @@ $add common.main
 c
 c                       local declarations
 c
-      character name*80, mname*24, dums*10
+      character name*80, mname*24, dums*10, lab*15
       logical fatal, coor, numnod, numel, elprop, elinc, constr, block,
      &  matchs, numr, endcrd, true, label, scanms, numd,
      &  matchs_exact, local_debug
@@ -867,7 +867,20 @@ c **********************************************************************
 c
 c
  350  continue
-      lmtprp(13,matnum) = .true.
+c      lmtprp(13,matnum) = .true.
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'gpall',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'on') then
+                              lmtprp(13,matnum) = .true.
+                           elseif (lab(1:nc) .eq. 'off') then
+                              lmtprp(13,matnum) = .false.
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
       go to 210
 c
 c **********************************************************************

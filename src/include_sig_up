@@ -22,7 +22,10 @@ c           Secondary type for CP crystal properties
      &            k_o, tau_y, tau_v, voche_m, u1, u2, u3, u4,
      &            u5, u6
             integer :: nslip, h_type, num_hard
-            logical :: real_tang
+c         Solver flags
+            logical :: real_tang, solver, strategy, gpall
+            integer :: miter, gpp
+            double precision :: atol, atol1, rtol, rtol1
       end type
 c
       type :: nonlinear_sigeps_work
