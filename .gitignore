@@ -1,0 +1,34 @@
+# Files output by warp
+energy
+core
+we*
+wn*
+cantilever
+*.db
+*_db
+*batch_mess*
+
+# Directories
+run_*/
+obj_*/
+linux_packages/lib/**
+linux_packages/include/**
+
+# Linux executables
+*.linux64
+*.osx
+*.linux
+
+# Vim tmp files
+*.swp
+
+# Test makefiles
+src/Makefile.linux_em64t.inc_*
+src/Makefile.linux_em64t.inc.*
+
+# OS X internal store files
+#
+.DS_Store
+
+# Python
+*.pyc
