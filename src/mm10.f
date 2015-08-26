@@ -37,14 +37,15 @@ c           Massive list of properties
      &                  tau_a, tau_hat_v, G_0_v,
      &                  k_0, mu_0, D_0, T_0, tau_y, tau_v, voche_m,
      &                  u1, u2, u3, u4, u5, u6
+                  double precision :: atol, atol1, rtol, rtol1
                   double precision, dimension(3,3) :: g
                   double precision :: ms(6,max_slip_sys),
      &                  qs(3,max_slip_sys), ns(3,max_slip_sys)
                   double precision, dimension(6,6) :: stiffness
                   integer :: angle_type, angle_convention, nslip, 
-     &                  h_type
+     &                  h_type, miter, gpp
                   integer :: num_hard
-                  logical :: real_tang
+                  logical :: real_tang, solver, strategy, debug, gpall
                   integer :: out
             end type
             type :: crystal_state
@@ -145,7 +146,8 @@ c                       Loop on crystals
                       if (debug) write(*,*) "Setting up properties"
                       call mm10_init_cc_props(local_work%c_props(i,c),
      &                        local_work%angle_type(i), 
-     &                        local_work%angle_convention(i),cc_props)
+     &                        local_work%angle_convention(i),
+     &                        local_work%debug_flag,cc_props)
                       cc_props%out = iout
 c
                       if (local_work%step .eq. 1) then
@@ -1641,11 +1643,13 @@ c     *    structure                                                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_init_cc_props(inc_props, atype, aconv, cc_props)
+      subroutine mm10_init_cc_props(inc_props, atype, aconv, debug,
+     &                              cc_props)
       use mm10_defs
       implicit integer (a-z)
 $add include_sig_up
       integer :: atype, aconv
+      logical :: debug
       type(crystal_properties) :: inc_props
       type(crystal_props) :: cc_props
 c
@@ -1678,6 +1682,15 @@ c     Just a whole lot of copying
       cc_props%u4 = inc_props%u4
       cc_props%u5 = inc_props%u5
       cc_props%u6 = inc_props%u6
+      cc_props%solver = inc_props%solver
+      cc_props%strategy = inc_props%strategy
+      cc_props%gpall = inc_props%gpall
+      cc_props%gpp = inc_props%gpp
+      cc_props%miter = inc_props%miter
+      cc_props%atol = inc_props%atol
+      cc_props%atol1 = inc_props%atol1
+      cc_props%rtol = inc_props%rtol
+      cc_props%rtol1 = inc_props%rtol1
 c
       cc_props%g(1:3,1:3) = inc_props%rotation_g(1:3,1:3)
 c
@@ -1698,6 +1711,7 @@ c
       cc_props%h_type = inc_props%h_type
       cc_props%num_hard = inc_props%num_hard
       cc_props%real_tang = inc_props%real_tang
+      cc_props%debug = debug
 c
       return
       end subroutine
@@ -1928,26 +1942,26 @@ c      Cubic line search
       double precision stepmx
 c
 c      Convergence parameters: Newton with geometric line search
-      parameter(atol = 1.0d-8)
-      parameter(atol1 = 1.0d-8)
-      parameter(rtol = 5.0d-5)
-      parameter(rtol1 = 1.0d-5)
-      parameter(miter = 30)
       parameter(c = 1.0d-4)
       parameter(red = 0.5d0)
       parameter(mls = 10)
       parameter(mmin = 1)
+      atol = props%atol
+      atol1 = props%atol1
+      rtol = props%rtol
+      rtol1 = props%rtol1
+      miter = props%miter
 c       Trust region parameters
       xtol = 1.0d-2
       maxfev = 3*miter
       lr=((6+props%num_hard)*(6+props%num_hard+1))/2
 c      Debug flags for printing iteration behavior
-      debug = .false.
-      gpall = .false. ! true to print iteration norms for all Gauss points
-      gpp = 0 ! set one particular G.P. to print
+      debug = props%debug
+      gpall = props%gpall ! true to print iteration norms for all Gauss points
+      gpp = props%gpp ! set one particular G.P. to print
 c      Solver flags
-      solver = .true. ! true for Mark's N.R. routine, false for trust-region
-      strategy = .true. ! true for geometric l.s., false for cubic l.s.
+      solver = props%solver ! true for Mark's N.R. routine, false for trust-region
+      strategy = props%strategy ! true for geometric l.s., false for cubic l.s.
 c
       if (debug) write(*,*) "Entering solution routine"
 c
@@ -1980,7 +1994,7 @@ c
       x2 = x(7:6+props%num_hard) + cos_ang*
      &        n%tt_rate(1:props%num_hard)*dt
 
-      if(debug)
+      if(debug) 
      & write(props%out,*)" Stress prediction module, G.P.=", gp
       if(debug .and.(gpall.or.(gp.eq.gpp))) then ! print statement for debugging
       write(props%out,*)" Extrapol tt6=",
@@ -7131,9 +7145,6 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7141,7 +7152,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7235,9 +7245,6 @@ c Load some material parameters
 c      write(*,*) "pi", pi
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7245,7 +7252,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7353,9 +7359,6 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7363,7 +7366,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7455,9 +7457,6 @@ c Load some material parameters
 c      write(*,*) "pi", pi
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7465,7 +7464,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7613,9 +7611,6 @@ c     &         tt, dslip)
         dslip(1:props%num_hard) = arr1(1:props%num_hard,1)
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7623,7 +7618,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7724,9 +7718,6 @@ c Load some material parameters
         PI=4.D0*DATAN(1.D0)
 c       
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7734,7 +7725,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7864,9 +7854,6 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7874,7 +7861,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7955,9 +7941,6 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
         K11=123.323d0+6.7008d-8*theta**3.d0
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
         K12=70.6512d0+4.4105d-8*theta**3.d0
@@ -7965,7 +7948,6 @@ c Compute the shear modulus using Roter's function
         K44=31.2071d0+7.0477d-9*theta**3.d0
      &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
