@@ -1221,7 +1221,7 @@ c
       implicit none
 #dbl      double precision, parameter ::
 #sgl      real, parameter ::
-     & local_tol_a_0 = 0.95d0
+     & local_tol_a_0 = 0.90d0
 c
 c             step 1: compute f, then q(f), then c1.
 c                     c_0, c_1, c_2. these routines will be inlined
