@@ -916,12 +916,12 @@ c
 c             set options in formulation to include, debug options
 c
       degrade_shear         = .false.
-      VVNT                  = .false.
-      modify_q              = .false.
+      VVNT                  = .true.
+      modify_q              = .true.
       include_nucleation    = .false.
       debug_newton          = .false.
-      include_cavity_growth = .false.
-      compute_solid_local   = .true.
+      include_cavity_growth = .true.
+      compute_solid_local   = .false.
 c      
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 
      &                  ( step .eq. 599 )
@@ -1091,7 +1091,8 @@ c
       history1(i,2) = a_new / props%a_0
       history1(i,3) = b_new / props%b_0
       history1(i,4) = V_new / props%V_0
-      history1(i,5) = Tn_solid !    T_new
+      history1(i,5) = T_new  ! for states output
+      if( compute_solid_local ) history1(i,5) = Tn_solid 
 C      if( abs(T_new) .gt. 1000. .and. step .gt. 1) then
 C         write(*,9500) abs_elem, T_new, top_sigma_m , bott_sigma_m,
 C     &        top_sigma_e, bott_sigma_e 
@@ -1283,7 +1284,7 @@ c
      &      ( four * pi * a_n**2 * props%hpsi )
 c     
       if( a_new .lt. local_tol_a_0*props%a_0 ) then
-        write(iout,*) " >> FATAL ERROR: mm04_cavit_std_update @ 1"
+        write(iout,*) " >> FATAL ERROR: mm04_cavit_std_update @ 3"
         write(iout,9300) felem+i-1, gpn
         write(iout,9310) reladis(i,3), delrlds(i,3),
      &                   opening, closing, neutral, penetrated      
@@ -2776,7 +2777,7 @@ c *               last modified : 8/13/2015  (rhd)                  *
 c *                                                                 *
 c *  Compute traction normal to interface from average of solid     *
 c *  element stresses. for nonlocal implementation of cohesive      *
-c *   material model. can be useful for checking                    *
+c *  material model. can be useful for checking                     *
 c *                                                                 *
 c *******************************************************************
 c
