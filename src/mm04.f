@@ -820,16 +820,7 @@ c    ****************************************************************
 c    *                                                              *
 c    *          subroutine mm04_cavit_sig_update                    *
 c    *                                                              *
-c    *    written by : Congrui Jin 7/20/2013                        *
-c    *    updated: 7/22/2014 rhd, Xiaohan Zhang                     *	
-c    *             11/20/2014 rhd (use physical units)              *
-c    *             3/4/2015  rhd (put a/Lnr in history)             *
-c    *             3/5/2015  rhd (add hist 14, 15 values)           *
-c    *             3/10/2015 kbc (1. modify q function              *
-c    *                            2. modify V_dot (VVNT eqns)       *
-c    *                            3. degrade shear visc. with a/b)  *
-c    *             7/21/2015 rhd  fix contact issues. re-design     *
-c    *                            logic of stress updating          *
+c    *    updated: 8/28/2015 rhd added switch_to_linear feature     8
 c    *                                                              *
 c    *     computes the cohesive traction vector for the            *
 c    *     cavitation-based cohesive zone model (cavit)             *
@@ -901,7 +892,7 @@ c
 c
       logical :: elem_killed(mxvl), local_debug, converged, 
      & nucleation_active, debug_span_loop, compute_solid_local,
-     & iterative_solve, opening, closing,
+     & iterative_solve, opening, closing, switch_to_linear,
      & debug_newton, open, neutral, penetrated
       logical :: degrade_shear, VVNT, modify_q, include_nucleation,
      &           include_cavity_growth  
@@ -1041,6 +1032,10 @@ c
       case( 6 ) 
           new_state = 7
           call mm04_cavit_std_update 
+          if( switch_to_linear ) then
+            call mm04_cavit_update_linear
+            new_state = 10
+          end if
       case( 7 ) 
           new_state = 8
           call  mm04_cavit_update_linear
@@ -1221,7 +1216,7 @@ c
       implicit none
 #dbl      double precision, parameter ::
 #sgl      real, parameter ::
-     & local_tol_a_0 = 0.90d0
+     & local_tol_a_0 = 0.80d0
 c
 c             step 1: compute f, then q(f), then c1.
 c                     c_0, c_1, c_2. these routines will be inlined
@@ -1283,13 +1278,17 @@ c
       a_new  = a_n + dtime*(v1_dot + v2_dot) / 
      &      ( four * pi * a_n**2 * props%hpsi )
 c     
-      if( a_new .lt. local_tol_a_0*props%a_0 ) then
-        write(iout,*) " >> FATAL ERROR: mm04_cavit_std_update @ 3"
+      switch_to_linear = .false.
+      if( a_new .lt. props%a_0 ) then
+        switch_to_linear = .true.
+        if( a_new .gt. local_tol_a_0 * props%a_0 ) return
+        write(iout,*) " >> Warning: mm04_cavit_std_update @ 3"
         write(iout,9300) felem+i-1, gpn
         write(iout,9310) reladis(i,3), delrlds(i,3),
-     &                   opening, closing, neutral, penetrated      
-        write(iout,9320) v1_dot, V_new, a_new
-        call die_abort
+     &                   opening, closing, neutral, penetrated    
+        write(iout,9315) c_0, c_1, c_2, delta_c_dot, T_new, a_n  
+        write(iout,9320) v1_dot, v2_dot, V_new, a_new
+        return
       end if     
 c     
 c                     a_new cannot be > (tol) * b_new. set limit
@@ -1334,8 +1333,10 @@ c
      &    /,15x,  "N_new, N_dot, nuc active:         ",2e14.5,5x,l1,
      &    /,15x,  "stiff_normal, new_state:          ",e14.5, i5 )
 9300  format('>>>> FATAL ERRROR: element, gpn: ', 2i6 )
-9310  format(15x,'reladis(,3), delrdis(,3): ',2e14.6, 
+9310  format(15x,'reladis(,3) @ n+1, delrdis(,3) n->n+1: ',2e14.5, 
      &    /,15x,'opening, closing, neutral, penetrated: ',4l2)
+9315  format(15x,'c_0, c_1, c_2: ',3e14.5, 
+     &    /,15x,' delta_c_dot, T_new, a_n: ',3e14.5)
 9320  format(15x, "v1_dot, v2_dot, V_new, a_new:     ",4e14.5)
 
 9800  format('>>>> FATAL ERROR. routine mm04_cavit_sig_update.',
