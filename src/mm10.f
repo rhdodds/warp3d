@@ -244,7 +244,9 @@ c
       double precision, dimension(3) :: wp
       double precision, dimension(6,6) :: S, erot
       double precision, dimension(max_uhard) :: vec1,vec2
-      double precision :: maxslip
+      double precision :: maxslip, ec_dot, n_eff, rs, ec_slip, 
+     &                    mm10_rs
+      double precision, dimension(max_slip_sys) :: dgammadtau
 c
 c     Store the slip increments
 c
@@ -281,7 +283,7 @@ c
 c
 c     Compute user history output
 c
-c     1:3 is about the active slip systems: maximum slip rate,
+c     6:8 is about the active slip systems: maximum slip rate,
 c     identifier of that system, and how many systems have rates
 c     on the same order of magnitude as that one.
       maxslip = 0.d0
@@ -332,6 +334,47 @@ c
 c     And finally, store the lattice strains
 c
       np1%eps = ee
+c
+c     Compute plastic creep rate and effective creep exponent
+c
+      ec_dot = np1%p_strain_inc/np1%tinc
+      np1%u(11) = ec_dot
+      if(ec_dot.gt.0.d0) then
+      ep(1:6) = ep(1:6)/np1%tinc
+c
+c Generalization of CP model implementation for other slip rate
+c equations, requiring other forms of d_gamma/d_tau
+c Vector dgammadtau should be 1 x n_slip
+c ******* START: Add new Constitutive Models into this block *********
+      if (props%h_type .eq. 1) then ! voche
+        call mm10_dgdt_voche(props,np1, n, np1%stress,
+     &         np1%tau_tilde, dgammadtau)
+      elseif (props%h_type .eq. 2) then ! MTS
+        call mm10_dgdt_mts(props, np1,n, np1%stress,
+     & np1%tau_tilde, dgammadtau)
+      elseif (props%h_type .eq. 3) then ! User
+        call mm10_dgdt_user(props,np1, n, np1%stress,
+     & np1%tau_tilde, dgammadtau)
+      elseif (props%h_type .eq. 7) then ! MRR
+        call mm10_dgdt_mrr(props,np1, n, np1%stress,
+     & np1%tau_tilde, dgammadtau)
+      else
+        call mm10_unknown_hard_error(props)
+      endif
+c ******* END: Add new Constitutive Models into this block *********
+      n_eff = 0.d0
+        do i=1,props%nslip
+           rs = mm10_rs(props, np1, n, np1%stress,
+     & np1%tau_tilde, i)
+           ec_slip = (dot_product(np1%ms(1:3,i),ep(1:3))+
+     &      0.5d0*dot_product(np1%ms(4:6,i),ep(4:6)))
+           n_eff = n_eff + 2.d0/3.d0/ec_dot/ec_dot*rs*
+     &             dgammadtau(i)/np1%tinc*ec_slip ! formula according to David Parks
+        end do
+      else
+      n_eff = 1.d0
+      endif
+      np1%u(12) = n_eff
 
       return
       end subroutine
@@ -5225,7 +5268,7 @@ c
       info_vector(1) = -100     ! set by special version above
       info_vector(2) = -100    ! set by special version above
       info_vector(3) = -100    ! set by special version above 
-      info_vector(4) = 39+max_slip_sys+max_uhard
+      info_vector(4) = 41+max_slip_sys+max_uhard
 c
       return
       end
@@ -5260,7 +5303,7 @@ c
       integer :: i
       logical, save :: do_print = .false.
 c
-      num_states = 39 + max_slip_sys + max_uhard
+      num_states = 41 + max_slip_sys + max_uhard
       num_comment_lines = 0
 c     
       state_labels(1) = "euler-1"
@@ -5325,15 +5368,21 @@ c
       state_labels(39) = "number-active"
       state_descriptors(39) = "number-active"
 
+      state_labels(40) = ""
+      state_descriptors(40) = "eff. creep rate"
+
+      state_labels(41) = ""
+      state_descriptors(41) = "n_eff"
+
       do i = 1, max_slip_sys
-            write(state_labels(i+39), 9000) i
-            state_descriptors(i+39) = "integrated slip"
+            write(state_labels(i+41), 9000) i
+            state_descriptors(i+41) = "integrated slip"
       end do
 
       do i = 1, max_uhard
-            write(state_labels(i+max_slip_sys+39), 9020)
+            write(state_labels(i+max_slip_sys+41), 9020)
      & i
-            state_descriptors(i+max_slip_sys+39) =
+            state_descriptors(i+max_slip_sys+41) =
      &  "inter. hardening var."
       end do
 c
@@ -5488,8 +5537,10 @@ c                                   grad Fe^-1 is     37:63
 c           22:27                   lattice strain    
 c           28:36                   R    
 c           37:39                   active slip systems   
-c           39+1:39+max_slip_sys    slip history      76:76+max_slip_sys-1
-c           39+max_slip_sys+1:end    hardening      76:76+max_slip_sys-1
+c           40                      effective creep rate
+c           41                      n_eff for creep
+c           41+1:41+max_slip_sys    slip history      76:76+max_slip_sys-1
+c           41+max_slip_sys+1:end    hardening      76:76+max_slip_sys-1
 c          
 c           Unfortunately we don't store ncrystals in the history, so
 c           we need to access it in the material properties
@@ -5569,13 +5620,20 @@ c
       one_elem_states(37:39) = ( 
      &      history_dump(s:e,1,relem) )
 c
+c           Results 40:41: effective creep, first Gauss point
+c    
+      s = sc + 30 + max_slip_sys + max_uhard + 11
+      e = sc + 30 + max_slip_sys + max_uhard + 12
+      one_elem_states(40:41) = ( 
+     &      history_dump(s:e,1,relem) )
+c
 c           Results 39+1:39+max_slip_sys : the slip totals, 
 c           padded with zeros as 
 c           required  and averaged over Gauss points
 c
       s = 76
       e = 76 + nslip - 1
-      one_elem_states(39+1:39+max_slip_sys) = 
+      one_elem_states(41+1:41+max_slip_sys) = 
      &         sum( history_dump(s:e,1:int_points,relem),2 ) / 
      &         dble(int_points)
 
@@ -5584,7 +5642,7 @@ c           Results 13: tau_tilde of first crystal, avged
 c
       s = sc + 30 + max_slip_sys + 1
       e = sc + 30 + max_slip_sys + max_uhard
-      one_elem_states(40+max_slip_sys:39+max_slip_sys+max_uhard) = 
+      one_elem_states(41+max_slip_sys:41+max_slip_sys+max_uhard) = 
      &         sum( history_dump(s:e,1:int_points,relem),2 ) /
      &         dble(int_points)
 c
