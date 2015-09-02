@@ -59,6 +59,10 @@ c           Read in properties
                               c_array(cnum)%slip_type = 3
                         elseif (lab(1:nc) .eq. 'roters') then
                               c_array(cnum)%slip_type = 6
+                        elseif (lab(1:nc) .eq. 'bcc12') then
+                              c_array(cnum)%slip_type = 7
+                        elseif (lab(1:nc) .eq. 'bcc48') then
+                              c_array(cnum)%slip_type = 8
                         else
                               call errmsg(353,dumi,dums,dumr,dumd)
                         end if

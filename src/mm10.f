@@ -43,7 +43,7 @@ c           Massive list of properties
      &                  qs(3,max_slip_sys), ns(3,max_slip_sys)
                   double precision, dimension(6,6) :: stiffness
                   integer :: angle_type, angle_convention, nslip, 
-     &                  h_type, miter, gpp
+     &                  h_type, miter, gpp, s_type
                   integer :: num_hard
                   logical :: real_tang, solver, strategy, debug, gpall
                   integer :: out
@@ -1755,6 +1755,7 @@ c
       cc_props%num_hard = inc_props%num_hard
       cc_props%real_tang = inc_props%real_tang
       cc_props%debug = debug
+      cc_props%s_type = inc_props%s_type
 c
       return
       end subroutine
@@ -5642,7 +5643,7 @@ c           Results 13: tau_tilde of first crystal, avged
 c
       s = sc + 30 + max_slip_sys + 1
       e = sc + 30 + max_slip_sys + max_uhard
-      one_elem_states(41+max_slip_sys:41+max_slip_sys+max_uhard) = 
+      one_elem_states(41+1+max_slip_sys:41+max_slip_sys+max_uhard) = 
      &         sum( history_dump(s:e,1:int_points,relem),2 ) /
      &         dble(int_points)
 c
@@ -7112,7 +7113,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt, h
+      double precision, dimension(props%num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha
       double precision :: slipinc
@@ -7134,7 +7135,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt, h
+      double precision, dimension(props%num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
       integer both
@@ -7157,7 +7158,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double complex, dimension(6) :: stress
-      double complex, dimension(12) :: tt, h
+      double complex, dimension(props%num_hard) :: tt, h
       double complex, dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
       double complex :: slipinc
@@ -7179,14 +7180,15 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt
+      double precision, dimension(props%num_hard) :: tt
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -7223,8 +7225,10 @@ c      rs = stress*ms; % tau^a
       rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:12),tt(1:12))
-          rhoP = dot_product(Hmat(alpha,1:12),tt(1:12))
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
 c
 c Compute some stresses and rates
         gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*dsqrt(rhoP) ! (15)
@@ -7271,7 +7275,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt, h
+      double precision, dimension(props%num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha, gp
 c
@@ -7281,7 +7285,8 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: Gmat, Hmat
 c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
@@ -7325,7 +7330,7 @@ c
 c
 c      write(*,*) "Gmat", Gmat(1,1)
 c      write(*,*) "G", G
-      do alpha = 1,12
+      do alpha = 1,props%num_hard
 c
 c Get dislocation density
           rho = tt(alpha) ! rho^a_SSD
@@ -7337,8 +7342,10 @@ c          rs = stress*ms; % tau^a
 c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:12),tt(1:12))
-          rhoP = dot_product(Hmat(alpha,1:12),tt(1:12))
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &    tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &    tt(1:props%num_hard))
 c        write(*,*) "rhoF", rhoF
 c        write(*,*) "rhoP", rhoP
 c          
@@ -7400,7 +7407,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double complex, dimension(6) :: stress
-      double complex, dimension(12) :: tt, temp
+      double complex, dimension(props%num_hard) :: tt, temp
       double complex :: h, slipinc, mm10_rsi
       integer :: alpha, i
 c
@@ -7408,7 +7415,8 @@ c
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44
       double complex :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &      :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -7445,9 +7453,11 @@ c      rs = stress*ms; % tau^a
       rs = mm10_rsi(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Gmat(alpha,1:12)*tt(1:12))
+          temp = (Gmat(alpha,1:props%num_hard)*
+     &     tt(1:props%num_hard))
           rhoF = sum(temp)
-          temp = (Hmat(alpha,1:12)*tt(1:12))
+          temp = (Hmat(alpha,1:props%num_hard)*
+     &     tt(1:props%num_hard))
           rhoP = sum(temp)
 c
 c Compute some stresses and rates
@@ -7489,7 +7499,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double complex, dimension(6) :: stress
-      double complex, dimension(12) :: tt, h, temp
+      double complex, dimension(props%num_hard) :: tt, h, temp
       double complex, dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
 c
@@ -7501,7 +7511,8 @@ c
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
      &  tem1, tem2, tem3
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &     :: Gmat, Hmat
 c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
@@ -7545,7 +7556,7 @@ c
 c
 c      write(*,*) "Gmat", Gmat(1,1)
 c      write(*,*) "G", G
-      do alpha = 1,12
+      do alpha = 1,props%num_hard
 c
 c Get dislocation density
           rho = tt(alpha) ! rho^a_SSD
@@ -7558,9 +7569,11 @@ c          rs = stress*ms; % tau^a
 c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Gmat(alpha,1:12)*tt(1:12))
+          temp = (Gmat(alpha,1:props%num_hard)
+     &      *tt(1:props%num_hard))
           rhoF = sum(temp)
-          temp = (Hmat(alpha,1:12)*tt(1:12))
+          temp = (Hmat(alpha,1:props%num_hard)
+     &      *tt(1:props%num_hard))
           rhoP = sum(temp)
 c        write(*,*) "rhoF", rhoF
 c        write(*,*) "rhoP", rhoP
@@ -7617,12 +7630,12 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt, zerosV
+      double precision, dimension(props%num_hard) :: tt, zerosV
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
       double complex, dimension(6) :: stressi
-      double complex, dimension(12) :: tti
+      double complex, dimension(props%num_hard) :: tti
       double complex :: slipinci
 c
       zerosV = 0.d0
@@ -7646,8 +7659,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress, dtdstress
-      double precision, dimension(12) :: tt
-      double precision, dimension(12,6) :: et
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard,6) :: et
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
@@ -7657,7 +7670,8 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &     :: Gmat, Hmat
       double precision, dimension(props%nslip) :: dslip
       integer :: alpha
 c Load some material parameters
@@ -7700,7 +7714,7 @@ c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
 c
-      do alpha = 1,12
+      do alpha = 1,props%num_hard
 
           ! Get dislocation density
           rho = tt(alpha) ! rho^a_SSD
@@ -7710,8 +7724,10 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:12),tt(1:12))
-          rhoP = dot_product(Hmat(alpha,1:12),tt(1:12))
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard)
+     &     ,tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard)
+     &      ,tt(1:props%num_hard))
 c
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
           ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
@@ -7756,8 +7772,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt
-      double precision, dimension(12,12) :: etau
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard,props%num_hard) :: etau
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
@@ -7768,8 +7784,10 @@ c
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM
-      double precision, dimension(12,12) :: Gmat, Hmat
-      double precision, dimension(12,12) :: dslip
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: dslip
       integer :: alpha, beta
 c      
 c compute derivatives of slip increments with respect to densities
@@ -7813,7 +7831,7 @@ c        [Gmat,Hmat] = mm10_mrr_GH(props);
 c
 c Compute drho_alpha/drho_beta
 c loop over numerator hardening variable
-      do alpha = 1,12
+      do alpha = 1,props%num_hard
 
 c Get dislocation density
         rho = tt(alpha) ! rho^a_SSD
@@ -7823,8 +7841,10 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
           
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:12),tt(1:12))
-          rhoP = dot_product(Hmat(alpha,1:12),tt(1:12))
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &     tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &     tt(1:props%num_hard))
 c
 c          call mm10_slipinc_mrr(props, np1, n, stress, tt, alpha, 
 c     &     slipinc)
@@ -7841,7 +7861,7 @@ c        write(*,*) "ddipole", ddipole
 c        write(*,*) "rhoM", rhoM
 c          
 c loop over denominator hardening variable
-        do beta = 1,12
+        do beta = 1,props%num_hard
 c          
 c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
           drhoF = Gmat(alpha,beta)
@@ -7893,8 +7913,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt
-      double precision, dimension(6,12) :: ed
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(6,props%num_hard) :: ed
 c
       ed = 0.d0
 c
@@ -7911,7 +7931,7 @@ c
       double precision, dimension(6) :: stress
       double precision :: rs
       double precision, dimension(props%nslip) :: dgammadtau
-      double precision, dimension(12) :: tt
+      double precision, dimension(props%num_hard) :: tt
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
@@ -7919,7 +7939,8 @@ c
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &      :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -7951,15 +7972,17 @@ c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
 c        
-      do alpha = 1,12
+      do alpha = 1,props%num_hard
 c        
 c          ms = np1.ms(1:6,alpha);
 c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:12),tt(1:12))
-          rhoP = dot_product(Hmat(alpha,1:12),tt(1:12))
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
 c
 c Compute one dependency
         gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*sqrt(rhoP) ! (15)
@@ -8000,8 +8023,9 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(12) :: tt
-      double precision, dimension(props%nslip,12) :: dgammadtt
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%nslip,props%num_hard)
+     &    :: dgammadtt
       double precision :: mm10_rs, rs
       integer :: alpha, beta
 c
@@ -8010,7 +8034,8 @@ c
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
      &  dtcut, dtpass
-      double precision, dimension(12,12) :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &      :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -8044,15 +8069,17 @@ c        [Gmat,Hmat] = mm10_mrr_GH(props);
         
 c Compute derivative of slip rate alpha w.r.t. density beta
 c loop over slip rate
-      do alpha = 1,12
+      do alpha = 1,props%num_hard
 c        
 c          ms = np1.ms(1:6,alpha);
 c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:12),tt(1:12))
-          rhoP = dot_product(Hmat(alpha,1:12),tt(1:12))
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &      tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &      tt(1:props%num_hard))
 c          
 c Compute one dependency
         gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*sqrt(rhoP) ! (15)
@@ -8061,7 +8088,7 @@ c Compute one dependency
         fract = ((dabs(rs)-tpass)/tcut)
 c        
 c loop over density
-        do beta = 1,12
+        do beta = 1,props%num_hard
         
 c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
           drhoF = Gmat(alpha,beta)
@@ -8111,21 +8138,66 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress, D
       double precision, dimension(6,props%nslip) :: dgammadd
-      double precision, dimension(12) :: tt
+      double precision, dimension(props%num_hard) :: tt
 c
       dgammadd = 0.d0
 c
       return
       end subroutine
 c
-c     Interaction matrices for parallel and forest dislocations
+c     Interaction matrices for parallel and forest dislocations, general
       subroutine mm10_mrr_GH(props,G,H)
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
-      double precision, dimension(12,12) :: G, H
-
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: G, H
+c
+      if(props%s_type.eq.6) then ! FCC
+         call mm10_mrr_GHfcc(G,H)
+      elseif(props%s_type.eq.7) then ! BCC12
+         call mm10_mrr_GHfcc(G,H)
+      elseif(props%s_type.eq.8) then ! BCC48
+         call mm10_mrr_GHfcc(G,H)
+      else ! calculate manually
+         call mm10_mrr_GHman(props,G,H)
+      endif
+c
+      return
+      end subroutine
+c
+c     Manual calculation of interactions
+      subroutine mm10_mrr_GHman(props,G,H)
+      use mm10_defs
+      use crystal_data
+      implicit none
+c
+      type(crystal_props) :: props
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: G, H
+      double precision :: s
+      double precision, dimension(3) :: bs,ns
+c     do some calcs here
+c     Initialize crystal
+      call initialize_new_crystal(1, 0)
+      c_array(1)%slip_type = props%s_type
+      call finalize_new_crystal(1, 0)
+c     Now calculate with the slip vectors
+      do s=1,props%nslip
+         bs = c_array(1)%bi(s,:)
+         ns = c_array(1)%ni(s,:)
+      end do
+c
+      return
+      end subroutine
+c
+c     Interaction matrices for FCC system, unitary interactions
+      subroutine mm10_mrr_GHfcc(G,H)
+c
+      double precision, dimension(12,12)
+     &    :: G, H
+c
       G = reshape((/
      & +0.0000000000000000D+00, +0.0000000000000000D+00,
      & +0.0000000000000000D+00, +0.0000000000000000D+00,
