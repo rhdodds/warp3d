@@ -740,7 +740,6 @@ c                         also send the element information to the
 c                         processor who owns the element.
 c                        Allocate the diagonal stiffness for non-MPI
 c
-      write(*,*) ' .... @ 1'
       call wmpi_send_basic
       call wmpi_send_const
       call wmpi_send_analysis
