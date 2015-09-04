@@ -1216,7 +1216,7 @@ c
       implicit none
 #dbl      double precision, parameter ::
 #sgl      real, parameter ::
-     & local_tol_a_0 = 0.80d0
+     & local_tol_a_0 = 0.90d0
 c
 c             step 1: compute f, then q(f), then c1.
 c                     c_0, c_1, c_2. these routines will be inlined
@@ -1282,12 +1282,13 @@ c
       if( a_new .lt. props%a_0 ) then
         switch_to_linear = .true.
         if( a_new .gt. local_tol_a_0 * props%a_0 ) return
-        write(iout,*) " >> Warning: mm04_cavit_std_update @ 3"
+        write(iout,9290) 
         write(iout,9300) felem+i-1, gpn
         write(iout,9310) reladis(i,3), delrlds(i,3),
      &                   opening, closing, neutral, penetrated    
         write(iout,9315) c_0, c_1, c_2, delta_c_dot, T_new, a_n  
         write(iout,9320) v1_dot, v2_dot, V_new, a_new
+        write(iout,9330)
         return
       end if     
 c     
@@ -1332,12 +1333,14 @@ c
      &    /,15x,  "a_new, b_new:                     ",2e14.5,
      &    /,15x,  "N_new, N_dot, nuc active:         ",2e14.5,5x,l1,
      &    /,15x,  "stiff_normal, new_state:          ",e14.5, i5 )
-9300  format('>>>> FATAL ERRROR: element, gpn: ', 2i6 )
+9290  format(">>>>> Warning:  mm04_cavit_std_update @ 3" )
+9300  format(15x,'element, gpn: ', i7, i2)
 9310  format(15x,'reladis(,3) @ n+1, delrdis(,3) n->n+1: ',2e14.5, 
      &    /,15x,'opening, closing, neutral, penetrated: ',4l2)
 9315  format(15x,'c_0, c_1, c_2: ',3e14.5, 
-     &    /,15x,' delta_c_dot, T_new, a_n: ',3e14.5)
+     &    /,15x,'delta_c_dot, T_new, a_n: ',3e14.5)
 9320  format(15x, "v1_dot, v2_dot, V_new, a_new:     ",4e14.5)
+9330  format(15x, "switch to linear stiffness path")
 
 9800  format('>>>> FATAL ERROR. routine mm04_cavit_sig_update.',
      & /,    '                  iterations in mm04_nr_itr did not',
