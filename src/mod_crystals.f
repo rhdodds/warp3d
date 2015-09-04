@@ -47,7 +47,7 @@ c                 Material parameters
                   double precision :: u1, u2, u3, u4, u5, u6
                   double precision, dimension(6,6) :: elast_stiff,
      &                                                elast_flex
-                  double precision, dimension(12,3) :: ni,bi
+                  double precision, dimension(max_slip_sys,3) :: ni,bi
 c
                   logical :: valid
 

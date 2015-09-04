@@ -1965,7 +1965,7 @@ c
      & dimension(6+props%num_hard,6+props%num_hard) :: J
       double precision :: nR, inR, atol, rtol, uB, alpha, ls1, ls2,
      &      nlsx, nRs, c, red, dt, cos_ang
-      integer :: iter, miter, info, ls, mls, mmin, gp, gpp
+      integer :: iter, miter, info, ls, mls, mmin, gp, gpp, ttind
       integer, dimension(6+props%num_hard) :: ipiv
       logical :: debug, gpall, solver, strategy
       double precision, dimension(6) :: R1, x1, dx1, xnew1, d1,d2
@@ -1996,6 +1996,7 @@ c      Convergence parameters: Newton with geometric line search
       rtol = props%rtol
       rtol1 = props%rtol1
       miter = props%miter
+      ttind = 1 ! index of tt to print while debugging
 c       Trust region parameters
       xtol = 1.0d-2
       maxfev = 3*miter
@@ -2162,7 +2163,7 @@ c
      & write(props%out,*)" Material update module, G.P.=", gp
       if(debug .and.(gpall.or.(gp.eq.gpp))) then ! print statement for debugging
       write(props%out,*)" Guess syy=",
-     &  x(2), " Guess tt=", x(6+6)
+     &  x(2), " Guess tt=", x(6+ttind)
       endif
 c
       if(solver) then ! Newton Raphson with line search
@@ -2201,7 +2202,7 @@ c           Increment
 c
       if(debug .and.(gpall.or.(gp.eq.gpp))) then ! print statement for debugging
       write(props%out,*)" Iter=",
-     &  iter, " dx1=", dx(2), " dx2=", dx(6+6)
+     &  iter, " dx1=", dx(2), " dx2=", dx(6+ttind)
       endif
 c
         if(strategy) then ! geometric line search
@@ -2225,7 +2226,7 @@ c             Line search convergence test
             x = xnew
       if(debug .and.(gpall.or.(gp.eq.gpp))) then ! print statement for debugging
       write(props%out,*)" L.S. converged, Iter=",
-     &  iter, " syy=", x(2), " tt(5)=", x(6+6), " nR=", nR
+     &  iter, " syy=", x(2), " tt(5)=", x(6+ttind), " nR=", nR
       write(props%out,*)" alpha=",
      &  alpha
       endif
@@ -2324,7 +2325,7 @@ c       Output statistics from N-R algorithm
       write(props%out,*)" Guess syy=",
      &  stress(2), " actual syy=", x(2)
       write(props%out,*)" Guess tt6=",
-     &  x2(6), " actual tt6=", x(6+6)
+     &  x2(6), " actual tt6=", x(6+ttind)
       endif
 c           Set for return
       stress = x(1:6)
