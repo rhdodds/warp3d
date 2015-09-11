@@ -39,7 +39,7 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 12/20/12 by rhd              *
+c *                 last modified: 9/10/15  by rhd              *
 c *                                                             *
 c ***************************************************************
 c
@@ -685,22 +685,26 @@ c
       return
 c
  9900 format(/,' >>>>> domain definition error:')
- 9910 format(/, '>>> no front nodes specified',// )
- 9920 format(/, '>>> cannot specify q-values & automatic',//)
- 9930 format(/, '>>> no q-values specified',//)
- 9940 format(/, '>>> no element list specified',//)
- 9970 format(/, '>>> cannot use normal orientation for function',
+ 9910 format(/, ' >>> no front nodes specified',// )
+ 9920 format(/, ' >>> cannot specify q-values & automatic',//)
+ 9930 format(/, ' >>> no q-values specified',//)
+ 9940 format(/, ' >>> no element list specified',//)
+ 9970 format(/, ' >>> cannot use normal orientation for function',
      &                   ' type:d',//)
- 9980 format(/, '>>>the number of front nodes and the order of'
+ 9980 format(/, ' >>>the number of front nodes and the order of'
      &   /,     '    interpolation are inconsistent',//)
- 9990 format(/, '>>> default value adopted for function type: ',
+ 9990 format(/, ' >>> default value adopted for function type: ',
      &              a1,//)
- 9992 format(/, '>>> the specified function type and the number of',
+ 9992 format(/, ' >>> the specified function type and the number of',
      &   /,     '       front nodes/interpolation order are '
      &   /,     '       inconsistent',//)
- 9994 format(/, '>>> the front nodes are not in order of monotonically',
+ 9994 format(/, ' >>> the front nodes are not in order of monotonically',
      &   /,     '       increasing distance from first front node...'
-     &   /,     '       first front node in error: ',i6,//)
+     &   /,     '       first front node in error: ',i6,
+     &   /,     "       Did you forget the keyword 'sets' in the ",
+     &          "'front nodes ...'",
+     &   /,     "       command for domains that use multiple nodes ",
+     &          "at each front location?", /)
 c
       end
 c
