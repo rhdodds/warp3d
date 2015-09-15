@@ -984,7 +984,7 @@ c
 #lnx     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
 #l64     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
 #mac     &     '    **     Mac OS X (64-bit)          -dev-    Release: ',
-     &     ' 17.6.0      **',/,
+     &     ' 17.6.1      **',/,
      &     '    **     Code Build Number: 2900             ',
      &     '                      **',/,
      &     '    **     University of Illinois              Dept. of ',
