@@ -4,7 +4,7 @@ c     *                      subroutine inmat                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/1/2015 rhd               *
+c     *                   last modified : 9/14/2015 rhd              *
 C     *                                                              *
 C     *     input of properties of the materials in the material     *
 c     *     library for the current problem.                         *
@@ -15,7 +15,7 @@ c
 c
       subroutine inmat( sbflg1, sbflg2, matnum )
       use main_data, only : matprp, lmtprp, imatprp, dmatprp,
-     &  smatprp, nonlocal_analysis
+     &  smatprp, nonlocal_analysis, umat_used
       implicit integer (a-z)
 $add common.main
       logical sbflg1, sbflg2
@@ -1133,6 +1133,7 @@ c **********************************************************************
 c
  1100 continue
       matprp(9,matnum) = 8
+      umat_used = .true.
       go to 210
 c
  1110 continue

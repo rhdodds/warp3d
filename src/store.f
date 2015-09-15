@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/12/2015 rhd              *
+c     *                   last modified : 9/14/2015 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -163,7 +163,7 @@ c
      &              time_assembly, parallel_assembly_allowed,
      &              parallel_assembly_used,
      &              distributed_stiffness_used, nonlocal_analysis,
-     &              umat_serial, asymmetric_assembly
+     &              umat_serial, umat_used, asymmetric_assembly
       write(fileno) sparse_stiff_file_name, packet_file_name
       write (fileno) check_data_key
 c

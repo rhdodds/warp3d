@@ -4,7 +4,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 1/23/2015 rhd                   *
+c     *              last modified : 9/14/2015 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -276,9 +276,9 @@ c
 c
       type (ulist), dimension(100) :: user_lists ! 100 is set in param_def  
 c
-c     Force serialization of umats?
+c     UMAT model used ? Force serialization of umats?
 c
-      logical :: umat_serial
+      logical :: umat_serial, umat_used
 c
 c                 convergence information for last few load steps.
 c                 used for user_solution_paramters

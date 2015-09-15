@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 5/13/2015 rhd               *
+c     *                   last modified: 9/14/2015 rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -21,7 +21,7 @@ c
       subroutine mnralg( mf, mf_nm1, mf_ratio_change, step, ldnum )
 c
       use main_data, only : mdiag, pbar, cnstrn, dload,
-     &     max_loddat_blks, convergence_history,
+     &     max_loddat_blks, convergence_history, umat_used,
      &     divergence_check, asymmetric_assembly
       use adaptive_steps, only : adapt_result, adapt_disp_fact,
      &                           adapt_load_fact
@@ -299,7 +299,7 @@ c          a simple way to get the "applied" forces equivalent to the
 c          imposed, incremental displacements for step.
 c
       if( predct .or. (.not.zrocon) .or. first_subinc .or.
-     &    temperatures ) then
+     &    temperatures .or. umat_used ) then
            if( show_details ) write(out,9155) step
            material_cut_step = .false.
            call drive_eps_sig_internal_forces( step, 0,

@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 5/12/2015 rhd              *
+c     *                   last modified : 9/14/2015 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -149,7 +149,7 @@ c
      &             time_assembly, parallel_assembly_allowed,
      &             parallel_assembly_used,
      &             distributed_stiffness_used, nonlocal_analysis,
-     &             umat_serial, asymmetric_assembly
+     &             umat_serial, umat_used, asymmetric_assembly
       read(fileno) sparse_stiff_file_name, packet_file_name
       call chk_data_key( fileno, 1, 1 )
 c

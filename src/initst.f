@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/12/2015 rhd              *
+c     *                   last modified : 9/14/2015 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -25,7 +25,7 @@ c
      &                      fgm_node_values_cols,
      &                      cohesive_ele_types, linear_displ_ele_types,
      &                      adjust_constants_ele_types,
-     &                      axisymm_ele_types,
+     &                      axisymm_ele_types, umat_used,
      &                      implemented_ele_types,
      &                      tables, user_lists, nonlocal_analysis,
      &                      modified_mpcs, umat_serial,
@@ -588,7 +588,12 @@ c
             write(out,9220) max_threads
             call die_abort
       end if
+c
+c                       global flags for UMAT used in model, 
+c                       run UMAT element blocks in serial
+c      
       umat_serial = .false.
+      umat_used   = .false.
 c
 c                       hypre solver defaults.  See the hypre reference manual
 c                       for rational (if provided) as I just copy
