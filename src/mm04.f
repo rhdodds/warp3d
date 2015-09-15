@@ -907,11 +907,11 @@ c
 c             set options in formulation to include, debug options
 c
       degrade_shear         = .false.
-      VVNT                  = .true.
-      modify_q              = .true.
+      VVNT                  = .false.
+      modify_q              = .false.
       include_nucleation    = .false.
       debug_newton          = .false.
-      include_cavity_growth = .true.
+      include_cavity_growth = .false.
       compute_solid_local   = .false.
 c      
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 
