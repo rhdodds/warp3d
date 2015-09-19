@@ -1,45 +1,76 @@
 c ************************************************************************
 c *                                                                      *
-c *     WARP3D source file builder for Intel F-90 compiler running       * 
-c *            on Windows                                                *
-c *                                                                      *
+c *   WARP3D source file builder - Mac OS X                              *
 c *                                                                      *
 c ************************************************************************
 c
+c
+c
 c     This program accepts Fortran source code files that contain
-c     additional markup lines that indicate computer dependencies and
+c     additional markup lines that indicate various dependencies and
 c     size limitations.  It emits a new Fortran source code file
 c     for compilation on a specific computer platform/operating system.
 c
-c     program also expands any $ADD <file> lines that maybe present. These
+c     usage:   filter.exe < input_source  > output_source
+c
+c     Features
+c
+c     Program expands any $ADD <file> lines that maybe present. These
 c     lines provides a platform independent method to "include" other
 c     source code files. The $ADDs may be stacked 10 levels deep.
 c
+c     Filters based on certain characters appearing in column 1:
 c
-      implicit integer ( a-z)
-      character * 1  firstc, dollar, pound, exclam, part2, percent
-      character * 3 machin, pgmsiz, part1, addcrd,precis,fmt,form,ptr
-c     &              ,exmach
-      character part3*16, part4*59, sfname*16
-      character * 16 filtbl(10)
-      character * 80 line
-c      character * 80 outnam
-      logical    debug, quotes, match, cray_ptr
-      equivalence (firstc,line( 1:1 ))
-      equivalence (part1 ,line( 2:4 ))
-      equivalence (part2 ,line( 5:5 ))
-      equivalence (part3 ,line( 6:21))
-      equivalence (part4 ,line(22:80))
-      data  addcrd, dollar, pound, exclam / 'ADD', '$', '#', '!' /
-      data  percent, ptr / '%', 'PTR' /
+c        $add < file>
 c
-      machin = 'win'
-      pgmsiz = 'SZ2'
+c        #<platform>  where <platform> is 3 characters, i.e.,
+c            #mac,  #win,  #l64 or #lnx (last two for linux)
+c          deprecated:  #dec,  #cry,  #sga, #r60, #hpi, #sun, #sgi
+c
+c          if <platform> matches variable machin, the #... is stripped
+c          and the line emitted to filtered source file
+c
+c        #dbl or #sgl  lines to be included for double or single precision
+c                      versions
+c          if dbl or sgl matches variable precis, the #... is stripped
+c          and the line emitted to filtered source file
+c
+c        !<platform>  means include this line (stripped)
+c          if NOT building source for <platform> 
+c
+c        @...  strip @ and emit remainder of line to the filtered 
+c              source file. @ often used ahead of !DIR$ ... compiler
+c              directives. present version replaces appearance of ###
+c              on such lines with the string in max_span
+c
+c        %...  not used at present. can be used in future. see routine
+c              process_line
+c
+c     Above capabilities are readily extended with this updated version
+c     of the filter program.
+c
+      call do_filter
+      stop
+      end
+            
+      subroutine do_filter
+      implicit none
+c      
+      integer :: outfil, out, stklev, nowfil, nowlin, io
+      character (len=256) :: upchar,lochar
+      character (len=3)   :: machin, part1, precis, max_span
+      character (len=16)  :: part3
+      character (len=59)  :: part4
+      character (len=16)  :: sfname
+      character (len=16)  :: filtbl(10)
+      character (len=80)  :: line
+      character (len=150) :: error_filename
+      logical :: debug, quotes
+c
+      machin = 'win'  !   Windows
       precis = 'DBL'
-      fmt    = 'FMT'
-      cray_ptr = .false.
-      form   = ' z8'
       quotes = .false.
+      max_span = "128" !  for compiler directives
 c
       outfil = 6
       out    = 10
@@ -48,192 +79,184 @@ c
       nowlin = 0
       sfname = ' '
       debug = .false.
-      do 10  i = 1, 10
-  10   filtbl(i) = ' '
+      filtbl(1:10) = ' '
 c
-C
-C                       generate upper to lower case/lower to upper case
-C                       mappings.
+c              generate upper to lower case/lower to upper case
+c              mappings.
 c
       call trmup      
 c
-c                       open the debug output file
-C
-      if ( debug ) then
-            open( unit = out,file = 'expand.debug',
-     &      status = 'unknown')
-      endif
+c              open the debug output file
+c
+      if( debug ) open( unit = out,file = 
+     &                  'expand.debug', status = 'unknown' )
+c
+c              loop to process each line of the source file. use
+c              a stack to handle multiple level $add commands.
+c      
+      do 
+       read(unit=nowfil,fmt=9006,iostat=io) line
+       if( io == 0 ) then  ! read is ok
+         call process_line
+         cycle
+       end if
+       if( io > 0 ) then ! unknown file read error
+         inquire(unit=nowfil,name=error_filename)
+         write(out,9100) io, error_filename
+         stop
+       end if
+       if( stklev == 1 ) then  ! eof on read. could be end of source
+         if ( debug ) write(out,9011)
+         return
+       end if
+       close(unit=nowfil)
+       if( debug ) write(out,9010) stklev
+       stklev = stklev - 1
+       nowfil = stklev + 10
+       if( stklev .eq. 1 ) nowfil = 5 ! back reading top level source
+      end do
+c       
+ 9006 format( a)
+ 9010 format(/,3x,'>>>>> Pop stack. File closed. Level = ',i3 )
+ 9011 format(/,3x,'>>>>> End of source file. Job done.' )
+ 9100 format(/,'....... FATAL ERROR .......',/,
+     &       /,'iostat error: ',i6,' reading file: ',a)
+ 
+      contains
+      
+c **********************************************************************
+c *                                                                    *
+c * process_line. handle the line and if and how to include it in the  *
+c * filtered source code file                                          *
+c *                                                                    *
+c **********************************************************************
 c
 c
-c                       top of reading loop.  read next line from
-c                       unexpanded source file.  if first character
-c                       is not a special character, just write out the
-c                       line.
-c
-c
- 9999 continue
-      read(unit=nowfil,fmt=9006,end=700) line
+      subroutine process_line
+      
+      implicit none
+      
+      character (len=1) :: firstc, dollar, pound, exclam, part2, 
+     &                     percent, atsign 
+      character (len=3) :: addcrd
+      integer :: linel, i, istats, pos
+      data  addcrd, dollar, pound, exclam / 'ADD', '$', '#', '!' /
+      data  percent, atsign / '%', '@' /
+
+      firstc = line(1:1)
+      part1  = line(2:4)
+      part2  = line(5:5)
+      part3  = line(6:21)
+      part4  = line(22:80)
+c      
       if ( debug ) write(out,9007) firstc, part1, part2, part3, part4
 c
+c              right strip the line.
+c              replace double w/ single quotes if req'd
 c
-c                       right strip the line
+      linel = len_trim( line )
 c
-c
-      do 15  i=1,80
-         j = 81 - i
-         if ( line(j:j) .ne. ' ' ) go to 20
-   15 continue
-   20 linel = j
-c
-c
-c                       if there are double quotes get rid of them 
-c                       unless its cdc or harris
-c
-c
-      if ( quotes ) then
-         do 50  i=1,linel
+      if( quotes ) then
+         do i = 1, linel
            if( line(i:i) .eq.'"' ) line(i:i) = ''''
-  50     continue
-      endif
+         end do
+      end if
 c
+c              look for a #, $, !, or %. if none just emit
+c              the line.
+c      
+      select case( firstc )
+c      
+c              % line found. retained as future optional
+c              filter sentinel. strip % and write line for now
 c
-c                       look for a #, $, !, or %. if none just emit
-c                       the line.
-c
-c
-c
-      if ( firstc .eq. percent ) go to 100
-      if ( firstc .eq. dollar  ) go to 200
-      if ( firstc .eq. pound   ) go to 300
-      if ( firstc .eq. exclam  ) go to 400
-c
-c
-c                       just an ordinary line!
-c
-c
-      write(outfil,9006) line(1:linel)
-      nowlin = nowlin + 1
-      go to 9999
-c
-c                       % card found. this would be a %include
-c                       line for apollo computers. convert
-c                       the line to lower case then emit.
-c			for decs and suns, remove %.
-c
- 100  continue
-      call convlc( line )
-      if (machin .eq. 'HPU') write(outfil,9006) line(1:linel)
-      if (machin .eq. 'SUN') write(outfil,9016) line(2:linel)
-      if (machin .eq. 'DEC') write(outfil,9016) line(2:linel)
-      nowlin = nowlin + 1
-      go to 9999
-c
-c                       $add card found.  pop down in stack.
- 200  continue
-      stklev = stklev + 1
-      nowfil = stklev + 10
-      call convlc( part3 )
-      sfname(1:16) = part3
-      if ( debug ) write(out,9008) stklev, part3
-      filtbl(stklev) = part3
-      open( unit=nowfil, file=sfname, iostat=istats, status = 'old')
-      if ( istats .ne. 0 ) go to 210
-      if ( debug ) write(out,9013)
-      go to 9999
- 210  write(outfil,*) '>>> could not open $ADD file ',sfname
-      stop
+      case( '%' )
+        write(outfil,9006) line(2:linel)
+        nowlin = nowlin + 1
+c        
+c                       $add line found.  pop down in stack to
+c                       start reading the include file.
+      case( '$' )
+        stklev = stklev + 1
+        nowfil = stklev + 10
+        call convlc( part3 )
+        sfname(1:16) = part3
+        if( debug ) write(out,9008) stklev, part3
+        filtbl(stklev) = part3
+        open( unit=nowfil, file=sfname, iostat=istats, status = 'old')
+        if( istats .ne. 0 ) then
+           write(outfil,9100) sfname
+           stop
+        end if        
+        if( debug ) write(out,9013)
 c
 c                       # card found with machine dependent or
 c                       size dependent line.
 c                       output line only if for current machine or
 c                       size.
 c
- 300  continue
+      case( '#' )
+        if( match(machin,part1)  .or. match(precis,part1) ) 
+     &      write(outfil,9012) part2, part3, part4
 c
-      if ( match(machin,part1)  .or.  
-     &     match(pgmsiz,part1)  .or.
-     &     match(precis,part1) ) then
-             write(outfil,9012) part2, part3, part4
-c
-c
-c                       check for a #fmt card. if so insert the 
-c                       correct format string for as many iterations
-c                       as there are ### groups.
-c                       then write the line.
-c
-c
-      else if ( match(fmt,part1) ) then
- 305     k = index(line,'###')
-         if ( k .ne. 0 ) then
-            line(k:k+2) = form
-            go to 305
-         else
-            write(outfil,9012) part2,part3,part4
-         endif
-c
-c                       if the string found is 'ptr' and we are using
-c                       cray style pointers, then write line
-c
-      else if (match (ptr,part1) .and. cray_ptr) then
-             write(outfil,9012) part2, part3, part4
-      endif
-      go to 9999
-c
-c
-c                       got an exclamation line.   first check if it
-c                       is a 'PTR' or a machine type. see if we should 
-c                       emit it or skip it.
-c
+c                       ! line. include line unless on specified
+c                       machine type. 
 c                       
- 400  if (match (ptr,part1) ) then
-            if (.not. cray_ptr) then
-                 write(outfil,9012) part2, part3, part4
-            endif
-      else if( .not.match(machin,part1) ) then 
-            write(outfil,9012) part2,part3,part4
-      endif
-      go to 9999
+      case( '!' )
+        if( .not. match(machin,part1) )
+     &      write(outfil,9012) part2,part3,part4
 c
-c                       end of file encountered.  close current file
-c                       pop file stack.
+c              @ sign starting line. a line with compiler directive
+c              setting max value of span for key do loops. can
+c              be used by compiler to assess approaches for 
+c              optimization. replace ### on line with max allowed block
+c              size. If no ###, just emit line w/o @ sign
 c
- 700  continue
-      if ( stklev .eq. 1 ) go to 1000
-      close(unit=nowfil)
-      if ( debug )write(out,9010) stklev
-      stklev = stklev - 1
-      nowfil = stklev + 10
-      if (stklev .eq. 1) nowfil = 5
-      go to 9999
+      case( '@' )
+        pos = index( line(1:), "###" ) 
+        if( pos .gt. 0 ) line(pos:) = max_span
+        write(outfil,9006) line(2:linel)
+        nowlin = nowlin + 1
 c
-c                       end of file on the unexpanded source.
+c              just an ordinary line
 c
- 1000 continue
-      if ( debug ) write(out,9011)
+      case default
+        write(outfil,9006) line(1:linel)
+        nowlin = nowlin + 1
+c
+      end select 
+c
+      return
+c
  9006 format( a)
  9007 format(3x,'>>> Line Read - ',a1,a3,a1,a16,a59)
  9008 format(/,3x,'>>>>> Pop Down. Level = ',i3, 'File = ',a16 )
  9009 format(/,3x,'>>>>> ADD file opened' )
- 9010 format(/,3x,'>>>>> Pop stack. File closed. Level = ',i3 )
- 9011 format(/,3x,'>>>>> End of source file. Job done.' )
  9012 format( a1, a16, a59 )
  9013 format(/,3x,'>>>>> Just opened a new input file' )
  9014 format(/,3x,'>>>>> Could not open the source file' )
  9016 format(6x,a)
-      end
+ 9100 format(/,'....... FATAL ERROR .......',/,
+     &       /,'>>> could not open $ADD file: ',a )
+c
+      end subroutine   process_line    
+      
+                  
 c **********************************************************************
 c *                                                                    *
-c * match - match two strings.  Case is converted to lower case for the*
-c *         compare.  Original strings are untouched                   *
+c * match - match two strings.  Case is converted to lower case for    *
+c *         the compare.  Original strings are untouched               *
 c *                                                                    *
 c **********************************************************************
-      logical function match(texta,textb)
-      character *256 upchar,lochar
-      common/tranup/ upchar,lochar
 c
 c
-      character *(*) texta, textb
-      character * 1  tex1, tex2
+      logical function match( texta, textb )
+c
+      implicit none
+      character (len=*) :: texta, textb
+c            
+      character (len=1) :: tex1, tex2
+      integer :: len1, len2, nchar, i
 c
       match = .false.
       len1 = len(texta)
@@ -245,73 +268,75 @@ c
         tex2 = lochar( (ichar(textb(i:i)) +1): )
         if( tex1 .ne. tex2 ) return
       end do
+c      
       match = .true.
       return
-      end
-      subroutine trmup
+      end function match
 c
 c**********************************************************************
-c                       subprogram to set up a table to map lower     *
-c                               case letters to upper case            *
-c                               independent of character set.         *
 c                                                                     *
-c           input:      none                                          *
-c           output:     upchar = mapping vector for lower to upper    *
+c      set up a table to map lower case letters to upper case         *
+c      independent of character set.                                  *
+c      output:     upchar = mapping vector for lower to upper         *
 c                                                                     *
-c                                                                     *
-c                       loones is the set to be mapped to uppercase   *
-c                       upones is the uppercase mapping for loones    *
+c      loones is the set to be mapped to uppercase                    *
+c      upones is the uppercase mapping for loones                     *
 c                                                                     *
 c**********************************************************************
-C
-      character *256 upchar,lochar
-      character *26  loones, upones
-      integer subscr
-      common/tranup/ upchar,lochar
+c
+c      
+      subroutine trmup
+      implicit none
+c      
+      character (len=26)  ::  loones, upones
+      integer :: subscr, maxchr, i, length
       data loones/'abcdefghijklmnopqrstuvwxyz'/
       data upones/'ABCDEFGHIJKLMNOPQRSTUVWXYZ'/
       data maxchr/256/
 c
-c
-c                       first map all characters to themselves
-c
+c              first map all characters to themselves
 c                               
-      do 10 i = 0,maxchr-1    
-       lochar(i+1:) = char(i)
-   10  upchar(i+1:) = char(i)
+      do i = 0, maxchr-1    
+        lochar(i+1:) = char(i)
+        upchar(i+1:) = char(i)
+      end do 
 c
-c
-c                       now re-map certain lowercase ones to upper case
-c                       and vice versa
+c              now re-map certain lowercase ones to upper case
+c              and vice versa
 c
       length = len(loones)
 c
-      do 20 i = 1,length
+      do i = 1, length
         subscr = ichar(upones(i:)) + 1
         lochar(subscr:subscr) = loones(i:i)
         subscr = ichar(loones(i:)) +1
-   20   upchar(subscr:subscr) = upones(i:i)
+        upchar(subscr:subscr) = upones(i:i)
+      end do
+c        
       return
-      end
-c
-      subroutine convlc(text)
-c
-      implicit integer(a-z)
+      end subroutine trmup
 c
 c**********************************************************************
 c                                                                     *
-c                       routine to translate any upper case           *
-c                       characters to lower case equivalents defined  *
-c                       via trmup.                                    *
+c        translate any upper case characters to lower case            *
+c        equivalents defined  via trmup.                              *
+c                                                                     *
 c**********************************************************************
 c
-      character  text * (*)                                           
-      character *256 upchar,lochar
-      common/tranup/ upchar,lochar
+      subroutine convlc( text )
+c
+      implicit none
+      character (len=*) :: text
+      integer :: nchar, i, subscr
 c
       nchar = len(text)                       
-      do 10 i = 1,nchar
-        subscr    =  ichar(text(i:i)) + 1
-  10    text(i:i) = lochar( subscr : subscr )
+      do i = 1, nchar
+        subscr    = ichar(text(i:i)) + 1
+        text(i:i) = lochar( subscr : subscr )
+      end do 
+c      
       return
-      end
+      end subroutine convlc
+c      
+      end subroutine do_filter
+
