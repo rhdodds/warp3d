@@ -2116,7 +2116,7 @@ $(OD)/rklstf$O : rklstf.f include_lin_ek \
 	$(RMC)  $@
 	$(RMC)  filt_rklstf.f
 	$(FILTER) < rklstf.f > filt_rklstf.f
-	$(F90) -O2 -ip  -c filt_rklstf.f
+	$(F90) -O2 -ip  -c filt_rklstf.f -qopt-report -qopt-report-file=filt_rklstf_opt_report
 	$(MVC) filt_rklstf$O  rklstf$O
 	$(MVC) rklstf$O $@
 

@@ -4,7 +4,7 @@ c     *                      subroutine rklstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 04/16/2013 rhd             *
+c     *                   last modified : 09/16/2015 rhd             *
 c     *                                                              *
 c     *     supervises the computation of linear stiffness matrices  *
 c     *     for a block of similar elements.                         *
@@ -40,9 +40,8 @@ c
      &   zero, one, beta_fact, eps_bbar, xi, eta, zeta, fnnode, avg
 c
       data local_debug, zero, one
-#sgl     &     / .false., 0.0, 1.0 /
-#dbl     &     / .false., 0.0d00, 1.0d00 /
-      real :: e, nu
+     &     / .false., 0.0d00, 1.0d00 /
+      real :: cp_e, cp_nu
 c
 c          set local variables from the data structure
 c          passed into routine. just saves lots of
@@ -103,6 +102,7 @@ c
       crystal     = mat_type .eq. 10
       regular     = .not. ( cohesive .or. umat_solid )
       local_work%segmental = .false.
+c      
       if( cohesive )
      &    call mm04_init( iout, span, felem, props, lprops, iprops,
      &                    local_work%cohes_type,
@@ -111,6 +111,7 @@ c
      &                    local_work%cohes_rot_block  )
 c
       if( umat_solid ) then    ! Abaqus umat
+@!DIR$ LOOP COUNT MAX=###      
          do i = 1, span
            local_work%umat_props(i,1:50) = dmatprp(151:200,matnum)
          end do
@@ -121,41 +122,48 @@ c
      &      local_work%iout_local  )
       end if
 c
-c          Need to set the average properties differently for cp
+c          need to set the average properties differently for cp
 c
       if( regular ) then
-        do i = 1, span
-         if ( crystal ) then
-            call mm10_set_e_nu(matnum,felem+i-1,e,nu)
-            local_work%e_block(i)  = e
-            local_work%nu_block(i) = nu
+c
+         if ( crystal ) then         
+@!DIR$ LOOP COUNT MAX=###      
+           do i = 1, span
+              call mm10_set_e_nu(matnum,felem+i-1,cp_e,cp_nu)
+              local_work%e_block(i)     = cp_e
+              local_work%nu_block(i)    = cp_nu
+              local_work%fgm_flags(i,1) = props(7,i)
+              local_work%fgm_flags(i,2) = props(8,i)
+           end do
          else
-            local_work%e_block(i)     = props(7,i)
-            local_work%nu_block(i)    = props(8,i)
+@!DIR$ LOOP COUNT MAX=###      
+           do i = 1, span
+              local_work%e_block(i)     = props(7,i)
+              local_work%nu_block(i)    = props(8,i)
+              local_work%fgm_flags(i,1) = props(7,i)
+              local_work%fgm_flags(i,2) = props(8,i)
+           end do
          end if
-         local_work%fgm_flags(i,1) = props(7,i)
-         local_work%fgm_flags(i,2) = props(8,1)
-       end do
-       bit_flags            = iprops(24,1)
-       local_work%segmental = .true.
-       if ( iand(bit_flags,4) .eq. 0 ) local_work%segmental = .false.
+c
+         bit_flags                 = iprops(24,1)
+         local_work%segmental      = .true.
+         if( iand(bit_flags,4) .eq. 0 ) local_work%segmental = .false.
+c         
       end if
 c
 c           zero element stiffnesses in local work block.
 c           we compute locally then copy to global.
 c
-      if (.not. asymmetric_assembly) then
-      call rklstf_zero_vector( ek, utsz*span )
-      else
-      call rklstf_zero_vector( ek, totdof*totdof*span)
-      end if
+      ntermsk = utsz*span
+      if( asymmetric_assembly ) ntermsk = totdof*totdof*span
+      call rklstf_zero_vector( ek, ntermsk )
 c
 c                       compute all the shape function derivatives, and
 c                       inverse jacobians. also calculate volume
 c                       terms if using bbar. ce is element
 c                       nodal coordinates at time = 0.
 c
-      if ( bbar .and. (elem_type .eq. 2) )
+      if( bbar .and. (elem_type .eq. 2) )
      &   call zero_vol( local_work%vol_block, local_work%volume_block,
      &                  span, mxvl )
 c
@@ -164,7 +172,7 @@ c           element coordinates are rotated to a coordinate
 c           system in which the normal axis (Z rotated) is
 c           perpendicular to the surface ot the cohesive element
 c
-      if ( local_work%is_cohes_elem )
+      if( local_work%is_cohes_elem )
      &     call cohes_rot_mat( span, felem, nnode, elem_type, ce,
      &                         local_work%cohes_rot_block )
 c
@@ -176,7 +184,7 @@ c
          if( compute_shape )
      &     call shapef( elem_type, xi, eta, zeta,
      &                  local_work%shape(1,gpn) )
-        if ( local_debug .and. gpn .eq. 1 ) then
+        if( local_debug .and. gpn .eq. 1 ) then
           write(iout,9000) gpn, elem_type, xi, eta, zeta
           write(iout,9005)
           do enode = 1, nnode
@@ -191,7 +199,7 @@ c
      &                local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &                local_work%nzeta(1,gpn), ce, nnode )
 c
-        if ( bbar ) then
+        if( bbar ) then
           call vol_terms(
      &    local_work%gama(1,1,1,gpn), local_work%det_jac_block(1,gpn),
      &    local_work%vol_block, local_work%nxi(1,gpn),
@@ -200,7 +208,7 @@ c
         end if
       end do
 c
-      if ( bbar ) call vol_avg( local_work%vol_block,
+      if( bbar ) call vol_avg( local_work%vol_block,
      &                          local_work%volume_block, span, mxvl )
 c
 c          for linear displacement elements and
@@ -216,7 +224,6 @@ c
       if( average )  call rklstf_avg_temps( span, mxvl, nnode,
      &                local_work%temps_node_blk(1,1),
      &                local_work%temps_ref_node_blk(1,1) )
-c
 c
 c          average fgm nodal property values of
 c          e and nu for linear displacment elements.
@@ -252,7 +259,7 @@ c
 c
       set_up_e_nu = local_work%segmental .and.
      &              (mat_type .eq. 1) .or. (mat_type .eq. 3) .or.
-     &              (mat_type .eq. 5)
+     &              (mat_type .eq. 5) .or. (mat_type .eq. 6)
 c
       do  gpn = 1, ngp
 c
@@ -277,8 +284,8 @@ c
      &                local_work%fgm_flags(1,2) )
        end if
 c
-         igpn = gpn
-         if (.not. asymmetric_assembly) then
+       igpn = gpn
+       if( .not. asymmetric_assembly ) then
          call gplns1(
      &    igpn, local_work%icp,
      &    local_work%e_block, local_work%nu_block,
@@ -291,7 +298,7 @@ c
      &    local_work%bt_block, local_work%bd_block, local_work%cep,
      &    local_work%cohes_rot_block,
      &    utsz, local_work, utsz)
-         else
+       else
          call gplns1(
      &    igpn, local_work%icp,
      &    local_work%e_block, local_work%nu_block,
@@ -304,16 +311,16 @@ c
      &    local_work%bt_block, local_work%bd_block, local_work%cep,
      &    local_work%cohes_rot_block,
      &    utsz, local_work, totdof*totdof)
-         end if
+       end if
 c
-      end do
+      end do  ! on gpn 
 c
 c
 c		       modify element stiffness matrix by thickness
 c         factor for a plane strain analysis
 c
-      if ( beta_fact .ne. one ) then
-            if (.not. asymmetric_assembly) then
+      if( beta_fact .ne. one ) then
+            if( .not. asymmetric_assembly ) then
               ek(1:utsz,1:span) = beta_fact * ek(1:utsz,1:span)
             else
               ek(1:totdof*totdof,1:span) = beta_fact * 
@@ -325,24 +332,23 @@ c          transform element stiffnesses to constraint
 c          compatible coordinates if required. skip
 c          whole block or specfic element to reduce work.
 c
-      if ( .not. local_work%trn_e_block ) go to 9999
-      do i = 1, span
-       if ( local_work%trn_e_flags(i) ) then
-        if (.not. asymmetric_assembly) then
-          call trnmtx( ek, local_work%cp,
+      if( local_work%trn_e_block ) then
+@!DIR$ LOOP COUNT MAX=###      
+        do i = 1, span
+         if( local_work%trn_e_flags(i) ) then
+           if( .not. asymmetric_assembly ) then
+             call trnmtx( ek, local_work%cp,
      &                 local_work%trnmte, local_work%trne, ndof, nnode,
      &                 totdof, i, utsz )
-        else
-          call trnmtx( ek, local_work%cp,
+           else
+             call trnmtx( ek, local_work%cp,
      &                 local_work%trnmte, local_work%trne, ndof, nnode,
      &                 totdof, i, totdof*totdof ) 
-        end if
-       end if
-      end do
-      go to 9999
+           end if
+         end if
+        end do ! on i over span
+      end if
 c
- 9999 continue
-
       return
 c
  9000 format(5x,"... gpn, elem_type,  xi, eta, zeta: ",
@@ -380,13 +386,14 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine rklstf_zero_vector( vec, n )
-#dbl      double precision
-#sgl      real
-     &  vec(*), zero
-#sgl      data zero / 0.0 /
-#dbl      data zero / 0.0d00 /
+      implicit none
+c      
+#dbl      double precision ::
+#sgl      real ::
+     &  vec(*)
+      integer :: n
 c
-      vec(1:n) = zero
+      vec(1:n) = 0.0d00
 c
       return
       end
@@ -428,15 +435,16 @@ c
 #sgl      real
      &   zero, fnnode
 c
-      data  zero
-#sgl     &     /  0.0 /
-#dbl     &     /  0.0d00 /
+      data  zero /  0.0d00 /
 c
 c
-      sum_temps(1:span) = zero
+@!DIR$ LOOP COUNT MAX=###      
+      sum_temps(1:span)  = zero
+@!DIR$ LOOP COUNT MAX=###      
       sum_rtemps(1:span) = zero
 c
       do enode = 1, nnode
+@!DIR$ LOOP COUNT MAX=###      
        do i = 1, span
          sum_temps(i)  = sum_temps(i) + temps_node_blk(i,enode)
          sum_rtemps(i) = sum_rtemps(i) + temps_ref_node_blk(i,enode)
@@ -445,6 +453,7 @@ c
 c
       fnnode =  real( nnode )
       do enode = 1, nnode
+@!DIR$ LOOP COUNT MAX=###      
         do i = 1, span
           temps_node_blk(i,enode) = sum_temps(i) / fnnode
           temps_ref_node_blk(i,enode) = sum_rtemps(i) / fnnode

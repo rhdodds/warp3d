@@ -173,9 +173,7 @@ c                                  bilinear, ramp, exponential_1 and
 c                                  exponential_2, ppr, cavitation
 c                              = 5 advanced cyclic plasticity model
 c                                  developed by kristine cochran
-c                              = 6 extended gurson-tvergaard model
-c                                  developed by frederique hachez and
-c                                  thomas pardoen
+c                              = 6 creep model
 c                              = 7 advanced mises model with hydrogen
 c                                  effects developed by yuiming liang
 c                              = 8 general UMAT for warp3d.
@@ -245,7 +243,8 @@ c                              76 - yl_7
 c                              77 - yl_8
 c                              78 - yl_9
 c                              79 - yl_10
-c                      80-89  available
+c
+c                      80-89  creep model
 c
 c                      90-- PPR cohesive model
 c                              90-98 currently used. see comments
@@ -449,6 +448,7 @@ c
       if ( matchs_exact('nonlocal')     ) go to 470
       if ( matchs('sig_o',5)            ) go to 260
       if ( matchs('linear_elastic',6)   ) go to 290
+      if ( matchs_exact('creep')        ) go to 600
       if ( matchs_exact('cyclic') )         go to 800
       if ( matchs_exact('cylic') )          go to 800
       if ( matchs_exact('mises_hydrogen') ) go to 1000
@@ -1041,6 +1041,18 @@ c
  470  continue
       nonlocal_analysis = .true.
       go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *         properties for creep model                                 *
+c *                                                                    *
+c **********************************************************************
+c
+c
+ 600  continue
+      matprp(9,matnum)= 6
+      call inmat_creep( matprp(1,matnum), lmtprp(1,matnum)  )
+      go to 9998
 c
 c **********************************************************************
 c *                                                                    *
@@ -3481,6 +3493,199 @@ c
      &   '          delta_n(peak): ',f12.9,'  delta_t(peak): ',f12.9 / )
       end
 
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine inmat_creep                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/16/2015 rhd              *
+c     *                                                              *
+c     *     input properties for the creep model (#6)                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine inmat_creep( matprp, lmtprp )
+c
+      implicit none
+c
+c                       parameter declarations (the column of the
+c                       table is passed for this material)
+c
+      real :: matprp(*)
+      logical :: lmtprp(*)
+c
+c                       local declarations
+c
+      integer :: creep_start, dum
+      logical :: local_debug
+      logical, external :: true, matchs, matchs_exact, endcrd,
+     &           numr
+      real ::  dumr
+      double precision :: dumd
+      real  value
+      character *1 dums
+
+c
+c                       enter here having seen the properties and
+c                       creep keywords at the beginning of a line.
+c                       we leave at the end of a logical line having
+c                       processed all property values for the
+c                       creep plasticty model.
+c
+c                       E, nu, n (n_power), B, alpha
+c                      
+c                       temperature handled by WARP3D.
+c 
+c
+c                  storage layout:
+c
+c                     80    B
+c                     81    n
+c
+      local_debug = .false.
+      if( local_debug ) write(*,*) '.... entered inmat_creep ....'
+      creep_start = 80
+c
+      matprp(80:89) = 0.0
+c
+      call reset
+      if( true( dum ) ) call splunj
+      if( matchs('properties',10) ) call splunj
+      if( matchs('creep',5) ) call splunj
+      if( local_debug ) write(*,*) '  @ 1'
+      go to 210
+c
+ 206  continue
+      call readsc
+
+ 210  continue
+      if( local_debug ) write(*,*) '  @ 2'
+      if( matchs_exact( 'type' ) ) go to 210
+      if( matchs_exact( 'e'  ) ) go to 300
+      if( matchs_exact( 'nu' ) ) go to 310
+      if( matchs_exact( 'rho' ) ) go to 320
+      if( matchs_exact( 'alpha' ) ) go to 330
+      if( matchs_exact( 'B' ) ) go to 340
+      if( matchs_exact( 'n_power' ) ) go to 350
+      if( matchs_exact( 'n' ) ) go to 350
+      if( matchs_exact( 'npower' ) ) go to 350
+c
+      if( matchs_exact(',')    ) go to 215
+c
+c                       there is no match with existing properties.
+c                       check for end of card. if not, print error
+c                       message, skip over bad item and keep going.
+c
+      if( endcrd(dum) ) then
+         if( local_debug ) then
+           write(*,9000) matprp(1), matprp(2), matprp(7), matprp(6),
+     &      matprp(creep_start+0), matprp(creep_start+1)
+         end if
+         return
+      else
+         call errmsg(4,dum,dums,dumr,dumd)
+         if( true(dum) ) go to 210
+      end if
+c
+c                       comma separator. if at the end of a line,
+c                       denotes continuation. otherwise, ignore.
+c
+ 215  continue
+      if( endcrd(dum) ) then
+         go to 206
+      else
+         go to 210
+      end if
+c
+c
+c                      we have a valid id for a cyclic plasticty
+c                      property. get the value, check validity. store.
+c
+c
+c * ********************************************************************
+c *                                                                    *
+c *                     input modulus of elasticity                    *
+c *                                                                    *
+c **********************************************************************
+c
+ 300  continue
+      if( .not. numr(matprp(1)) ) then
+         call errmsg(5,dum,'e',dumr,dumd)
+      end if
+      go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *                     input poisson's ratio                          *
+c *                                                                    *
+c **********************************************************************
+c
+c
+ 310  continue
+      if( .not. numr(matprp(2)) ) then
+         call errmsg(5,dum,'nu',dumr,dumd)
+      end if
+      go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *                     input the mass density                         *
+c *                                                                    *
+c **********************************************************************
+c
+ 320  continue
+      if( .not. numr(matprp(7)) ) then
+         call errmsg(5,dum,'rho',dumr,dumd)
+      end if
+      go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *                     input the thermal expansion                    *
+c *                                                                    *
+c **********************************************************************
+c
+ 330  continue
+      if( .not. numr(matprp(6)) ) then
+         call errmsg(5,dum,'alpha',dumr,dumd)
+      end if
+      go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *                     creep-rate factor: B                           *
+c *                                                                    *
+c **********************************************************************
+c
+ 340  continue
+      if( .not. numr(matprp(creep_start+0)) ) then
+         call errmsg(5,dum,'B',dumr,dumd)
+      end if
+      go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *                     creep exponent: n or n_power                   *
+c *                                                                    *
+c **********************************************************************
+c
+ 350  continue
+      if( .not. numr(matprp(creep_start+1)) ) then
+         call errmsg(5,dum,'n_power',dumr,dumd)
+      end if
+      go to 210
+c
+ 9000 format(/,2x,'** values for creep model:',
+     &  /,5x,'e:        ',f10.0,
+     &  /,5x,'nu:       ',f10.3,
+     &  /,5x,'rho:      ',e14.6,
+     &  /,5x,'alpha:    ',e14.6,
+     &  /,5x,'B:        ',e14.6,
+     &  /,5x,'n_power:  ',f10.3 )
+      end
 
 
 

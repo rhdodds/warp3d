@@ -4,7 +4,7 @@ c     *                      subroutine lnstff                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/23/13 rhd                *
+c     *                   last modified : 9/16/2015 rhd              *
 c     *                                                              *
 c     *     drive linear stiffness computation for all elements.     *
 c     *     assemble diagonal stiffness vector for strucure or       *
@@ -580,7 +580,7 @@ c
 c
 c
 c     Allocate and set up some data structures specific to the CP materials
-c     Basically I need the initial, anisotropic stiffness, the crystallographic
+c     need the initial, anisotropic stiffness, the crystallographic
 c     rotations, and the elastic rotations (a history variable...).
 c
       if (local_work%mat_type .eq. 10) then
