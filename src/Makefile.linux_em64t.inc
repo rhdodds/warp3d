@@ -225,7 +225,6 @@ OBJ =	 \
 	$(OD)/mm09$O	 \
 	$(OD)/mm10_a$O	 \
 	$(OD)/mm10_b$O	 \
-	$(OD)/mm10_c$O	 \
 	$(OD)/mm11$O       \
 	$(OD)/mmnoopt$O	\
 	$(OD)/mpi_code$O	 \
@@ -1480,7 +1479,7 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
 	$(RMC)  filt_mm10_a.f
 	$(FILTER) < mm10_a.f > filt_mm10_a.f
-	$(F90) -O3 -ip  -c filt_mm10_a.f
+	$(F90) -O2 -ip  -c filt_mm10_a.f
 	$(MVC) filt_mm10_a$O  mm10_a$O
 	$(MVC) mm10_a$O $@
 
@@ -1488,17 +1487,9 @@ $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
 	$(RMC)  filt_mm10_b.f
 	$(FILTER) < mm10_b.f > filt_mm10_b.f
-	$(F90) -O3 -ip  -c filt_mm10_b.f
+	$(F90) -O2 -ip  -c filt_mm10_b.f
 	$(MVC) filt_mm10_b$O  mm10_b$O
 	$(MVC) mm10_b$O $@
-
-$(OD)/mm10_c$O : mm10_c.f $(OD)/mod_crystals$O param_def
-	$(RMC)  $@
-	$(RMC)  filt_mm10_c.f
-	$(FILTER) < mm10_c.f > filt_mm10_c.f
-	$(F90) -O3 -ip  -c filt_mm10_c.f
-	$(MVC) filt_mm10_c$O  mm10_c$O
-	$(MVC) mm10_c$O $@
 
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
