@@ -193,7 +193,7 @@ c
 c
       case ( 6 )
 c
-c                       available
+c                       creep model
 c
            do gpn = 1, ngp
              call oumm06( gpn, mxvl, span, iout, elestr(1,1,gpn),

@@ -276,9 +276,15 @@ c
 c
       type (ulist), dimension(100) :: user_lists ! 100 is set in param_def  
 c
-c     UMAT model used ? Force serialization of umats?
+c               UMAT model used ? Force serialization of umats?
 c
       logical :: umat_serial, umat_used
+c
+c
+c               creep material appears in solution. will force
+c               iter=0 computations
+c
+      logical :: creep_model_used
 c
 c                 convergence information for last few load steps.
 c                 used for user_solution_paramters
@@ -297,8 +303,9 @@ c                 A CP flag, stick here b/c it's a solution parameter
 c
       logical :: cp_unloading
 c
-c                 Another solution parameter telling us whether or not to use
-c                 asymmetric assembly
+c                 Another solution parameter telling us whether 
+c                 or not to use asymmetric assembly
+c
       logical :: asymmetric_assembly
       logical :: pardiso_first 
 c

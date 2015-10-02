@@ -34,7 +34,8 @@ c
      &                      divergence_check, asymmetric_assembly,
      &                      pardiso_first, output_command_file,
      &                      output_step_bitmap_list,
-     &                      material_model_names, batch_mess_fname
+     &                      material_model_names, batch_mess_fname,
+     &                      creep_model_used
       
       use stiffness_data
       use file_info
@@ -168,7 +169,7 @@ c
       material_model_names(3)(1:) = "mises_gurson"     
       material_model_names(4)(1:) = "cohesive"     
       material_model_names(5)(1:) = "cyclic"     
-      material_model_names(6)(1:) = "not_used"     
+      material_model_names(6)(1:) = "creep"     
       material_model_names(7)(1:) = "mises_hydrogen"     
       material_model_names(8)(1:) = "umat"     
       material_model_names(9)(1:) = "not_used"     
@@ -594,6 +595,12 @@ c                       run UMAT element blocks in serial
 c      
       umat_serial = .false.
       umat_used   = .false.
+c
+c                       global flags for modeling containing
+c                       a material that creep. will cause
+c                       iter =0 computations to be run
+c
+      creep_model_used = .false.
 c
 c                       hypre solver defaults.  See the hypre reference manual
 c                       for rational (if provided) as I just copy

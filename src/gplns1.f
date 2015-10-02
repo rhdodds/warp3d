@@ -4,7 +4,7 @@ c     *                      subroutine gplns1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/24/13 rhd                *
+c     *                   last modified : 9/28/2015 rhd              *
 c     *                                                              *
 c     *     process elements in the block for this integration       *
 c     *     point. add to element stiffness for this integration pt  *
@@ -22,7 +22,7 @@ c
      &                   shape, ce, weight, vol_block, b_block,
      &                   bt_block, bd_block, local_cep_block,
      &                   cohes_rot_block,
-     &                   utsz, local_work, nsz)
+     &                   local_work, nrow_ek)
       use elem_block_data, only : global_cep_blocks => cep_blocks
       use main_data, only: asymmetric_assembly
       implicit integer (a-z)
@@ -31,9 +31,9 @@ $add include_lin_ek
 c
 c                       parameter declaration
 c
-#dbl      double precision
-#sgl      real
-     &   ek(nsz,*), e_block(*), nu_block(*),
+#dbl      double precision ::
+#sgl      real ::
+     &   ek(nrow_ek,*), e_block(*), nu_block(*),
      &   local_cep_block(mxvl,nstr,*),
      &   vol_block(*),
      &   gama_block(*), det_jac_block(*), nxi(*), neta(*), nzeta(*),
@@ -44,17 +44,14 @@ c
       integer icp(mxutsz,*)
 c
 c                       locals
-#dbl      double precision
-#sgl      real
+
+#dbl      double precision ::
+#sgl      real ::
      &   rad(mxvl), eps_bbar, factors(mxvl), one
 c
-      logical bbar, local_debug, cohesive_elem, need_adjust,
-     &        axisymm_elem, umat_solid, crystal
-      data local_debug / .false. /
-      data one
-#sgl     &  / 1.0 /
-#dbl     &  / 1.0d00 /
-c
+      logical :: bbar, local_debug, cohesive_elem, need_adjust,
+     &           axisymm_elem, umat_solid, crystal
+      data local_debug, one / .false., 1.0d00 /
 c
       nnode           = local_work%num_enodes
       span            = local_work%span
@@ -81,7 +78,7 @@ c                       compute the strain-displacement matrices
 c                       for the given gauss point for all elements
 c                       in the block.
 c
-      if ( cohesive_elem ) then
+      if( cohesive_elem ) then
         call blcmp_cohes( span, b_block, cohes_rot_block, shape,
      &                    elem_type, nnode )
       else
@@ -89,7 +86,7 @@ c
      &     ( span, b_block, gama_block, nxi, neta, nzeta, shape,
      &             ce, rad, elem_type, nnode )
       end if
-      if ( bbar .and. elem_type .eq. 2 )
+      if( bbar .and. elem_type .eq. 2 )
      &   call bmod ( b_block, vol_block, span, mxvl, eps_bbar, mxedof )
 c
 c                       set the constitutive matrices for this
@@ -101,7 +98,7 @@ c                       values. we call a separate driver for Abaqus
 c                       compatible UMATs to set up all the local data
 c                       requried by the UMAT.
 c
-      if ( cohesive_elem ) then
+      if( cohesive_elem ) then
         ispan  = span
         imxvl  = mxvl
         instr  = nstr
@@ -115,24 +112,23 @@ c
      &               det_jac_block, weight,
      &               local_work%temps_node_blk(1,1),
      &               local_work%temps_ref_node_blk(1,1) )
-        go to 100
-      end if
-c
-      if( crystal ) then
-        call lnstff10( gpn, span, local_work )
-      else if( umat_solid ) then
-        call drive_umat_lnstf( gpn, local_work )
-      else
-        call lcnst1( span, local_cep_block, nu_block, e_block,
-     &               det_jac_block, weight )
-      end if                  
+      else   ! solid elements/materials
+        if( crystal ) then
+          call lnstff10( gpn, span, local_work )
+        else if( umat_solid ) then
+          call drive_umat_lnstf( gpn, local_work )
+        else
+          call lcnst1( span, local_cep_block, nu_block, e_block,
+     &                 det_jac_block, weight )
+        end if 
+      end if                    
 c
 c                       store cep (i.e. [D]) for all elements in
 c                       block at this integration point. scale out
 c                       det[J] * weight included above. put in
 c                       global blocked data structure
 c
- 100  continue
+@!DIR$ LOOP COUNT MAX=###      
       do i = 1, span
          factors(i) = one / ( det_jac_block(i) * weight )
       end do
@@ -151,27 +147,20 @@ c
       if( need_adjust ) call adjust_cnst( elem_type, nstr, mxvl,
      &                                    span, rad, local_cep_block )
 c
-c                       compute each part of the element linear
-c                       stiffness matrices and add it in to the
-c                       total. assume the [D] matrix is full.
-c
-      if (.not. asymmetric_assembly) then
-      if ( totdof .eq. 24 ) then
-        call bdbt1( span, icp, b_block, bt_block, bd_block,
-     &              local_cep_block, ek, mxvl, mxedof, utsz, nstr,
-     &              mxutsz )
+      if( asymmetric_assembly ) then 
+        call bdbt_asym( span, local_work%b_block, 
+     &                  local_work%cep, ek, mxvl, mxedof,
+     &                  nstr, totdof )
       else
-        call bdbtgen1( span, icp, b_block, bt_block, bd_block,
-     &                 local_cep_block, ek, mxvl, mxedof, utsz, nstr,
-     &                 totdof, mxutsz )
-      end if
-
-      else
-        call bdbt_asym( span, icp, local_work%b_block, 
-     &                  local_work%bt_block, local_work%bd_block,
-     &                  local_work%cep, ek, mxvl, mxedof, utsz,
-     &                  nstr, totdof, mxutsz)
-      end if
+        if( totdof .eq. 24 )
+     &    call bdbt1( span, icp, b_block, bt_block, bd_block,
+     &                local_cep_block, ek, mxvl, mxedof, nrow_ek,
+     &                nstr, mxutsz )
+        if( totdof .ne. 24 )
+     &     call bdbtgen1( span, icp, b_block, bt_block, bd_block,
+     &                 local_cep_block, ek, mxvl, mxedof, 
+     &                 nrow_ek, nstr, totdof, mxutsz )
+      end if  
 c
       return
 c
@@ -195,7 +184,7 @@ c     *                                                              *
 c     *                     subroutine get_radius                    *
 c     *                                                              *
 c     *                       written by: gvt                        *
-c     *                   last modified : 08/25/98                   *
+c     *                   last modified : 09/28/2015 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -222,16 +211,16 @@ c                  contain the x=radial coordinates
 c
       subroutine get_radius( rad, nnode, span, n, ce, mxvl )
       implicit none
-      integer nnode, span, mxvl
-#dbl      double precision
-#sgl      real
+      integer :: nnode, span, mxvl
+#dbl      double precision ::
+#sgl      real ::
      &         rad(*), n(*), ce(mxvl,*)
 c
       integer i,j
 #dbl      double precision
 #sgl      real
      &         zero
-      data zero / 0.0 /
+      data zero / 0.0d00 /
 c
       do i = 1, span
          rad(i) = zero
@@ -269,15 +258,16 @@ c
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision :: 
+#sgl      real ::
      &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-      integer icp(mxutsz,*)
+      integer :: icp(mxutsz,*)
 c
-c                       set b transpose.
+c                       set trans( [B] )
 c
       do j = 1, 24
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
          do k = 1, 6
           bt(i,k,j)= b(i,j,k)
@@ -285,10 +275,11 @@ c
        end do
       end do
 c
-c                       perform multiplication of b*d. do the
+c                       perform multiplication of [D]*[B]. do the
 c                       full matrix.
 c
       do j = 1, 24
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
          do k = 1, 6
            bd(i,j,k) = d(i,1,k) * b(i,j,1)
@@ -301,14 +292,15 @@ c
        end do
       end do
 c
-c                       perform multiplication of bd*b . do
-c                       only for upper triangular entries.
+c                       perform multiplication of trans([B]) * ( D B ).
+c                       do only for upper triangular entries.
 c                       do it in-line to reduce an enormous
 c                       number of subroutine calls
 c
       do j = 1, 300
         row = icp(j,1)
         col = icp(j,2)
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
          ek(j,i) = ek(j,i)
      &         +   bt(i,1,col) * bd(i,row,1)
@@ -345,13 +337,13 @@ c
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-      integer icp(mxutsz,*)
-
-c                       set b transpose.
+      integer :: icp(mxutsz,*)
+c
+c                       set trans( [B] )
 c
       do j = 1, totdof
         do i = 1, span
@@ -361,10 +353,11 @@ c
        end do
       end do
 c
-c                       perform multiplication of b*d. do the
+c                       perform multiplication of [D]*[B]. do the
 c                       full matrix.
 c
       do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
          do k = 1, 6
            bd(i,j,k) = d(i,1,k) * b(i,j,1)
@@ -377,14 +370,15 @@ c
        end do
       end do
 c
-c                       perform multiplication of bd*b . do
-c                       only for upper triangular entries.
+c                       perform multiplication of trans([B]) * ( D B ).
+c                       do only for upper triangular entries.
 c                       do it in-line to reduce an enormous
 c                       number of subroutine calls
 c
       do j = 1, utsz
         row = icp(j,1)
         col = icp(j,2)
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
          ek(j,i) = ek(j,i)
      &         +   bt(i,1,col) * bd(i,row,1)
@@ -421,8 +415,8 @@ $add include_lin_ek  ! defines local_work
 c
 c                      locally defined variables
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero, one, ddsddt(6), drplde(6), drpldt,
      &  big, pnewdt, predef(1), dpred(1), time(2), dtime,
@@ -432,15 +426,14 @@ c
      &  gp_coords(mxvl,3), identity(9), local_cep(6,6),
      &  nonloc_ele_values(nonlocal_shared_state_size)
 c
-      logical local_debug, debug_now, temperatures_ref, temperatures
-      character * 8  cmname
-      integer  map(6)
+      logical :: local_debug, debug_now, temperatures_ref,
+     &           temperatures
+      character * 8  :: cmname
+      integer  :: map(6)
       data map / 1,2,3,4,6,5 /
-#sgl      data zero, one, big / 0.0, 1.0, 1.0 /
-#dbl      data zero, one, big / 0.0d00, 1.0d00, 1.0d06 /
-#sgl      data identity /1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,0.0, 1.0 /
-#dbl      data identity /1.0d00, 0.0d00, 0.0d00, 0.0d00, 1.0d00,
-#dbl     &   0.0d00, 0.0d00, 0.0d00, 1.0d00 /
+      data zero, one, big / 0.0d00, 1.0d00, 1.0d06 /
+      data identity /1.0d00, 0.0d00, 0.0d00, 0.0d00, 1.0d00,
+     &   0.0d00, 0.0d00, 0.0d00, 1.0d00 /
 c
 c           1a. pull a few values from local_work for block
 c
@@ -667,7 +660,7 @@ c     *             subroutine gplns1_make_symmetric                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 05/14/12                   *
+c     *                   last modified : 9/28/2015 rhd              *
 c     *                                                              *
 c     *                   support for umat processing                *
 c     *                                                              *
@@ -680,12 +673,11 @@ c
 #sgl      real
      & ddsdde(6,6), cep(6,6)
 c
-#dbl      double precision
-#sgl      real
-     & transpose(6,6), half
-      integer i, j, k, map(6)
-#sgl      data half / 0.5 /
-#dbl      data half / 0.5d00 /
+#dbl      double precision ::
+#sgl      real ::
+     & tp(6,6), half
+      integer :: i, j, k, map(6)
+      data half / 0.5d00 /
       data map / 1,2,3,4,6,5 /
 c
 c         1. compute transpose of 6 x 6 ddsdde from UMAT
@@ -693,16 +685,12 @@ c         2. compute symmetrized version
 c         3. swap rows, cols 5 & 6 to make shear ordering
 c            compatible with WARP3D
 c
-      do i = 1, 6
-        do j = 1, 6
-          transpose(i,j) = ddsdde(j,i)
-        end do
-      end do
+      tp = transpose( ddsdde )
 c
       do j = 1, 6
         do i = 1, 6
           cep(map(i),map(j)) = half * ( ddsdde(i,j) +
-     &                                  transpose(i,j) )
+     &                                  tp(i,j) )
         end do
       end do
 c

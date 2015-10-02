@@ -106,7 +106,7 @@ c
        real (h_prec), allocatable :: tan_e_vec(:)             ! (mxvl)
        real (h_prec), allocatable :: fgm_flags(:,:)           ! (mxvl,mxndpr)
        real (h_prec), allocatable :: mm05_props(:,:)          ! (mxvl,10)
-       real (h_prec), allocatable :: mm06_props(:,:)          ! (mxvl,5)
+       real (h_prec), allocatable :: mm06_props(:,:)          ! (mxvl,10)
        real (h_prec), allocatable :: mm07_props(:,:)          ! (mxvl,10)
        real (h_prec), allocatable :: umat_props(:,:)          ! (mxvl,50)
 c
@@ -118,8 +118,14 @@ c
      &            nonlocal_stvals_bott_n(:,:),                ! (mxvl,nxx)
      &            nonlocal_stvals_top_n(:,:)                  ! (mxvl,nxx)
 c
+c              workspace to store block of solid matl. nonlocal values
+c              while processing an integration point
+c
+       real (h_prec), allocatable ::   ! nonlocal cohesive support
+     &            nonlocal_state_blk(:,:)                     ! (mxvl,nxx)
+c
 c             where nxx above = nonlocal_shared_state_size
-
+c
        integer, allocatable :: top_surf_solid_elements(:),    ! (mxvl)
      &                         bott_surf_solid_elements(:)
        integer, allocatable :: top_solid_matl(:),             ! (mxvl)
@@ -153,7 +159,7 @@ c
      &            is_axisymm_elem, killed_status_vec(mxvl),
      &            block_killed, is_umat, is_solid_matl, is_crys_pls,
      &            compute_f_bar, compute_f_n, is_cohes_nonlocal,
-     &            is_inter_dmg
+     &            is_inter_dmg, block_has_nonlocal_solids
 c     Added stuff for CP
       logical, allocatable :: debug_flag(:)                   ! mxvl
       double precision, allocatable :: local_tol(:)           ! mxvl

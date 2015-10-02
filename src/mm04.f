@@ -40,7 +40,7 @@ c
 #sgl      real
      1 intfprps(mxvl,*), trac_n(mxvl,*), delrlds(mxvl,*),
      2 trac_n1(mxvl,*), reladis(mxvl,*),
-     3 history(span,13), history1(span,13),
+     3 history(span,15), history1(span,15),
      4 time_n, dtime,
      5 top_surf_stresses_n(mxvl,6), bott_surf_stresses_n(mxvl,6),
      6 top_surf_eps_n(mxvl,6), bott_surf_eps_n(mxvl,6),
@@ -906,12 +906,12 @@ c
 c
 c             set options in formulation to include, debug options
 c
-      degrade_shear         = .false.
-      VVNT                  = .false.
-      modify_q              = .false.
+      degrade_shear         = .true.
+      VVNT                  = .true.
+      modify_q              = .true.
       include_nucleation    = .false.
       debug_newton          = .false.
-      include_cavity_growth = .false.
+      include_cavity_growth = .true.
       compute_solid_local   = .false.
 c      
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 

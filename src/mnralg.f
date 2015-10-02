@@ -22,7 +22,7 @@ c
 c
       use main_data, only : mdiag, pbar, cnstrn, dload,
      &     max_loddat_blks, convergence_history, umat_used,
-     &     divergence_check, asymmetric_assembly
+     &     divergence_check, asymmetric_assembly, creep_model_used
       use adaptive_steps, only : adapt_result, adapt_disp_fact,
      &                           adapt_load_fact
       use hypre_parameters, only : hyp_trigger_step
@@ -299,7 +299,7 @@ c          a simple way to get the "applied" forces equivalent to the
 c          imposed, incremental displacements for step.
 c
       if( predct .or. (.not.zrocon) .or. first_subinc .or.
-     &    temperatures .or. umat_used ) then
+     &    temperatures .or. umat_used .or. creep_model_used ) then
            if( show_details ) write(out,9155) step
            material_cut_step = .false.
            call drive_eps_sig_internal_forces( step, 0,
@@ -655,7 +655,7 @@ c
  9110 format(7x,
      & '>> updating internal forces step, iteration:       ',i5,i3)
  9120 format(7x,
-     & '>> line search beta ratio:                         ',f7.3)
+     & '>> line search beta ratio:                         ',e14.6)
  9150 format(/,7x,
      & '>> starting global newton solution for step:       ',i5)
  9152 format(7x,

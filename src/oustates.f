@@ -159,9 +159,12 @@ c           routine to send back a state variables to output for
 c           a block. write out zero values for elements not using
 c           current WARP3D material type.
 c
+        if( allocated( st_values ) ) then
+          write(out,*) "<<< fatal. st_values already allocated"
+        end if
         allocate( st_values(num_states,noelem), stat=allocate_error )
         if( allocate_err .ne. 0 ) then
-          write(out,9110)
+          write(out,9110) num_states, noelem, allocate_err
           call die_gracefully
         end if
         st_values = zero
@@ -282,7 +285,7 @@ c
  9100 format("#",/,"#  header file for state variable output",
      & /, "#  WARP3D material: ",a )
  9110 format(/1x,
-     &'>>>>> Error: allocate failed @ 1 in oustates_files',
+     &'>>>>> Error: allocate failed @ 1 in oustates_files',2i7,i20,
      & /,16x,'Job terminated....'/)
   9190 format("#",/,"# number of WARP3D model names and list",
      & /,"#",/,   i6 )

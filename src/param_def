@@ -36,7 +36,7 @@ c
 !win     &    mxtim=50,nstrs=9,max_procs=2048,mxndpr=8,max_crystals=1000,
 !win     &    max_slip_sys=12, max_uhard=12)
 c
-#win      parameter (mxnod=1000000,mxel=1000000,mxndel=20,max_threads=64,
+#win      parameter (mxnod=1500000,mxel=1500000,mxndel=20,max_threads=64,
 #win     &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=100000,mxlc=5000,
 #win     &    mxmat=25,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
 #win     &    mxoupr=30,ntrc=10,mxconn=50,mxvl=128,mxnmgp=10,
@@ -74,7 +74,13 @@ c
       parameter( mxoupt=mxndel )
 c
 c
-c     Other notes:
+c     Other *critical* notes:
+c
+c     mxvl=128 is the maximum number of elements allowed in a block.
+c     the filter program value must be set to this same value -- it
+c     translates compiler directive commands marked with @!DIR which
+c     include ### for mxvl
+c
 c
 c     mxblsz is used only to size the length of a message vector.
 c            It has nothing to do with the maximum block sizes.

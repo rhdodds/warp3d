@@ -4,7 +4,7 @@ c     *                      subroutine lnstff                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/16/2015 rhd              *
+c     *                   last modified : 9/28/2015 rhd              *
 c     *                                                              *
 c     *     drive linear stiffness computation for all elements.     *
 c     *     assemble diagonal stiffness vector for strucure or       *
@@ -18,20 +18,17 @@ c
       use elem_block_data, only : estiff_blocks, edest_blocks
       use main_data,       only : umat_serial, 
      &                            asymmetric_assembly
-      use mpi_lnpcg
-c
       implicit integer (a-z)
 $add common.main
 c
 c             local declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  zero, mag
-      logical local_debug, blks_reqd_serial, umat_matl
-      allocatable blks_reqd_serial(:)      
-      data local_debug / .false. /
-      data zero / 0.0d00 /
+      logical :: local_debug, blks_reqd_serial, umat_matl
+      allocatable :: blks_reqd_serial(:)      
+      data local_debug, zero / .false., 0.0d00 /
 c
 c             if MPI:
 c                tell the worker processors to join us in this
@@ -41,11 +38,6 @@ c
       call wmpi_alert_slaves ( 3 )
       call wmpi_bcast_int ( now_step )
       call wmpi_bcast_int ( now_iter )
-      if ( use_mpi ) then
-         mydof = (local_nodes%num_private +
-     &           local_nodes%num_own_shared)*3
-         refdof = local_nodes%num_local_nodes * 3
-      end if
 c
       call thyme( 3, 1 )
 c
@@ -87,7 +79,7 @@ c
 c$OMP PARALLEL DO PRIVATE( blk, now_thread )
 c$OMP&            SHARED( now_step, now_iter, nelblk, elblks )
       do blk = 1, nelblk
-         if ( elblks(2,blk) .ne. myid ) cycle
+         if( elblks(2,blk) .ne. myid ) cycle
          if( blks_reqd_serial(blk) ) cycle
          now_thread = omp_get_thread_num() + 1
          call do_lnek_block( now_step, now_iter, blk )
@@ -98,7 +90,7 @@ c             serial version of the block loop to
 c             catch non-thread safe code (possibly umats)
 c
       do blk = 1, nelblk
-         if ( elblks(2,blk) .ne. myid ) cycle
+         if( elblks(2,blk) .ne. myid ) cycle
          if( .not. blks_reqd_serial(blk) ) cycle
          now_thread = omp_get_thread_num() + 1
          call do_lnek_block( now_step, now_iter, blk )
@@ -120,7 +112,7 @@ c     *                      subroutine do_lnek_block                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/23/13 rhd                *
+c     *                   last modified : 9/28/2015 rhd              *
 c     *                                                              *
 c     *     drive computation of linear stiffness matrices for a     *
 c     *     block of elements                                        *
@@ -144,6 +136,7 @@ c
      &                               asymmetric_assembly
 c
       use damage_data, only : dam_ptr, growth_by_kill
+      use contact, only : use_contact     
 c
       implicit integer (a-z)
 $add common.main
@@ -151,10 +144,10 @@ c
 c             local declarations
 c
 $add include_lin_ek
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  zero
-      logical local_debug, geo_non_flg, bbar_flg
+      logical :: local_debug, geo_non_flg, bbar_flg
       data local_debug, zero / .false., 0.0d00 /
 c
       felem          = elblks(1,blk)
@@ -209,16 +202,13 @@ c
 c             if all elements in block killed skip
 c             all calculations. just zero the stiffnesses for block.
 c
-      if ( growth_by_kill ) then
-        if ( dam_blk_killed(blk) ) then
-          if ( local_debug ) write(*,*) 'blk ',blk,' killed - skip.'
-               if (.not. asymmetric_assembly) then
-               call lnstff_zero_vector( estiff_blocks(blk)%ptr(1,1),
-     &                      utsz*span )
-               else
-               call lnstff_zero_vector( estiff_blocks(blk)%ptr(1,1),
-     &                      totdof*totdof*span )
-               end if
+      nrow_ek = utsz
+      if( asymmetric_assembly ) nrow_ek = totdof**2
+      if( growth_by_kill ) then
+        if( dam_blk_killed(blk) ) then
+          if( local_debug ) write(*,*) 'blk ',blk,' killed - skip.'
+          call lnstff_zero_vector( estiff_blocks(blk)%ptr(1,1),
+     &                             nrow_ek*span )
           return
         end if
       end if
@@ -228,7 +218,7 @@ c             this is a gather operation on nodal coordinates,
 c             constraint transformation, etc. the gather is into
 c             local (stack) data structures.
 c
-      if ( local_debug )
+      if( local_debug )
      &  write(out,9100) blk, span, felem, mat_type, num_enodes,
      &                  num_enode_dof, totdof, num_int_points
 c
@@ -236,51 +226,43 @@ c
      &             incid(incmap(felem)), num_enodes, local_work )
 c
 c             compute linear stiffness for each element
-c             in the block. element stiffnesses are stored
+c             in the block. symmetric element stiffnesses are stored
 c             in upper triangular form.
 c
-      if ( local_debug )
+      if( local_debug )
      &          write(out,9200) blk, span, felem, elem_type, int_order,
      &                               geo_non_flg, bbar_flg
 c
-      if (.not. asymmetric_assembly) then
       call rklstf( local_work, props(1,felem), props(1,felem),
-     &             estiff_blocks(blk)%ptr(1,1), utsz )
-      else
-      call rklstf( local_work, props(1,felem), props(1,felem),
-     &            estiff_blocks(blk)%ptr(1,1),
-     &            totdof*totdof )
-      end if
+     &             estiff_blocks(blk)%ptr(1,1), nrow_ek )
 c
 c             check if this block has any killed elements -- if so,
 c             zero computed linear stifffness matrices for killed
 c             elements.
 c
-      if ( .not. growth_by_kill ) go to 1000
-      if ( iand( iprops(30,felem),2 ) .eq. 0 ) go to 1000
-      do relem = 1, span
-         element = felem + relem - 1
-         if ( dam_ptr(element) .eq. 0 ) cycle
-         if ( dam_state(dam_ptr(element)) .ne. 0 ) then
-           if (.not. asymmetric_assembly) then
-           call lnstff_zero_vector( estiff_blocks(blk)%ptr(1,relem),
-     &                              utsz )
-           else
-           call lnstff_zero_vector( estiff_blocks(blk)%ptr(1, relem),
-     &                              totdof*totdof)
-           end if
-           end if
-      end do
+      if( growth_by_kill ) then
+        block_is_killable = iand( iprops(30,felem),2 ) .ne. 0
+        if( block_is_killable ) then
+@!DIR$ LOOP COUNT MAX=###  
+          do relem = 1, span
+           element = felem + relem - 1
+           if( dam_ptr(element) .eq. 0 ) cycle
+           if( dam_state(dam_ptr(element) ) .ne. 0 )
+     &     call lnstff_zero_vector( estiff_blocks(blk)%ptr(1,relem),
+     &                              nrow_ek )
+         end do
+        end if 
+      end if 
 c
 c              if contact is included in this analysis, then add
 c              the contact spring stiffnesses into the corresponding
 c              element stiffness matricies.
 c
- 1000 continue
-      call contact_stfadd (span, felem, totdof,
+      if( use_contact )
+     &   call contact_stfadd (span, felem, totdof,
      &     edest_blocks(blk)%ptr(1,1),
-     &     estiff_blocks(blk)%ptr(1,1), utsz, num_enodes,
-     &     incid(incmap(felem)))
+     &     estiff_blocks(blk)%ptr(1,1), nrow_ek, num_enodes,
+     &     incid(incmap(felem)) )
 c
 c              release all the allocated data structures private to
 c              this block
@@ -310,7 +292,7 @@ c
      &  local_work%umat_props,
      &  local_work%trne )
 c
-      if (local_work%mat_type .eq. 10) then
+      if( local_work%mat_type .eq. 10 ) then
             deallocate(local_work%cp_stiff)
             deallocate(local_work%ncrystals)
             deallocate(local_work%cp_g_rot)
@@ -366,19 +348,19 @@ c
 c
 c             local declarations
 c
-      logical local_debug
-#dbl      double precision
-#sgl      real
-     &  zero
-       data local_debug, zero / .false., 0.0d00 /
-       integer :: matnum, ci, cnum, elnum, osn, ati, aci, ngp, co, blk,
+      logical :: local_debug
+#dbl      double precision ::
+#sgl      real ::
+     &  zero, one
+      data local_debug, zero, one / .false., 0.0d00, 1.0d00 /
+      integer :: matnum, ci, cnum, elnum, osn, ati, aci, ngp, co, blk,
      &            hist_sz
-       character :: aconv*5
-       character :: atype*7
-       double precision, dimension(3) :: angles
-       double precision, dimension(3,3) :: eye
-
-      eye = zero; do i = 1, 3; eye(i,i) = 1.0d00; end do
+      character :: aconv*5
+      character :: atype*7
+      double precision :: angles(3), eye(3,3)
+c       
+      eye = zero
+      eye(1,1) = one; eye(2,2) = one; eye(3,3) = one
 c
       now_step = local_work%now_step
       now_iter = local_work%now_iter
@@ -436,6 +418,7 @@ c
       local_work%trn_e_block = .false.
       k = 1
       do j = 1, num_enodes
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
           local_work%ce(i,k)        = c(bcdst(k,i))
           local_work%ce(i,k+1)      = c(bcdst(k+1,i))
@@ -448,7 +431,7 @@ c
         end do
         k = k + 3
       end do
-
+c
       if( local_work%is_cohes_elem ) then
         if( local_work%elem_type .eq. 14 ) then
           call check_cohes_quad( local_work%elem_type, span, mxvl,
@@ -460,11 +443,10 @@ c
      &                        local_work%iout_local, local_work%ce )
         end if
        end if
-
 c
 c             gather element-level transformation matrices
 c
-      if ( local_work%trn_e_block )
+      if( local_work%trn_e_block )
      &        call duptrans( span, felem, local_work%trnmte )
 c
 c             make copies of vectors of subscripts
@@ -496,6 +478,7 @@ c             temperatures flag set by loads processor to indicate
 c             a specified temperature change over the step.
 c
       do j = 1, num_enodes
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
           local_work%dtemps_node_blk(i,j)    = zero
           local_work%temps_ref_node_blk(i,j) = zero
@@ -503,7 +486,7 @@ c
       end do
 
       if( temperatures ) then ! global flag
-        if ( local_debug )  write(out,9622)
+        if( local_debug )  write(out,9622)
         call gadtemps( dtemp_nodes, dtemp_elems(felem), belinc,
      &                 num_enodes, span, felem,
      &                 local_work%dtemps_node_blk, mxvl )
@@ -534,6 +517,7 @@ c
 c
       local_work%temps_node_to_process = .false.
       enode_loop: do j = 1, num_enodes
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
         if( abs( local_work%temps_node_blk(i,j) ) .gt. zero ) then
            local_work%temps_node_to_process = .true.
@@ -570,6 +554,7 @@ c
       if ( fgm_node_values_defined ) then  ! global flag
         do j = 1, fgm_node_values_cols
          do i = 1, num_enodes
+@!DIR$ LOOP COUNT MAX=###  
           do k = 1, span
            local_work%enode_mat_props(i,k,j) =
      &               fgm_node_values(belinc(i,k),j)
@@ -579,18 +564,20 @@ c
       end if
 c
 c
-c     Allocate and set up some data structures specific to the CP materials
-c     need the initial, anisotropic stiffness, the crystallographic
-c     rotations, and the elastic rotations (a history variable...).
+c             if the model has fgm properties at the model nodes,
+c             allocate and set up some data structures specific to 
+c             the CP materials need the initial, anisotropic stiffness,
+c             the crystallographic rotations, and the elastic 
+c             rotations (a history variable...).
 c
-      if (local_work%mat_type .eq. 10) then
-      allocate(local_work%cp_stiff(mxvl, 6, 6, max_crystals))
-      allocate(local_work%cp_g_rot(mxvl, 3, 3, max_crystals))
-      allocate(local_work%ncrystals(mxvl))
-      do i = 1, span
-            local_work%ncrystals(i) = imatprp(101,matnum)
-            elnum = felem+i-1
-            do ci=1,local_work%ncrystals(i)
+      if( local_work%mat_type .ne. 10) return
+        allocate(local_work%cp_stiff(mxvl, 6, 6, max_crystals))
+        allocate(local_work%cp_g_rot(mxvl, 3, 3, max_crystals))
+        allocate(local_work%ncrystals(mxvl))
+        do i = 1, span
+          local_work%ncrystals(i) = imatprp(101,matnum)
+          elnum = felem+i-1
+          do ci =1, local_work%ncrystals(i)
 c                 Get the local crystal number
                   if (imatprp(104,matnum) .eq. 1) then
                         cnum = imatprp(105,matnum)
@@ -645,11 +632,8 @@ c                 Call a helper to get the crystal -> reference rotation
      &                  aconv, atype,
      &                  local_work%cp_g_rot(i,1:3,1:3,ci), 
      &                  local_work%iout_local)
-            end do
-      end do
-
-      end if
-
+            end do ! over ncrystals
+      end do   !   over span
       return
 c
  9000 format(/,'>> running dplstf ...',
@@ -711,9 +695,7 @@ c
 #sgl      real
      &  vec(*), zero
       data zero / 0.0d00 /
-c
       vec(1:n) = zero
-c
       return
       end
 
