@@ -4,7 +4,7 @@ c     *                      subroutine rktstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/09/13 mcm               *
+c     *                   last modified : 9/27/2015 rhd              *
 c     *                                                              *
 c     *     drive computation of tangent stiffness matrices for a    *
 c     *     block of similar elements.                               *
@@ -12,40 +12,38 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine rktstf( props, iprops, lprops, ek, nrowek, ispan,
+      subroutine rktstf( props, iprops, lprops, ek, nrow_ek, ispan,
      &                   local_work )
-      use main_data, only : matprp, lmtprp, asymmetric_assembly
+      use main_data, only : matprp, lmtprp
       implicit integer (a-z)
 $add param_def
 $add include_tan_ek
 c
 c                 parameter declarations
 c
-#dbl      double precision
-#sgl      real
-     &   ek(nrowek,ispan)
-      real    props(mxelpr,*)
-      integer iprops(mxelpr,*)
-      logical lprops(mxelpr,*)
+#dbl      double precision ::
+#sgl      real ::
+     &   ek(nrow_ek,ispan)
+      real    :: props(mxelpr,*)   !  all 3 are same. read-only here
+      integer :: iprops(mxelpr,*)
+      logical :: lprops(mxelpr,*)
 c
 c                 local
 c
-      logical geonl, local_debug, bbar, first, qbar_flag,
-     &        compute_shape, cohes_mirror, dummy_logic,
-     &        average
+      logical :: geonl, local_debug, bbar, first, qbar_flag,
+     &           compute_shape, cohes_mirror, dummy_logic,
+     &           average
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  xi, eta, zeta, beta_fact, eps_bbar, zero, one, dummy,
      &  temp_ref, d_temp, temp_np1
 c
       data local_debug, dummy_logic / .false., .true. /
       data zero, one, dummy / 0.d0, 1.d0, 1.d0 /
 c
-      if ( local_debug ) then
-         call iodevn( innum, out, dummy, 1 )
-         write(out,9100)
-      end if
+      local_iout = local_work%iout
+      if( local_debug ) write(out,9100)
 c
 c              set common properties for all elements in block
 c
@@ -72,11 +70,7 @@ c
      &                 local_work%is_axisymm_elem .or.
      &                 local_work%fgm_enode_props
 c
-      if (.not. asymmetric_assembly) then
-         call rktstf_zero_vec( ek, utsz*span )
-      else
-         call rktstf_zero_vec( ek, totdof*totdof*span)
-      end if
+      call rktstf_zero_vec( ek, nrow_ek*span )
 c
 c               compute all the shape function derivatives,
 c               inverse coordinate jacobians and determinants.
@@ -184,7 +178,7 @@ c               in block, one gauss point at a time. zero
 c               [b] matrices used in computations for block -
 c               lower routines fill in only non-zero terms.
 c
-      nlength = mxvl * mxedof * nstr
+      nlength = mxvl * mxedof * nstr 
       call rktstf_zero_vec( local_work%b_block,  nlength )
       call rktstf_zero_vec( local_work%bd_block, nlength )
       call rktstf_zero_vec( local_work%bt_block, nlength )
@@ -237,7 +231,7 @@ c
      &                          local_work )
             local_work%segmental = .false.
          case default
-          write(*,9500)
+          write(local_iout,9500)
           call die_abort
       end select
 c
@@ -246,44 +240,31 @@ c               computes stiffness contribution for all elements in
 c               the block at a gauss point.
 c
       do gpn = 1, ngp
-        if ( .not. asymmetric_assembly) then
         call gptns1( local_work%cp, local_work%icp, gpn, props,
-     &               iprops, ek, local_work, utsz )
-        else
-        call gptns1( local_work%cp, local_work%icp, gpn, props,
-     &               iprops, ek, local_work, totdof*totdof )
-        end if
+     &               iprops, ek, local_work, nrow_ek )
       end do
 c
 c		             modify element stiffness matrix by thickness factor for
 c             		plane strain analysis
 c
-      if ( beta_fact .ne. one ) ek = beta_fact * ek
+      if( beta_fact .ne. one ) ek = beta_fact * ek
 c
 c               transform element stiffnesses to constraint
 c               compatible coordinates if required. skip
 c               whole block or specfic element to reduce work.
 c
-      if ( local_work%trn_e_block ) then
+      if( local_work%trn_e_block ) then
         do i = 1, span
-           if ( local_work%trn_e_flags(i) ) then
-             if (.not. asymmetric_assembly) then
-               call trnmtx( ek, local_work%cp,
+           i_local = i
+           if( local_work%trn_e_flags(i) )
+     &         call trnmtx( ek, local_work%cp,
      &                      local_work%trnmte, local_work%trne, ndof,
-     &                      nnode, totdof, i, utsz )
-             else
-               call trnmtx( ek, local_work%cp,
-     &                      local_work%trnmte, local_work%trne, ndof,
-     &                      nnode, totdof, i, totdof*totdof )
-             end if
-           end if
+     &                      nnode, totdof, i_local, nrow_ek )
          end do
       end if
 c
-      go to 9999
-c
- 9999 continue
-c
+      return
+c      
  9100 format(8x,'>> entered rktstf...' )
  9200 format(12x,'>> upper-triangular stiffnesses for elements',
      &   ' in block...')
@@ -474,7 +455,7 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 06/18/02                   *
 c     *                                                              *
-c     *        set up material model #6 (adv. gurson)                *
+c     *        set up material model #6 (creep)                      *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -498,20 +479,8 @@ c
       do i = 1, span
          local_work%e_v(i)         = props(7,i)
          local_work%nu_v(i)        = props(8,i)
-         local_work%sigyld_v(i)    = props(23,i)
          local_work%n_power_v(i)   = props(21,i)
-         local_work%f0_v(i)        = props(26,i)
-         local_work%q1_v(i)        = props(27,i)
-         local_work%q2_v(i)        = props(28,i)
-         local_work%q3_v(i)        = props(29,i)
-         local_work%nuc_v(i)       = .true.
-         local_work%nuc_s_n_v(i)   = props(31,i)
-         local_work%nuc_e_n_v(i)   = props(32,i)
-         local_work%nuc_f_n_v(i)   = props(33,i)
-         if ( iand (iprops(30,i),1) .eq. 0 )
-     &             local_work%nuc_v(i) = .false.
-         local_work%mm06_props(i,1:5) = matprp(65:69,matnum)
-
+         local_work%mm06_props(i,1) = matprp(80,matnum)
       end do
 c
       return

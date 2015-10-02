@@ -6,11 +6,10 @@ c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 01/23/12 rhd               *
 c     *                                                              *
-c     *     this subroutine computes the global tangent stiffness    *
-c     *     matrix or the global diagonal tangent stiffness vector.  *
-c     *     the matrix is in ebe upper triangular form. the matrix   *
-c     *     and the vector are in constraint compatable global       *
-c     *     coordinates at state (n+1).                              *
+c     *     drive computation of all element [K]s. can be symmetric  *
+c     *     (store upper-triangle) or asymmetric (store full [K])    *
+c     *     get [K] rotated into constraint compatible coords as     *
+c     *     needed                                                   *                              
 c     *                                                              *
 c     ****************************************************************
 c
@@ -25,17 +24,14 @@ $add common.main
 c
 c                       parameter dclarations
 c
-      logical  first ! can't see that this is used with evolved
-c                      structure of code
-c
+      logical ::  first 
 c                       local declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  zero, start_estiff, end_estiff, omp_get_wtime
-      logical local_debug
-      data local_debug / .false. /
-      data zero / 0.0d00 /
+      logical :: local_debug
+      data local_debug, zero / .false., 0.0d00 /
 c
 c
 c             For MPI:
@@ -56,7 +52,7 @@ c             copy to globally allocated array. reduces
 c             access to globals in parallel and gets better cache use.
 
       call estiff_allocate ( 1 )
-      if( local_debug ) write(*,*) ' @ 1'
+      if( local_debug ) write(*,*) ' @ 1 tanstf'
 c
 c             compute element nonlinear [k] matrices. data structures
 c             are set up so this can be done in parallel over blocks
@@ -69,9 +65,9 @@ c             if we are using the non-MPI version:
 c               elblks(2,blk) is all equal to 0, so all blocks
 c               are processed.
 c
-c             this code runs serial, mpi, omp, or omp under  mpi.
+c             this code runs serial, mpi, omp, or omp under mpi.
 c
-      if( local_debug ) write(*,*) ' @ 2'
+      if( local_debug ) write(*,*) ' @ 2 tanstf'
 c
       call omp_set_dynamic( .false. )
       if( local_debug ) then
@@ -83,7 +79,7 @@ c$OMP PARALLEL DO PRIVATE( blk, now_thread )
 c$OMP&            SHARED( nelblk, elblks, first, now_iter,
 c$OMP&                    now_step )
        do blk = 1, nelblk
-         if ( elblks(2,blk) .ne. myid ) cycle
+         if( elblks(2,blk) .ne. myid ) cycle
          now_thread = omp_get_thread_num() + 1
          call do_nlek_block( blk, first, now_iter, now_step )
       end do
@@ -93,12 +89,14 @@ c
          end_estiff = omp_get_wtime()
          write(out,*) '>> threaded estiff: ', end_estiff - start_estiff
       end if
+c
 c                       set flags indicating that the tangent stiffness
 c                       matrix has been calculated.
 c
       tkcomp = .true.
       lkcomp = .false.
       call thyme(2,2)
+c      
       return
 c
       end
@@ -108,7 +106,7 @@ c     *                      subroutine do_nlek_block                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/23/2015  rhd             *
+c     *                   last modified : 9/27/2015 rhd              *
 c     *                                                              *
 c     *     computes the global nonlinear stiffness                  *
 c     *     matrices for a block of elements. the data structures    *
@@ -125,6 +123,7 @@ c
       use elem_block_data,   only : estiff_blocks, cdest_blocks,
      &                              edest_blocks
       use elem_extinct_data, only : dam_blk_killed, dam_state
+c
       use main_data,         only : trn, incid, incmap,
      &                              fgm_node_values_defined,
      &                              cohesive_ele_types,
@@ -137,22 +136,26 @@ c
      &                              dmatprp, imatprp
 c
       use damage_data, only : dam_ptr, growth_by_kill
+c 
+      use contact, only : use_contact     
 c
       implicit integer (a-z)
 $add common.main
 c
 c                       parameter declarations
 c
-      logical first
+      logical :: first
+      integer :: blk, now_iter, now_step
 c
 c                       local declarations 
 c
 $add include_tan_ek
-#dbl      double precision
-#sgl      real
-     &  zero, lambda(mxvl,3,3)
-      logical local_debug, geo_non_flg, bbar_flg
-      data local_debug, zero / .false., 0.0 /
+#dbl      double precision ::
+#sgl      real ::
+     &  zero, lambda(mxvl,3,3) ! on stack
+      logical :: local_debug, geo_non_flg, bbar_flg, 
+     &           symmetric_assembly, block_is_killable
+      data local_debug, zero / .false., 0.0d0 /
 c
       felem          = elblks(1,blk)
       elem_type      = iprops(1,felem)
@@ -215,8 +218,10 @@ c
       if( local_work%is_umat ) call material_model_info( felem, 0, 3,
      &                                 local_work%umat_stress_type )
       if( local_work%is_cohes_elem ) local_work%cep_sym_size = 6
+      symmetric_assembly = .not. asymmetric_assembly
 c
-c             See if we're actually an interface damaged material
+c             See if we're actually an interface damaged material.
+c             
 c
       local_work%is_inter_dmg = .false.
       if( iprops(42,felem) .ne. -1 ) then
@@ -245,15 +250,14 @@ c
 c             check if blk has all killed elements -- if so skip
 c             all calculations. just zero element [k]s
 c
-      if ( growth_by_kill ) then
-        if ( local_work%block_killed ) then
-          if (local_debug) write (*,*)'blk ',blk,' killed, skip.'
-           if (.not. asymmetric_assembly) then
-             estiff_blocks(blk)%ptr(1:utsz,1:span) = zero
-           else
-             estiff_blocks(blk)%ptr(1:totdof*totdof,1:span) = zero
-           end if
-          go to 1000
+      nrow_ek = utsz
+      if( asymmetric_assembly ) nrow_ek = totdof**2
+c      
+      if( growth_by_kill ) then  ! note return inside here
+        if( local_work%block_killed ) then
+          if( local_debug ) write (*,*)'blk ',blk,' killed, skip.'
+          estiff_blocks(blk)%ptr(1:nrow_ek,1:span) = zero
+          return  ! no tanstf_deallocate  needed
         end if
       end if
 c
@@ -262,15 +266,13 @@ c             this is a gather operation on nodal coordinates,
 c             nodal displacements, stresses at time n+1, material
 c             state/history data needed to form consistent
 c             tangent matrices. the gathered data for this block
-c             is stored in the "local" f-90 data structure created
-c             on the stack. each invocation of this routine in
-c             parallel thus has its own private copy of the stack based
-c             data structure.
+c             is stored in the "local_work" data structure with base
+c             definition on the stack (each thread thus has a 
+c             private copy). allocatables inside local_work are
+c             also unique to the thread.
 c
-      if ( local_debug ) then
-            write(out,9100) blk, span, felem, mat_type, num_enodes,
-     &                      num_enode_dof, totdof, num_int_points
-      end if
+      if( local_debug ) write(out,9100) blk, span, felem, mat_type, 
+     &            num_enodes, num_enode_dof, totdof, num_int_points
 c
       call tanstf_allocate( local_work )
 c
@@ -306,64 +308,49 @@ c             compute updated tangent stiffness for each element
 c             in the block. element stiffnesses are stored
 c             in upper triangular form.
 c
-      if ( local_debug ) then
-         write(out,9200) blk, span, felem, elem_type, int_order,
-     &                   geo_non_flg, bbar_flg
-      end if
+      if( local_debug ) write(out,9200) blk, span, felem, elem_type,
+     &                 int_order, geo_non_flg, bbar_flg
 c
-c             compute element stiffness for the block. not we
+c             compute element stiffness for the block. note we
 c             pass first element in block of props table.
 c
-      nrowek = utsz
-      ispan  = span
-      if (.not. asymmetric_assembly) then
-         call rktstf( props(1,felem), iprops(1,felem),
+      ispan  = span   ! just protects span value
+      call rktstf( props(1,felem), iprops(1,felem),
      &             lprops(1,felem), estiff_blocks(blk)%ptr(1,1),
-     &             nrowek, ispan, local_work )
-      else
-         call rktstf( props(1,felem), iprops(1,felem),
-     &             lprops(1,felem), 
-     &             estiff_blocks(blk)%ptr(:,:), 
-     &             totdof*totdof, ispan, local_work )
-      end if
+     &             nrow_ek, ispan, local_work )
 c
 c             check if this block has any killed elements -- if so,
 c             zero computed nonlinear stifffness matrices for killed
-c             elements.
+c             elements (the [D] may not have been zeroed)
 c
-      if ( .not. growth_by_kill ) go to 500
-      if ( iand( iprops(30,felem),2 ) .eq. 0 ) go to 500
-      do relem = 1, span
-         element = felem + relem - 1
-         if ( dam_ptr(element) .eq. 0 ) cycle
-         if ( dam_state(dam_ptr(element)) .ne. 0 ) then
-           if (.not. asymmetric_assembly) then
-           call tanstf_zero_vector( estiff_blocks(blk)%ptr(1,relem),
-     &                              utsz )
-           else
-           call tanstf_zero_vector(estiff_blocks(blk)%ptr(:,relem),
-     &                              totdof*totdof)
-           end if
-         end if
-      end do
+      if( growth_by_kill ) then
+        block_is_killable = iand( iprops(30,felem),2 ) .ne. 0
+        if( block_is_killable ) then
+@!DIR$ LOOP COUNT MAX=###  
+         do relem = 1, span
+           element = felem + relem - 1
+           if( dam_ptr(element) .eq. 0 ) cycle
+           if( dam_state(dam_ptr(element)) .ne. 0 )
+     &       call tanstf_zero_vector( estiff_blocks(blk)%ptr(1,relem),
+     &                                nrow_ek )
+         end do
+        end if 
+      end if 
 c
-c              if contact is included in this analysis, then add
-c              the contact spring stiffnesses into the corresponding
-c              element stiffness matricies.
+c              if contact, add penalty stiffnesses
 c
-  500 continue
-      call contact_stfadd (span, felem, totdof,
+      if( use_contact ) then
+        call contact_stfadd( span, felem, totdof,
      &     edest_blocks(blk)%ptr(1,1),
-     &     estiff_blocks(blk)%ptr(1,1), nrowek, num_enodes,
+     &     estiff_blocks(blk)%ptr(1,1), nrow_ek, num_enodes,
      &     incid(incmap(felem)) )
+      end if
 c
- 1000 continue
+c             release all allocated data for block. data never 
+c             allocated above for a killed block of elements
 c
-c             release all allocated data for block unless this
-c             is a block of all killed elements
-c
-      if( .not. local_work%block_killed )
-     &   call tanstf_deallocate( local_work )
+      call tanstf_deallocate( local_work )
+      return
 c
  9100 format(5x,'>>> ready to call dptstf:',
      &     /,10x,'blk, span, felem, mat_model:      ',4i10,
@@ -373,7 +360,7 @@ c
      &     /,10x,'blk, span, felem                 :',3i10,
      &     /,10x,'elem_type, int_order, geo_non_flg:',2i10,l10,
      &     /,10x,'bbar_flg:                        :',l10 )
-      return
+c
       end
 c     ****************************************************************
 c     *                                                              *
@@ -381,7 +368,7 @@ c     *                subroutine estiff_allocate                    *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                last modified : 8/17/2015 rhd                 *
+c     *                last modified : 9/27/2015 rhd                 *
 c     *                                                              *
 c     *     create the blocked data structure for storage of element *
 c     *     stiffness matrices                                       *
@@ -398,7 +385,7 @@ c
 c
       implicit integer (a-z)
 $add common.main
-      logical myblk
+      logical :: myblk
 c
 c
 c            the data structure is a 2-D array for each element
@@ -414,13 +401,12 @@ c
       select case ( type ) ! careful. type could be integer constant
       case ( 1, 4 ) ! symmetric or asymmetric.
 c
-         if ( .not. allocated( estiff_blocks ) ) then
+         if( .not. allocated( estiff_blocks ) ) then
            allocate( estiff_blocks(nelblk), stat=iok )
-           if ( iok .ne. 0 ) then
+           if( iok .ne. 0 ) then
               call iodevn( idummy, iout, dummy, 1 )
               write(iout,9100) iok
               call die_abort
-              stop
            end if
            do blk = 1, nelblk
             nullify( estiff_blocks(blk)%ptr )
@@ -437,9 +423,9 @@ c             skip blocks if the pointer to them is associated.
 c
          do blk = 1, nelblk
             myblk = myid .eq. elblks(2,blk)
-            if ( myid .eq. 0 .and. type .eq. 4 ) myblk = .true.
-            if ( .not. myblk ) cycle
-            if ( associated(estiff_blocks(blk)%ptr) ) cycle
+            if( myid .eq. 0 .and. type .eq. 4 ) myblk = .true.
+            if( .not. myblk ) cycle
+            if( associated(estiff_blocks(blk)%ptr) ) cycle
             felem         = elblks(1,blk)
             num_enodes    = iprops(2,felem)
             num_enode_dof = iprops(4,felem)
@@ -449,7 +435,7 @@ c
             nterms        = utsz
             if( asymmetric_assembly ) nterms = totdof * totdof
             allocate( estiff_blocks(blk)%ptr(nterms,span),stat=iok )
-            if ( iok .ne. 0 ) then
+            if( iok .ne. 0 ) then
                call iodevn( idummy, iout, dummy, 1 )
                write(iout,9100) iok
             end if
@@ -457,13 +443,13 @@ c
 c
       case( 5 ) ! deallocate estiff_blocks
 c
-         if ( .not. allocated( estiff_blocks ) ) return
-         if ( myid .ne. 0 ) return ! only do this on root
+         if( .not. allocated( estiff_blocks ) ) return
+         if( myid .ne. 0 ) return ! only do this on root
          do blk = 1, nelblk
             myblk = myid .eq. elblks(2,blk)
-            if ( .not. myblk ) cycle
+            if( .not. myblk ) cycle
             deallocate( estiff_blocks(blk)%ptr, stat=iok )
-            if ( iok .ne. 0 ) then
+            if( iok .ne. 0 ) then
                call iodevn( idummy, iout, dummy, 1 )
                write(iout,9200) iok
             end if
@@ -493,7 +479,7 @@ c     *                  subroutine dptstf_blocks                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 05/14/12 rhd               *
+c     *                   last modified : 9/27/2015 rhd              *
 c     *                                                              *
 c     *     this subroutine creates a separate copy of element       *
 c     *     data necessary for the tangent stiffness computation of  *
@@ -527,14 +513,14 @@ $add include_tan_ek
 c
 c           parameter declarations
 c
-      dimension belinc(nnode,*)
-      logical   geonl
+      dimension :: belinc(nnode,*)
+      logical ::   geonl
 c
 c           local declarations
 c
-      logical  local_debug, warp3d_umat
-#dbl      double precision
-#sgl      real
+      logical :: local_debug
+#dbl      double precision ::
+#sgl      real ::
      & zero
       data zero, local_debug / 0.0d00, .false. /
 c
@@ -557,16 +543,14 @@ c            o History data is not needed for warp3d_umat since
 c              we'll just extract already computed [Dt]s in global
 c              blocks
 c
-      warp3d_umat = mat_type .eq. 8
-c
-      if ( geonl )  call gastr( local_work%rot_blk_n1,
+      if( geonl )  call gastr( local_work%rot_blk_n1,
      &                          rot_n1_blocks(blk)%ptr(1), ngp,
      &                          9, span )
 c
       hist_size = history_blk_list(blk)
       local_work%hist_size_for_blk = hist_size
 c
-      if( .not. warp3d_umat ) then
+      if( .not. local_work%is_umat ) then
          allocate( local_work%elem_hist1(span,hist_size,ngp),
      &             local_work%elem_hist(span,hist_size,ngp) )
          call dptstf_copy_history(
@@ -582,8 +566,8 @@ c                 over load step (if they are defined). we
 c                 construct a set of incremental nodal temperatures
 c                 for each element in block.
 c
-      if ( temperatures ) then
-        if ( local_debug )  write(*,9610)
+      if( temperatures ) then
+        if( local_debug )  write(*,9610)
         call gadtemps( dtemp_nodes, dtemp_elems(felem), belinc,
      &                 nnode, span, felem, local_work%dtemps_node_blk,
      &                 mxvl )
@@ -597,7 +581,7 @@ c           global vector of reference values at(if they are defined).
 c           construct a set of reference nodal temperatures for each
 c           element in block.
 c
-      if ( temperatures_ref ) then
+      if( temperatures_ref ) then
         call gartemps( temper_nodes_ref, belinc, nnode, span,
      &                 felem, local_work%temps_ref_node_blk, mxvl )
       else
@@ -609,7 +593,7 @@ c                 build nodal temperatures for elements in the block
 c                 at end of step (includes both imposed nodal and element
 c                 temperatures)
 c
-      if ( local_debug )  write(*,9620)
+      if( local_debug )  write(*,9620)
       call gatemps( temper_nodes, temper_elems(felem), belinc,
      &              nnode, span, felem, local_work%temps_node_blk,
      &              mxvl, local_work%dtemps_node_blk,
@@ -636,11 +620,11 @@ c
       case( 2 )   ! deformation plasticity
 c     =========
 c
-      call gastr( local_work%ddtse, eps_n1_blocks(blk)%ptr(1),
-     &            ngp, nstr, span )
-      call dptstf_copy_history(
-     &         local_work%elem_hist(1,1,1), history_blocks(blk)%ptr(1),
-     &         ngp, hist_size, span )
+        call gastr( local_work%ddtse, eps_n1_blocks(blk)%ptr(1),
+     &              ngp, nstr, span )
+        call dptstf_copy_history(
+     &           local_work%elem_hist(1,1,1), 
+     &           history_blocks(blk)%ptr(1), ngp, hist_size, span )
 c
       case( 4 )   ! cohesive
 c     =========
@@ -650,10 +634,9 @@ c
          call dptstf_copy_history(
      &         local_work%elem_hist(1,1,1), history_blocks(blk)%ptr(1),
      &         ngp, hist_size, span )
-      if( local_work%is_cohes_nonlocal ) then
-           call tanstf_build_cohes_nonlocal( local_work )
-      end if
-
+         if( local_work%is_cohes_nonlocal ) 
+     &      call tanstf_build_cohes_nonlocal( local_work )
+c
       case( 3, 5, 6, 7, 10 )
 c     ==================
 c
@@ -661,35 +644,35 @@ c           gather history data at n, n+1, trial elastic
 c           stresses at n+1 for these models
 c            (3) -- general mises plasticity with optional Gurson  model
 c            (5) -- cyclic plasticity
-c            (6) -- adv. gurson model
+c            (6) -- creep
 c            (7) -- mises + hyrdogen effects
 c           (10) -- crystal plasticity
 c
          call dptstf_copy_history(
      &         local_work%elem_hist(1,1,1), history_blocks(blk)%ptr(1),
      &         ngp, hist_size, span )
-        call gastr( local_work%rtse, rts_blocks(blk)%ptr(1), ngp, nstr,
-     &              span )
+         call gastr( local_work%rtse, rts_blocks(blk)%ptr(1),
+     &               ngp, nstr, span )
 c
-      case( 8 )
+      case( 8 )   ! umat. nothing to do for now.
 c     =========
 c
-      continue
+      continue  ! just so it is clear that 8 is umat
 c
       case default
-          write(*,*) '>>> invalid material model number'
-          write(*,*) '    in dptstf_blocks'
+          write(local_work%iout,*) '>>> invalid material model number'
+          write(local_work%iout,*) '    in dptstf_blocks'
           call die_abort
-          stop
       end select
 c
 c                 if the model has fgm properties at the model nodes,
 c                 build a table of values for nodes of elements in the
 c                 block
 c
-      if ( fgm_node_values_defined ) then
+      if( fgm_node_values_defined ) then
         do j = 1,  fgm_node_values_cols
           do i = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
             do k = 1, span
               local_work%enode_mat_props(i,k,j) =
      &                     fgm_node_values(belinc(i,k),j)
@@ -698,10 +681,11 @@ c
         end do
       end if
 c
+      return
+c
  9610 format(12x,'>> gather element incremental temperatures...' )
  9620 format(12x,'>> gather element total temperatures...' )
 c
-      return
       end
 c     ****************************************************************
 c     *                                                              *
@@ -709,7 +693,7 @@ c     *                  subroutine duptrans                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/17/2015 rhd             *
+c     *                   last modified : 09/27/2015 rhd             *
 c     *                                                              *
 c     *     this subroutine creates a separate copy of element       *
 c     *     data necessary to transform displacements from global to *
@@ -747,6 +731,7 @@ c
 c           this code below depends on ndof per node = 3
 c
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
          do k = 1, span
             node = incid(incmap(felem+k-1) + j-1)
             jj = (j-1)*3
@@ -773,7 +758,7 @@ c     *               subroutine dptstf_copy_history                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/17/04                   *
+c     *                   last modified : 09/27/2015 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -792,6 +777,7 @@ c
       if ( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, hist_size
+@!DIR$ LOOP COUNT MAX=###  
             do  i = 1, span
                local_hist(i,j,k) = global_hist(j,k,i)
             end do
@@ -803,6 +789,7 @@ c
 c                number of gauss points = 8, unroll.
 c
       do  j = 1, hist_size
+@!DIR$ LOOP COUNT MAX=###  
         do  i = 1, span
             local_hist(i,j,1) = global_hist(j,1,i)
             local_hist(i,j,2) = global_hist(j,2,i)
@@ -825,7 +812,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/17/2015 rhd              *
+c     *                   last modified : 9/24/2015 rhd              *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     element stiffnesses                                      *
@@ -915,7 +902,7 @@ c
       if( local_work%mat_type .eq. 5 )
      &  allocate( local_work%mm05_props(mxvl,10) )
       if( local_work%mat_type .eq. 6 )
-     &  allocate( local_work%mm06_props(mxvl,5) )
+     &  allocate( local_work%mm06_props(mxvl,10) )
       if( local_work%mat_type .eq. 7 )
      &  allocate( local_work%mm07_props(mxvl,10) )
 c
@@ -961,13 +948,20 @@ c
 c
       allocate( local_work%ncrystals(mxvl) )
 c
+c                always allocate cohes_rot_block. it gets passed as
+c                parameter even when block is not interface elements
+
+      allocate( local_work%cohes_rot_block(mxvl,3,3), stat=error )
+      if( error .ne. 0 ) then
+           write(out,9000) 9
+           call die_abort
+      end if
       if( local_work%is_cohes_elem ) then
          allocate( local_work%cohes_temp_ref(mxvl),
      1      local_work%cohes_dtemp(mxvl),
      2      local_work%cohes_temp_n(mxvl),
-     3      local_work%cohes_rot_block(mxvl,3,3),
-     4      local_work%intf_prp_block(mxvl,max_interface_props),
-     5      stat=error )
+     3      local_work%intf_prp_block(mxvl,max_interface_props),
+     4      stat=error )
          if( error .ne. 0 ) then
            write(out,9000) 9
            call die_abort
@@ -1009,7 +1003,7 @@ c     *                   subroutine tanstf_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/17/2015 rhd              *
+c     *                   last modified : 9/27/2015 rhd              *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1022,9 +1016,13 @@ c
 $add common.main
 $add include_tan_ek
 c
-      deallocate( local_work%ce )
+      logical :: local_debug
 c
-      deallocate(
+      local_debug = .false.
+      if( local_debug ) write(out,*) "..tanstf_deall @ 1"
+      local_mt = local_work%mat_type
+c
+      deallocate( local_work%ce,
      1 local_work%det_jac_block,
      2 local_work%shape,
      3 local_work%nxi,
@@ -1035,6 +1033,7 @@ c
            write(out,9000) 1
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 5"
 c
       deallocate( local_work%vol_block,
      1  local_work%volume_block,
@@ -1046,6 +1045,7 @@ c
            write(out,9000) 2
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 10"
 c
       deallocate( local_work%ue,
      1  local_work%due,
@@ -1057,6 +1057,7 @@ c
            write(out,9000) 3
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 15"
 c
       deallocate(
      1  local_work%temps_node_blk,
@@ -1066,10 +1067,23 @@ c
            write(out,9000) 4
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 20"
 c    
-      deallocate( local_work%fgm_flags )
-      if( local_work%fgm_enode_props )
-     &   deallocate( local_work%enode_mat_props )
+      deallocate( local_work%fgm_flags, stat=error )
+       if( error .ne. 0 ) then
+           write(out,9000) 200
+           call die_abort
+       end if
+      
+      if( local_work%fgm_enode_props ) then
+        deallocate( local_work%enode_mat_props, stat=error )
+        if( error .ne. 0 ) then
+           write(out,9000) 205
+           call die_abort
+        end if
+      end if  
+     
+      if( local_debug ) write(out,*) "..tanstf_deall @ 30"
 c
       deallocate( local_work%cep,
      1  local_work%qn1,
@@ -1078,13 +1092,32 @@ c
            write(out,9000) 5
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 40"
 c       
-      if( local_work%mat_type .eq. 5 )
-     &  deallocate( local_work%mm05_props )
-      if( local_work%mat_type .eq. 6 )
-     &  deallocate( local_work%mm06_props )
-      if( local_work%mat_type .eq. 7 )
-     &  deallocate( local_work%mm07_props )
+      if( local_mt .eq. 5 ) then
+        deallocate( local_work%mm05_props, stat=error  )
+        if( error .ne. 0 ) then
+           write(out,9000) 210
+           call die_abort
+        end if
+      end if
+        
+      if( local_mt .eq. 6 ) then 
+         deallocate( local_work%mm06_props, stat=error )
+        if( error .ne. 0 ) then
+           write(out,9000) 215
+           call die_abort
+        end if
+      end if
+c
+      if( local_mt .eq. 7 ) then 
+         deallocate( local_work%mm07_props, stat=error )
+         if( error .ne. 0 ) then
+           write(out,9000) 220
+           call die_abort
+        end if
+      end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 50"
 c
       deallocate( 
      a    local_work%e_v, 
@@ -1099,6 +1132,7 @@ c
            write(out,9000) 6
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 55"
 c      
       if( local_work%mat_type .eq. 3 )  then
         deallocate( local_work%f0_v,
@@ -1109,12 +1143,14 @@ c
      5              local_work%nuc_e_n_v,
      6              local_work%nuc_f_n_v )
       end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 60"
 
       deallocate( local_work%cp, local_work%icp, stat=error )
       if( error .ne. 0 ) then
            write(out,9000) 7
            call die_abort
       end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 65"
 c
       deallocate( local_work%trn_e_flags, local_work%trne,
      &            local_work%trnmte, stat=error )
@@ -1122,8 +1158,13 @@ c
            write(out,9000) 8
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 70"
 c
-      deallocate( local_work%ncrystals)
+      deallocate( local_work%ncrystals, stat=error)
+      if( error .ne. 0 ) then
+           write(out,9000) 225
+           call die_abort
+      end if
 c
       if( allocated(local_work%elem_hist1) )
      &    deallocate(local_work%elem_hist1, stat=error )
@@ -1131,12 +1172,14 @@ c
            write(out,9000) 9
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 75"
       if( allocated(local_work%elem_hist) )
      &      deallocate(local_work%elem_hist, stat=error )
        if( error .ne. 0 ) then
            write(out,9000) 10
            call die_abort
        end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 80"
 c
       if( local_work%is_cohes_nonlocal ) then
          deallocate( local_work%top_surf_solid_stresses_n1,
@@ -1152,6 +1195,7 @@ c
            write(out,9000) 11
            call die_abort
          end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 85"
          deallocate( local_work%top_solid_matl,
      &         local_work%bott_solid_matl, stat=error )
          if( error .ne. 0 ) then
@@ -1159,18 +1203,27 @@ c
            call die_abort
          end if
       end if
-
+      if( local_debug ) write(out,*) "..tanstf_deall @ 90"
+c
+c                cohes_rot_block is always allocated. tt gets passed as
+c                parameter even when block is not interface elements
+c
+      deallocate( local_work%cohes_rot_block, stat=error )
+      if( error .ne. 0 ) then
+           write(out,9000) 13
+           call die_abort
+      end if
       if( local_work%is_cohes_elem ) then
          deallocate( local_work%cohes_temp_ref,
      1      local_work%cohes_dtemp,
      2      local_work%cohes_temp_n,
-     3      local_work%cohes_rot_block,
-     4      local_work%intf_prp_block, stat=error )
+     3      local_work%intf_prp_block, stat=error )
          if( error .ne. 0 ) then
-           write(out,9000) 13
+           write(out,9000) 14
            call die_abort
          end if
       end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 95"
 c
       return
 c
@@ -1179,13 +1232,14 @@ c
      &  /,   '                job terminated' )
 c
       end
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine tanstf_zero_vector                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 01/27/13                   *
+c     *                   last modified : 09/27/2015 rhd             *
 c     *                                                              *
 c     *     zero a vector of specified length w/ floating zero       *
 c     *                                                              *
@@ -1194,7 +1248,7 @@ c
       subroutine tanstf_zero_vector( vec, n )
 #dbl      double precision
 #sgl      real
-     &  vec(*), zero
+     &  vec(n), zero
       data zero / 0.0d00 /
 c
       vec(1:n) = zero

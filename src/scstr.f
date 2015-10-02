@@ -48,7 +48,7 @@ c
       end do
 c
       return
-      end
+      end 
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine scstr_history                *

@@ -59,7 +59,7 @@ c                       inverse jacobians.  also calculate volume
 c                       terms if using bbar. use element shape
 c                       at n+1 for geonl.
 c
-      if ( bbar .and. elem_type .eq. 2 )
+      if( bbar .and. elem_type .eq. 2 )
      &  call zero_vol( local_work%vol_block, local_work%volume_block,
      &                 span, mxvl )
 c
@@ -69,7 +69,7 @@ c             the global displacements are rotated to a coordinate
 c             system in which the normal axis (Z rotated) is
 c             perpendicular to the surface ot the cohesive element
 c
-      if ( local_work%is_cohes_elem ) then
+      if( local_work%is_cohes_elem ) then
            call cohes_rot_mat( span, felem, nnode, elem_type,
      &                         local_work%ce_n1,
      &                         local_work%cohes_rot_block )
@@ -162,7 +162,10 @@ c
       go to 9999
 c
 c
- 9999 return
+ 9999 continue
+      if ( local_debug ) write(local_work%iout,*)
+     &     "    >>> leaving rknifv ...." 
+      return
       end
 c     ****************************************************************
 c     *                                                              *
@@ -204,8 +207,9 @@ c                       not being used, all element volumes are
 c                       updated.
 c
       if ( local_debug )
-     &   write(*,*) '... in update_ele...growth_by_kill: ',
-     &    growth_by_kill
+     &   write(*,*)
+     &       '... in update_ele...growth_by_killm felem, span: ',
+     &       growth_by_kill, felem, span
       if ( .not. growth_by_kill ) then
         do i = 1, span
            updated_element_volumes(i) = element_volumes_for_blk(i)

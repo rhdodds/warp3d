@@ -4,7 +4,7 @@ c     *                      subroutine rknstr                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 02/22/13  rhd              *
+c     *                   last modified : 9/20/2015 rhd              *
 c     *                                                              *
 c     *     drive updating of strains/stresses for a block of        *
 c     *     elements                                                 *
@@ -19,25 +19,20 @@ c
       implicit integer (a-z)
 $add param_def
 c
-c
-c
-      real props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real    :: props(mxelpr,mxvl)   ! all 3 the same. read only
+      logical :: lprops(mxelpr,mxvl)
+      integer :: iprops(mxelpr,mxvl)
 $add include_sig_up
 c
+c                    locals
 c
-cc                    local
-c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &      xi, eta, zeta, zero, temp_ref, d_temp, temp_np1
-      logical geonl, bbar, local_debug, adaptive_flag, adaptive,
-     &        segmental, cohesive_elem, linear_displ, fgm_enode_props,
-     &        compute_shape, average
-      data local_debug / .false. /
-#sgl      data zero / 0.0 /
-#dbl      data zero / 0.0d00 /
+      logical :: geonl, bbar, local_debug, adaptive_flag, adaptive,
+     &           segmental, cohesive_elem, linear_displ, 
+     &           fgm_enode_props, compute_shape, average
+      data local_debug, zero / .false., 0.0d00 /
 c
 c           pull values from the local block definition
 c
@@ -65,7 +60,7 @@ c
 c            set up to compute element volumes for bbar option and for
 c           [F] bar options
 c
-      if ( bbar .and. elem_type .eq. 2 )
+      if( bbar .and. elem_type .eq. 2 )
      &  call zero_vol( local_work%vol_block, local_work%volume_block,
      &                 span, mxvl )
       if( local_work%compute_f_bar ) then
@@ -84,11 +79,11 @@ c           mid-surface.
 c
 c           note: for small displacements, ce_mid, ce_n1 = ce_0
 c
-       if ( cohesive_elem ) then
+       if( cohesive_elem ) then
            call cohes_rot_mat( span, felem, nnode, elem_type,
      &                         local_work%ce_n1,
      &                         local_work%cohes_rot_block )
-           if ( geonl )
+           if( geonl )
      &       call cohes_mirror_refsurf( span, mxvl, totdof, nnode,
      &                                  local_work%ce_mid )
        end if
@@ -99,211 +94,16 @@ c           undeformed coordinates).
 c           compute volume terms for b-bar option and finish up b-bar
 c           when done with integration point loop.
 c
-      if ( geonl ) go to 1000
+      if( geonl ) then
+         if( local_work%compute_f_bar ) then
+            call rknstr_geonl_f_bar
+         else
+            call rknstr_geonl
+         end if
+      else
+         call rknstr_sm_displ
+      end if   
 c
-      do gpn = 1, ngp
-        local_work%gpn = gpn
-        call getgpts( elem_type, order, gpn, xi, eta, zeta,
-     &                local_work%weights(gpn) )
-        call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
-     &               local_work%neta(1,gpn),local_work% nzeta(1,gpn) )
-        if ( local_debug .and. gpn .eq. 1 ) then
-          write(iout,9000) gpn, elem_type, xi, eta, zeta
-          write(iout,9005)
-          do enode = 1, nnode
-            write(iout,9010) enode, local_work%nxi(enode,gpn),
-     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
-          end do
-        end if
-        call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &    local_work%det_j(1,gpn), local_work%gama(1,1,1,gpn),
-     &    local_work%cohes_rot_block,
-     &    local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &    local_work%nzeta(1,gpn), local_work%ce_0, nnode )
-c
-        if ( compute_shape )
-     &     call shapef( elem_type, xi, eta, zeta,
-     &                  local_work%shape(1,gpn) )
-c
-        if ( bbar ) then
-          call vol_terms( local_work%gama(1,1,1,gpn),
-     &                    local_work%det_j(1,gpn),
-     &                    local_work%vol_block,
-     &                    local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &                    local_work%nzeta(1,gpn),
-     &                    local_work%volume_block, span, mxvl )
-        end if
-      end do
-c
-      if( bbar .and. elem_type .eq. 2 )
-     &  call vol_avg( local_work%vol_block, local_work%volume_block,
-     &                span, mxvl )
-
-      go to 4000
-c
-c           for geometrically nonlinear elements, the deformation
-c           jacobians at (n + 1/2) and (n + 1) relative to n = 0 are
-c           computed at a lower level. here we compute coordinate
-c           jacobians and their inverses for the nodal coordinates
-c           updated to the mid-step configuration. these will be used
-c           to construct the linear-form for [B] at mid-step to multiply
-c           into displacement increment to define the strain increment.
-c           b-bar formulation is included as in the small displacement
-c           model but using mid-step geometry.
-c
-c           for cohesive elements, the mid-increment formulation
-c           to compute "strains" (displacement jumps) is not used.
-c           we formulate the [B] using coordinates at n+1.
-c
-c           for some material models, we need to also compute [F] @ n.
-c           A logical flag has been set by drive_eps_sig_internal_forces
-c           for this case.
-c
-c           for the hex-8 elements, we need to perform the equivalent
-c           of a b-bar adjustment on each [F] (but only needed at n
-c           and n+1). drive_eps_sig_internal_forces set a logical flag
-c           for this case.
-c
-c           the additional computations required for bar-[F] makes it
-c           simpler to use a separate loop structure.
-c
- 1000 continue
-      if( local_work%compute_f_bar ) go to 3000
-c
-      do gpn = 1, ngp
-       if( local_debug ) write(*,9050)  gpn, elem_type
-       local_work%gpn = gpn
-       call getgpts( elem_type, order, gpn, xi, eta, zeta,
-     &               local_work%weights(gpn) )
-       call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
-     &              local_work%neta(1,gpn), local_work%nzeta(1,gpn) )
-       if ( local_debug .and. gpn .eq. 1 ) then
-          write(iout,9000) gpn, elem_type, xi, eta, zeta
-          write(iout,9005)
-          do enode = 1, nnode
-            write(iout,9010) enode, local_work%nxi(enode,gpn),
-     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
-          end do
-       end if
-       if( cohesive_elem ) then
-          call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j_mid(1,gpn),
-     &              local_work%gama_mid(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_n1, nnode )
-        else
-          call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j_mid(1,gpn),
-     &              local_work%gama_mid(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_mid, nnode )
-        end if
-c
-       if( compute_shape )
-     &     call shapef( elem_type, xi, eta, zeta,
-     &                  local_work%shape(1,gpn) )
-c
-       if( bbar ) then
-         call vol_terms( local_work%gama_mid(1,1,1,gpn),
-     &                   local_work%det_j_mid(1,gpn),
-     &                   local_work%vol_block, local_work%nxi(1,gpn),
-     &                   local_work%neta(1,gpn),
-     &                   local_work%nzeta(1,gpn),
-     &                   local_work%volume_block, span, mxvl )
-       end if
-      end do
-c
-      if( bbar .and. elem_type .eq. 2 )
-     &  call vol_avg( local_work%vol_block, local_work%volume_block,
-     &                span, mxvl )
-
-      go to 4000
-c
-c           loop for geometric nonlinear when we also need to compute
-c           terms needed for [F] bar at same time. mainly we're just
-c           computing volume of deformed element at  n=0, n, n+1.
-c           regular coordinate jacobian is based on n+1/2 element
-c           deformed shape.
-c
- 3000 continue
-      do gpn = 1, ngp
-       if( local_debug ) write(*,9050)  gpn, elem_type
-       local_work%gpn = gpn
-       call getgpts( elem_type, order, gpn, xi, eta, zeta,
-     &               local_work%weights(gpn) )
-       call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
-     &              local_work%neta(1,gpn), local_work%nzeta(1,gpn) )
-       if ( local_debug .and. gpn .eq. 1 ) then
-          write(iout,9000) gpn, elem_type, xi, eta, zeta
-          write(iout,9005)
-          do enode = 1, nnode
-            write(iout,9010) enode, local_work%nxi(enode,gpn),
-     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
-          end do
-       end if
-       call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j_mid(1,gpn),
-     &              local_work%gama_mid(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_mid, nnode )
-       call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j(1,gpn),
-     &              local_work%gama(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_0, nnode )
-       do i = 1, span
-         local_work%volume_block_0(i) = local_work%volume_block_0(i)
-     &                + local_work%det_j(i,gpn)
-       end do
-       call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j(1,gpn),
-     &              local_work%gama(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_n, nnode )
-        do i = 1, span
-           local_work%volume_block_n(i) = local_work%volume_block_n(i)
-     &                + local_work%det_j(i,gpn)
-        end do
-        call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j(1,gpn),
-     &              local_work%gama(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_n1, nnode )
-        do i = 1, span
-          local_work%volume_block_n1(i) = local_work%volume_block_n1(i)
-     &              + local_work%det_j(i,gpn)
-        end do
-c
-       if( compute_shape )
-     &     call shapef( elem_type, xi, eta, zeta,
-     &                  local_work%shape(1,gpn) )
-c
-       if( bbar ) then
-         call vol_terms( local_work%gama_mid(1,1,1,gpn),
-     &                   local_work%det_j_mid(1,gpn),
-     &                   local_work%vol_block, local_work%nxi(1,gpn),
-     &                   local_work%neta(1,gpn),
-     &                   local_work%nzeta(1,gpn),
-     &                   local_work%volume_block, span, mxvl )
-       end if
-      end do
-c
-      if( bbar .and. elem_type .eq. 2 )
-     &  call vol_avg( local_work%vol_block, local_work%volume_block,
-     &                span, mxvl )
-     c
 c           all done with loop over gauss points for geometrically
 c           linear and nonlinear options.
 c
@@ -319,32 +119,7 @@ c           cohesive elements are treated as having constant
 c           temperature. for later convenience, build element values
 c           for cohesive temps.
 c
- 4000 continue
-       average =  local_work%linear_displ_elem .or.
-     &             local_work%is_cohes_elem
-      if( average ) then
-         call average_nodal_temps( local_work%temperatures,
-     &      local_work%temps_node_to_process,
-     &      local_work%temperatures_ref, nnode,
-     &      local_work%dtemps_node_blk, local_work%temps_node_blk,
-     &      local_work%temps_ref_node_blk, mxvl, span, 1 )
-      end if
-c
-      if( local_work%linear_displ_elem .and. fgm_enode_props ) then
-         call average_fgm_properties( local_work%enode_mat_props,
-     &                           mxndel, mxvl, mxndpr, nnode, span )
-      end if
-c
-      if( local_work%is_cohes_elem ) then  ! all zero if no temps
-         do i = 1, span
-           temp_ref = local_work%temps_ref_node_blk(i,1)
-           d_temp   = local_work%dtemps_node_blk(i,1)
-           temp_np1 = local_work%temps_node_blk(i,1)
-           local_work%cohes_temp_ref(i) = temp_ref
-           local_work%cohes_dtemp(i)    = d_temp
-           local_work%cohes_temp_n(i)   = temp_np1 - d_temp
-         end do
-      end if
+      call rknstr_fix_temps
 c
 c           *** set up material data for block ***
 c
@@ -361,7 +136,86 @@ c
 c           for new models, all elements in the block must have the
 c           same property values.
 c
- 5000 continue
+      call rknstr_set_up_materials
+c
+c           compute the updated strains and stresses for all elements
+c           in the block. outer loop is over integration points, inner
+c           loop at lower levels is over elements in block.
+c
+      do gpn = 1, ngp
+        local_work%gpn = gpn
+        if ( geonl ) call rstgp1( props, lprops, iprops,
+     &                            local_work )
+        if ( .not. geonl ) call rstgp2( props, lprops, iprops,
+     &                                  local_work )
+        if ( local_work%material_cut_step ) return
+      end do
+c
+c           For CP model, calculate the gradient of the elastic
+c           rotations at the element level by linear curve fit.
+c
+c           For linear models this will just be based on the plastic rotations
+c           which may or may not be a realistic assumption
+c
+      if( local_work%mat_type .eq. 10 ) call rknstr_finish_cp
+c
+      return
+c
+      contains
+c     ========    
+
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_finish_cp                *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/20/2015 rhd              *
+c     *                                                              *
+c     *     make calls to the specific material model for block      *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rknstr_finish_cp
+c
+c              calculate the gradient of the elastic
+c              rotations at the element level by linear curve fit.
+c
+      do i = 1, local_work%span
+        if( local_work%ncrystals(i) .gt. 1 )  then
+             local_work%elem_hist1(i,37:63,1:ngp) = zero
+        else
+             rs = 76+max_slip_sys+9
+             re = 76+max_slip_sys+17
+             call mm10_calc_grads(ngp, elem_type, order, geonl,
+     &           local_work%rot_blk_n1(i,1:9,1:ngp),
+     &           local_work%jac(i,1:3,1:3),
+     &           local_work%elem_hist(i,rs:re,1:ngp),
+     &           local_work%elem_hist1(i,37:63,1:ngp)) 
+        end if
+      end do
+c
+      return     
+      end subroutine rknstr_finish_cp
+
+
+
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_set_up_materials         *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/20/2015 rhd              *
+c     *                                                              *
+c     *     make calls to the specific material model for block      *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rknstr_set_up_materials
+
       adaptive = adaptive_flag .and. step .gt. 1
 c
       select case ( mat_type )
@@ -419,69 +273,353 @@ c
 c
       end select
 c
-c
 c           If this material is going to have interface damage applied to it,
 c           call the setup function for mm11
 c
-      if (local_work%is_inter_dmg) then
+      if( local_work%is_inter_dmg ) then
         call setup_mm11_rknstr( span, props, lprops, iprops,
      &                            adaptive, local_work )
       end if
+c
+      return     
+      end subroutine rknstr_set_up_materials
 
+
+
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_fix_temps                *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/20/2015 rhd              *
+c     *                                                              *
+c     *     make temp for higher-order elements vary linearly        *
+c     *     between nodes to stop locking from temp loading          *
+c     *     intended for this routine to be inlined                  *
+c     *                                                              *
+c     ****************************************************************
 c
 c
-c           compute the updated strains and stresses for all elements
-c           in the block. outer loop is over integration points, inner
-c           loop at lower levels is over elements in block.
+      subroutine rknstr_fix_temps
+c      
+
+      average =  local_work%linear_displ_elem .or.
+     &             local_work%is_cohes_elem
+      if( average ) then
+         call average_nodal_temps( local_work%temperatures,
+     &      local_work%temps_node_to_process,
+     &      local_work%temperatures_ref, nnode,
+     &      local_work%dtemps_node_blk, local_work%temps_node_blk,
+     &      local_work%temps_ref_node_blk, mxvl, span, 1 )
+      end if
 c
-      do gpn = 1, ngp
-        local_work%gpn = gpn
-        if ( geonl ) call rstgp1( props, lprops, iprops,
-     &                            local_work )
-        if ( .not. geonl ) call rstgp2( props, lprops, iprops,
-     &                                  local_work )
-        if ( local_work%material_cut_step ) return
-      end do
+      if( local_work%linear_displ_elem .and. fgm_enode_props ) then
+         call average_fgm_properties( local_work%enode_mat_props,
+     &                           mxndel, mxvl, mxndpr, nnode, span )
+      end if
 c
-c           For CP model, calculate the gradient of the elastic
-c           rotations at the element level by linear curve fit.
-c
-c           For linear models this will just be based on the plastic rotations
-c           which may or may not be a realistic assumption
-c
-      if (local_work%mat_type .eq. 10) then
-         do i=1,local_work%span
-           if (local_work%ncrystals(i) .gt. 1)  then
-             local_work%elem_hist1(i,37:63,1:ngp) = 0.0
-           else
-             rs = 76+max_slip_sys+9
-             re = 76+max_slip_sys+17
-             call mm10_calc_grads(ngp, elem_type, order, geonl,
-     &           local_work%rot_blk_n1(i,1:9,1:ngp),
-     &           local_work%jac(i,1:3,1:3),
-     &           local_work%elem_hist(i,rs:re,1:ngp),
-     &           local_work%elem_hist1(i,37:63,1:ngp)) 
-            end if
+      if( local_work%is_cohes_elem ) then  ! all zero if no temps
+@!DIR$ LOOP COUNT MAX=###
+         do i = 1, span
+           temp_ref = local_work%temps_ref_node_blk(i,1)
+           d_temp   = local_work%dtemps_node_blk(i,1)
+           temp_np1 = local_work%temps_node_blk(i,1)
+           local_work%cohes_temp_ref(i) = temp_ref
+           local_work%cohes_dtemp(i)    = d_temp
+           local_work%cohes_temp_n(i)   = temp_np1 - d_temp
          end do
       end if
 c
-      go to 9999
- 9999 continue
+      return   
+c        
+      end subroutine rknstr_fix_temps
+
+
+
+
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_geonl                    *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/13/2010 add only        *
+c     *                                                              *
+c     *     driver all computations to set up subsequent strain      *
+c     *     computations for large displacement elements where F is  *
+c     *     not needed                                               *
+c     *                                                              *
+c     ****************************************************************
 c
+c
+      subroutine rknstr_geonl 
+c
+c           for geometrically nonlinear elements, the deformation
+c           jacobians at (n + 1/2) and (n + 1) relative to n = 0 are
+c           computed at a lower level. here we compute coordinate
+c           jacobians and their inverses for the nodal coordinates
+c           updated to the mid-step configuration. these will be used
+c           to construct the linear-form for [B] at mid-step to multiply
+c           into displacement increment to define the strain increment.
+c           b-bar formulation is included as in the small displacement
+c           model but using mid-step geometry.
+c
+c           for cohesive elements, the mid-increment formulation
+c           to compute "strains" (displacement jumps) is not used.
+c           we formulate the [B] using coordinates at n+1.
+c
+c           for some material models, we need to also compute [F] @ n.
+c           A logical flag has been set by drive_eps_sig_internal_forces
+c           for this case.
+c
+c           for the hex-8 elements, we need to perform the equivalent
+c           of a b-bar adjustment on each [F] (but only needed at n
+c           and n+1). drive_eps_sig_internal_forces set a logical flag
+c           for this case.
+c
+c           the additional computations required for bar-[F] makes it
+c           simpler to use a separate loop structure.
+c
+c
+      do gpn = 1, ngp
+       if( local_debug ) write(*,9050)  gpn, elem_type
+       local_work%gpn = gpn
+       call getgpts( elem_type, order, gpn, xi, eta, zeta,
+     &               local_work%weights(gpn) )
+       call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
+     &              local_work%neta(1,gpn), local_work%nzeta(1,gpn) )
+       if( local_debug .and. gpn .eq. 1 ) then
+          write(iout,9000) gpn, elem_type, xi, eta, zeta
+          write(iout,9005)
+          do enode = 1, nnode
+            write(iout,9010) enode, local_work%nxi(enode,gpn),
+     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
+          end do
+       end if
+       if( cohesive_elem ) then
+          call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              local_work%det_j_mid(1,gpn),
+     &              local_work%gama_mid(1,1,1,gpn),
+     &              local_work%cohes_rot_block,
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn),
+     &              local_work%ce_n1, nnode )
+        else
+          call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              local_work%det_j_mid(1,gpn),
+     &              local_work%gama_mid(1,1,1,gpn),
+     &              local_work%cohes_rot_block,
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn),
+     &              local_work%ce_mid, nnode )
+        end if
+c
+       if( compute_shape )
+     &     call shapef( elem_type, xi, eta, zeta,
+     &                  local_work%shape(1,gpn) )
+c
+       if( bbar ) then
+         call vol_terms( local_work%gama_mid(1,1,1,gpn),
+     &                   local_work%det_j_mid(1,gpn),
+     &                   local_work%vol_block, local_work%nxi(1,gpn),
+     &                   local_work%neta(1,gpn),
+     &                   local_work%nzeta(1,gpn),
+     &                   local_work%volume_block, span, mxvl )
+       end if
+      end do
+c
+      if( bbar .and. elem_type .eq. 2 )
+     &  call vol_avg( local_work%vol_block, local_work%volume_block,
+     &                span, mxvl )
+
       return
-c
  9000 format(5x,"... gpn, elem_type,  xi, eta, zeta: ",
      &  2i4, 3f10.4 )
  9005 format(10x,"... shape function derivatives ..." )
  9010 format(10x,i4,3f15.6)
-
  9050 format ( '>>> ready to calculate deformation gradient gpn,',
      &         ' etype: ',2i3)
- 9100 format ( '>>> ready to call rstgp1,  gpn:', i3)
- 9600 format('  Material type (rknstr) = ',i4 )
- 9700 format(10x,i5,f15.6)
+      end subroutine rknstr_geonl
+  
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_sm_displ                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/13/2010 add only        *
+c     *                                                              *
+c     *     driver all computations to set up subsequent strain      *
+c     *     computations for small displacement elements             *
+c     *                                                              *
+c     ****************************************************************
 c
-      end
+c
+      subroutine rknstr_sm_displ
+c
+c
+      do gpn = 1, ngp
+        local_work%gpn = gpn
+        call getgpts( elem_type, order, gpn, xi, eta, zeta,
+     &                local_work%weights(gpn) )
+        call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
+     &               local_work%neta(1,gpn),local_work% nzeta(1,gpn) )
+        if( local_debug .and. gpn .eq. 1 ) then
+          write(iout,9000) gpn, elem_type, xi, eta, zeta
+          write(iout,9005)
+          do enode = 1, nnode
+            write(iout,9010) enode, local_work%nxi(enode,gpn),
+     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
+          end do
+        end if
+        call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &    local_work%det_j(1,gpn), local_work%gama(1,1,1,gpn),
+     &    local_work%cohes_rot_block,
+     &    local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &    local_work%nzeta(1,gpn), local_work%ce_0, nnode )
+c
+        if ( compute_shape )
+     &     call shapef( elem_type, xi, eta, zeta,
+     &                  local_work%shape(1,gpn) )
+c
+        if( bbar ) then
+          call vol_terms( local_work%gama(1,1,1,gpn),
+     &                    local_work%det_j(1,gpn),
+     &                    local_work%vol_block,
+     &                    local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &                    local_work%nzeta(1,gpn),
+     &                    local_work%volume_block, span, mxvl )
+        end if
+      end do
+c
+      if( bbar .and. elem_type .eq. 2 )
+     &  call vol_avg( local_work%vol_block, local_work%volume_block,
+     &                span, mxvl )
+      return
+ 9000 format(5x,"... gpn, elem_type,  xi, eta, zeta: ",
+     &  2i4, 3f10.4 )
+ 9005 format(10x,"... shape function derivatives ..." )
+ 9010 format(10x,i4,3f15.6)
+ 9050 format ( '>>> ready to calculate deformation gradient gpn,',
+     &         ' etype: ',2i3)
+
+      end subroutine rknstr_sm_displ
+      
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_geonl_f_bar              *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/13/2010 add only        *
+c     *                                                              *
+c     *                   last modified : 12/13/2010 add only        *
+c     *                                                              *
+c     *     driver all computations to set up subsequent strain      *
+c     *     computations for large displacement elements             *
+c     *     where F-bar is needed                                    *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rknstr_geonl_f_bar
+c
+c           loop for geometric nonlinear when we also need to compute
+c           terms needed for [F] bar at same time. mainly we're just
+c           computing volume of deformed element at  n=0, n, n+1.
+c           regular coordinate jacobian is based on n+1/2 element
+c           deformed shape.
+c
+      do gpn = 1, ngp
+       if( local_debug ) write(*,9050)  gpn, elem_type
+       local_work%gpn = gpn
+       call getgpts( elem_type, order, gpn, xi, eta, zeta,
+     &               local_work%weights(gpn) )
+       call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
+     &              local_work%neta(1,gpn), local_work%nzeta(1,gpn) )
+       if( local_debug .and. gpn .eq. 1 ) then
+          write(iout,9000) gpn, elem_type, xi, eta, zeta
+          write(iout,9005)
+          do enode = 1, nnode
+            write(iout,9010) enode, local_work%nxi(enode,gpn),
+     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
+          end do
+       end if
+       call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              local_work%det_j_mid(1,gpn),
+     &              local_work%gama_mid(1,1,1,gpn),
+     &              local_work%cohes_rot_block,
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn),
+     &              local_work%ce_mid, nnode )
+       call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              local_work%det_j(1,gpn),
+     &              local_work%gama(1,1,1,gpn),
+     &              local_work%cohes_rot_block,
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn),
+     &              local_work%ce_0, nnode )
+@!DIR$ LOOP COUNT MAX=###
+       do i = 1, span
+         local_work%volume_block_0(i) = local_work%volume_block_0(i)
+     &                + local_work%det_j(i,gpn)
+       end do
+       call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              local_work%det_j(1,gpn),
+     &              local_work%gama(1,1,1,gpn),
+     &              local_work%cohes_rot_block,
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn),
+     &              local_work%ce_n, nnode )
+@!DIR$ LOOP COUNT MAX=###
+        do i = 1, span
+           local_work%volume_block_n(i) = local_work%volume_block_n(i)
+     &                + local_work%det_j(i,gpn)
+        end do
+        call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              local_work%det_j(1,gpn),
+     &              local_work%gama(1,1,1,gpn),
+     &              local_work%cohes_rot_block,
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn),
+     &              local_work%ce_n1, nnode )
+@!DIR$ LOOP COUNT MAX=###
+        do i = 1, span
+          local_work%volume_block_n1(i) = local_work%volume_block_n1(i)
+     &              + local_work%det_j(i,gpn)
+        end do
+c
+       if( compute_shape )
+     &     call shapef( elem_type, xi, eta, zeta,
+     &                  local_work%shape(1,gpn) )
+c
+       if( bbar ) then
+         call vol_terms( local_work%gama_mid(1,1,1,gpn),
+     &                   local_work%det_j_mid(1,gpn),
+     &                   local_work%vol_block, local_work%nxi(1,gpn),
+     &                   local_work%neta(1,gpn),
+     &                   local_work%nzeta(1,gpn),
+     &                   local_work%volume_block, span, mxvl )
+       end if
+      end do
+c
+      if( bbar .and. elem_type .eq. 2 )
+     &  call vol_avg( local_work%vol_block, local_work%volume_block,
+     &                span, mxvl )
+c
+      return 
+c      
+ 9000 format(5x,"... gpn, elem_type,  xi, eta, zeta: ",
+     &  2i4, 3f10.4 )
+ 9005 format(10x,"... shape function derivatives ..." )
+ 9010 format(10x,i4,3f15.6)
+ 9050 format ( '>>> ready to calculate deformation gradient gpn,',
+     &         ' etype: ',2i3)
+c     
+      end subroutine rknstr_geonl_f_bar
+
+      end subroutine rknstr
 
 c     ****************************************************************
 c     *                                                              *
@@ -530,11 +668,11 @@ c                  fgm defined at model nodes.
 c
       bit_flags            = iprops(24,1)
       local_work%segmental = .true.
-      if ( iand(bit_flags,4) .eq. 0 ) local_work%segmental = .false.
+      if( iand(bit_flags,4) .eq. 0 ) local_work%segmental = .false.
       local_work%power_law = .not.  local_work%segmental
 c
-      if ( local_work%segmental ) then
-        if ( local_work%fgm_enode_props )
+      if( local_work%segmental ) then
+        if( local_work%fgm_enode_props )
      &       call errmsg2( 31, dumr, '  ', dumr, dumd  )
         curve_set_number  = iprops(21,1)
         first_curve       = seg_curve_table(2,curve_set_number)
@@ -586,8 +724,7 @@ c
 #sgl      real
      & sum1(span), sum2(span), sum3(span), avg1, avg2, avg3, zero,
      & fnnodel
-#dbl      data zero / 0.d0 /
-#sgl      data zero / 0.0 /
+       data zero / 0.0d0 /
 c
 c                    elements with linear displacement fields
 c                    can shear lock when the temperature
@@ -601,7 +738,7 @@ c                    of all the nodal values.
 c
       do_average = temperatures .or.  temps_node_to_process .or.
      &             temperatures_ref
-      if ( .not. do_average ) return
+      if( .not. do_average ) return
 c
       fnnodel = nnodel
 c
@@ -610,6 +747,7 @@ c
          sum2(1:span) = zero
          sum3(1:span) = zero
          do enode = 1, nnodel
+@!DIR$ LOOP COUNT MAX=###
             do i = 1, span
                sum1(i) = sum1(i) + dtemps_node_blk(i,enode)
                sum2(i) = sum2(i) + temps_node_blk(i,enode)
@@ -617,6 +755,7 @@ c
             end do
          end do
          do enode = 1, nnodel
+@!DIR$ LOOP COUNT MAX=###         
             do i = 1, span
                avg1 = sum1(i) / fnnodel
                avg2 = sum2(i) / fnnodel
@@ -631,11 +770,13 @@ c
       if( average_case .eq. 2) then
          sum1(1:span) = zero
          do enode = 1, nnodel
+@!DIR$ LOOP COUNT MAX=###
             do i = 1, span
                sum1(i) = sum1(i) + temps_node_blk(i,enode)
             end do
          end do
          do enode = 1, nnodel
+@!DIR$ LOOP COUNT MAX=###         
             do i = 1, span
                avg1 = sum1(i) / fnnodel
                temps_node_blk(i,enode) = avg1
@@ -679,8 +820,7 @@ c
 #sgl      real
      & sum(span), avg, zero
 c
-#dbl      data zero / 0.d0 /
-#sgl      data zero / 0.0 /
+      data zero / 0.d0 /
 c
 c                    elements with linear displacement fields
 c                    can shear lock when properties within the
@@ -691,13 +831,16 @@ c                    for each property, redefine the nodal values
 c                    to be the simple average of all the nodal values.
 c
       do prop = 1, num_props
+@!DIR$ LOOP COUNT MAX=###
          sum(1:span) = zero
          do enode = 1, nnode
+@!DIR$ LOOP COUNT MAX=###
             do elem = 1, span
                sum(elem) = sum(elem) + enode_mat_props(enode,elem,prop)
             end do
          end do
          do enode = 1, nnode
+@!DIR$ LOOP COUNT MAX=###         
             do elem = 1, span
                avg = sum(elem) / nnode
                enode_mat_props(enode,elem,prop) = avg
@@ -737,6 +880,7 @@ c
       integer iprops(mxelpr,mxvl)
 $add include_sig_up
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
          local_work%e_vec(i)         = props(7,i)
          local_work%e_vec_n(i)       = props(7,i)
@@ -802,6 +946,7 @@ c
       integer iprops(mxelpr,mxvl)
 $add include_sig_up
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
          local_work%e_vec(i)       = props(7,i)
          local_work%nu_vec(i)      = props(8,i)
@@ -856,6 +1001,7 @@ c                    local
 c
       logical adaptive
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
            local_work%e_vec(i)       = props(7,i)
            local_work%e_vec_n(i)     = props(7,i)
@@ -903,6 +1049,7 @@ c
 c
       bit_flags = iprops(24,1)
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
         if ( iand(iprops(30,i),1) .eq. 0 )
      &         local_work%nuc_vec(i) = .false.
@@ -969,6 +1116,7 @@ c                     59        gamma_u         gp_delta_u
 c                     60 sig_tol
 c                     61-64 <available>
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1025,9 +1173,9 @@ c     *                   subroutine setup_mm06_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/18/02 rhd               *
+c     *                   last modified : 09/19/2015 rhd             *
 c     *                                                              *
-c     *     set up material model #6 (adv. gurson model)             *
+c     *     set up material model #6 (creep)                         *
 c     *     for stress updating: values constant across all g. pts.  *
 c     *                                                              *
 c     ****************************************************************
@@ -1035,7 +1183,6 @@ c
 c
       subroutine setup_mm06_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
-      use segmental_curves
       use main_data, only : matprp, lmtprp
 c
       implicit integer (a-z)
@@ -1043,17 +1190,19 @@ $add param_def
 c
 c                    parameter declarations
 c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real    ::  props(mxelpr,mxvl)
+      logical ::  lprops(mxelpr,mxvl)
+      integer ::  iprops(mxelpr,mxvl)
 $add include_sig_up
 c
 c                    local
 c
-      logical adaptive
+      logical :: adaptive, local_debug
 c
+      local_debug = .false.
       matnum = local_work%matnum
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1064,42 +1213,41 @@ c
            local_work%alpha_vec(i,4) = props(35,i)
            local_work%alpha_vec(i,5) = props(36,i)
            local_work%alpha_vec(i,6) = props(37,i)
-           local_work%sigyld_vec(i)  = props(23,i)
            local_work%n_power_vec(i) = props(21,i)
-c
-           local_work%f0_vec(i)      = props(26,i)
-           local_work%h_vec(i)       = props(15,i)
-           local_work%sigyld_vec(i)  = props(23,i)
-           local_work%n_power_vec(i) = props(21,i)
-           local_work%eps_ref_vec(i) = props(22,i)
-           local_work%m_power_vec(i) = props(20,i)
-           local_work%q1_vec(i)      = props(27,i)
-           local_work%q2_vec(i)      = props(28,i)
-           local_work%q3_vec(i)      = props(29,i)
-           local_work%nuc_vec(i)     = .true.
-           local_work%nuc_s_n_vec(i) = props(31,i)
-           local_work%nuc_e_n_vec(i) = props(32,i)
-           local_work%nuc_f_n_vec(i) = props(33,i)
-c
-           local_work%tan_e_vec(i)    = matprp(4,matnum)
-           local_work%mm06_props(i,1:5) = matprp(65:69,matnum)
+           local_work%mm06_props(i,1) = matprp(80,matnum)
 c
       end do
+      
+      if( local_debug ) then 
+         jout = local_work%iout
+         write(jout,9000) 
+         write(jout,9005) span, matnum
+         felem = local_work%felem - 1
+         do i = 1, span 
+           write(jout,9010) felem+i, local_work%e_vec(i), 
+     &                      local_work%nu_vec(i),
+     &                      local_work%n_power_vec(i), 
+     &                      local_work%mm06_props(i,1)
+           write(jout,9015) local_work%alpha_vec(i,1:6)
+         end do
+      end if         
 c
-      bit_flags = iprops(24,1)
-c
-      do i = 1, span
-        if ( iand(iprops(30,i),1) .eq. 0 )
-     &         local_work%nuc_vec(i) = .false.
-      end do
 c
 c                   determine if material model can call for a
 c                   reduction in the adaptive step size
 c
+      bit_flags = iprops(24,1)
       local_work%allow_cut = adaptive
       if ( iand(bit_flags,2) .eq. 0 ) local_work%allow_cut = .false.
 c
+      if( local_debug ) write(jout,9002)
       return
+c
+ 9000 format(//,3x,'.... setup stress-strain update props for creep')
+ 9002 format(//,3x,'.... leaving setup props for creep')
+ 9005 format(//,3x,'.... span, matnum: ',2i6 )
+ 9010 format(8x,i8, 4e18.6 )
+ 9015 format(8x,8x,6e18.6 )      
       end
 
 c     ****************************************************************
@@ -1137,6 +1285,7 @@ c
 c
       matnum = local_work%matnum
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1200,6 +1349,7 @@ c
 c
       matnum = local_work%matnum
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
         local_work%e_vec(i)       = props(7,i)
         local_work%nu_vec(i)      = props(8,i)
@@ -1260,22 +1410,21 @@ $add param_def
 c
 c                    parameter declarations
 c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real    :: props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl)
+      integer :: iprops(mxelpr,mxvl)
 $add include_sig_up
 c
 c                    local
 c
-      logical adaptive
-      integer :: ctotal, c, cnum, s
+      logical :: adaptive
+      integer :: ctotal, c, cnum, s, elnum, osn
       double precision, dimension(3) :: angles
       character :: aconv*5
       character :: atype*7
       double precision, dimension(3) :: bs, ns
       double precision, dimension(3,3) :: A
       double precision, dimension(6,6) :: Rstiff, temp
-      integer :: elnum, osn
 c
       ctotal = 0
 c
@@ -1299,14 +1448,16 @@ c
 c
            local_work%debug_flag(i) = lmtprp(13,matnum)
            local_work%local_tol(i) = dmatprp(100,matnum)
+c
 c                 May eventually change this to allow for different # of
 c                 crystals in block
+c
            local_work%ncrystals(i) = imatprp(101,matnum)
 c
            local_work%angle_convention(i) = imatprp(102,matnum)
            local_work%angle_type(i) = imatprp(103,matnum)
 c
-
+c
 c                 VERY IMPORTANT LOOP
 c                 Will need to (in the near future) extract crystal
 c                 and orientation information.  Also possibly change
@@ -1315,8 +1466,7 @@ c                 block.
 c
            elnum = local_work%felem+i-1
 c
-c
-           do c=1,local_work%ncrystals(i)
+           do c = 1,local_work%ncrystals(i)
 c                       Get the local crystal number
                   if (imatprp(104,matnum) .eq. 1) then
                         cnum = imatprp(105,matnum)
@@ -1334,9 +1484,10 @@ c                       Couldn't do this earlier, so check here
                         write(out,9502)
                         call die_gracefully
                   end if
-
+c
 c                       Get the local orientation
-                  if (imatprp(107,matnum) .eq. 1) then
+c
+                  if( imatprp(107,matnum) .eq. 1 ) then
                         angles(1) = dmatprp(108,matnum)
                         angles(2) = dmatprp(109,matnum)
                         angles(3) = dmatprp(110,matnum)
@@ -1347,8 +1498,10 @@ c                       Get the local orientation
                         write (out,9502)
                         call die_gracefully
                   end if
-c                       Now we have the properties, we just need to extract
-c                       into our local structure
+c
+c                       Now we have the properties, we just need 
+c                       to extract into our local structure
+c
                   local_work%c_props(i,c)%init_elast_stiff =
      &                  c_array(cnum)%elast_stiff
                   local_work%c_props(i,c)%init_angles = angles
@@ -1366,7 +1519,7 @@ c                       into our local structure
                   local_work%c_props(i,c)%q_v = c_array(cnum)%q_v
                   local_work%c_props(i,c)%p_y = c_array(cnum)%p_y
                   local_work%c_props(i,c)%q_y = c_array(cnum)%q_y
-                  local_work%c_props(i,c)%boltzman = c_array(cnum)%boltz
+                  local_work%c_props(i,c)%boltzman = c_array(cnum)%boltz       
                   local_work%c_props(i,c)%theta_o =
      &                  c_array(cnum)%theta_o
                   local_work%c_props(i,c)%eps_dot_o_v =
@@ -1401,14 +1554,14 @@ c                 Call a helper to get the crystal -> reference rotation
                         write(out,9503)
                         call die_gracefully
                   end if
-
+c
                   if (local_work%angle_convention(i) .eq. 1) then
                         aconv="kocks"
                   else
                         write(out,9504)
                         call die_gracefully
                   end if
-
+c
                   call mm10_rotation_matrix(
      &                  local_work%c_props(i,c)%init_angles,
      &                  aconv, atype,
@@ -1416,6 +1569,7 @@ c                 Call a helper to get the crystal -> reference rotation
 c
 c                 Now that we have that, we can set up and rotate our
 c                 orientation tensors
+c
                   do s=1,local_work%c_props(i,c)%nslip
                         bs = matmul(transpose(
      &                   local_work%c_props(i,c)%rotation_g),
@@ -1432,8 +1586,9 @@ c                 orientation tensors
                         call mm10_WT2WV(0.5*(A-transpose(A)),
      &                        local_work%c_props(i,c)%qs(:,s))
                   end do
-
+c
 c           We can also rotate forward our stiffness tensor
+c
             call mm10_RT2RVE( transpose(
      &            local_work%c_props(i,c)%rotation_g), Rstiff)
             local_work%c_props(i,c)%init_elast_stiff = matmul(
@@ -1442,17 +1597,15 @@ c           We can also rotate forward our stiffness tensor
      &            transpose(Rstiff)))
 
            end do
-
+c
            ctotal = ctotal + local_work%ncrystals(i)
 c
       end do
-
 c
 c                   determine if material model can call for a
 c                   reduction in the adaptive step size
 c
       local_work%allow_cut = adaptive .and. lmtprp(22,matnum)
-c
 c
       return
 
@@ -1538,13 +1691,13 @@ c
 c     
 c            Calculate the number of crystals per GP based on the initial
 c            element size
+c
            call mm11_elem_size(local_work%elem_type, 
      &          local_work%num_enodes, local_work%ce_0(i,1:3*
      &          local_work%num_enodes),
      &          local_work%sv, local_work%lv, local_work%tv,
      &          local_work%ls, local_work%ll, local_work%lt,
      &          local_work%nstacks(i), local_work%nper(i))
-c
 c
            local_work%debug_flag(i) = lmtprp(13,matnum)
            local_work%local_tol(i) = dmatprp(100,matnum)
@@ -1555,6 +1708,7 @@ c
            local_work%angle_type(i) = imatprp(103,matnum)
 c
 c           Make sure we aren't asking for more orientations than we have
+c
       if ((local_work%ncrystals(i) .gt. nangles) .or.
      &      (local_work%ncrystals(i) .gt. imatprp(101,matnum))) then
             write(*,*) "Too many angles required!"
@@ -1565,16 +1719,21 @@ c           Make sure we aren't asking for more orientations than we have
             call die_abort
       end if
 c
-c
 c          Extract props for each crystal
 c
-           do c=1,local_work%ncrystals(i)
+           do c= 1, local_work%ncrystals(i)
+c
 c                       Get the local crystal number
+c
                   cnum = imatprp(105,matnum)
+c
 c                       Get the local orientation
+c
                   angles(1:3) = simple_angles(mc_array(e,c),1:3)
-c                       Now we have the properties, we just need to extract
-c                       into our local structure
+c
+c                       Now we have the properties, we just need
+c                        to extract into our local structure
+c
                   local_work%c_props(i,c)%init_elast_stiff =
      &                  c_array(cnum)%elast_stiff
                   local_work%c_props(i,c)%init_angles = angles
@@ -1618,7 +1777,9 @@ c                       into our local structure
                   local_work%c_props(i,c)%tau_v = c_array(cnum)%tau_v
                   local_work%c_props(i,c)%voche_m = 
      &                  c_array(cnum)%voche_m
+c
 c                 Call a helper to get the crystal -> reference rotation
+c
                   if (local_work%angle_type(i) .eq. 1) then
                         atype = "degrees"
                   elseif (local_work%angle_type(i) .eq. 2) then
@@ -1634,7 +1795,7 @@ c                 Call a helper to get the crystal -> reference rotation
                         write(out,9504)
                         call die_gracefully
                   end if
-
+c
                   call mm10_rotation_matrix(
      &                  local_work%c_props(i,c)%init_angles,
      &                  aconv, atype,
@@ -1642,7 +1803,8 @@ c                 Call a helper to get the crystal -> reference rotation
 c
 c                 Now that we have that, we can set up and rotate our
 c                 orientation tensors
-                  do s=1,local_work%c_props(i,c)%nslip
+c
+                  do s = 1, local_work%c_props(i,c)%nslip
                         bs = matmul(transpose(
      &                   local_work%c_props(i,c)%rotation_g),
      &                   c_array(cnum)%bi(s,:))
@@ -1658,8 +1820,9 @@ c                 orientation tensors
                         call mm10_WT2WV(0.5*(A-transpose(A)),
      &                        local_work%c_props(i,c)%qs(:,s))
                   end do
-
+c
 c           We can also rotate forward our stiffness tensor
+c
             call mm10_RT2RVE( transpose(
      &            local_work%c_props(i,c)%rotation_g), Rstiff)
             local_work%c_props(i,c)%init_elast_stiff = matmul(
@@ -1668,11 +1831,10 @@ c           We can also rotate forward our stiffness tensor
      &            transpose(Rstiff)))
 
            end do
-
+c
            ctotal = ctotal + local_work%ncrystals(i)
 c
       end do
-
 c
 c                   determine if material model can call for a
 c                   reduction in the adaptive step size
@@ -1767,6 +1929,7 @@ c
       do j = 1, nlengths
         nodea = node_pairs(j,1)
         nodeb = node_pairs(j,2)
+@!DIR$ LOOP COUNT MAX=###
         do i = 1, span
           xa = node_coords(i,nodea)
           ya = node_coords(i,nodea+nnodel)
@@ -1782,6 +1945,7 @@ c
       scale_factor = half
       if( linear ) scale_factor = one
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
        lengths(i) = local_sums(i) * rnlengths * scale_factor
       end do
