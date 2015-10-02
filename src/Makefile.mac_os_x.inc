@@ -65,7 +65,7 @@
 #        Intel F90 (fort) compiler options. see also Makefile.mac_os_x.omp
 #
 F90OPTS1 =  -fpconstant -fixed -72 -traceback -no-inline-factor
-F90OPTS2 =  -module $(ODIR) -ftz
+F90OPTS2 =  -module $(ODIR) -ftz 
 PROFILEOPT =
 #
 F90      = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) $(PROFILEOPT)
@@ -965,7 +965,7 @@ $(OD)/gastr$O : gastr.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_gastr.f
 	$(FILTER) < gastr.f > filt_gastr.f
-	$(F90) -O2 -ip  -c filt_gastr.f
+	$(F90) -O3 -ip  -c filt_gastr.f
 	$(MVC) filt_gastr$O  gastr$O
 	$(MVC) gastr$O $@
 
@@ -1016,7 +1016,7 @@ $(OD)/gplns1$O : gplns1.f param_def include_lin_ek $(OD)/mod_eleblocks$O
 	$(RMC)  $@
 	$(RMC)  filt_gplns1.f
 	$(FILTER) < gplns1.f > filt_gplns1.f
-	$(F90) -O3 -ip  -c filt_gplns1.f
+	$(F90) -O3  -ip -c filt_gplns1.f
 	$(MVC) filt_gplns1$O  gplns1$O
 	$(MVC) gplns1$O $@
 
@@ -1033,7 +1033,7 @@ $(OD)/gptns1$O : gptns1.f include_tan_ek \
 	$(RMC)  $@
 	$(RMC)  filt_gptns1.f
 	$(FILTER) < gptns1.f > filt_gptns1.f
-	$(F90) -O3 -ip  -c filt_gptns1.f
+	$(F90) -O3 -ip -c filt_gptns1.f
 	$(MVC) filt_gptns1$O  gptns1$O
 	$(MVC) gptns1$O $@
 
@@ -1458,7 +1458,7 @@ $(OD)/mm06$O : mm06.f
 	$(RMC)  $@
 	$(RMC)  filt_mm06.f
 	$(FILTER) < mm06.f > filt_mm06.f
-	$(F90) -O3 -ip  -c filt_mm06.f
+	$(F90) -O3 -ip  -c filt_mm06.f -qopt-report -qopt-report-file=filt_mm06_opt_report
 	$(MVC) filt_mm06$O  mm06$O
 	$(MVC) mm06$O $@
 
@@ -2116,7 +2116,7 @@ $(OD)/rklstf$O : rklstf.f include_lin_ek \
 	$(RMC)  $@
 	$(RMC)  filt_rklstf.f
 	$(FILTER) < rklstf.f > filt_rklstf.f
-	$(F90) -O2 -ip  -c filt_rklstf.f -qopt-report -qopt-report-file=filt_rklstf_opt_report
+	$(F90) -O3 -ip  -c filt_rklstf.f -qopt-report -qopt-report-file=filt_rklstf_opt_report
 	$(MVC) filt_rklstf$O  rklstf$O
 	$(MVC) rklstf$O $@
 
@@ -2154,7 +2154,7 @@ $(OD)/rktstf$O : rktstf.f param_def include_tan_ek \
 	$(RMC)  $@
 	$(RMC)  filt_rktstf.f
 	$(FILTER) < rktstf.f > filt_rktstf.f
-	$(F90) -O3 -ip  -c filt_rktstf.f
+	$(F90) -O3  -ip -c filt_rktstf.f
 	$(MVC) filt_rktstf$O  rktstf$O
 	$(MVC) rktstf$O $@
 
@@ -2164,7 +2164,7 @@ $(OD)/rplstr$O : rplstr.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_rplstr.f
 	$(FILTER) < rplstr.f > filt_rplstr.f
-	$(F90) -O2 -ip  -c filt_rplstr.f
+	$(F90) -O3 -ip  -c filt_rplstr.f -qopt-report -qopt-report-file=filt_rplstr_opt_report
 	$(MVC) filt_rplstr$O  rplstr$O
 	$(MVC) rplstr$O $@
 
@@ -2200,7 +2200,7 @@ $(OD)/scstr$O : scstr.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_scstr.f
 	$(FILTER) < scstr.f > filt_scstr.f
-	$(F90) -O2 -ip  -c filt_scstr.f
+	$(F90) -O3 -ip  -c filt_scstr.f
 	$(MVC) filt_scstr$O  scstr$O
 	$(MVC) scstr$O $@
 
@@ -2327,7 +2327,7 @@ $(OD)/tanstf$O : tanstf.f $(OD)/mod_eleblocks$O $(OD)/mod_segmental_curves$O \
 	$(RMC)  $@
 	$(RMC)  filt_tanstf.f
 	$(FILTER) < tanstf.f > filt_tanstf.f
-	$(F90) -O3 -ip  -c filt_tanstf.f
+	$(F90) -O3 -ip -c filt_tanstf.f
 	$(MVC) filt_tanstf$O  tanstf$O
 	$(MVC) tanstf$O $@
 

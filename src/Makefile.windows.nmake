@@ -806,7 +806,7 @@ $(OD)/find_neighbors$O : find_neighbors.f param_def \
 #
 $(OD)/gastr$O : gastr.f param_def
 	$(FILTER) < gastr.f > filt_gastr.f
-	$(F90) /O2 /Qip  /c filt_gastr.f
+	$(F90) /O3 /Qip  /c filt_gastr.f
 	$(MVC) filt_gastr$O  gastr$O
 	$(MVC) gastr$O $@
 
@@ -1710,7 +1710,7 @@ $(OD)/reopen$O : reopen.f param_def common.main $(OD)/mod_eleblocks$O \
 $(OD)/rklstf$O : rklstf.f include_lin_ek \
                    param_def   $(OD)/mod_main$O
 	$(FILTER) < rklstf.f > filt_rklstf.f
-	$(F90) /O2 /Qip  /c filt_rklstf.f
+	$(F90) /O3 /Qip  /c filt_rklstf.f
 	$(MVC) filt_rklstf$O  rklstf$O
 	$(MVC) rklstf$O $@
 
@@ -1748,7 +1748,7 @@ $(OD)/rplstr$O : rplstr.f common.main \
                    param_def include_sig_up \
                    $(OD)/mod_eleblocks$O $(OD)/mod_segmental_curves$O
 	$(FILTER) < rplstr.f > filt_rplstr.f
-	$(F90) /O2 /Qip  /c filt_rplstr.f
+	$(F90) /O3 /Qip  /c filt_rplstr.f
 	$(MVC) filt_rplstr$O  rplstr$O
 	$(MVC) rplstr$O $@
 
@@ -1776,7 +1776,7 @@ $(OD)/scan$O : scan.f $(OD)/mod_file_info$O
 
 $(OD)/scstr$O : scstr.f param_def
 	$(FILTER) < scstr.f > filt_scstr.f
-	$(F90) /O2 /Qip  /c filt_scstr.f
+	$(F90) /O3 /Qip  /c filt_scstr.f
 	$(MVC) filt_scstr$O  scstr$O
 	$(MVC) scstr$O $@
 

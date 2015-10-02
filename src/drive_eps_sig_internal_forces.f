@@ -4,7 +4,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 01/19/2013 rhd             *
+c     *                   last modified : 9/29/2015 rhd              *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -29,7 +29,7 @@ c
       implicit integer (a-z)
 $add common.main
 c
-      logical material_cut_step
+      logical :: material_cut_step
 c
 c             locals
 c
@@ -37,22 +37,20 @@ c
 #dbl      double precision, allocatable, dimension(:) ::
      &  block_energies, block_plastic_work
 #sgl      real, allocatable, dimension(:,:) ::
-#dbl      double precision, allocatable, dimension(:,:) ::
-     &  ifv_threads
 c
-#sgl      real
-#dbl      double precision
+#sgl      real ::
+#dbl      double precision ::
      & zero, mag, dummy(mxvl,mxedof), start_time, end_time,
      & omp_get_wtime, sum_ifv_threads(max_threads)
 c
-      dimension num_term_ifv_threads(max_threads), idummy1(1),
-     &          idummy2(1)
+      integer :: num_term_ifv_threads(max_threads), 
+     &           idummy1(1), idummy2(1)
 c
       logical, allocatable, dimension(:)  :: step_cut_flags,
      &    blks_reqd_serial
-      logical local_debug, umat_matl
-      real spone
-      data zero, local_debug, spone / 0.0, .false., 1.0 /
+      logical :: local_debug, umat_matl
+      real :: spone
+      data zero, local_debug, spone / 0.0d00, .false., 1.0d0 /
 c
 c             MPI:
 c               alert workers we are in the strain-
@@ -77,7 +75,7 @@ c             and/or extrapolated displacement increment, and/or
 c             imposed temperature increments. do not scatter state
 c             variables back to structure data for this situation.
 c
-      if ( local_debug ) then
+      if( local_debug ) then
          write(out,*) '>>>> entered recstr : strain/stress update'
          write(out,*) '     step, iter: ',step, iter
       end if
@@ -142,7 +140,7 @@ c$OMP&            SHARED( nelblk, elblks, myid, iter, step,
 c$OMP&                    step_cut_flags, block_energies,
 c$OMP&                    block_plastic_work )
       do blk = 1, nelblk
-         if ( elblks(2,blk) .ne. myid ) cycle
+         if( elblks(2,blk) .ne. myid ) cycle
          if( blks_reqd_serial(blk) ) cycle
          now_thread = omp_get_thread_num() + 1
          call do_nleps_block( blk, iter, step, step_cut_flags(blk),
@@ -178,8 +176,8 @@ c
       internal_energy   = zero
       plastic_work      = zero
       do blk = 1, nelblk
-         if ( elblks(2,blk) .ne. myid ) cycle
-         if ( step_cut_flags(blk) )  material_cut_step = .true.
+         if( elblks(2,blk) .ne. myid ) cycle
+         if( step_cut_flags(blk) )  material_cut_step = .true.
          internal_energy = internal_energy + block_energies(blk)
          plastic_work    = plastic_work + block_plastic_work(blk)
       end do
@@ -203,9 +201,9 @@ c
       ifv(1:nodof) = zero
       sum_ifv      = zero
       num_term_ifv = 0
-      if ( material_cut_step ) then
+      if( material_cut_step ) then
         call allocate_ifv( 2 )
-        go to 9999
+        return
       end if
 c
 c             assemble internal force vectors for elements into
@@ -213,17 +211,14 @@ c             structure vector, and store ifv contributions from
 c             killable elements. if block has all killed elements
 c             then skip then entire block.  Each processor only computes
 c             the blocks which they specifically own. Use threads to
-c             process blocks in parallel on this domain. Requires
-c             per thread data structures to support the scatter from
-c             blocks to system vector. reduce the per thread vectors
-c             to system level vector when done. timing results
-c             show that doing this is serial is probably just as fast
-c             since the work per block on a thread (i.e. a call to
-c             addifv) is just not large. two calls to addifv prevent
-c             possible call w/o non-allocated damage data structures.
+c             process blocks in parallel on this domain.
 c
-      allocate( ifv_threads(nodof,num_threads) )
-      call zero_vector( ifv_threads, num_threads*nodof )
+c             timing studies show that use of ATOMIC UPDATE in 
+c             addifv is 10 x faster than allocating an ifv vector per
+c             thread, then gathering vectors. even then, this whole
+c             gather process is quite fast
+c
+
       sum_ifv_threads(1:num_threads) = zero
       num_term_ifv_threads(1:num_threads) = 0
 c
@@ -233,15 +228,15 @@ c
 c$OMP PARALLEL DO PRIVATE( blk, now_thread, felem, num_enodes,
 c$OMP&                     num_enode_dof, totdof, span )
 c$OMP&            SHARED( nelblk, elblks, myid, growth_by_kill,
-c$OMP&                    dam_blk_killed, edest_blocks, ifv_threads,
+c$OMP&                    dam_blk_killed, edest_blocks, ifv,
 c$OMP&                    iprops, sum_ifv_threads, out,
 c$OMP&                    num_term_ifv_threads, einfvec_blocks, dam_ifv,
 c$OMP&                    dam_state, idummy1, idummy2 )
 c
       do blk = 1, nelblk
-         if ( elblks(2,blk) .ne. myid ) cycle
-         if ( growth_by_kill ) then
-           if ( dam_blk_killed(blk) ) cycle
+         if( elblks(2,blk) .ne. myid ) cycle
+         if( growth_by_kill ) then
+           if( dam_blk_killed(blk) ) cycle
          end if
          now_thread    = omp_get_thread_num() + 1
          felem         = elblks(1,blk)
@@ -249,19 +244,21 @@ c
          num_enode_dof = iprops(4,felem)
          totdof        = num_enodes * num_enode_dof
          span          = elblks(0,blk)
-         if ( local_debug ) write(out,9300) myid, blk, span, felem
+         if( local_debug ) write(out,9300) myid, blk, span, felem
          if( allocated( dam_ifv ) ) then
            call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,
-     &                ifv_threads(1,now_thread),
+     &                ifv(1),
      &                iprops, felem, sum_ifv_threads(now_thread),
      &                num_term_ifv_threads(now_thread),
-     &                einfvec_blocks(blk)%ptr(1,1), dam_ifv, dam_state )
+     &                einfvec_blocks(blk)%ptr(1,1), dam_ifv,
+     &                dam_state,iout )
          else
            call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,
-     &                ifv_threads(1,now_thread),
+     &                ifv(1),
      &                iprops, felem, sum_ifv_threads(now_thread),
      &                num_term_ifv_threads(now_thread),
-     &                einfvec_blocks(blk)%ptr(1,1), idummy1, idummy2 )
+     &                einfvec_blocks(blk)%ptr(1,1), idummy1, 
+     &                idummy2, out )
          end if
 c
       end do
@@ -270,25 +267,23 @@ c$OMP END PARALLEL DO
 c
       if( local_debug ) then
          end_time = omp_get_wtime()
-         write(out,*) '>> threaded scatter ifv: ', end_time - start_time
+         write(out,*) '>> atomic scatter ifv: ', end_time - start_time
       end if
 c
-c             reduction of thread ifv vectors, scalars sum_ifv and
+c             reduction of scalars sum_ifv and
 c             num_term_ifv into unique system level vector.
 c
       do j = 1, num_threads
-        ifv(1:nodof) = ifv(1:nodof) + ifv_threads(1:nodof,j)
         sum_ifv      = sum_ifv + sum_ifv_threads(j)
         num_term_ifv = num_term_ifv + num_term_ifv_threads(j)
       end do
-      deallocate( ifv_threads )
 c
-      if( local_debug ) write (*,*) myid,':>>>>>> local sum_ifv is:',
+      if( local_debug ) write (out,*) myid,':>>>>>> local sum_ifv is:',
      &                              sum_ifv
       if( iter .eq. 0 .and. local_debug ) then
-       write(*,*) '... drive sig-eps ifv for iter 0'
+       write(out,*) '... drive sig-eps ifv for iter 0'
        do kkk = 1, min(100,nodof)
-         write(*,fmt="(i8,f15.8)") ( kkk, ifv(kkk) )
+         write(out,fmt="(i8,f15.8)") ( kkk, ifv(kkk) )
        end do
       end if
 c
@@ -306,27 +301,22 @@ c            vectors.
 c
       call allocate_ifv( 2 )
 c
-c            skip to end if we are not the root processor.
+c            all done
 c
-      if ( slave_processor ) goto 9999
+      if( slave_processor ) return
 c
 c            modify ifv by beta_factor for thickness other than 1.
 c            only used in 2d analysis
 c
-      if ( beta_fact .ne. spone ) ifv(1:nodof) =
+      if( beta_fact .ne. spone ) ifv(1:nodof) =
      &                            beta_fact * ifv(1:nodof)
-c      if ( local_debug ) then
-c        write(out,9400)
-c        write(out,9410) (i, ifv(i),i=1,nodof)
-c      end if
 c
-c                       set flag indicating that the internal force
-c                       vector has been calculated. save cpu time.
+c            set flag indicating that the internal force
+c            vector has been calculated. saves cpu time.
 c
       ifvcmp = .true.
       call thyme( 6, 2 )
 c
- 9999 continue
       return
 c
 c
@@ -341,7 +331,7 @@ c     *                      subroutine do_nleps_block               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/28/2013 rhd             *
+c     *                   last modified : 9/30/2015 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -351,7 +341,8 @@ c
 c
       use elem_extinct_data, only : dam_blk_killed, dam_state
       use elem_block_data,   only : einfvec_blocks, cdest_blocks,
-     &                              edest_blocks, element_vol_blocks
+     &                              edest_blocks, element_vol_blocks,
+     &                              nonlocal_flags, nonlocal_data_n1
       use main_data,         only : trn, incid, incmap,
      &                              temperatures_ref,
      &                              fgm_node_values_defined,
@@ -373,11 +364,11 @@ $add include_sig_up
 c
       logical local_debug, geo_non_flg, bbar_flg, tet_elem, tri_elem,
      &            axisymm_elem, cohesive_elem, used_flg
-      data zero, local_debug
-#sgl     &         / 0.0, .false. /
-#dbl     &         / 0.0d00, .false. /
+      data zero, local_debug / 0.0d00, .false. /
       integer :: elem, ii, jj
-      double precision :: gp_coords(mxvl,3,mxgp)
+#dbl      double precision :: 
+#sgl      real ::
+     &  gp_coords(mxvl,3,mxgp)
 c
 c                       skip stress and internal for calculation
 c                       if all elements in the block have been killed
@@ -458,17 +449,16 @@ c
       tet_elem = elem_type .eq. 6 .or. elem_type .eq. 13
       tri_elem = elem_type .eq. 8
       axisymm_elem = elem_type .eq. 10 .or. elem_type .eq. 11
-
+c
 c             See if we're actually an interface damaged material
-      if (iprops(42,felem) .ne. -1) then
+c
+      local_work%is_inter_dmg = .false.
+      if( iprops(42,felem) .ne. -1 ) then
             local_work%is_inter_dmg = .true.
             local_work%inter_mat = iprops(42,felem)
             local_work%macro_sz = imatprp(132, local_work%inter_mat)
             local_work%cp_sz = imatprp(133, local_work%inter_mat)
-      else
-            local_work%is_inter_dmg = .false.
       end if
-
 c
 c             build data structures for elements in this block.
 c             this is a gather operation on nodal coordinates,
@@ -487,11 +477,16 @@ c             blocked structures. a mixure of arguments are passed
 c             vs. data in modules to optimize indexing into blocked
 c             data structures.
 c
-      if ( local_debug ) then
+      if( local_debug ) then
             write(out,9100) blk, span, felem, mat_type, num_enodes,
      &                      num_enode_dof, totdof, num_int_points,
      &                      elem_type, int_order, bbar_flg
       end if
+c
+c             are there solid elements in this block involved in a
+c             nonlocal analysis? set flags.
+c
+      call do_nleps_block_a
 c
       call recstr_allocate( local_work )
 c
@@ -517,7 +512,7 @@ c             compute updated strain increment for specified
 c             displacement increment. update stresses at all
 c             strain points of elements in block.
 c
-      if ( local_debug ) then
+      if( local_debug ) then
          write(out,9200) blk, span, felem, geo_non_flg
       end if
 c
@@ -529,8 +524,7 @@ c            on material model computations. set passed in value
 c            for the block. just leave now if we need a cut.
 c
       material_cut_step = local_work%material_cut_step
-      if ( material_cut_step ) return
-c
+      if( material_cut_step ) return
 c
 c            save the summed internal energy for elements
 c            in this block into the block value passed in.
@@ -543,20 +537,30 @@ c            data structures at n+1 from element block
 c            data structures. blocks being processed in parallel can
 c            access these data structures w/o conflict.
 c
+      if( local_debug ) write(out,9520) blk, span, felem
       call rplstr( span, felem, num_int_points, mat_type, iter,
      &             geo_non_flg, local_work, blk )
+      if( local_debug ) write(out,9522) blk, span, felem
 c
 c            compute updated internal force vectors for each element
 c            in the block.
 c
-      if ( local_debug ) write(out,9500)
+      if( local_debug ) then
+        write(out,9500) blk, span, felem
+        write(out,*) ">>> size of element_vol_blocks: ",     
+     &         sizeof(    element_vol_blocks(blk)%ptr )
+      end if 
       call rknifv( einfvec_blocks(blk)%ptr(1,1),
      &             element_vol_blocks(blk)%ptr(1), span, local_work )
+      if( local_debug ) write(out,9505) blk, span, felem
 c
 c             release all allocated data for block
 c
+      if( local_debug ) write(out,9510) blk, span, felem
       call recstr_deallocate( local_work )
+      if( local_debug ) write(out,9515) blk, span, felem
 
+      if( local_debug ) write(out,9525) blk, span, felem
       return
 c
  9100 format(5x,'>>> ready to call dupstr:',
@@ -572,16 +576,65 @@ c
  9400 format(/,5x,'>>> nodal displacments at n and increments: '
      &      // )
  9410 format(8x,i9,1x,6f15.6)
- 9500 format(5x,'>>> ready to call rknifv: ')
+ 9500 format(5x,'>>> ready to call rknifv. blk, span, felem: ',3i6)
+ 9505 format(5x,'>>> back from rknifv. blk, span, felem: ',3i6)
+ 9510 format(5x,'>>> ready to call recstr_deallocate. ',
+     &     'blk, span, felem:',3i6)
+ 9515 format(5x,'>>> back from recstr_deallocate. ',
+     &     'blk, span, felem:',3i6)
+ 9520 format(5x,'>>> ready to call rplstr. blk, span, felem:',3i6)
+ 9522 format(5x,'>>> back from rplstr. blk, span, felem:',3i6)
+ 9525 format(5x,'>>> leaving do_nleps_block. blk, span, felem:',3i6)
 c
-      end
+      contains
+c     ========
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine do_nleps_block_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/30/2015 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine do_nleps_block_a
+     &                          
+c
+      local_work%block_has_nonlocal_solids = .false.
+      if( .not. nonlocal_analysis ) return ! regular local analysis
+      if( local_work%is_cohes_elem ) return
+c 
+c              the allocated check is for sanity.
+c
+      do i = 1, span ! check each element in block
+        elem_num = felem + i - 1
+        if( .not. nonlocal_flags(elem_num) ) cycle ! local element
+        if( allocated( nonlocal_data_n1(elem_num)%state_values ) ) then
+           local_work%block_has_nonlocal_solids = .true.
+        else ! we have a bad error before here
+           write(out,9000) elem_num, blk
+           call die_abort
+        end if
+      end do 
+      return
+c
+ 9000 format('>> FATAL ERROR: do_nleps_block_a'
+     &  /,   '  unallocated nonlocal state vector for element: ',i6,
+     &  /,   '  in block: ',i6,
+     &  /,   '  job terminated' )
+c     
+      end subroutine do_nleps_block_a
+      end subroutine do_nleps_block
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine recstr_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/16/2015 rhd             *
+c     *                   last modified :  9/29/2015 rhd             *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -694,9 +747,10 @@ c
      2   local_work%alpha_vec_n(mxvl,6),
      3   local_work%h_vec_n(mxvl),
      4   local_work%n_power_vec(mxvl) )
-     
+c     
       local_mt = local_work%mat_type
-      if( local_mt .eq. 3 .or. local_mt .eq. 6 ) then
+c      
+      if( local_mt .eq. 3 ) then
         allocate( 
      1   local_work%f0_vec(mxvl),
      2   local_work%eps_ref_vec(mxvl),
@@ -723,7 +777,7 @@ c
       end if
 c
       if( local_mt .eq. 5 ) allocate( local_work%mm05_props(mxvl,10) )
-      if( local_mt .eq. 6 ) allocate( local_work%mm06_props(mxvl,5) )
+      if( local_mt .eq. 6 ) allocate( local_work%mm06_props(mxvl,10) )
       if( local_mt .eq. 7 ) allocate( local_work%mm07_props(mxvl,10) )
       if( local_work%is_umat ) then
         allocate(local_work%umat_props(mxvl,50),
@@ -746,14 +800,14 @@ c
      5    local_work%c_props(mxvl,max_crystals),
      6    local_work%nstacks(mxvl),
      7    local_work%nper(mxvl))
-      endif
+      end if
 c
       span                         = local_work%span
       blk                          = local_work%blk
       ngp                          = local_work%num_int_points
       hist_size                    = history_blk_list(blk)
       local_work%hist_size_for_blk = hist_size
-
+c
       allocate( local_work%elem_hist1(span,hist_size,ngp),
      &          local_work%elem_hist(span,hist_size,ngp), stat=error )
       if( error .ne. 0 ) then
@@ -784,230 +838,50 @@ c
          end if
       end if
 c
+c             always allocate cohes_rot_block even if not
+c             a block of cohesive elements. the
+c             array is passed in lots of places
+c             that process both solid and interface elements.
+c             So it needs to exist !
+
+      allocate( local_work%cohes_rot_block(mxvl,3,3), stat=error ) 
+      if( error .ne. 0 ) then
+         write(out,9000) 15
+         call die_abort
+      end if
+c         
       if( local_work%is_cohes_elem ) then
          allocate( local_work%cohes_temp_ref(mxvl),
      1      local_work%cohes_dtemp(mxvl),
      2      local_work%cohes_temp_n(mxvl),
      3      local_work%intf_prp_block(mxvl,max_interface_props),
-     4      local_work%cohes_rot_block(mxvl,3,3),
-     5      stat=error )
+     4      stat=error )
          if( error .ne. 0 ) then
-           write(out,9000) 15
+           write(out,9000) 16
            call die_abort
          end if
       end if
 c
-      return
+c             when nonlocal analysis in effect, allocate space
+c             for block nonlocal state values. we need to store span x 
+c             num local values (fixed global in param_def). Space
+c             will be passed to material model code to insert values
+c             for elements in the block at the integration point
+c             being processed.
+c             allocate dummy 1x1 for std. local analysis to
+c             simplify calls later.
 c
- 9000 format('>> FATAL ERROR: recstr_allocate'
-     &  /,   '                failure status= ',i5,
-     &  /,   '                job terminated' )
-c
-      end
-c     ****************************************************************
-c     *                                                              *
-c     *                   subroutine recstr_allocate                 *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 04/21/2014 rhd             *
-c     *                                                              *
-c     *     allocate data structure in local_work for updating       *
-c     *     strains-stresses-internal forces.                        *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine recstr_allocate_old( local_work )
-      use segmental_curves, only : max_seg_points, max_seg_curves
-      use elem_block_data, only: history_blk_list
-      implicit integer (a-z)
-
-$add common.main
-$add include_sig_up
-c
-      allocate(
-     &   local_work%ce_0(mxvl,mxecor),
-     &   local_work%ce_n(mxvl,mxecor),
-     &   local_work%ce_mid(mxvl,mxecor),
-     &   local_work%ce_n1(mxvl,mxecor), stat=error )
-      if( error .ne. 0 ) then
-         write(out,9000) 1
-         call die_abort
-      end if
-c
-      allocate( local_work%trnmte(mxvl,mxedof,mxndof),
-     1 local_work%det_j(mxvl,mxgp),
-     2 local_work%det_j_mid(mxvl,mxgp),
-     3 local_work%nxi(mxndel,mxgp),
-     4 local_work%neta(mxndel,mxgp),
-     5 local_work%nzeta(mxndel,mxgp),
-     6 local_work%gama(mxvl,3,3,mxgp),
-     7 local_work%gama_mid(mxvl,3,3,mxgp), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 2
-         call die_abort
-      end if
-c
-      allocate( local_work%vol_block(mxvl,8,3),
-     &  local_work%volume_block(mxvl),
-     &  local_work%volume_block_0(mxvl),
-     &  local_work%volume_block_n(mxvl),
-     &  local_work%volume_block_n1(mxvl),
-     &  local_work%jac(mxvl,3,3),
-     &  local_work%b(mxvl,mxedof,nstr),
-     &  local_work%ue(mxvl,mxedof),
-     &  local_work%due(mxvl,mxedof),
-     &  local_work%uenh(mxvl,mxedof), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 3
-         call die_abort
-      end if
-c
-      allocate( local_work%uen1(mxvl,mxedof),
-     1  local_work%urcs_blk_n(mxvl,nstrs,mxgp),
-     2  local_work%urcs_blk_n1(mxvl,nstrs,mxgp),
-     3  local_work%rot_blk_n1(mxvl,9,mxgp),
-     4  local_work%rtse(mxvl,nstr,mxgp), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 4
-         call die_abort
-      end if
-c
-
-      allocate( local_work%ddtse(mxvl,nstr,mxgp),
-     1   local_work%strain_n(mxvl,nstr,mxgp),
-     2   local_work%dtemps_node_blk(mxvl,mxndel),
-     3   local_work%temps_ref_node_blk(mxvl,mxndel),
-     4   local_work%temps_node_blk(mxvl,mxndel),
-     5   local_work%temps_node_ref_blk(mxvl,mxndel),
-     6   local_work%nu_vec(mxvl),
-     7   local_work%beta_vec(mxvl),
-     8   local_work%h_vec(mxvl),
-     9   local_work%e_vec(mxvl), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 5
-         call die_abort
-      end if
-c
-      allocate( local_work%sigyld_vec(mxvl),
-     1   local_work%alpha_vec(mxvl,6),
-     2   local_work%e_vec_n(mxvl),
-     3   local_work%nu_vec_n(mxvl),
-     4   local_work%gp_sig_0_vec(mxvl),
-     5   local_work%gp_sig_0_vec_n(mxvl),
-     6   local_work%gp_h_u_vec(mxvl),
-     7   local_work%gp_h_u_vec_n(mxvl),
-     8   local_work%gp_beta_u_vec(mxvl),
-     9   local_work%gp_beta_u_vec_n(mxvl), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 6
-         call die_abort
-      end if
-c
-      allocate( local_work%gp_delta_u_vec(mxvl),
-     1   local_work%gp_delta_u_vec_n(mxvl),
-     2   local_work%alpha_vec_n(mxvl,6),
-     3   local_work%h_vec_n(mxvl),
-     4   local_work%n_power_vec(mxvl),
-     5   local_work%f0_vec(mxvl),
-     6   local_work%eps_ref_vec(mxvl),
-     7   local_work%m_power_vec(mxvl),
-     8   local_work%q1_vec(mxvl),
-     9   local_work%q2_vec(mxvl), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 7
-         call die_abort
-      end if
-c
-      allocate( local_work%q3_vec(mxvl),
-     1   local_work%nuc_s_n_vec(mxvl),
-     2   local_work%nuc_e_n_vec(mxvl),
-     3   local_work%nuc_f_n_vec(mxvl), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 8
-         call die_abort
-      end if
-c
-      allocate( local_work%eps_curve(max_seg_points),
-     1    local_work%shape(mxndel,mxgp),
-     2    local_work%characteristic_length(mxvl),
-     3    local_work%intf_prp_block(mxvl,max_interface_props),
-     4    local_work%cohes_rot_block(mxvl,3,3),
-     5    local_work%enode_mat_props(mxndel,mxvl,mxndpr),
-     6    local_work%tan_e_vec(mxvl),
-     8    local_work%fgm_flags(mxvl,mxndpr), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 9
-         call die_abort
-      end if
-c
-      allocate( local_work%mm05_props(mxvl,10),
-     1    local_work%mm06_props(mxvl,5),
-     2    local_work%mm07_props(mxvl,10),
-     3    local_work%umat_props(mxvl,50), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 10
-         call die_abort
-      end if
-c
-      allocate( local_work%trne(mxvl,mxndel), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 11
-         call die_abort
-      end if
-c
-      allocate( local_work%debug_flag(mxvl),
-     1    local_work%local_tol(mxvl),
-     2    local_work%ncrystals(mxvl),
-     3    local_work%angle_type(mxvl),
-     4    local_work%angle_convention(mxvl),
-     5    local_work%c_props(mxvl,max_crystals),
-     6    local_work%nstacks(mxvl),
-     7    local_work%nper(mxvl))
-c
-      span                         = local_work%span
-      blk                          = local_work%blk
-      ngp                          = local_work%num_int_points
-      hist_size                    = history_blk_list(blk)
-      local_work%hist_size_for_blk = hist_size
-
-      allocate( local_work%elem_hist1(span,hist_size,ngp),
-     &          local_work%elem_hist(span,hist_size,ngp), stat=error )
-      if( error .ne. 0 ) then
-         write(out,9000) 12
-         call die_abort
-      end if
-c
-      if( local_work%is_cohes_nonlocal ) then
-         nlsize = nonlocal_shared_state_size
-         allocate( local_work%top_surf_solid_stresses_n(mxvl,nstrs),
-     &      local_work%bott_surf_solid_stresses_n(mxvl,nstrs),
-     &      local_work%top_surf_solid_eps_n(mxvl,nstr),
-     &      local_work%bott_surf_solid_eps_n(mxvl,nstr),
-     &      local_work%top_surf_solid_elements(mxvl),
-     &      local_work%bott_surf_solid_elements(mxvl),
-     &      local_work%nonlocal_stvals_bott_n(mxvl,nlsize),
-     &      local_work%nonlocal_stvals_top_n(mxvl,nlsize),
-     &      stat=error )
+      if( local_work%block_has_nonlocal_solids ) then
+         allocate( local_work%nonlocal_state_blk(mxvl,
+     &             nonlocal_shared_state_size), stat=error ) 
          if( error .ne. 0 ) then
-           write(out,9000) 13
+           write(out,9000) 17
            call die_abort
          end if
-         allocate( local_work%top_solid_matl(mxvl),
-     &      local_work%bott_solid_matl(mxvl), stat=error )
+      else 
+         allocate( local_work%nonlocal_state_blk(1,1), stat=error ) 
          if( error .ne. 0 ) then
-           write(out,9000) 14
-           call die_abort
-         end if
-      end if
-c
-      if( local_work%is_cohes_elem ) then
-         allocate( local_work%cohes_temp_ref(mxvl),
-     1      local_work%cohes_dtemp(mxvl),
-     2      local_work%cohes_temp_n(mxvl), stat=error )
-         if( error .ne. 0 ) then
-           write(out,9000) 15
+           write(out,9000) 18
            call die_abort
          end if
       end if
@@ -1026,7 +900,7 @@ c     *                   subroutine recstr_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/28/13 rhd               *
+c     *                   last modified :  9/30/2015 rhd             *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1039,8 +913,13 @@ c
 $add common.main
 $add include_sig_up
 c
+      logical :: local_debug
+c
+      local_debug = .false.
+      if( local_debug ) write(out,*) "..recstr_dell @ 1"
       local_mt = local_work%mat_type
 c
+      
       deallocate(
      & local_work%ce_0,
      & local_work%ce_n,
@@ -1051,8 +930,14 @@ c
          call die_abort
       end if
 c
-      deallocate( local_work%trnmte )
+      if( local_debug ) write(out,*) "..recstr_dell @ 2"
+      deallocate( local_work%trnmte, stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 100
+         call die_abort
+      end if
 c      
+      if( local_debug ) write(out,*) "..recstr_dell @ 3"
       deallocate(
      1 local_work%det_j,
      2 local_work%det_j_mid,
@@ -1066,12 +951,18 @@ c
          call die_abort
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 4"
       if( local_work%geo_non_flg ) then
         deallocate( local_work%fn,
-     &  local_work%fn1,
-     &  local_work%dfn1 )
+     &              local_work%fn1,
+     &              local_work%dfn1, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 102
+         call die_abort
+        end if
       end if
 
+      if( local_debug ) write(out,*) "..recstr_dell @ 5"
       deallocate( 
      &  local_work%vol_block,
      &  local_work%volume_block, local_work%volume_block_0,
@@ -1091,6 +982,7 @@ c
          call die_abort
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 6"
       deallocate( local_work%ddtse,
      1   local_work%strain_n,
      2   local_work%dtemps_node_blk,
@@ -1107,6 +999,7 @@ c
          call die_abort
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 7"
       deallocate( local_work%sigyld_vec,
      1   local_work%alpha_vec,
      2   local_work%e_vec_n,
@@ -1122,13 +1015,19 @@ c
          call die_abort
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 8"
       deallocate( local_work%gp_delta_u_vec,
      1   local_work%gp_delta_u_vec_n,
      2   local_work%alpha_vec_n,
      3   local_work%h_vec_n,
-     4   local_work%n_power_vec )
+     4   local_work%n_power_vec, stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 104
+         call die_abort
+      end if
 c
-      if( local_mt .eq. 3 .or. local_mt .eq. 6 ) then
+      if( local_debug ) write(out,*) "..recstr_dell @ 9"
+      if( local_mt .eq. 3 ) then
         deallocate(      
      1   local_work%f0_vec,
      2   local_work%eps_ref_vec,
@@ -1145,6 +1044,7 @@ c
         end if
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 10"
       deallocate( local_work%eps_curve,
      1    local_work%shape,
      5    local_work%enode_mat_props,
@@ -1154,25 +1054,66 @@ c
          call die_abort
       end if
 c
-      if( local_mt .eq. 5 ) deallocate( local_work%mm05_props )
-      if( local_mt .eq. 6 ) deallocate( local_work%mm06_props )
-      if( local_mt .eq. 7 ) deallocate( local_work%mm07_props )
-      if( local_work%is_umat ) deallocate(local_work%umat_props,
-     1                          local_work%characteristic_length )
+      if( local_debug ) write(out,*) "..recstr_dell @ 11"
+      if( local_mt .eq. 5 ) then
+        deallocate( local_work%mm05_props, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 106
+         call die_abort
+        end if
+      end if  
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 12"
+      if( local_mt .eq. 6 ) then
+        deallocate( local_work%mm06_props, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 108
+         call die_abort
+        end if
+      end if  
+c
+      if( local_debug ) write(out,*) "..recstr_dell @ 13"
+      if( local_mt .eq. 7 ) then
+        deallocate( local_work%mm07_props, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 110
+         call die_abort
+        end if
+      end if  
+c
+      if( local_debug ) write(out,*) "..recstr_dell @ 14"
+      if( local_work%is_umat ) then
+        deallocate( local_work%umat_props,
+     &              local_work%characteristic_length, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 112
+         call die_abort
+        end if
+      end if  
+c
+      if( local_debug ) write(out,*) "..recstr_dell @ 15"
       deallocate( local_work%trne, stat=error )
       if( error .ne. 0 ) then
          write(out,9000) 9
          call die_abort
       end if
 c
-      deallocate( local_work%elem_hist,
-     &    local_work%elem_hist1, stat=error )
+      if( local_debug ) write(out,*) "..recstr_dell @ 16"
+      deallocate( local_work%elem_hist, stat=error )
       if( error .ne. 0 ) then
          write(out,9000) 10
          call die_abort
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 16.5"
+      deallocate( local_work%elem_hist1, stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 10
+         call die_abort
+      end if
+
+c
+      if( local_debug ) write(out,*) "..recstr_dell @ 17"
       if( local_mt .eq. 10 .or. local_mt .eq. 11 ) then
         deallocate( local_work%debug_flag,
      1    local_work%local_tol,
@@ -1181,9 +1122,14 @@ c
      4    local_work%angle_convention,
      5    local_work%c_props,
      6    local_work%nstacks,
-     7    local_work%nper)
+     7    local_work%nper, stat=error)
+        if( error .ne. 0 ) then
+         write(out,9000) 114
+         call die_abort
+        end if
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 18"
       if( local_work%is_cohes_nonlocal ) then
          deallocate( local_work%top_surf_solid_stresses_n,
      1      local_work%bott_surf_solid_stresses_n,
@@ -1198,6 +1144,7 @@ c
            write(out,9000) 12
            call die_abort
          end if
+         if( local_debug ) write(out,*) "..recstr_dell @ 19"
          deallocate( local_work%top_solid_matl,
      &      local_work%bott_solid_matl, stat=error )
          if( error .ne. 0 ) then
@@ -1206,18 +1153,29 @@ c
          end if
       end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 20"
+      deallocate( local_work%cohes_rot_block, stat=error )
+      if( error .ne. 0 ) then
+           write(out,9000) 14
+           call die_abort
+      end if
       if( local_work%is_cohes_elem ) then
          deallocate( local_work%cohes_temp_ref,
      1      local_work%cohes_dtemp,
      2      local_work%cohes_temp_n, 
-     3      local_work%intf_prp_block,
-     4      local_work%cohes_rot_block,
-     %      stat=error )
+     3      local_work%intf_prp_block, stat=error )
          if( error .ne. 0 ) then
            write(out,9000) 14
            call die_abort
          end if
       end if
+c
+      if( local_debug ) write(out,*) "..recstr_dell @ 21"
+      deallocate( local_work%nonlocal_state_blk, stat=error ) 
+         if( error .ne. 0 ) then
+           write(out,9000) 15
+           call die_abort
+         end if
 c
       return
 c
@@ -1244,8 +1202,8 @@ c     ****************************************************************
 c
 c
       subroutine dupstr_blocked(
-     & blk, span, felem, ngp, nnode, ndof, totdof, mat_type, geonl,
-     & step, iter, belinc, bcdst, ce_0, ce_n, ce_mid, ce_n1,
+     & blk, span, felem, ngp, nnode, ndof, totdof, mat_type, 
+     & geonl, step, iter, belinc, bcdst, ce_0, ce_n, ce_mid, ce_n1,
      & ue, due, local_work )
 c
       use elem_block_data, only:  history_blocks, rts_blocks,
@@ -1259,7 +1217,6 @@ c
      &                            fgm_node_values_cols, matprp,
      &                            lmtprp
 c
-
       use segmental_curves, only : max_seg_points, max_seg_curves
 c
       implicit integer (a-z)
@@ -1268,23 +1225,23 @@ $add include_sig_up
 c
 c           parameter declarations
 c
-      logical geonl
+      logical :: geonl
       dimension belinc(nnode,*), bcdst(totdof,*)
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      & ce_0(mxvl,*), ce_mid(mxvl,*), ue(mxvl,*), due(mxvl,*),
      & ce_n(mxvl,*), ce_n1(mxvl,*)
 c
 c           local declarations
 c
-      logical local_debug, update, update_coords, middle_surface
-#dbl      double precision
-#sgl      real
+      logical ::local_debug, update, update_coords, middle_surface
+#dbl      double precision ::
+#sgl      real ::
      &   half, zero, one, mag, mags(3), djcoh(mxvl)
       data local_debug, half, zero, one
      &  / .false., 0.5d00, 0.0d00, 1.0d00 /
 c
-      if ( local_debug ) write(out,9100)
+      if( local_debug ) write(out,9100)
 c
       elem_type      = local_work%elem_type
       surf           = local_work%surface
@@ -1296,6 +1253,7 @@ c           pull coordinates at t=0 from global input vector.
 c
       k = 1
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
          do i = 1, span
             ce_0(i,k)   = c(bcdst(k,i))
             ce_0(i,k+1) = c(bcdst(k+1,i))
@@ -1317,11 +1275,12 @@ c           computing equiv nodal forces for imposed/extrapolated
 c           displacements to start a step.
 c
       update = .true.
-      if ( step .eq. 1 .and. iter .eq. 0 ) update = .false.
+      if( step .eq. 1 .and. iter .eq. 0 ) update = .false.
       update_coords = geonl .and. update
 c
-      if ( update_coords ) then
+      if( update_coords ) then
        do  j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
           do i = 1, span
             ce_n(i,j)   = ce_0(i,j) + ue(i,j)
             ce_mid(i,j) = ce_0(i,j) + ue(i,j) + half*due(i,j)
@@ -1338,8 +1297,9 @@ c
           end if
       end if   !  update_coords
 c
-      if ( .not. update_coords ) then
+      if( .not. update_coords ) then
           do  j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
             do i = 1, span
               ce_n(i,j)   = ce_0(i,j)
               ce_mid(i,j) = ce_0(i,j)
@@ -1352,8 +1312,8 @@ c           gather nodal and element temperature change over load step
 c           (if they are defined). construct a set of incremental nodal
 c           temperatures for each element in block.
 c
-      if ( temperatures ) then
-        if ( local_debug )  write(out,9610)
+      if( temperatures ) then
+        if( local_debug )  write(out,9610)
         call gadtemps( dtemp_nodes, dtemp_elems(felem), belinc,
      &                 nnode, span, felem, local_work%dtemps_node_blk,
      &                 mxvl )
@@ -1366,8 +1326,8 @@ c           global vector of reference values at(if they are defined).
 c           construct a set of reference nodal temperatures for each
 c           element in block.
 c
-      if ( temperatures_ref ) then
-        if ( local_debug )  write(out,9610)
+      if( temperatures_ref ) then
+        if( local_debug )  write(out,9610)
         call gartemps( temper_nodes_ref, belinc, nnode, span,
      &                 felem, local_work%temps_ref_node_blk, mxvl )
       else
@@ -1378,7 +1338,7 @@ c           build nodal temperatures for elements in the block
 c           at end of step (includes both imposed nodal and element
 c           temperatures)
 c
-      if ( local_debug )  write(out,9620)
+      if( local_debug )  write(out,9620)
       call gatemps( temper_nodes, temper_elems(felem), belinc,
      &              nnode, span, felem, local_work%temps_node_blk,
      &              mxvl, local_work%dtemps_node_blk,
@@ -1388,9 +1348,10 @@ c
 c           if the model has fgm properties at the model nodes, build a
 c           table of values for nodes of elements in the block
 c
-      if ( fgm_node_values_defined ) then
+      if( fgm_node_values_defined ) then
         do j = 1,  fgm_node_values_cols
           do i = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
             do k = 1, span
               local_work%enode_mat_props(i,k,j) =
      &                     fgm_node_values(belinc(i,k),j)
@@ -1404,7 +1365,7 @@ c           gather material specific data for elements
 c           in the block. we split operations based on
 c           the material model associated with block
 c
-      if ( local_debug )  write(out,9600)
+      if( local_debug )  write(out,9600)
 c
 c           gather element data at n from global blocks:
 c            a) stresses -  unrotated cauchy stresses for geonl
@@ -1425,7 +1386,6 @@ c
       call dptstf_copy_history(
      &  local_work%elem_hist(1,1,1), history_blocks(blk)%ptr(1),
      &            ngp, hist_size, span )
-c      if ( mat_type .eq. 4 ) local_work%elem_hist1 = 0.0
 c
       call recstr_gastr( local_work%ddtse, eps_n_blocks(blk)%ptr(1),
      &                   ngp, nstr, span )
@@ -1437,7 +1397,6 @@ c
      &                   ngp, nstrs, span )
 c
 c
-c
       select case ( mat_type )
 c
       case ( 1 )
@@ -1447,6 +1406,7 @@ c
         if ( iter .eq. 0 )
      &     call recstr_gastr( local_work%rtse, rts_blocks(blk)%ptr(1),
      &                        ngp, nstr, span )
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
            matl_no = iprops(38,felem+i-1)
            local_work%tan_e_vec(i) = matprp(4,matl_no)
@@ -1464,6 +1424,7 @@ c
 c           general mises/gurson model.
 c
         if ( local_debug ) write(out,9950)
+@!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
            matl_no = iprops(38,felem+i-1)
            local_work%tan_e_vec(i) = matprp(4,matl_no)
@@ -1486,7 +1447,7 @@ c
 c
       case ( 6 )
 c
-c           advanced gurson model
+c           creep model
 c
         if ( local_debug ) write(out,9960)
 
@@ -1510,8 +1471,8 @@ c
 c
 c
       case default
-          write(*,*) '>>> invalid material model number'
-          write(*,*) '    in dupstr_blocked'
+          write(out,*) '>>> invalid material model number'
+          write(out,*) '    in dupstr_blocked'
           call die_abort
           stop
 c
@@ -1529,7 +1490,7 @@ c
  9800 format(12x,'>> gather material data for type 1...' )
  9900 format(15x,'>> gather plast. parms, back stress, state...' )
  9950 format(12x,'>> gather data for model type 5...' )
- 9960 format(12x,'>> gather data for model type 6...' )
+ 9960 format(12x,'>> gather data for model type creep...' )
  9970 format(12x,'>> gather data for model type 7...' )
  9980 format(12x,'>> gather data for model type 8...' )
  9990 format(12x,'>> gather data for model type 10...' )
@@ -1563,9 +1524,10 @@ c           unroll inner loop for most common number of integration
 c           points (ngp).
 c
 c
-      if ( ngp .ne. 8 ) then
+      if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, nprm
+@!DIR$ LOOP COUNT MAX=###  
             do  i = 1, span
                mlocal(i,j,k) = mglobal(j,k,i)
             end do
@@ -1577,6 +1539,7 @@ c
 c                number of integration points = 8, unroll.
 c
       do  j = 1, nprm
+@!DIR$ LOOP COUNT MAX=###  
         do  i = 1, span
             mlocal(i,j,1) = mglobal(j,1,i)
             mlocal(i,j,2) = mglobal(j,2,i)
@@ -1616,7 +1579,6 @@ c           allocate blks of elem internal force vectors
 c
       allocate ( einfvec_blocks(nelblk), stat=iok )
       if ( iok .ne. 0 ) then
-          call iodevn( idummy, out, dummy, 1 )
           write(out,9100) iok
           call die_abort
           stop
@@ -1651,7 +1613,7 @@ c           deallocate blks of elem internal force vectors
 c           see comments about MPI, threads in action type 1
 c
       do blk = 1, nelblk
-         if ( myid .ne. elblks(2,blk) ) cycle
+         if( myid .ne. elblks(2,blk) ) cycle
          deallocate( einfvec_blocks(blk)%ptr,stat=iok )
          if ( iok .ne. 0 ) then
            write(out,9200) iok
@@ -1660,7 +1622,7 @@ c
       end do
 c
       deallocate( einfvec_blocks, stat=iok )
-      if ( iok .ne. 0 ) then
+      if( iok .ne. 0 ) then
           write(out,9200) iok
           call die_abort
       end if
@@ -1704,13 +1666,13 @@ c
 $add param_def
 $add include_sig_up
 c
-      integer iprops(mxelpr,*)  ! global element props array
+      integer :: iprops(mxelpr,*)  ! global element props array
 c
 c           local declarations.
 c
-      logical local_debug
-#dbl      double precision
-#sgl      real
+      logical :: local_debug
+#dbl      double precision :: 
+#sgl      real ::
      &   zero,
      &   top_stress_n_avg(nstrs), bott_stress_n_avg(nstrs),
      &   top_eps_n_avg(nstr), bott_eps_n_avg(nstr),
@@ -1953,13 +1915,13 @@ c
 c
 c           parameter declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  top_local_vals(nsize), bott_local_vals(nsize)
 c
 c           local declarations
 c
-      logical chk1, chk2
+      logical :: chk1, chk2
 c
       n = nsize
 c
@@ -2024,9 +1986,9 @@ $add common.main
 c
 c           local declarations
 c
-      logical local_debug
-#dbl      double precision
-#sgl      real
+      logical :: local_debug
+#dbl      double precision ::
+#sgl      real ::
      &    zero, stress_n(nstrs,mxgp), eps_n(nstr,mxgp)
 c
 c           given solid element, build 2D arrays of strain-stress
@@ -2090,9 +2052,9 @@ c
      &                                outmat,
      &                                in3dmat, nrow, ncol, nz )
       implicit  none
-      integer  kindex_to_copy, nrow, ncol, nz, i, j
-#dbl      double precision
-#sgl      real
+      integer  :: kindex_to_copy, nrow, ncol, nz, i, j
+#dbl      double precision ::
+#sgl      real ::
      &  outmat(nrow,ncol), in3dmat(nrow,ncol,nz)
 c
 c           pull results from k-plane of 3D array into 2D array.
@@ -2120,9 +2082,9 @@ c
 c
       subroutine recstr_make_avg( nrows, ncols, matrix, averages )
       implicit  none
-      integer nrows, ncols, i, j
-#dbl      double precision
-#sgl      real
+      integer :: nrows, ncols, i, j
+#dbl      double precision ::
+#sgl      real ::
      &  averages(nrows), matrix(nrows,ncols)
 c
 c           compute the average of each row in matrix. averages was

@@ -953,7 +953,7 @@ $(OD)/gastr$O : gastr.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_gastr.f
 	$(FILTER) < gastr.f > filt_gastr.f
-	$(F90) -O2 -ip  -c filt_gastr.f
+	$(F90) -O3 -ip  -c filt_gastr.f
 	$(MVC) filt_gastr$O  gastr$O
 	$(MVC) gastr$O $@
 
@@ -2104,7 +2104,7 @@ $(OD)/rklstf$O : rklstf.f include_lin_ek \
 	$(RMC)  $@
 	$(RMC)  filt_rklstf.f
 	$(FILTER) < rklstf.f > filt_rklstf.f
-	$(F90) -O2 -ip  -c filt_rklstf.f
+	$(F90) -O3 -ip  -c filt_rklstf.f
 	$(MVC) filt_rklstf$O  rklstf$O
 	$(MVC) rklstf$O $@
 
@@ -2152,7 +2152,7 @@ $(OD)/rplstr$O : rplstr.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_rplstr.f
 	$(FILTER) < rplstr.f > filt_rplstr.f
-	$(F90) -O2 -ip  -c filt_rplstr.f
+	$(F90) -O3 -ip  -c filt_rplstr.f
 	$(MVC) filt_rplstr$O  rplstr$O
 	$(MVC) rplstr$O $@
 
@@ -2188,7 +2188,7 @@ $(OD)/scstr$O : scstr.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_scstr.f
 	$(FILTER) < scstr.f > filt_scstr.f
-	$(F90) -O2 -ip  -c filt_scstr.f
+	$(F90) -O3 -ip  -c filt_scstr.f
 	$(MVC) filt_scstr$O  scstr$O
 	$(MVC) scstr$O $@
 
@@ -2315,7 +2315,7 @@ $(OD)/tanstf$O : tanstf.f $(OD)/mod_eleblocks$O $(OD)/mod_segmental_curves$O \
 	$(RMC)  $@
 	$(RMC)  filt_tanstf.f
 	$(FILTER) < tanstf.f > filt_tanstf.f
-	$(F90) -O2 -ip  -c filt_tanstf.f
+	$(F90) -O3 -ip  -c filt_tanstf.f
 	$(MVC) filt_tanstf$O  tanstf$O
 	$(MVC) tanstf$O $@
 

@@ -93,11 +93,13 @@ c
           call ds_setup_sparsity_local( iresult )
           if( iresult .eq. 1 ) return ! no equations to solve
         end if          
+        if( local_debug ) write(*,*) '... direct_driver_sparse @ 2'
         if( parallel_assembly_used ) then
           call ds_setup_sparsity_distributed( iresult )
           if( iresult .eq. 0 ) return ! no equations to solve
         end if  
         call t_end_assembly( assembly_total, start_assembly_step )
+        if( local_debug ) write(*,*) '... direct_driver_sparse @ 3'
 c
       end if        
 c
@@ -145,6 +147,7 @@ c
      &                  k_indexes, .true., "blockrow", itype, out )
       end if
 c
+      if( local_debug ) write(*,*) '... direct_driver_sparse @ 4'
       call t_end_assembly( assembly_total, start_assembly_step )
 c
 c
@@ -173,20 +176,24 @@ c
         if( .not. asymmetric_assembly ) then
           write(out,9110); call die_gracefully
         end if
+        if( local_debug ) write(*,*) '... direct_driver_sparse @ 5'
         call mkl_unsymmetric( neqns, nnz, k_ptrs, k_indexes, k_coeffs,
      &            p_vec, u_vec, cpu_stats, itype, out, 
      &            solver_mkl_iterative )
+        if( local_debug ) write(*,*) '... direct_driver_sparse @ 5.5'
 c
       elseif( mkl_symmetric ) then
 c
         if( asymmetric_assembly ) then
           write(out,9120); call die_gracefully
         end if
+        if( local_debug ) write(*,*) '... direct_driver_sparse @ 6'
         call direct_sparse_mkl ( neqns, ncoeff, k_diag, p_vec,
      &                          u_vec, k_coeffs, k_ptrs, k_indexes,
      &                          cpu_stats, itype, out,
      &                          solver_out_of_core, solver_memory,
      &                          solver_scr_dir, solver_mkl_iterative )
+        if( local_debug ) write(*,*) '... direct_driver_sparse @ 6.5'
 c
       else ! unknown solver type
 c
@@ -508,13 +515,14 @@ c     *                                                              *
 c     *                        ds_root_assembly                      *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 04/21/2015                 *
+c     *                   last modified : 09/14/2015                 *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine ds_root_assembly
 c
       logical :: hypre_solver, rebuild_mpcs
+      double precision :: px, py, pz
       
       
 c              1. sparsity of equilibrium equations already defined on
@@ -636,6 +644,18 @@ c
 c              4. set the rhs of the equations. p_vec has the
 c                 neqns terms for unconstrained dof from res.
 c
+      if( local_debug ) then 
+         write(out,9500)
+         i_offset = 0
+         do i = 1, nonode
+           px = res(i_offset+1)
+           py = res(i_offset+2)
+           pz = res(i_offset+3)
+           i_offset = i_offset + 3
+           write(out,9510) i, px, py, pz
+         end do
+      end if         
+c      
       do i = 1, nodof
         eqn_num = dof_eqn_map(i) ! dof # -> eqn # map
         if( eqn_num .ne. 0 ) p_vec(eqn_num) = res(i)
@@ -737,6 +757,9 @@ c
      &  15x, 'load vector assembly done     @ ',f10.2 )
  9490  format(
      &  15x, 'multi-point constraints added @ ',f10.2 )
+ 9500 format( 2x,"... Force vector for equation solving: ",
+     &   /,   2x,"   node       /----   px, py, pz    ----/")
+ 9510 format( 2x,i7, 3e14.6 )
  9999 format(
      &  15x, 'upper triangle to full done   @ ',f10.2)
 c

@@ -62,6 +62,7 @@ c                       convergence tests
 c                       
       if( iter .eq. 1 ) norm_resids_for_checking(1:50) = zero
       res_max   = -hundred
+      sum = zero
       do j = 1, nodof
         resforce = res(j)
         if( have_mpc_equations ) then
