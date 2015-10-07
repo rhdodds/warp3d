@@ -277,6 +277,10 @@ c ******* START: Add new Constitutive Models into this block *********
             call mm10_init_user(props, 
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
      & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
+      elseif (props%h_type .eq. 4) then ! ORNL
+            call mm10_init_ornl(props, 
+     &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
+     & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
       elseif (props%h_type .eq. 7) then ! MRR
             call mm10_init_mrr(props, 
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
@@ -335,6 +339,12 @@ c ******* START: Add new Constitutive Models into this block *********
            call mm10_slipinc_user(props, np1, n, np1%stress,
      &                        np1%tau_tilde, i, np1%slip_incs(i))
         end do
+      elseif (props%h_type .eq. 4) then ! ORNL
+c        do i=1,props%nslip
+c           call mm10_slipinc_ornl(props, np1, n, 
+c     &           np1%stress,np1%tau_tilde, i, np1%slip_incs(i))
+c        end do
+        np1%slip_incs(1:props%nslip)  = vec1(1:props%nslip)
       elseif (props%h_type .eq. 7) then ! MRR
 c        do i=1,props%nslip
 c           call mm10_slipinc_mrr(props, np1, n, 
@@ -423,6 +433,9 @@ c ******* START: Add new Constitutive Models into this block *********
      & np1%tau_tilde, dgammadtau)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_dgdt_user(props,np1, n, np1%stress,
+     & np1%tau_tilde, dgammadtau)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_dgdt_ornl(props,np1, n, np1%stress,
      & np1%tau_tilde, dgammadtau)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_dgdt_mrr(props,np1, n, np1%stress,
@@ -530,6 +543,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_ed_mts(props, np1, n, np1%stress, np1%tau_tilde, ed)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_ed_user(props, np1, n, np1%stress, np1%tau_tilde, ed)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_ed_ornl(props, np1, n, np1%stress, np1%tau_tilde, ed)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_ed_mrr(props, np1, n, np1%stress, np1%tau_tilde, ed)
 c        if (debug) write (*,*) "ed", ed(1:6,1:12)
@@ -549,6 +564,9 @@ c ******* START: Add new Constitutive Models into this block *********
      &       np1%tau_tilde, np1%D, dgammadd)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_dgdd_user(props,np1, n, np1%stress, 
+     &       np1%tau_tilde, np1%D, dgammadd)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_dgdd_ornl(props,np1, n, np1%stress, 
      &       np1%tau_tilde, np1%D, dgammadd)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_dgdd_mrr(props,np1, n, np1%stress, 
@@ -669,6 +687,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_setup_mts(props, np1, n)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_setup_user(props, np1, n)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_setup_ornl(props, np1, n)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_setup_mrr(props, np1, n)
       else
@@ -2437,7 +2457,74 @@ c increment the total time
 c     
       return
       end subroutine
-
+c
+c *****************************************************************************
+c *                                                                           *
+c *         ORNL ferritic-martensitic steel hardening routines                *
+c *                                                                           *
+c *****************************************************************************
+c
+c Variable conversion table:
+c      WARP3D        Matlab
+c      rate_n        
+c      tau_hat_y     c7
+c      G_0_y         v_attack
+c      burgers,      
+c      p_v           
+c      q_v           
+c      boltzman      
+c      theta_0       rho_initial
+c      eps_dot_0_v   
+c      eps_dot_0_y   
+c      p_y           
+c      q_y            
+c      tau_a         Qbulk 
+c      tau_hat_v     c8 
+c      G_0_v         Qslip  
+c      k_0            
+c      mu_0           
+c      D_0               
+c      T_0           
+c      voche_m          
+c      u1            c1   
+c      u2            c2
+c      u3            c3
+c      u4            c4
+c      u5            c5
+c      u6            c6
+c
+c           Initialize history
+      subroutine mm10_init_ornl(props, tau_tilde, uhist)
+      use mm10_defs
+      implicit integer(a-z)
+c
+      type(crystal_props) :: props
+      double precision :: tau_tilde(props%num_hard)
+      double precision, dimension(max_uhard) :: uhist
+c
+      if(props%theta_0.eq.0.d0) then
+      tau_tilde(1:props%num_hard) = 1.0d8 ! Initial densities for edges
+      else
+      tau_tilde(1:props%num_hard) = props%theta_0 ! Initial densities for edges
+      endif
+c      
+      return
+      end subroutine
+c
+c           Setup ornl hardening    
+      subroutine mm10_setup_ornl(props, np1, n)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision :: time
+c increment the total time
+      time = n%u(1) + np1%tinc
+      np1%u(1) = time
+c     
+      return
+      end subroutine
 c
 c ****************************************************************************
 c *                                                                          *

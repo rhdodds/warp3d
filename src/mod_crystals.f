@@ -30,6 +30,8 @@ c                             2) cubic
 c                             1) voche or voce
 c                             2) mts
 c                             3) user
+c                             4) ornl
+c                             7) roters
 c                 Solver flags
                   logical :: real_tang, solver, strategy, gpall
                   integer :: miter, gpp
@@ -940,8 +942,8 @@ c ! Allocate number of hardening variables
                   elseif (c_array(num)%h_type .eq. 3) then !User
                           c_array(num)%num_hard = 0
                           c_array(num)%real_tang = .false.
-!                  elseif (c_array(num)%h_type .eq. 4) then !ORNL
-!                          c_array(num)%num_hard = c_array(num)%nslip
+                  elseif (c_array(num)%h_type .eq. 4) then !ORNL
+                          c_array(num)%num_hard = c_array(num)%nslip
                   elseif (c_array(num)%h_type .eq. 7) then !MRR
                           c_array(num)%num_hard = c_array(num)%nslip
                           c_array(num)%real_tang = .true.

@@ -78,6 +78,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_h_mts(props, np1, n, stress, tt, h)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_h_user(props, np1, n, stress, tt, h)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_h_ornl(props, np1, n, vec1, vec2,stress,tt,h,gp)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_h_mrr(props, np1, n, vec1, vec2,stress,tt,h,gp)
       else
@@ -128,6 +130,8 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_hi_ornl(props, np1, n, ivec1, ivec2, stress, tt, h)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_hi_mrr(props, np1, n, ivec1, ivec2, stress, tt, h)
       else
@@ -194,6 +198,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_dgdt_mts(props, np1,n, stress, tt, dgammadtau)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_dgdt_user(props,np1, n, stress, tt, dgammadtau)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_dgdt_ornl(props,np1, n, stress, tt, dgammadtau)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_dgdt_mrr(props,np1, n, stress, tt, dgammadtau)
       else
@@ -273,6 +279,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_dgdh_mts(props, np1,n, stress, tt, dgammadtt)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_dgdh_user(props,np1, n, stress, tt, dgammadtt)
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_dgdh_ornl(props,np1, n, stress, tt, dgammadtt)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_dgdh_mrr(props,np1, n, stress, tt, dgammadtt)
       else
@@ -333,7 +341,10 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_estress_mts(props, np1, n, stress, tt, estr)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_estress_user(props, np1, n, stress, tt, estr)
-      elseif (props%h_type .eq. 7) then ! User
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_estress_ornl(props, np1, n, vec1, vec2, arr1, arr2,
+     &            stress, tt, estr)
+      elseif (props%h_type .eq. 7) then ! MRR
         call mm10_estress_mrr(props, np1, n, vec1, vec2, arr1, arr2,
      &            stress, tt, estr)
       else
@@ -383,7 +394,10 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_ehard_mts(props, np1, n, stress, tt, etau)
       elseif (props%h_type .eq. 3) then ! User
         call mm10_ehard_user(props, np1, n, stress, tt, etau)
-      elseif (props%h_type .eq. 7) then ! User
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_ehard_ornl(props, np1, n, vec1, vec2, arr1, arr2,
+     &          stress, tt, etau)
+      elseif (props%h_type .eq. 7) then ! MRR
         call mm10_ehard_mrr(props, np1, n, vec1, vec2, arr1, arr2,
      &          stress, tt, etau)
       else
@@ -422,6 +436,10 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_v_ornl(props, np1, n, stress, tt, 
+
+     &   vec1, vec2)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_v_mrr(props, np1, n, stress, tt, 
      &   vec1, vec2)
@@ -463,6 +481,9 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_a_ornl(props, np1, n, stress, tt, vec1, vec2,
+     &          arr1, arr2, both)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_a_mrr(props, np1, n, stress, tt, vec1, vec2,
      &          arr1, arr2, both)
@@ -742,6 +763,9 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
+      elseif (props%h_type .eq. 4) then ! ORNL
+        call mm10_vi_ornl(props, np1, n, stress, tt, 
+     &   ivec1, ivec2)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_vi_mrr(props, np1, n, stress, tt, 
      &   ivec1, ivec2)
@@ -796,6 +820,15 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_slipinc_user(props, np1, n, stress, tt, i, slipinc)
         dbar = dbar + slipinc*np1%ms(1:6,i)
       end do
+      elseif (props%h_type .eq. 4) then ! ORNL
+c      dbar = 0.0
+c      do i=1,props%nslip
+c c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
+c        slipinc = vec1(i)
+c        dbar = dbar + slipinc*np1%ms(1:6,i)
+c      end do
+        dbar(1:6) = matmul(np1%ms(1:6,1:props%nslip),
+     &                     vec1(1:props%nslip))
       elseif (props%h_type .eq. 7) then ! MRR
 c      dbar = 0.0
 c      do i=1,props%nslip
@@ -850,6 +883,15 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_slipinc_user(props, np1, n, stress, tt, i, slipinc)
         wbar = wbar + slipinc*np1%qs(1:3,i)
       end do
+      elseif (props%h_type .eq. 4) then ! ORNL
+c      wbar = 0.0
+c      do i=1,props%nslip
+c c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
+c        slipinc = vec1(i)
+c        wbar = wbar + slipinc*np1%qs(1:3,i)
+c      end do
+        wbar(1:3) = matmul(np1%qs(1:3,1:props%nslip),
+     &                     vec1(1:props%nslip))
       elseif (props%h_type .eq. 7) then ! MRR
 c      wbar = 0.0
 c      do i=1,props%nslip
@@ -902,6 +944,12 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_slipinc_user(props, np1, n, stress, tt, i, slipinc)
         w = w + slipinc*np1%qc(1:3,i)
       end do
+      elseif (props%h_type .eq. 4) then ! ornl
+      w = 0.0d0
+      do i=1,props%nslip
+        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
+        w = w + slipinc*np1%qc(1:3,i)
+      end do
       elseif (props%h_type .eq. 7) then ! MRR
       w = 0.0d0
       do i=1,props%nslip
@@ -937,6 +985,13 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
+      elseif (props%h_type .eq. 7) then ! ORNL
+      dbar = (0.d0,0.d0)
+      do i=1,props%nslip
+c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
+        slipinc = ivec1(i)
+        dbar = dbar + slipinc*np1%ms(1:6,i)
+      end do
       elseif (props%h_type .eq. 7) then ! MRR
       dbar = (0.d0,0.d0)
       do i=1,props%nslip
@@ -973,6 +1028,12 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
+      elseif (props%h_type .eq. 7) then ! ORNL
+      w = (0.d0,0.d0)
+      do i=1,props%nslip
+        call mm10_slipinci_ornl(props, np1, n, stress, tt, i, slipinc)
+        w = w + slipinc*np1%qc(1:3,i)
+      end do
       elseif (props%h_type .eq. 7) then ! MRR
       w = (0.d0,0.d0)
       do i=1,props%nslip
@@ -6479,6 +6540,1090 @@ c
      & +9.1100602236709483D-01, +9.1100602236709483D-01,
      & +9.6890428330360967D-01, +1.0000000000000000D+00
      &    /)
+c
+      return
+      end subroutine
+c
+c *****************************************************************************
+c *                                                                           *
+c *         ORNL ferric-martensitic steel hardening routines                  *
+c *                                                                           *
+c *****************************************************************************
+c
+c Variable conversion table:
+c      WARP3D        Matlab
+c      rate_n        
+c      tau_hat_y     c7
+c      G_0_y         v_attack
+c      burgers,      
+c      p_v           
+c      q_v           
+c      boltzman      
+c      theta_0       rho_initial
+c      eps_dot_0_v   
+c      eps_dot_0_y   
+c      p_y           
+c      q_y            
+c      tau_a         Qbulk 
+c      tau_hat_v     c8 
+c      G_0_v         Qslip  
+c      k_0            
+c      mu_0           
+c      D_0               
+c      T_0           
+c      voche_m          
+c      u1            c1   
+c      u2            c2
+c      u3            c3
+c      u4            c4
+c      u5            c5
+c      u6            c6
+
+c
+c           Form intermediate vectors for faster calculations
+      subroutine mm10_v_ornl(props, np1, n, stress, tt, 
+
+     &   vec1, vec2)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(max_uhard) :: vec1, vec2
+      integer :: alpha
+      double precision :: slipinc
+c
+      do alpha = 1,props%nslip
+         call mm10_slipinc_ornl(props, np1, n, stress, tt, 
+     &                            alpha, slipinc)
+         vec1(alpha) = slipinc
+      enddo
+c
+      end subroutine
+c
+c           Form intermediate arrays for faster calculations
+      subroutine mm10_a_ornl(props, np1, n, stress, tt, 
+     &   vec1, vec2, arr1, arr2, both)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+      integer both
+c
+         call mm10_dgdt_ornl(props, np1, n, stress, tt, 
+     &                            arr1(1:props%num_hard,1))
+      if(both.eq.2) then
+         call mm10_dgdh_ornl(props, np1, n, stress, tt, 
+     &               arr2(1:props%nslip,1:props%num_hard))
+      endif
+c
+      end subroutine
+c
+c           Form intermediate vectors for faster calculations
+      subroutine mm10_vi_ornl(props, np1, n, stress, tt, 
+     &   ivec1, ivec2)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double complex, dimension(6) :: stress
+      double complex, dimension(props%num_hard) :: tt, h
+      double complex, dimension(max_uhard) :: ivec1, ivec2
+      integer :: alpha
+      double complex :: slipinc
+c
+      do alpha = 1,props%nslip
+         call mm10_slipinci_ornl(props, np1, n, stress, tt, 
+     &                            alpha, slipinc)
+         ivec1(alpha) = slipinc
+      enddo
+c
+      end subroutine
+c
+c           Actual ornl sliprate function
+      subroutine mm10_slipinc_ornl(props, np1, n, stress, tt, 
+     &                            alpha, slipinc)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision :: h, slipinc, mm10_rs
+      integer :: alpha
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
+      double precision, dimension(props%num_hard,props%num_hard)
+     &   :: Gmat, Hmat
+c
+c Load some material parameters
+        dt = np1%tinc
+        k = props%boltzman
+        theta = np1%temp
+        G = props%mu_0
+        b = props%burgers
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        p_e = props%p_v
+        q_e = props%q_v
+        Qslip = props%G_0_v
+        v_attack = props%G_0_y
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+c        
+c      ms = np1.ms(1:6,alpha);
+c      rs = stress*ms; % tau^a
+      rs = mm10_rs(props, np1, n, stress, tt, alpha)
+c        
+c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
+c
+c Compute some stresses and rates
+        gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*dsqrt(rhoP) ! (15)
+        tpass = c1*G*b*dsqrt(rhoP) ! (16)
+        tcut = Qslip/(c2*c3*b*b)*dsqrt(rhoF) ! (17)
+        fract = ((dabs(rs)-tpass)/tcut)
+c
+c Evaluate the slip rate equation
+c        if(alpha.eq.6) then
+c          write(*,*) "fract=", fract, "rs=", rs
+c          write(*,*) "tcut=", tcut, "tpass=", tpass
+c          write(*,*) "gamma_0=", gamma_0, "dt=", dt
+c          write(*,*) "exp=", dexp (-(Qslip/k/theta)*(1.d0 - fract))
+c        endif
+
+        if(fract.gt.1.d0) then
+            ! linear extrapolation past the too-high stress (rs) value
+            b = gamma_0
+            x = fract
+            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
+     &  **(q_e-1.d0))
+     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
+            y = m*x + b
+            slipinc = dt * y
+        elseif(dabs(rs).gt.0.d0) then
+        slipinc = dt * gamma_0 * dsign(1.d0,rs)
+     & * dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
+        else
+            slipinc = 0.d0
+        endif
+c       if(np1.step.gt.21) then
+c       write(*,*) alpha, "rs", rs, "fract", fract, "slipinc", slipinc
+c       endif
+c
+      return
+      end subroutine
+c
+c           Actual ornl hardening function
+      subroutine mm10_h_ornl(props, np1, n, vec1, vec2, 
+     & stress, tt, h,gp)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(max_uhard) :: vec1, vec2
+      integer :: alpha, gp
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+
+     &  ddipole, rhoM, slipinc, gammadot, Qbulk,
+     &  tem1, tem2, tem3, tem4
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: Gmat, Hmat
+c Load some material parameters
+        Qbulk = props%tau_a
+        k = props%boltzman
+        theta = np1%temp
+        if(theta.le.0.d0) then
+          write (*,*) "Roters model requires non-zero 
+     &   nodal temperatures"
+      call die_gracefully
+        endif
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        c4 = props%u4
+        c5 = props%u5
+        c6 = props%u6
+        c7 = props%tau_hat_y
+        c8 = props%tau_hat_v
+        G = props%mu_0
+        b = props%burgers
+        v = 0.3d0 !props%nu
+        dt = np1%tinc
+        PI=4.D0*DATAN(1.D0)
+c      write(*,*) "pi", pi
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+c
+c
+c      write(*,*) "Gmat", Gmat(1,1)
+c      write(*,*) "G", G
+      do alpha = 1,props%num_hard
+c
+c Get dislocation density
+          rho = tt(alpha) ! rho^a_SSD
+          rho_n = n%tau_tilde(alpha) ! rho^a_SSD
+c
+c          ms = np1.ms(1:6,alpha);
+c          rs = stress*ms; % tau^a
+          rs = mm10_rs(props, np1, n, stress, tt, alpha)
+c        write(*,*) "rs", rs
+c          
+c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &    tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &    tt(1:props%num_hard))
+c        write(*,*) "rhoF", rhoF
+c        write(*,*) "rhoP", rhoP
+c          
+          tpass = c1*G*b*dsqrt(rhoP) ! (16)
+          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+     &       (dabs(rs)) ! (42)
+          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+     &       theta*dsqrt(rhoF*rhoP) ! (13)
+c        write(*,*) "tpass", tpass
+c        write(*,*) "ddipole", ddipole
+c        write(*,*) "rhoM", rhoM
+c          
+c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
+c     &     slipinc)
+          slipinc = vec1(alpha)
+c       if(np1.step.gt.21) then
+c       write(*,*) alpha, "slipinc", slipinc
+c       endif
+          gammadot = dabs(slipinc/dt)
+c      if((alpha.eq.6).and.(gp.eq.1)) then
+c      write(*,*) "rhoF=", rhoF, "rhoP=", rhoP
+c      write(*,*) "tpass=", tpass, "dd=", ddipole
+c      write(*,*) "rhoM=", rhoM, "gdot=", gammadot
+c      endif
+c        write(*,*) "gammadot", gammadot
+c              
+c Evaluate the hardening equation
+c      write(*,*) "c4", c4
+c      write(*,*) "c5", c5
+c      write(*,*) "c6", c6
+c      write(*,*) "c7", c7
+c      write(*,*) "c8", c8
+c      write(*,*) "Qbulk", Qbulk
+c      write(*,*) "rho", rho
+c      write(*,*) "b", b
+      tem1 = c4/b*dsqrt(rhoP)*gammadot
+      tem2 = c6*ddipole/b*rhoM*gammadot
+      tem3 = c5*rho*gammadot
+      tem4 = c7*dexp(-Qbulk/k/theta)*dabs(rs)/(k*theta)
+     &        *rho*rho*gammadot**c8
+c      if((alpha.eq.6).and.(gp.eq.1)) then
+c      write(*,*) "h1=", tem1, "h2=", tem2
+c      write(*,*) "h3=", tem3, "h4=", tem4
+c      endif
+          h(alpha) = rho_n + dt*(tem1
+     &        + tem2 - tem3
+     &        - tem4) ! (18)
+      enddo
+c
+      return
+      end subroutine
+c
+c           Imaginary ornl sliprate function
+      subroutine mm10_slipinci_ornl(props, np1, n, stress, tt, 
+     &                            alpha, slipinc)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double complex, dimension(6) :: stress
+      double complex, dimension(props%num_hard) :: tt, temp
+      double complex :: h, slipinc, mm10_rsi
+      integer :: alpha, i
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44
+      double complex :: rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
+      double precision, dimension(props%num_hard,props%num_hard)
+     &      :: Gmat, Hmat
+c
+c Load some material parameters
+        dt = np1%tinc
+        k = props%boltzman
+        theta = np1%temp
+        G = props%mu_0
+        b = props%burgers
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        p_e = props%p_v
+        q_e = props%q_v
+        Qslip = props%G_0_v
+        v_attack = props%G_0_y
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+c        
+c      ms = np1.ms(1:6,alpha);
+c      rs = stress*ms; % tau^a
+      rs = mm10_rsi(props, np1, n, stress, tt, alpha)
+c        
+c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          temp = (Gmat(alpha,1:props%num_hard)*
+     &     tt(1:props%num_hard))
+          rhoF = sum(temp)
+          temp = (Hmat(alpha,1:props%num_hard)*
+     &     tt(1:props%num_hard))
+          rhoP = sum(temp)
+c
+c Compute some stresses and rates
+        gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*cdsqrt(rhoP) ! (15)
+        tpass = c1*G*b*cdsqrt(rhoP) ! (16)
+        tcut = Qslip/(c2*c3*b*b)*cdsqrt(rhoF) ! (17)
+          if(dreal(rs).lt.0.d0) then
+        fract = (-rs-tpass)/tcut
+          else
+        fract = (rs-tpass)/tcut
+          endif
+c
+c Evaluate the slip rate equation
+        if(dreal(fract).gt.1.d0) then
+            ! linear extrapolation past the too-high stress (rs) value
+            b = gamma_0
+            x = fract
+            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
+     &  **(q_e-1.d0))
+     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,dreal(rs))/tcut
+
+            y = m*x + b
+            slipinc = dt * y
+        elseif(dabs(dreal(rs)).gt.0.d0) then
+        slipinc = dt * gamma_0 * dsign(1.d0,dreal(rs))
+     & * cdexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
+        else
+            slipinc = 0.d0
+        endif
+c
+      return
+      end subroutine
+c
+c           Imaginary ornl hardening function
+      subroutine mm10_hi_ornl(props, np1, n, ivec1, ivec2, 
+     & stress, tt, h)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double complex, dimension(6) :: stress
+      double complex, dimension(props%num_hard) :: tt, h, temp
+      double complex, dimension(max_uhard) :: ivec1, ivec2
+      integer :: alpha
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
+     &  pi, c4, c5, c6, c7, c8, v, Qbulk
+      double complex :: rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  mm10_rsi,
+     &  ddipole, rhoM, slipinc, gammadot, 
+     &  tem1, tem2, tem3
+      double precision, dimension(props%num_hard,props%num_hard)
+     &     :: Gmat, Hmat
+c Load some material parameters
+        Qbulk = props%tau_a
+        k = props%boltzman
+        theta = np1%temp
+        if(theta.le.0.d0) then
+          write (*,*) "Roters model requires non-zero 
+     &   nodal temperatures"
+      call die_gracefully
+        endif
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        c4 = props%u4
+        c5 = props%u5
+        c6 = props%u6
+        c7 = props%tau_hat_y
+        c8 = props%tau_hat_v
+        G = props%mu_0
+        b = props%burgers
+        v = 0.3d0 !props%nu
+        dt = np1%tinc
+        PI=4.D0*DATAN(1.D0)
+c      write(*,*) "pi", pi
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+c
+c
+c      write(*,*) "Gmat", Gmat(1,1)
+c      write(*,*) "G", G
+      do alpha = 1,props%num_hard
+c
+c Get dislocation density
+          rho = tt(alpha) ! rho^a_SSD
+          rho_n = n%tau_tilde(alpha) ! rho^a_SSD
+c
+c          ms = np1.ms(1:6,alpha);
+c          rs = stress*ms; % tau^a
+          rs = mm10_rsi(props, np1, n, stress, tt, alpha)
+          rs = dsign(1.d0,dreal(rs))*rs
+c        write(*,*) "rs", rs
+c          
+c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          temp = (Gmat(alpha,1:props%num_hard)
+     &      *tt(1:props%num_hard))
+          rhoF = sum(temp)
+          temp = (Hmat(alpha,1:props%num_hard)
+     &      *tt(1:props%num_hard))
+          rhoP = sum(temp)
+c        write(*,*) "rhoF", rhoF
+c        write(*,*) "rhoP", rhoP
+c          
+          tpass = c1*G*b*cdsqrt(rhoP) ! (16)
+          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+     &       (rs) ! (42)
+          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+     &       theta*cdsqrt(rhoF*rhoP) ! (13)
+c        write(*,*) "tpass", tpass
+c        write(*,*) "ddipole", ddipole
+c        write(*,*) "rhoM", rhoM
+c          
+c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
+c     &     slipinc)
+          slipinc = ivec1(alpha)
+          slipinc = dsign(1.d0,dreal(slipinc))*slipinc
+          gammadot = slipinc/dt
+c        write(*,*) "gammadot", gammadot
+c              
+c Evaluate the hardening equation
+c      write(*,*) "c4", c4
+c      write(*,*) "c5", c5
+c      write(*,*) "c6", c6
+c      write(*,*) "c7", c7
+c      write(*,*) "c8", c8
+c      write(*,*) "Qbulk", Qbulk
+c      write(*,*) "rho", rho
+c      write(*,*) "b", b
+      tem1 = c4/b*cdsqrt(rhoF)*gammadot
+      tem2 = c6*ddipole/b*rhoM*gammadot
+      tem3 = c5*rho*gammadot
+c      write(*,*) "c1", tem1
+c      write(*,*) "c2", tem2
+c      write(*,*) "c3", tem3
+      tem1 = c7*dexp(-Qbulk/k/theta)*rs/(k*theta)
+     &        *rho*rho*gammadot**c8
+c      write(*,*) "c1", tem1
+          h(alpha) = rho_n + dt*(c4/b*cdsqrt(rhoP)*gammadot
+     &        + c6*ddipole/b*rhoM*gammadot - c5*rho*gammadot
+     &        - c7*dexp(-Qbulk/k/theta)*rs/(k*theta)
+     &        *rho*rho*gammadot**c8) ! (18)
+      enddo
+c
+      return
+      end subroutine
+c
+c           Wrapper version, ornl slipinc function
+      subroutine mm10_slipinc_ornlW(props, np1, n, stress, tt, 
+     &                            alpha, slipinc)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, zerosV
+      double precision :: h, slipinc, mm10_rs
+      integer :: alpha
+c
+      double complex, dimension(6) :: stressi
+      double complex, dimension(props%num_hard) :: tti
+      double complex :: slipinci
+c
+      zerosV = 0.d0
+      stressi = dcmplx(stress,zerosV(1:6))
+      tti = dcmplx(tt,zerosV)
+c
+      call mm10_slipinci_ornl(props, np1, n, stressi, tti, 
+     &                            alpha, slipinci)
+c
+      slipinc = dreal(slipinci)
+c
+      return
+      end subroutine
+c
+c           Derivative of hardening fn wrt stress
+      subroutine mm10_estress_ornl(props, np1, n, vec1, vec2, 
+     &        arr1, arr2, stress, tt, et)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress, dtdstress
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard,6) :: et
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  ddipole, rhoM, slipinc, gammadot, Qbulk,
+     &  dddipole, dslipinc, badterm
+      double precision, dimension(props%num_hard,props%num_hard)
+     &     :: Gmat, Hmat
+      double precision, dimension(props%nslip) :: dslip
+      integer :: alpha
+c Load some material parameters
+        Qbulk = props%tau_a
+        k = props%boltzman
+        theta = np1%temp
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        c4 = props%u4
+        c5 = props%u5
+        c6 = props%u6
+        c7 = props%tau_hat_y
+        c8 = props%tau_hat_v
+        G = props%mu_0
+        b = props%burgers
+        v = 0.3d0 !props%nu
+        dt = np1%tinc
+        PI=4.D0*DATAN(1.D0)
+c
+c compute derivatives of slip increments with respect to resolved
+c shear stress
+c        call mm10_dgdt_ornl(props, np1, n, stress, 
+c     &         tt, dslip)
+        dslip(1:props%num_hard) = arr1(1:props%num_hard,1)
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+c
+      do alpha = 1,props%num_hard
+
+          ! Get dislocation density
+          rho = tt(alpha) ! rho^a_SSD
+c
+c          ms = np1.ms(1:6,alpha);
+c          rs = stress*ms; % tau^a
+          rs = mm10_rs(props, np1, n, stress, tt, alpha)
+c
+c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard)
+     &     ,tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard)
+     &      ,tt(1:props%num_hard))
+c
+          tpass = c1*G*b*dsqrt(rhoP) ! (16)
+          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+     &       (dabs(rs)) ! (42)
+          dddipole = -dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+     &          (dabs(rs))**2.d0*dsign(1.d0,rs)
+          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+     &       theta*dsqrt(rhoF*rhoP) ! (13)
+c          
+c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
+c     &     slipinc)
+          slipinc = vec1(alpha)
+          gammadot = dabs(slipinc/dt)
+          dtdstress(1:6) = np1%ms(1:6,alpha)
+          dslipinc = dslip(alpha)/dt ! always positive
+
+          ! Evaluate the equation
+          if(gammadot.eq.0.d0) then
+          badterm = 0.d0
+          else
+          badterm = c8*dabs(rs)*gammadot**(c8-1.d0)*dslipinc
+          endif
+          et(alpha,1:6) = dt*(c4/b*dsqrt(rhoF)*dsign(1.d0,rs)
+     &         *dslipinc + c6/b*rhoM*(ddipole*dsign(1.d0,rs)
+     &         *dslipinc + dddipole*gammadot)
+     &        - c5*rho*dsign(1.d0,rs)*dslipinc
+     &    - c7*dexp(-Qbulk/k/theta)/(k*theta)*rho**2.d0*
+     &      (badterm + dsign(1.d0,rs)*gammadot**c8))
+     &    *dtdstress(1:6) ! d(18)
+      
+      enddo
+c
+      return
+      end subroutine
+c
+c           Derivative of hardening fn wrt hardening
+      subroutine mm10_ehard_ornl(props, np1, n, vec1, vec2,
+     &       arr1, arr2, stress, tt, etau)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard,props%num_hard) :: etau
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  ddipole, rhoM, slipinc, gammadot, Qbulk,
+     &  dddipole, dslipinc, badterm, deltaij,
+     &  drhoF, drhoP, drhoM
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: Gmat, Hmat
+      double precision, dimension(props%num_hard,props%num_hard)
+     &    :: dslip
+      integer :: alpha, beta
+c      
+c compute derivatives of slip increments with respect to densities
+c        call mm10_dgdh_ornl(props, np1, n, stress, tt, dslip)
+        dslip(1:props%nslip,1:props%num_hard) = 
+     &   arr2(1:props%nslip,1:props%num_hard)
+c
+c Load some material parameters
+        Qbulk = props%tau_a
+        k = props%boltzman
+        theta = np1%temp
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        c4 = props%u4
+        c5 = props%u5
+        c6 = props%u6
+        c7 = props%tau_hat_y
+        c8 = props%tau_hat_v
+        G = props%mu_0
+        b = props%burgers
+        v = 0.3d0 !props%nu
+        dt = np1%tinc
+        PI=4.D0*DATAN(1.D0)
+c       
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+
+c
+c Compute drho_alpha/drho_beta
+c loop over numerator hardening variable
+      do alpha = 1,props%num_hard
+
+c Get dislocation density
+        rho = tt(alpha) ! rho^a_SSD
+c
+c          ms = np1.ms(1:6,alpha);
+c          rs = stress*ms; % tau^a
+          rs = mm10_rs(props, np1, n, stress, tt, alpha)
+          
+c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &     tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &     tt(1:props%num_hard))
+c
+c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
+c     &     slipinc)
+          slipinc = vec1(alpha)
+          gammadot = dabs(slipinc/dt)
+          
+        tpass = c1*G*b*dsqrt(rhoP) ! (16)
+        ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+     &       (dabs(rs)) ! (42)
+        rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+     &       theta*dsqrt(rhoF*rhoP) ! (13)
+c        write(*,*) "tpass", tpass
+c        write(*,*) "ddipole", ddipole
+c        write(*,*) "rhoM", rhoM
+c          
+c loop over denominator hardening variable
+        do beta = 1,props%num_hard
+c          
+c           [drhoF,drhoP] = mm10_drhoFP_ornl(props, np1, n, tt, alpha, beta);
+          drhoF = Gmat(alpha,beta)
+          drhoP = Hmat(alpha,beta)
+          
+          dddipole = 0.d0
+          drhoM = 0.5d0*(2.d0*k/(c1*c2*c3*G*b**3.d0))*
+     &       theta/dsqrt(rhoF*rhoP) * (drhoF*rhoP + rhoF*drhoP)
+          
+          dslipinc = dslip(alpha,beta)/dt
+c        write(*,*) "dslipinc", dslipinc
+          
+          if(alpha.eq.beta) then
+              deltaij = 1.d0
+          else
+              deltaij = 0.d0
+          endif
+
+c Evaluate the equation
+          if(gammadot.eq.0.d0) then
+          badterm = 0.d0
+          else
+          badterm = c8*gammadot**(c8-1.d0)*dslipinc
+          endif
+          etau(alpha,beta) = deltaij - dt*(c4/b*(0.5d0*drhoF/
+     &        dsqrt(rhoF)*gammadot*dsign(1.d0,rs) 
+     &     + dsqrt(rhoF)*dslipinc) + c6/b*(rhoM*ddipole*dslipinc
+     &     + rhoM*dddipole*gammadot*dsign(1.d0,rs)
+     &     + drhoM*ddipole*gammadot*dsign(1.d0,rs))
+     &     - c5*(rho*dslipinc + deltaij*gammadot*dsign(1.d0,rs))
+     &     - c7*dexp(-Qbulk/k/theta)/(k*theta)*dabs(rs)*
+     &      (rho**2.d0*badterm + 2.d0*rho*dsign(1.d0,rs)
+     &      *deltaij*gammadot**c8))*dsign(1.d0,rs)
+      
+c          write(*,*) "etau", etau(alpha,beta)
+        enddo !beta
+      
+      enddo !alpha
+c
+      return
+      end subroutine
+c
+c
+c           Derivative of hardening fn wrt strain
+      subroutine mm10_ed_ornl(props, np1, n, stress, tt, ed)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(6,props%num_hard) :: ed
+c
+      ed = 0.d0
+c
+      return
+      end subroutine
+c
+c           Derivative of sliprate wrt resolved shear stress
+      subroutine mm10_dgdt_ornl(props, np1, n, stress, tt, dgammadtau)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision :: rs
+      double precision, dimension(props%nslip) :: dgammadtau
+      double precision, dimension(props%num_hard) :: tt
+      double precision :: h, slipinc, mm10_rs
+      integer :: alpha
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  dslipinc, slipexp
+      double precision, dimension(props%num_hard,props%num_hard)
+     &      :: Gmat, Hmat
+c
+c Load some material parameters
+        dt = np1%tinc
+        k = props%boltzman
+        theta = np1%temp
+        G = props%mu_0
+        b = props%burgers
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        p_e = props%p_v
+        q_e = props%q_v
+        Qslip = props%G_0_v
+        v_attack = props%G_0_y
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+c        
+      do alpha = 1,props%num_hard
+c        
+c          ms = np1.ms(1:6,alpha);
+c          rs = stress*ms; % tau^a
+          rs = mm10_rs(props, np1, n, stress, tt, alpha)
+c        
+c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &   tt(1:props%num_hard))
+c
+c Compute one dependency
+        gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*sqrt(rhoP) ! (15)
+        tpass = c1*G*b*dsqrt(rhoP) ! (16)
+        tcut = Qslip/(c2*c3*b*b)*dsqrt(rhoF) ! (17)
+        fract = ((dabs(rs)-tpass)/tcut)
+
+c Evaluate the equation
+        dfract = dsign(1.d0,rs)/tcut
+        if(fract.gt.1.d0) then
+c linear extrapolation past the too-high stress (rs) value
+            b = gamma_0
+            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)**(q_e-1.d0))
+     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
+            dslipinc = dt * m
+        elseif(dabs(rs).gt.0.d0) then
+        slipexp = dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e)
+
+     &          * dsign(1.d0,rs)
+        dslipinc = dt * (gamma_0 * slipexp * -(Qslip/k/theta)*q_e*
+     &      (1.d0 - fract**p_e)**(q_e-1.d0)
+     &      * -p_e*fract**(p_e-1.d0) * dfract) !(14)
+        else
+            dslipinc = 0.d0
+        endif
+        
+        dgammadtau(alpha) = dslipinc
+
+      enddo
+c
+      return
+      end subroutine
+c
+c           Derivative of sliprate wrt hardening variables
+      subroutine mm10_dgdh_ornl(props, np1, n, stress, tt, dgammadtt)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%nslip,props%num_hard)
+     &    :: dgammadtt
+      double precision :: mm10_rs, rs
+      integer :: alpha, beta
+c
+      double precision :: dt, k, theta, G, b, c1, c2, c3, 
+     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
+     &  dtcut, dtpass
+      double precision, dimension(props%num_hard,props%num_hard)
+     &      :: Gmat, Hmat
+c
+c Load some material parameters
+        dt = np1%tinc
+        k = props%boltzman
+        theta = np1%temp
+        G = props%mu_0
+        b = props%burgers
+        c1 = props%u1
+        c2 = props%u2
+        c3 = props%u3
+        p_e = props%p_v
+        q_e = props%q_v
+        Qslip = props%G_0_v
+        v_attack = props%G_0_y
+c        
+c Compute the shear modulus using Roter's function
+        if(G.lt.0.d0) then
+        G = -G
+        else
+        K11=123.323d0+6.7008d-8*theta**3.d0
+     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3.d0
+     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3.d0
+     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        endif
+c Load the interaction matrices for parallel and forest dislocs
+c        [Gmat,Hmat] = mm10_mrr_GH(props);
+      call mm10_mrr_GH(props,Gmat,Hmat)
+        
+c Compute derivative of slip rate alpha w.r.t. density beta
+c loop over slip rate
+      do alpha = 1,props%num_hard
+c        
+c          ms = np1.ms(1:6,alpha);
+c          rs = stress*ms; % tau^a
+          rs = mm10_rs(props, np1, n, stress, tt, alpha)
+c        
+c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
+          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+     &      tt(1:props%num_hard))
+          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+     &      tt(1:props%num_hard))
+c          
+c Compute one dependency
+        gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*sqrt(rhoP) ! (15)
+        tpass = c1*G*b*dsqrt(rhoP) ! (16)
+        tcut = Qslip/(c2*c3*b*b)*dsqrt(rhoF) ! (17)
+
+        fract = ((dabs(rs)-tpass)/tcut)
+c        
+c loop over density
+        do beta = 1,props%num_hard
+        
+c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
+          drhoF = Gmat(alpha,beta)
+          drhoP = Hmat(alpha,beta)
+        
+          dgamma_0 = 0.5d0*v_attack*k*theta/(c1*c3*G*b*b)
+     &              /dsqrt(rhoP)*drhoP ! (15)
+          dtpass = 0.5d0*c1*G*b/dsqrt(rhoP)*drhoP ! (16)
+          dtcut = 0.5d0*Qslip/(c2*c3*b*b)/dsqrt(rhoF)*drhoF ! (17)
+          dfract = ((-dtpass)*tcut - 
+     &             (dabs(rs)-tpass)*dtcut)/tcut**2.d0
+
+c Evaluate the equation
+          if(fract.gt.1.d0) then
+              ! linear extrapolation past the too-high stress (rs) value
+              dslipinc = dt * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
+     &           **(q_e-1.d0)) * (- p_e*(1.d0)**(p_e-1.d0))
+     &            * dsign(1.d0,rs) * (dgamma_0/tcut 
+     &             - gamma_0*dtcut/tcut**2.d0)
+          elseif(dabs(rs).gt.0.d0) then
+          slipexp = dexp (-(Qslip/k/theta)*
+     &             (1.d0 - fract**p_e)**q_e) !(14)
+          dslipinc = dt * (dgamma_0 * slipexp * dsign(1.d0,rs)
+     &          + gamma_0 * dsign(1.d0,rs) * slipexp *
+     &          -(Qslip/k/theta)*q_e*(1.d0 - fract**p_e)**(q_e-1.d0)
+     &        * -p_e*fract**(p_e-1.d0) * dfract)
+          else
+              dslipinc = 0.d0
+          endif
+        
+          dgammadtt(alpha,beta) = dslipinc
+
+        enddo !beta
+      
+      enddo !alpha
+c
+      return
+      end subroutine
+c
+c           Derivative of sliprate wrt strain increment
+      subroutine mm10_dgdd_ornl(props, np1, n, stress, tt, D, 
+     &              dgammadd)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress, D
+      double precision, dimension(6,props%nslip) :: dgammadd
+      double precision, dimension(props%num_hard) :: tt
+c
+      dgammadd = 0.d0
 c
       return
       end subroutine
