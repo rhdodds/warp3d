@@ -985,7 +985,7 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 7) then ! ORNL
+      elseif (props%h_type .eq. 4) then ! ORNL
       dbar = (0.d0,0.d0)
       do i=1,props%nslip
 c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
@@ -1028,7 +1028,7 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       elseif (props%h_type .eq. 2) then ! MTS
       elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 7) then ! ORNL
+      elseif (props%h_type .eq. 4) then ! ORNL
       w = (0.d0,0.d0)
       do i=1,props%nslip
         call mm10_slipinci_ornl(props, np1, n, stress, tt, i, slipinc)
@@ -6661,9 +6661,10 @@ c
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
-      double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
+      double precision :: dt, k, theta, G, b, c1, c2, tau0, 
+     &  p_e, q_e, Qslip, v_s, K11, K12, K44, rs,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  fM, lamda, G0, rhoM
       double precision, dimension(props%num_hard,props%num_hard)
      &   :: Gmat, Hmat
 c
@@ -6671,28 +6672,20 @@ c Load some material parameters
         dt = np1%tinc
         k = props%boltzman
         theta = np1%temp
-        G = props%mu_0
+        G0 = props%mu_0
         b = props%burgers
         c1 = props%u1
         c2 = props%u2
-        c3 = props%u3
+        tau0 = props%u3
         p_e = props%p_v
         q_e = props%q_v
         Qslip = props%G_0_v
-        v_attack = props%G_0_y
+        v_s = props%G_0_y
+        fM = 0.1d0
+        lamda = c2*b
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -6702,15 +6695,16 @@ c      rs = stress*ms; % tau^a
       rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &   tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &   tt(1:props%num_hard))
           rhoP = dot_product(Hmat(alpha,1:props%num_hard),
      &   tt(1:props%num_hard))
 c
 c Compute some stresses and rates
-        gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*dsqrt(rhoP) ! (15)
+        rhoM = fM*tt(alpha)
+        gamma_0 = rhoM*b*v_s/b*lamda
         tpass = c1*G*b*dsqrt(rhoP) ! (16)
-        tcut = Qslip/(c2*c3*b*b)*dsqrt(rhoF) ! (17)
+        tcut = tau0*G/G0
         fract = ((dabs(rs)-tpass)/tcut)
 c
 c Evaluate the slip rate equation
@@ -6760,9 +6754,8 @@ c
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
-
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
-     &  tem1, tem2, tem3, tem4
+     &  tem1, tem2, tem3, tem4, G0
       double precision, dimension(props%num_hard,props%num_hard)
      &    :: Gmat, Hmat
 c Load some material parameters
@@ -6782,25 +6775,15 @@ c Load some material parameters
         c6 = props%u6
         c7 = props%tau_hat_y
         c8 = props%tau_hat_v
-        G = props%mu_0
+        G0 = props%mu_0
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
         PI=4.D0*DATAN(1.D0)
 c      write(*,*) "pi", pi
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -6889,39 +6872,32 @@ c
       double complex :: h, slipinc, mm10_rsi
       integer :: alpha, i
 c
-      double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44
+      double precision :: dt, k, theta, G, b, c1, c2, tau0, 
+     &  p_e, q_e, Qslip, v_s, K11, K12, K44
       double complex :: rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  fM, lamda, G0, rhoM
       double precision, dimension(props%num_hard,props%num_hard)
-     &      :: Gmat, Hmat
+     &   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
         k = props%boltzman
         theta = np1%temp
-        G = props%mu_0
+        G0 = props%mu_0
         b = props%burgers
         c1 = props%u1
         c2 = props%u2
-        c3 = props%u3
+        tau0 = props%u3
         p_e = props%p_v
         q_e = props%q_v
         Qslip = props%G_0_v
-        v_attack = props%G_0_y
+        v_s = props%G_0_y
+        fM = 0.1d0
+        lamda = c2*b
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -6931,17 +6907,15 @@ c      rs = stress*ms; % tau^a
       rs = mm10_rsi(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Gmat(alpha,1:props%num_hard)*
-     &     tt(1:props%num_hard))
-          rhoF = sum(temp)
           temp = (Hmat(alpha,1:props%num_hard)*
      &     tt(1:props%num_hard))
           rhoP = sum(temp)
 c
 c Compute some stresses and rates
-        gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*cdsqrt(rhoP) ! (15)
+        rhoM = fM*tt(alpha)
+        gamma_0 = rhoM*b*v_s/b*lamda
         tpass = c1*G*b*cdsqrt(rhoP) ! (16)
-        tcut = Qslip/(c2*c3*b*b)*cdsqrt(rhoF) ! (17)
+        tcut = tau0*G/G0
           if(dreal(rs).lt.0.d0) then
         fract = (-rs-tpass)/tcut
           else
@@ -6989,7 +6963,7 @@ c
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
-     &  tem1, tem2, tem3
+     &  tem1, tem2, tem3, G0
       double precision, dimension(props%num_hard,props%num_hard)
      &     :: Gmat, Hmat
 c Load some material parameters
@@ -7009,25 +6983,15 @@ c Load some material parameters
         c6 = props%u6
         c7 = props%tau_hat_y
         c8 = props%tau_hat_v
-        G = props%mu_0
+        G0 = props%mu_0
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
         PI=4.D0*DATAN(1.D0)
 c      write(*,*) "pi", pi
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7149,7 +7113,7 @@ c
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
-     &  dddipole, dslipinc, badterm
+     &  dddipole, dslipinc, badterm, G0
       double precision, dimension(props%num_hard,props%num_hard)
      &     :: Gmat, Hmat
       double precision, dimension(props%nslip) :: dslip
@@ -7166,7 +7130,7 @@ c Load some material parameters
         c6 = props%u6
         c7 = props%tau_hat_y
         c8 = props%tau_hat_v
-        G = props%mu_0
+        G0 = props%mu_0
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
@@ -7178,18 +7142,8 @@ c        call mm10_dgdt_ornl(props, np1, n, stress,
 c     &         tt, dslip)
         dslip(1:props%num_hard) = arr1(1:props%num_hard,1)
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7263,7 +7217,7 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
-     &  drhoF, drhoP, drhoM
+     &  drhoF, drhoP, drhoM,G0
       double precision, dimension(props%num_hard,props%num_hard)
      &    :: Gmat, Hmat
       double precision, dimension(props%num_hard,props%num_hard)
@@ -7287,24 +7241,14 @@ c Load some material parameters
         c6 = props%u6
         c7 = props%tau_hat_y
         c8 = props%tau_hat_v
-        G = props%mu_0
+        G0 = props%mu_0
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
         PI=4.D0*DATAN(1.D0)
-c       
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c        
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7419,7 +7363,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
-     &  dslipinc, slipexp
+     &  dslipinc, slipexp, G0
       double precision, dimension(props%num_hard,props%num_hard)
      &      :: Gmat, Hmat
 c
@@ -7437,18 +7381,8 @@ c Load some material parameters
         Qslip = props%G_0_v
         v_attack = props%G_0_y
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)
@@ -7515,7 +7449,7 @@ c
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
-     &  dtcut, dtpass
+     &  dtcut, dtpass, G0
       double precision, dimension(props%num_hard,props%num_hard)
      &      :: Gmat, Hmat
 c
@@ -7533,18 +7467,8 @@ c Load some material parameters
         Qslip = props%G_0_v
         v_attack = props%G_0_y
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
+c New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       call mm10_mrr_GH(props,Gmat,Hmat)

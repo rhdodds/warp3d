@@ -944,6 +944,7 @@ c ! Allocate number of hardening variables
                           c_array(num)%real_tang = .false.
                   elseif (c_array(num)%h_type .eq. 4) then !ORNL
                           c_array(num)%num_hard = c_array(num)%nslip
+                          c_array(num)%real_tang = .false.
                   elseif (c_array(num)%h_type .eq. 7) then !MRR
                           c_array(num)%num_hard = c_array(num)%nslip
                           c_array(num)%real_tang = .true.
