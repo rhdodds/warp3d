@@ -1,0 +1,125 @@
+!
+!
+!
+! 3D CVN - impact loading 120 in/sec
+!
+!     14 Element Layers through the 1/2 thickness:
+!        W=B  = 0.394 in
+!        a    = 0.197 in
+!        Span = 1.576 in
+!
+!     Plane Sided
+!     Displacement Control
+!     Dynamic:  time step 0.5 us
+!     Large Strain theory (initial notch radiusRi=6.e-5 in)
+!
+!     Non-linear material - viscoplastic
+!         E = 30000 ksi
+!     sig_o = 60.   ksi
+!         n = 10
+!         m = 35.
+!         D = 1.
+!
+!     Input from the following files:
+!         coordinates
+!         incidences
+!         blocking
+!         twenty
+!         forty
+!         sixty
+!         eighty
+!         one-twenty
+!         values_to_output
+!         domain_define
+!
+!
+!
+!     This file is for threaded execution only
+!
+structure cvn
+!
+material steel
+  properties  mises  e 30000.  nu 0.3  yld_pt 60.  n_power 10.,
+                ref_eps 1.0  m_power 35.0 rho  7.29275e-07
+!
+number of nodes 22140 elements 19334
+!
+elements
+   1 -19334 type l3disop  nonlinear material steel,
+               order 2x2x2 bbar center_output short
+!
+*input from 'coordinates.inp'
+*input from 'incidences.inp'
+blocking automatic
+!
+!    run simulation for total t = 0.25 milli-secs
+!    ramp velocities at loaded nodes over time
+!    to simulate hammer impact 
+!
+ loading impact
+  nonlinear
+    step 1-500  constraints 1.0
+!
+ output model flat patran convention text file "cvn_model.text"
+!
+ nonlinear analysis parameters 
+   solution technique direct sparse iterative
+   maximum iterations 8
+   minimum iterations 1
+   convergence test norm res tol 0.005
+   time step 0.5e-6
+   extrapolate on
+   divergence check on
+   nonconvergent solution stop
+   adaptive on
+   material messages off
+   batch messages on
+   bbar stabilization factor 0.05
+   consistent q-matrix off
+   cpu time limit off
+   display tied mesh mpcs off
+!
+output commands use file "values_to_output.inp",
+      steps 1-500 by 5
+!
+!   initial loading rate is 20 in/s
+!
+*input from 'contraints_20_in_per_sec.inp' 
+ compute displacements for loading impact for step 1
+!
+!   increase loading rate to 40 in/s
+!
+*input from 'contraints_40_in_per_sec.inp'
+ compute displacements for loading impact for step 3 4
+!
+!   increase loading rate to 80 in/s
+!
+*input from 'contraints_80_in_per_sec.inp'
+ compute displacements for loading impact for step 5 6
+  *input 'domain_define.inp'
+!
+!   increase loading rate to 120 in/s
+!
+*input from 'contraints_120_in_per_sec.inp'
+ compute displacements for loading impact for step 7 8
+!
+ compute displacements for loading impact for step 100
+  *input 'domain_define.inp'
+!
+ compute displacements for loading impact for step 200
+  *input 'domain_define.inp'
+!
+ compute displacements for loading impact for step 300
+  *input 'domain_define.inp'
+!
+ compute displacements for loading impact for step 400
+  *input 'domain_define.inp'
+!
+ compute displacements for loading impact for step 500
+  *input 'domain_define.inp'
+!
+stop
+
+
+
+
