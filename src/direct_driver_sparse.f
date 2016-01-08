@@ -4,11 +4,12 @@ c     *                                                              *
 c     *  assemble & solve linear equations for a Newton iteration    *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 04/19/2015 rhd             *
+c     *                   last modified : 11/21/2015 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine direct_routine_sparse( first_solve, now_iteration )
+      subroutine direct_routine_sparse( first_solve, now_iteration,
+     &                                  suggested_new_precond )
 c
       use elem_block_data, only : edest_blocks
       use main_data, only : repeat_incid, modified_mpcs,
@@ -27,7 +28,7 @@ $add common.main
 c
 c                    parameter declarations
 c
-      logical :: first_solve
+      logical :: first_solve, suggested_new_precond
 c
 c                    allocatables used to support stiffness
 c                    assembly in sparse format. note those
@@ -192,7 +193,8 @@ c
      &                          u_vec, k_coeffs, k_ptrs, k_indexes,
      &                          cpu_stats, itype, out,
      &                          solver_out_of_core, solver_memory,
-     &                          solver_scr_dir, solver_mkl_iterative )
+     &                          solver_scr_dir, solver_mkl_iterative,
+     &                          suggested_new_precond )
         if( local_debug ) write(*,*) '... direct_driver_sparse @ 6.5'
 c
       else ! unknown solver type
