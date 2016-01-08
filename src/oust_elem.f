@@ -26,7 +26,7 @@ c
 
 #dbl      double precision
 #sgl      real
-     &  elem_values(nrowd,*)
+     &  elem_values(nrowd,num_vals)
 $add common.main
 c
 c                       local declarations
@@ -40,6 +40,9 @@ c
       logical connected
       save fileno, flat_file_number
       external warp3d_get_device_number
+#dbl      double precision :: small_tol, zero
+#sgl      real :: small_tol, zero
+      data small_tol, zero / 1.0d-80, 0.0d00 /
 c
       patran_file = oubin .or. ouasc  
       data_type = 1
@@ -98,7 +101,12 @@ c                        flat file. For Patran file(s), the element
 c                        type is hard coded into this line as a 
 c                        hex element
 c
-      if ( patran_file .and. oubin ) then
+c                        zero small values to prevent 3-digit exponents
+c                        in formatted files
+c
+      where( abs(elem_values) .lt. small_tol ) elem_values = zero
+c      
+      if( patran_file .and. oubin ) then
          do relelem = 1, nrow
              elem = felem + relelem - 1
 #dbl         write(fileno) elem, 8,
@@ -111,7 +119,7 @@ c
          do relelem = 1, nrow
             elem = felem + relelem - 1
             write(fileno,920) elem, 8,
-     &              (sngl(elem_values(relelem,i)),i=1,num_vals)
+     &              (elem_values(relelem,i),i=1,num_vals)
          end do
       end if
 c
