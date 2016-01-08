@@ -4,7 +4,7 @@ c *    mod_crystals - contains all crystal data, struct for each crystal as  *
 c *                   well as the array of crystals and some helper methods  *
 c *                                                                          *
 c *         written by : mcm                                                 *
-c *         last modified : 3/21/12 mcm
+c *         last modified : 04/01/15 tjt                                     *
 c *                                                                          *
 c ****************************************************************************
 c
@@ -18,14 +18,26 @@ c
 c                             1) fcc
 c                             2) bcc
 c                             3) single
+c                             6) fcc roters order
+c                             7) bcc 12
+c                             8) bcc 48
                   integer :: elastic_type
 c                             1) isotropic
 c                             2) cubic
                   integer :: nslip
+                  integer :: num_hard
                   integer :: h_type
 c                             1) voche or voce
 c                             2) mts
 c                             3) user
+c                             4) ornl
+c                             7) roters
+c                 Solver flags
+                  logical :: real_tang, solver, strategy, gpall
+                  integer :: miter, gpp, method, st_it(3)
+                  double precision :: atol, atol1, rtol, rtol1,
+     &                                xtol, xtol1
+c                 Material parameters
                   double precision :: e, nu, mu, harden_n, tau_a,
      &                                tau_hat_y, g_o_y, b, p_v, q_v,
      &                                p_y, q_y, boltz, 
@@ -38,7 +50,7 @@ c                             3) user
                   double precision :: u1, u2, u3, u4, u5, u6
                   double precision, dimension(6,6) :: elast_stiff,
      &                                                elast_flex
-                  double precision, dimension(12,3) :: ni,bi
+                  double precision, dimension(max_slip_sys,3) :: ni,bi
 c
                   logical :: valid
 
@@ -109,6 +121,24 @@ c
                   c_array(num)%u6 = 0.0
 
                   c_array(num)%h_type = 1
+                  c_array(num)%num_hard = 1
+                  c_array(num)%real_tang = .true.
+c            Solver parameters
+                  c_array(num)%atol = 1.0d-5
+                  c_array(num)%atol1 = 1.0d-5
+                  c_array(num)%rtol = 5.0d-5
+                  c_array(num)%rtol1 = 1.0d-5
+                  c_array(num)%xtol = 1.0d-4
+                  c_array(num)%xtol1 = 1.0d-4
+                  c_array(num)%miter = 30
+                  c_array(num)%solver = .true.
+                  c_array(num)%strategy = .true.
+                  c_array(num)%gpall = .false.
+                  c_array(num)%gpp = 0
+                  c_array(num)%method = 3
+                  c_array(num)%st_it(1) = -2
+                  c_array(num)%st_it(2) = -2
+                  c_array(num)%st_it(3) = -2
 
             end subroutine
 c
@@ -117,6 +147,8 @@ c                 and elasticity tensors
             subroutine finalize_new_crystal(num, out)
                   integer, intent(in) :: num, out
                   double precision :: f,e,v,u
+                  double precision :: z0,f2,f3,f112,f211,
+     &                  f123,f213,f312
                   integer :: i,j,info
                   double precision, dimension(600) :: work
                   integer, dimension(600) :: lwork
@@ -300,10 +332,636 @@ c
                         c_array(num)%ni(1,1) = 0.0
                         c_array(num)%ni(1,2) = 1.0
                         c_array(num)%ni(1,3) = 0.0
+                  elseif (c_array(num)%slip_type .eq. 6) then
+                        c_array(num)%nslip = 12
+                        f = 1/dsqrt(2.0D0)
+c                     edge
+                        c_array(num)%bi(1,1)=f
+                        c_array(num)%bi(1,2)=-f
+                        c_array(num)%bi(1,3)=0.d0
+                        
+                        c_array(num)%bi(2,1)=f
+                        c_array(num)%bi(2,2)=0.d0
+                        c_array(num)%bi(2,3)=-f
+                        
+                        c_array(num)%bi(3,1)=0.d0
+                        c_array(num)%bi(3,2)=f
+                        c_array(num)%bi(3,3)=-f
+                        
+                        c_array(num)%bi(4,1)=f
+                        c_array(num)%bi(4,2)=f
+                        c_array(num)%bi(4,3)=0.d0
+                        
+                        c_array(num)%bi(5,1)=f
+                        c_array(num)%bi(5,2)=0.d0
+                        c_array(num)%bi(5,3)=f
+                        
+                        c_array(num)%bi(6,1)=0.d0
+                        c_array(num)%bi(6,2)=f
+                        c_array(num)%bi(6,3)=-f
+                        
+                        c_array(num)%bi(7,1)=f
+                        c_array(num)%bi(7,2)=f
+                        c_array(num)%bi(7,3)=0.d0
+                        
+                        c_array(num)%bi(8,1)=f
+                        c_array(num)%bi(8,2)=0.d0
+                        c_array(num)%bi(8,3)=-f
+                        
+                        c_array(num)%bi(9,1)=0.d0
+                        c_array(num)%bi(9,2)=f
+                        c_array(num)%bi(9,3)=f
+                        
+                        c_array(num)%bi(10,1)=f
+                        c_array(num)%bi(10,2)=-f
+                        c_array(num)%bi(10,3)=0.d0
+                        
+                        c_array(num)%bi(11,1)=f
+                        c_array(num)%bi(11,2)=0.d0
+                        c_array(num)%bi(11,3)=f
+                        
+                        c_array(num)%bi(12,1)=0.d0
+                        c_array(num)%bi(12,2)=f
+                        c_array(num)%bi(12,3)=f
+c                        
+                        f = 1/dsqrt(3.0D0)
+c                edge
+                        c_array(num)%ni(1,1)=f
+                        c_array(num)%ni(1,2)=f
+                        c_array(num)%ni(1,3)=f
+                        
+                        c_array(num)%ni(2,1)=-f
+                        c_array(num)%ni(2,2)=-f
+                        c_array(num)%ni(2,3)=-f
+                        
+                        c_array(num)%ni(3,1)=f
+                        c_array(num)%ni(3,2)=f
+                        c_array(num)%ni(3,3)=f
+                        
+                        c_array(num)%ni(4,1)=f
+                        c_array(num)%ni(4,2)=-f
+                        c_array(num)%ni(4,3)=-f
+                        
+                        c_array(num)%ni(5,1)=-f
+                        c_array(num)%ni(5,2)=f
+                        c_array(num)%ni(5,3)=f
+                        
+                        c_array(num)%ni(6,1)=f
+                        c_array(num)%ni(6,2)=-f
+                        c_array(num)%ni(6,3)=-f
+                        
+                        c_array(num)%ni(7,1)=f
+                        c_array(num)%ni(7,2)=-f
+                        c_array(num)%ni(7,3)=f
+                        
+                        c_array(num)%ni(8,1)=f
+                        c_array(num)%ni(8,2)=-f
+                        c_array(num)%ni(8,3)=f
+                        
+                        c_array(num)%ni(9,1)=-f
+                        c_array(num)%ni(9,2)=f
+                        c_array(num)%ni(9,3)=-f
+                        
+                        c_array(num)%ni(10,1)=-f
+                        c_array(num)%ni(10,2)=-f
+                        c_array(num)%ni(10,3)=f
+                        
+                        c_array(num)%ni(11,1)=-f
+                        c_array(num)%ni(11,2)=-f
+                        c_array(num)%ni(11,3)=f
+                        
+                        c_array(num)%ni(12,1)=f
+                        c_array(num)%ni(12,2)=f
+                        c_array(num)%ni(12,3)=-f
+                  elseif (c_array(num)%slip_type .eq. 7) then
+                        c_array(num)%nslip = 12
+                        z0 = 0.d0
+                        f2 = 1.d0/sqrt(2.0D0)
+                        f3 = 1.d0/sqrt(3.0D0)
+                        f112 = 1.d0/sqrt(6.0D0)
+                        f211 = 2.d0/sqrt(6.0D0)
+                        f123 = 1.d0/sqrt(14.0D0)
+                        f213 = 2.d0/sqrt(14.0D0)
+                        f312 = 3.d0/sqrt(14.0D0)
+                        !{110}<111>
+                        c_array(num)%bi( 1,1)=-f3
+                        c_array(num)%bi( 1,2)= f3
+                        c_array(num)%bi( 1,3)= f3
+                        
+                        c_array(num)%bi( 2,1)= f3
+                        c_array(num)%bi( 2,2)=-f3
+                        c_array(num)%bi( 2,3)= f3
+                        
+                        c_array(num)%bi( 3,1)= f3
+                        c_array(num)%bi( 3,2)= f3
+                        c_array(num)%bi( 3,3)= f3
+                        
+                        c_array(num)%bi( 4,1)= f3
+                        c_array(num)%bi( 4,2)= f3
+                        c_array(num)%bi( 4,3)=-f3
+                        
+                        c_array(num)%bi( 5,1)= f3
+                        c_array(num)%bi( 5,2)= f3
+                        c_array(num)%bi( 5,3)=-f3
+                        
+                        c_array(num)%bi( 6,1)=-f3
+                        c_array(num)%bi( 6,2)= f3
+                        c_array(num)%bi( 6,3)= f3
+                        
+                        c_array(num)%bi( 7,1)= f3
+                        c_array(num)%bi( 7,2)= f3
+                        c_array(num)%bi( 7,3)= f3
+                        
+                        c_array(num)%bi( 8,1)= f3
+                        c_array(num)%bi( 8,2)=-f3
+                        c_array(num)%bi( 8,3)= f3
+                        
+                        c_array(num)%bi( 9,1)= f3
+                        c_array(num)%bi( 9,2)= f3
+                        c_array(num)%bi( 9,3)=-f3
+                        
+                        c_array(num)%bi(10,1)= f3
+                        c_array(num)%bi(10,2)=-f3
+                        c_array(num)%bi(10,3)= f3
+                        
+                        c_array(num)%bi(11,1)= f3
+                        c_array(num)%bi(11,2)= f3
+                        c_array(num)%bi(11,3)= f3
+                        
+                        c_array(num)%bi(12,1)=-f3
+                        c_array(num)%bi(12,2)= f3
+                        c_array(num)%bi(12,3)= f3
+c                        
+                        !{110}<111>
+                        c_array(num)%ni( 1,1)= f2
+                        c_array(num)%ni( 1,2)= f2
+                        c_array(num)%ni( 1,3)= z0
+                        
+                        c_array(num)%ni( 2,1)= f2
+                        c_array(num)%ni( 2,2)= f2
+                        c_array(num)%ni( 2,3)= z0
+                        
+                        c_array(num)%ni( 3,1)= f2
+                        c_array(num)%ni( 3,2)=-f2
+                        c_array(num)%ni( 3,3)= z0
+                        
+                        c_array(num)%ni( 4,1)= f2
+                        c_array(num)%ni( 4,2)=-f2
+                        c_array(num)%ni( 4,3)= z0
+                        
+                        c_array(num)%ni( 5,1)= f2
+                        c_array(num)%ni( 5,2)= z0
+                        c_array(num)%ni( 5,3)= f2
+                        
+                        c_array(num)%ni( 6,1)= f2
+                        c_array(num)%ni( 6,2)= z0
+                        c_array(num)%ni( 6,3)= f2
+                        
+                        c_array(num)%ni( 7,1)= f2
+                        c_array(num)%ni( 7,2)= z0
+                        c_array(num)%ni( 7,3)=-f2
+                        
+                        c_array(num)%ni( 8,1)= f2
+                        c_array(num)%ni( 8,2)= z0
+                        c_array(num)%ni( 8,3)=-f2
+                        
+                        c_array(num)%ni( 9,1)= z0
+                        c_array(num)%ni( 9,2)= f2
+                        c_array(num)%ni( 9,3)= f2
+                        
+                        c_array(num)%ni(10,1)= z0
+                        c_array(num)%ni(10,2)= f2
+                        c_array(num)%ni(10,3)= f2
+                        
+                        c_array(num)%ni(11,1)= z0
+                        c_array(num)%ni(11,2)= f2
+                        c_array(num)%ni(11,3)=-f2
+                        
+                        c_array(num)%ni(12,1)= z0
+                        c_array(num)%ni(12,2)= f2
+                        c_array(num)%ni(12,3)=-f2
+                  elseif (c_array(num)%slip_type .eq. 8) then ! BCC 48 sys
+                        c_array(num)%nslip = 48
+                        z0 = 0.d0
+                        f2 = 1.d0/sqrt(2.0D0)
+                        f3 = 1.d0/sqrt(3.0D0)
+                        f112 = 1.d0/sqrt(6.0D0)
+                        f211 = 2.d0/sqrt(6.0D0)
+                        f123 = 1.d0/sqrt(14.0D0)
+                        f213 = 2.d0/sqrt(14.0D0)
+                        f312 = 3.d0/sqrt(14.0D0)
+                        !{110}<111>
+                        c_array(num)%bi( 1,1)=-f3
+                        c_array(num)%bi( 1,2)= f3
+                        c_array(num)%bi( 1,3)= f3
+                        
+                        c_array(num)%bi( 2,1)= f3
+                        c_array(num)%bi( 2,2)=-f3
+                        c_array(num)%bi( 2,3)= f3
+                        
+                        c_array(num)%bi( 3,1)= f3
+                        c_array(num)%bi( 3,2)= f3
+                        c_array(num)%bi( 3,3)= f3
+                        
+                        c_array(num)%bi( 4,1)= f3
+                        c_array(num)%bi( 4,2)= f3
+                        c_array(num)%bi( 4,3)=-f3
+                        
+                        c_array(num)%bi( 5,1)= f3
+                        c_array(num)%bi( 5,2)= f3
+                        c_array(num)%bi( 5,3)=-f3
+                        
+                        c_array(num)%bi( 6,1)=-f3
+                        c_array(num)%bi( 6,2)= f3
+                        c_array(num)%bi( 6,3)= f3
+                        
+                        c_array(num)%bi( 7,1)= f3
+                        c_array(num)%bi( 7,2)= f3
+                        c_array(num)%bi( 7,3)= f3
+                        
+                        c_array(num)%bi( 8,1)= f3
+                        c_array(num)%bi( 8,2)=-f3
+                        c_array(num)%bi( 8,3)= f3
+                        
+                        c_array(num)%bi( 9,1)= f3
+                        c_array(num)%bi( 9,2)= f3
+                        c_array(num)%bi( 9,3)=-f3
+                        
+                        c_array(num)%bi(10,1)= f3
+                        c_array(num)%bi(10,2)=-f3
+                        c_array(num)%bi(10,3)= f3
+                        
+                        c_array(num)%bi(11,1)= f3
+                        c_array(num)%bi(11,2)= f3
+                        c_array(num)%bi(11,3)= f3
+                        
+                        c_array(num)%bi(12,1)=-f3
+                        c_array(num)%bi(12,2)= f3
+                        c_array(num)%bi(12,3)= f3
+                        !{112}<111>
+                        c_array(num)%bi(13,1)= f3
+                        c_array(num)%bi(13,2)= f3
+                        c_array(num)%bi(13,3)=-f3
+                        
+                        c_array(num)%bi(14,1)= f3
+                        c_array(num)%bi(14,2)=-f3
+                        c_array(num)%bi(14,3)= f3
+                        
+                        c_array(num)%bi(15,1)=-f3
+                        c_array(num)%bi(15,2)= f3
+                        c_array(num)%bi(15,3)= f3
+                        
+                        c_array(num)%bi(16,1)= f3
+                        c_array(num)%bi(16,2)= f3
+                        c_array(num)%bi(16,3)= f3
+                        
+                        c_array(num)%bi(17,1)= f3
+                        c_array(num)%bi(17,2)=-f3
+                        c_array(num)%bi(17,3)= f3
+                        
+                        c_array(num)%bi(18,1)= f3
+                        c_array(num)%bi(18,2)= f3
+                        c_array(num)%bi(18,3)=-f3
+                        
+                        c_array(num)%bi(19,1)= f3
+                        c_array(num)%bi(19,2)= f3
+                        c_array(num)%bi(19,3)= f3
+                        
+                        c_array(num)%bi(20,1)=-f3
+                        c_array(num)%bi(20,2)= f3
+                        c_array(num)%bi(20,3)= f3
+                        
+                        c_array(num)%bi(21,1)=-f3
+                        c_array(num)%bi(21,2)= f3
+                        c_array(num)%bi(21,3)= f3
+                        
+                        c_array(num)%bi(22,1)= f3
+                        c_array(num)%bi(22,2)= f3
+                        c_array(num)%bi(22,3)= f3
+                        
+                        c_array(num)%bi(23,1)= f3
+                        c_array(num)%bi(23,2)= f3
+                        c_array(num)%bi(23,3)=-f3
+                        
+                        c_array(num)%bi(24,1)= f3
+                        c_array(num)%bi(24,2)=-f3
+                        c_array(num)%bi(24,3)= f3
+                        !{123}<111>
+                        c_array(num)%bi(25,1)= f3
+                        c_array(num)%bi(25,2)= f3
+                        c_array(num)%bi(25,3)=-f3
+                        
+                        c_array(num)%bi(26,1)= f3
+                        c_array(num)%bi(26,2)=-f3
+                        c_array(num)%bi(26,3)= f3
+                        
+                        c_array(num)%bi(27,1)=-f3
+                        c_array(num)%bi(27,2)= f3
+                        c_array(num)%bi(27,3)= f3
+                        
+                        c_array(num)%bi(28,1)= f3
+                        c_array(num)%bi(28,2)= f3
+                        c_array(num)%bi(28,3)= f3
+                        
+                        c_array(num)%bi(29,1)= f3
+                        c_array(num)%bi(29,2)=-f3
+                        c_array(num)%bi(29,3)= f3
+                        
+                        c_array(num)%bi(30,1)= f3
+                        c_array(num)%bi(30,2)= f3
+                        c_array(num)%bi(30,3)=-f3
+                        
+                        c_array(num)%bi(31,1)= f3
+                        c_array(num)%bi(31,2)= f3
+                        c_array(num)%bi(31,3)= f3
+                        
+                        c_array(num)%bi(32,1)=-f3
+                        c_array(num)%bi(32,2)= f3
+                        c_array(num)%bi(32,3)= f3
+                        
+                        c_array(num)%bi(33,1)= f3
+                        c_array(num)%bi(33,2)= f3
+                        c_array(num)%bi(33,3)=-f3
+                        
+                        c_array(num)%bi(34,1)= f3
+                        c_array(num)%bi(34,2)=-f3
+                        c_array(num)%bi(34,3)= f3
+                        
+                        c_array(num)%bi(35,1)=-f3
+                        c_array(num)%bi(35,2)= f3
+                        c_array(num)%bi(35,3)= f3
+                        
+                        c_array(num)%bi(36,1)= f3
+                        c_array(num)%bi(36,2)= f3
+                        c_array(num)%bi(36,3)= f3
+                        
+                        c_array(num)%bi(37,1)= f3
+                        c_array(num)%bi(37,2)=-f3
+                        c_array(num)%bi(37,3)= f3
+                        
+                        c_array(num)%bi(38,1)= f3
+                        c_array(num)%bi(38,2)= f3
+                        c_array(num)%bi(38,3)=-f3
+                        
+                        c_array(num)%bi(39,1)= f3
+                        c_array(num)%bi(39,2)= f3
+                        c_array(num)%bi(39,3)= f3
+                        
+                        c_array(num)%bi(40,1)=-f3
+                        c_array(num)%bi(40,2)= f3
+                        c_array(num)%bi(40,3)= f3
+                        
+                        c_array(num)%bi(41,1)=-f3
+                        c_array(num)%bi(41,2)= f3
+                        c_array(num)%bi(41,3)= f3
+                        
+                        c_array(num)%bi(42,1)= f3
+                        c_array(num)%bi(42,2)= f3
+                        c_array(num)%bi(42,3)= f3
+                        
+                        c_array(num)%bi(43,1)= f3
+                        c_array(num)%bi(43,2)= f3
+                        c_array(num)%bi(43,3)=-f3
+                        
+                        c_array(num)%bi(44,1)= f3
+                        c_array(num)%bi(44,2)=-f3
+                        c_array(num)%bi(44,3)= f3
+                        
+                        c_array(num)%bi(45,1)=-f3
+                        c_array(num)%bi(45,2)= f3
+                        c_array(num)%bi(45,3)= f3
+                        
+                        c_array(num)%bi(46,1)= f3
+                        c_array(num)%bi(46,2)= f3
+                        c_array(num)%bi(46,3)= f3
+                        
+                        c_array(num)%bi(47,1)= f3
+                        c_array(num)%bi(47,2)= f3
+                        c_array(num)%bi(47,3)=-f3
+                        
+                        c_array(num)%bi(48,1)= f3
+                        c_array(num)%bi(48,2)=-f3
+                        c_array(num)%bi(48,3)= f3
+                        !{110}<111>
+                        c_array(num)%ni( 1,1)= f2
+                        c_array(num)%ni( 1,2)= f2
+                        c_array(num)%ni( 1,3)= z0
+                        
+                        c_array(num)%ni( 2,1)= f2
+                        c_array(num)%ni( 2,2)= f2
+                        c_array(num)%ni( 2,3)= z0
+                        
+                        c_array(num)%ni( 3,1)= f2
+                        c_array(num)%ni( 3,2)=-f2
+                        c_array(num)%ni( 3,3)= z0
+                        
+                        c_array(num)%ni( 4,1)= f2
+                        c_array(num)%ni( 4,2)=-f2
+                        c_array(num)%ni( 4,3)= z0
+                        
+                        c_array(num)%ni( 5,1)= f2
+                        c_array(num)%ni( 5,2)= z0
+                        c_array(num)%ni( 5,3)= f2
+                        
+                        c_array(num)%ni( 6,1)= f2
+                        c_array(num)%ni( 6,2)= z0
+                        c_array(num)%ni( 6,3)= f2
+                        
+                        c_array(num)%ni( 7,1)= f2
+                        c_array(num)%ni( 7,2)= z0
+                        c_array(num)%ni( 7,3)=-f2
+                        
+                        c_array(num)%ni( 8,1)= f2
+                        c_array(num)%ni( 8,2)= z0
+                        c_array(num)%ni( 8,3)=-f2
+                        
+                        c_array(num)%ni( 9,1)= z0
+                        c_array(num)%ni( 9,2)= f2
+                        c_array(num)%ni( 9,3)= f2
+                        
+                        c_array(num)%ni(10,1)= z0
+                        c_array(num)%ni(10,2)= f2
+                        c_array(num)%ni(10,3)= f2
+                        
+                        c_array(num)%ni(11,1)= z0
+                        c_array(num)%ni(11,2)= f2
+                        c_array(num)%ni(11,3)=-f2
+                        
+                        c_array(num)%ni(12,1)= z0
+                        c_array(num)%ni(12,2)= f2
+                        c_array(num)%ni(12,3)=-f2
+                        !{112}<111>
+                        c_array(num)%ni(13,1)= f112
+                        c_array(num)%ni(13,2)= f112
+                        c_array(num)%ni(13,3)= f211
+                        
+                        c_array(num)%ni(14,1)=-f112
+                        c_array(num)%ni(14,2)= f112
+                        c_array(num)%ni(14,3)= f211
+                        
+                        c_array(num)%ni(15,1)= f112
+                        c_array(num)%ni(15,2)=-f112
+                        c_array(num)%ni(15,3)= f211
+                        
+                        c_array(num)%ni(16,1)= f112
+                        c_array(num)%ni(16,2)= f112
+                        c_array(num)%ni(16,3)=-f211
+                        
+                        c_array(num)%ni(17,1)= f112
+                        c_array(num)%ni(17,2)= f211
+                        c_array(num)%ni(17,3)= f112
+                        
+                        c_array(num)%ni(18,1)=-f112
+                        c_array(num)%ni(18,2)= f211
+                        c_array(num)%ni(18,3)= f112
+                        
+                        c_array(num)%ni(19,1)= f112
+                        c_array(num)%ni(19,2)=-f211
+                        c_array(num)%ni(19,3)= f112
+                        
+                        c_array(num)%ni(20,1)= f112
+                        c_array(num)%ni(20,2)= f211
+                        c_array(num)%ni(20,3)=-f112
+                        
+                        c_array(num)%ni(21,1)= f211
+                        c_array(num)%ni(21,2)= f112
+                        c_array(num)%ni(21,3)= f112
+                        
+                        c_array(num)%ni(22,1)=-f211
+                        c_array(num)%ni(22,2)= f112
+                        c_array(num)%ni(22,3)= f112
+                        
+                        c_array(num)%ni(23,1)= f211
+                        c_array(num)%ni(23,2)=-f112
+                        c_array(num)%ni(23,3)= f112
+                        
+                        c_array(num)%ni(24,1)= f211
+                        c_array(num)%ni(24,2)= f112
+                        c_array(num)%ni(24,3)=-f112
+                        !{123}<111>
+                        c_array(num)%ni(25,1)= f123
+                        c_array(num)%ni(25,2)= f213
+                        c_array(num)%ni(25,3)= f312
+                        
+                        c_array(num)%ni(26,1)=-f123
+                        c_array(num)%ni(26,2)= f213
+                        c_array(num)%ni(26,3)= f312
+                        
+                        c_array(num)%ni(27,1)= f123
+                        c_array(num)%ni(27,2)=-f213
+                        c_array(num)%ni(27,3)= f312
+                        
+                        c_array(num)%ni(28,1)= f123
+                        c_array(num)%ni(28,2)= f213
+                        c_array(num)%ni(28,3)=-f312
+                        
+                        c_array(num)%ni(29,1)= f123
+                        c_array(num)%ni(29,2)= f312
+                        c_array(num)%ni(29,3)= f213
+                        
+                        c_array(num)%ni(30,1)=-f123
+                        c_array(num)%ni(30,2)= f312
+                        c_array(num)%ni(30,3)= f213
+                        
+                        c_array(num)%ni(31,1)= f123
+                        c_array(num)%ni(31,2)=-f312
+                        c_array(num)%ni(31,3)= f213
+                        
+                        c_array(num)%ni(32,1)= f123
+                        c_array(num)%ni(32,2)= f312
+                        c_array(num)%ni(32,3)=-f213
+                        
+                        c_array(num)%ni(33,1)= f213
+                        c_array(num)%ni(33,2)= f123
+                        c_array(num)%ni(33,3)= f312
+                        
+                        c_array(num)%ni(34,1)=-f213
+                        c_array(num)%ni(34,2)= f123
+                        c_array(num)%ni(34,3)= f312
+                        
+                        c_array(num)%ni(35,1)= f213
+                        c_array(num)%ni(35,2)=-f123
+                        c_array(num)%ni(35,3)= f312
+                        
+                        c_array(num)%ni(36,1)= f213
+                        c_array(num)%ni(36,2)= f123
+                        c_array(num)%ni(36,3)=-f312
+
+                        c_array(num)%ni(37,1)= f213
+                        c_array(num)%ni(37,2)= f312
+                        c_array(num)%ni(37,3)= f123
+                        
+                        c_array(num)%ni(38,1)=-f213
+                        c_array(num)%ni(38,2)= f312
+                        c_array(num)%ni(38,3)= f123
+                        
+                        c_array(num)%ni(39,1)= f213
+                        c_array(num)%ni(39,2)=-f312
+                        c_array(num)%ni(39,3)= f123
+                        
+                        c_array(num)%ni(40,1)= f213
+                        c_array(num)%ni(40,2)= f312
+                        c_array(num)%ni(40,3)=-f123
+                        
+                        c_array(num)%ni(41,1)= f312
+                        c_array(num)%ni(41,2)= f123
+                        c_array(num)%ni(41,3)= f213
+                        
+                        c_array(num)%ni(42,1)=-f312
+                        c_array(num)%ni(42,2)= f123
+                        c_array(num)%ni(42,3)= f213
+                        
+                        c_array(num)%ni(43,1)= f312
+                        c_array(num)%ni(43,2)=-f123
+                        c_array(num)%ni(43,3)= f213
+                        
+                        c_array(num)%ni(44,1)= f312
+                        c_array(num)%ni(44,2)= f123
+                        c_array(num)%ni(44,3)=-f213
+                        
+                        c_array(num)%ni(45,1)= f312
+                        c_array(num)%ni(45,2)= f213
+                        c_array(num)%ni(45,3)= f123
+                        
+                        c_array(num)%ni(46,1)=-f312
+                        c_array(num)%ni(46,2)= f213
+                        c_array(num)%ni(46,3)= f123
+                        
+                        c_array(num)%ni(47,1)= f312
+                        c_array(num)%ni(47,2)=-f213
+                        c_array(num)%ni(47,3)= f123
+                        
+                        c_array(num)%ni(48,1)= f312
+                        c_array(num)%ni(48,2)= f213
+                        c_array(num)%ni(48,3)=-f123
                   else
                         write (out,*) "Error: invalid slip type."
                         call die_gracefully
                   end if
+c
+c ! Allocate number of hardening variables
+                  if (c_array(num)%h_type .eq. 1) then !Voche
+                          c_array(num)%num_hard = 1
+                          c_array(num)%real_tang = .true.
+                  elseif (c_array(num)%h_type .eq. 2) then !MTS
+                          c_array(num)%num_hard = 1
+                          c_array(num)%real_tang = .true.
+                  elseif (c_array(num)%h_type .eq. 3) then !User
+                          c_array(num)%num_hard = 0
+                          c_array(num)%real_tang = .false.
+                  elseif (c_array(num)%h_type .eq. 4) then !ORNL
+                          c_array(num)%num_hard = c_array(num)%nslip
+                          c_array(num)%real_tang = .true.
+                  elseif (c_array(num)%h_type .eq. 7) then !MRR
+                          c_array(num)%num_hard = c_array(num)%nslip
+                          c_array(num)%real_tang = .true.
+                  else
+                     write(*,101) c_array(num)%h_type
+ 101  format(
+     &      10x,'>> Error: unknown hardening type ', 'i6', '.',
+     &    /,10x, 'Aborting...')
+      call die_gracefully
+                  endif
 c
 c                
                   e = c_array(num)%e
