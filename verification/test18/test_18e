@@ -3969,6 +3969,7 @@ c
    adaptive solution on
    maximum iterations 5
    convergence test norm res tol 0.005 $ rather tight
+   line search on details
    time step 0.0005
    trace solution on
    extrapolate on  $ really helps convergence rate
