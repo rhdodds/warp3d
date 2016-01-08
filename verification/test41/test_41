@@ -745,9 +745,10 @@ c
    maximum iterations 20
    minimum iterations 1
    convergence test norm res tol 0.01
+   extrapolate on
+   line search on details
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off
@@ -755,7 +756,6 @@ c
    consistent q-matrix on
    time step 0.0001
    trace solution on
-   extrapolate on
 c
 contact planes
   shape 1 plane
