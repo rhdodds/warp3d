@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/3/2014  rhd              *
+c     *                   last modified : 12/28/2015  rhd            *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -984,8 +984,8 @@ c
 #lnx     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
 #l64     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
 #mac     &     '    **     Mac OS X (64-bit)          -dev-    Release: ',
-     &     ' 17.6.2      **',/,
-     &     '    **     Code Build Number: 2900             ',
+     &     ' 17.7.0      **',/,
+     &     '    **     Code Build Number: 3200             ',
      &     '                      **',/,
      &     '    **     University of Illinois              Dept. of ',
      &     'Civil Eng.   **',/,
