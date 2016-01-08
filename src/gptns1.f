@@ -159,29 +159,6 @@ c
         call drive_11_cnst(gpn, local_iout, local_work)
       end if
 c
-c                       store cep (i.e. [Dt]) for all elements in
-c                       block at this integration point. scale out
-c                       det[J] * weight included above. put in
-c                       global blocked data structure. these
-c                       will be used to compute stresses for iter=0
-c                       if we have imposed displacement and/or
-c                       temperature change over this step.
-c
-c                       No need to do this for UMAT since it only
-c                       has [Dt] in global cep_blocks
-c
-      if( .not. local_work%is_umat ) then
-       do i = 1, span
-         factors(i) = one / ( local_work%det_jac_block(i,gpn)
-     &                  * weight )
-       end do
-       now_blk = local_work%blk
-       call tanstf_store_cep( span, mxvl, gpn,
-     &                        local_work%cep_sym_size, local_work%cep,
-     &                        global_cep_blocks(now_blk)%vector,
-     &                        factors )
-      end if
-c
 c                       convert [Dt] from unrotated cauchy to cauchy
 c                       at current deformed configuration for geometric
 c                       nonlinear analysis. no computations
@@ -315,10 +292,7 @@ c     *                      subroutine drive_01_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/28/02                   *
-c     *                                                              *
-c     *     drive [D] consistent update for bilinear mises model     *
-c     *     (has temperature and loading rate dependence, cyclic)    *
+c     *                   last modified :  12/21/2015 rhd            *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -326,58 +300,99 @@ c
       subroutine drive_01_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout 
+c      
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k, felem
+      logical :: local_debug 
+      
+c      
+      span    = local_work%span
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
+      felem   = local_work%felem
+c      
+      local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-      etype            = local_work%elem_type
-      nnode            = local_work%num_enodes
-      span             = local_work%span
-      felem            = local_work%felem
-      weight           = local_work%weights(gpn)
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
+c
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
 c
 c
-c              set material states and get [cep]. transform
-c              unrotated (material) -> spatial using qn1.
-c              get temperature dependent modulus and nu if needed.
-c
-      call set_e_nu_for_block(
-     &    span, local_work%nu_v, local_work%e_v, local_work%segmental,
-     &    felem, etype, local_work%int_order, gpn, nnode,
-     &    local_work%temps_node_to_process, local_work%temps_node_blk )
-c
-      if ( local_work%fgm_enode_props ) then
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%e_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 1,
-     &                local_work%fgm_flags(1,1) )
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%nu_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 2,
-     &                local_work%fgm_flags(1,2) )
-      end if
-c
-      call cnst1( span, local_work%cep, local_work%rtse(1,1,gpn),
-     &            local_work%nu_v,
-     &            local_work%e_v, local_work%elem_hist1(1,2,gpn),
-     &            local_work%elem_hist1(1,5,gpn), local_work%beta_v,
-     &            local_work%elem_hist1(1,1,gpn),
-     &            local_work%det_jac_block(1,gpn), weight,
-     &            local_work%elem_hist1(1,4,gpn), felem )
-c
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do
+      
+      if( local_debug ) then
+        write(iout,9000) now_blk, felem, gpn, span
+        do ielem = 1, span
+          write(iout,9010) felem + ielem - 1
+          do k = 1, 6
+            write(iout,9020) local_work%cep(ielem,k,1:6)
+          end do
+        end do  
+      end if    
       return
+c
+ 9000 format(1x,'.... debug cnst1. now_blk, felem, gpn, span: ', 4i8)  
+ 9010 format(10x,'[D] for element: ',i7)
+ 9020 format(15x,6es14.6)
+ 
       end
-
 
 c     ****************************************************************
 c     *                                                              *
@@ -385,10 +400,7 @@ c     *                      subroutine drive_02_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/28/02                   *
-c     *                                                              *
-c     *     drive [D] consistent update for deformation plasticity   *
-c     *     model                                                    *
+c     *                   last modified :  12/26/2015 rhd            *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -396,137 +408,189 @@ c
       subroutine drive_02_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout 
+c      
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k, felem
+      logical :: local_debug 
+      
+c      
+      span    = local_work%span
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
+      felem   = local_work%felem
+c      
+      local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-c                      use linear+power law nonlinear elastic
-c                      material model. not valid for geometric
-c                      nonlinear formulation. [cep] computation
-c                      is fully vectorized.
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
 c
-      etype            = local_work%elem_type
-      nnode            = local_work%num_enodes
-      span             = local_work%span
-      felem            = local_work%felem
-      weight           = local_work%weights(gpn)
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
 c
-      if ( local_work%fgm_enode_props ) then
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%e_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 1,
-     &                local_work%fgm_flags(1,1) )
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%nu_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 2,
-     &                local_work%fgm_flags(1,2) )
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%sigyld_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 7,
-     &                local_work%fgm_flags(1,7) )
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%n_power_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 8,
-     &                local_work%fgm_flags(1,8) )
-      end if
 c
-      call cnst2( felem, gpn, local_work%e_v, local_work%nu_v,
-     &            local_work%sigyld_v,
-     &            local_work%n_power_v,
-     &            local_work%ddtse(1,1,gpn),
-     &            local_work%elem_hist1(1,1,gpn), local_work%cep,
-     &            span, local_work%det_jac_block(1,gpn), weight )
-c
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do
+      
+      if( local_debug ) then
+        write(iout,9000) now_blk, felem, gpn, span
+        do ielem = 1, span
+          write(iout,9010) felem + ielem - 1
+          do k = 1, 6
+            write(iout,9020) local_work%cep(ielem,k,1:6)
+          end do
+        end do  
+      end if    
       return
+c
+ 9000 format(1x,'.... debug cnst2. now_blk, felem, gpn, span: ', 4i8)  
+ 9010 format(10x,'[D] for element: ',i7)
+ 9020 format(15x,6es14.6)
+ 
       end
-
 
 c     ****************************************************************
 c     *                                                              *
-c     *                   subroutine drive_03_cnst                   *
+c     *                      subroutine drive_03_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/28/02                   *
+c     *                   last modified :  11/9/2015 rhd             *
 c     *                                                              *
-c     *     drive [D] consistent update for mises, gt plasticity     *
-c     *     model                                                    *
-c     *                                                              *
+c     *                   mises and gurson                           *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_03_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout 
+c      
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight
-      logical first
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k 
+      
+c      
+      span    = local_work%span
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
 c
-      etype            = local_work%elem_type
-      nnode            = local_work%num_enodes
-      span             = local_work%span
-      felem            = local_work%felem
-      weight           = local_work%weights(gpn)
-      first            = local_work%first
-      iter             = local_work%iter
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
 c
-c               general mises & Gurson rate dependent model
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
 c
-c         general mises/gurson model material model. the [cep] routine
-c         needs all history values at n+1 but only 2 values fron
-c         history at start of step (n). computation of [cep] is now
-c         vectorized.
 c
-      call set_e_nu_for_block(
-     &   span, local_work%nu_v, local_work%e_v, local_work%segmental,
-     &   felem, etype, local_work%int_order, gpn, nnode,
-     &   local_work%temps_node_to_process, local_work%temps_node_blk )
-c
-      if( local_work%fgm_enode_props ) then
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%e_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 1,
-     &                local_work%fgm_flags(1,1) )
-             call set_fgm_solid_props_for_block(
-     &                span, felem, etype, gpn, nnode,
-     &                local_work%nu_v, local_work%shape(1,gpn),
-     &                local_work%enode_mat_props, 2,
-     &                local_work%fgm_flags(1,2) )
-      end if
-c
-      call cnst3( felem, gpn, first, iter, local_work%e_v,
-     &            local_work%nu_v,
-     &            local_work%q1_v, local_work%q2_v,
-     &            local_work%q3_v, local_work%nuc_v,
-     &            local_work%nuc_s_n_v, local_work%nuc_e_n_v,
-     &            local_work%nuc_f_n_v, local_work%rtse(1,1,gpn),
-     &            local_work%elem_hist(1,1,gpn),
-     &            local_work%elem_hist1(1,1,gpn), local_work%cep,
-     &            span, local_work%det_jac_block(1,gpn), weight )
-c
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do
       return
+c
       end
 
 c     ****************************************************************
@@ -535,7 +599,7 @@ c     *                   subroutine drive_04_cnst                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/27/13 rhd               *
+c     *                   last modified : 10/26/2015 rhd             *
 c     *                                                              *
 c     *     drive [D] consistent update for cohesive model           *
 c     *                                                              *
@@ -545,99 +609,78 @@ c
       subroutine drive_04_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout
+c      
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight, time_n, dtime, ddummy(mxvl)
-      integer idummy(mxvl)  ! and ddummy could be just (1)
-      logical  nonlocal, temperatures, temperatures_ref
+#dbl      double precision :: weight, symm_part_cep(6), f
+#sgl      real :: weight, symm_part_cep(6), f
+      logical :: ldebug
+      integer :: span, felem, now_blk, ielem, k, i
+c    
+      ldebug  = .false.
+      span    = local_work%span
+      felem   = local_work%felem
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
 c
-      etype            = local_work%elem_type
-      nnode            = local_work%num_enodes
-      span             = local_work%span
-      felem            = local_work%felem
-      weight           = local_work%weights(gpn)
-      step             = local_work%step
-      iter             = local_work%iter
-      blk              = local_work%blk
-      temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
-      knumthreads       = local_work%num_threads
-      kthread           = omp_get_thread_num() + 1
+c              pull 6 terms of lower-triangle for this element
+c              global cep block is 6 x span x num integration
+c              points
 c
-      time_n = local_work%time_n
-      dtime  = local_work%dt
+c              expand to 3x3 symmetric [D] scaled by gpn
+c              weight factor
 c
-      nonlocal = local_work%is_cohes_nonlocal
-      imxvl = mxvl
-      igpn = gpn
-      kout = iout
-c
-      if( nonlocal ) then
-        call cnst4(
-     1    step, iter, felem, igpn, kout, span, imxvl, time_n, dtime,
-     2    nonlocal, knumthreads, kthread, weight,
-     3    local_work%cohes_type,local_work%intf_prp_block,
-     4    local_work%ddtse(1,1,gpn),
-     5    local_work%elem_hist(1,1,gpn),
-     6    local_work%elem_hist1(1,1,gpn), local_work%cep,
-     7    local_work%det_jac_block(1,gpn),
-     8    local_work%cohes_temp_ref(1),
-     9    local_work%cohes_dtemp(1),
-     a    local_work%cohes_temp_n(1),  ! nonlocal after here
-     a    local_work%top_surf_solid_elements(1),
-     b    local_work%bott_surf_solid_elements(1),
-     c    local_work%top_surf_solid_stresses_n1(1,1),
-     d    local_work%bott_surf_solid_stresses_n1(1,1),
-     e    local_work%top_surf_solid_eps_n1(1,1),
-     f    local_work%bott_surf_solid_eps_n1(1,1),
-     g    local_work%nonlocal_stvals_top_n1(1,1),
-     h    local_work%nonlocal_stvals_bott_n1(1,1),
-     i    local_work%top_solid_matl(1),
-     j    local_work%bott_solid_matl(1) )
-      else
-        call cnst4(
-     1    step, iter, felem, igpn, kout, span, imxvl, time_n, dtime,
-     2    nonlocal, knumthreads, kthread, weight,
-     3    local_work%cohes_type,local_work%intf_prp_block,
-     4    local_work%ddtse(1,1,gpn),
-     5    local_work%elem_hist(1,1,gpn),
-     6    local_work%elem_hist1(1,1,gpn), local_work%cep,
-     7    local_work%det_jac_block(1,gpn),
-     8    local_work%cohes_temp_ref(1),
-     9    local_work%cohes_dtemp(1),
-     a    local_work%cohes_temp_n(1),
-     a    idummy(1),
-     b    idummy(1),
-     c    ddummy(1),
-     d    ddummy(1),
-     e    ddummy(1),
-     f    ddummy(1),
-     g    ddummy(1),
-     h    ddummy(1),
-     i    idummy(1),
-     j    idummy(1) )
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+       f = weight * local_work%det_jac_block(ielem,gpn)
+       k = ( 6 * span * (gpn-1) ) + 6 * (ielem-1)
+       symm_part_cep(1) = f * gbl_cep_blocks(now_blk)%vector(k+1)
+       symm_part_cep(2) = f * gbl_cep_blocks(now_blk)%vector(k+2)
+       symm_part_cep(3) = f * gbl_cep_blocks(now_blk)%vector(k+3)
+       symm_part_cep(4) = f * gbl_cep_blocks(now_blk)%vector(k+4)
+       symm_part_cep(5) = f * gbl_cep_blocks(now_blk)%vector(k+5)
+       symm_part_cep(6) = f * gbl_cep_blocks(now_blk)%vector(k+6)
+       local_work%cep(ielem,1,1) = symm_part_cep(1)
+       local_work%cep(ielem,2,1) = symm_part_cep(2)
+       local_work%cep(ielem,2,2) = symm_part_cep(3)
+       local_work%cep(ielem,3,1) = symm_part_cep(4)
+       local_work%cep(ielem,3,2) = symm_part_cep(5)
+       local_work%cep(ielem,3,3) = symm_part_cep(6)
+       local_work%cep(ielem,1,2) = symm_part_cep(2)
+       local_work%cep(ielem,1,3) = symm_part_cep(4)
+       local_work%cep(ielem,2,3) = symm_part_cep(5)
+      end do
+c      
+      if( ldebug ) then
+         write(iout,9000)
+         do i = 1, span
+           f = 1.0d00 / (weight * local_work%det_jac_block(i,gpn) )
+           write(iout,9100) felem+i-1, gpn
+           write(iout,9110) local_work%cep(i,1:3,1:3) * f
+         end do
       end if
-c
+            
       return
+c
+9000  format('... drive_04_cnst. returned [D]s')
+9100  format(10x,'...element, gpn: ',i7,i3)
+9110  format(3(15x,3f10.3,/))
       end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine drive_05_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/5/2011                  *
-c     *                                                              *
-c     *    drive [D] consistent update for cyclic plasticity model   *
+c     *                   last modified :  12/31/2015 rhd            *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -645,90 +688,98 @@ c
       subroutine drive_05_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout 
+c      
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight, gp_tau_vec(mxvl)
-      logical first, nonlin_hard, generalized_pl,
-     &        local_debug
-      data local_debug / .false. /
-
-      parameter(zero=0)
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k, felem
+      logical :: local_debug 
+      
+c      
+      span    = local_work%span
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
+      felem   = local_work%felem
+c      
+      local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-      span             = local_work%span
-      felem            = local_work%felem
-      weight           = local_work%weights(gpn)
-      first            = local_work%first
-      iter             = local_work%iter
-      etype            = local_work%elem_type
-      nnode            = local_work%num_enodes
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
 c
-      matnum           = local_work%matnum
-      nonlin_hard      = matprp(58,matnum) .gt. zero
-      generalized_pl   = matprp(58,matnum) .lt. zero
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
 c
 c
-c                  storage layout for mm05_props:
-c
-c             local_work  matl storage  FA option      GP option
-c                 1        55             q_u             gp_h_u
-c                 2        56             b_u             gp_tau
-c                 3        57             h_u             gp_beta_u
-c                 4        58             1.0              -1.0
-c                 5        59            gamma_u         gp_delta_u
-c                 6        60            sig_tol         sig_tol
-C                      61-64 <available>
-
-      call set_mm05_props_for_block(
-     &   span, local_work%nu_v, local_work%e_v, local_work%mm05_props,
-     &   nonlin_hard, generalized_pl, local_work%segmental,
-     &   felem, etype, local_work%int_order, gpn, nnode,
-     &   local_work%temps_node_to_process, local_work%temps_node_blk,
-     &   iout )
-c
-c            build remaining local data vectors generalized_plasticity.
-c
-      do i = 1, span
-        gp_tau_vec(i) = matprp(56,matnum)
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
       end do
-
-c
+      
       if( local_debug ) then
-       write(iout,*) '>.... drive_05_cnst:'
-       write(iout,9000) span, felem, iter, first, matnum, gpn
-       write(iout,9010) nonlin_hard, generalized_pl
-       write(iout,9020)
-       write(iout,9030) (felem+i-1, local_work%e_v(i),
-     &                   local_work%nu_v(i),
-     &                   local_work%mm05_props(i,1:5), i=1,span)
-      end if
-c
-      call cnst5( span, felem, gpn, first, iter, iout, mxvl, nstr,
-     &            weight, local_work%e_v, local_work%nu_v,
-     &            local_work%mm05_props,
-     &            local_work%rtse(1,1,gpn),
-     &            local_work%elem_hist(1,1,gpn),
-     &            local_work%elem_hist1(1,1,gpn),
-     &            local_work%urcs_blk_n1(1,1,gpn),
-     &            local_work%cep,
-     &            local_work%det_jac_block(1,gpn),
-     &            local_work%mm05_props(1,1),
-     &            local_work%mm05_props(1,3),
-     &            locaL_work%mm05_props(1,5), gp_tau_vec)
-c
- 9000 format(3x,'span, felem, iter, first, matnum, gpn: ',3i4,l4,2i4)
- 9010 format(3x,'nonlin_hard, generalized_pl: ',2l4)
- 9020 format(3x,"Property values:",/,9x,'elem',5x,'E         ','nu',
-     &   15x,'mm05_props(1-5)')
- 9030 format(5x,i8,f10.1,2x,f8.3,5f10.3)
+        write(iout,9000) now_blk, felem, gpn, span
+        do ielem = 1, span
+          write(iout,9010) felem + ielem - 1
+          do k = 1, 6
+            write(iout,9020) local_work%cep(ielem,k,1:6)
+          end do
+        end do  
+      end if    
       return
+c
+ 9000 format(1x,'.... debug cnst5. now_blk, felem, gpn, span: ', 4i8)  
+ 9010 format(10x,'[D] for element: ',i7)
+ 9020 format(15x,6es14.6)
+ 
       end
 
 c     ****************************************************************
@@ -737,7 +788,7 @@ c     *                      subroutine drive_06_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/2/03                    *
+c     *                   last modified :  10/18/2015                *
 c     *                                                              *
 c     *     drive [D] consistent update for creep
 c     *                                                              *
@@ -747,49 +798,88 @@ c
       subroutine drive_06_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout 
+c      
 c                     local variables
 c
-#dbl      double precision ::
-#sgl      real ::
-     & weight
-      logical :: first
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k 
+      
 c      
       span    = local_work%span
-      felem   = local_work%felem
       weight  = local_work%weights(gpn)
-      first   = local_work%first
-      iter    = local_work%iter
+      now_blk = local_work%blk
 c
-      local_gpn = gpn
-      local_iout = iout
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
 c
-      call cnst6( span, felem, local_gpn, iter, local_iout, mxvl,
-     &            nstr, weight, local_work%dt,  local_work%e_v,
-     &            local_work%nu_v, local_work%n_power_v,
-     &            local_work%rtse(1,1,gpn),
-     &            local_work%mm06_props(1,1),
-     &            local_work%elem_hist1(1,1,gpn),
-     &            local_work%cep, local_work%det_jac_block(1,gpn) )
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
+c
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do
       return
 c
       end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine drive_07_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/2/03                    *
-c     *                                                              *
-c     *     drive [D] consistent update for adv. mises model +       *
-c     *     hydrogen effects                                         *
+c     *                   last modified :  1/2/2015 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -797,39 +887,99 @@ c
       subroutine drive_07_cnst( gpn, iout, local_work )
 c
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn, iout 
+c      
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight
-      logical first
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k, felem
+      logical :: local_debug 
+      
+c      
+      span    = local_work%span
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
+      felem   = local_work%felem
+c      
+      local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-      span             = local_work%span
-      felem            = local_work%felem
-      weight           = local_work%weights(gpn)
-      first            = local_work%first
-      iter             = local_work%iter
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
 c
-      call cnst7( span, felem, gpn, first, iter, iout, mxvl, nstr,
-     &            weight, local_work%e_v, local_work%nu_v,
-     &            local_work%sigyld_v, local_work%n_power_v,
-     &            local_work%mm07_props,
-     &            local_work%rtse(1,1,gpn),
-     &            local_work%elem_hist(1,1,gpn),
-     &            local_work%elem_hist1(1,1,gpn),
-     &            local_work%urcs_blk_n1(1,1,gpn),
-     &            local_work%cep,
-     &            local_work%det_jac_block(1,gpn) )
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
 c
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do
+      
+      if( local_debug ) then
+        write(iout,9000) now_blk, felem, gpn, span
+        do ielem = 1, span
+          write(iout,9010) felem + ielem - 1
+          do k = 1, 6
+            write(iout,9020) local_work%cep(ielem,k,1:6)
+          end do
+        end do  
+      end if    
       return
+c
+ 9000 format(1x,'.... debug cnst7. now_blk, felem, gpn, span: ', 4i8)  
+ 9010 format(10x,'[D] for element: ',i7)
+ 9020 format(15x,6es14.6)
+ 
       end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine drive_umat_cnst                 *
@@ -922,49 +1072,100 @@ c     *                      subroutine drive_10_cnst                *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 09/25/2015 rhd             *
+c     *                   last modified : 12/8/2015 rhd              *
 c     *                                                              *
-c     *     drive [D] consistent update for warp3d umat              *
+c     *              drive [D] consistent update for CP model        *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_10_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      use main_data, only : matprp, lmtprp, extrapolated_du,
+     &                      non_zero_imposed_du 
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+c      
+      implicit none
 $add param_def
-$add include_tan_ek
 c
 c                     parameter declarations
 c
+$add include_tan_ek
+      integer :: gpn, iout
+c
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
-     & weight
-      logical first
+      integer :: span, felem, iter, now_blk,
+     &           start_loc, k, i, j
+#dbl      double precision ::
+#sgl      real ::
+     & weight, f, cep(6,6), cep_vec(36), tol
+      logical :: local_debug
+      equivalence ( cep, cep_vec )
 c
       span             = local_work%span
       felem            = local_work%felem
       weight           = local_work%weights(gpn)
-      first            = local_work%first
       iter             = local_work%iter
+      now_blk          = local_work%blk
 c
-      hist_size_for_blk = local_work%hist_size_for_blk
+      local_debug =  .false.
+      if( local_debug ) then
+        write(iout,9100) now_blk, span, felem,
+     &                   local_work%hist_size_for_blk
+      end if
+c      
+c                     the consistent [D] for each integration point is
+c                     stored in the 1st 36 positions of history
+c 
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         f = weight * local_work%det_jac_block(i,gpn)
+         cep_vec(1:36) = local_work%elem_hist1(i,1:36,gpn)
+         local_work%cep(i,1:6,1:6) = cep(1:6,1:6) * f
+      end do
 c
-c               this call causes compiler to create local arrays and
-c               do copies.
+c                     code to optionally check symmetry of the 
+c                     [D] linear
 c
-c               should be re-written to remove this overhead.
-c
-      call cnst10( gpn, span,
-     &           hist_size_for_blk,
-     &           local_work%elem_hist(1:span,1:hist_size_for_blk,gpn),
-     &           local_work%elem_hist1(1:span,1:hist_size_for_blk,gpn),
-     &           local_work, iout)
-c
+      if( local_debug ) then
+      tol = 0.01d00
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         cep_vec(1:36) = local_work%elem_hist1(i,1:36,gpn)
+         do j = 1, 6
+            if( cep(j,j) .lt. tol ) then
+               write(iout,*) ' .. fatal @ 1'
+               call die_abort
+            end if
+        end do
+        do j = 1, 6
+          do k = 1, 6
+            if( abs( cep(j,k) -cep(k,j) )
+     &           .gt. 1.0d-8 ) then       
+               write(iout,*) ' .. fatal @ 2'
+               call die_abort
+            end if
+          end do
+       end do
+      end do         
+      end if
+c      
+      if( local_debug ) then
+        write(iout,*) ".... linear elastic [D] for CP"
+        do k = 1, span
+           write(iout,*) '    ... element: ', felem+k-1
+           do i = 1, 6
+             write(iout,9000) cep(i,1:6)
+           end do
+        end do   
+      end if
       return
+c      
+ 9000 format(10x,6e14.5)
+ 9100 format(2x,".. debug for routine drive_10_cnst",
+     & /,10x,"now_blk, span, felem, history size:", 4i6)
+c     
       end
 c
 c     ****************************************************************
