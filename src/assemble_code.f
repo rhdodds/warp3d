@@ -721,7 +721,7 @@ c                      insert/add their values where they belong
 c
       allocate(edest(mxedof,mxconn,num_threads))
 c
-c$OMP PARALLEL DO PRIVATE(srow, now_thread, nnzr)
+c$OMP PARALLEL DO  PRIVATE(srow, now_thread, nnzr)
       do srow = 1, neqns
         now_thread = omp_get_thread_num() + 1
         nnzr = k_ptrs(srow+1) - k_ptrs(srow)
