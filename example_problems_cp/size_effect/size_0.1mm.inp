@@ -98,7 +98,7 @@ constraints
    bbar stabilization factor 0.0
    consistent q-matrix off
    time step 1.0e06
-   extrapolate off
+   extrapolate on
 ! 
  output model flat patran convention text file "size_0.1mm.text"
 ! 
