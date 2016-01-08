@@ -75,7 +75,7 @@ c
          write(out,*) '... num_threads: ',num_threads
       end if
 c
-c$OMP PARALLEL DO PRIVATE( blk, now_thread )
+c$OMP PARALLEL DO  PRIVATE( blk, now_thread )
 c$OMP&            SHARED( nelblk, elblks, first, now_iter,
 c$OMP&                    now_step )
        do blk = 1, nelblk
@@ -221,7 +221,7 @@ c
       symmetric_assembly = .not. asymmetric_assembly
 c
 c             See if we're actually an interface damaged material.
-c             
+c        
 c
       local_work%is_inter_dmg = .false.
       if( iprops(42,felem) .ne. -1 ) then
