@@ -7,6 +7,7 @@ c
       integer, parameter :: h_prec = selected_real_kind(12)
 c
 c           Secondary type for CP crystal properties
+c
       type :: crystal_properties
             double precision, dimension(6,6) :: init_elast_stiff
             double precision, dimension(3) :: init_angles
@@ -21,7 +22,12 @@ c           Secondary type for CP crystal properties
      &            tau_a, t_o,  tauHat_v, Go_v,
      &            k_o, tau_y, tau_v, voche_m, u1, u2, u3, u4,
      &            u5, u6
-            integer :: nslip, h_type
+            integer :: nslip, h_type, num_hard, s_type, cnum
+c              new variables to control local solvers inside mm10
+            logical :: real_tang, solver, strategy, gpall
+            integer :: miter, gpp, method, st_it(3)
+            double precision :: atol, atol1, rtol, rtol1,
+     &                                xtol, xtol1
       end type
 c
       type :: nonlinear_sigeps_work
@@ -144,7 +150,7 @@ c
      &            number_points, cohes_type, curve_set_number,
      &            surface, hist_size_for_blk, iout, blk,
      &            umat_stress_type, cep_sym_size, num_threads,
-     &            inter_mat, macro_sz, cp_sz 
+     &            inter_mat, macro_sz, cp_sz, now_thread 
 c
        logical, allocatable ::  trne(:,:)                     ! (mxvl,mxndel)
 
