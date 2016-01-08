@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 9/14/2015 rhd               *
+c     *                   last modified: 12/3/2015 rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -22,7 +22,11 @@ c
 c
       use main_data, only : mdiag, pbar, cnstrn, dload,
      &     max_loddat_blks, convergence_history, umat_used,
-     &     divergence_check, asymmetric_assembly, creep_model_used
+     &     divergence_check, asymmetric_assembly, creep_model_used,
+     &     non_zero_imposed_du, extrapolated_du, extrapolate,
+     &     extrap_off_next_step, line_search, ls_details, 
+     &     ls_min_step_length, ls_max_step_length, ls_rho,
+     &     ls_slack_tol
       use adaptive_steps, only : adapt_result, adapt_disp_fact,
      &                           adapt_load_fact
       use hypre_parameters, only : hyp_trigger_step
@@ -37,26 +41,31 @@ c
 c
       implicit integer (a-z)
 $add common.main
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  mf, mf_nm1, dt_original
-      logical mf_ratio_change
-      double precision sumrr, sumdd
+      logical :: mf_ratio_change
+      double precision :: sumrr, sumdd
 c
 c           local variables
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  mgres1, magdu1, zero, one, mgload, ext_tol,
-     &  scaling_load, ls_s0, ls_s1, mag
+     &  scaling_load, mag
+#dbl      double precision,
+#sgl      real,
+     &  allocatable, dimension(:) ::u_n_local
+      
 c     
-      logical dynamic, material_cut_step, emit_extrap_msg,
-     & emit_forced_linear_k_for_step,
-     & forced_linear_k_for_iter_1, diverging_flag
+      logical :: dynamic, material_cut_step, emit_extrap_msg,
+     & emit_forced_linear_k_for_step, ls_request_adaptive,
+     & diverging_flag, user_extrapolation_on, user_extrapolation_off
 c
-      character * 1 dums
-      logical local_debug, first_solve, first_subinc, check_crk_growth,
-     &        hypre_solver, cnverg, adaptive, local_mf_ratio_change
+      character (len=1) :: dums
+      logical :: local_debug, first_solve, first_subinc, 
+     &        hypre_solver, cnverg, adaptive, local_mf_ratio_change,
+     &        check_crk_growth
 c     
       type :: info_mnralg
         logical :: adaptive_used 
@@ -68,13 +77,13 @@ c
       type( info_mnralg ) info
 c
       data zero, one, ext_tol, local_debug / 0.0d00, 1.0d00,
-     &      0.00001d00, .false. /
+     &      1.0d-20, .false. /
 c
-c          predct:          .true. if use requested extrapolate on
+c          predct:          .true. if user requested extrapolate on
 c          adaptive_flag    .true. if user requested adaptive solution
 c          first_subinc     .true. if we are executing the the first
 c                           subincrement after adaptive has reduced
-c                           the step size
+c                           or restired the step size
 c          mf_ratio_change  .true. if the equivloads process says this
 c                           step load increment is NOT proportional to
 c                           step n laod increment
@@ -84,8 +93,18 @@ c
          write(out,*) "..... entered mnralg ....."
       end if   
 c
-      now_step = step
+      now_step = step ! just for protection
       iout = out
+c
+c          store model displacement vector at start of step (n).
+c          "u" will be updated to n+1 in this routine.
+c          at bottom here we set du = u(n+1) - u(n) to get
+c          ready for extrapolation in next load(time) step.
+c          Needed since adaptive will set du to be just a fraction
+c          of total du over n -> n+1.
+c
+      allocate( u_n_local(nodof) )
+      u_n_local(1:nodof) = u(1:nodof)
 c      
 c          used to track how the step converged for updating 
 c          global onvergence_history info
@@ -95,7 +114,15 @@ c
       info%adapt_substeps = 0
       info%iters_at_convergence = 1
       info%adapt_iters_at_convergence = 0
-c      
+c
+c          forcing of linear stiffness at start of load step now
+c          means to turn off extrapolation (if on) for just the new
+c          step. the strain-stress updating routines for iter = 0
+c          will return the linear [D] for integration points
+c          if extrapolation = .false.
+c 
+      user_extrapolation_on = extrapolate ! better name for local use   
+      user_extrapolation_off = .not. extrapolate ! convenience
       emit_extrap_msg = .true.
       emit_forced_linear_k_for_step = .true.
       hypre_solver = solver_flag .eq. 9
@@ -110,7 +137,7 @@ c
       dynamic      = total_mass .gt. zero .and. dt .gt. zero
       adaptive     = adaptive_flag .and. step .gt. 1
       first_subinc = .false.  ! 1st substep for adaptive
-      call adapt_check( scaling_adapt, 3, step )
+      call adapt_check( scaling_adapt, 3, step, out )
       dt_original  = dt
 c
 c           calculate the scaling value for extrapolated displacements.
@@ -118,8 +145,8 @@ c           this value is used for real steps only (not subincrements).
 c           the scaling value is modified if the step is subincremented.
 c           mf_ratio_change = .true. means the loading routines believe
 c           the next step is not proportional to the last step
-c           (then turn off extrapolation for the step and use the
-c           linear stiffness on iteration 1)
+c           (then turn off extrapolation for the step which forces [D]
+c           linear to be used on iteration 1)
 c
       if( abs(mf_nm1) .le. ext_tol ) mf_nm1 = one
       scaling_load = mf / mf_nm1
@@ -179,75 +206,95 @@ c
       if( show_details ) write(out,9150) step
 c
 c          set up the displacement increment to start the step or
-c          adaptive subincrement.
+c          adaptive subincrement. vector du contains converged 
+c          displacement increment from previous step
 c
 c          options for extrapolating (predct) converged displacement
-c          increments from the last step. none, (du=0), user
-c          defined scaling factor (prdmlt >0), or a computed scaling
-c          factor based on the load step factors specified by the user.
+c          increments from the last step. none, (du=0) or a 
+c          computed factor based on the load step factors s
+c          specified by the user.
 c
 c          the scaling factor for the step is a function of the
 c          scaling factor due to changes in the load mulitplier and
 c          the scaling factor due to subincrementation.
 c
-
-c          the linear stiffness on iteration 1 is enforced if
+c          extrapolation on is now the default with new solution
+c          algorithms in Oct. 2015.
 c
-c            - the user requested it just for this step (but not
+c          the linear stiffness on iteration 1 (extrapolation=off)
+c          is enforced if
+c
+c            - user requested extrapolation is off
+c            - the user requested it just for this step with the
+c              nonlinear parameters command (but not
 c               substeps if adative kicks in)
 c            - the loading routines determined that the current step
 c              is not proportional to last one (mf_ratio_change
 c              = true.). Not for substeps if adaptive kicks in
-c            - we just reduced the step size for adaptive. use liner
-c              [K] for 1st substep after reduction
+c            - we just reduced the step size for adaptive. use linear
+c              [D] for 1st substep after reduction
 c
-c          the stiffness update code takes care of the case of
-c          when the user requested linear stiffness for iteration
-c          1 until further changes by user.
+c          extrapolated_du keeps track of what
+c          to do about du extrapolation for just this step and adaptive
+c          substeps as needed.
 c
-      forced_linear_k_for_iter_1 = .false.
-      if( linstf_nxt_step ) forced_linear_k_for_iter_1 = .true.
-      if( first_subinc ) forced_linear_k_for_iter_1 = .true.
+c          no extrapolation is possible for step 1. further, step 1
+c          cannot have adaptive solution in this version.
+c
+c          user specified extrapolation value (prdmlt) no longer
+c          supported
+c
+c          note local variables user_extrapolation_on, 
+c          user_extrapolation_off for simpler code
 c
       scaling_factor = scaling_load * scaling_adapt
 c
       if( local_debug ) write (iout,9600)
      &      scaling_load, scaling_adapt, scaling_factor
 c
-      if( predct .and. step .gt. 1  ) then
-         if( local_mf_ratio_change .or. linstf_nxt_step ) then
-           forced_linear_k_for_iter_1 = .true.
-           if( emit_extrap_msg ) then
-             call errmsg ( 255, dum, dums, dumr, dumd)
-             emit_extrap_msg = .false.
-         end if
-         end if
-         if( show_details ) write(out,9152) step, scaling_factor
-         if( prdmlt .ne. zero ) then
-           du(1:nodof) = prdmlt * du(1:nodof)
-         else
-           du(1:nodof) =  scaling_factor  * du(1:nodof)
-           if(local_debug) write (iout,9530) scaling_factor
-         end if
-      else
+      if( first_subinc ) then ! easiest case
+         extrapolated_du = .false.
          du(1:nodof) = zero
-         if(  local_mf_ratio_change .or. linstf_nxt_step ) then
-            forced_linear_k_for_iter_1 = .true.
-            if( emit_forced_linear_k_for_step ) then
-               emit_forced_linear_k_for_step = .false.
-               if( step .ne. 1 ) call errmsg ( 321, dum, 
-     &                           dums, dumr, dumd)
-            end if
-         end if
+         if( show_details ) write(out,9154) step
+      elseif( extrap_off_next_step ) then
+         extrapolated_du = .false.
+         du(1:nodof) = zero
+         if( show_details ) write(out,9154) step
+         extrap_off_next_step = .false.
+      else ! regular load step or continuation of adaptive substep
+         extrapolated_du = .false. 
+         if( user_extrapolation_on .and. step .gt. 1  ) then
+           extrapolated_du = .true.
+           if( local_mf_ratio_change  ) then ! non-proportional loading
+             extrapolated_du = .false.
+             call errmsg ( 255, dum, dums, dumr, dumd)
+             emit_extrap_msg = .false. ! no need for repeated messages
+           else
+             if( show_details ) write(out,9152) step, scaling_factor
+             extrapolated_du = .true.
+             du(1:nodof) =  scaling_factor * du(1:nodof)
+             if( local_debug ) write (iout,9530) scaling_factor
+           end if
+        else ! no extrapolation to start this step. 
+           du(1:nodof) = zero
+           if( show_details ) write(out,9154) step
+        end if
       end if
 c
 c          apply constraints to the starting displacement change for
 c          step. non-zero constraints are scaled by current adaptive
 c          factor (<= 1). the extrapolated displacements are thus
 c          scaled back if the load step has been subdivided.
+c          set global variable if user-imposed constrains have non-zero
+c          values -- used during iter=0 as part of stress update
+c          to get loading for step
 c
+      non_zero_imposed_du = .false.
       do i = 1, nodof
-         if( cstmap(i) .ne. 0 ) du(i) = cnstrn(i) * adapt_disp_fact
+         if( cstmap(i) .ne. 0 ) then 
+            du(i) = cnstrn(i) * adapt_disp_fact
+            if( du(i) .ne. zero ) non_zero_imposed_du = .true.
+         end if
       end do
 c
 c          if adaptive for a (real) dynamic solution, then cut time
@@ -285,26 +332,22 @@ c          compute the contact force.
 c
       call contact_find
 c
-c          element stiffness matrices. (stifup gets only new element
-c          stiffnesss - not a structure stiff).  a
-c          linear stiffness on iteration 1 is supported.
-c          We're processing stiffness at start of load step (iter=0)
-c
-      call stifup( step, 0, forced_linear_k_for_iter_1 )
-c
 c          perform the strain-stress recovery and compute the internal
 c          forces to reflect non-zero displacements applied before
 c          the step (either extrapolate or non-zero constraints). this is
 c          a simple way to get the "applied" forces equivalent to the
 c          imposed, incremental displacements for step.
 c
-      if( predct .or. (.not.zrocon) .or. first_subinc .or.
-     &    temperatures .or. umat_used .or. creep_model_used ) then
-           if( show_details ) write(out,9155) step
-           material_cut_step = .false.
-           call drive_eps_sig_internal_forces( step, 0,
+      if( show_details ) write(out,9155) step
+      material_cut_step = .false.
+      call drive_eps_sig_internal_forces( step, 0,
      &          material_cut_step )
-      end if
+c
+c          element stiffness matrices. (stifup gets only new element
+c          stiffnesss - not a structure stiff). 
+c          We're processing stiffness at start of load step (iter=0)
+c
+      call stifup( step, 1, out, newstf, show_details )
 c
 c          setup nodal forces that enforce for MPCs. we call them 
 c          Lagrange forces. See comments in module stiffness_data.
@@ -360,16 +403,13 @@ c
       material_cut_step = .false.
       first_solve       = .true.
 c
-c          target for top of iteration loop. update stiffness.
-c          (stifup gets only new element
-c          stiffnesss - not a structure stiff).  a
-c          linear stiffness on iteration 1 is supported. right after
-c          stifup, we add nodal mass (with newmark beta and dt) to
+c          target for top of iteration loop. update element [K]s.
+c          we add nodal mass (with newmark beta and dt) to
 c          diagonal terms of element stiffnesses.
 c
  25   continue
       if( iter .gt. 1 ) ! start of step done above
-     &   call stifup( step, iter, .false. )
+     &         call stifup( step, iter, out, newstf, show_details )
 c
 c          if we're using hypre solver, we need to distribute the
 c          stiffness to MPI ranks (that's the second flag).
@@ -433,7 +473,7 @@ c          Enforce MPCs when:
 c              - symmetric MKL solvers (direct/iterative)
 c              - no MPI
 c
-      call eqn_solve( iter, step, first_subinc, first_solve,
+      call eqn_solve( iter, step, first_solve,
      &                nodof, solver_flag, use_mpi, show_details,
      &                du, idu, iout ) 
 c
@@ -445,9 +485,8 @@ c          factor, call for a reset and return to the start
 c          of the step.
 c
       if( hyp_trigger_step ) then
-               call adapt_check( scaling_adapt, 1, step )
+               call adapt_check( scaling_adapt, 1, step, out )
                call adaptive_reset
-               force_k_update = 2
                first_subinc = .true.
                go to 1000
       end if
@@ -459,69 +498,28 @@ c            iterations.
 c
       call wmpi_send_itern
 c
-c          compute the line search factor s0 for the corrective
-c          displacements and the residual loads used to compute
-c          them. Line search not implemented. These factors
-c          for FYI at this point.
-c
-      sumrr = zero ; sumdd = zero; ls_s0 = zero
-      do i = 1, nodof
-         if( cstmap(i) .eq. 0 ) then ! no abs constraint
-          ls_s0 = ls_s0 - res(i)*du(i)
-          sumrr = sumrr + abs(res(i)); sumdd = sumdd + abs(du(i))
-         end if
-      end do
-      if( local_debug ) write(iout,9710) sumrr, sumdd
-c
-c          update strains/stresses to define a new estimate of
-c          the solution at n+1. compute/assemble a new internal
-c          force vector (ifv) using the updates estimate of the
-c          stresses and nodal displacements (large displ).
-c   
-c          a material model may request aborting the current
-c          iteration and an immediate adaptive step reduction.
-c
-      if( show_details ) write(out,9100) step, iter
-      call drive_eps_sig_internal_forces( step, iter,
-     &                                    material_cut_step )
+c      call mnralg_ls_instrumented
+      call mnralg_ls
+c      
       if(  material_cut_step ) then ! from a material model
-        if ( adaptive  ) then
-          if ( show_details ) write(out,9420)
-          go to 50
-        else
-          call abort_job
-        end if
+       if ( adaptive  ) then
+         if ( show_details ) write(out,9420)
+         go to 50
+       else
+         call abort_job
+       end if
       end if
+c      
+      if( ls_request_adaptive ) then ! ls search failed
+       if ( adaptive  ) then
+         if ( show_details ) write(out,9425)
+         go to 50
+       else
+         call abort_job
+       end if
+      end if
+      
 c
-c          compute the residual force vector at the end of current
-c          ith iteration to advance solution from n -> n+1. this
-c          will be driver to compute corrective displacements of
-c          iteration i+1.
-c          get norm of current total load (applied forces +
-c          reactions + inertia - used for convergence check). residuals
-c          at constrained dof are set zero. print residuals if
-c          requested. compute the line search factor for the residuals
-c          after iteration 1.
-c
-c          compute new contact forces if contact included.
-c
-      call contact_find
-      call upres( iter, out, nodof, dt, nbeta, num_term_loads,
-     &            sum_loads, mgload, mdiag, pbar, du, v, a, 
-     &            ifv, res, cstmap, dstmap, load )
-c
-      sumrr = zero; sumdd = zero
-      ls_s1 = zero
-      do i = 1, nodof
-        if( cstmap(i) .eq. 0 ) then ! no abs constraint
-          sumrr = sumrr + abs(res(i)); sumdd = sumdd + abs(du(i))
-          ls_s1 = ls_s1 - res(i)*idu(i)
-        end if
-      end do
-      if( local_debug ) write(iout,9710) sumrr, sumdd
-c
-      if( abs(ls_s0) .gt. 1.0d-06 .and. show_details )
-     &               write(out,9120) ls_s1/ls_s0
       if( prnres ) call oures( ldnum, iter )
 c
 c          perform convergence tests for newton iterations. even
@@ -551,11 +549,10 @@ c
  50   continue
       if ( adaptive ) then
           info%adaptive_used = .true.
-          call adapt_check( scaling_adapt, 1, step )
+          call adapt_check( scaling_adapt, 1, step, out )
           if( adapt_result .eq. 1 ) go to 100
           if( adapt_result .eq. 2 ) then
                call adaptive_reset
-               force_k_update = 2
                first_subinc = .true.
                go to 1000  ! do over with smaller load inrement
           end if
@@ -601,7 +598,7 @@ c
       adapt_result = 1
       scaling_load = one
       if( adaptive ) then
-          call adapt_check( scaling_adapt, 2, step )
+          call adapt_check( scaling_adapt, 2, step, out )
           info%adapt_iters_at_convergence = 
      &        info%adapt_iters_at_convergence + iter
           info%adapt_substeps = 
@@ -609,7 +606,6 @@ c
       end if
       if( cnverg ) call energy ( step, adapt_result, mdiag )
       first_subinc = .false.
-      linstf_nxt_step = .false.
       local_mf_ratio_change = .false.
       if( adapt_result .eq. 2 ) go to 1000
 c
@@ -644,6 +640,12 @@ c          print element killing information if requested.
 c
       call dam_print( step, iter )
 c
+c          get total displacement change over n -> n+1. du
+c          will not be this if adaptive was used over n -> n+1
+c
+      du(1:nodof) = u(1:nodof) - u_n_local(1:dof)
+      deallocate( u_n_local )
+c      
       return  ! back to stpdrv
 c
  9000 format(/,1x,'... mnralg: step, mf, mf_nm1,'
@@ -654,20 +656,22 @@ c
      & '>> updating strains/stress/forces step, iteration: ',i5,i3)
  9110 format(7x,
      & '>> updating internal forces step, iteration:       ',i5,i3)
- 9120 format(7x,
-     & '>> line search beta ratio:                         ',e14.6)
  9150 format(/,7x,
      & '>> starting global newton solution for step:       ',i5)
  9152 format(7x,
      & '>> extrapolating displacements to start step:      ',i5,
-     & ' (* ',f6.2,')')
+     & ' (* ',f7.3,')')
+ 9154 format(7x,
+     & '>> no extrapolating displacements to start step:   ',i5)
  9155 format(7x,
-     & '>> stresses/forces for imposed displacements. step:',i5)
+     & '>> delta forces for loads/displ/temps/creep. step: ',i5)
  9410 format(/1x,'>> iteration limit exceeded for current step:',i6,
      & /,1x       '   (or adaptive sub-increment) or the solution ',
      &   'appears to be diverging....')
  9420 format(/,2x,'>>> material model stress update computations',
      &     /,2x,'    requested load step reduction...')
+ 9425 format(/,2x,
+     &'>>> line search has requested load step reduction...')
  9500 format (/,'... mnralg:',
      & /8x,'Dynamic parameter = ',l2,
      & /8x,'Adaptive solution = ',l2,
@@ -686,7 +690,6 @@ c
      &             3e16.6,// )
  9610 format(3x,i8,2x,e14.6)
  9700 format(10x,i4, 2x, e14.6, 2x, e14.6)
- 9710 format(10x,'sumrr: ',e14.6,'  sumdd: ',e14.6)
  9715 format(/,'>> ERROR: tied contact and/or multi-point constraints',
      &    /, '          cannot be used with the asymmetric assembly-',
      &    /, '          solver process' )
@@ -700,7 +703,432 @@ c
      & /,10x,'adapt_iters_at_convergence: ',i2,
      & /,10x,'step_converged:             ',l2, //)
 c
-      end
+      contains
+c     ========
+c     ****************************************************************
+c     *                                                              *
+c     *                     subroutine mnralg_ls                     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/3/2015 rhd              *
+c     *                                                              *
+c     *    run line search for this global Newton iteration if       *
+c     *    user requested . instrumented version to gather behavior  *
+c     *    for all LS iterations to support algorithm tuning         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mnralg_ls
+      implicit none
+c
+c              local variables
+c
+#dbl      double precision :: 
+#sgl      real ::
+     &      s_value, s0_value, r_value, alpha, rho, slack_toler,
+     &      alpha_min, s_values(0:30), r_values(0:30), zero, one,
+     &      ls_reduce_fraction, alpha_values(30)
+#dbl      double precision, allocatable :: du0(:)
+#sgl      real, allocatable :: du0(:)
+     
+      logical :: ls_debug, no_line_search, line_search_details
+      integer :: ls_ell, i
+      character(len=1) :: ls_flag
+      data zero, one / 0.0d00, 1.0d00 /
+c           
+      if( show_details ) write(iout,9210) step, iter
+c      
+      ls_debug = .false.
+      line_search_details = ls_details
+      if( ls_debug ) write(iout,8900) step, iter
+      rho = ls_rho
+      no_line_search = .not. line_search
+      slack_toler = ls_slack_tol
+      alpha_min = ls_min_step_length
+      ls_request_adaptive = .false.
+      ls_reduce_fraction = 0.9d00 ! could make user input
+      ls_flag = "*"
+c
+c              1. we always compute s0 even if the user does not 
+c                 request line search. if s0 > 0 we issue a 
+c                 warning message that the global NR is in 
+c                 in an uphill situation. 
+c
+c                 if s0 >=0 start next Newton iteration 
+c                 even if user requested line search. 
+c
+c                 may want to consider immediate adaptive.
+c
+c                 skip MPC dof if present in s computations.
+c                 use separate loops for efficiency.
+c     
+      call mnralg_ls_get_s( s0_value )
+      if( s0_value > zero .and. show_details )  
+     &       write(iout,9010) s0_value, step, iter
+      if( s0_value >= zero .or. no_line_search ) then  
+        call mnralg_ls_update_res_0  
+        return
+      end if   
+      if( ls_debug ) write(iout,9000) s0_value
+      if( line_search_details ) write(iout,8930)
+c          
+c              2. loop to find acceptable search length (alpha) if
+c                 one exists
+c                 
+      alpha = ls_max_step_length  ! defaults to 1.0
+      ls_ell = 1
+      allocate( du0(1:nodof) )
+      du0(1:nodof) = du(1:nodof)  ! since residual/contact/... use du
+      s_values = zero
+      r_values = zero
+      s_values(0) = s0_value
+c     
+      do ! step length search
+c    
+c              2a. new alpha (step length). get s-value.
+c                   material routines may want immediate adaptive.
+c      
+         if( ls_debug ) write(iout,8910) ls_ell, alpha
+         call mnralg_ls_update_res( alpha, du0 )  
+         if( material_cut_step ) then
+           deallocate( du0 )
+           return
+         end if
+         call mnralg_ls_get_s( s_value )
+         s_values(ls_ell) = s_value
+c        
+c              2b. compute r-ratio. check for convergence of step
+c                  length
+c         
+         r_value = abs( s_values(ls_ell) / s_values(0) )
+         r_values(ls_ell) = r_value
+         alpha_values(ls_ell) = alpha
+         if( ls_debug ) write(iout,9030) s_value, r_value
+c
+         if( r_value < slack_toler ) then ! converged
+             if( ls_debug ) write(iout,8920) slack_toler
+             if( line_search_details ) write(iout,9205)  ls_ell,
+     &                                    alpha, r_value    
+             if( show_details ) write(iout,9200) alpha, ls_flag,
+     &                                           step, iter 
+             deallocate( du0 )
+             return 
+         end if    
+         if( line_search_details ) write(iout,9205)  ls_ell,
+     &                 alpha_values(ls_ell), r_values(ls_ell)   
+c
+c              2c. if r increases or if r is not decreasing
+c                  fast enough, then stop ls. use step length
+c                  = 1.0
+c
+         if( ls_ell .ge. 2 ) then ! increasing r ?
+           if( r_values(ls_ell) .gt. ls_reduce_fraction *
+     &         r_values(ls_ell-1) ) then ! r-value not decreasing
+               alpha = one
+               ls_request_adaptive = .false.
+               call mnralg_ls_update_res( alpha, du0 )  
+               deallocate( du0 )
+               ls_flag = "#"
+               if( show_details ) write(iout,9200) alpha, ls_flag,
+     &                            step, iter
+               return
+           end if
+         end if 
+c        
+c              2d. get new step length. simple back track for now.
+c                  check if smaller than min step length.
+c                  up to top of search loop.
+c
+         alpha = rho * alpha  ! simple back track.
+         if( alpha .lt. alpha_min ) then
+             ls_flag = "%"
+             if( show_details ) write(iout,9100) ls_ell, 
+     &            step, iter, r_value, alpha, ls_flag
+             ls_request_adaptive = .false.
+             alpha = one
+             call mnralg_ls_update_res( alpha, du0 )  
+             deallocate( du0 )
+             return
+         end if      
+         ls_ell = ls_ell + 1
+      end do
+c
+      return
+c
+ 8900 format(6x,'.... entered line search routine. step, iter: ',
+     &  i6,i3)
+ 8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
+ 8920 format(20x,'satisfied search tolerance of: ',f10.3)
+ 8930 format(7x,
+     & '>> begin line search ' )
+ 9000 format(3x,'       ... s0 value: ' e14.6)
+ 9010 format(7x,
+     &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
+     & /,7x,'   using step length 1.0 this iteration')
+ 9030 format(20x,'new s, r:  ',2f10.4)
+ 9100 format(7x,          
+     &    '>> line search did not converge. iterations: ',i3,3x,i5,i3,
+     &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
+ 9200 format(7x,
+     & '>> line search completed. step length: ',f6.3,a2,4x,i5,i3)
+ 9205 format(7x,
+     & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
+ 9210 format(7x,
+     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
+ 9220 format(7x,     
+     & '      ... finished line search. iterations, step length: ',
+     &   i2,1x,f7.4)
+     
+c       
+      end subroutine mnralg_ls
+c     ****************************************************************
+c     *                                                              *
+c     *              subroutine mnralg_ls_instrumented               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/3/2015 rhd              *
+c     *                                                              *
+c     *    run line search for this global Newton iteration if       *
+c     *    user requested . instrumented version to gather behavior  *
+c     *    for all LS iterations to support algorithm tuning         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mnralg_ls_instrumented
+      implicit none
+c
+c              local variables
+c
+#dbl      double precision :: 
+#sgl      real ::
+     &      s_value, s0_value, r_value, alpha, rho, slack_toler,
+     &      alpha_min, s_values(0:30), r_values(0:30), zero, one,
+     &      ls_reduce_fraction, alpha_values(30)
+#dbl      double precision, allocatable :: du0(:)
+#sgl      real, allocatable :: du0(:)
+     
+      logical :: ls_debug, no_line_search, line_search_details
+      integer :: ls_ell, i, curve_type, bug
+      character(len=1) :: ls_flag
+      data zero, one / 0.0d00, 1.0d00 /
+c           
+      if( show_details ) write(iout,9210) step, iter
+c      
+      ls_debug = .false.
+      line_search_details = .true.
+      if( ls_debug ) write(iout,8900) step, iter
+      rho = ls_rho
+      no_line_search = .not. line_search
+      slack_toler = ls_slack_tol
+      alpha_min   = 0.01 ! ls_min_step_length
+      ls_request_adaptive = .false.
+      ls_reduce_fraction = 0.9d00
+      ls_flag = "*"
+c
+c              we always compute s0 even if the user does not 
+c              request line search. if s0 > 0 we issue a 
+c              warning message that the global NR is in in an uphill
+c              situation. 
+c
+c              if s0 >=0 start next Newton iteration 
+c              even if user requested line search. 
+c
+c              may want to consider immediate adaptive.
+c
+c              skip MPC dof if present in s computations.
+c              use separate loops for efficiency.
+c     
+      call mnralg_ls_get_s( s0_value )
+      if( s0_value > zero .and. show_details )  
+     &       write(iout,9010) s0_value, step, iter
+      if( s0_value >= zero .or. no_line_search ) then  
+        call mnralg_ls_update_res_0  
+        return
+      end if   
+      if( line_search_details ) write(iout,8930)
+c          
+c              loop over all step lengths. compute r-value
+c              and print for studies of how r-values change
+c              with step lengths
+c                 
+      alpha = 1.0d00
+      ls_ell = 1
+      allocate( du0(1:nodof) )
+      du0(1:nodof) = du(1:nodof)  ! since residual/contact/... use du
+      s_values = zero
+      r_values = zero
+      s_values(0) = s0_value
+c     
+      do ! step length search
+c          
+         call mnralg_ls_update_res( alpha, du0 )  
+         if( material_cut_step ) then
+           deallocate( du0 )
+           return
+         end if
+         call mnralg_ls_get_s( s_value )
+         s_values(ls_ell) = s_value
+c        
+c              2. compute r-ratio. check for convergence of step
+c                 length
+c         
+         r_value = abs( s_values(ls_ell) / s_values(0) )
+         r_values(ls_ell) = r_value
+         alpha_values(ls_ell) = alpha
+         if( line_search_details ) write(iout,9205)  ls_ell,
+     &                 alpha_values(ls_ell), r_values(ls_ell)   
+         alpha = rho * alpha  ! simple back track.
+         if( alpha .lt. alpha_min ) then
+             ls_flag = "%"
+             ls_request_adaptive = .false.
+             bug = 0
+             if ( step .eq. 5 ) bug = 1
+             call mnralg_ls_instrumented_a( ls_ell, 
+     &          r_values(1), alpha_values(1), curve_type, iout, bug )   
+              write(iout,9300) curve_type
+             deallocate( du0 )
+             return
+         end if      
+         ls_ell = ls_ell + 1
+      end do
+      return
+
+ 9300 format(7x,     
+     & '      ... LS r-values curve type: ',i3)
+ 8900 format(6x,'.... entered line search routine. step, iter: ',
+     &  i6,i3)
+ 8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
+ 8920 format(20x,'satisfied search tolerance of: ',f10.3)
+ 8930 format(//,7x,
+     & '>> begin line search ' )
+ 9000 format(3x,'       ... s0 value: ' e14.6)
+ 9010 format(7x,
+     &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
+     & /,7x,'   using step length 1.0 this iteration')
+ 9030 format(20x,'new s, r:  ',2f10.4)
+ 9100 format(7x,          
+     &    '>> line search did not converge. iterations: ',i3,3x,i5,i3,
+     &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
+ 9200 format(7x,
+     & '>> line search completed. step length: ',f6.3,a2,4x,i5,i3)
+ 9205 format(7x,
+     & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
+ 9210 format(7x,
+     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
+ 9220 format(7x,     
+     & '      ... finished line search. iterations, step length: ',
+     &   i2,1x,f7.4)
+c       
+      end subroutine mnralg_ls_instrumented
+c
+      subroutine mnralg_ls_instrumented_a( npts, yvalues, xvalues,
+     &                      curve_type, iout, bug )
+      implicit none
+      integer npts,curve_type, i, first_min, iout, bug
+      double precision yvalues(*), xvalues(*), alpha,
+     &                 ymin
+      if( bug .eq. 1 ) then
+      write(iout,*) '<<< num points: ', npts
+      do i = 1, npts
+         write(iout,*) i, xvalues(i), yvalues(i)
+      end do
+      end if
+      
+      curve_type = 1
+      do i = 2, npts
+        if( yvalues(i) < yvalues(i-1) ) cycle
+          go to 200
+      end do
+      return
+      
+ 200  curve_type = 2
+      do i = 2, npts
+        if( yvalues(i) > yvalues(i-1) ) cycle
+          go to 300
+      end do
+      return
+      
+ 300  curve_type = 3
+      return
+      end subroutine mnralg_ls_instrumented_a
+      
+c     ****************************************************************
+c     *                                                              *
+c     *  subroutines: mnralg_ls_update_res_0, mnralg_ls_update_res   *
+c     *                mnralg_ls_get_s                               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/25/2015                 *
+c     *                                                              *
+c     *    support routines to make ls code clean. these will be     *
+c     *    inlined by compiler                                       *
+c     *                                                              *
+c     ****************************************************************
+c      
+      subroutine mnralg_ls_update_res_0
+      implicit none
+c      
+      du(1:nodof) = du(1:nodof) + idu(1:nodof)  
+      call drive_eps_sig_internal_forces( step, iter,
+     &                                    material_cut_step )
+      if( material_cut_step ) return
+      call contact_find
+      call upres( iter, out, nodof, dt, nbeta, num_term_loads,
+     &            sum_loads, mgload, mdiag, pbar, du, v, a, 
+     &            ifv, res, cstmap, dstmap, load )
+      return
+      end subroutine mnralg_ls_update_res_0
+      
+      subroutine mnralg_ls_update_res( alpha, du0 )
+      implicit none
+#dbl      double precision :: alpha, du0(*) 
+#sgl      real :: alpha, du0(*)    
+c      
+      du(1:nodof) = du0(1:nodof) + alpha*idu(1:nodof)  
+      call drive_eps_sig_internal_forces( step, iter,
+     &                                    material_cut_step )
+      if( material_cut_step ) return
+      call contact_find
+      call upres( iter, out, nodof, dt, nbeta, num_term_loads,
+     &            sum_loads, mgload, mdiag, pbar, du, v, a, 
+     &            ifv, res, cstmap, dstmap, load )
+      return
+      end subroutine mnralg_ls_update_res
+      
+      subroutine mnralg_ls_get_s( svalue )
+      implicit none     
+#dbl      double precision :: svalue 
+#sgl      real :: svalue 
+      integer :: i 
+c      
+      svalue = zero
+      if( allocated( d_lagrange_forces ) ) then
+        do i = 1, nodof  
+         if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+         if( d_lagrange_forces(1) .ne. zero ) cycle
+         svalue = svalue  - res(i)*idu(i)
+        end do
+      else  ! no mpcs active      
+        do i = 1, nodof   !   fix for MPCs
+         if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+         svalue = svalue  - res(i)*idu(i)
+        end do
+      end if
+      return
+      end subroutine mnralg_ls_get_s
+c      
+      end subroutine mnralg
+      
+      
+      
+      
+      
+c      
 c     ****************************************************************
 c     *                                                              *
 c     *                subroutine update_convergence_history         *
@@ -1035,7 +1463,7 @@ c     *                      subroutine eqn_solve                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : rhd 4/19/2015 rhd          *
+c     *                   last modified : rhd 11/21/2015 rhd         *
 c     *                                                              *
 c     *     solution of the linearized equilibrium equations         *
 c     *     using an available equation solver.                      *
@@ -1043,10 +1471,11 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine eqn_solve( iter, step, first_subinc, first_solve,
+      subroutine eqn_solve( iter, step, first_solve,
      &                      nodof, solver_flag, use_mpi, show_details,
      &                      du, idu, iout ) 
 c
+      use main_data, only : extrapolated_du
       use hypre_parameters, only: hyp_trigger_step
       use stiffness_data, only: d_lagrange_forces, 
      &                          i_lagrange_forces
@@ -1056,14 +1485,14 @@ c
 c          parameters
 c
       integer :: iter, step, solver_flag, iout, nodof 
-      logical :: first_subinc, first_solve, use_mpi, show_details
+      logical :: first_solve, use_mpi, show_details
 #dbl      double precision ::
 #sgl      real ::
      &  du(nodof), idu(nodof)            
 c
 c          locals
 c
-      logical :: hypre, not_hypre
+      logical :: hypre, not_hypre, no_extrapolation, new_pre_cond
 c
 c          solve for the change in the displacements for this iteration.
 c          use either the Pardiso threaded solver (direct or iterative)
@@ -1101,8 +1530,35 @@ c
 c          drive the equation solver. Code to allow changing
 c          solver during a run has been removed.
 c
+c          give some help for an iterative solver about
+c          when is a good point to build a new preconditioner
+c
+c          if using linear stiffness at beginning of a step
+c          (no extrapolation of du),
+c          the old conditioner is likely from a tangent stiffness
+c          and not very good. iteration 2 of such a step should
+c          then also have a new pre-cond for the tangent K
+c          rather than linear K used in iteration one.
+c
+c          for now iter = 1 with extrapolation gets hint of no
+c          new pre-conditioner.
+c          may want to make this a user option. when the user knows
+c          that large stiffness changes can occur from step n -> n+1
+c          forcing a pre-conditioner update may be beneficial.
+c
+c          the solvers may choose to ignore the hint of new_pre_cond
+c
       if ( not_hypre .and. show_details ) write(iout,9142) step, iter
-      call direct_routine_sparse( first_solve, iter)  ! run solve
+      no_extrapolation = .not. extrapolated_du
+      new_pre_cond = .false.
+      if( iter .gt. 2 ) then
+         new_pre_cond = .false.
+      elseif( iter .eq. 1 )then 
+         new_pre_cond = .true.  ! linear K being used
+      elseif( iter .eq. 2 .and. no_extrapolation ) then
+         new_pre_cond = .true.  ! first tangent K after linear K
+      end if
+      call direct_routine_sparse( first_solve, iter, new_pre_cond )  
       first_solve = .false.
 c
 c          MPI: wake up worker processes
@@ -1117,11 +1573,12 @@ c
 c
 c          update after this iteration:
 c
-c           - estimated change in displacement from n -> n+1
+c           - du is estimated change in displacement from n -> n+1
+c             now updated in line search routine here
 c           - estimated change in Lagrange forces from n -> n+1
 c                for MPCs (always self-equilibrating)
-c           
-      du(1:nodof) = du(1:nodof) + idu(1:nodof)
+c              
+c        
       if( allocated( d_lagrange_forces ) ) then
          if( .not. allocated( i_lagrange_forces ) ) then
             write(iout,9200); call die_gracefully
@@ -1215,6 +1672,7 @@ c
         f = adapt_temper_fact
         dtemp_nodes(1:nonode) = f * dtemp_nodes_step(1:nonode)
         dtemp_elems(1:noelem) = f * dtemp_elems_step(1:noelem)
+c        write(*,*) '.... mnralg_scale_temps. f: ',f
 c
       case( 3 )
 c
@@ -1364,7 +1822,7 @@ c
 #sgl      real ::
      & total_model_time, adapt_load_fact
 c
-      character (len=6) :: fraction
+      character (len=10) :: fraction
 #dbl      double precision,
 #sgl      real,
      &  parameter :: one = 1.0d00
@@ -1380,7 +1838,7 @@ c
         if( adapt_load_fact .eq. one ) then
           write(out,9100) step, lstitr, total_model_time 
         else
-          write(out,9102) step, fraction(3:6), lstitr,
+          write(out,9102) step, fraction(6:10), lstitr,
      &                    total_model_time 
         end if
         
@@ -1390,7 +1848,7 @@ c
 c
       return
 c
- 9000 format(f6.3)
+ 9000 format(f10.4)
  9100 format(/1x,'>> solution for step: ',i7,
      &           ' converged:',i3,' iters.  ',
      &           ' model time:',e14.6)
@@ -1403,3 +1861,381 @@ c
 c
       return
       end
+      
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine stifup                       *
+c     *                                                              *
+c     *                       written by : bh                        *
+c     *                                                              *
+c     *                   last modified : 10/27/2015 rhd             *
+c     *                                                              *
+c     *     invoke the process to compute element [K]s               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine stifup( step, iter, out, stiff_update_flg,
+     &                   show_details )
+      implicit none
+      integer :: step, iter, out
+      logical :: stiff_update_flg, show_details
+c
+      integer :: local_step, local_iter
+c
+      stiff_update_flg = .true.
+      local_step = step   ! just protect values
+      local_iter = iter
+      if ( show_details ) write(out,9110) step, iter
+      call tanstf( .false., local_step, local_iter )
+      return
+c
+ 9110 format(7x,
+     & '>> computing tangent stiffness step, iteration:    ',i5,i3)
+c
+      end
+
+c
+c
+c    code below is my attempt to also include Crisfield's SEARCH
+c    algorithm/code in addition to simple backtracking.
+c
+c    Sort of works but there are definitely bugs to be crushed.
+c
+c    Code included here for the record in case we want to 
+c    bring back and fix at some point.
+c
+c      
+cc     ****************************************************************
+cc     *                                                              *
+cc     *                      subroutine mnralg_ls                    *
+cc     *                                                              *
+cc     *                       written by : rhd                       *
+cc     *                                                              *
+cc     *                   last modified : 11/15/2015                 *
+cc     *                                                              *
+cc     *    run line search for this global Newton iteration if       *
+cc     *    user requested                                            *
+cc     *                                                              *
+cc     ****************************************************************
+cc
+cc
+c      subroutine mnralg_ls  
+c      implicit none
+cc
+cc              local variables
+cc
+c#dbl      double precision :: 
+c#sgl      real ::
+c     &      s_value, s0_value, r_value, alpha, rho, slack_toler,
+c     &      alpha_min, s_values(0:30), r_values(0:30), zero,
+c     &      eta_values(30), prodr(30), amp, etmxa, etmna
+c#dbl      double precision, allocatable :: du0(:)
+c#sgl      real, allocatable :: du0(:)
+c     
+c      logical :: ls_debug, no_line_search, backtrack
+c      integer :: ls_ell, i, ils, ico, iwrit, iwr, nlsmxp 
+c      data zero / 0.0d00 /
+cc           
+c      if( show_details ) write(iout,9210) step, iter
+cc      
+c      ls_debug = .true.
+c      backtrack = .not. ls_crisfield
+c      if( ls_debug ) write(iout,8900) step, iter
+c      rho = ls_rho
+c      no_line_search = .not. line_search
+c      slack_toler = ls_slack_tol
+c      alpha_min   = ls_min_step_length
+c      ls_request_adaptive = .false.
+cc
+cc              we always compute s0 even if the user does not 
+cc              request line search. if s0 > 0 we issue a 
+cc              warning message that the global NR is in in an uphill
+cc              situation. 
+cc
+cc              if s0 >=0 start next Newton iteration 
+cc              even if user requested line search. 
+cc
+cc              may want to consider immediate adaptive.
+cc
+cc              skip MPC dof if present in s computations.
+cc              use separate loops for efficiency.
+cc     
+c      s0_value = zero
+c      if( allocated( d_lagrange_forces ) ) then
+c        do i = 1, nodof  
+c         if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+c         if( d_lagrange_forces(1) .ne. zero ) cycle
+c         s0_value = s0_value  - res(i)*idu(i)
+c        end do
+c      else  ! no mpcs active      
+c        do i = 1, nodof   !   fix for MPCs
+c         if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+c         s0_value = s0_value  - res(i)*idu(i)
+c        end do
+c      end if
+cc      
+c      if( s0_value > 0 .and. show_details )  
+c     &       write(iout,9010) s0_value, step, iter
+c      if( s0_value >= zero .or. no_line_search ) then    
+c         du(1:nodof) = du(1:nodof) + idu(1:nodof)  
+c         call drive_eps_sig_internal_forces( step, iter,
+c     &                                    material_cut_step )
+c         if( material_cut_step ) return
+c         call contact_find
+c         call upres( iter, out, nodof, dt, nbeta, num_term_loads,
+c     &            sum_loads, mgload, mdiag, pbar, du, v, a, 
+c     &            ifv, res, cstmap, dstmap, load )
+c         return
+c      end if   
+c      if( ls_debug ) write(iout,9000) s0_value
+cc          
+cc              search loop to find acceptable search length alpha
+cc                 
+c      allocate( du0(1:nodof) )
+c      du0(1:nodof) = du(1:nodof)  ! since residual/contact/... use du
+cc      
+c      if( ls_crisfield ) then   
+c         eta_values(1) = 0.0d00
+c         eta_values(2) = 1.0d00
+c         prodr(1)      = 1.0d00
+c         ico = 0
+c         do ils = 1, 10
+c           write(iout,*) '.... ils: ', ils
+c           du(1:nodof) = du0(1:nodof) + 
+c     &                   eta_values(ils+1) * idu(1:nodof)
+c           call drive_eps_sig_internal_forces( step, iter,
+c     &                                 material_cut_step )
+c           if( material_cut_step ) then
+c              deallocate( du0 )
+c              return
+c           end if
+c          call contact_find
+c          call upres( iter, out, nodof, dt, nbeta, num_term_loads,
+c     &         sum_loads, mgload, mdiag, pbar, du, v, a, 
+c     &         ifv, res, cstmap, dstmap, load )
+c         s_value = zero
+c         if( allocated( d_lagrange_forces ) ) then
+c           do i = 1, nodof  
+c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+c             if( d_lagrange_forces(1) .ne. zero ) cycle
+c             s_value = s_value  - res(i)*idu(i)
+c           end do
+c         else  ! no mpcs active      
+c           do i = 1, nodof   !   fix for MPCs
+c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+c             s_value = s_value  - res(i)*idu(i)
+c           end do
+c         end if
+c           
+c          prodr(ils+1) = s_value / s0_value
+c          if( abs(prodr(ils+1)) < slack_toler ) then
+c             deallocate( du0 )
+c             write(iout,*) '... crisfield converged...'
+c             return 
+c          end if
+c         amp = 2.0d0
+c         etmxa = 10.0d00
+c         etmna = 0.05d00
+c         iwrit = 1
+c         iwr = iout
+c         nlsmxp = 25
+c         call mnralg_crisfield_search( ils, prodr,
+c     &                         eta_values, amp,
+c     &                          etmxa, etmna, iwrit, iwr, ico, 
+c     &                          nlsmxp )  
+c         write(iout,*) '.... ils,  s_value,  prodr(ils+1): ',
+c     &            ils,  s_value,  prodr(ils+1)
+c         write(iout,*) '.... ico, new eta: ', ico, eta_values(ils+2)
+c         end do
+c         write(iout,*) '... crisfield not eta value after 10 iters'
+c         call die_abort
+c       end if         
+c      
+c      
+c      
+c      
+c      alpha = 1.0d00
+c      ls_ell = 1
+c      s_values = zero
+c      s_values(0) = s0_value
+c      r_values = 1.0d00
+c      
+c      do ! step length search
+cc    
+cc              1. new alpha (step length). get s-value.
+cc                 omit mpcs of present. material routines
+cc                 may want immediate adaptive.
+cc      
+c         if( ls_debug ) write(iout,8910) ls_ell, alpha
+c         du(1:nodof) = du0(1:nodof) + alpha * idu(1:nodof)
+c         call drive_eps_sig_internal_forces( step, iter,
+c     &                                 material_cut_step )
+c         if( material_cut_step ) then
+c            deallocate( du0 )
+c            return
+c         end if
+c         call contact_find
+c         call upres( iter, out, nodof, dt, nbeta, num_term_loads,
+c     &         sum_loads, mgload, mdiag, pbar, du, v, a, 
+c     &         ifv, res, cstmap, dstmap, load )
+c         s_value = zero
+c         if( allocated( d_lagrange_forces ) ) then
+c           do i = 1, nodof  
+c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+c             if( d_lagrange_forces(1) .ne. zero ) cycle
+c             s_value = s_value  - res(i)*idu(i)
+c           end do
+c         else  ! no mpcs active      
+c           do i = 1, nodof   !   fix for MPCs
+c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
+c             s_value = s_value  - res(i)*idu(i)
+c           end do
+c         end if
+c         s_values(ls_ell) = s_value
+cc        
+cc              2. compute r-ratio. check for convergence of step
+cc                 length
+c         
+c         r_value = abs( s_values(ls_ell) / s_values(0) )
+c         if( ls_debug ) write(iout,9030) s_value, r_value
+c         r_values(ls_ell) = r_value
+c         if( r_value < slack_toler ) then
+c             if( ls_debug ) write(iout,8920) slack_toler
+c             if( show_details ) write(iout,9200) alpha,  step, iter 
+c             deallocate( du0 )
+c             return 
+c         end if             
+cc        
+cc              3. get new step length. simple back track for now.
+cc                 check if smaller than min step length.
+cc                 up to top of search loop.
+cc
+c         alpha = rho * alpha  ! simple back track.
+c         if( alpha .lt. alpha_min ) then
+c             if( show_details ) write(iout,9100) ls_ell, 
+c     &                 step, iter, r_value, alpha 
+c             deallocate( du0 )
+c             ls_request_adaptive = .true.
+c             return
+c         end if      
+c         ls_ell = ls_ell + 1
+c      end do
+cc
+c      return
+cc
+c 8900 format(6x,'.... entered line search routine. step, iter: ',
+c     &  i6,i3)
+c 8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
+c 8920 format(20x,'satisfied search tolerance of: ',f10.3)
+c 9000 format(3x,'       ... s0 value: ' e14.6)
+c 9010 format(7x,
+c     &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
+c     & /,7x,'   using step length 1.0 this iteration')
+c 9030 format(20x,'new s, r:  ',2f10.4)
+c 9100 format(7x,          
+c     &    '>> line search did not converge. iterations: ',i3,3x,i5,i3,
+c     &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,
+c     &/7x,'      triggering adaptive load steps' )
+c 9200 format(7x,
+c     & '>> line search completed. step length: ',f6.3,6x,i5,i3)
+c 9210 format(7x,
+c     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
+c 9220 format(7x,     
+c     & '      ... finished line search. iterations, step length: ',
+c     &   i2,1x,f7.4)
+cc 
+c           
+c      end subroutine mnralg_ls 
+c      
+c      end subroutine mnralg
+c      
+c      
+c      
+c      
+c      subroutine mnralg_crisfield_search( ils, prodr, eta, 
+c     &                             amp, etmxa, 
+c     &                             etmna, iwrit, iwr, ico, nlsmxp )
+c      implicit none
+cc
+cc              parameters
+cc
+c      integer ::  ils, iwrit, iwr, ico, nlsmxp 
+c      double precision :: prodr(nlsmxp), eta(nlsmxp), amp, etmxa, 
+c     &                    etmna, etmxt
+cc
+cc              locals
+cc
+c      integer :: i, ineg, ipos
+c      double precision :: etaneg, etmaxp, etaint, etaalt, etaext
+cc      
+c      ineg    = 999
+c      etaneg  = 1.0d05
+c      etmaxp = 0.0d00
+cc      
+c      do i = 1, ils + 1
+c       if( eta(i) .gt. etmaxp ) etmaxp = eta(i)
+c       if( prodr(i) .ge. 0.0d00 ) cycle
+c       if( eta(i) .gt. etaneg ) cycle
+c       etaneg = eta(1)
+c       ineg = i
+c      end do
+cc
+c      if( ineg .ne. 999 ) then  ! B
+c        ipos = 1
+c        do i = 1, ils + 1
+c          if( prodr(i) .lt. 0.0d00 ) cycle
+c          if( eta(i) .gt. eta(ineg) ) cycle
+c          if( eta(i) .lt. eta(ipos) ) cycle
+c          ipos = i
+c        end do
+cc
+c        etaint = prodr(ineg)*eta(ipos) - prodr(ipos)*eta(ineg)                   
+c        etaint = etaint / ( prodr(ineg) - prodr(ipos) )
+c        etaalt = eta(ipos) + 0.2d00*(eta(ineg) - eta(ipos) )
+c        if( etaint .lt. etaalt ) etaint = etaalt
+c        if( etaint .lt. etmna ) then  ! A
+c           etaint = etmna
+c           if( ico .eq. 1 ) then
+c             ico = 2
+c             write(iwr,1010)
+c           elseif( ico .eq.0 ) then
+c             ico = 1
+c           end if
+c        end if   !  A
+cc
+c        eta(ils+2) = etaint
+c        if( iwrit .eq. 1 ) then
+c          write(iwr,1001) ( eta(i), i = 1, ils + 2 ) 
+c          write(iwr,1002) ( prodr(i), i = 1, ils + 1 )
+c        end if
+c        return
+cc
+c      elseif( ineg .eq. 999 ) then !  B
+c        etmxt = amp * etmaxp
+c        if( etmxt .gt. etmxa ) etmxt = etmxa
+c        etaext = prodr(ils+1) * eta(ils) - prodr(ils) * eta(ils+1)
+c        etaext = etaext / ( prodr(ils+1) - prodr(ils) ) 
+c        eta(ils+2) = etaext
+c        if( etaext .le. 0.0d00   .or.  etaext .gt. etmxt ) 
+c     &           eta(ils+2) = etmxt   
+c        if( eta(ils+2) .eq. etmxa  .and. ico .eq. 1 ) then
+c          write(iwr,1003)
+c          ico = 2
+c          return
+c        end if
+c        if( eta(ils+2) .eq. etmxa ) ico = 1
+c        if( iwrit .eq.1 ) then
+c           write(iwr,1001) ( eta(i), i = 1, ils + 2 ) 
+c           write(iwr,1002) ( prodr(i), i = 1, ils + 1 )
+c        end if
+c      end if  ! B
+cc
+c      return
+cc      
+c 1010 format(10x,'... Crisfield. min step length reached twice')
+c 1001 format(10x,'... Crisfield. etas: ',(5g11.3))
+c 1002 format(10x,'... Crisfield. ratios: ', (5g11.3) )
+c 1003 format(10x,'... Crisfield. max step length again')
+cc
+c      end  
+c
