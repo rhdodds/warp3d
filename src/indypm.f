@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/24/2015 rhd              *
+c     *                   last modified : 11/25/2015 rhd             *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -18,8 +18,13 @@ c
       use mod_mpc, only : display_mpcs
       use main_data, only : output_packets, packet_file_name,
      &                      run_user_solution_routine, cp_unloading,
-     &                      divergence_check, asymmetric_assembly,
-     &                      batch_mess_fname
+     &                      divergence_check, diverge_check_strict,
+     &                      asymmetric_assembly,
+     &                      batch_mess_fname, extrapolate,
+     &                      extrap_off_next_step, line_search,
+     &                      ls_details, ls_min_step_length,
+     &                      ls_max_step_length, ls_rho,
+     &                      ls_slack_tol
       use hypre_parameters
       use performance_data
       use distributed_stiffness_data, only : parallel_assembly_allowed,
@@ -32,15 +37,16 @@ $add common.main
       character dums
 #dbl      double precision
 #sgl      real
-     &  dnum, dumd
+     &  dnum, dumd, zero
       logical sbflg1, sbflg2, linlst, lstflg, matchs, integr, endcrd,
      &        true, numd, numr, string, numi, label, msg_flag,
-     &        local_direct_flag
+     &        local_direct_flag, matchs_exact
+      character (len=50) :: error_string
 c
 c                       locally allocated
 c
       dimension intlst(mxlsz)
-      data zero /0.0/
+      data zero /0.0d00/
 c
 c
       msg_flag = .true.
@@ -66,13 +72,12 @@ c
  20   if( matchs('print',5)         ) go to 100
       if( matchs('newmark',4)       ) go to 300
       if( matchs('time',4)          ) go to 400
-      if( matchs('predict',7)       ) go to 500
       if( matchs('extrapolate',7)   ) go to 500
       if( matchs('convergence',5)   ) go to 700
       if( matchs('nonconvergent',6) ) go to 800
       if( matchs('maximum',3)       ) go to 900
       if( matchs('minimum',3)       ) go to 950
-      if( matchs('linear',6)        ) go to 1000
+      if( matchs('linear',6)        ) go to 1000 ! deprecated. send warn
       if( matchs('solution',8)      ) go to 1100
       if( matchs('trace',5)         ) go to 1200
       if( matchs('adaptive',5)      ) go to 1500
@@ -94,6 +99,7 @@ c
       if( matchs('user_routine',6)  ) go to 3200
       if( matchs('unloading',6)     ) go to 3300
       if( matchs('divergence',5)    ) go to 3400
+      if( matchs_exact('line')      ) go to 3500 ! line search
 c
 c                       no match with solutions parameters command.
 c                       return to driver subroutine to look for high
@@ -242,7 +248,7 @@ c
 c
 c **********************************************************************
 c *                                                                    *
-c *                     parameter controlling whether to predict       *
+c *                     parameter controlling whether to extrapolate   *
 c *                     the incremental displacement vector for        *
 c *                     newton iterations                              *
 c *                                                                    *
@@ -251,25 +257,20 @@ c
 c
  500  continue
 c
-      if(matchs('on',2)) then
-c
-         predct= .true.
-c
-         if(matchs('multiply',4)) call splunj
-         if(matchs('by',2)) call splunj
-c
-         if(numd(dnum)) then
-              prdmlt= dnum
-         else
-              prdmlt = zero
-         end if
-c
-      else if(matchs('off',3)) then
-         predct= .false.
+      if( matchs('solution',4) ) call splunj
+      if( matchs('on',2) ) then
+         extrapolate = .true.
+      else if( matchs('off',3) ) then
+         extrapolate = .false.
       else
          call errmsg(174,dum,dums,dumr,dumd)
       end if
-c
+      if( endcrd() ) go to 10
+      if( matchs('next',2) ) then
+         extrap_off_next_step = .true.
+      else
+         call errmsg(170,dum,dums,dumr,dumd)
+      end if
       go to 10
 c
 c **********************************************************************
@@ -406,12 +407,6 @@ c
          if(.not.integr(mxiter)) then
             call errmsg(103,dum,dums,dumr,dumd)
          end if
-      else if(matchs('linear',3)) then
-         if(matchs('iterations',4)) then
-            if(.not.integr(mxlitr)) then
-               call errmsg(103,dum,dums,dumr,dumd)
-            end if
-         end if
       else
          call errmsg(104,dum,dums,dumr,dumd)
       end if
@@ -441,16 +436,28 @@ c
 c
 c **********************************************************************
 c *                                                                    *
+c *                    *** deprecated ***                              *
+c *             *** done now thru extrapolation command ***            *
+c *                                                                    *
 c *                     request use of linear stiffness                *
 c *                     iteration 1 of each load step                  *
 c *                                                                    *
-c *    linear stiffness for iteration 1 on | off  (subsequent steps)   *
-c *    linear stiffness for iteration one next step                    *
+c *  (a)  linear stiffness for iteration 1 on | off                    *
+c *          (subsequent steps)                                        *
+c *  (b)  linear stiffness for iteration one next step                 *
+c *                                                                    *
+c *    use these commands to replace                                   *
+c *                                                                    *
+c *       extrapolate off => same  as (a)                              *
+c *       extrapolate off next step => same  as (b)                    *
 c *                                                                    *
 c **********************************************************************
 c
 c
- 1000 continue
+1000  continue
+      write(out,9000)
+      write(out,*) 
+      go to 10
 c
       if( matchs('stiffness',5) ) then
 c
@@ -459,11 +466,13 @@ c
          if( matchs('iteration',4) ) then
             if( matchs('one',3) ) then
                if( matchs('on',2) ) then
-                  lnkit1= .true.
+                  extrapolate = .false. !lnkit1= .true.
+                  extrap_off_next_step = .true.
                else if( matchs('off',3) ) then
-                  lnkit1= .false.
+                  extrapolate = .false. ! lnkit1= .false.
+                  extrap_off_next_step = .true.
                else if( matchs('next',4) ) then ! step
-                   linstf_nxt_step = .true.
+                   extrap_off_next_step = .true.
                else
                   call errmsg(93,dum,dums,dumr,dumd)
                end if
@@ -486,7 +495,7 @@ c
       end if
 c
       go to 10
-c
+ 
 c
 c **********************************************************************
 c *                                                                    *
@@ -1296,8 +1305,6 @@ c
       go to 10
 c
 c
-c
-c
 c **********************************************************************
 c *                                                                    *
 c *                     divergence check. default is on. mnralg will   *
@@ -1312,21 +1319,119 @@ c
       if( matchs('check',2) ) call splunj
       if( matchs('on',2) ) then
          divergence_check = .true.
+         if( match('strict',4) ) diverge_check_strict = .true.
       else if( matchs('off',3) ) then
          divergence_check = .false.
+         diverge_check_strict = .false.
       else
          call errmsg2(81,dum,dums,dumr,dumd)
       end if
       go to 10
 c      
- 9999 sbflg1= .true.
-      sbflg2= .false.
+c **********************************************************************
+c *                                                                    *
+c *                     line search and parameters                     *
+c *                                                                    *
+c **********************************************************************
+c
+c
+ 3500 continue  ! make sure consistent with initst
+      line_search    =  .true.
+      ls_details     =  .false.
+      ls_min_step_length = 0.01d00
+      ls_max_step_length = 1.0d00
+      ls_rho         = 0.7d00
+      ls_slack_tol   = 0.5d00
+c
+      if( matchs('search',5) ) call splunj
+      if( matchs_exact('on') ) line_search = .true.
+      if( matchs_exact('off') ) then
+         line_search = .false.
+         call scan_flushline
+         go to 10
+      end if
+c      
+ 3510 continue      
+       if( endcrd( ) ) go to 10
+       if( matchs_exact(',') ) call splunj
+       if( matchs_exact('rho') ) then
+          if( numd(ls_rho) ) go to 3510
+          call entits( error_string, ncerror )
+          write(out,9514) error_string(1:ncerror)
+          call scan_flushline
+          go to 10
+       end if
+       if( matchs('details',5) ) then
+          ls_details = .true.
+          go to 3510
+       end if      
+       if( matchs_exact('min_step') ) then
+          if( numd(ls_min_step_length) ) go to 3510
+          call entits( error_string, ncerror )
+          write(out,9516)  error_string(1:ncerror)
+          call scan_flushline
+          go to 10
+       end if
+       if( matchs_exact('max_step') ) then
+          if( numd(ls_max_step_length) ) go to 3510
+          call entits( error_string, ncerror )
+          write(out,9518)  error_string(1:ncerror)
+          call scan_flushline
+          go to 10
+       end if
+       if( matchs('slack_toler',5) ) then
+          if( numd(ls_slack_tol) ) go to 3510
+          call entits( error_string, ncerror )
+          write(out,9520)  error_string(1:ncerror)
+          call scan_flushline
+          go to 10
+       end if
+       if( matchs('dump',4) ) then
+         write(out,9510) line_search, ls_details,
+     &          ls_min_step_length, ls_max_step_length, ls_rho,
+     &          ls_slack_tol
+         go to 3510
+       end if
+       call entits( error_string, ncerror )
+       write(out,9512) error_string(1:ncerror)
+       num_error = num_error + 1
+       call scan_flushline
+       go to 10
+c 
+ 9999 sbflg1 = .true.
+      sbflg2 = .false.
 c
 c
       return
 c
+ 9000 format(/1x'>>>>>> Warning: the option:  linear stiffness ... ',
+     &   'has been deleted from WARP3D.',
+     &/,1x,'                Use the option: extrapolate off   to '
+     &      ' force use of linear [D] at start of subsequent steps.',
+     & /,1x,'                Or use the option: extrapolate off  ',
+     &   'next step'
+     & /,1x,'                The: linear stiffness ... command will',
+     & ' be deleted in a coming release. '  )
  9100 format(/1x,'>>>>> Warning:  the file name has been truncated ',
      &           'to 80 characters...',/)
+ 9500 format(/1x,'>>>>> Warning:  the predict/extrapolate nonlinear',
+     &      /,1x,'                solution with a user specified',
+     &  ' factor is',
+     &      /,1x '                no longer supported. command',
+     &     ' ignored...',/)
+ 9510 format(/1x,'.... dump of line search values ....',
+     &      /,10x,'line_search:          ', l1,
+     &      /,10x,'ls_details:           ', l1,
+     &      /,10x,'ls_min_step_length:   ', f10.4,
+     &      /,10x,'ls_max_step_length:   ', f10.4,
+     &      /,10x,'ls_rho:               ', f10.4,
+     &      /,10x,'ls_slack_tol:         ', f10.4, //)
+ 9512 format(/1x,'>>>>> error: unknown line search option: ',a,/)
+ 9514 format(/1x,'>>>>> error: expecting rho value: ',a,/)
+ 9516 format(/1x,'>>>>> error: expecting min step length value: ',a,/)
+ 9518 format(/1x,'>>>>> error: expecting max step length value: ',a,/)
+ 9520 format(/1x,'>>>>> error: expecting slack tolerance value: ',a,/)
+c
       end
 c
 c
