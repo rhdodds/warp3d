@@ -1,7 +1,7 @@
 c
 c           user_routines_support.f   Distribution version
 c
-c           Updated:  2/6/2015
+c           Updated:  110/7/2015 rhd
 c
 
 c     ****************************************************************
@@ -335,6 +335,28 @@ $add common.main
 c
       thisrank = 0
       if( use_mpi ) thisrank = myid
+      return
+      end
+
+c     ****************************************************************
+c     *                                                              *
+c     *                     subroutine getmodelsizes                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/7/2015                  *
+c     *                                                              *
+c     *     return number of nodes and elements                      *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine getmodelsizes( num_model_nodes, num_model_elements )
+      implicit integer (a-z)
+$add common.main
+c
+      num_model_nodes    = nonode
+      num_model_elements = noelem
+c      
       return
       end
 
