@@ -1,24 +1,23 @@
 c *******************************************************************
 c *                                                                 *
-c *        material model # 7 -- warp3d hydrogen model		            *
-c *								                                                         *
-c *		             written by: yueming liang	                        *
-c *					                                                     			    *  
-c *                last modified: 03/19/04 rhd                      *
+c *        material model # 7 -- warp3d hydrogen model              *
 c *                                                                 *
-c *				  	                                                   			    *
+c *               written by: yueming liang                         *
+c *                                                                 *  
+c *                last modified:1/2/2106 rhd                       *
+c *                                                                 *
+c *                                                                 *
 c *     this material model incorporates the equilibrium hydrogen   *
-c *	softeninging model by Sofronis et al. (sofronis, liang, and     *
-c *	aravas. hydrogen induced shear localization of the plastic      *
+c * softeninging model by Sofronis et al. (sofronis, liang, and     *
+c * aravas. hydrogen induced shear localization of the plastic      *
 c *     flow in metals and alloys. eur. j. mech. a/solids. 20(2001) *
 c *     857-872). the algorithm for updating stresses, strains, and *
-c *	the current hydrogen concentrations is the modified aravas      *
-c *	type of algorithm (n. aravas, on the numerical integration      *
-c *	of a class of pressure-dependent plasticity models. int. j.     *
-c *	num. method. engng. vol. 24, 1987, 1395-1416).		                *
-c *								                                                         *
+c * the current hydrogen concentrations is the modified aravas      *
+c * type of algorithm (n. aravas, on the numerical integration      *
+c * of a class of pressure-dependent plasticity models. int. j.     *
+c * num. method. engng. vol. 24, 1987, 1395-1416).                  *
+c *                                                                 *
 c *******************************************************************
- 
       subroutine mm07( 
      &  step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
@@ -30,15 +29,15 @@ c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
+      integer ::
      &  step, iter, felem, gpn, mxvl, hist_size, span, iout,
      &  nstrs, nstrn
 c
-      logical
+      logical ::
      &   signal_flag, adaptive_possible, cut_step_size_now
 c     
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      & mm_props(mxvl,10), e_vec(mxvl), tan_e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), n_power_vec(mxvl), stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
@@ -75,18 +74,18 @@ c     nu_vec            : Poisson's ratio for each element in block
 c     sigyld_vec        : yield stress for each element in block
 c     n_power_vec       : power-law hardening exponent for each element
 c                         in block (may not be defined)
-c (*) trial_elas_stress_np1 : trial elastic stress vector to be used later by
-c                         consistent tangent routine for model
+c (*) trial_elas_stress_np1 : trial elastic stress vector to be used
+c                          later by consistent tangent routine for model
 c (**)stress_n          : stresses at start of load step (n) for all
 c                         elements in block for this gauss point
 c (*) stress_np1        : stresses at end of load step (n+1) for all
 c                         elements in block for this gauss point
 c     deps              : current estimate of strain increment over the
 c                         load step (minus increment of thermal strain)
-c (**)history_n         : history values at start of load step (n) for all
-c                         elements in block for this gauss point
-c (*) history_np1       : history values at end of load step (n+1) for all
-c                         elements in block for this gauss point
+c (**)history_n         : history values at start of load step (n) for
+c                         all elements in block for this gauss point
+c (*) history_np1       : history values at end of load step (n+1) for
+c                         all elements in block for this gauss point
 c     
 c    (*)  values to be updated by this material model
 c    (**) needs to be initialized on step 1
@@ -107,69 +106,56 @@ c     (7) total work density
 c     (8) total plastic work density
 c     (9) total plastic strain 
 c
-c
 c   mm_props ordering
-c       (1) alpha, # of H sites per trap, C_T=alpha*theta_t*N_T
-c	(2) rho0, initial dislocation density, line length/m^3
-c	(3) gamma, rho=rho0+gamma*epsilon(p), line length/m^3
-c	(4) a, lattice parameter, m
-c	(5) W_B, trap binding energy, j/mole
+c (1) alpha, # of H sites per trap, C_T=alpha*theta_t*N_T
+c (2) rho0, initial dislocation density, line length/m^3
+c (3) gamma, rho=rho0+gamma*epsilon(p), line length/m^3
+c (4) a, lattice parameter, m
+c (5) W_B, trap binding energy, j/mole
 c
-c	(6) beta, number of NILS per solvent atom, C_L=beta*theta_l*N_L
-c	(7) V_M, molar volume of host metal (m^3/mole)
-c	(8) V_H, partial molar volume of H in solution (m^3/mole)
-c	(9) c_0, initial hydrogen concentration (H/M)
-c	(10)rksi, softening parameter, sigY(c)=sig0*((rksi-1)*c+1)
+c (6) beta, number of NILS per solvent atom, C_L=beta*theta_l*N_L
+c (7) V_M, molar volume of host metal (m^3/mole)
+c (8) V_H, partial molar volume of H in solution (m^3/mole)
+c (9) c_0, initial hydrogen concentration (H/M)
+c (10)rksi, softening parameter, sigY(c)=sig0*((rksi-1)*c+1)
 c
 c   history parameters ordering
-c	(1) plastic strain
-c	(2) c, current hydrogen concentration
-c	(3) etran, transformation strain due to hydrogen
-c	(4) yflag, indicator of yielding
+c (1) plastic strain
+c (2) c, current hydrogen concentration
+c (3) etran, transformation strain due to hydrogen
+c (4) yflag, indicator of yielding
 c                        ( -1 = currently linear elasticity)
 c                        (  1 = active yielding            )
 c       (5) increment of plastic strain
 c
-c
-c
-c
 c                   local variables
 c                   ---------------
 c     
-      integer i,j    
-      logical local_debug
-#dbl      double precision
-#sgl      real 
-     &     shear_mod, a,b,c, zero, one, two,half,three,onep5,
+      integer :: i,j    
+      logical :: local_debug
+#dbl      double precision ::
+#sgl      real  ::
+     & shear_mod, a,b,c, zero, one, two,half,three,onep5,
 c
-     &     str_epd(6), str_epd_1(6), strdir(6),
-     &     deps_plas(6),stress_np1_1(6),
-     &     alpha, rho0, gamma, alat, wb, beta, vm, vh, c0, rksi,
-     &     rgas, rna, temper, rnl, alamda,
-     &     eps_n, hcon_n, etran_n, eps_0, sigma_0, bk, sigmaY, 
-     &     pe, qe, fac1, tol, yflag, dekk, hcon_np1, eps_np1, 
-     &     p_np1, etran_np1, delastic,aux1, dplastic,n_power,deleps,
-     &     e11,e22,e33,s11,s22,s33,s44,s55,s66,e44,e55,e66,et,
-     &     dsdep,dsdc,cl,ct,eps,cnow, thl, tht, dcdskk, dcdep, 
-     &       dntdeps,skk
+     & str_epd(6), str_epd_1(6), strdir(6),
+     & deps_plas(6),stress_np1_1(6),
+     & alpha, rho0, gamma, alat, wb, beta, vm, vh, c0, rksi,
+     & rgas, rna, temper, rnl, alamda,
+     & eps_n, hcon_n, etran_n, eps_0, sigma_0, bk, sigmaY, 
+     & pe, qe, fac1, tol, yflag, dekk, hcon_np1, eps_np1, 
+     & p_np1, etran_np1, delastic,aux1, dplastic,n_power,deleps,
+     & e11,e22,e33,s11,s22,s33,s44,s55,s66,e44,e55,e66,et,
+     & dsdep,dsdc,cl,ct,eps,cnow, thl, tht, dcdskk, dcdep, 
+     & dntdeps,skk
 c
+      data zero, one, two/0.0d00, 1.0d00, 2.0d00/
+      data half, three, onep5 /0.5d00, 3.0d00, 1.5d00/
+      data rgas,rna,temper,tol/8.3144d00,6.0232d23,300.d00,1.0d-6/
+      data local_debug / .false. /
 c
-#dbl      data zero, one, two/0.0d00, 1.0d00, 2.0d00/
-#sgl      data zero, one, two/0.0, 1.0, 2.0/
-c
-#dbl      data half, three, onep5 /0.5d00, 3.0d00, 1.5d00/
-#sgl      data half, three, onep5 /0.5, 3.0, 1.5/
-c
-#dbl      data rgas,rna,temper,tol/8.3144d00,6.0232d23,300.d00,1.0d-6/
-#sgl      data rgas,rna,temper,tol /8.3144, 6.0232e23, 300.0,1.0e-6/
-c
-         data local_debug / .false. /
-c
-         
-        if ( step .eq. 1 ) then
+      if( step .eq. 1 ) then
           do i = 1, span
-c
-          if(gpn.eq.1.and.i.eq.1.and.local_debug) then
+          if( gpn.eq.1 .and. i.eq.1. and. local_debug) then
             write(iout,*)
             write(iout,*) 'Mechanical properties are:'
             write(iout,*)
@@ -182,234 +168,218 @@ c
             write(iout,*) 'Hydrogen related properties are:'
             write(iout,*)
             write(iout,*) '  alpha = ', mm_props(i,1)
-	    write(iout,*) '  rho0  = ', mm_props(i,2)
-	    write(iout,*) '  gamma = ', mm_props(i,3)
-	    write(iout,*) '  alat  = ', mm_props(i,4)
-	    write(iout,*) '  wb    = ', mm_props(i,5)
-	    write(iout,*) '  beta  = ', mm_props(i,6)
-	    write(iout,*) '  Vm    = ', mm_props(i,7)
-	    write(iout,*) '  Vh    = ', mm_props(i,8)
-	    write(iout,*) '  c0    = ', mm_props(i,9)
-	    write(iout,*) '  rksi  = ', mm_props(i,10)           
-
-          endif
-c
-            stress_n(i,1) = zero
-            stress_n(i,2) = zero
-            stress_n(i,3) = zero
-            stress_n(i,4) = zero
-            stress_n(i,5) = zero
-            stress_n(i,6) = zero
-            stress_n(i,7) = zero
-            stress_n(i,8) = zero
-            stress_n(i,9) = zero
-c
+            write(iout,*) '  rho0  = ', mm_props(i,2)
+            write(iout,*) '  gamma = ', mm_props(i,3)
+            write(iout,*) '  alat  = ', mm_props(i,4)
+            write(iout,*) '  wb    = ', mm_props(i,5)
+            write(iout,*) '  beta  = ', mm_props(i,6)
+            write(iout,*) '  Vm    = ', mm_props(i,7)
+            write(iout,*) '  Vh    = ', mm_props(i,8)
+            write(iout,*) '  c0    = ', mm_props(i,9)
+            write(iout,*) '  rksi  = ', mm_props(i,10)           
+          end if
+            stress_n(i,1:9) = zero
             history_n(i,1) = zero
             history_n(i,2) = mm_props(i,9)
             history_n(i,3) = zero
-            history_n(i,4) = - one
-            history_n(i,5) = zero
-            history_n(i,6) = zero
-            history_n(i,7) = zero
-          enddo
-        endif
+            history_n(i,4) = -one
+            history_n(i,5:7) = zero
+          end do
+      end if
 c
-        do i=1,span
+      do i = 1, span
 c
-	   alpha = mm_props(i,1)
-	   rho0  = mm_props(i,2)
-	   gamma = mm_props(i,3)
-	   alat  = mm_props(i,4)
-	   wb    = mm_props(i,5)
-	   beta  = mm_props(i,6)
-           vm    = mm_props(i,7)
-	   vh    = mm_props(i,8)
-	   c0    = mm_props(i,9)
-	   rksi  = mm_props(i,10)
+        alpha = mm_props(i,1)
+        rho0  = mm_props(i,2)
+        gamma = mm_props(i,3)
+        alat  = mm_props(i,4)
+        wb    = mm_props(i,5)
+        beta  = mm_props(i,6)
+        vm    = mm_props(i,7)
+        vh    = mm_props(i,8)
+        c0    = mm_props(i,9)
+        rksi  = mm_props(i,10)
 c
-	   alamda= vh/vm
-           rnl   = rna/vm
+        alamda= vh/vm
+        rnl   = rna/vm
 c
-
-           if(step.eq.1) then
-              eps=zero
-              skk=zero
-              call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
+        if(step.eq.1) then
+           eps = zero
+           skk = zero
+           call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
      &       wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
      &       temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
      &       dntdeps, cl, ct)
-             history_n(i,2)=cnow
-           endif
+           history_n(i,2) = cnow
+        end if
 c
-           eps_n   = history_n(i,1)
-           hcon_n  = history_n(i,2)
-           etran_n = history_n(i,3)
+        eps_n   = history_n(i,1)
+        hcon_n  = history_n(i,2)
+        etran_n = history_n(i,3)
 c
 
-           sigma_0 = sigyld_vec(i)
-           eps_0   = sigma_0 / e_vec(i)
-           n_power = n_power_vec(i)
+        sigma_0 = sigyld_vec(i)
+        eps_0   = sigma_0 / e_vec(i)
+        n_power = n_power_vec(i)
 c
-           bk = e_vec(i) / ( three * (one - two * nu_vec(i)))
+        bk = e_vec(i) / ( three * (one - two * nu_vec(i)))
 c
-           shear_mod = e_vec(i) / 
+        shear_mod = e_vec(i) / 
      &         (two * ( one + nu_vec(i) ))
 c
-           a = two * shear_mod * ( one - nu_vec(i) )
+        a = two * shear_mod * ( one - nu_vec(i) )
      &         /( one - two * nu_vec(i))
 c
-           b = two * shear_mod * nu_vec(i)
+        b = two * shear_mod * nu_vec(i)
      &         /( one - two * nu_vec(i))
 c
-           str_epd(1) = stress_n(i,1) + a * deps(i,1)
+        str_epd(1) = stress_n(i,1) + a * deps(i,1)
      &                       + b * deps(i,2) + b * deps(i,3)
-           str_epd(2) = stress_n(i,2) + a * deps(i,2)
+        str_epd(2) = stress_n(i,2) + a * deps(i,2)
      &                       + b * deps(i,1) + b * deps(i,3)
-           str_epd(3) = stress_n(i,3) + a * deps(i,3)
+        str_epd(3) = stress_n(i,3) + a * deps(i,3)
      &                       + b * deps(i,1) + b * deps(i,2)
-           str_epd(4) = stress_n(i,4) + shear_mod * deps(i,4)
-           str_epd(5) = stress_n(i,5) + shear_mod * deps(i,5)
-           str_epd(6) = stress_n(i,6) + shear_mod * deps(i,6)
+        str_epd(4) = stress_n(i,4) + shear_mod * deps(i,4)
+        str_epd(5) = stress_n(i,5) + shear_mod * deps(i,5)
+        str_epd(6) = stress_n(i,6) + shear_mod * deps(i,6)
 c
-           trial_elas_stress_np1(i,1) = str_epd(1)
-           trial_elas_stress_np1(i,2) = str_epd(2)
-           trial_elas_stress_np1(i,3) = str_epd(3)
-           trial_elas_stress_np1(i,4) = str_epd(4)
-           trial_elas_stress_np1(i,5) = str_epd(5)
-           trial_elas_stress_np1(i,6) = str_epd(6)
+        trial_elas_stress_np1(i,1) = str_epd(1)
+        trial_elas_stress_np1(i,2) = str_epd(2)
+        trial_elas_stress_np1(i,3) = str_epd(3)
+        trial_elas_stress_np1(i,4) = str_epd(4)
+        trial_elas_stress_np1(i,5) = str_epd(5)
+        trial_elas_stress_np1(i,6) = str_epd(6)
 c
-           pe = (str_epd(1) + str_epd(2) + str_epd(3))/three
+        pe = (str_epd(1) + str_epd(2) + str_epd(3))/three
 c
-           str_epd_1(1) = str_epd(1) - pe
-           str_epd_1(2) = str_epd(2) - pe
-           str_epd_1(3) = str_epd(3) - pe
-           str_epd_1(4) = str_epd(4)
-           str_epd_1(5) = str_epd(5)
-           str_epd_1(6) = str_epd(6)
+        str_epd_1(1) = str_epd(1) - pe
+        str_epd_1(2) = str_epd(2) - pe
+        str_epd_1(3) = str_epd(3) - pe
+        str_epd_1(4) = str_epd(4)
+        str_epd_1(5) = str_epd(5)
+        str_epd_1(6) = str_epd(6)
 c
-           fac1 = str_epd_1(1) * str_epd_1(1)
+        fac1 = str_epd_1(1) * str_epd_1(1)
      &          + str_epd_1(2) * str_epd_1(2)
      &          + str_epd_1(3) * str_epd_1(3)
      &          + ( str_epd_1(4) * str_epd_1(4)
      &            + str_epd_1(5) * str_epd_1(5)
      &            + str_epd_1(6) * str_epd_1(6) ) * two
 c
-           qe = sqrt( onep5 * fac1 )
+        qe = sqrt( onep5 * fac1 )
 c
-           strdir(1) = onep5 * str_epd_1(1) / qe
-           strdir(2) = onep5 * str_epd_1(2) / qe
-           strdir(3) = onep5 * str_epd_1(3) / qe
-           strdir(4) = onep5 * str_epd_1(4) / qe
-           strdir(5) = onep5 * str_epd_1(5) / qe
-           strdir(6) = onep5 * str_epd_1(6) / qe
+        strdir(1) = onep5 * str_epd_1(1) / qe
+        strdir(2) = onep5 * str_epd_1(2) / qe
+        strdir(3) = onep5 * str_epd_1(3) / qe
+        strdir(4) = onep5 * str_epd_1(4) / qe
+        strdir(5) = onep5 * str_epd_1(5) / qe
+        strdir(6) = onep5 * str_epd_1(6) / qe
 c
-           call mm07_yield(hcon_n, rksi, eps_n, sigma_0, eps_0, 
-     &    n_power, sigmaY, dsdep, dsdc)
+        call mm07_yield( hcon_n, rksi, eps_n, sigma_0, eps_0, 
+     &                   n_power, sigmaY, dsdep, dsdc)
 c
-           if( qe.le.sigmaY ) then
+        if( qe.le.sigmaY ) then
 c
-              call mm07_elastic( alpha, rho0, gamma, alat, wb, beta,
-     &    vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
-     &    shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, eps_n,
-     &    etran_np1, adaptive_possible, cut_step_size_now, iout,
-     &    cl, ct )
+          call mm07_elastic( alpha, rho0, gamma, alat, wb, beta,
+     &      vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
+     &      shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, eps_n,
+     &      etran_np1, adaptive_possible, cut_step_size_now, iout,
+     &      cl, ct )
 c
-              stress_np1(i,1) = str_epd_1(1) + p_np1
-              stress_np1(i,2) = str_epd_1(2) + p_np1
-              stress_np1(i,3) = str_epd_1(3) + p_np1
-              stress_np1(i,4) = str_epd_1(4)
-              stress_np1(i,5) = str_epd_1(5)
-              stress_np1(i,6) = str_epd_1(6)
+          stress_np1(i,1) = str_epd_1(1) + p_np1
+          stress_np1(i,2) = str_epd_1(2) + p_np1
+          stress_np1(i,3) = str_epd_1(3) + p_np1
+          stress_np1(i,4) = str_epd_1(4)
+          stress_np1(i,5) = str_epd_1(5)
+          stress_np1(i,6) = str_epd_1(6)
 c
-              history_np1(i,1) = eps_n
-              history_np1(i,2) = hcon_np1
-              history_np1(i,3) = etran_np1
-              history_np1(i,4) = - one
-              history_np1(i,5) = zero
-              history_np1(i,6) = cl
-              history_np1(i,7) = ct
+          history_np1(i,1) = eps_n
+          history_np1(i,2) = hcon_np1
+          history_np1(i,3) = etran_np1
+          history_np1(i,4) = - one
+          history_np1(i,5) = zero
+          history_np1(i,6) = cl
+          history_np1(i,7) = ct
            
-	      delastic =
+          delastic =
      &        half * ( stress_np1(i,1) + stress_n(i,1) )*deps(i,1) +
      &        half * ( stress_np1(i,2) + stress_n(i,2) )*deps(i,2) +
      &        half * ( stress_np1(i,3) + stress_n(i,3) )*deps(i,3) +
      &        half * ( stress_np1(i,4) + stress_n(i,4) )*deps(i,4) +
      &        half * ( stress_np1(i,5) + stress_n(i,5) )*deps(i,5) +
      &        half * ( stress_np1(i,6) + stress_n(i,6) )*deps(i,6) 
-              stress_np1(i,7) = stress_n(i,7) +  delastic
-              stress_np1(i,8) = zero
-              stress_np1(i,9) = zero
-
-           endif
+          stress_np1(i,7) = stress_n(i,7) +  delastic
+          stress_np1(i,8) = zero
+          stress_np1(i,9) = zero
+        end if
 c
-           if( qe.gt.sigmaY ) then
+        if( qe.gt.sigmaY ) then
 c
-              call mm07_plastic( alpha, rho0, gamma, alat, wb, beta,
-     &    vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
-     &    shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, etran_np1,
-     &    eps_n, eps_np1, adaptive_possible, cut_step_size_now, iout,
-     &    sigma_0, eps_0, n_power, qe, cl,ct )
+          call mm07_plastic( alpha, rho0, gamma, alat, wb, beta,
+     &       vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
+     &       shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n,
+     &       etran_np1, eps_n, eps_np1, adaptive_possible,
+     &       cut_step_size_now, iout,
+     &       sigma_0, eps_0, n_power, qe, cl,ct )
 c
-              deleps = eps_np1 - eps_n
-              aux1 = two * shear_mod * deleps
+          deleps = eps_np1 - eps_n
+          aux1 = two * shear_mod * deleps
 c
-              stress_np1_1(1) = str_epd_1(1) - aux1 * strdir(1)
-              stress_np1_1(2) = str_epd_1(2) - aux1 * strdir(2)
-              stress_np1_1(3) = str_epd_1(3) - aux1 * strdir(3)
-              stress_np1_1(4) = str_epd_1(4) - aux1 * strdir(4)
-              stress_np1_1(5) = str_epd_1(5) - aux1 * strdir(5)
-              stress_np1_1(6) = str_epd_1(6) - aux1 * strdir(6)
+          stress_np1_1(1) = str_epd_1(1) - aux1 * strdir(1)
+          stress_np1_1(2) = str_epd_1(2) - aux1 * strdir(2)
+          stress_np1_1(3) = str_epd_1(3) - aux1 * strdir(3)
+          stress_np1_1(4) = str_epd_1(4) - aux1 * strdir(4)
+          stress_np1_1(5) = str_epd_1(5) - aux1 * strdir(5)
+          stress_np1_1(6) = str_epd_1(6) - aux1 * strdir(6)
 c
-              stress_np1(i,1) = stress_np1_1(1) + p_np1
-              stress_np1(i,2) = stress_np1_1(2) + p_np1
-              stress_np1(i,3) = stress_np1_1(3) + p_np1
-              stress_np1(i,4) = stress_np1_1(4)
-              stress_np1(i,5) = stress_np1_1(5)
-              stress_np1(i,6) = stress_np1_1(6)
-c              
-              history_np1(i,1) = eps_np1
-              history_np1(i,2) = hcon_np1
-              history_np1(i,3) = etran_np1
-              history_np1(i,4) = one
-              history_np1(i,5) = deleps
-              history_np1(i,6) = cl
-              history_np1(i,7) = ct
+          stress_np1(i,1) = stress_np1_1(1) + p_np1
+          stress_np1(i,2) = stress_np1_1(2) + p_np1
+          stress_np1(i,3) = stress_np1_1(3) + p_np1
+          stress_np1(i,4) = stress_np1_1(4)
+          stress_np1(i,5) = stress_np1_1(5)
+          stress_np1(i,6) = stress_np1_1(6)
+c          
+          history_np1(i,1) = eps_np1
+          history_np1(i,2) = hcon_np1
+          history_np1(i,3) = etran_np1
+          history_np1(i,4) = one
+          history_np1(i,5) = deleps
+          history_np1(i,6) = cl
+          history_np1(i,7) = ct
 c
-	     delastic =
+          delastic =
      &       half * ( stress_np1(i,1) + stress_n(i,1) ) *  deps(i,1) +
      &       half * ( stress_np1(i,2) + stress_n(i,2) ) *  deps(i,2) +
      &       half * ( stress_np1(i,3) + stress_n(i,3) ) *  deps(i,3) +
      &       half * ( stress_np1(i,4) + stress_n(i,4) ) *  deps(i,4) +
      &       half * ( stress_np1(i,5) + stress_n(i,5) ) *  deps(i,5) +
      &       half * ( stress_np1(i,6) + stress_n(i,6) ) *  deps(i,6) 
-             stress_np1(i,7) = stress_n(i,7) +  delastic
-             stress_np1(i,8) = zero
-             stress_np1(i,9) = zero
+          stress_np1(i,7) = stress_n(i,7) +  delastic
+          stress_np1(i,8) = zero
+          stress_np1(i,9) = zero
 c
-	     deps_plas(1) = deleps * strdir(1)
-      	     deps_plas(2) = deleps * strdir(2)
-	     deps_plas(3) = deleps * strdir(3)
-	     deps_plas(4) = deleps * strdir(4)
-	     deps_plas(5) = deleps * strdir(5)
-  	     deps_plas(6) = deleps * strdir(6)
+          deps_plas(1) = deleps * strdir(1)
+          deps_plas(2) = deleps * strdir(2)
+          deps_plas(3) = deleps * strdir(3)
+          deps_plas(4) = deleps * strdir(4)
+          deps_plas(5) = deleps * strdir(5)
+          deps_plas(6) = deleps * strdir(6)
 c
-	     dplastic =
+          dplastic =
      &       half * ( stress_np1(i,1) + stress_n(i,1) )*deps_plas(1) +
      &       half * ( stress_np1(i,2) + stress_n(i,2) )*deps_plas(2) +
      &       half * ( stress_np1(i,3) + stress_n(i,3) )*deps_plas(3) +
      &       one * ( stress_np1(i,4) + stress_n(i,4) )*deps_plas(4) +
      &       one * ( stress_np1(i,5) + stress_n(i,5) )*deps_plas(5) +
      &       one * ( stress_np1(i,6) + stress_n(i,6) )*deps_plas(6) 
-             stress_np1(i,8) = stress_n(i,8) + dplastic
-             stress_np1(i,9) = stress_n(i,9) + deleps
+          stress_np1(i,8) = stress_n(i,8) + dplastic
+          stress_np1(i,9) = stress_n(i,9) + deleps
 c
-           endif
-
+        end if
+      end do  ! on span
 c
-       enddo
-
-       return
-       end
+      return
+      end
 c *******************************************************************
        subroutine mm07_elastic( alpha, rho0, gamma, alat, wb, beta,
      &    vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
@@ -418,67 +388,60 @@ c *******************************************************************
      &    cl, ct )
        implicit none
 c
-       integer iout
-       logical adaptive_possible, cut_step_size_now
+       integer :: iout
+       logical :: adaptive_possible, cut_step_size_now
 
-#dbl       double precision 
-#sgl       real
+#dbl       double precision ::
+#sgl       real ::
      &   alpha, rho0, gamma, alat, wb, beta, vm, vh, 
      &   c0, rksi, alamda,
      &   rnl, rna, rgas, temper, bk, shear_mod, pe, p_np1, hcon_n, 
      &   hcon_np1, etran_n, eps_n,etran_np1
 c
-c   local variables
-c   ^^^^^^^^^^^^^^^
+c                  local variables
 c
-       integer j
-#dbl      double precision
-#sgl      real
+       integer :: j
+#dbl      double precision ::
+#sgl      real ::
      &    zero, one, two, three, tol, cguess,
      &    delc, ddc, detkk, skk, cnow, thl, tht, dcdskk, dcdep,
      &    dntdeps, res, dskkdc, slope, eps, cl, ct,tol1
 
-#dbl      data zero, one, two, three /0.0d00, 1.0d00, 2.0d00, 3.0d00/
-#sgl      data zero, one, two, three /0.0, 1.0, 2.0, 3.0/
+      data zero, one, two, three /0.0d00, 1.0d00, 2.0d00, 3.0d00/
+      data tol,tol1, cguess/1.d-6,1.d-8, 1.d-3/
 c
-#dbl      data tol,tol1, cguess/1.d-6,1.d-8, 1.d-3/
-#sgl      data tol,tol1, cguess/1.e-6,1.e-8, 1.e-3/
-c
-c
-       delc = zero
-       ddc  = zero
-       do j = 1, 20
-          delc = delc + ddc
-          hcon_np1 = hcon_n + delc
-          detkk = three * delc * alamda /
-     &            ( three + etran_n )
-          p_np1 = pe - bk * detkk
-          skk = three * p_np1
-          eps = eps_n
+      delc = zero
+      ddc  = zero
+      do j = 1, 20
+         delc = delc + ddc
+         hcon_np1 = hcon_n + delc
+         detkk = three * delc * alamda /
+     &           ( three + etran_n )
+         p_np1 = pe - bk * detkk
+         skk = three * p_np1
+         eps = eps_n
 c 
-          call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
-     &       wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
-     &       temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
-     &       dntdeps, cl, ct) 
+         call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
+     &      wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
+     &      temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
+     &      dntdeps, cl, ct ) 
 c
-          res = hcon_np1 - cnow
-c          
-          if( abs(res/c0).lt.tol ) goto 1117
+         res = hcon_np1 - cnow
+c         
+         if( abs(res/c0).lt.tol ) goto 1117
 c
-          dskkdc = - three * bk * alamda
-     &           / ( one + etran_n / three )
+         dskkdc = - three * bk * alamda
+     &          / ( one + etran_n / three )
 c
-          slope = one - dskkdc * dcdskk
-          ddc = - res / slope
-       enddo
-       write(iout,*) '*** no convergence in mm07 for elasticity ****'
-       write(iout,*) '....need to cut the step size immediately.......'
-       if(adaptive_possible) cut_step_size_now=.true.
+         slope = one - dskkdc * dcdskk
+         ddc = - res / slope
+      end do
+      write(iout,*) '*** no convergence in mm07 for elasticity ****'
+      write(iout,*) '....need to cut the step size immediately.......'
+      if( adaptive_possible ) cut_step_size_now=.true.
        
  1117  continue
-c
        etran_np1 = etran_n + delc * alamda
-c
        return
        end
 c *******************************************************************
@@ -488,58 +451,48 @@ c *******************************************************************
      &       dntdeps, cl, ct)
        implicit none
 c
-       integer iout
+       integer :: iout
 c
-#dbl      double precision
-#sgl      real
-     &    alpha, rho0, gamma, alat, 
-     &    wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
-     &    temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
-     &    dntdeps, dthldskk, dthtdskk
+#dbl      double precision ::
+#sgl      real ::
+     & alpha, rho0, gamma, alat, 
+     & wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
+     & temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
+     & dntdeps, dthldskk, dthtdskk
 c
-c local variables
+c                local variables
 c
-#dbl      double precision
-#sgl      real
-     &   zero, one,two,three,half,fac,
-     &   aux, rkl, rkt, thl0, cl, ct, rho, epst2, tden,
-     &   n1,n2,n3,n4,n5,n6,n7,ten, tdenfac,k1,k2,k3
+#dbl      double precision ::
+#sgl      real ::
+     & zero, one,two,three,half,fac,
+     & aux, rkl, rkt, thl0, cl, ct, rho, epst2, tden,
+     & n1,n2,n3,n4,n5,n6,n7,ten, tdenfac,k1,k2,k3
 c
-#dbl      data one, two, three /1.0d00, 2.0d00, 3.0d00/
-#sgl      data one, two, three /1.0, 2.d0, 3.0/
+      data one, two, three /1.0d00, 2.0d00, 3.0d00/
+      data zero , half,fac /0.0d00, 0.5d00,6932799.d0/
+      data n1,n2,n3,n4/20.911d0,10.334d0,18.635d0,17.073d0/
+      data n5,n6,n7,ten/8.302d0,2.034d0,0.197d0,10.d0/
+      data k1,k2,k3/23.26d0,-2.33d0,-5.5d0/
 c
-#dbl      data zero , half,fac /0.0d00, 0.5d00,6932799.d0/
-#sgl      data zero , half,fac /0.0, 0.5,6932799.0/
+      aux = vh /( three * rgas * temper )
+      rkl = exp( skk * aux )
+      rkt = exp( wb / (rgas * temper))
+      thl0 = c0 / beta
+      thl = thl0 * rkl / ( one - thl0 + thl0 * rkl )
+      tht = thl * rkt / ( one - thl + thl * rkt )
+      cl = beta * thl
 c
-#dbl      data n1,n2,n3,n4/20.911d0,10.334d0,18.635d0,17.073d0/
-#dbl      data n5,n6,n7,ten/8.302d0,2.034d0,0.197d0,10.d0/
-#sgl      data n1,n2,n3,n4/20.911,10.334,18.635,17.073/
-#sgl      data n5,n6,n7,ten/8.302,2.034,0.197,10.0/
+      if( rho0.eq.zero .and .gamma.eq.zero )  then
 c
-#dbl      data k1,k2,k3/23.26d0,-2.33d0,-5.5d0/
-#sgl      data k1,k2,k3/23.26,-2.33,-5.5/
-
+c                 formula by Krom et al, 1999
 c
-        aux = vh /( three * rgas * temper )
-	rkl = exp( skk * aux )
-	rkt = exp( wb / (rgas * temper))
-	thl0 = c0 / beta
-	thl = thl0 * rkl / ( one - thl0 + thl0 * rkl )
-	tht = thl * rkt / ( one - thl + thl * rkt )
-	cl = beta * thl
-c
-        if(rho0.eq.zero.and.gamma.eq.zero)  then
-c
-c  formula by Krom et al, 1999
-c
-
             tden = k1 + k2 * exp(k3*eps)
             tden = exp ( tden * log(ten) )
             tdenfac = k2 * k3 * exp(k3 * eps)
             dntdeps = tden * tdenfac * log(ten)
-
-c  formula by Taha and Sofronis
-
+c
+c               formula by Taha and Sofronis
+c
 c           tden = n1 + n2 * eps 
 c     +          - n3 * eps * eps 
 c     +          + n4 * eps * eps * eps
@@ -554,9 +507,8 @@ c     +          - n5 * eps * eps * eps
 c     +          + n6 * eps * eps * eps * eps
 c     +          - n7 * eps * eps * eps * eps * eps
 c           dntdeps = tdenfac * tden * log(ten)
-
-
-        else
+c
+      else
            epst2 = eps
            if( eps.gt.half ) then
               epst2 = half
@@ -568,25 +520,23 @@ c           dntdeps = tdenfac * tden * log(ten)
               tden = sqrt( two ) * rho / alat
               dntdeps = sqrt ( two ) * gamma / alat
            endif
-        endif
+      endif
 c
-        ct = alpha * tht * tden / rnl
-c
-        cnow = cl + ct
-c
-        if( cnow.gt.one ) then
+      ct = alpha * tht * tden / rnl
+      cnow = cl + ct
+      if( cnow.gt.one ) then
            write(iout,*) '>>>>>>>FATAL ERROR:'
            write(iout,*) 'c > 1 in mm07_hydrogen'
            stop
-        endif
+      end if
 c
-	DTHLDSKK=THL*(one-THL0)*AUX/(one-THL0+THL0*RKL)
-	DTHTDSKK=DTHLDSKK*RKT/( one -THL+THL*RKT)**two
-	DCDSKK=BETA*DTHLDSKK+ALPHA*TDEN/RNL*DTHTDSKK
-	DCDEP=ALPHA*THT/RNL*DNTDEPS
+      dthldskk = thl*(one-thl0)*aux/(one-thl0+thl0*rkl)
+      dthtdskk = dthldskk*rkt/( one -thl+thl*rkt)**two
+      dcdskk   = beta*dthldskk+alpha*tden/rnl*dthtdskk
+      dcdep    = alpha*tht/rnl*dntdeps
 c
-	return
-	end
+      return
+      end
 
 c *******************************************************************
        subroutine mm07_plastic( alpha, rho0, gamma, alat, wb, beta,
@@ -596,37 +546,33 @@ c *******************************************************************
      &    sigma_0, eps_0, n_power, qe, cl, ct )
        implicit none
 c
-          integer iout, j
-          logical adaptive_possible, cut_step_size_now
+       integer :: iout, j
+       logical :: adaptive_possible, cut_step_size_now
 c
-#dbl      double precision
-#sgl      real
-     &    alpha, rho0, gamma, alat, wb, beta,
-     &    vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
-     &    shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, etran_np1,
-     &    eps_n, eps_np1, sigma_0, eps_0, n_power, qe, cl, ct
+#dbl      double precision ::
+#sgl      real ::
+     & alpha, rho0, gamma, alat, wb, beta,
+     & vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
+     & shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, etran_np1,
+     & eps_n, eps_np1, sigma_0, eps_0, n_power, qe, cl, ct
 c
-c   local variables
-c   ^^^^^^^^^^^^^^^
+c                   local variables
 c
-#dbl      double precision
-#sgl      real
-     &    tol, zero, one, two, three,
-     &    epsguess, ddeps, sigmaY, dsdep, ff1, slope,ff2,deleps,
-     &    delc, ddelc, detkk, dsdc, cnow, thl, tht, dcdskk,tol1, 
-     &    dcdep, dntdeps, a11, a12, a21, a22, det1, skk, dskkdc
+#dbl      double precision :: 
+#sgl      real ::
+     & tol, zero, one, two, three,
+     & epsguess, ddeps, sigmaY, dsdep, ff1, slope,ff2,deleps,
+     & delc, ddelc, detkk, dsdc, cnow, thl, tht, dcdskk,tol1, 
+     & dcdep, dntdeps, a11, a12, a21, a22, det1, skk, dskkdc
 c          
-#dbl      data zero, one, two, three /0.0d00, 1.0d00, 2.0d00, 3.0d00/
-#sgl      data zero, one, two, three /0.0, 1.0, 2.0, 3.0/
-#dbl      data tol,tol1, epsguess/1.d-6,1.d-8, 1.d-4/
-#sgl      data tol,tol1, epsguess/1.e-6,1.e-8, 1.e-4/
+      data zero, one, two, three /0.0d00, 1.0d00, 2.0d00, 3.0d00/
+      data tol,tol1, epsguess/1.d-6,1.d-8, 1.d-4/
 c
-c
-         deleps = epsguess
-         delc = zero
-         ddeps = zero
-         ddelc = zero
-         do j = 1, 20
+      deleps = epsguess
+      delc = zero
+      ddeps = zero
+      ddelc = zero
+      do j = 1, 20
             delc = delc + ddelc
             deleps = deleps + ddeps
             hcon_np1 = hcon_n + delc
@@ -636,15 +582,15 @@ c
             p_np1 = pe - bk * detkk
             skk = three * p_np1
 c
-            call mm07_yield(hcon_np1, rksi, eps_np1, sigma_0, eps_0, 
-     &    n_power, sigmaY, dsdep, dsdc)
+            call mm07_yield( hcon_np1, rksi, eps_np1, sigma_0, eps_0, 
+     &                       n_power, sigmaY, dsdep, dsdc )
 c
             ff1 = qe - three * shear_mod * deleps - sigmaY
 c
-            call mm07_hydrogen(iout, alpha, rho0, gamma, alat, 
+            call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
      &       wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
      &       temper, eps_np1, skk, cnow, thl, tht, dcdskk, dcdep, 
-     &       dntdeps, cl, ct)
+     &       dntdeps, cl, ct )
 c
             ff2 = hcon_np1 - cnow
 c
@@ -660,53 +606,48 @@ c
             det1 = a11 * a22 - a12 * a21
             ddelc = - ( a22 * ff1 - a12 * ff2 ) / det1
             ddeps = - ( a11 * ff2 - a21 * ff1 ) / det1
-         enddo
-         write(iout,*) '*** no convergence in mm07 plasticiy!!!***'
-         write(iout,*) '....need to cut the step size immediately...'
-         if(adaptive_possible) cut_step_size_now=.true.
+      end do
+      write(iout,*) '*** no convergence in mm07 plasticiy!!!***'
+      write(iout,*) '....need to cut the step size immediately...'
+      if(adaptive_possible) cut_step_size_now=.true.
 c
- 1121    continue
+ 1121 continue
 c
-         etran_np1 = etran_n + delc * alamda
+      etran_np1 = etran_n + delc * alamda
 c
-       return
-       end
+      return
+      end
 c *******************************************************************
 
-       subroutine mm07_yield(hcon, rksi, eps, sigma_0, eps_0, 
+       subroutine mm07_yield( hcon, rksi, eps, sigma_0, eps_0, 
      &    n_power, sigmaY, dsdep, dsdc)
        implicit none
 c
-#dbl      double precision
-#sgl      real
-     &    hcon, rksi, eps, sigma_0, eps_0, n_power, 
-     &    sigmaY, dsdep, dsdc
+#dbl      double precision ::
+#sgl      real ::
+     & hcon, rksi, eps, sigma_0, eps_0, n_power, 
+     & sigmaY, dsdep, dsdc
 c
-c  local variables
+c                   local variables
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &    zero, one, aux1, aux2
-#dbl      data zero, one /0.d00, 1.d00/
-#sgl      data zero, one /0.0, 1.0/
+      data zero, one / 0.d00, 1.d00 /
 c
-       aux2 = ( rksi - one )* hcon + one
-       
-       if(eps.le.zero) then
+      aux2 = ( rksi - one )* hcon + one
+      if( eps.le.zero ) then
           sigmaY = sigma_0 * aux2
           dsdep = sigma_0 / eps_0
-       else
+      else
           aux1   = one + eps/eps_0
           sigmaY = sigma_0 * aux2 * aux1 ** ( one / n_power )
           dsdep  = sigmaY / n_power / ( eps + eps_0)
           dsdc   = sigma_0*(rksi - one )* aux1 **(one/n_power)
-       endif
+      end if
 c
-       return
-       end
-
-
-
+      return
+      end
 c *******************************************************************
 c *                                                                 *
 c *        material model # 7 -- adv. mises + hydrogen              *  
@@ -715,10 +656,10 @@ c *******************************************************************
 c
 c
       subroutine cnst7( 
-     &  span, felem, gpn, first, iter, iout, mxvl, nstrn,
-     &  weight, e_vec, nu_vec, sigyld_vec, n_power_vec, mm_props,
+     &  span, felem, gpn, iter, iout, mxvl, nstrn,
+     &  e_vec, nu_vec, sigyld_vec, n_power_vec, mm_props,
      &  trial_elas_stress, history_n,
-     &  history_np1, stress_np1, dmat, det_jac_block )
+     &  history_np1, stress_np1, dmat )
       implicit none
 c
 c                   parameter declarations
@@ -727,16 +668,12 @@ c
       integer
      &  span, felem, gpn, iter, iout, mxvl, nstrn
 c
-      logical
-     &   first
-c     
 #dbl      double precision
 #sgl      real
-     & weight, mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
+     & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & trial_elas_stress(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
-     & det_jac_block(mxvl), stress_np1(mxvl,nstrn),
-     & sigyld_vec(mxvl), n_power_vec(mxvl)
+     & stress_np1(mxvl,nstrn), sigyld_vec(mxvl), n_power_vec(mxvl)
 c
 c
 c               description of parameters
@@ -747,10 +684,6 @@ c     iter              : current newton iteration number. iter 1 is
 c                         for application of the "real" load increment.
 c     felem             : first element of the current block
 c     gpn               : gauss point number being processed for block
-c     first             : logical flag indicating if this
-c                         is the very first call to the routine
-c                         the linear elastic [d] is returned
-c                         whenever first = .true.
 c     mxvl              : maximum no. elements per block
 c     nstrn             : number of strain-stress components (=6)
 c     span              : number of elements in current block
@@ -761,13 +694,13 @@ c     e_vec             : Young's modulus for each element in block
 c     nu_vec            : Poisson's ratio for each element in block
 c     sigyld_vec        : yield stress for each element in block
 c     n_power_vec       : power-law hardening exponent
-c     trial_elas_stress_np1 : trial elastic stress vector defined by stress
-c                             update routine
+c     trial_elas_stress_np1 : trial elastic stress vector defined by
+c                             stress update routine
 c                         consistent tangent routine for model
-c     history_n         : history values at start of load step (n) for all
-c                         elements in block for this gauss point
-c     history_np1       : history values at end of load step (n+1) for all
-c                         elements in block for this gauss point
+c     history_n         : history values at start of load step (n) for
+c                         all elements in block for this gauss point
+c     history_np1       : history values at end of load step (n+1) for 
+c                         all elements in block for this gauss point
 c     det_jac_block     : |J| at this gauss point for each element in
 c                         block
 c     stress_np1        : current estimate of 6 stress components for
@@ -785,275 +718,225 @@ c
 c   stress ordering (at n and n+1):
 c     sig-xx, sig-yy, sig-zz, tau-xy, tau-yz, tau-xz
 c   
+      integer :: i,jj,kk    
+      logical :: local_debug
+#dbl      double precision ::
+#sgl      real  ::
+     &  zero, one, two,three, quarter, half, onep5,
+     &  one_third, two_third,
 c
-c   Note: warp3d expects all dmat[] values to be multiplied by
-c         weight * det_jac_block(i), where i = relative
-c         element number of block
+     &  rna,rgas,temper,fact,c1,c2,c3,c4,bk,shear_mod,
+     &  alpha,rho0,gamma,alat,wb,beta,vm,vh,c0,rksi,alamda,
+     & rnl,hcon,delc,rlam,drlamdc,eps,skk,thl,tht,dthldskk,
+     & dthtdskk,dcdskk,dcdep,fac1,fac2,sigmaY,dsdep,dsdc,
+     & pe,qe,fac3,fac4,tden,sigma_0,hcon_np1,eps_np1,eps_0,
+     & deleps,dntdeps,rbeta,rgamma,n_power,ctol,cnow,fac,
+     &  cl, ct, etran,
 c
+     &  dcde(6),depde(6),delta(6),an(6),str_epd_1(6),ak(6,6)
 c
-      integer i,jj,kk    
-      logical local_debug
-#dbl      double precision
-#sgl      real 
-     &     zero, one, two,three, quarter, half, onep5,
-     &     one_third, two_third,
+      data zero, one, two, three /0.0d00,1.0d00,2.0d00,3.0d00/
+      data quarter, half, onep5 /0.25d00, 0.5d00, 1.5d00/
+      data one_third, two_third/0.333333333d00, 0.666666667d00/
+      data rgas, rna, temper, ctol/8.3144d0,6.0232d23,3.d02,1.d-8/
 c
-     &   rna,rgas,temper,fact,c1,c2,c3,c4,bk,shear_mod,
-     &   alpha,rho0,gamma,alat,wb,beta,vm,vh,c0,rksi,alamda,
-     &	rnl,hcon,delc,rlam,drlamdc,eps,skk,thl,tht,dthldskk,
-     &	dthtdskk,dcdskk,dcdep,fac1,fac2,sigmaY,dsdep,dsdc,
-     &	pe,qe,fac3,fac4,tden,sigma_0,hcon_np1,eps_np1,eps_0,
-     &	deleps,dntdeps,rbeta,rgamma,n_power,ctol,cnow,fac,
-     &   cl, ct,etran,
+      dcdep  = zero
+      dsdc   = zero
+      dcdskk = zero
+      ak(:,:) = zero
 c
-     &   dcde(6),depde(6),delta(6),an(6),str_epd_1(6),ak(6,6)
+      ak(1,1) = two_third
+      ak(2,2) = two_third
+      ak(3,3) = two_third
+      ak(1,2) = - one_third
+      ak(1,3) = - one_third
+      ak(2,1) = - one_third
+      ak(2,3) = - one_third
+      ak(3,1) = - one_third
+      ak(3,2) = - one_third
+      ak(4,4) = half
+      ak(5,5) = half
+      ak(6,6) = half
 c
-#dbl      data zero,one,two,three /0.0d00,1.0d00,2.0d00,3.0d00/
-#sgl      data zero,one,two,three /0.0, 1.0, 2.0, 3.0/
+c              dmat[] zeroed by warp3d
 c
-#dbl      data quarter, half, onep5 /0.25d00, 0.5d00, 1.5d00/
-#sgl      data quarter, half, onep5 /0.25, 0.5, 1.5/
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
 c
-#dbl      data one_third, two_third/0.333333333d00, 0.666666667d00/
-#sgl      data one_third, two_thrid/0.333333333, 0.666666667/
+       alpha = mm_props(i,1)
+       rho0  = mm_props(i,2)
+       gamma = mm_props(i,3)
+       alat  = mm_props(i,4)
+       wb    = mm_props(i,5)
+       beta  = mm_props(i,6)
+       vm    = mm_props(i,7)
+       vh    = mm_props(i,8)
+       c0    = mm_props(i,9)
+       rksi  = mm_props(i,10)
 c
-#dbl      data rgas,rna,temper,ctol/8.3144d0,6.0232d23,3.d02,1.d-8/
-#sgl      data rgas,rna,temper,ctol/8.3144,6.0232e23,300.0,1.e-8/
+       alamda= vh/vm
+       rnl   = rna/vm
 c
-    
-      dcdep = zero
-      dsdc  = zero
-      dcdskk= zero
+       fact = one 
 c
-
-       do jj = 1,6
-       do kk = 1,6
-         ak(jj,kk) = zero
-       enddo
-       enddo
+       sigma_0   = sigyld_vec(i)
+       eps_0     = sigma_0 / e_vec(i)
+       n_power   = n_power_vec(i)
 c
-       ak(1,1) = two_third
-       ak(2,2) = two_third
-       ak(3,3) = two_third
-       ak(1,2) = - one_third
-       ak(1,3) = - one_third
-       ak(2,1) = - one_third
-       ak(2,3) = - one_third
-       ak(3,1) = - one_third
-       ak(3,2) = - one_third
-       ak(4,4) = half
-       ak(5,5) = half
-       ak(6,6) = half
-c
-       do i=1,span
-c
-	alpha = mm_props(i,1)
-	rho0  = mm_props(i,2)
-	gamma = mm_props(i,3)
-	alat  = mm_props(i,4)
-	wb    = mm_props(i,5)
-	beta  = mm_props(i,6)
-         vm    = mm_props(i,7)
-	vh    = mm_props(i,8)
-	c0    = mm_props(i,9)
-	rksi  = mm_props(i,10)
-c
-	alamda= vh/vm
-         rnl   = rna/vm
-c         
-         do jj=1,6
-         do kk=1,6
-            dmat(i,jj,kk) = zero
-         enddo
-         enddo
-c
-         fact = weight * det_jac_block(i)
-c
-         sigma_0   = sigyld_vec(i)
-         eps_0     = sigma_0 / e_vec(i)
-         n_power   = n_power_vec(i)
-c
-         bk = e_vec(i) /
+       bk = e_vec(i) /
      &       ( three * ( one - two * nu_vec(i)))
-         shear_mod = e_vec(i) /
+       shear_mod = e_vec(i) /
      &       ( two * ( one + nu_vec(i)))
-
 c
-c c1 is actually lamda
+c               c1 is actually lamda
 c
-         c1 = nu_vec(i) * two * shear_mod
+       c1 = nu_vec(i) * two * shear_mod
      &       /( one - two * nu_vec(i))
 c
-         c2 = c1 + two * shear_mod
-         c2 = c2 * fact
-         c1 = c1 * fact
-         c3 = shear_mod * fact
+       c2 = c1 + two * shear_mod
+       c3 = shear_mod 
 c
-         dmat(i,1,1) = c2
-         dmat(i,2,2) = c2
-         dmat(i,3,3) = c2
-         dmat(i,1,2) = c1
-         dmat(i,1,3) = c1
-         dmat(i,2,1) = c1
-         dmat(i,2,3) = c1
-         dmat(i,3,1) = c1
-         dmat(i,3,2) = c1
-         dmat(i,4,4) = c3
-         dmat(i,5,5) = c3
-         dmat(i,6,6) = c3
+       dmat(i,1,1) = c2
+       dmat(i,2,2) = c2
+       dmat(i,3,3) = c2
+       dmat(i,1,2) = c1
+       dmat(i,1,3) = c1
+       dmat(i,2,1) = c1
+       dmat(i,2,3) = c1
+       dmat(i,3,1) = c1
+       dmat(i,3,2) = c1
+       dmat(i,4,4) = c3
+       dmat(i,5,5) = c3
+       dmat(i,6,6) = c3
 c
-            hcon = history_np1(i,2)
-            delc = history_np1(i,2) - history_n(i,2)
-            etran= history_np1(i,3)
-            rlam = three * alamda / ( three+ etran )
-            drlamdc = -rlam * rlam / three
+       hcon = history_np1(i,2)
+       delc = history_np1(i,2) - history_n(i,2)
+       etran= history_np1(i,3)
+       rlam = three * alamda / ( three+ etran )
+       drlamdc = -rlam * rlam / three
 c
-            eps = history_np1(i,1)
-            skk=( stress_np1(i,1)
+       eps = history_np1(i,1)
+       skk = ( stress_np1(i,1)
      +          + stress_np1(i,2)
      +          + stress_np1(i,3) ) / three
-            call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
+       call mm07_hydrogen( iout, alpha, rho0, gamma, alat, 
      &       wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
      &       temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
      &       dntdeps, cl, ct)
 c
-         if( history_np1(i,4).lt.zero ) then
-              fac1=bk*(drlamdc*delc+rlam)*three *bk*dcdskk
-     +            /(one + three*bk*(delc*drlamdc+rlam)*dcdskk)
-              fac2=fac1*fact
-              dmat(i,1,1)=dmat(i,1,1)-fac2
-              dmat(i,1,2)=dmat(i,1,2)-fac2
-              dmat(i,1,3)=dmat(i,1,3)-fac2
-              dmat(i,2,1)=dmat(i,2,1)-fac2
-              dmat(i,2,2)=dmat(i,2,2)-fac2
-              dmat(i,2,3)=dmat(i,2,3)-fac2
-              dmat(i,3,1)=dmat(i,3,1)-fac2
-              dmat(i,3,2)=dmat(i,3,2)-fac2
-              dmat(i,3,3)=dmat(i,3,3)-fac2               
-         endif
+       if( history_np1(i,4) .lt. zero ) then
+         fac1 = bk*(drlamdc*delc+rlam)*three *bk*dcdskk
+     +       /(one + three*bk*(delc*drlamdc+rlam)*dcdskk)
+         fac2 = fac1*fact
+         dmat(i,1,1) = dmat(i,1,1)-fac2
+         dmat(i,1,2) = dmat(i,1,2)-fac2
+         dmat(i,1,3) = dmat(i,1,3)-fac2
+         dmat(i,2,1) = dmat(i,2,1)-fac2
+         dmat(i,2,2) = dmat(i,2,2)-fac2
+         dmat(i,2,3) = dmat(i,2,3)-fac2
+         dmat(i,3,1) = dmat(i,3,1)-fac2
+         dmat(i,3,2) = dmat(i,3,2)-fac2
+         dmat(i,3,3) = dmat(i,3,3)-fac2               
+       end if
 c
-         if( history_np1(i,4).gt.zero ) then
+       if( history_np1(i,4) .gt. zero ) then
+          eps_np1 = history_np1(i,1)
+          hcon_np1 = history_np1(i,2)
+          deleps  = history_np1(i,5)
 c
-           eps_np1 = history_np1(i,1)
-           hcon_np1 = history_np1(i,2)
-           deleps  = history_np1(i,5)
+          pe = ( trial_elas_stress(i,1)
+     &         + trial_elas_stress(i,2)
+     &         + trial_elas_stress(i,3) ) / three
 c
-           pe = ( trial_elas_stress(i,1)
-     &          + trial_elas_stress(i,2)
-     &          + trial_elas_stress(i,3) ) / three
+          str_epd_1(1) = trial_elas_stress(i,1) - pe
+          str_epd_1(2) = trial_elas_stress(i,2) - pe
+          str_epd_1(3) = trial_elas_stress(i,3) - pe
+          str_epd_1(4) = trial_elas_stress(i,4)
+          str_epd_1(5) = trial_elas_stress(i,5)
+          str_epd_1(6) = trial_elas_stress(i,6)
 c
-           str_epd_1(1) = trial_elas_stress(i,1) - pe
-           str_epd_1(2) = trial_elas_stress(i,2) - pe
-           str_epd_1(3) = trial_elas_stress(i,3) - pe
-           str_epd_1(4) = trial_elas_stress(i,4)
-           str_epd_1(5) = trial_elas_stress(i,5)
-           str_epd_1(6) = trial_elas_stress(i,6)
+          fac1 = str_epd_1(1) * str_epd_1(1)
+     &         + str_epd_1(2) * str_epd_1(2)
+     &         + str_epd_1(3) * str_epd_1(3)
+     &        + (str_epd_1(4) * str_epd_1(4)
+     &         + str_epd_1(5) * str_epd_1(5)
+     &         + str_epd_1(6) * str_epd_1(6))* two
+          qe = sqrt ( onep5 * fac1 )
 c
-           fac1 = str_epd_1(1) * str_epd_1(1)
-     &          + str_epd_1(2) * str_epd_1(2)
-     &          + str_epd_1(3) * str_epd_1(3)
-     &         + (str_epd_1(4) * str_epd_1(4)
-     &          + str_epd_1(5) * str_epd_1(5)
-     &          + str_epd_1(6) * str_epd_1(6))* two
-           qe = sqrt ( onep5 * fac1 )
+          an(1) = onep5 * str_epd_1(1) / qe
+          an(2) = onep5 * str_epd_1(2) / qe
+          an(3) = onep5 * str_epd_1(3) / qe
+          an(4) = onep5 * str_epd_1(4) / qe
+          an(5) = onep5 * str_epd_1(5) / qe
+          an(6) = onep5 * str_epd_1(6) / qe
 c
-           an(1) = onep5 * str_epd_1(1) / qe
-           an(2) = onep5 * str_epd_1(2) / qe
-           an(3) = onep5 * str_epd_1(3) / qe
-           an(4) = onep5 * str_epd_1(4) / qe
-           an(5) = onep5 * str_epd_1(5) / qe
-           an(6) = onep5 * str_epd_1(6) / qe
+          call mm07_yield( hcon_np1, rksi, eps_np1, sigma_0, eps_0, 
+     &                     n_power, sigmaY, dsdep, dsdc )
 c
-           call mm07_yield(hcon_np1, rksi, eps_np1, sigma_0, eps_0, 
-     &    n_power, sigmaY, dsdep, dsdc)
+          fac1 = dsdep+three*shear_mod
+          fac2 =  one + three * bk*(delc*drlamdc+rlam)*dcdskk
+          fac3 = fac1*fac2+dsdc*dcdep
 c
+          delta(1) = one
+          delta(2) = one
+          delta(3) = one
+          delta(4) = zero
+          delta(5) = zero
+          delta(6) = zero
 c
-              fac1=dsdep+three*shear_mod
-              fac2= one + three * bk*(delc*drlamdc+rlam)*dcdskk
-              fac3=fac1*fac2+dsdc*dcdep
+          dcde(:)  =  zero
+          depde(:) =  zero
 c
-              delta(1)=one
-              delta(2)=one
-              delta(3)=one
-              delta(4)=zero
-              delta(5)=zero
-              delta(6)=zero
+          dcde(1) = (three *bk*fac1*dcdskk*delta(1)
+     +          + two * shear_mod*dcdep*an(1))/fac3
 c
-              do jj=1,6
-                 dcde(jj) = zero
-                 depde(jj)= zero
-              enddo
-
+          dcde(2) = (three *bk*fac1*dcdskk*delta(2)
+     +          +two *shear_mod*dcdep*an(2))/fac3
 c
-c              write(iout,*)'fac1=',fac1
-c              write(iout,*)'fac2=',fac2
-c              write(iout,*)'fac3=',fac3
-          
-
-              dcde(1)=(three *bk*fac1*dcdskk*delta(1)
-     +               + two * shear_mod*dcdep*an(1))/fac3
-
-              dcde(2)=(three *bk*fac1*dcdskk*delta(2)
-     +               +two *shear_mod*dcdep*an(2))/fac3
-
-              dcde(3)=(three *bk*fac1*dcdskk*delta(3)
-     +               +two *shear_mod*dcdep*an(3))/fac3
-
-              dcde(4)=(three *bk*fac1*dcdskk*delta(4)
-     +               +two *shear_mod*dcdep*an(4))/fac3
-
-              dcde(5)=(three *bk*fac1*dcdskk*delta(5)
-     +               +two *shear_mod*dcdep*an(5))/fac3
-
-              dcde(6)=(three *bk*fac1*dcdskk*delta(6)
-     +               +two *shear_mod*dcdep*an(6))/fac3
-
-              depde(1)=(two *shear_mod*fac2*an(1)
-     +                  -three *bk*dsdc*dcdskk*delta(1))/fac3
-
-              depde(2)=(two *shear_mod*fac2*an(2)
-     +                  -three *bk*dsdc*dcdskk*delta(2))/fac3
-
-              depde(3)=(two *shear_mod*fac2*an(3)
-     +                  -three *bk*dsdc*dcdskk*delta(3))/fac3
-              
-              depde(4)=(two *shear_mod*fac2*an(4)
-     +                  -three *bk*dsdc*dcdskk*delta(4))/fac3
-
-              depde(5)=(two *shear_mod*fac2*an(5)
-     +                  -three *bk*dsdc*dcdskk*delta(5))/fac3
-
-              depde(6)=(two *shear_mod*fac2*an(6)
-     +                  -three *bk*dsdc*dcdskk*delta(6))/fac3
+          dcde(3) = (three *bk*fac1*dcdskk*delta(3)
+     +          +two *shear_mod*dcdep*an(3))/fac3
 c
+          dcde(4) = (three *bk*fac1*dcdskk*delta(4)
+     +          +two *shear_mod*dcdep*an(4))/fac3
 c
-              fac4= two * shear_mod * shear_mod * deleps /qe
-              do jj=1,6
-              do kk=1,6
-                 dmat(i,jj,kk)=dmat(i,jj,kk)
+          dcde(5) = (three *bk*fac1*dcdskk*delta(5)
+     +          +two *shear_mod*dcdep*an(5))/fac3
+c
+          dcde(6) = (three *bk*fac1*dcdskk*delta(6)
+     +          +two *shear_mod*dcdep*an(6))/fac3
+c
+          depde(1) = (two *shear_mod*fac2*an(1)
+     +             -three *bk*dsdc*dcdskk*delta(1))/fac3
+c
+          depde(2) = (two *shear_mod*fac2*an(2)
+     +             -three *bk*dsdc*dcdskk*delta(2))/fac3
+c
+          depde(3) = (two *shear_mod*fac2*an(3)
+     +             -three *bk*dsdc*dcdskk*delta(3))/fac3
+c          
+          depde(4) = (two *shear_mod*fac2*an(4)
+     +             -three *bk*dsdc*dcdskk*delta(4))/fac3
+c
+          depde(5) = (two *shear_mod*fac2*an(5)
+     +             -three *bk*dsdc*dcdskk*delta(5))/fac3
+c
+          depde(6) = (two *shear_mod*fac2*an(6)
+     +             -three *bk*dsdc*dcdskk*delta(6))/fac3
+c 
+          fac4 = two * shear_mod * shear_mod * deleps / qe
+          do jj = 1, 6
+            do kk = 1, 6
+                 dmat(i,jj,kk) = dmat(i,jj,kk)
      +           +fac4*(two *an(jj)*an(kk) - three *ak(jj,kk))*fact
      +           -shear_mod*(an(jj)*depde(kk)+an(kk)*depde(jj))*fact
      +           -bk*(drlamdc*delc+rlam)*fact
      +           * half *(delta(jj)*dcde(kk)+delta(kk)*dcde(jj))
-              enddo
-              enddo
+            end do
+          end do
 c
-c            if(gpn.eq.1.and.i.eq.1) then
-c             write(iout,*)'deleps= ',deleps
-c            write(iout,*)' iter= ', iter, ' consistent modulus are...'  
-c            do jj=1,6
-c              write(iout,1234)dmat(i,jj,1),dmat(i,jj,2),dmat(i,jj,3)
-c     +         ,dmat(i,jj,4),dmat(i,jj,5),dmat(i,jj,6)
-c 1234         format(6(2x,f10.3))
-c            enddo
-c            endif
-c             
-
-         endif
+         end if  !  history_np1(i,4) .gt. zero
 c
-
-
-      enddo    
+      end do    
 c
       return
       end
