@@ -23,7 +23,7 @@ structure box_girder
 c
 c
 material concrete
-   properties linear_elastic  e 3000 nu 0.3 yld_pt 1.0e20,
+   properties bilinear e 3000 nu 0.3 yld_pt 1.0e20,
              rho 2.3e-07
 c
 number of nodes   1092
@@ -1652,15 +1652,7 @@ incidences
    519  1040  1044  1043  1039   994   998   997   993
    520  1060  1078  1077  1059  1058  1066  1065  1057
 c
-blocking   $ vectorized
-     1   120     1
-     2   112   121
-     3   109   233
-     4   100   342
-     5    42   442
-     6    24   484
-     7    11   508
-     8     2   519
+blocking automatic
 c
 loading unit_top
  nodal loads
