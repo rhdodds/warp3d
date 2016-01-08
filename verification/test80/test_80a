@@ -78,7 +78,8 @@ blocking automatic size=16 ! for testing
    minimum iterations 1
    convergence test norm res tol 0.001 $ really tight for testing
    adaptive off
-   extrapolate off
+   extrapolate on
+   line search on details
    material messages off
    batch messages off
 #
