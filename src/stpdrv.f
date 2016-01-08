@@ -4,7 +4,7 @@ c     *                      subroutine stpdrv                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 06/27/2014 rhd             *
+c     *                   last modified : 10/30/2015 rhd             *
 c     *                                                              *
 c     *     drive the solution process list of steps specified       *
 c     *     on the compute command. compute intermediate             *
@@ -266,7 +266,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 01/4/13 rhd                *
+c     *                   last modified : 10/26/2015 rhd             *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -358,12 +358,6 @@ c
 c          execute the iteration driver to compute
 c          displacements for this load-time step.
 c
-      if( now_step .eq. 1 ) then
-        write(out,9160)
-        call lnstff( 1, 0 ) ! stepno, iterno
-        newstf = .true.
-      end if
-
       call mnralg( mf, mf_nm1, mf_ratio_change, now_step, ldnum )
 c
 c          if global load step size was reduced via  reduction
@@ -393,7 +387,7 @@ c     *              subroutine stpdrv_user_solution_parms           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/14/2013 rhd             *
+c     *                   last modified : 11/6/2015 rhd              *
 c     *                                                              *
 c     *     drive execution of user_solution_parms routine           *
 c     *                                                              *
@@ -403,7 +397,10 @@ c
       subroutine stpdrv_user_solution_parms( now_step )
 c
       use damage_data, only :  perm_load_fact 
-      use main_data, only : step_load_data, convergence_history
+      use main_data, only : step_load_data, convergence_history,
+     &                      extrapolate, extrap_off_next_step,
+     &                      divergence_check, diverge_check_strict,
+     &                      line_search
       implicit integer (a-z)
 $add common.main
 $add include_usr_parm
@@ -422,8 +419,12 @@ c
       usolution_parms%minimum_iterations = mniter
       usolution_parms%nonconvergent_solutions_flag = halt
       usolution_parms%adaptive_solution = adaptive_flag  
-      usolution_parms%extrapolate_solution = predct
-      usolution_parms%extrapolate_multiplier = prdmlt 
+      usolution_parms%extrapolate_solution = extrapolate
+      usolution_parms%extrap_off_next_step = extrap_off_next_step 
+      usolution_parms%divergence_check = divergence_check
+      usolution_parms%diverge_check_strict = diverge_check_strict
+      usolution_parms%line_search = line_search
+      
 c
       usolution_parms%convergence_test_1 = convrg(1)
       usolution_parms%convergence_test_1_tolerance = tol(1)
@@ -433,10 +434,6 @@ c
       usolution_parms%convergence_test_3_tolerance = tol(3)
       usolution_parms%convergence_test_4 = convrg(4) 
       usolution_parms%convergence_test_4_tolerance = tol(4)
-c      
-      usolution_parms%k_linear_iteration_1_all_steps = lnkit1 
-      usolution_parms%k_linear_iteration_1_next_step_only = 
-     &     linstf_nxt_step
 c
       usolution_parms%batch_messages = batch_messages
       usolution_parms%wall_time_limit_seconds = time_limit 
@@ -487,8 +484,11 @@ c
       halt   = usolution_parms%nonconvergent_solutions_flag 
 c      
       adaptive_flag = usolution_parms%adaptive_solution 
-      predct        = usolution_parms%extrapolate_solution 
-      prdmlt        = usolution_parms%extrapolate_multiplier 
+      extrapolate   = usolution_parms%extrapolate_solution 
+      extrap_off_next_step = usolution_parms%extrap_off_next_step
+      divergence_check = usolution_parms%divergence_check
+      diverge_check_strict = usolution_parms%diverge_check_strict
+      line_search = usolution_parms%line_search
 c
       convrg(1) = usolution_parms%convergence_test_1 
       tol(1)    = usolution_parms%convergence_test_1_tolerance 
@@ -497,11 +497,7 @@ c
       convrg(3) = usolution_parms%convergence_test_3 
       tol(3)    = usolution_parms%convergence_test_3_tolerance 
       convrg(4) = usolution_parms%convergence_test_4 
-      tol(4)    = usolution_parms%convergence_test_4_tolerance 
-c      
-      lnkit1 = usolution_parms%k_linear_iteration_1_all_steps 
-      linstf_nxt_step = 
-     &         usolution_parms%k_linear_iteration_1_next_step_only
+      tol(4)    = usolution_parms%convergence_test_4_tolerance      
 c
       batch_messages = usolution_parms%batch_messages 
       time_limit = usolution_parms%wall_time_limit_seconds
