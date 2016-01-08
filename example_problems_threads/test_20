@@ -6779,7 +6779,8 @@ c
  loading bend
   nonlinear
     step 1-80 constraints 1.0
-    step 81-500 constraints 1.0
+c    step 81-500 constraints 1.0
+    step 81-500 constraints 0.5
 c
   nonlinear analysis parameters
    solution technique direct sparse 
@@ -6788,7 +6789,7 @@ c
    convergence test norm res tol 0.001
    time step 10000000
    trace solution on
-   extrapolate on
+   extrapolate off
    minimum iterations 2
    consistent q-matrix off $ need for convergence at high loads
 c
@@ -6802,11 +6803,13 @@ c
    cell height 0.003623
    release fraction 0.1
 c
-   compute displacements for loading bend step 1-10
+   compute displacements for loading bend step 320
    output patran binary displ 
    output patran binary stress
    output reactions 1-8
+   output displacements 116
    *input test_20_get_j
+   stop
 c
    compute displacements for loading bend step 11-20
    output patran binary displ 

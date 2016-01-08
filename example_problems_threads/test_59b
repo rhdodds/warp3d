@@ -260,11 +260,12 @@ c
    maximum iterations 10
    minimum iterations 4   $ guarantee very small residuals
    convergence test norm res tol 0.001  maximum residual tol 0.001
+   divergence check off
    time step  1.0e10
    trace solution off     $ reduce output volume
    adaptive solution off  $ never needed in this solution
    batch messages off
-   extrapolate off        $ small strain analysis - not needed
+   extrapolate off        $ for load reversals
    material messages off
    show details off       $ reduce output messages 
 c

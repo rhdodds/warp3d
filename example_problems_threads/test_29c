@@ -65,7 +65,7 @@ c
    solution technique direct sparse
    maximum iterations 5
    minimum iterations 1
-   convergence test norm res tol 0.01
+   convergence test norm res tol 0.001
    nonconvergent solutions stop
    adaptive on
    linear stiffness for iteration one off
@@ -75,8 +75,8 @@ c
    bbar stabilization factor 0.0
    consistent q-matrix on
    time step 1.0e06
-   trace solution on l
-   extrapolate off
+   trace solution on 
+   extrapolate on
 c
 c
  compute displacements for loading test step 20

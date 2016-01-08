@@ -3931,7 +3931,7 @@ c
    convergence test norm res tol 0.005
    time step 1000000
    trace solution on
-   extrapolate on
+   extrapolate off
    consistent q-matrix on
    bbar stabilization factor 0.0
    batch messages off

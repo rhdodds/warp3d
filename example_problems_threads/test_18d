@@ -3951,7 +3951,7 @@ c
    convergence test norm res tol 0.01
    time step 0.0005
    trace solution on
-   extrapolate on
+   extrapolate off
    consistent q-matrix on
    bbar stabilization factor 0.0
 c

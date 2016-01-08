@@ -4519,7 +4519,7 @@ c
    convergence test norm res tol .005 maximum residual tol 0.5
    time step 0.0006
    trace solution on
-   extrapolate on
+   extrapolate off
    nonconvergent solution stop
    consistent q off
    adaptive on

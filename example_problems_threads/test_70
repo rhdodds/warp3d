@@ -122,11 +122,11 @@ c
 elements
 c   for config number   0
 c            1 - 8 type q3disop    linear material gp_hastelloy_x,
-c                  order 2x2x2 no_bbar center_output short
+c                  order 2x2x2  center_output short
             1 - 4 type q3disop    linear material gp_hastelloy_x,
-                  order 2x2x2 no_bbar center_output short
+                  order 2x2x2r center_output short
             5 - 8 type q3disop    linear material gp_hastelloy_x,
-                  order 2x2x2 no_bbar center_output short
+                  order 2x2x2 center_output short
 c
 incidences
 *echo off
@@ -681,14 +681,16 @@ c cccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
  nonlinear analysis parameters
    solution technique direct sparse
-   maximum iterations 25
-   minimum iterations 3
-   convergence norm residual tol 1.0e-6
+   maximum iterations 10
+   minimum iterations 1
+   convergence norm residual tol 1.0e-4
+   divergence check off
    time step 1.0e10
    trace solution off
    adaptive solution on
    batch messages off
-   extrapolate off
+   extrapolate on
+   line search on
    material messages off
    show details off
 c

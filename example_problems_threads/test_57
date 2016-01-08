@@ -6653,7 +6653,7 @@ loading unit_ki
 c
  loading test
   nonlinear
-    step 1-50 constraints 1.0
+    step 1-200 constraints 1.0
 c
  nonlinear analysis parameters
    solution technique direct sparse
@@ -6666,9 +6666,10 @@ c
    nonconvergent solutions stop
    trace solution on
    extrapolate on
+   line search on
    bbar stabilization factor 0.0
 c
-compute displacements for loading test steps 5
+compute displacements for loading test steps 100
 output displacements 10 2145
 c
 domain dssy_001

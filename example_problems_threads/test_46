@@ -310,7 +310,7 @@ c
    minimum iterations 1
    convergence test norm res tol 0.05
    nonconvergent solutions continue
-   linear stiffness for iteration one off
+!   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off

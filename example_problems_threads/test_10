@@ -224,7 +224,7 @@ c
   time step 100000000
   nonconvergent solutions stop
   trace solution on 
-  extrapolate on
+  extrapolate off
 c 
  crack growth parameters
   type of crack growth gurson
