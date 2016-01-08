@@ -19,8 +19,9 @@ c
        logical :: nonconvergent_solutions_flag ! .true. = halt
        logical :: adaptive_solution ! .true. = on
        logical :: extrapolate_solution ! .true. = on
-       real (h_prec) :: extrapolate_multiplier ! normally not
-c                                                set by user       
+       logical :: divergence_check ! .true. = on
+       logical :: diverge_check_strict ! .true. = on
+       logical :: line_search   ! .true. is on
 c       
        logical :: convergence_test_1 ! .true. = on
        real (h_prec) :: convergence_test_1_tolerance
@@ -31,8 +32,7 @@ c
        logical :: convergence_test_4 ! .true. = on
        real (h_prec) :: convergence_test_4_tolerance
 c       
-       logical :: k_linear_iteration_1_all_steps
-       logical :: k_linear_iteration_1_next_step_only
+       logical :: extrap_off_next_step ! .true. = on
 c       
        logical :: batch_messages ! .true. = on
        real    :: wall_time_limit_seconds ! = 0 no limit
@@ -85,9 +85,9 @@ c    nonconvergent_solutions_flag    halt  common.main
 c    
 c    adaptive_solution        adaptive_flag  common.main
 c    
-c    extrapolate_solution     predct   common.main
+c    extrapolate_solution     extrapolate   mod_main
 c    
-c    extrapolate_multiplier    prdmlt   common.main
+c    extrapolate_multiplier   --- deprecated ---
 c    
 c    convergence_test_1    testyp=1, convrg(1) common.main  (norm displ)
 c    convergence_test_1_tolerance       tol(1) common.main
@@ -101,8 +101,7 @@ c
 c    convergence_test_4    testyp=4, convrg(4) common.main  (max residual)
 c    convergence_test_4_tolerance    tol(4)    common.main 
 c    
-c    k_linear_iteration_1_all_steps    lnkit1    common.main
-c    k_linear_iteration_1_next_step_only linstf_nxt_step  common.main
+c    extrap_off_next_step                      mod_main
 c    
 c    
 c    batch_messages batch_messages  common.main
