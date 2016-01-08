@@ -167,13 +167,13 @@ nonlinear analysis parameters
    maximum iterations 5
    minimum iterations 2
    convergence test norm residual 0.01
+   extrapolate on
+   line search on details
    trace solution on
-   linear stiffness iteration one off
    adaptive solution off
    batch messages off
    bbar stabilization factor 0.0
-   extrapolate off
-
+c   
 compute displacements for loading creep step  10
 nonlinear analysis parameters
    time step 980
