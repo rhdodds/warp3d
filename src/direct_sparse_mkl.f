@@ -158,7 +158,6 @@ c     this takes 1 call, if not it takes 2 calls
      &        error, mkl_ooc_flag, cpu_stats, iparm )
         call thyme( 26, 2 )
       end if
-
 c
 c     Temp error printing
 c
@@ -179,7 +178,7 @@ c     *  the serial or parallel sparse (direct) symmetric solver     *
 c     *  routines. The routines are part of the Intel MKL product    *
 c     *                                                              *
 c     *  written by: rhd   modified by: rhd                          *
-c     *  last modified : 12/2/2013 use parallel reordering           *
+c     *  last modified : 11/21/2015 rhd. hint about new_precond      *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -187,44 +186,45 @@ c
      &                        sol_vec, eqn_coeffs, k_pointers,
      &                        k_indices, cpu_stats, itype, out, 
      &                        solver_out_of_core, solver_memory,
-     &                        solver_scr_dir, solver_mkl_iterative )
+     &                        solver_scr_dir, solver_mkl_iterative,
+     &                        suggested_new_precond )
 c
-      implicit integer (a-z)      
-
-c ********************************************************************
+      implicit none      
 c
 c                parameter declarations
 c
-      double precision  k_diag, rhs, sol_vec, eqn_coeffs
-      dimension k_diag(*), rhs(*), eqn_coeffs(*), k_pointers(*),
-     &          k_indices(*), sol_vec(*)
-      logical cpu_stats, solver_out_of_core, solver_mkl_iterative 
-      character * (*) solver_scr_dir
+      double precision ::  k_diag(*), rhs(*), sol_vec(*), 
+     &                     eqn_coeffs(*)
+      integer :: k_pointers(*), k_indices(*)
+      logical :: cpu_stats, solver_out_of_core, solver_mkl_iterative,
+     &           suggested_new_precond  
+      integer :: itype, out, neq, ncoeff, solver_memory
+      character (len=*) ::  solver_scr_dir
 c
 c                locally defined.
 c
-      real wcputime
-      external wcputime
-      character * 150 solver_directory 
-      logical pardiso_mat_defined, use_iterative
+      real, external :: wcputime
+      character(len=150) solver_directory 
+      logical ::  pardiso_mat_defined, use_iterative
+      integer ::  mkl_ooc_flag
       save num_calls, pardiso_mat_defined
 c
 c                local for pardiso
 c
-      external pardiso
-      integer*8 pt(64)
-      integer maxfct, mnum, mtype, phase, nrhs, error, msglvl,
-     &        iparm(64), idum
-      double precision ddum
-      save handle, pt, iparm, msglvl, mtype
+      external :: pardiso
+      integer(kind=8), save :: pt(64)
+      integer, save :: handle, iparm(64), msglvl, mtype
+      integer :: maxfct, mnum, phase, nrhs, error,
+     &           idum, num_calls 
+      double precision :: ddum
 c
       data  nrhs /1/, maxfct /1/, mnum /1/, num_calls / 0 /
       data  pardiso_mat_defined / .false. /
 c
 c                solution types (itype):
 c                 1 - first time solution for a matrix:
-c		      setup ordering method and perform
-c		      pre-processing steps.
+c             		      setup ordering method and perform
+c		                   pre-processing steps.
 c                 2 - Solution of above same matrix equations
 c                     with a new set of coefficients but same
 c                     sparsity
@@ -244,19 +244,19 @@ c
         return
       end if
 c
-c		1.-  Map the input arrays from NASA-VSS
-c                    format to the MKL format.
+c		            1.-  Map the input arrays from NASA-VSS
+c                   format to the MKL format.
 c
-c                    if we're solving with the out-of-core option,
-c                    the initialization, reordering steps must be
-c                    repeated. for in-core solutions jump to
-c                    factorization for itype = 2
+c                   if we're solving with the out-of-core option,
+c                   the initialization, reordering steps must be
+c                   repeated. for in-core solutions jump to
+c                   factorization for itype = 2
 c
       call map_vss_mkl( neq, ncoeff, k_diag, rhs, eqn_coeffs,
      &                  k_pointers, k_indices )
       if ( itype .eq. 2 .and. .not. solver_out_of_core ) go to 1000
 c
-c		2.-  Initialization. 
+c	            	2.-  Initialization. 
 c
       call thyme( 23, 1 )
       if ( pardiso_mat_defined ) then
@@ -269,23 +269,22 @@ c
      &        error, mkl_ooc_flag, cpu_stats, iparm )
       end if
 c
-c
-c                  2.-  create and write the out-of-core configuration
-c                       file if necessary.
+c              2a.-  create and write the out-of-core configuration
+c                    file if necessary.
 c
       mkl_ooc_flag = 0
       if( .not. use_iterative ) then
          if( solver_out_of_core ) then
             mkl_ooc_flag = 1
-            call warp3d_dss_ooc( iout, solver_memory, solver_scr_dir )
+            call warp3d_dss_ooc( out, solver_memory, solver_scr_dir )
          end if 
       end if 
 c  
       call warp3d_pardiso_mess( 1, out, 
      &        error, mkl_ooc_flag, cpu_stats, iparm )
 c
-c		3.-  initialize, input  sparsity structure, reorder,
-c                    symbolic factorization.
+c	             3.-  initialize, input  sparsity structure, reorder,
+c                   symbolic factorization.
 c
       iparm(1:64) = 0
       iparm(1) = 1 ! no solver default
@@ -311,6 +310,8 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(18) = -1 ! Output: number of nonzeros in the factor LU
       iparm(19) = -1 ! Output: Mflops for LU factorization
       iparm(20) = -1 ! Output: Numbers of CG Iterations
+      iparm(24) = 1 ! two-level factorization for better performance
+      iparm(25) = 0 ! parallel forward-backward solve
       iparm(60) = mkl_ooc_flag 
       error = 0 ! initialize error flag
       msglvl = 0 ! print statistical information
@@ -327,16 +328,18 @@ c
      &        error, mkl_ooc_flag, cpu_stats, iparm )
       call thyme( 23, 2 )
 c
-c		4.-  Numeric Factorization:
+c            		4.-  Numeric Factorization:
 c                      -> input numerical values of coeffs
 c                      -> Factor a matrix into L and L transpose
-c                    For iterative, we do possible factoriztion and
-c                    solve together in one call.
+c                   For iterative, we do possible factoriztion and
+c                   solve together in one call.
 c
  1000 continue
       if( use_iterative ) then
         num_calls = num_calls + 1; call thyme( 25, 1 )
-        phase = 23 ! iterative solve
+        phase = 23 ! iterative solve for displ
+        iparm(4) = 52
+        if( suggested_new_precond ) iparm(4) = 0 ! new factorization
         call warp3d_pardiso_mess( 9, out, 
      &        error, mkl_ooc_flag, cpu_stats, iparm )
         call pardiso( pt, maxfct, mnum, mtype, phase, neq,
@@ -360,8 +363,8 @@ c
      &        error, mkl_ooc_flag, cpu_stats, iparm )
       call thyme( 25, 2 )
 c
-c		5.-  Solve:
-c		     Forward and backward substitution
+c		            5.-  Solve:
+c		                Forward and backward substitution
 c
       call thyme( 26, 1 )
       iparm(8) = 0 ! max numbers of iterative refinement steps
@@ -386,13 +389,13 @@ c     ****************************************************************
 c
       subroutine warp3d_pardiso_mess( mess_no, iout, 
      &               ier, ooc_flag, cpu_stats, iparm )
-      implicit integer (a-z)
+      implicit none
 c
-      logical  cpu_stats
-      real wcputime
-      external wcputime
-      dimension iparm(*)
+      logical::  cpu_stats
+      real, external :: wcputime
+      integer :: iparm(*), mess_no, iout, ier, ooc_flag
 c
+      real :: start_factor_cpu_time
 c
       select case ( mess_no )
 c
@@ -509,7 +512,6 @@ c
      &  15x,'conjugate gradient-Krylov iters  ', i9)
  9610  format(7x,
      & '>> conjugate gradient-Krylov iterations:           ',i5)
-
 c
       end
 
@@ -525,7 +527,10 @@ c     ****************************************************************
 c
       subroutine map_vss_mkl( neq, ncoeff, diag, rhs, amat, kpt, kind )
 c
-      implicit integer (a-z)   
+      implicit none
+c
+      double precision :: diag(*), rhs(*), amat(*)
+      integer :: neq, ncoeff, kpt(*), kind(*)         
 c
 c	This sub maps arrays needed for the NASA sparse solver to
 c	arrays in the format that the MKL 7 solver needs ( Harwell-Boeing
@@ -552,48 +557,42 @@ c	       amat(ncoeff)                  k_coeff( ncoeff +neq )
 c	       kind(ncoeff)                  k_indices ( ncoeff + neq )
 c              kpt(neq)                      k_pointers ( neq + 1)
 c
+     	double precision ::  zero
+	     data zero / 0.0 /
+	     integer, allocatable :: kpt_l(:)
+	     integer :: i_old, i_new, i, j, nonzt_sum
 c
-	double precision  diag(*), rhs(*), amat(*)
-	dimension kpt(*), kind(*)
-c
-c		Local Variables
-c
-	double precision zero
-	data zero / 0.0 /
-	allocatable kpt_l(:)
-c
-	allocate( kpt_l( neq + 1) ); kpt_l(1:neq) = kpt(1:neq)
+	     allocate( kpt_l( neq + 1) ); kpt_l(1:neq) = kpt(1:neq)
 c
 c                 Map amat and kind arrays
+c      
+	     i_old = ncoeff + 1; i_new = ncoeff + neq + 1
 c
-      
-	i_old = ncoeff + 1; i_new = ncoeff + neq + 1
-c
-	do i = neq, 1, -1
-	  do j = 1, kpt(i)
-	    i_new = i_new - 1; i_old = i_old - 1
-	    amat(i_new) = amat(i_old); kind(i_new) = kind(i_old)
-	  end do
-	  if(diag(i).ne.zero) then
-	   i_new = i_new - 1; amat(i_new) = diag(i); kind(i_new) = i
-	  end if
-	end do
+     	do i = neq, 1, -1
+	      do j = 1, kpt(i)
+	        i_new = i_new - 1; i_old = i_old - 1
+	        amat(i_new) = amat(i_old); kind(i_new) = kind(i_old)
+	      end do
+	      if( diag(i) .ne. zero ) then
+	        i_new = i_new - 1; amat(i_new) = diag(i); kind(i_new) = i
+	      end if
+    	end do
 c
 c                Map kpt ---> k_pointers
 c
-	nonzt_sum = 1
-	kpt(1) = nonzt_sum
-	do i =1 ,neq
-	 if( diag(i). ne . zero ) then
-	  nonzt_sum = nonzt_sum + kpt_l(i) + 1; kpt(i+1) = nonzt_sum
-	 end if
-	end do
+	     nonzt_sum = 1
+     	kpt(1) = nonzt_sum
+	     do i =1 ,neq
+	      if( diag(i). ne . zero ) then
+	        nonzt_sum = nonzt_sum + kpt_l(i) + 1; kpt(i+1) = nonzt_sum
+	      end if
+	     end do
 c
 c               Note: always pointers(neq+1) = # of non-zero terms  + 1
 c
-	deallocate( kpt_l  )
-	return
-	end
+     	deallocate( kpt_l  )
+     	return
+      end
 
 c     ****************************************************************
 c     *                                                              *
@@ -604,20 +603,20 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine warp3d_dss_ooc( iout, solver_memory, solver_scr_dir )
-      implicit integer (a-z)
+      implicit none
 c
-      character * (*) solver_scr_dir
+      integer :: iout, solver_memory, ifileno, ii
+      character(len=*) :: solver_scr_dir
+      integer, external :: warp3d_get_device_number
 c
 c                 find an unused file number to use
 c
-      do ifileno = 11, 99
-        inquire(unit=ifileno, opened=connected )
-        if ( .not. connected ) go to 1000
-      end do
-      write(iout,*) '>>> Fatal error in warp3d_dss_ooc...'
-      call die_gracefully
+      ifileno = warp3d_get_device_number()
+      if( ifileno .eq. -1 ) then
+         write(iout,*) '>>> Fatal error in warp3d_dss_ooc...'
+         call die_gracefully
+      end if
 c
- 1000 continue
       open(unit=ifileno,dispose='keep',file='pardiso_ooc.cfg',
      &         status='unknown')
       ii = len_trim( solver_scr_dir )
