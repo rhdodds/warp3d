@@ -6644,12 +6644,13 @@ c
    maximum iterations 20
    minimum iterations 2
    convergence test norm res tol .001e0 max res tol 0.01e0
+   extrapolate on
+   line search on details
    adaptive on
    consistent q off
    time step 10000000
    nonconvergent solutions stop
    trace solution on
-   extrapolate on
    bbar stabilization factor 0.0
 c
 compute displacements for loading test steps 5
