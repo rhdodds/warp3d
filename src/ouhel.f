@@ -19,10 +19,13 @@ c
       use elblk_data, only : elestr
       implicit integer (a-z)
 $add common.main
-      logical wide, eform, prec, newhed, nodpts, newel, center_output,
-     &        noheader, out_packet_now
-      character*8 strlbl(*)
-      character*(*) hedtyp
+      logical :: wide, eform, prec, newhed, nodpts, newel,
+     &           center_output, noheader, out_packet_now
+      character(len=8) :: strlbl(*)
+      character(len=*) :: hedtyp
+#dbl      double precision :: small_tol, zero 
+#sgl      real :: small_tol, zero     
+      data small_tol, zero / 1.0d-50, 0.0d00 /
 c
 c                       local declarations
 c
@@ -82,6 +85,17 @@ c
          loctyp  = 'g.p.'
          npts    = ngp
       end if
+c      
+c                       zero out small values to prevent 3 digit
+c                       exponents
+c
+      do strpt = 1, npts
+       do j = 1, nstrou
+        if( abs(elestr(bele,j,strpt)) .le. small_tol ) 
+     &    elestr(bele,j,strpt) = zero
+       end do
+      end do 
+      
 c
 c                      for packet output write entries & return.
 c                      for output at element nodes, use the structure
@@ -101,7 +115,7 @@ c                       print the stresses or strains, etc, for this
 c                       element. for output at element nodes,
 c                       print the structure node number rather than
 c                       the element node number.
-c
+c    
       do strpt = 1, npts
 c
       optno = strpt
