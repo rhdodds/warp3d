@@ -102,7 +102,7 @@ c
          end if
       else
          call rknstr_sm_displ
-      end if   
+      end if  
 c
 c           all done with loop over gauss points for geometrically
 c           linear and nonlinear options.
@@ -150,6 +150,7 @@ c
      &                                  local_work )
         if ( local_work%material_cut_step ) return
       end do
+
 c
 c           For CP model, calculate the gradient of the elastic
 c           rotations at the element level by linear curve fit.
@@ -1410,21 +1411,22 @@ $add param_def
 c
 c                    parameter declarations
 c
-      real    :: props(mxelpr,mxvl)
-      logical :: lprops(mxelpr,mxvl)
-      integer :: iprops(mxelpr,mxvl)
+      real    props(mxelpr,mxvl)
+      logical lprops(mxelpr,mxvl)
+      integer iprops(mxelpr,mxvl)
 $add include_sig_up
 c
 c                    local
 c
-      logical :: adaptive
-      integer :: ctotal, c, cnum, s, elnum, osn
+      logical adaptive
+      integer :: ctotal, c, cnum, s
       double precision, dimension(3) :: angles
       character :: aconv*5
       character :: atype*7
       double precision, dimension(3) :: bs, ns
       double precision, dimension(3,3) :: A
       double precision, dimension(6,6) :: Rstiff, temp
+      integer :: elnum, osn
 c
       ctotal = 0
 c
@@ -1448,16 +1450,16 @@ c
 c
            local_work%debug_flag(i) = lmtprp(13,matnum)
            local_work%local_tol(i) = dmatprp(100,matnum)
-c
-c                 May eventually change this to allow for different # of
-c                 crystals in block
+c           
+c                 may eventually change this to allow for 
+c                 different # of crystals in block
 c
            local_work%ncrystals(i) = imatprp(101,matnum)
 c
            local_work%angle_convention(i) = imatprp(102,matnum)
            local_work%angle_type(i) = imatprp(103,matnum)
 c
-c
+
 c                 VERY IMPORTANT LOOP
 c                 Will need to (in the near future) extract crystal
 c                 and orientation information.  Also possibly change
@@ -1466,7 +1468,7 @@ c                 block.
 c
            elnum = local_work%felem+i-1
 c
-           do c = 1,local_work%ncrystals(i)
+           do c=1,local_work%ncrystals(i)
 c                       Get the local crystal number
                   if (imatprp(104,matnum) .eq. 1) then
                         cnum = imatprp(105,matnum)
@@ -1484,23 +1486,21 @@ c                       Couldn't do this earlier, so check here
                         write(out,9502)
                         call die_gracefully
                   end if
-c
 c                       Get the local orientation
-c
-                  if( imatprp(107,matnum) .eq. 1 ) then
-                        angles(1) = dmatprp(108,matnum)
+                  if (imatprp(107,matnum) .eq. 1) then
+                       angles(1) = dmatprp(108,matnum)
                         angles(2) = dmatprp(109,matnum)
                         angles(3) = dmatprp(110,matnum)
                   elseif (imatprp(107,matnum) .eq. 2) then
-                        osn = data_offset(elnum)
+                       osn = data_offset(elnum)
                         angles(1:3) = angle_input(osn,c,1:3)
-                  else
+                 else
                         write (out,9502)
                         call die_gracefully
                   end if
 c
-c                       Now we have the properties, we just need 
-c                       to extract into our local structure
+c                       we have the properties, we just need to extract
+c                       into our local structure
 c
                   local_work%c_props(i,c)%init_elast_stiff =
      &                  c_array(cnum)%elast_stiff
@@ -1519,7 +1519,7 @@ c
                   local_work%c_props(i,c)%q_v = c_array(cnum)%q_v
                   local_work%c_props(i,c)%p_y = c_array(cnum)%p_y
                   local_work%c_props(i,c)%q_y = c_array(cnum)%q_y
-                  local_work%c_props(i,c)%boltzman = c_array(cnum)%boltz       
+                  local_work%c_props(i,c)%boltzman = c_array(cnum)%boltz
                   local_work%c_props(i,c)%theta_o =
      &                  c_array(cnum)%theta_o
                   local_work%c_props(i,c)%eps_dot_o_v =
@@ -1530,11 +1530,19 @@ c
      &                  c_array(cnum)%mu_o
                   local_work%c_props(i,c)%D_o  =
      &                  c_array(cnum)%D_o
+c 
                   local_work%c_props(i,c)%t_o = c_array(cnum)%t_o
                   local_work%c_props(i,c)%tau_a = c_array(cnum)%tau_a
                   local_work%c_props(i,c)%k_o = c_array(cnum)%k_o
                   local_work%c_props(i,c)%h_type =
      &                  c_array(cnum)%h_type
+                  local_work%c_props(i,c)%s_type =
+     &                  c_array(cnum)%slip_type
+                  local_work%c_props(i,c)%cnum = cnum
+                  local_work%c_props(i,c)%num_hard =
+     &                  c_array(cnum)%num_hard
+                  local_work%c_props(i,c)%real_tang =
+     &                  c_array(cnum)%real_tang
                   local_work%c_props(i,c)%u1 = c_array(cnum)%u1
                   local_work%c_props(i,c)%u2 = c_array(cnum)%u2
                   local_work%c_props(i,c)%u3 = c_array(cnum)%u3
@@ -1545,7 +1553,24 @@ c
                   local_work%c_props(i,c)%tau_v = c_array(cnum)%tau_v
                   local_work%c_props(i,c)%voche_m = 
      &                  c_array(cnum)%voche_m
-c                 Call a helper to get the crystal -> reference rotation
+c         Solver flags
+                  local_work%c_props(i,c)%solver = c_array(cnum)%solver
+                  local_work%c_props(i,c)%strategy = 
+     &                  c_array(cnum)%strategy
+                  local_work%c_props(i,c)%gpall = c_array(cnum)%gpall
+                  local_work%c_props(i,c)%gpp = c_array(cnum)%gpp
+                  local_work%c_props(i,c)%st_it(1:3) = 
+     &                  c_array(cnum)%st_it(1:3)
+                  local_work%c_props(i,c)%method = c_array(cnum)%method
+                  local_work%c_props(i,c)%miter = c_array(cnum)%miter
+                  local_work%c_props(i,c)%atol = c_array(cnum)%atol
+                  local_work%c_props(i,c)%atol1 = c_array(cnum)%atol1
+                  local_work%c_props(i,c)%rtol = c_array(cnum)%rtol
+                  local_work%c_props(i,c)%rtol1 = c_array(cnum)%rtol1
+                  local_work%c_props(i,c)%xtol = c_array(cnum)%xtol
+                  local_work%c_props(i,c)%xtol1 = c_array(cnum)%xtol1
+c                   call a helper to get the crystal -> 
+c                   reference rotation
                   if (local_work%angle_type(i) .eq. 1) then
                         atype = "degrees"
                   elseif (local_work%angle_type(i) .eq. 2) then
@@ -1554,21 +1579,18 @@ c                 Call a helper to get the crystal -> reference rotation
                         write(out,9503)
                         call die_gracefully
                   end if
-c
                   if (local_work%angle_convention(i) .eq. 1) then
                         aconv="kocks"
                   else
                         write(out,9504)
                         call die_gracefully
                   end if
-c
                   call mm10_rotation_matrix(
      &                  local_work%c_props(i,c)%init_angles,
      &                  aconv, atype,
      &                  local_work%c_props(i,c)%rotation_g, out)
 c
-c                 Now that we have that, we can set up and rotate our
-c                 orientation tensors
+c                   set up and rotate our orientation tensors
 c
                   do s=1,local_work%c_props(i,c)%nslip
                         bs = matmul(transpose(
@@ -1586,26 +1608,25 @@ c
                         call mm10_WT2WV(0.5*(A-transpose(A)),
      &                        local_work%c_props(i,c)%qs(:,s))
                   end do
-c
 c           We can also rotate forward our stiffness tensor
-c
             call mm10_RT2RVE( transpose(
      &            local_work%c_props(i,c)%rotation_g), Rstiff)
-            local_work%c_props(i,c)%init_elast_stiff = matmul(
+           local_work%c_props(i,c)%init_elast_stiff = matmul(
      &            Rstiff, matmul(
      &            local_work%c_props(i,c)%init_elast_stiff, 
      &            transpose(Rstiff)))
-
            end do
-c
+
            ctotal = ctotal + local_work%ncrystals(i)
 c
       end do
+
 c
 c                   determine if material model can call for a
 c                   reduction in the adaptive step size
 c
       local_work%allow_cut = adaptive .and. lmtprp(22,matnum)
+c
 c
       return
 
