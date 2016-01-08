@@ -1,5 +1,5 @@
 c
-c           Updated:  9/21/2015 rhd
+c           Updated:  10/18/2015 rhd
 c
 c
 c     ****************************************************************
@@ -8,7 +8,7 @@ c     *                 subroutine mm06_set_sizes                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 5/24/2015 rhd               *
+c     *                   last modified: 10/1/2015 rhd               *
 c     *                                                              *
 c     *  called by warp3d to obtain history size and                 *
 c     *  other characteristic information about the model            *
@@ -42,7 +42,7 @@ c
       info_vector(4) = 3
 c
       return
-      end
+      end subroutine mm06_set_sizes
 c
 c     ****************************************************************
 c     *                                                              *
@@ -50,7 +50,7 @@ c     *                 subroutine mm06                              *
 c     *                                                              *
 c     *              Norton power-law creep model                    *
 c     *                                                              *
-c     *           last modified: 9/30/2015 rhd                       *
+c     *           last modified: 10/18/2015 rhd                      *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -60,21 +60,23 @@ c
      &                 e_vec, nu_vec, n_power_vec, rtse,
      &                 stress_n, stress_np1, dstran, 
      &                 history_n, history_np1, elem_killed_vec,
-     &                 do_nonlocal, nonlocal_state, maxnonlocal  )
+     &                 do_nonlocal, nonlocal_state, maxnonlocal,
+     &                 cep, compute_creep_strains  )
       implicit none
 c
 c             parameter definitions
 c
       integer :: step, iter, felem, gpn, mxvl, hist_size,
      &           nstrs, nstr, span, kout, maxnonlocal
-      logical :: elem_killed_vec(mxvl), do_nonlocal
+      logical :: elem_killed_vec(mxvl), do_nonlocal, 
+     &           compute_creep_strains
 #dbl      double precision
 #sgl      real
      &  dtime, block_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      &  n_power_vec(mxvl), rtse(mxvl,nstr), stress_n(mxvl,nstrs),
      &  stress_np1(mxvl,nstrs), dstran(mxvl,nstr),
      &  history_n(span,hist_size), history_np1(span,hist_size),
-     &  nonlocal_state(mxvl,maxnonlocal)
+     &  nonlocal_state(mxvl,maxnonlocal), cep(mxvl,6,6)
 c
 c             local variables
 c
@@ -83,7 +85,7 @@ c
 #dbl      double precision
 #sgl      real
      &  zero, half, one, two, three, four, five, six, roothalf,
-     &  stress(6), statev(10), t_c,
+     &  stress(6), statev(10), t_c, ddsdde(6,6),
      &  props(10), nrm_dtime, local_dstran(6), local_rtse(6)
 c
       data zero, half, one, two, three, four, five, six, roothalf 
@@ -120,21 +122,19 @@ c
       debug = felem .eq. 1  .and. gpn .eq. 8
       debug = .false.
       if( debug ) write(kout,9010) felem, gpn
-c   
-c             iter = 0. WARP3D calls mm06 to remove creep strain
-c             increment for load (time) step from dstran and return.
-c             WARP3D uses the modified dstran and existing [D] to
-c             compute incremental nodal loads for the creep loading.
-c             dstran will contain thermal strains inserted by WARP3D
-c           
       if( debug ) then
           write(kout,9019)
           do i = 1, span
             write(kout,9020) felem+i-1, (dstran(i,j),j=1,6)
           end do
-      end if
-c      
-      if( iter .eq. 0 )  then
+      end if      
+c   
+c             iter = 0 and no global displacement extrapolation.
+c             mm06 just removes estimated creep strain
+c             increment for load (time) step from dstran and fill
+c             [D] with linear-elastic values.
+c
+      if( compute_creep_strains )  then
         call mm06_step_crp_strains
         if( debug ) then
            write(kout,9021)
@@ -142,6 +142,13 @@ c
                write(kout,9020) felem+i-1, (dstran(i,j),j=1,6)
            end do
         end if
+@!DIR$ LOOP COUNT MAX=###  
+        do i = 1, span
+         call cnst6_linear_elastic( e_vec(i), nu_vec(i), 
+     &                              ddsdde, one, two, zero )
+         cep(i,1:6,1:6) = ddsdde(1:6,1:6)
+         stress_np1(i,1:6) = stress_n(i,1:6)
+        end do
         return
       end if  
 c      
@@ -214,7 +221,11 @@ c
         nonlocal_state(i,1) = statev(2) 
         nonlocal_state(i,2) = statev(1)
       end if 
-      
+c
+      call cnst6n( local_rtse, ddsdde, statev, nrm_dtime, 
+     &             props, felem+i-1, gpn, iter, kout )
+      cep(i,1:6,1:6) = ddsdde(1:6,1:6)
+c     
       call mm06_get_eng_dens( i ) 
 c
       if( debug ) then
@@ -223,9 +234,6 @@ c
         write(kout,9310) statev(1), statev(2), statev(3)
         write(kout,*) " "
       end if
-      
-      
-      
 c      
       end do  ! over span
 c           
@@ -564,8 +572,164 @@ c
 c      
 9000  format(3x,'(',i1,',',i1,'): ', 2e14.6 )         
 c
-      end
+      end subroutine mm06n
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine cnst6n                            *
+c     *                                                              *
+c     *            last modified: 5/25/2015 rhd                      *
+c     *            should be inlined                                 *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine cnst6n( ssdevnt, ddsdde, statev, dtime, props, 
+     &                   noel, npt,  kiter, kout )
+c
+      implicit none
+c
+c             parameter definitions
+c
+      integer :: noel, npt, kinc, kiter, kout
+#dbl      double precision ::
+#sgl      real ::
+     & ssdevnt(6), statev(3), dtime, props(3), ddsdde(6,6)
+c
+c             locals
+c
+      integer :: j, k
+#dbl      double precision ::
+#sgl      real ::
+     1 expon, sigma_e_star, root32, mu, alpha, kmod,
+     2 one, two, three, zero, aprime, beta1, beta2, beta,
+     3 decrnew, emod, enu, tol_null
+      logical :: debug, null_deviator
       
+      double precision c1, c2, c3, c4
+c      
+      data zero, one, two, three, tol_null, root32
+     & / 0.0d0, 1.0d0, 2.0d0, 3.0d0, 1.0d-15, 1.22474487139d0 /
+           
+c             material properties from user input
+c
+c     props(1) - Young's modulus 
+c     props(2) - Poisson's ratio: nu (often 0.285 in examples)
+c     props(3) - creep exponent: n (often 5.0 in examples)
+c
+c             state variables 
+c
+c     statev(1) - total effective creep strain
+c     statev(2) - effective strain rate in normalized time
+c     statev(3) - effective creep strain increment over step
+c                 from last stress update.  consistent
+c                 with ssdevnt
+c
+c             material parameters
+c
+      emod    = props(1)
+      enu     = props(2)
+      expon   = props(3)
+      decrnew = statev(3)
+c
+c             compute the elastic-plastic consistent tangent. couples 
+c             normalized stress increments to strain increments 
+c             where time is normalized as tbar
+c
+      mu = emod/two/(one+enu)
+      kmod = emod/three/(one-two*enu)
+c
+      sigma_e_star = ssdevnt(1)**2 + ssdevnt(2)**2 + ssdevnt(3)**2 +
+     &    ( ssdevnt(4)**2 + ssdevnt(5)**2 + ssdevnt(6)**2 ) * two
+      sigma_e_star = root32 * sqrt(sigma_e_star)
+c      
+      if( sigma_e_star .lt. tol_null*emod ) then
+        ddsdde(1:6,1:6) = zero
+        c1 = emod/((one+enu)*(one-two*enu))
+        c2 = (one-enu)*c1   
+        c3 = ((one-two*enu)/two)*c1
+        c4 = enu*c1
+        ddsdde(1,1)= c2
+        ddsdde(2,2)= c2
+        ddsdde(3,3)= c2
+        ddsdde(4,4)= c3
+        ddsdde(5,5)= c3
+        ddsdde(6,6)= c3
+        ddsdde(1,2)= c4
+        ddsdde(1,3)= c4
+        ddsdde(2,1)= c4
+        ddsdde(3,1)= c4
+        ddsdde(2,3)= c4
+        ddsdde(3,2)= c4
+        return
+      end if 
+c      
+      alpha = one - three*mu*decrnew/sigma_e_star
+      aprime = (one/expon)*(one/dtime)*
+     &         (decrnew/dtime)**((one-expon)/expon)
+      beta1 = three/two/sigma_e_star/sigma_e_star
+      beta2 = -three*mu +(one-alpha)*(three*mu+aprime)
+      beta  = beta1 * beta2/(three*mu+aprime)
+c      
+      do j = 1, 6
+       do k = 1, 6
+        ddsdde(k,j) = two * mu * beta * ssdevnt(k) * ssdevnt(j) 
+       end do
+      end do
+c
+      ddsdde(1,1) = ddsdde(1,1) + two*mu*alpha
+      ddsdde(2,2) = ddsdde(2,2) + two*mu*alpha
+      ddsdde(3,3) = ddsdde(3,3) + two*mu*alpha
+      ddsdde(4,4) = ddsdde(4,4) + mu*alpha
+      ddsdde(5,5) = ddsdde(5,5) + mu*alpha
+      ddsdde(6,6) = ddsdde(6,6) + mu*alpha
+c
+      ddsdde(1:3,1:3) = ddsdde(1:3,1:3) +
+     &                        (kmod - two*mu*alpha/three)
+c
+      return
+c
+      end subroutine cnst6n
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine cnst6_linear_elastic              *
+c     *                                                              *
+c     *       linear-elastic [D] matrix. should be inlined           *
+c     *                                                              *
+c     *                 last modified: 10/18/2015 rhd                *
+c     *                                                              *
+c     ****************************************************************
+      
+      subroutine cnst6_linear_elastic( emod, enu, ddsdde, 
+     &                                 one, two, zero )
+      implicit none
+#dbl      double precision ::
+#sgl      real ::
+     &  ddsdde(6,6), emod, enu, one, two, zero, c1, c2, c3, c4
+c
+c                       linear isotropic elastic matrix.
+c
+      ddsdde(1:6,1:6) = zero
+      c1 = emod/((one+enu)*(one-two*enu))
+      c2 = (one-enu)*c1   
+      c3 = ((one-two*enu)/two)*c1
+      c4 = enu*c1
+      ddsdde(1,1)= c2
+      ddsdde(2,2)= c2
+      ddsdde(3,3)= c2
+      ddsdde(4,4)= c3
+      ddsdde(5,5)= c3
+      ddsdde(6,6)= c3
+      ddsdde(1,2)= c4
+      ddsdde(1,3)= c4
+      ddsdde(2,1)= c4
+      ddsdde(3,1)= c4
+      ddsdde(2,3)= c4
+      ddsdde(3,2)= c4
+c
+      return
+      end subroutine cnst6_linear_elastic
+             
+          
 c
 c     ****************************************************************
 c     *                                                              *
@@ -596,7 +760,7 @@ c
       f1    = smisest*temp1 - (decreq/dtime)**(one/n)
 c
       return
-      end
+      end subroutine mm06_derivatives
 c
 c     ****************************************************************
 c     *                                                              *
@@ -765,13 +929,13 @@ c
 c      
       state_labels(1) = "crp-eps"
       state_labels(2) = "crp-rate"
-      state_labels(3) = "deltacrp"
+      state_labels(3) = "Uelas"
       state_descriptors(1) = "Eq creep eps"
       state_descriptors(2) = "Eq creep eps dot"
-      state_descriptors(3) = "delta Eq creep eps for step"
+      state_descriptors(3) = "elastic energy density"
 c
       return
-      end
+      end subroutine mm06_states_labels
 
 c *******************************************************************
 c *                                                                 *
@@ -836,7 +1000,7 @@ c
 c
 c   mat_va11 = c1 = accumulated, effective creep strain over time
 c   mat_va11 = c2 = current, effective creep strain rate
-c   mat_va11 = c3 = increment of effective creep strain over n -> n+1
+c   mat_va11 = c3 = elastic energy
 c
 c
 @!DIR$ LOOP COUNT MAX=###  
@@ -850,16 +1014,16 @@ c                                     deps_{elastic}
        end do     
 c
        return
-       end
+       end subroutine oumm06
 
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                 subroutine cnst6                             *
+c     *         subroutine cnst6  -- no longer used                  *
 c     *                                                              *
 c     *     tangent stiffness for power-law creep model              *
 c     *                                                              *
-c     *           last modified: 9/24/2015 rhd                       *
+c     *           last modified: 10/18/2015 rhd                      *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -955,134 +1119,4 @@ c
  9400 format(3x,'row',i2,': ',6e14.6 )         
 c
       end subroutine cnst6
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine cnst6n                            *
-c     *                                                              *
-c     *            last modified: 5/25/2015 rhd                      *
-c     *            should be inlined                                 *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine cnst6n( ssdevnt, ddsdde, statev, dtime, props, 
-     &                   noel, npt,  kiter, kout )
-c
-      implicit none
-c
-c             parameter definitions
-c
-      integer :: noel, npt, kinc, kiter, kout
-#dbl      double precision ::
-#sgl      real ::
-     & ssdevnt(6), statev(3), dtime, props(3), ddsdde(6,6)
-c
-c             locals
-c
-      integer :: j, k
-#dbl      double precision ::
-#sgl      real ::
-     1 expon, sigma_e_star, root32, mu, alpha, kmod,
-     2 one, two, three, zero, aprime, beta1, beta2, beta,
-     3 decrnew, emod, enu, tol_null
-      logical :: debug, null_deviator
-      
-      double precision c1, c2, c3, c4
-c      
-      data zero, one, two, three, tol_null, root32
-     & / 0.0d0, 1.0d0, 2.0d0, 3.0d0, 1.0d-15, 1.22474487139d0 /
-           
-c             material properties from user input
-c
-c     props(1) - Young's modulus 
-c     props(2) - Poisson's ratio: nu (often 0.285 in examples)
-c     props(3) - creep exponent: n (often 5.0 in examples)
-c
-c             state variables 
-c
-c     statev(1) - total effective creep strain
-c     statev(2) - effective strain rate in normalized time
-c     statev(3) - effective creep strain increment over step
-c                 from last stress update.  consistent
-c                 with ssdevnt
-c
-c             material parameters
-c
-      emod    = props(1)
-      enu     = props(2)
-      expon   = props(3)
-      decrnew = statev(3)
-c
-c             compute the elastic-plastic consistent tangent. couples 
-c             normalized stress increments to strain increments 
-c             where time is normalized as tbar
-c
-      mu = emod/two/(one+enu)
-      kmod = emod/three/(one-two*enu)
-c
-      sigma_e_star = ssdevnt(1)**2 + ssdevnt(2)**2 + ssdevnt(3)**2 +
-     &    ( ssdevnt(4)**2 + ssdevnt(5)**2 + ssdevnt(6)**2 ) * two
-      sigma_e_star = root32 * sqrt(sigma_e_star)
-c      
-      if( sigma_e_star .lt. tol_null*emod ) then
-        call cnst6_linear_elastic( emod, enu, ddsdde, one, two, zero )
-        return
-      end if 
-c      
-      alpha = one - three*mu*decrnew/sigma_e_star
-      aprime = (one/expon)*(one/dtime)*
-     &         (decrnew/dtime)**((one-expon)/expon)
-      beta1 = three/two/sigma_e_star/sigma_e_star
-      beta2 = -three*mu +(one-alpha)*(three*mu+aprime)
-      beta  = beta1 * beta2/(three*mu+aprime)
-c      
-      do j = 1, 6
-        do k = 1, 6
-          ddsdde(k,j) = two * mu * beta * ssdevnt(k) * ssdevnt(j) 
-        end do
-      end do
-c
-      ddsdde(1,1) = ddsdde(1,1) + two*mu*alpha
-      ddsdde(2,2) = ddsdde(2,2) + two*mu*alpha
-      ddsdde(3,3) = ddsdde(3,3) + two*mu*alpha
-      ddsdde(4,4) = ddsdde(4,4) + mu*alpha
-      ddsdde(5,5) = ddsdde(5,5) + mu*alpha
-      ddsdde(6,6) = ddsdde(6,6) + mu*alpha
-c
-      ddsdde(1:3,1:3) = ddsdde(1:3,1:3) + (kmod - two*mu*alpha/three)
-c
-      return
-c
-      end
-      
-      subroutine cnst6_linear_elastic( emod, enu, ddsdde, 
-     &                                 one, two, zero )
-      implicit none
-#dbl      double precision ::
-#sgl      real ::
-     &  ddsdde(6,6), emod, enu, one, two, zero, c1, c2, c3, c4
-c
-c                       linear isotropic elastic matrix.
-c
-      ddsdde(1:6,1:6) = zero
-      c1 = emod/((one+enu)*(one-two*enu))
-      c2 = (one-enu)*c1   
-      c3 = ((one-two*enu)/two)*c1
-      c4 = enu*c1
-      ddsdde(1,1)= c2
-      ddsdde(2,2)= c2
-      ddsdde(3,3)= c2
-      ddsdde(4,4)= c3
-      ddsdde(5,5)= c3
-      ddsdde(6,6)= c3
-      ddsdde(1,2)= c4
-      ddsdde(1,3)= c4
-      ddsdde(2,1)= c4
-      ddsdde(3,1)= c4
-      ddsdde(2,3)= c4
-      ddsdde(3,2)= c4
-c
-      return
-      end
-             
-      
+c  
