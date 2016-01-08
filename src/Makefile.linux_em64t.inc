@@ -3,6 +3,9 @@
 #
 #   File: Header.linux_em64t.inc
 #
+#   Last modifications: January 7, 2016
+#
+#
 #   Description:
 #
 #     Common parts of makefile for building WARP3D on Linux-64
@@ -40,6 +43,22 @@
 #              5/13/2015 remove ouconv.f
 #              6/2/2015  remove oultrc.f
 #              8/19/2015 use -heap-arrays on some *.f
+#             10/27/2015  delete stifup.f
+#             11/8/2015  add user_routines_module.f, update dependencies for
+#                        user_routines_...f, reorder some rules 
+#                        for convenience
+#                        add rstgp1 dependency on mod_crystals
+#             11/29/2015 add -xHOST to compiler options
+#             12/22/2015 replace mm10 with mm10a, b, c
+#                        use -inline-level=1 on some very long .f files
+#                        to reduce unnecessarily long compile times w/o 
+#                        improving runtime performance
+#              1/3/2016  remove gplns1.f, lnstff.f, rklstf.f, lcnst1.f,
+#                        cnst1.f, cnst2.f, cnst3.f, cnst4.f
+#              1/7/2016  mm10_a.f at -O3 for ifort V16.x causes seg fault.
+#                        isolated the culprit routine into a new mm10_d.f
+#                        and compiled at -O2 which runs fine.
+#
 # *****************************************************************************
 #
 #                COMPILER parameter is set by the Makewarp.bash
@@ -53,7 +72,7 @@
 #
 #                Intel F90 (fort) compiler options
 #
-F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz
+F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz -xHOST
 F90INC = -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #
 PROFILEOPT =
@@ -104,6 +123,7 @@ OBJ =	 \
 	$(OD)/mod_pconvert$O	 \
 	$(OD)/mod_segmental_curves$O	 \
 	$(OD)/mod_stiffness$O	 \
+	$(OD)/user_routines_module$O \
 	$(OD)/addifv$O	 \
 	$(OD)/addmas$O	 \
 	$(OD)/adapt_check$O	 \
@@ -125,10 +145,6 @@ OBJ =	 \
 	$(OD)/chk_stp_reduce_smcs$O	 \
 	$(OD)/chk_stp_reduce_cohes$O	 \
 	$(OD)/cmpmas$O	 \
-	$(OD)/cnst1$O	 \
-	$(OD)/cnst2$O	 \
-	$(OD)/cnst3$O	 \
-	$(OD)/cnst4$O	 \
 	$(OD)/cohes_elem$O	 \
 	$(OD)/con_dump$O	 \
 	$(OD)/contact$O	 \
@@ -172,7 +188,6 @@ OBJ =	 \
 	$(OD)/growth_loads$O	 \
 	$(OD)/gp_temp_eps$O	 \
 	$(OD)/gpifv1$O	 \
-	$(OD)/gplns1$O	 \
 	$(OD)/gpmas1$O	 \
 	$(OD)/gptns1$O	 \
 	$(OD)/gtlsn1$O	 \
@@ -206,10 +221,8 @@ OBJ =	 \
 	$(OD)/iodevn$O	 \
 	$(OD)/kg1$O	 \
 	$(OD)/kill_element$O	 \
-	$(OD)/lcnst1$O	 \
 	$(OD)/license$O	 \
 	$(OD)/linked_list$O	 \
-	$(OD)/lnstff$O	 \
 	$(OD)/main_program$O	 \
 	$(OD)/mnralg$O	 \
 	$(OD)/mem_allocate$O	 \
@@ -223,7 +236,10 @@ OBJ =	 \
 	$(OD)/mm07$O	 \
 	$(OD)/mm08$O	 \
 	$(OD)/mm09$O	 \
-	$(OD)/mm10$O	 \
+	$(OD)/mm10_a$O	 \
+	$(OD)/mm10_b$O	 \
+	$(OD)/mm10_c$O	 \
+	$(OD)/mm10_d$O	 \
 	$(OD)/mm11$O       \
 	$(OD)/mmnoopt$O	\
 	$(OD)/mpi_code$O	 \
@@ -292,7 +308,6 @@ OBJ =	 \
 	$(OD)/read_damage$O	 \
 	$(OD)/read_write$O	 \
 	$(OD)/reopen$O	 \
-	$(OD)/rklstf$O	 \
 	$(OD)/rknifv$O	 \
 	$(OD)/rknmas$O	 \
 	$(OD)/rknstr$O	 \
@@ -309,7 +324,6 @@ OBJ =	 \
 	$(OD)/splunj$O	 \
 	$(OD)/statistics$O	 \
 	$(OD)/steptime$O   \
-	$(OD)/stifup$O	 \
 	$(OD)/store$O	 \
 	$(OD)/store_ifv$O	 \
 	$(OD)/stpdrv$O	 \
@@ -561,38 +575,6 @@ $(OD)/cmpmas$O : cmpmas.f $(OD)/mod_eleblocks$O \
 	$(F90) -O2 -ip  -c filt_cmpmas.f
 	$(MVC) filt_cmpmas$O  cmpmas$O
 	$(MVC) cmpmas$O $@
-
-$(OD)/cnst1$O : cnst1.f param_def
-	$(RMC)  $@
-	$(RMC)  filt_cnst1.f
-	$(FILTER) < cnst1.f > filt_cnst1.f
-	$(F90) -O2 -ip  -c filt_cnst1.f
-	$(MVC) filt_cnst1$O  cnst1$O
-	$(MVC) cnst1$O $@
-
-$(OD)/cnst2$O : cnst2.f param_def
-	$(RMC)  $@
-	$(RMC)  filt_cnst2.f
-	$(FILTER) < cnst2.f > filt_cnst2.f
-	$(F90) -O2 -ip  -c filt_cnst2.f
-	$(MVC) filt_cnst2$O  cnst2$O
-	$(MVC) cnst2$O $@
-
-$(OD)/cnst3$O : cnst3.f param_def
-	$(RMC)  $@
-	$(RMC)  filt_cnst3.f
-	$(FILTER) < cnst3.f > filt_cnst3.f
-	$(F90) -O2 -ip  -c filt_cnst3.f
-	$(MVC) filt_cnst3$O  cnst3$O
-	$(MVC) cnst3$O $@
-
-$(OD)/cnst4$O : cnst4.f param_def
-	$(RMC)  $@
-	$(RMC)  filt_cnst4.f
-	$(FILTER) < cnst4.f > filt_cnst4.f
-	$(F90) -O2 -ip  -c filt_cnst4.f
-	$(MVC) filt_cnst4$O  cnst4$O
-	$(MVC) cnst4$O $@
 
 $(OD)/cohes_elem$O : cohes_elem.f param_def
 	$(RMC)  $@
@@ -1000,14 +982,6 @@ $(OD)/gpifv1$O : gpifv1.f param_def \
 	$(MVC) filt_gpifv1$O  gpifv1$O
 	$(MVC) gpifv1$O $@
 
-$(OD)/gplns1$O : gplns1.f param_def include_lin_ek $(OD)/mod_eleblocks$O
-	$(RMC)  $@
-	$(RMC)  filt_gplns1.f
-	$(FILTER) < gplns1.f > filt_gplns1.f
-	$(F90) -O3 -ip  -c filt_gplns1.f
-	$(MVC) filt_gplns1$O  gplns1$O
-	$(MVC) gplns1$O $@
-
 $(OD)/gpmas1$O : gpmas1.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_gpmas1.f
@@ -1330,13 +1304,6 @@ $(OD)/kill_element$O : kill_element.f common.main \
 #
 #       --- l --
 #
-$(OD)/lcnst1$O : lcnst1.f param_def
-	$(RMC)  $@
-	$(RMC)  filt_lcnst1.f
-	$(FILTER) < lcnst1.f > filt_lcnst1.f
-	$(F90) -O2 -ip  -c filt_lcnst1.f
-	$(MVC) filt_lcnst1$O  lcnst1$O
-	$(MVC) lcnst1$O $@
 
 $(OD)/license$O : license.f param_def \
                    common.main
@@ -1356,17 +1323,6 @@ $(OD)/linked_list$O : linked_list.f $(OD)/mod_crack_growth$O \
 	$(F90) -O2 -ip  -c filt_linked_list.f
 	$(MVC) filt_linked_list$O  linked_list$O
 	$(MVC) linked_list$O $@
-
-$(OD)/lnstff$O : lnstff.f param_def common.main $(OD)/mod_eleblocks$O \
-                   $(OD)/mod_crack_growth$O $(OD)/mod_damage$O \
-                   include_lin_ek $(OD)/mod_main$O \
-                   $(OD)/mod_mpi_lnpcg$O $(OD)/mod_crystals$O
-	$(RMC)  $@
-	$(RMC)  filt_lnstff.f
-	$(FILTER) < lnstff.f > filt_lnstff.f
-	$(F90) -O2 -ip  -c filt_lnstff.f
-	$(MVC) filt_lnstff$O  lnstff$O
-	$(MVC) lnstff$O $@
 
 #
 #       --- m --
@@ -1474,13 +1430,37 @@ $(OD)/mm09$O : mm09.f
 	$(MVC) filt_mm09$O  mm09$O
 	$(MVC) mm09$O $@
 
-$(OD)/mm10$O : mm10.f $(OD)/mod_crystals$O param_def
+$(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10.f
-	$(FILTER) < mm10.f > filt_mm10.f
-	$(F90) -O2 -ip  -c filt_mm10.f
-	$(MVC) filt_mm10$O  mm10$O
-	$(MVC) mm10$O $@
+	$(RMC)  filt_mm10_a.f
+	$(FILTER) < mm10_a.f > filt_mm10_a.f
+	$(F90) -O3 -ip -inline-level=1 -c filt_mm10_a.f
+	$(MVC) filt_mm10_a$O  mm10_a$O
+	$(MVC) mm10_a$O $@
+
+$(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_b.f
+	$(FILTER) < mm10_b.f > filt_mm10_b.f
+	$(F90) -O3 -ip -inline-level=1  -c filt_mm10_b.f
+	$(MVC) filt_mm10_b$O  mm10_b$O
+	$(MVC) mm10_b$O $@
+
+$(OD)/mm10_c$O : mm10_c.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_c.f
+	$(FILTER) < mm10_c.f > filt_mm10_c.f
+	$(F90) -O3 -ip -inline-level=1  -c filt_mm10_c.f
+	$(MVC) filt_mm10_c$O  mm10_c$O
+	$(MVC) mm10_c$O $@
+
+$(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_d.f
+	$(FILTER) < mm10_d.f > filt_mm10_d.f
+	$(F90) -O2 -ip -inline-level=1  -c filt_mm10_d.f
+	$(MVC) filt_mm10_d$O  mm10_d$O
+	$(MVC) mm10_d$O $@
 
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
@@ -2099,15 +2079,6 @@ $(OD)/reopen$O : reopen.f param_def common.main $(OD)/mod_eleblocks$O \
 	$(MVC) filt_reopen$O  reopen$O
 	$(MVC) reopen$O $@
 
-$(OD)/rklstf$O : rklstf.f include_lin_ek \
-                   param_def   $(OD)/mod_main$O
-	$(RMC)  $@
-	$(RMC)  filt_rklstf.f
-	$(FILTER) < rklstf.f > filt_rklstf.f
-	$(F90) -O3 -ip  -c filt_rklstf.f
-	$(MVC) filt_rklstf$O  rklstf$O
-	$(MVC) rklstf$O $@
-
 $(OD)/rknifv$O : rknifv.f common.main \
                    param_def include_sig_up \
                    $(OD)/mod_crack_growth$O $(OD)/mod_segmental_curves$O \
@@ -2164,7 +2135,7 @@ $(OD)/rscmp1$O : rscmp1.f param_def
 	$(MVC) filt_rscmp1$O  rscmp1$O
 	$(MVC) rscmp1$O $@
 
-$(OD)/rstgp1$O : rstgp1.f param_def \
+$(OD)/rstgp1$O : rstgp1.f param_def  $(OD)/mod_crystals$O  \
                    include_sig_up $(OD)/mod_segmental_curves$O \
                    $(OD)/mod_main$O common.main  $(OD)/mod_eleblocks$O
 	$(RMC)  $@
@@ -2259,16 +2230,6 @@ $(OD)/steptime$O : steptime.f common.main \
 	$(F90) -O2 -ip  -c filt_steptime.f
 	$(MVC) filt_steptime$O  steptime$O
 	$(MVC) steptime$O $@
-
-
-$(OD)/stifup$O : stifup.f common.main \
-                   param_def
-	$(RMC)  $@
-	$(RMC)  filt_stifup.f
-	$(FILTER) < stifup.f > filt_stifup.f
-	$(F90) -O2 -ip  -c filt_stifup.f
-	$(MVC) filt_stifup$O  stifup$O
-	$(MVC) stifup$O $@
 
 $(OD)/store$O : store.f param_def common.main $(OD)/mod_eleblocks$O \
                    $(OD)/mod_crack_growth$O $(OD)/mod_performance$O  \
@@ -2401,38 +2362,6 @@ $(OD)/user_list$O : user_list.f common.main \
 	$(MVC) filt_user_list$O  user_list$O
 	$(MVC) user_list$O $@
 	
-$(OD)/user_routines_umat$O : user_routines_umat.f  
-	$(RMC)  $@
-	$(RMC)  filt_user_routines_umat.f
-	$(FILTER) < user_routines_umat.f > filt_user_routines_umat.f
-	$(F90) -O3 -ip -c filt_user_routines_umat.f
-	$(MVC) filt_user_routines_umat$O  user_routines_umat$O
-	$(MVC) user_routines_umat$O $@
-
-$(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f  
-	$(RMC)  $@
-	$(RMC)  filt_user_routines_other_Abaqus.f
-	$(FILTER) < user_routines_other_Abaqus.f > filt_user_routines_other_Abaqus.f
-	$(F90) -O3 -ip -heap-arrays -c filt_user_routines_other_Abaqus.f
-	$(MVC) filt_user_routines_other_Abaqus$O  user_routines_other_Abaqus$O
-	$(MVC) user_routines_other_Abaqus$O $@
-
-$(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm
-	$(RMC)  $@
-	$(RMC)  filt_user_routines_warp3d.f
-	$(FILTER) < user_routines_warp3d.f > filt_user_routines_warp3d.f
-	$(F90) -O3 -ip -heap-arrays -c filt_user_routines_warp3d.f
-	$(MVC) filt_user_routines_warp3d$O  user_routines_warp3d$O
-	$(MVC) user_routines_warp3d$O $@
-
-$(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm
-	$(RMC)  $@
-	$(RMC)  filt_user_routines_support.f
-	$(FILTER) < user_routines_support.f > filt_user_routines_support.f
-	$(F90) -O3 -ip -c filt_user_routines_support.f
-	$(MVC) filt_user_routines_support$O  user_routines_support$O
-	$(MVC) user_routines_support$O $@
-
 $(OD)/uppbar$O : uppbar.f common.main \
                    param_def
 	$(RMC)  $@
@@ -2451,6 +2380,47 @@ $(OD)/upres$O : upres.f common.main \
 	$(F90) -O2 -ip  -c filt_upres.f
 	$(MVC) filt_upres$O  upres$O
 	$(MVC) upres$O $@
+
+#
+#       ---  Abaqus compatible user routines ------
+#
+
+
+$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O 
+	$(RMC)  $@
+	$(RMC)  filt_user_routines_umat.f
+	$(FILTER) < user_routines_umat.f > filt_user_routines_umat.f
+	$(F90) -O3 -ip  -inline-level=1  -c filt_user_routines_umat.f
+	$(MVC) filt_user_routines_umat$O  user_routines_umat$O
+	$(MVC) user_routines_umat$O $@
+
+$(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
+                                     $(OD)/user_routines_module$O 
+	$(RMC)  $@
+	$(RMC)  filt_user_routines_other_Abaqus.f
+	$(FILTER) < user_routines_other_Abaqus.f > filt_user_routines_other_Abaqus.f
+	$(F90) -O3 -ip -heap-arrays -c filt_user_routines_other_Abaqus.f
+	$(MVC) filt_user_routines_other_Abaqus$O  user_routines_other_Abaqus$O
+	$(MVC) user_routines_other_Abaqus$O $@
+
+$(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
+                               $(OD)/user_routines_module$O 
+	$(RMC)  $@
+	$(RMC)  filt_user_routines_warp3d.f
+	$(FILTER) < user_routines_warp3d.f > filt_user_routines_warp3d.f
+	$(F90) -O3 -ip -heap-arrays  -c filt_user_routines_warp3d.f
+	$(MVC) filt_user_routines_warp3d$O  user_routines_warp3d$O
+	$(MVC) user_routines_warp3d$O $@
+
+$(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
+                                $(OD)/user_routines_module$O 
+	$(RMC)  $@
+	$(RMC)  filt_user_routines_support.f
+	$(FILTER) < user_routines_support.f > filt_user_routines_support.f
+	$(F90) -O3 -ip -c filt_user_routines_support.f
+	$(MVC) filt_user_routines_support$O  user_routines_support$O
+	$(MVC) user_routines_support$O $@
+
 #
 #       --- v --
 #
@@ -2656,5 +2626,13 @@ $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(F90) -O2 -ip  -c filt_mod_stiffness.f
 	$(MVC) filt_mod_stiffness$O  mod_stiffness$O
 	$(MVC) mod_stiffness$O $@
+
+$(ODIR)/user_routines_module$O : user_routines_module.f 
+	$(RMC)  $@
+	$(RMC)  filt_user_routines_module.f
+	$(FILTER) < user_routines_module.f > filt_user_routines_module.f
+	$(F90) -O2 -ip  -c filt_user_routines_module.f
+	$(MVC) filt_user_routines_module$O  user_routines_module$O
+	$(MVC) user_routines_module$O $@
 
 
