@@ -4,7 +4,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 9/14/2015 rhd                   *
+c     *              last modified : 11/25/2015 rhd                  *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -200,7 +200,7 @@ c                 common.main
 c
 c
       logical :: nonlocal_analysis, modified_mpcs,
-     &           divergence_check
+     &           divergence_check, diverge_check_strict
 c
 c
 c                 information for output packets
@@ -309,10 +309,8 @@ c
       logical :: asymmetric_assembly
       logical :: pardiso_first 
 c
-c
 c          file name for "output commands file ... after steps <list>'
 c          bit map to store expanded list of steps
-c
 c
       character * 80 output_command_file
       integer, save, allocatable, dimension(:) ::
@@ -323,7 +321,23 @@ c
       character(len=20), save, 
      &   allocatable, dimension(:) :: material_model_names
 c
+c                 do we have extrapolated displacement increments
+c                 for the step and/or non-zero imposed
+c                 (user) displacement increments for the step
+c                 global extrapolate flag and no extrapolate next
+c                 step only
+
+      logical :: extrapolated_du, non_zero_imposed_du,
+     &           extrapolate, extrap_off_next_step
 c
+c                 line search parameters
+c
+      logical :: line_search, ls_details
+#sgl        real :: 
+#dbl        double precision ::
+     & ls_min_step_length, ls_max_step_length, ls_rho,
+     & ls_slack_tol
+
       end module     
       
 
