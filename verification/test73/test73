@@ -217,7 +217,8 @@ c
    convergence test norm res tol 0.001
    time step  1.0e10
    trace solution on
-   extrapolate off
+   extrapolate on
+   line search on 
    adaptive on
 c
 list 'left-end'  x=0
