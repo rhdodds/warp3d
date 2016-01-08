@@ -565,6 +565,9 @@ c
    maximum iterations 5
    minimum iterations 1
    convergence test norm res tol 0.05
+   extrapolate on
+   adaptive on
+   line search off details
    nonconvergent solutions stop
    linear stiffness for iteration one off
    batch messages off
@@ -574,8 +577,6 @@ c
    consistent q-matrix on
    time step 1.0e06
    trace solution on
-   extrapolate on
-   adaptive on
 c
 c
 c      notes about solution strategy:
