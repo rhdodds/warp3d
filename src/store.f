@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/14/2015 rhd              *
+c     *                   last modified : 11/16/2015 rhd             *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -149,9 +149,8 @@ c                       variables.
 c
 c
       write(fileno) prnres,updstf,nostif,halt,lkcomp,
-     &              linstf_nxt_step,
-     &              linmas,ifvcmp,predct,zrocon,growth_k_flag,
-     &              tkcomp,newtrn,lnkit1,lsldnm,accsol,incflg,
+     &              linmas,ifvcmp,zrocon,growth_k_flag,
+     &              tkcomp,newtrn,lsldnm,accsol,incflg,
      &              cnldcp,prlres,adaptive_flag,batch_messages,
      &              signal_flag, scalar_blocking, stname,
      &              qbar_flag, solver_out_of_core, solver_scr_dir,
@@ -163,7 +162,10 @@ c
      &              time_assembly, parallel_assembly_allowed,
      &              parallel_assembly_used,
      &              distributed_stiffness_used, nonlocal_analysis,
-     &              umat_serial, umat_used, asymmetric_assembly
+     &              umat_serial, umat_used, asymmetric_assembly,
+     &              extrapolate, extrap_off_next_step,
+     &              divergence_check, diverge_check_strict,
+     &              line_search, ls_details
       write(fileno) sparse_stiff_file_name, packet_file_name
       write (fileno) check_data_key
 c
@@ -176,9 +178,10 @@ c
      &              overshoot_limit, control_load_fact,
      &              old_load_fact, min_load_fact, killed_ele_int_work,
      &              killed_ele_pls_work,hypre_tol,threshold,filter,
-     &              loadbal, start_assembly_step,
+     &              loadbal, start_assembly_step, 
      &              assembly_total, truncation, relax_wt,
-     &              relax_outer_wt, mg_threshold
+     &              relax_outer_wt, mg_threshold, ls_min_step_length, 
+     &              ls_max_step_length, ls_rho, ls_slack_tol
       write (fileno) check_data_key
 c
 c
@@ -911,7 +914,7 @@ c     *               subroutine write_cry_data                      *
 c     *                                                              *
 c     *                    written by : mcm                          *
 c     *                                                              *
-c     *                last modified : 8/16/12                       *
+c     *                last modified : 12/23/2015 rhd                *
 c     *                                                              *
 c     *           Write the CP crystal definitions to file           *
 c     *                                                              *
@@ -926,29 +929,27 @@ c
 c
       write(fileno) defined_crystal
 c
-      if (defined_crystal) then
-c
-      write(fileno) cry_multiplier
-c
-      write(fileno) c_array
-      nelem = size(angle_input,1)
-      mxcry = size(angle_input,2)
-      write(fileno) nelem
-      write(fileno) mxcry
-      write(fileno) data_offset
-      write(fileno) angle_input
-      write(fileno) crystal_input
-
+      if( defined_crystal ) then
+        write(fileno) cry_multiplier
+        write(fileno) c_array
+        nelem = size(angle_input,1)
+        mxcry = size(angle_input,2)
+        write(fileno) nelem
+        write(fileno) mxcry
+        write(fileno) data_offset
+        write(fileno) angle_input
+        write(fileno) crystal_input
       end if
 c
       write(fileno) srequired 
-
-      if (srequired) then
+c 
+      if( srequired)  then
         write(fileno) nangles
         write(fileno) simple_angles
         write(fileno) mc_array
       end if
-
+c
+      return
       end subroutine
 
 
