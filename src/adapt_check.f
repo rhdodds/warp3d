@@ -4,10 +4,7 @@ c     *                      subroutine adapt_check                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/08/94                   *
-c     *                   last modified : 02/15/94                   *
-c     *                                   09/27/94 kck               *
-c     *                                   04/07/95 kck               *
+c     *                   last modified : 11/11/2015 RHD             *
 c     *                                                              *
 c     *     executes all logic to drive the adaptive solution        *
 c     *     process for the static analysis of a load step           *
@@ -15,22 +12,29 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine adapt_check( scaling_adapt, process_type, step )
+      subroutine adapt_check( scaling_adapt, process_type, step, 
+     &                        iout )
       use adaptive_steps
-      implicit integer (a-z)
+      implicit none
 c
-      logical local_debug
-#dbl      double precision
-#sgl      real
-     & min_fact, start_scale, end_scale, incr_scale, start, zero, one,
-     & scaling_adapt
+c              parameters
+c
+      integer :: process_type, step, iout
+#dbl      double precision :: scaling_adapt
+#sgl      real :: scaling_adapt
+c
+c              locals
+c
+      integer :: num_subs, i, j
+      logical :: local_debug
+#dbl      double precision ::
+#sgl      real ::
+     & start_scale, end_scale, incr_scale, start, zero, one
 c     
-      data min_fact, zero, one / 0.0625, 0.0, 1.0 /
+      data zero, one / 0.0d00, 1.0d00 /
       data local_debug / .false. /
 c
-      call iodevn( idummy, iout, dummy, 1 )
-c
-      go to ( 100, 200, 300 ), process_type
+      select case( process_type )
 c
 c                         process type - 1
 c                         ----------------
@@ -40,23 +44,27 @@ c            material models requested immediate step size cut.
 c            subdivide increment and start over for increment.
 c            we may be at the limit of subdivision now.
 c
- 100  continue
+      case( 1 )
       adapt_result = 1
       num_subs     = adapt_divisions
-      if ( adapt_disp_fact .le. min_fact ) then
+      if( adapt_disp_fact .le. adapt_min_fact ) then
            write(iout,*) ' '
            write(iout,9420) step, adaptive_stack(1,adapt_level),
      &                      adaptive_stack(2,adapt_level)
            write(iout,*) ' '
            adapt_result = 3
-           go to 1000
+           call adapt_check_a
+           return
       end if
 c
       start_scale  = adaptive_stack(1,adapt_level)
       end_scale    = adaptive_stack(2,adapt_level)
-#sgl      incr_scale   = (end_scale - start_scale) / real(num_subs)
-#dbl      incr_scale   = (end_scale - start_scale) / dble(num_subs)
+      incr_scale   = (end_scale - start_scale) / dble(num_subs)
 c
+      if( adapt_level+num_subs .ge. adapt_cols ) then
+        write(iout,9010) adapt_level+num_subs
+        call die_abort
+      end if
       do i = adapt_level+1, adapt_level+num_subs, 1
         adaptive_stack(3,i) = incr_scale
       end do
@@ -68,7 +76,7 @@ c
         start               = start + incr_scale
       end do
 c
-      if ( local_debug ) write (iout,9500)
+      if( local_debug ) write (iout,9500)
      &    adapt_level+num_subs, adaptive_stack(4,adapt_level+num_subs),
      &    adapt_level, adaptive_stack(4,adapt_level),
      &    adaptive_stack(4,adapt_level+num_subs)
@@ -98,7 +106,7 @@ c
      &                 incr_scale, adaptive_stack(1,adapt_level),
      &                 adaptive_stack(2,adapt_level)
       write(iout,*) ' '
-      go to 1000
+      call adapt_check_a
 c
 c                         process type - 2
 c                         ----------------
@@ -116,27 +124,34 @@ c            to the scaling_adapt.  If not, we need to multiply the
 c            stack value by the number of subincrements.
 c
 c
- 200  continue
+      case( 2 )
       adapt_result = 1
       num_subs     = adapt_divisions
-      if ( adapt_level .le. 1  ) go to 1000
+      if( adapt_level .le. 1  ) then
+          call adapt_check_a
+          return
+      end if
       end_scale = adaptive_stack(2,adapt_level)
-      if ( end_scale .eq. adaptive_stack(2,adapt_level-1) ) then
+      if( end_scale .eq. adaptive_stack(2,adapt_level-1) ) then
           adapt_level  = adapt_level - 2
-          if ( adapt_level .eq. 0 ) then
+          if( adapt_level .eq. 0 ) then
              scaling_adapt = adaptive_stack(4,1)
-             go to 1000
+             call adapt_check_a
+             return
           end if
           adaptive_stack(4,adapt_level) = num_subs *
      &               adaptive_stack(4,adapt_level)
-          if (local_debug )
+          if( local_debug )
      &        write (iout,9510) adapt_level, num_subs,
      &        adaptive_stack(4,adapt_level), num_subs
           scaling_adapt = adaptive_stack(4,adapt_level)
       else
           adapt_level  = adapt_level - 1
       end if
-      if ( adapt_level .le. 1 ) go to 1000
+      if( adapt_level .le. 1 ) then
+         call adapt_check_a
+         return
+      end if
 c
 c                  more work to do.
 c
@@ -148,14 +163,14 @@ c
       write(iout,9200) step, adaptive_stack(1,adapt_level),
      &                 adaptive_stack(2,adapt_level)
       write(iout,*) ' '
-      go to 1000
+      call adapt_check_a
 c
 c                         process type - 3
 c                         ----------------
 c
 c            initialize adaptive stack for step
 c
- 300  continue
+      case( 3 )
       adaptive_stack(1:adapt_rows,1:adapt_cols) = zero
       adaptive_stack(1,1) = zero
       adaptive_stack(2,1) = one
@@ -166,22 +181,20 @@ c
       adapt_temper_fact   = one
       adapt_load_fact     = one
       adapt_divisions     = 4
+      adapt_min_fact      = one / dble(adapt_divisions**2)
       scaling_adapt       = one
+c
+      case default
+        write(iout,9000)      
+        call die_abort
+      end select
+c      
       return
 c
-c
- 1000 continue
-      if ( .not. local_debug ) return
-      write(iout,*) '>> returning from adapt_check:'
-      write(iout,*) '     process type: ', process_type
-      write(iout,*) '     adapt_result: ', adapt_result
-      write(iout,9000) adapt_level, adapt_disp_fact, adapt_load_fact
-      write(iout,9100) (i, (adaptive_stack(j,i),j=1,4),i=1,20)
-c
-      return
-c
- 9000 format(' new level, disp_fact, load_fact: ',i3,3f10.4)
- 9100 format(1x,i4,4f12.4)
+ 9000 format( 1x,'>>>>> FATAL Error: adapt_check. bad process_type',
+     &   /,   1x,'                   job aborted.',/)
+ 9010 format( 1x,'>>>>> FATAL Error: adapt_check. table overflow: ',i5,
+     &   /,   1x,'                   job aborted.',/)
  9200 format(/,4x,'adaptive solution for load step: ',i5,
      & /,    7x,'now advancing step solution from: ',f7.4,' to: ',f7.4)
  9300 format(/,6x,'adaptive solution driver for step: ',i5,
@@ -201,8 +214,22 @@ c
      &               i3 / ' by to obtain the following ',
      &             'adaptive_stack = ',e16.6 )
 
+      contains
+c     ========
 
+      subroutine adapt_check_a
+c      
+      if ( .not. local_debug ) return
+      write(iout,*) '>> returning from adapt_check:'
+      write(iout,*) '     process type: ', process_type
+      write(iout,*) '     adapt_result: ', adapt_result
+      write(iout,9000) adapt_level, adapt_disp_fact, adapt_load_fact
+      write(iout,9100) (i, (adaptive_stack(j,i),j=1,4),i=1,20)
+      return
+c      
+ 9000 format(' new level, disp_fact, load_fact: ',i3,3f10.4)
+ 9100 format(1x,i4,4f12.4)
 c
-      end
-
+      end subroutine adapt_check_a
+      end subroutine adapt_check
 
