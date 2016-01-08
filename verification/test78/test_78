@@ -138,24 +138,21 @@ c
  output patran neutral file "panel_model.neut"
 c
  nonlinear analysis parameters
-  time step 0.00001
+   time step 0.00001
    solution technique sparse direct
-c   solution technique sparse iterative 
-c   solution technique hypre
-   hypre tolerance 0.000001
    maximum iterations 5 $  newton iterations
    minimum iterations 1
    convergence test norm res tol 0.01
+   extrapolate on
+   line search on details
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off
    bbar stabilization factor 0.0
    consistent q-matrix on
    trace solution on 
-   extrapolate off
    display tied mesh mpcs off
 c 
  output commands use file "get_output.inp" steps all
