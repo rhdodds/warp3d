@@ -378,6 +378,7 @@ c
    convergence test norm res tol .0001 max res load tol 0.001
    adaptive on
    extrapolate on
+   line search off details
    material messages off
    batch messages off
 c
