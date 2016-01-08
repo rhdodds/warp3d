@@ -19,7 +19,7 @@ $line = <infile>;
 $line = <infile>; 
 @parts = split( / +/, $line);
 #
-$answer = "0.044540";
+$answer = "0.044536";
 $partno = 3;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
