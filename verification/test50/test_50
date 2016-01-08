@@ -156,16 +156,16 @@ c
    maximum iterations 100
    minimum iterations 4
    convergence test norm res tol 0.0005 max res tol 0.005
+   extrapolate on
+   line search on details
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off
    consistent q-matrix on
    time step 1.0e06
    trace solution on
-   extrapolate off   $ recommended for growing crack
    binary packets on file 'fatigue_packets'
 c
  crack growth parameters
