@@ -19,7 +19,7 @@ find_line( 1, "  343  " );
 @parts = split( / +/, $line);
 
 #
-$answer = "105.246006";
+$answer = "105.245273";
 $partno = 4;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
