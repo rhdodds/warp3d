@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 9/14/2015 rhd              *
+c     *                   last modified : 11/25/2015 rhd             *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -135,9 +135,8 @@ c                       variables.
 c
 c
       read(fileno) prnres,updstf,nostif,halt,lkcomp,
-     &             linstf_nxt_step,
-     &             linmas,ifvcmp,predct,zrocon,growth_k_flag,
-     &             tkcomp,newtrn,lnkit1,lsldnm,accsol,incflg,
+     &             linmas,ifvcmp,zrocon,growth_k_flag,
+     &             tkcomp,newtrn,lsldnm,accsol,incflg,
      &             cnldcp,prlres,adaptive_flag,batch_messages,
      &             signal_flag, scalar_blocking, stname,
      &             qbar_flag, solver_out_of_core, solver_scr_dir,
@@ -149,7 +148,10 @@ c
      &             time_assembly, parallel_assembly_allowed,
      &             parallel_assembly_used,
      &             distributed_stiffness_used, nonlocal_analysis,
-     &             umat_serial, umat_used, asymmetric_assembly
+     &             umat_serial, umat_used, asymmetric_assembly,
+     &             extrapolate, extrap_off_next_step,
+     &             divergence_check, diverge_check_strict,
+     &             line_search, ls_details
       read(fileno) sparse_stiff_file_name, packet_file_name
       call chk_data_key( fileno, 1, 1 )
 c
@@ -164,7 +166,8 @@ c
      &             killed_ele_pls_work,hypre_tol,threshold,filter,
      &             loadbal, start_assembly_step,
      &             assembly_total, truncation, relax_wt,
-     &             relax_outer_wt, mg_threshold
+     &             relax_outer_wt, mg_threshold, ls_min_step_length, 
+     &             ls_max_step_length, ls_rho, ls_slack_tol
       call chk_data_key( fileno, 1, 2 )
 c
 c
@@ -655,7 +658,6 @@ c
       newmas = .false.
       newcns = .false.
       newstf = .false.
-      force_k_update = 1
 c
 c                       initialize necessary arrays. cdest, edest,
 c                       pbar.
@@ -1018,15 +1020,14 @@ c                      process [D] (i.e. cep) blocks
 c                      -----------------------------
 c
         block_size = span * ngp * cep_size
-c
         allocate( cep_blocks(blk)%vector(block_size),
-     &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
-           write(out,9900)
-           write(out,9910) 5
-           call die_abort
-           stop
-        end if
+     &             stat = alloc_stat )
+          if ( alloc_stat .ne. 0 ) then
+             write(out,9900)
+             write(out,9910) 5
+             call die_abort
+             stop
+          end if
 c
         if ( proc_type .eq. 1 )
      &         call ro_zero_vec( cep_blocks(blk)%vector(1), block_size )
@@ -2711,7 +2712,7 @@ c     *               subroutine read_alloc_cry                      *
 c     *                                                              *
 c     *                    written by : mcm                          *
 c     *                                                              *
-c     *                last modified : 8/16/12                       *
+c     *                last modified : 12/23/2105 rhd                *
 c     *                                                              *
 c     *      Read the crystal data from file while allocating the    *
 c     *      appropriate structures.                                 *
@@ -2721,7 +2722,7 @@ c
       subroutine read_alloc_cry( fileno )
       use crystal_data, only: c_array,data_offset,angle_input,
      &      crystal_input, srequired, nangles, simple_angles,
-     &      mc_array
+     &      mc_array, defined_crystal 
       implicit integer (a-z)
 $add common.main
       integer, intent(in) :: fileno
@@ -2730,45 +2731,40 @@ c
 c
       read(fileno) defined_crystal
 c
-      if (defined_crystal) then
+      if( defined_crystal ) then
+        read(fileno) cry_multiplier
+        read(fileno) c_array
+        read(fileno) nelem
+        read(fileno) mxcry
+        if( .not. allocated(data_offset) ) then
+            allocate( data_offset(noelem) )
+        end if
+        if( .not. allocated(angle_input) ) then
+            allocate( angle_input(nelem,mxcry,3) )
+        end if
+        if( .not. allocated(crystal_input) ) then
+            allocate( crystal_input(nelem,mxcry) )
+        end if
+        read(fileno) data_offset
+        read(fileno) angle_input
+        read(fileno) crystal_input
+      end if
 c
-      read(fileno) cry_multiplier
-c
-      read(fileno) c_array
-      read(fileno) nelem
-      read(fileno) mxcry
-
-      if (.not. allocated(data_offset)) then
-            allocate(data_offset(noelem))
-      end if
-      if (.not. allocated(angle_input)) then
-            allocate(angle_input(nelem,mxcry,3))
-      end if
-      if (.not. allocated(crystal_input)) then
-            allocate(crystal_input(nelem,mxcry))
-      end if
-
-      read(fileno) data_offset
-      read(fileno) angle_input
-      read(fileno) crystal_input
-
-
-      end if
-
       read(fileno) srequired
-
-      if (srequired) then
+c
+      if( srequired ) then
         read(fileno) nangles
-        if (.not. allocated(simple_angles)) then
-          allocate(simple_angles(nangles,3))
+        if( .not. allocated(simple_angles) ) then
+          allocate( simple_angles(nangles,3) )
         end if
         read(fileno) simple_angles
-        if (.not. allocated(mc_array)) then
-          allocate(mc_array(noelem,max_crystals))
+        if( .not. allocated(mc_array) ) then
+          allocate( mc_array(noelem,max_crystals) )
         end if
         read(fileno) mc_array
       end if
-
+c
+      return
       end subroutine
 
 
