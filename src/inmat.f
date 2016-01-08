@@ -4,7 +4,7 @@ c     *                      subroutine inmat                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/22/2015 rhd              *
+c     *                   last modified : 1/3/2016 rhd               *
 C     *                                                              *
 C     *     input of properties of the materials in the material     *
 c     *     library for the current problem.                         *
@@ -1053,7 +1053,6 @@ c
  600  continue
       matprp(9,matnum)= 6
       creep_model_used = .true.
-c      call inmat_creep( matprp(1,matnum), lmtprp(1,matnum)  )
       go to 210
  605  continue
       if( numr(matprp(80,matnum)) ) then
@@ -1390,6 +1389,8 @@ c *                                                                     *
 c ***********************************************************************
 c
  2100 continue
+      write(*,*) '... model not yet included in newest WARP3D'
+      call die_abort
       matprp(9, matnum) = 11
       call inmat_inter( matnum)
       go to 9998
