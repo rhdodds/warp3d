@@ -284,6 +284,134 @@ c
 c
        return
        end
+c     ****************************************************************
+c     *                                                              *
+c     *                     subroutine get_radius                    *
+c     *                                                              *
+c     *                       written by: gvt                        *
+c     *                   last modified : 09/28/2015 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+c         for axisymmetric elements, compute the radius to the current
+c         gauss point for each element in the block.  The radius is
+c         used for the hoop strain = u/r, and in the summation of the
+c         element stiffness matrix. Use the first nnode values in ce()
+c         for x=radial coordinates.
+c
+c         Variables:
+c
+c          nnode = number of nodes
+c          span  = number of elements in the block
+c          mxvl  = maximum number of elements in a block
+c          rad() = radius to the current Gauss point for each element
+c                  in the current block. Using the shape functions
+c                  and node coordinates, the radius is given by:
+c                  r = Sum[n(i)*x(i)], i=1,nnode where n(i) =
+c                  shape functions, x(i) = x=radial coordinate
+c          n()   = element shape functions, already evaluated at the curent
+c                  gauss integration point
+c          ce()  = matrix of node coordinates, the first nnode columns
+c                  contain the x=radial coordinates
+c
+      subroutine get_radius( rad, nnode, span, n, ce, mxvl )
+      implicit none
+      integer :: nnode, span, mxvl
+#dbl      double precision ::
+#sgl      real ::
+     &         rad(*), n(*), ce(mxvl,*)
+c
+      integer i,j
+#dbl      double precision
+#sgl      real
+     &         zero
+      data zero / 0.0d00 /
+c
+      do i = 1, span
+         rad(i) = zero
+      end do
+c
+      do j = 1, nnode
+          do i = 1, span
+            rad(i) = rad(i) + n(j)*ce(i,j)
+          end do
+      end do
+c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                     Subroutine adjust_cnst                   *
+c     *                                                              *
+c     *                       written by: gvt                        *
+c     *                   last modified : 08/25/98                   *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+c         Include other scalars with the linear material matrix required for
+c         axisymmetric or planar elements.
+c
+c         For triangular elements, the correct area is given by
+c         0.5*|J|.
+c
+c         For axisymmetric elements, include the 2*pi*radius scalar term
+c         in the element stiffness summation.
+c
+c         Determine the correct scalar value and then multiply all the
+c         terms in the material matrix [D] = cep_block.
+c
+c         Variables:
+c
+c         elem_type = integer flag for the element type, should get one of
+c                     8=tri6, 10=axiquad8, 11=axitri6
+c         nstr  = number of strains, should be 6
+c         mxvl  = maximum number of elements in a block
+c         span  = number of elements in the block
+c         rad() = radius to the current Gauss point for each element in the
+c                 current block.
+c         cep() = material matrix, should already have been updated, extra
+c                 scalar values in the Gauss integration
+c                 loop are included here into the material matrix.
+c
+      subroutine adjust_cnst( elem_type, nstr, mxvl, span, rad, cep )
+      implicit none
+c
+c                  parameters
+c
+      integer elem_type, nstr, mxvl, span
+#dbl      double precision
+#sgl      real
+     &         rad(*),
+     &         cep(mxvl,nstr,*)
+c
+c                   local variables
+c
+      integer i, row
+c
+#dbl      double precision
+#sgl      real
+     &         scalar
+c
+c                    the element type determines the scalar
+c                    multiple to get the correct adjustment to |J|.
+c
+      call adjust_scalar_weights( elem_type, scalar )
+      do row = 1, nstr
+          do i = 1, span
+              cep(i,row,1) = scalar*cep(i,row,1)
+              cep(i,row,2) = scalar*cep(i,row,2)
+              cep(i,row,3) = scalar*cep(i,row,3)
+              cep(i,row,4) = scalar*cep(i,row,4)
+              cep(i,row,5) = scalar*cep(i,row,5)
+              cep(i,row,6) = scalar*cep(i,row,6)
+          end do
+      end do
+c
+      return
+      end
+
+
 
 
 
