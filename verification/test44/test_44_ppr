@@ -121,7 +121,8 @@ c
    convergence test norm res tol 0.001 max resid tol 0.1
    time step 1.0e06
    trace solution on
-   extrapolate off
+   extrapolate on
+   line search on details
    material messages off
    consistent q-matrix on
    bbar stabilization factor 0.0
