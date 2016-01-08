@@ -312,6 +312,7 @@ c
    solution technique direct sparse
    maximum iterations 20
    convergence test norm res tol 0.001
+   line search on details
    adaptive on
    time step 100000
    trace solution on
