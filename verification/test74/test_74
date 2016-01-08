@@ -64,13 +64,14 @@ loading test
    maximum iterations 20
    minimum iterations 1
    convergence test norm res tol 0.01
+   extrapolate on
+   line search on details
    nonconvergent solutions stop
    adaptive on
    linear stiffness for iteration one off
    bbar stabilization factor 0.0
    consistent q-matrix off
    time step 1.0e06
-   extrapolate off
 !
 !  only run 10 steps to reduce effort
 !
