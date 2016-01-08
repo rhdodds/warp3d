@@ -3936,6 +3936,7 @@ c
    adaptive solution on
    maximum iterations 5
    convergence test norm res tol 0.005
+   line search on details
    time step 1000000
    trace solution on
    extrapolate on
