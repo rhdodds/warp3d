@@ -2,7 +2,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- cyclic plasticity model            * 
 c *                                                                 *
-c *        mm05.f  -- last modified 5/29/09 by kbc                  *    
+c *        mm05.f  -- last modified z5/29/09 by kbc                 *    
 c *                   more comments added 8/28/09 by rhd            *  
 c *                                                                 *
 c *******************************************************************
@@ -1558,9 +1558,9 @@ c *******************************************************************
 c
 c
       subroutine cnst5( 
-     &  span, felem, gpn, first, iter, iout, mxvl, nstrn, 
-     &  weight, e_vec, nu_vec, mm_props, sig_trial, history_n,
-     &  history_np1, stress_np1, dmat, det_jac_block,
+     &  span, felem, gpn, iter, iout, mxvl, nstrn, 
+     &  e_vec, nu_vec, mm_props, sig_trial, history_n,
+     &  history_np1, stress_np1, dmat, 
      &  h_gp_np1, beta_gp_np1, delta_gp_np1, tau )
       implicit none
 c
@@ -1570,17 +1570,13 @@ c
       integer
      &  span, felem, gpn, iter, iout, mxvl, nstrn
 c
-      logical
-     &   first
-c     
 #dbl      double precision
 #sgl      real
-     & weight, mm_props(mxvl,6), e_vec(mxvl), nu_vec(mxvl),
+     & mm_props(mxvl,6), e_vec(mxvl), nu_vec(mxvl),
      & sig_trial(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
-     & det_jac_block(mxvl), stress_np1(mxvl,nstrn),
-     & h_gp_np1(mxvl), beta_gp_np1(mxvl), delta_gp_np1(mxvl),
-     & tau(mxvl)
+     & stress_np1(mxvl,nstrn), h_gp_np1(mxvl), beta_gp_np1(mxvl), 
+     & delta_gp_np1(mxvl), tau(mxvl)
 c
 c               description of parameters
 c               -------------------------
@@ -1590,10 +1586,6 @@ c     iter              : current newton iteration number. iter 1 is
 c                         for application of the "real" load increment.
 c     felem             : first element of the current block
 c     gpn               : gauss point number being processed for block
-c     first             : logical flag indicating if this
-c                         is the very first call to the routine
-c                         the linear elastic [d] is returned
-c                         whenever first = .true.
 c     mxvl              : maximum no. elements per block
 c     nstrn             : number of strain-stress components (=6)
 c     span              : number of elements in current block
@@ -1609,11 +1601,8 @@ c     history_n         : history values at start of load step (n) for all
 c                         elements in block for this gauss point
 c     history_np1       : history values at end of load step (n+1) for all
 c                         elements in block for this gauss point
-c     det_jac_block     : |J| at this gauss point for each element in
-c                         block
 c (!) stress_np1        : current estimate of 6 stress components for
 c                         end of step (see ordering below)
-c     weight            : integration point weight factor
 c (*) dmat              : 6x6 (symmetric) tangent (consistent) for
 c                         this gauss point for each element of block
 c                         (see stress ordering below) 
@@ -1642,19 +1631,13 @@ c
 c   stress ordering (at n and n+1):
 c     sig-xx, sig-yy, sig-zz, tau-xy, tau-yz, tau-xz
 c   
-c
-c   Note: warp3d expects all dmat[] values to be multiplied by
-c         weight * det_jac_block(i), where i = relative
-c         element number of block
-c
-c
 c                      local variables
 c                      ----------------
 c
-      integer i, iword(2), state, l, m , j, t
-      logical yield(mxvl), debug
-#dbl      double precision
-#sgl      real 
+      integer ::i, iword(2), state, l, m , j, t
+      logical :: yield(mxvl), debug
+#dbl      double precision ::
+#sgl      real ::
      &     c1, c2, c3, c4, fact, zero, one, two, dword,
      &     n(6), k, dk, H, dH, kappa, dkappa, beta, dbeta,
      &     ro, zeta, a, b, c, equiv(6), norm_equiv, g, bulk,
@@ -1662,45 +1645,39 @@ c
      &     gamma, lambda, aps, lg, temp, rt2third,
      &     three, four, mean_sig, type
 
-          data zero,one,two, twothird, onethird, half,
-     &         rt2third, three, four  /0.0, 1.0, 2.0,
-     &     0.66666666, 0.33333333, 0.5, 0.81649658, 3.0, 4.0 /
+       data zero,one,two, twothird, onethird, half,
+     &         rt2third, three, four  /0.0d0, 1.0d0, 2.0d0,
+     &     0.66666666d0, 0.33333333d0, 0.5d0, 0.81649658d0, 3.0d0,
+     &     4.0d0 /
 c
        equivalence(dword, iword)
 c
        type = mm_props(1,4)
 c
-c if GP model is indicated call subroutine for GP tangent and return
-c otherwise - compute tangent for FA model
+c                if GP model is indicated call subroutine for GP 
+c                tangent and return. otherwise - compute tangent 
+c                for FA model
 c
-       if(type .lt. zero ) then
-c
+       if( type .lt. zero ) then
         call  cnst5_gp( 
-     &  span, felem, gpn, first, iter, iout, mxvl, nstrn, 
-     &  weight, e_vec, nu_vec, h_gp_np1, beta_gp_np1, 
+     &  span, felem, gpn, iter, iout, mxvl, nstrn, 
+     &  e_vec, nu_vec, h_gp_np1, beta_gp_np1, 
      &  delta_gp_np1, tau, sig_trial, history_n, history_np1, 
-     &  stress_np1, dmat, det_jac_block )
-c
+     &  stress_np1, dmat )
         return
        end if
 c
-c       write(*,*) 'fa tangent'
-c
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
          dword = history_np1(i,4)
          state = iword(1)
-         if ( state .eq. 1 ) then
-            yield(i) = .true.
-         else
-            yield(i) = .false.
-         end if
+         yield(i) = .false.
+         if( state .eq. 1 ) yield(i) = .true.
       end do
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span      
-c  
-       if( .not. yield(i) ) then
-c
-c          write(*,*) 'fa elastic tangent'
+         if( yield(i) ) cycle
          dmat(i,1,4) = zero
          dmat(i,1,5) = zero
          dmat(i,1,6) = zero
@@ -1726,8 +1703,7 @@ c          write(*,*) 'fa elastic tangent'
          dmat(i,6,4) = zero
          dmat(i,6,5) = zero
 c
-         fact = weight * det_jac_block(i)
-         c1 = (e_vec(i)/((one+nu_vec(i))*(one-two*nu_vec(i))))*fact
+         c1 = e_vec(i)/((one+nu_vec(i))*(one-two*nu_vec(i)))
          c2 = (one-nu_vec(i))*c1   
          c3 = ((one-two*nu_vec(i))/two)*c1
          c4 = nu_vec(i)*c1
@@ -1744,146 +1720,146 @@ c
          dmat(i,3,1)= c4
          dmat(i,2,3)= c4
          dmat(i,3,2)= c4
+      end do         
 c        
-        else
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span      
+       if( .not. yield(i) ) cycle
+       fact = 1.0d00
+       g     = e_vec(i)/(two*(1+nu_vec(i)))
+       bulk  = e_vec(i)/(three*(one-two*nu_vec(i)))
+       Q_bar = mm_props(i,1)
+       b     = mm_props(i,2)
+       H_bar = mm_props(i,3)
+       gamma = mm_props(i,5)
+c       
+       lambda = history_np1(i,1)
+       k      = history_np1(i, 2)
+       aps    = history_np1(i,3)
+       H      = history_np1(i, 5)
+       dk     = rt2third*b*Q_bar*(exp( -b*aps ))
+       dH     = zero
+       lg     = one + lambda*gamma
 c
-            fact = weight * det_jac_block(i)
-            g     = e_vec(i)/(two*(1+nu_vec(i)))
-            bulk  = e_vec(i)/(three*(one-two*nu_vec(i)))
-            Q_bar = mm_props(i,1)
-            b     = mm_props(i,2)
-            H_bar = mm_props(i,3)
-            gamma = mm_props(i,5)
-c            
-            lambda = history_np1(i,1)
-            k      = history_np1(i, 2)
-            aps    = history_np1(i,3)
-            H      = history_np1(i, 5)
-            dk     = rt2third*b*Q_bar*(exp( -b*aps ))
-            dH     = zero
-            lg     = one + lambda*gamma
+       kappa = two*g*lambda/k
+       beta  = lambda*H/k
+       ro    = lg*(one+kappa)+beta
 c
-            kappa = two*g*lambda/k
-            beta  = lambda*H/k
-            ro    = lg*(one+kappa)+beta
-c
-            mean_sig = ( stress_np1(i,1)+stress_np1(i,2) +
+       mean_sig = ( stress_np1(i,1)+stress_np1(i,2) +
      &                    stress_np1(i,3) )/three
 c
-             equiv(1) = stress_np1(i,1)- mean_sig - history_np1(i,6)
-             equiv(2) = stress_np1(i,2)- mean_sig - history_np1(i,7)
-             equiv(3) = stress_np1(i,3)- mean_sig - history_np1(i,8)
-             equiv(4) = stress_np1(i,4)-history_np1(i,9)
-             equiv(5) = stress_np1(i,5)-history_np1(i,10)
-             equiv(6) = stress_np1(i,6)-history_np1(i,11)
+       equiv(1) = stress_np1(i,1)- mean_sig - history_np1(i,6)
+       equiv(2) = stress_np1(i,2)- mean_sig - history_np1(i,7)
+       equiv(3) = stress_np1(i,3)- mean_sig - history_np1(i,8)
+       equiv(4) = stress_np1(i,4)-history_np1(i,9)
+       equiv(5) = stress_np1(i,5)-history_np1(i,10)
+       equiv(6) = stress_np1(i,6)-history_np1(i,11)
 c
-            norm_equiv = sqrt(equiv(1)**2+equiv(2)**2+equiv(3)**2 +
+       norm_equiv = sqrt(equiv(1)**2+equiv(2)**2+equiv(3)**2 +
      &              two*(equiv(4)**2+equiv(5)**2+equiv(6)**2 ))
 c
-            n(1) = equiv(1)/norm_equiv
-            n(2) = equiv(2)/norm_equiv
-            n(3) = equiv(3)/norm_equiv
-            n(4) = equiv(4)/norm_equiv
-            n(5) = equiv(5)/norm_equiv
-            n(6) = equiv(6)/norm_equiv
+       n(1) = equiv(1)/norm_equiv
+       n(2) = equiv(2)/norm_equiv
+       n(3) = equiv(3)/norm_equiv
+       n(4) = equiv(4)/norm_equiv
+       n(5) = equiv(5)/norm_equiv
+       n(6) = equiv(6)/norm_equiv
 c
-            dkappa = two*g*(k-lambda*dk)/k**2
-            dbeta  = H/k + (lambda/k**2)*(dH*k - H*dk)
+       dkappa = two*g*(k-lambda*dk)/k**2
+       dbeta  = H/k + (lambda/k**2)*(dH*k - H*dk)
 c
-            temp = n(1)*sig_trial(i,1) + 
-     &             n(2)*sig_trial(i,2) +
-     &             n(3)*sig_trial(i,3) +
-     &         two*n(4)*sig_trial(i,4) +
-     &         two*n(5)*sig_trial(i,5) + 
-     &         two*n(6)*sig_trial(i,6)    
+       temp = n(1)*sig_trial(i,1) + 
+     &        n(2)*sig_trial(i,2) +
+     &        n(3)*sig_trial(i,3) +
+     &        two*n(4)*sig_trial(i,4) +
+     &        two*n(5)*sig_trial(i,5) + 
+     &        two*n(6)*sig_trial(i,6)    
 c
-            zeta   = (two*g*lg) / (dk + two*g + H + lambda*dH + 
-     &               gamma*(k + four*g*lambda + dk*lambda - temp))
+       zeta   = (two*g*lg) / (dk + two*g + H + lambda*dH + 
+     &           gamma*(k + four*g*lambda + dk*lambda - temp))
 c
-            a = two*g/ro*(lg+beta)
-            b = k*zeta/ro*(gamma*(kappa*(one+kappa) - lambda*dkappa )
-     &          + dbeta*kappa - beta*dkappa - dkappa ) 
-            c = gamma*zeta*kappa/ro  
+       a = two*g/ro*(lg+beta)
+       b = k*zeta/ro*(gamma*(kappa*(one+kappa) - lambda*dkappa )
+     &     + dbeta*kappa - beta*dkappa - dkappa ) 
+       c = gamma*zeta*kappa/ro  
 c
-c    diagonal terms
+c                      diagonal terms
 c
-         mean_n  = onethird*(n(1) + n(2) + n(3) )
-         dmat(i,1,1)= (bulk + twothird*a + (b*n(1)-c*sig_trial(i,1))*
-     &                                     (n(1)-mean_n) )*fact
-         dmat(i,2,2)= (bulk + twothird*a + (b*n(2)-c*sig_trial(i,2))*
-     &                                     (n(2)-mean_n) )*fact
-         dmat(i,3,3)= (bulk + twothird*a + (b*n(3)-c*sig_trial(i,3))*
-     &                                     (n(3)-mean_n) )*fact
-         dmat(i,4,4)= (half*a + (b*n(4) - c*sig_trial(i,4))*n(4))*fact
-         dmat(i,5,5)= (half*a + (b*n(5) - c*sig_trial(i,5))*n(5))*fact
-         dmat(i,6,6)= (half*a + (b*n(6) - c*sig_trial(i,6))*n(6))*fact
+       mean_n  = onethird*(n(1) + n(2) + n(3) )
+       dmat(i,1,1) = (bulk + twothird*a + (b*n(1)-c*sig_trial(i,1))*
+     &                                     (n(1)-mean_n) )
+       dmat(i,2,2) = (bulk + twothird*a + (b*n(2)-c*sig_trial(i,2))*
+     &                                     (n(2)-mean_n) )
+       dmat(i,3,3) = (bulk + twothird*a + (b*n(3)-c*sig_trial(i,3))*
+     &                                     (n(3)-mean_n) )
+       dmat(i,4,4) = (half*a + (b*n(4) - c*sig_trial(i,4))*n(4))
+       dmat(i,5,5) = (half*a + (b*n(5) - c*sig_trial(i,5))*n(5))
+       dmat(i,6,6) = (half*a + (b*n(6) - c*sig_trial(i,6))*n(6))
 c
-c   off diagonal terms, symmetrized
+c                     off diagonal terms, symmetrized
 c
-         dmat(i,1,2) = fact*(bulk - onethird*a + 
+       dmat(i,1,2) = (bulk - onethird*a + 
      &                half*((b*n(1)-c*sig_trial(i,1))*(n(2)-mean_n)+
      &                      (b*n(2)-c*sig_trial(i,2))*(n(1)-mean_n)))
-         dmat(i,1,3) = fact*(bulk - onethird*a + 
+       dmat(i,1,3) = (bulk - onethird*a + 
      &                half*((b*n(1)-c*sig_trial(i,1))*(n(3)-mean_n)+
      &                      (b*n(3)-c*sig_trial(i,3))*(n(1)-mean_n)))
-         dmat(i,1,4)=fact*half*( (b*n(1) - c*sig_trial(i,1))*n(4) +
-     &                    (b*n(4) - c*sig_trial(i,4))*(n(1)-mean_n))
-         dmat(i,1,5)=fact*half*( (b*n(1) - c*sig_trial(i,1))*n(5) +
-     &                    (b*n(5) - c*sig_trial(i,5))*(n(1)-mean_n))
-         dmat(i,1,6)=fact*half*( (b*n(1) - c*sig_trial(i,1))*n(6) +
-     &                    (b*n(6) - c*sig_trial(i,6))*(n(1)-mean_n))
+       dmat(i,1,4) = half*( (b*n(1) - c*sig_trial(i,1))*n(4) +
+     &                  (b*n(4) - c*sig_trial(i,4))*(n(1)-mean_n))
+       dmat(i,1,5) = half*( (b*n(1) - c*sig_trial(i,1))*n(5) +
+     &                  (b*n(5) - c*sig_trial(i,5))*(n(1)-mean_n))
+       dmat(i,1,6) = half*( (b*n(1) - c*sig_trial(i,1))*n(6) +
+     &                  (b*n(6) - c*sig_trial(i,6))*(n(1)-mean_n))
 c
-         dmat(i,2,3) = fact*(bulk - onethird*a + 
-     &                half*((b*n(2)-c*sig_trial(i,2))*(n(3)-mean_n)+
-     &                      (b*n(3)-c*sig_trial(i,3))*(n(2)-mean_n)))
-         dmat(i,2,4)=fact*half*((b*n(2) - c*sig_trial(i,2))*n(4) +
-     &                   (b*n(4) - c*sig_trial(i,4))*(n(2)-mean_n))
-         dmat(i,2,5)=fact*half*((b*n(2) - c*sig_trial(i,2))*n(5) +
-     &                   (b*n(5) - c*sig_trial(i,5))*(n(2)-mean_n))
-         dmat(i,2,6)=fact*half*((b*n(2) - c*sig_trial(i,2))*n(6) +
-     &                   (b*n(6) - c*sig_trial(i,6))*(n(2)-mean_n))
+       dmat(i,2,3) = (bulk - onethird*a + 
+     &              half*((b*n(2)-c*sig_trial(i,2))*(n(3)-mean_n)+
+     &                    (b*n(3)-c*sig_trial(i,3))*(n(2)-mean_n)))
+       dmat(i,2,4) = half*((b*n(2) - c*sig_trial(i,2))*n(4) +
+     &                 (b*n(4) - c*sig_trial(i,4))*(n(2)-mean_n))
+       dmat(i,2,5) = half*((b*n(2) - c*sig_trial(i,2))*n(5) +
+     &                 (b*n(5) - c*sig_trial(i,5))*(n(2)-mean_n))
+       dmat(i,2,6) = half*((b*n(2) - c*sig_trial(i,2))*n(6) +
+     &                 (b*n(6) - c*sig_trial(i,6))*(n(2)-mean_n))
 c
-         dmat(i,3,4)=fact*half*((b*n(3) - c*sig_trial(i,3))*n(4) +
-     &                   (b*n(4) - c*sig_trial(i,4))*(n(3)-mean_n))
+       dmat(i,3,4) = half*((b*n(3) - c*sig_trial(i,3))*n(4) +
+     &                 (b*n(4) - c*sig_trial(i,4))*(n(3)-mean_n))
 
-         dmat(i,3,5)=fact*half*((b*n(3) - c*sig_trial(i,3))*n(5) +
-     &                   (b*n(5) - c*sig_trial(i,5))*(n(3)-mean_n))
+       dmat(i,3,5) = half*((b*n(3) - c*sig_trial(i,3))*n(5) +
+     &                 (b*n(5) - c*sig_trial(i,5))*(n(3)-mean_n))
 
-         dmat(i,3,6)=fact*half*((b*n(3) - c*sig_trial(i,3))*n(6) +
-     &                   (b*n(6) - c*sig_trial(i,6))*(n(3)-mean_n))
+       dmat(i,3,6) = half*((b*n(3) - c*sig_trial(i,3))*n(6) +
+     &                 (b*n(6) - c*sig_trial(i,6))*(n(3)-mean_n))
 c
-         dmat(i,4,5)=fact*half*((b*n(4) - c*sig_trial(i,4))*n(5) +
-     &                          (b*n(5) - c*sig_trial(i,5))*n(4))
-         dmat(i,4,6)=fact*half*((b*n(4) - c*sig_trial(i,4))*n(6) +
-     &                          (b*n(6) - c*sig_trial(i,6))*n(4))
+       dmat(i,4,5) = half*((b*n(4) - c*sig_trial(i,4))*n(5) +
+     &                        (b*n(5) - c*sig_trial(i,5))*n(4))
+       dmat(i,4,6) = half*((b*n(4) - c*sig_trial(i,4))*n(6) +
+     &                        (b*n(6) - c*sig_trial(i,6))*n(4))
 c
-         dmat(i,5,6)=fact*half*((b*n(5) - c*sig_trial(i,5))*n(6) +
-     &                          (b*n(6) - c*sig_trial(i,6))*n(5))
-
+       dmat(i,5,6) = half*((b*n(5) - c*sig_trial(i,5))*n(6) +
+     &                        (b*n(6) - c*sig_trial(i,6))*n(5))
 c
-c   symmetry
+c                  symmetry
 c
-         dmat(i,2,1) = dmat(i,1,2)
-         dmat(i,3,1) = dmat(i,1,3)
-         dmat(i,4,1) = dmat(i,1,4)
-         dmat(i,5,1) = dmat(i,1,5)
-         dmat(i,6,1) = dmat(i,1,6)
+       dmat(i,2,1) = dmat(i,1,2)
+       dmat(i,3,1) = dmat(i,1,3)
+       dmat(i,4,1) = dmat(i,1,4)
+       dmat(i,5,1) = dmat(i,1,5)
+       dmat(i,6,1) = dmat(i,1,6)
 c
-         dmat(i,3,2) = dmat(i,2,3)
-         dmat(i,4,2) = dmat(i,2,4)
-         dmat(i,5,2) = dmat(i,2,5)
-         dmat(i,6,2) = dmat(i,2,6)
+       dmat(i,3,2) = dmat(i,2,3)
+       dmat(i,4,2) = dmat(i,2,4)
+       dmat(i,5,2) = dmat(i,2,5)
+       dmat(i,6,2) = dmat(i,2,6)
 c
-         dmat(i,4,3) = dmat(i,3,4)
-         dmat(i,5,3) = dmat(i,3,5)
-         dmat(i,6,3) = dmat(i,3,6)
+       dmat(i,4,3) = dmat(i,3,4)
+       dmat(i,5,3) = dmat(i,3,5)
+       dmat(i,6,3) = dmat(i,3,6)
 c
-         dmat(i,5,4) = dmat(i,4,5)
-         dmat(i,6,4) = dmat(i,4,6)
+       dmat(i,5,4) = dmat(i,4,5)
+       dmat(i,6,4) = dmat(i,4,6)
 c
-         dmat(i,6,5) = dmat(i,5,6)
+       dmat(i,6,5) = dmat(i,5,6)
 c
-         end if
       end do
 c
       return 
@@ -3610,34 +3586,30 @@ c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity model       *
 c *                                                                 *
 c *        subroutine cnst5_gp -- computes consistent tangent       * 
-c *             -- last modified  7/11/11 by jcs                    *
+c *             -- last modified 1/1/2016 rhd                       *
 c *                                                                 *
 c *******************************************************************
 c
 c
       subroutine cnst5_gp( 
-     &  span, felem, gpn, first, iter, iout, mxvl, nstrn, 
-     &  weight, e_vec_np1, nu_vec_np1, h_gp_np1, beta_gp_np1, 
+     &  span, felem, gpn, iter, iout, mxvl, nstrn, 
+     &  e_vec_np1, nu_vec_np1, h_gp_np1, beta_gp_np1, 
      &  delta_gp_np1, tau, sig_trial, history_n, history_np1, 
-     &  stress_np1, dmat, det_jac_block )
+     &  stress_np1, dmat )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
-     &  span, felem, gpn, iter, iout, mxvl, nstrn
-c
-      logical
-     &   first
+      integer :: span, felem, gpn, iter, iout, mxvl, nstrn
 c     
-#dbl      double precision
-#sgl      real
-     & weight, e_vec_np1(mxvl), nu_vec_np1(mxvl), h_gp_np1(mxvl), 
+#dbl      double precision ::
+#sgl      real ::
+     & e_vec_np1(mxvl), nu_vec_np1(mxvl), h_gp_np1(mxvl), 
      & beta_gp_np1(mxvl), delta_gp_np1(mxvl), tau(mxvl),
      & sig_trial(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
-     & det_jac_block(mxvl), stress_np1(mxvl,nstrn)
+     & stress_np1(mxvl,nstrn)
 c
 c               description of parameters
 c               -------------------------
@@ -3647,10 +3619,6 @@ c     iter              : current newton iteration number. iter 1 is
 c                         for application of the "real" load increment.
 c     felem             : first element of the current block
 c     gpn               : gauss point number being processed for block
-c     first             : logical flag indicating if this
-c                         is the very first call to the routine
-c                         the linear elastic [d] is returned
-c                         whenever first = .true.
 c     mxvl              : maximum no. elements per block
 c     nstrn             : number of strain-stress components (=6)
 c     span              : number of elements in current block
@@ -3707,19 +3675,13 @@ c
 c   stress ordering (at n and n+1):
 c     sig-xx, sig-yy, sig-zz, tau-xy, tau-yz, tau-xz
 c   
-c
-c   Note: warp3d expects all dmat[] values to be multiplied by
-c         weight * det_jac_block(i), where i = relative
-c         element number of block
-c
-c
 c                      local variables
 c                      ----------------
 c
-      integer i, iword(2), state, l, m , j, t
-      logical yield(mxvl), debug
-#dbl      double precision
-#sgl      real 
+      integer :: i, iword(2), state, l, m , j, t
+      logical :: yield(mxvl), debug
+#dbl      double precision ::
+#sgl      real ::
      &     c1, c2, c3, c4, fact, dword,
      &     n(6), equiv(6), norm_equiv_np1, g, bulk,
      &     A_GP, C_GP, mean_n, norm_equiv_n, lambda,
@@ -3729,198 +3691,177 @@ c
      &     three, four
 
           data zero, one, two, twothird, onethird, half,
-     &         rt2third, three, four  /0.0, 1.0, 2.0,
-     &     0.66666666, 0.33333333, 0.5, 0.81649658, 3.0, 4.0 /
+     &         rt2third, three, four  /0.0d0, 1.0d0, 2.0d0,
+     &     0.66666666d0, 0.33333333d0, 0.5d0, 0.81649658d0, 3.0d0,
+     &     4.0d0 /
 c
        equivalence(dword, iword)
 c
-c       write(iout,*) 'inside cnst5_gp'
-c
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
          dword = history_np1(i,4)
          state = iword(1)
-         if ( state .eq. 1 ) then
-            yield(i) = .true.
-         else
-            yield(i) = .false.
-         end if
+         yield(i) = .false.
+         if( state .eq. 1 ) yield(i) = .true.
        end do
 c
-      do i = 1, span
-c       
-       if ( .not. yield(i) ) then
-          dmat(i,1,4) = zero
-          dmat(i,1,5) = zero
-          dmat(i,1,6) = zero
-          dmat(i,2,4) = zero
-          dmat(i,2,5) = zero
-          dmat(i,2,6) = zero
-          dmat(i,3,4) = zero
-          dmat(i,3,5) = zero
-          dmat(i,3,6) = zero
-          dmat(i,4,1) = zero
-          dmat(i,4,2) = zero
-          dmat(i,4,3) = zero
-          dmat(i,4,5) = zero
-          dmat(i,4,6) = zero
-          dmat(i,5,1) = zero
-          dmat(i,5,2) = zero
-          dmat(i,5,3) = zero
-          dmat(i,5,4) = zero
-          dmat(i,5,6) = zero
-          dmat(i,6,1) = zero
-          dmat(i,6,2) = zero
-          dmat(i,6,3) = zero
-          dmat(i,6,4) = zero
-          dmat(i,6,5) = zero
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span      
+       if( yield(i) ) cycle
+       dmat(i,1,4) = zero
+       dmat(i,1,5) = zero
+       dmat(i,1,6) = zero
+       dmat(i,2,4) = zero
+       dmat(i,2,5) = zero
+       dmat(i,2,6) = zero
+       dmat(i,3,4) = zero
+       dmat(i,3,5) = zero
+       dmat(i,3,6) = zero
+       dmat(i,4,1) = zero
+       dmat(i,4,2) = zero
+       dmat(i,4,3) = zero
+       dmat(i,4,5) = zero
+       dmat(i,4,6) = zero
+       dmat(i,5,1) = zero
+       dmat(i,5,2) = zero
+       dmat(i,5,3) = zero
+       dmat(i,5,4) = zero
+       dmat(i,5,6) = zero
+       dmat(i,6,1) = zero
+       dmat(i,6,2) = zero
+       dmat(i,6,3) = zero
+       dmat(i,6,4) = zero
+       dmat(i,6,5) = zero
 c     
-          fact = weight * det_jac_block(i)
-          c1 = (e_vec_np1(i)/((one+nu_vec_np1(i)) * 
-     &         (one-two*nu_vec_np1(i))))*fact
-          c2 = (one-nu_vec_np1(i))*c1   
-          c3 = ((one-two*nu_vec_np1(i))/two)*c1
-          c4 = nu_vec_np1(i)*c1
+       c1 = e_vec_np1(i)/((one+nu_vec_np1(i)) * 
+     &         (one-two*nu_vec_np1(i)))
+       c2 = (one-nu_vec_np1(i))*c1   
+       c3 = ((one-two*nu_vec_np1(i))/two)*c1
+       c4 = nu_vec_np1(i)*c1
 c
-          dmat(i,1,1)= c2
-          dmat(i,2,2)= c2
-          dmat(i,3,3)= c2
-          dmat(i,4,4)= c3
-          dmat(i,5,5)= c3
-          dmat(i,6,6)= c3
-          dmat(i,1,2)= c4
-          dmat(i,1,3)= c4
-          dmat(i,2,1)= c4
-          dmat(i,3,1)= c4
-          dmat(i,2,3)= c4
-          dmat(i,3,2)= c4
+       dmat(i,1,1) = c2
+       dmat(i,2,2) = c2
+       dmat(i,3,3) = c2
+       dmat(i,4,4) = c3
+       dmat(i,5,5) = c3
+       dmat(i,6,6) = c3
+       dmat(i,1,2) = c4
+       dmat(i,1,3) = c4
+       dmat(i,2,1) = c4
+       dmat(i,3,1) = c4
+       dmat(i,2,3) = c4
+       dmat(i,3,2) = c4
+      end do          
 c     
-       else
-c
-          fact     = weight * det_jac_block(i)
-          g        = e_vec_np1(i)/(two*(one+nu_vec_np1(i)))
-          bulk     = e_vec_np1(i)/(three*(one-two*nu_vec_np1(i)))
-          del_n1   = twothird*delta_gp_np1(i)
-          beta_n1  = rt2third*beta_gp_np1(i)
-          H_n1     = twothird*h_gp_np1(i)
-          Hk_n1    = ( one - tau(i) )*H_n1
-          G1       = g+half*H_n1
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span      
+       if( .not. yield(i) ) cycle
+       fact     = 1.0d00
+       g        = e_vec_np1(i)/(two*(one+nu_vec_np1(i)))
+       bulk     = e_vec_np1(i)/(three*(one-two*nu_vec_np1(i)))
+       del_n1   = twothird*delta_gp_np1(i)
+       beta_n1  = rt2third*beta_gp_np1(i)
+       H_n1     = twothird*h_gp_np1(i)
+       Hk_n1    = ( one - tau(i) )*H_n1
+       G1       = g+half*H_n1
 c            
-          lambda   = history_np1(i,1)
-          k_n1     = history_np1(i,2)
-          dHi      = history_np1(i,14)
+       lambda   = history_np1(i,1)
+       k_n1     = history_np1(i,2)
+       dHi      = history_np1(i,14)
 c
-          norm_equiv_n = history_np1(i,5)
-          k_n          = history_np1(i,13)
+       norm_equiv_n = history_np1(i,5)
+       k_n          = history_np1(i,13)
 c
-          mean_sig = ( stress_np1(i,1)+stress_np1(i,2) +
+       mean_sig = ( stress_np1(i,1)+stress_np1(i,2) +
      &         stress_np1(i,3) )/three
 c
-          equiv(1) = stress_np1(i,1)-history_np1(i, 6)-mean_sig
-          equiv(2) = stress_np1(i,2)-history_np1(i, 7)-mean_sig
-          equiv(3) = stress_np1(i,3)-history_np1(i, 8)-mean_sig
-          equiv(4) = stress_np1(i,4)-history_np1(i, 9)
-          equiv(5) = stress_np1(i,5)-history_np1(i,10)
-          equiv(6) = stress_np1(i,6)-history_np1(i,11)
+       equiv(1) = stress_np1(i,1)-history_np1(i, 6)-mean_sig
+       equiv(2) = stress_np1(i,2)-history_np1(i, 7)-mean_sig
+       equiv(3) = stress_np1(i,3)-history_np1(i, 8)-mean_sig
+       equiv(4) = stress_np1(i,4)-history_np1(i, 9)
+       equiv(5) = stress_np1(i,5)-history_np1(i,10)
+       equiv(6) = stress_np1(i,6)-history_np1(i,11)
 c
-          norm_equiv_np1 = sqrt(equiv(1)**2+equiv(2)**2+equiv(3)**2 +
+       norm_equiv_np1 = sqrt(equiv(1)**2+equiv(2)**2+equiv(3)**2 +
      &         two*(equiv(4)**2+equiv(5)**2+equiv(6)**2 ))
 c
-          f_n  = norm_equiv_n   - k_n
-          f_n1 = norm_equiv_np1 - k_n1
+       f_n  = norm_equiv_n   - k_n
+       f_n1 = norm_equiv_np1 - k_n1
 c
-          BB1 = H_n1 + del_n1 - dHi
-          BB2 = ( del_n1 + H_n1 )*beta_n1
-          BB3 = two*f_n1 - f_n + BB1*lambda
-          BB4 = BB2 - BB1*f_n1
+       BB1 = H_n1 + del_n1 - dHi
+       BB2 = ( del_n1 + H_n1 )*beta_n1
+       BB3 = two*f_n1 - f_n + BB1*lambda
+       BB4 = BB2 - BB1*f_n1
 c
-          A_GP = two*g*BB3/( two*G1*BB3 + BB4 )
-          C_GP = two*g*lambda/( norm_equiv_np1 + (two*g+Hk_n1)*lambda )
+       A_GP = two*g*BB3/( two*G1*BB3 + BB4 )
+       C_GP = two*g*lambda/( norm_equiv_np1 + (two*g+Hk_n1)*lambda )
 c
-c     elasitc-plastic weighting terms
+c               elasitc-plastic weighting terms
 c
-          c1 = two*g*(1-C_GP)
-          c2 = two*g*(C_GP-A_GP)
+       c1 = two*g*(1-C_GP)
+       c2 = two*g*(C_GP-A_GP)
 c           
-          n(1) = equiv(1)/norm_equiv_np1
-          n(2) = equiv(2)/norm_equiv_np1
-          n(3) = equiv(3)/norm_equiv_np1
-          n(4) = equiv(4)/norm_equiv_np1
-          n(5) = equiv(5)/norm_equiv_np1
-          n(6) = equiv(6)/norm_equiv_np1
+       n(1) = equiv(1)/norm_equiv_np1
+       n(2) = equiv(2)/norm_equiv_np1
+       n(3) = equiv(3)/norm_equiv_np1
+       n(4) = equiv(4)/norm_equiv_np1
+       n(5) = equiv(5)/norm_equiv_np1
+       n(6) = equiv(6)/norm_equiv_np1
 c
-c    diagonal terms
+c               diagonal terms
 c
-         mean_n  = onethird*(n(1) + n(2) + n(3) )
-         dmat(i,1,1)= (bulk + twothird*c1 + c2*n(1)*n(1))*fact
-         dmat(i,2,2)= (bulk + twothird*c1 + c2*n(2)*n(2))*fact
-         dmat(i,3,3)= (bulk + twothird*c1 + c2*n(3)*n(3))*fact
-         dmat(i,4,4)= (half*c1 + c2*n(4)*n(4))*fact
-         dmat(i,5,5)= (half*c1 + c2*n(5)*n(5))*fact
-         dmat(i,6,6)= (half*c1 + c2*n(6)*n(6))*fact
+       mean_n  = onethird*(n(1) + n(2) + n(3) )
+       dmat(i,1,1) = bulk + twothird*c1 + c2*n(1)*n(1)
+       dmat(i,2,2) = bulk + twothird*c1 + c2*n(2)*n(2)
+       dmat(i,3,3) = bulk + twothird*c1 + c2*n(3)*n(3)
+       dmat(i,4,4) = half*c1 + c2*n(4)*n(4)
+       dmat(i,5,5) = half*c1 + c2*n(5)*n(5)
+       dmat(i,6,6) = half*c1 + c2*n(6)*n(6)
 c
-c   off diagonal terms
+c               off diagonal terms
 c
-         dmat(i,1,2)= fact*(bulk - onethird*c1 + c2*n(1)*n(2))
-         dmat(i,1,3)= fact*(bulk - onethird*c1 + c2*n(1)*n(3))
-         dmat(i,1,4)= fact*(c2*n(1)*n(4))
-         dmat(i,1,5)= fact*(c2*n(1)*n(5))
-         dmat(i,1,6)= fact*(c2*n(1)*n(6))
+       dmat(i,1,2) = (bulk - onethird*c1 + c2*n(1)*n(2))
+       dmat(i,1,3) = (bulk - onethird*c1 + c2*n(1)*n(3))
+       dmat(i,1,4) = (c2*n(1)*n(4))
+       dmat(i,1,5) = (c2*n(1)*n(5))
+       dmat(i,1,6) = (c2*n(1)*n(6))
 c
-         dmat(i,2,3)= fact*(bulk - onethird*c1 + c2*n(2)*n(3))
-         dmat(i,2,4)= fact*(c2*n(2)*n(4))
-         dmat(i,2,5)= fact*(c2*n(2)*n(5))
-         dmat(i,2,6)= fact*(c2*n(2)*n(6))
+       dmat(i,2,3) = bulk - onethird*c1 + c2*n(2)*n(3)
+       dmat(i,2,4) = c2*n(2)*n(4)
+       dmat(i,2,5) = c2*n(2)*n(5)
+       dmat(i,2,6) = c2*n(2)*n(6)
 c
-         dmat(i,3,4)=fact*(c2*n(3)*n(4))
-         dmat(i,3,5)=fact*(c2*n(3)*n(5))
-         dmat(i,3,6)=fact*(c2*n(3)*n(6))
+       dmat(i,3,4) = c2*n(3)*n(4)
+       dmat(i,3,5) = c2*n(3)*n(5)
+       dmat(i,3,6) = c2*n(3)*n(6)
 c
-         dmat(i,4,5)=fact*(c2*n(4)*n(5))
-         dmat(i,4,6)=fact*(c2*n(4)*n(6))
+       dmat(i,4,5) = c2*n(4)*n(5)
+       dmat(i,4,6) = c2*n(4)*n(6)
 c
-         dmat(i,5,6)=fact*(c2*n(5)*n(6))
+       dmat(i,5,6) = c2*n(5)*n(6)
 c
-c   symmetry
+c                symmetry
 c
-         dmat(i,2,1) = dmat(i,1,2)
-         dmat(i,3,1) = dmat(i,1,3)
-         dmat(i,4,1) = dmat(i,1,4)
-         dmat(i,5,1) = dmat(i,1,5)
-         dmat(i,6,1) = dmat(i,1,6)
+       dmat(i,2,1) = dmat(i,1,2)
+       dmat(i,3,1) = dmat(i,1,3)
+       dmat(i,4,1) = dmat(i,1,4)
+       dmat(i,5,1) = dmat(i,1,5)
+       dmat(i,6,1) = dmat(i,1,6)
 c
-         dmat(i,3,2) = dmat(i,2,3)
-         dmat(i,4,2) = dmat(i,2,4)
-         dmat(i,5,2) = dmat(i,2,5)
-         dmat(i,6,2) = dmat(i,2,6)
+       dmat(i,3,2) = dmat(i,2,3)
+       dmat(i,4,2) = dmat(i,2,4)
+       dmat(i,5,2) = dmat(i,2,5)
+       dmat(i,6,2) = dmat(i,2,6)
 c
-         dmat(i,4,3) = dmat(i,3,4)
-         dmat(i,5,3) = dmat(i,3,5)
-         dmat(i,6,3) = dmat(i,3,6)
+       dmat(i,4,3) = dmat(i,3,4)
+       dmat(i,5,3) = dmat(i,3,5)
+       dmat(i,6,3) = dmat(i,3,6)
 c
-         dmat(i,5,4) = dmat(i,4,5)
-         dmat(i,6,4) = dmat(i,4,6)
+       dmat(i,5,4) = dmat(i,4,5)
+       dmat(i,6,4) = dmat(i,4,6)
 c
-         dmat(i,6,5) = dmat(i,5,6)
-c
-         end if
-c
+       dmat(i,6,5) = dmat(i,5,6)
       end do
-c
-c      if ( gpn .ne. 1 ) return
-c      i = 1
-c      write( iout, 9000 ) iter, felem, gpn, span
-c      write( iout, 9010 ) e_vec_np1(i), nu_vec_np1(i),
-c     &        h_gp_np1(i), beta_gp_np1(i),
-c     &        delta_gp_np1(i), tau(i),
-c     &        ( stress_np1(i,j), j=1,6 ),
-c     &        ( history_np1(i,j), j=1,14 )        
-c      write( iout, 9020 )
-c      write( iout, 9030 ) 1/fact*dmat(i,1,1:6)
-c      write( iout, 9030 ) 1/fact*dmat(i,2,1:6)
-c      write( iout, 9030 ) 1/fact*dmat(i,3,1:6)
-c      write( iout, 9030 ) 1/fact*dmat(i,4,1:6)
-c      write( iout, 9030 ) 1/fact*dmat(i,5,1:6)
-c      write( iout, 9030 ) 1/fact*dmat(i,6,1:6)
 c
       return 
 c
