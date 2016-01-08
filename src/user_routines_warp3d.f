@@ -9,7 +9,7 @@ c     *                 subroutine user_solution_parmeters           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/21/2013 rhd             *
+c     *                   last modified : 11/7/2015 rhd              *
 c     *                                                              *
 c     *     user routine to potentially alter solution parameters    *
 c     *     and loading before the next load (time) step             *
@@ -30,80 +30,18 @@ c           See Section 2.10 of User Manual for more details. The
 c           variables below have 1-to-1 correspondence with 
 c           user input commands.
 c
-      integer, parameter :: h_prec = selected_real_kind(12)
-c      
-      type :: solution_parameters
-c      
-       real (h_prec)  :: simulation_time
-       real (h_prec)  :: time_step 
-       real (h_prec)  :: newmark_beta
-c       
-       integer :: maximum_iterations ! global Newton
-       integer :: minimum_iterations ! global Newton
-       logical :: nonconvergent_solutions_flag ! .true. = halt
-       logical :: adaptive_solution ! .true. = on
-       logical :: extrapolate_solution ! .true. = on
-       real (h_prec) :: extrapolate_multiplier ! normally not
-c                                                set by user       
-c       
-       logical :: convergence_test_1 ! .true. = on
-       real (h_prec) :: convergence_test_1_tolerance
-       logical :: convergence_test_2 ! .true. = on
-       real (h_prec) :: convergence_test_2_tolerance
-       logical :: convergence_test_3 ! .true. = on
-       real (h_prec) :: convergence_test_3_tolerance
-       logical :: convergence_test_4 ! .true. = on
-       real (h_prec) :: convergence_test_4_tolerance
-c       
-       logical :: k_linear_iteration_1_all_steps
-       logical :: k_linear_iteration_1_next_step_only
-c       
-       logical :: batch_messages ! .true. = on
-       real    :: wall_time_limit_seconds ! = 0 no limit
-       logical :: material_messages ! .true. = on
-       logical :: trace_solution ! .true. = on
-c
-       real (h_prec) :: bbar_stabiliation_factor
-       logical :: consistent_q_matrix ! .true. = on
-c
-       real (h_prec) :: reset_load_reduction_factor 
-      end type
-c
-      type :: step_definition
-        real (h_prec) :: constraints_multiplier
-        integer :: number_load_patt
-        integer :: load_patt_nums(10) 
-        real (h_prec) :: load_patt_multipliers(10)
-        character(len=8) :: load_patt_ids(10)
-      end type
-c
+$add include_usr_parm
       type :: step_convergence_data
         logical :: step_converged  
         logical :: adaptive_used 
         integer :: iterations_for_convergence
         integer :: adapt_substeps
       end type
-
+c
       type(solution_parameters) :: sol_parms
       type(step_definition) :: next_step_loading
-      type( step_convergence_data ), dimension(5) :: 
+      type(step_convergence_data), dimension(5) ::
      &                         convergence_history
-c      
-c      
-c  number_load_patt:  the number of loading patterns defined
-c                     for next load (time) step. Does not include 
-c                     constraints in the list
-c  load_patt_nums:    internal (integer) numbers for loading
-c                     patterns
-c  load_patt_ids:     corresponding 8-char name the user gave the
-c                     loading pattern in input
-c  load_patt_multipliers: 
-c
-c       The user routine may change the number_load_patt,
-c       load_patt_nums,  load_patt_multipliers but
-c       load_patt_ids. But load_patt_nums and ids must be
-c       consistent with input data.
-c     
 c      
 c            locals
 c
@@ -118,8 +56,7 @@ c
      &   sol_parms%maximum_iterations, sol_parms%minimum_iterations,
      &   sol_parms%nonconvergent_solutions_flag,
      &   sol_parms%adaptive_solution,
-     &   sol_parms%extrapolate_solution,
-     &   sol_parms%extrapolate_multiplier
+     &   sol_parms%extrapolate_solution
         write(iout,9010) 
      &   sol_parms%convergence_test_1,
      &   sol_parms%convergence_test_1_tolerance,
@@ -130,8 +67,6 @@ c
      &   sol_parms%convergence_test_4,
      &   sol_parms%convergence_test_4_tolerance
         write(iout,9020) 
-     &   sol_parms%k_linear_iteration_1_all_steps,
-     &   sol_parms%k_linear_iteration_1_next_step_only,
      &   sol_parms%batch_messages,
      &   sol_parms%wall_time_limit_seconds,
      &   sol_parms%material_messages,
@@ -184,16 +119,13 @@ c
      & /,8x,'max, min global iterations:  ',2i3,
      & /,8x,'stop on nonconvergent iters: ',l2,
      & /,8x,'adaptive solution:           ',l2,
-     & /,8x,'extrapolate displacements:   ',l2,
-     & /,8x,'user extrapolate multiplier: ',f10.4 )
+     & /,8x,'extrapolate displacements:   ',l2 )
  9010  format(
      &   8x,'convergence test 1, tol:     ',l2,1x,f10.4,
      & /,8x,'convergence test 2, tol:     ',l2,1x,f10.4,
      & /,8x,'convergence test 3, tol:     ',l2,1x,f10.4,
      & /,8x,'convergence test 4, tol:     ',l2,1x,f10.4 )
  9020 format(      
-     &   8x,'[K] linear all steps:        ',l2,
-     & /,8x,'[K] linear next step only:   ',l2,
      & /,8x,'batch messages:              ',l2,
      & /,8x,'wall time limits (secs):     ',f10.0,
      & /,8x,'material messages:           ',l2,
