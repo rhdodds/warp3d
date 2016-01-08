@@ -36,6 +36,10 @@
 !
 !     This file is for threaded execution only
 !
+!
+!     Runs thru time step 440 then fails due to aninverted 
+!     element (large deformations)
+!
 structure cvn
 !
 material steel
@@ -63,12 +67,13 @@ blocking automatic
  output model flat patran convention text file "cvn_model.text"
 !
  nonlinear analysis parameters 
-   solution technique direct sparse iterative
+   solution technique direct sparse direct
    maximum iterations 8
    minimum iterations 1
    convergence test norm res tol 0.005
    time step 0.5e-6
    extrapolate on
+   line search on details
    divergence check on
    nonconvergent solution stop
    adaptive on
@@ -115,7 +120,7 @@ output commands use file "values_to_output.inp",
  compute displacements for loading impact for step 400
   *input 'domain_define.inp'
 !
- compute displacements for loading impact for step 500
+ compute displacements for loading impact for step 440
   *input 'domain_define.inp'
 !
 stop
