@@ -27,7 +27,7 @@ c
       call omp_set_dynamic( .false. )
       if( local_debug ) start_time = omp_get_wtime()
 c
-c$OMP PARALLEL DO PRIVATE( elem, type, now_thread ) 
+c$OMP PARALLEL DO  PRIVATE( elem, type, now_thread ) 
        do 10 elem = 1, noelem
 c
        type = elstor(1,elem) 
