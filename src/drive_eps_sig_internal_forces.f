@@ -331,7 +331,7 @@ c     *                      subroutine do_nleps_block               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/30/2015 rhd              *
+c     *                   last modified : 10/26/2015 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -362,20 +362,13 @@ $add include_sig_up
      &    zero, block_energy, block_plastic_work
       logical material_cut_step
 c
+      integer, external :: omp_get_thread_num
       logical local_debug, geo_non_flg, bbar_flg, tet_elem, tri_elem,
      &            axisymm_elem, cohesive_elem, used_flg
       data zero, local_debug / 0.0d00, .false. /
       integer :: elem, ii, jj
-#dbl      double precision :: 
-#sgl      real ::
-     &  gp_coords(mxvl,3,mxgp)
-c
-c                       skip stress and internal for calculation
-c                       if all elements in the block have been killed
-c
-      if( growth_by_kill ) then
-        if( dam_blk_killed(blk) ) return
-      end if
+#dbl      double precision :: gp_coords(mxvl,3,mxgp)
+#sgl      real :: gp_coords(mxvl,3,mxgp)
 c
       span           = elblks(0,blk)
       felem          = elblks(1,blk)
@@ -391,7 +384,15 @@ c
       bbar_flg       = lprops(19,felem)
       cohes_type     = iprops(27,felem)
       surface        = iprops(26,felem)
+c      
+      call chk_killed_blk( blk, local_work%killed_status_vec,
+     &                      local_work%block_killed )
+      if( local_work%block_killed ) then
+        einfvec_blocks(blk)%ptr(1:span,1:totdof) = zero
+        return
+      end if   
 c
+      local_work%now_thread         = omp_get_thread_num()
       local_work%span               = span
       local_work%felem              = felem
       local_work%blk                = blk
@@ -436,9 +437,6 @@ c
       local_work%is_axisymm_elem    = axisymm_ele_types(elem_type)
       local_work%cep_sym_size = 21
       if( local_work%is_cohes_elem ) local_work%cep_sym_size = 6
-c
-      call chk_killed_blk( blk, local_work%killed_status_vec,
-     &                     local_work%block_killed )
       if( local_work%is_umat ) call material_model_info( felem, 0, 3,
      &                                 local_work%umat_stress_type )
       local_work%compute_f_bar =  bbar_flg .and.
