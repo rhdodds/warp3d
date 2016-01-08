@@ -4,7 +4,7 @@ c     *                      subroutine rplstr                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/22/2015 rhd             *
+c     *                   last modified : 12/8/2015 rhd              *
 c     *                                                              *
 c     *     stores globally the recovered material                   *
 c     *     and stress states.                                       *
@@ -22,7 +22,8 @@ c
       implicit integer (a-z)
 $add common.main
 $add include_sig_up
-      logical process_rts, process_hist
+      logical :: process_rts, process_hist, save_history_1,
+     &           save_history_2
 
 c
 c                   parameter declarations
@@ -52,7 +53,8 @@ c             extrapolated displacement increment for step.
 c             we do no want to update the material state variables
 c             especially (2) above since they most likely will be
 c             used immediately after this for stiffness
-c             computation.
+c             computation. Except for the CP model since it hides the
+c             [D] matrix in there.
 c
 c
       process_rts  = mat_type .ne. 2  ! note the .ne. 
@@ -86,7 +88,10 @@ c
           end if
       end if
 c
-      if( process_hist .and. iter .gt. 0 ) then
+      save_history_1 = process_hist .and. iter > 0
+      save_history_2 = mat_type .eq. 10
+c      if( process_hist .and. iter .gt. 0 ) then
+      if( save_history_1  .or.  save_history_2 ) then
         hist_size = history_blk_list(blk)
         call rp_scstr_history( local_work%elem_hist1(1,1,1),
      &                      history1_blocks(blk)%ptr(1), ngp, 
