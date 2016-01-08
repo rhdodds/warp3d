@@ -190,7 +190,6 @@ constraints
    divergence check on 
    nonconvergent solutions stop
    adaptive on   $ global Newton iterations
-   linear stiffness for iteration one off
    batch messages off
    wall time limit off
    material messages off
