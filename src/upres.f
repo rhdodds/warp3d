@@ -241,7 +241,6 @@ c
       if( local_debug ) write(iout,9100) mgload
 c
       if( local_debug ) write(iout,9305)
-      write(iout,*) " "
 c
       return
 c
