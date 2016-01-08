@@ -57,6 +57,12 @@ c           Read in properties
                               c_array(cnum)%slip_type = 2
                         elseif (lab(1:nc) .eq. 'single') then
                               c_array(cnum)%slip_type = 3
+                        elseif (lab(1:nc) .eq. 'roters') then
+                              c_array(cnum)%slip_type = 6
+                        elseif (lab(1:nc) .eq. 'bcc12') then
+                              c_array(cnum)%slip_type = 7
+                        elseif (lab(1:nc) .eq. 'bcc48') then
+                              c_array(cnum)%slip_type = 8
                         else
                               call errmsg(353,dumi,dums,dumr,dumd)
                         end if
@@ -216,6 +222,104 @@ c           Read in properties
                               c_array(cnum)%h_type = 2
                            elseif (lab(1:nc) .eq. 'user') then
                               c_array(cnum)%h_type = 3
+                           elseif (lab(1:nc) .eq. 'ornl') then
+                              c_array(cnum)%h_type = 4
+                           elseif (lab(1:nc) .eq. 'roters') then
+                              c_array(cnum)%h_type = 7
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
+                  elseif ( matchs_exact('atol')) then
+                     if (.not. numd(c_array(cnum)%atol)) then
+                           call errmsg(5,dumi,'atol',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('atol1')) then
+                     if (.not. numd(c_array(cnum)%atol1)) then
+                           call errmsg(5,dumi,'atol1',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('rtol')) then
+                     if (.not. numd(c_array(cnum)%rtol)) then
+                           call errmsg(5,dumi,'rtol',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('rtol1')) then
+                     if (.not. numd(c_array(cnum)%rtol1)) then
+                           call errmsg(5,dumi,'rtol1',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('xtol')) then
+                     if (.not. numd(c_array(cnum)%xtol)) then
+                           call errmsg(5,dumi,'xtol',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('xtol1')) then
+                     if (.not. numd(c_array(cnum)%xtol1)) then
+                           call errmsg(5,dumi,'xtol1',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('miter')) then
+                     if (.not. numi(c_array(cnum)%miter)) then
+                           call errmsg(5,dumi,'miter',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('gpp')) then
+                     if (.not. numi(c_array(cnum)%gpp)) then
+                           call errmsg(5,dumi,'gpp',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('method')) then
+                     if (.not. numi(c_array(cnum)%method)) then
+                           call errmsg(5,dumi,'method',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('dstep')) then
+                     if (.not. numi(c_array(cnum)%st_it(1))) then
+                           call errmsg(5,dumi,'dstep',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('diter')) then
+                     if (.not. numi(c_array(cnum)%st_it(2))) then
+                           call errmsg(5,dumi,'diter',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('delem')) then
+                     if (.not. numi(c_array(cnum)%st_it(3))) then
+                           call errmsg(5,dumi,'delem',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('method')) then
+                     if (.not. numi(c_array(cnum)%method)) then
+                           call errmsg(5,dumi,'method',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('solver')) then
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'solver',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'nr') then
+                              c_array(cnum)%solver = .true.
+                           elseif (lab(1:nc) .eq. 'tr') then
+                              c_array(cnum)%solver = .false.
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
+                  elseif ( matchs_exact('strategy')) then
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'strategy',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'geom') then
+                              c_array(cnum)%strategy = .true.
+                           elseif (lab(1:nc) .eq. 'cubic') then
+                              c_array(cnum)%strategy = .false.
+                           else
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                           end if
+                     end if
+                  elseif ( matchs_exact('gpall')) then
+                     if (.not. label(dumi)) then
+                           call errmsg(5,dumi,'gpall',dumr,dumd)
+                     else
+                           lab = ' '
+                           call entits(lab,nc)
+                           if (lab(1:nc) .eq. 'on') then
+                              c_array(cnum)%gpall = .true.
+                           elseif (lab(1:nc) .eq. 'off') then
+                              c_array(cnum)%gpall = .false.
                            else
                               call errmsg(364,dumi,dums,dumr,dumd)
                            end if
