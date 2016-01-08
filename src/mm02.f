@@ -17,30 +17,30 @@ $add param_def
 c
 c                   parameter declarations
 c   
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      & e(*), nu(*), sigyld(*), exp(*), stress_n(mxvl,*), 
      & stress_n1(mxvl,*), strain(mxvl,*), history(span,*),
      & history1(span,*)
-       logical signal_flag
+       logical :: signal_flag
 c
 c                   locally defined
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      & k1, k2(mxvl), l2, pi2, twothd, third, root2, rt23, zero, one,
      & two, half, epsm, e1, e2, e3, epseff(mxvl),
      & epsyld(mxvl), epslim(mxvl), g, c, a, b, 
      & theta, c1, c2, epsnc(mxvl), signc(mxvl), rnc(mxvl),
      & sigeff(mxvl),  eps_elas(mxvl,6), shear_mod(mxvl)
-      logical mm02es, debug, signal, nonlinear_flags(mxvl), test,
-     &        nonlinear_points
+      logical :: mm02es, debug, signal, nonlinear_flags(mxvl), test,
+     &           nonlinear_points, linear_flags(mxvl)
 c
       data pi2, twothd, third, root2, rt23
-     & / 1.570795, 0.66666667, 0.333333333, 1.4142135623730,
-     &   0.816496580927726 /
+     & / 1.570795d0, 0.66666667d0, 0.333333333d0, 1.4142135623730d0,
+     &   0.816496580927726d0 /
       data zero, one, two, k1, half
-     & / 0.0, 1.0, 2.0, 0.95, 0.5 /  
+     & / 0.0d0, 1.0d0, 2.0d0, 0.95d0, 0.5d0 /  
       data signal / .true. /             
 c
 c              model history data:
@@ -50,18 +50,11 @@ c              (3) scalar effective strain
 c
       debug = .false.
 c
-      if ( step .eq. 1 ) then
+      if( step .eq. 1 ) then
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
-         history(i,1) = zero
-         history(i,2) = zero
-         history(i,3) = zero
-         history(i,4) = zero
-         history(i,5) = zero
-         history1(i,1) = zero
-         history1(i,2) = zero
-         history1(i,3) = zero
-         history1(i,4) = zero
-         history1(i,5) = zero
+         history(i,1:5) = zero
+         history1(i,1:5) = zero
        end do
       end if
 c
@@ -69,6 +62,7 @@ c             get the effective strain for the total strain. check if
 c             we are still on the linear-reponse below the transition
 c             point. set logical linear vs. nonlinear flag for element.
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
          epsm = ( strain(i,1) + strain(i,2) + strain(i,3) ) * third
          e1   = strain(i,1) - epsm
@@ -80,6 +74,7 @@ c
          epsyld(i) = sigyld(i) / e(i)
          epslim(i) = k1 * epsyld(i) * twothd * (one+nu(i))
          nonlinear_flags(i) =  epseff(i) .gt. epslim(i)
+         linear_flags(i) = .not. nonlinear_flags(i)
          history1(i,4) = e(i)
          history1(i,5) = sigyld(i)
       end do
@@ -90,14 +85,15 @@ c
       nonlinear_points = .false.
       nonlin_point     = 0
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-         if ( nonlinear_flags(i) ) then
+         if( nonlinear_flags(i) ) then
             nonlinear_points = .true. 
-            if ( nonlin_point .eq. 0 ) nonlin_point = i
+            if( nonlin_point .eq. 0 ) nonlin_point = i
          end if
       end do
 c
-      if ( debug ) then
+      if( debug ) then
         write(iout,*) ' ' 
         i = max( nonlin_point,1 )
         write(iout,9000) felem+i-1, gpn, e(i), nu(i), sigyld(i),
@@ -108,8 +104,9 @@ c
 c
 c             process points still in linear response region
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( .not. nonlinear_flags(i) ) then 
+        if( nonlinear_flags(i) ) cycle
         g = half * e(i) / ( one + nu(i) )
         c = e(i) / ( ( one + nu(i) ) * ( one - two * nu(i) ) )
         a = c * ( one - nu(i) )
@@ -129,10 +126,9 @@ c
         history1(i,1) = zero
         history1(i,2) = zero
         history1(i,3) = epseff(i)
-       end if
       end do
 c      
-      if ( .not. nonlinear_points ) go to 1000
+      if( .not. nonlinear_points ) go to 1000
 c
 c
 c             process points beyond linear region. iteratively solve for
@@ -141,8 +137,9 @@ c             effective stress requires a local newtion iteration
 c             done by function mm02es. Function is inlined but loop
 c             not vectorized.
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( nonlinear_flags(i) ) then 
+        if( linear_flags(i) ) cycle 
         k2(i)  = root2 * ( one-k1 ) / exp(i) + one
         theta  = atan( k2(i)**(one-exp(i))/exp(i) )
         l2     = -tan(pi2-theta)
@@ -151,19 +148,18 @@ c
         epsnc(i) = ( two*k1 + l2*c2 - k2(i) ) * c1
         signc(i) = ( two*l2*k1 - l2*c2 + k2(i) ) * c1
         rnc(i)   = root2 * ( k1 - l2*k1 + l2*c2 - k2(i) ) * c1
-       end if
       end do
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( nonlinear_flags(i) ) then 
-         test = mm02es( sigyld(i), epsyld(i), nu(i), exp(i),
+       if( linear_flags(i) ) cycle
+       test = mm02es( sigyld(i), epsyld(i), nu(i), exp(i),
      &                  epseff(i), sigeff(i), k2(i), epsnc(i),
      &                  signc(i), rnc(i) ) 
-         if ( .not. test ) then
+       if( .not. test ) then
            write(iout,9250) felem+i-1, gpn
            call die_abort
            stop
-         end if
        end if
       end do
 c
@@ -171,9 +167,10 @@ c             compute total stresses for total strain. write a
 c             yielding message if that option is on.
 c             get strain energy  density
 c
-      if ( signal .and. signal_flag ) then 
+      if( signal .and. signal_flag ) then 
+@!DIR$ LOOP COUNT MAX=###  
        do i = 1, span
-        if ( nonlinear_flags(i) .and. history(i,1) .eq. zero ) then 
+        if( nonlinear_flags(i) .and. history(i,1) .eq. zero ) then 
           write(iout,9300) felem+i-1, gpn, sigeff(i)-sigyld(i)*k1
           history1(i,1) = one
         end if
@@ -182,19 +179,19 @@ c
 c
       call mm02ns( rnc, signc, k2, k1, exp,
      &             sigyld, epseff, sigeff, nu, e, 
-     &             strain, stress_n1, nonlinear_flags, span )
+     &             strain, stress_n1, linear_flags, span )
 c
 c             put effective stress and strain energy into stress
 c             vector for point. update history parameters.
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( nonlinear_flags(i) ) then 
-         history1(i,1) = one
-         history1(i,2) = sigeff(i)
-         history1(i,3) = epseff(i)
-       end if
+       if( linear_flags(i) ) cycle
+       history1(i,1) = one
+       history1(i,2) = sigeff(i)
+       history1(i,3) = epseff(i)
       end do
-      if ( debug ) then
+      if( debug ) then
         write(iout,*) ' ' 
         i = nonlin_point 
         write(iout,9400) (stress_n1(i,j),j=1,7)
@@ -204,6 +201,7 @@ c             compute plastic work density at gauss pts. and
 c             the current plastic effective strain.
 c         
  1000 continue
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
          shear_mod(i) = e(i) * half / (one + nu(i))
          eps_elas(i,1) = (stress_n1(i,1) - nu(i)*(stress_n1(i,2)+
@@ -261,12 +259,12 @@ c
      &                         k2, epsnc, signc, rnc )
 #dbl      implicit double precision ( a-h,o-z)                                
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &   nu, k2
-      data  maxitr / 30 /, toler / 0.0001 /
+      data  maxitr / 30 /, toler / 0.0001d0 /
       data  twothd, third, one, two, half, zero 
-     &  / 0.666666667, 0.333333333, 1.0, 2.0, 0.5, 0.0 /
+     &  / 0.666666667d0, 0.333333333d0, 1.0d0, 2.0d0, 0.5d0, 0.0d0 /
 c
 c             use newton-raphson iterative solution to find the
 c             effective stress given the effective strain for
@@ -296,7 +294,7 @@ c
 c             handle circular transition and power-law in
 c             separate iteration loops
 c
-      if ( epseff .ge. trnlim ) go to 200
+      if( epseff .ge. trnlim ) go to 200
 c
 c             perform newton raphson on circular transition part of
 c             response to compute effective stress. starting guess for
@@ -315,13 +313,13 @@ c
       dfdsn = (signc - sign ) / radical - const
       signew = sign - resid / dfdsn
       radical = rnc*rnc - (signew - signc)**2 
-      if ( radical .lt. zero ) then
+      if( radical .lt. zero ) then
          iterno = 1
          go to 200
       end if
       radical = sqrt( radical )
       resid   = epsn - epsnc + radical - const * signew
-      if ( abs(signew-sign) .le. toler ) then
+      if( abs(signew-sign) .le. toler ) then
         sigeff = signew * sigyld
       else
         sign = signew
@@ -346,12 +344,12 @@ c
       dfdsn  = exp*sign**expm1 + c
       signew = sign - resid / dfdsn
       resid  = signew**exp + c*signew - epsn
-      if ( abs(signew-sign) .le. toler ) then
+      if( abs(signew-sign) .le. toler ) then
         sigeff = signew * sigyld
       else
         sign = signew
         iterno = iterno + 1
-        if ( iterno .gt. maxitr ) return
+        if( iterno .gt. maxitr ) return
         go to 210
       end if
       mm02es = .true.
@@ -367,22 +365,22 @@ c
 c
       subroutine mm02ns( rnc, signc, k2, k1, exp,
      &                   sigyld, epseff, sigeff, nu, e,
-     &                   strain, sig, nonlinear_flags, span )
+     &                   strain, sig, linear_flags, span )
       implicit integer (a-z)
 $add param_def
 c
 c             parameter declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      & rnc(*), signc(*), k2(*), k1, exp(*), sigyld(*),
      & epseff(*), sigeff(*), nu(*), e(*), strain(mxvl,*), sig(mxvl,*)
-      logical  nonlinear_flags(*)
+      logical :: linear_flags(*)
 c
 c             local declarations
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      & one, two, three, half, onefive, six, pt25, twothd, 
      & third, const1, const2, epsv, sigm, upress(mxvl),
      & sigk1, uelask1(mxvl), sncso(mxvl), rncso(mxvl),
@@ -391,9 +389,9 @@ c
      & term4, term5, term6, term7 
 c
       data one, two, three, half, onefive, six, pt25
-     &   / 1.0, 2.0, 3.0, 0.5, 1.5, 6.0, 0.25 / 
+     &   / 1.0d0, 2.0d0, 3.0d0, 0.5d0, 1.5d0, 6.0d0, 0.25d0 / 
       data twothd, third
-     &  / 0.6666666667, 0.33333333333 /                         
+     &  / 0.6666666667d0, 0.33333333333d0 /                         
 c
 c             compute total stress given total strain and
 c             effective strain. also the total work density.
@@ -402,8 +400,9 @@ c
 c             compute stress by volumetric and deviatoric
 c             components.
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( nonlinear_flags(i) ) then 
+        if( linear_flags(i) ) cycle
         const1 = twothd * sigeff(i) / epseff(i)
         const2 = e(i) / ( one - two*nu(i) ) - const1
         epsv   = ( strain(i,1) + strain(i,2) + strain(i,3) ) * third
@@ -413,15 +412,15 @@ c
         sig(i,4) = const1 * strain(i,4) * half
         sig(i,5) = const1 * strain(i,5) * half
         sig(i,6) = const1 * strain(i,6) * half
-       end if
       end do
 c
 c             compute exact strain energy density. we have a point on
 c             transition part of curve or power-law part of curve.
 c             energy up to k1*sigyld is same for both cases.
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( nonlinear_flags(i) ) then 
+       if( linear_flags(i) ) cycle
         sigm      = third * ( sig(i,1) + sig(i,2) + sig(i,3) )
         upress(i) = ( onefive - three*nu(i)) * sigm * sigm   
         sigk1     = k1 * sigyld(i)
@@ -435,12 +434,12 @@ c
         term2     = -sigk1 * sqrt( rncsq(i) - (sigk1-sncso(i))**2 )
         term3     = rncsq(i) * ( half*betak1 + pt25*sin(two*betak1) )
         uk1(i) = term1 + term2 + term3
-       end if
       end do
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-       if ( nonlinear_flags(i) ) then 
-        if ( sigeff(i)/sigyld(i) .lt. k2(i) ) then
+       if( linear_flags(i) ) cycle
+       if( sigeff(i)/sigyld(i) .lt. k2(i) ) then
 c
 c                 Stress point in transition:
 c                   1) pressure component (total)
@@ -455,7 +454,7 @@ c
         uk2      = term1 + term2 + term3
         sig(i,7) = ( upress(i) + uelask1(i) + (uk2-uk1(i)) ) / e(i)
 c
-      else
+       else
 c                 Stress point in power-law region:
 c                   1) pressure component (total)
 c                   2) deviatoric on linear curve up to k1*sigyld
@@ -479,7 +478,6 @@ c
      &              (term6+term7) - (term5+term4) ) / e(i)
 c
         end if
-       end if
       end do
 c
       return
@@ -602,6 +600,7 @@ c
      &           (/hist_size,int_points,span/) )
 c      
       if( do_a_block ) then    
+@!DIR$ LOOP COUNT MAX=###  
         do relem = 1, span
            elnum = felem + relem - 1  ! absolute element number
            one_elem_states(1:nrow_states) = zero 
@@ -652,6 +651,7 @@ c
       sig_eff = zero
       eps_eff = zero
 c       
+@!DIR$ LOOP COUNT MAX=###  
       do ipt = 1, int_points
         ymod    = history_dump(4,ipt,relem)
         sigyld  = history_dump(5,ipt,relem)
@@ -718,3 +718,272 @@ c
       return
  9010 format(2x,i3,2x,a8,2x,a)      
       end
+c *********************************************************************
+c *                                                                   *
+c *   cnst2 -- tangent modulus matrix for nonlinear elastic model     *
+c *            vectorized version                                     *
+c *                                                                   *
+c *********************************************************************
+c
+      subroutine cnst2( felem, gpn, e, nu, sigyld, exp, strain_n1,
+     &                  history, cep, span, iout )
+      implicit none
+$add param_def
+c
+c                   parameter declarations
+c   
+      integer :: felem, gpn, span, iout
+#dbl      double precision ::
+#sgl      real ::
+     & strain_n1(mxvl,*), history(span,*), cep(mxvl,6,6), e(*),
+     & nu(*), sigyld(*), exp(*)
+c
+c                   locally defined 
+c
+      integer :: nonlin_point, i, j
+#dbl      double precision ::
+#sgl      real ::
+     & k1, k2(mxvl), epsyld(mxvl), epslim(mxvl), sigeff(mxvl),
+     & epseff(mxvl), l2, c1, c2, c3, c4, theta, pi2,
+     & root2, zero, one, two, three,
+     & epsnc(mxvl), signc(mxvl), rnc(mxvl)
+      logical :: debug, nonlinear_points, nonlinear_flags(mxvl)       
+c
+      data pi2, root2
+     & / 1.570795d00, 1.4142135623730d00  /
+      data zero, one, two, k1, three
+     & / 0.0d00, 1.0d00, 2.0d00, 0.95d00, 3.0d00 /  
+c
+c              pull out model properties
+c
+      nonlinear_points = .false.
+      nonlin_point     = 0
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        epsyld(i) = sigyld(i) / e(i)
+        k2(i)     = root2 * ( one-k1 ) / exp(i) + one
+        epslim(i) = k1 * epsyld(i) * (two/three) * (one+nu(i))
+        sigeff(i) = history(i,2)
+        epseff(i) = history(i,3)
+      end do
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        nonlinear_flags(i) = .false.
+        if( epseff(i) .gt. epslim(i) ) then
+           nonlinear_points = .true.
+           if( nonlin_point .eq. 0 ) nonlin_point = i
+           nonlinear_flags(i) = .true.
+        end if
+      end do
+c
+      debug = .false.
+      if( debug ) then
+        write(iout,*) ' '
+        i = nonlin_point
+        write(iout,9000) felem+i-1, gpn, e(i), nu(i), sigyld(i), exp(i),
+     &                   (strain_n1(i,j),j=1,6), (history(i,j),j=1,3)
+      end if
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span  ! linear elastic points
+       if( nonlinear_flags(i) ) cycle
+       cep(i,1,4) = zero
+       cep(i,1,5) = zero
+       cep(i,1,6) = zero
+       cep(i,2,4) = zero
+       cep(i,2,5) = zero
+       cep(i,2,6) = zero
+       cep(i,3,4) = zero
+       cep(i,3,5) = zero
+       cep(i,3,6) = zero
+       cep(i,4,1) = zero
+       cep(i,4,2) = zero
+       cep(i,4,3) = zero
+       cep(i,4,5) = zero
+       cep(i,4,6) = zero
+       cep(i,5,1) = zero
+       cep(i,5,2) = zero
+       cep(i,5,3) = zero
+       cep(i,5,4) = zero
+       cep(i,5,6) = zero
+       cep(i,6,1) = zero
+       cep(i,6,2) = zero
+       cep(i,6,3) = zero
+       cep(i,6,4) = zero
+       cep(i,6,5) = zero
+       c1 = (e(i)/((one+nu(i))*(one-two*nu(i))))
+       c2 = (one-nu(i))*c1   
+       c3 = ((one-two*nu(i))/two)*c1
+       c4 = nu(i)*c1
+       cep(i,1,1)= c2
+       cep(i,2,2)= c2
+       cep(i,3,3)= c2
+       cep(i,4,4)= c3
+       cep(i,5,5)= c3
+       cep(i,6,6)= c3
+       cep(i,1,2)= c4
+       cep(i,1,3)= c4
+       cep(i,2,1)= c4
+       cep(i,3,1)= c4
+       cep(i,2,3)= c4
+       cep(i,3,2)= c4
+      end do
+c      
+      if( .not. nonlinear_points ) return
+c
+c             some points are nonlinear
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( .not. nonlinear_flags(i) ) cycle
+        theta    = atan( k2(i)**(1.-exp(i))/exp(i) )
+        l2       = -tan(pi2-theta)
+        c1       = one / (l2 + one)
+        c2       = k2(i)**exp(i)
+        epsnc(i) = ( two*k1 + l2*c2 - k2(i) ) * c1
+        signc(i) = ( two*l2*k1 - l2*c2 + k2(i) ) * c1
+        rnc(i)   = root2 * ( k1 - l2*k1 + l2*c2 - k2(i) ) * c1
+      end do
+c
+      call cnst2a( cep, e, nu, sigeff, epseff, strain_n1,
+     &             sigyld, exp, signc, rnc, k2,
+     &             span, nonlinear_flags )
+c
+      if( .not. debug ) return
+      write(iout,9034)
+      i = nonlin_point
+      do j = 1, 6
+        write(iout,9008) cep(i,j,1), cep(i,j,2), cep(i,j,3), 
+     &                     cep(i,j,4), cep(i,j,5), cep(i,j,6)
+      end do
+      write(iout,*) ' '
+      return
+c
+ 9000 format('>> debug from cnst2. elem, gpn : ',i8,i2,
+     & /,    '    e, nu, sigyld, exp : ',4f10.2,
+     & /,    '    strains @ n+1 :',
+     & /,10x,3e15.6,/,10x,3e15.6,
+     & /,    '    history : ',f4.1,f10.3,f10.6 )
+ 9008 format(3x,6e14.4)
+ 9020 format(//,5x,'>> update [d] element, point: ',2i6)
+ 9034 format('    elasto-plastic d matrix: ' )
+ 9038 format('    point is elastic.  epseff, sigeff: ',e15.6,
+     & f10.3 )
+c
+      end
+c ********************************************************************
+c *                                                                  *
+c *   cnst2a -- tangent modulus matrix                               *
+c *                                                                  *
+c ********************************************************************
+c
+c
+      subroutine cnst2a( cep, e, nu, sigeff, epseff, strain, sigyld, 
+     &                   exp, signc, rnc, k2, span, nonlinear_flags )
+      implicit none
+$add param_def
+c
+      integer :: span
+#dbl      double precision ::
+#sgl      real ::            
+     & cep(mxvl,6,6), e(*), nu(*), sigeff(*), epseff(*),
+     & strain(mxvl,*), sigyld(*), exp(*), signc(*),
+     & rnc(*), k2(*)
+      logical ::  nonlinear_flags(*)
+c
+      integer :: i 
+#dbl      double precision ::
+#sgl      real ::         
+     & ev(mxvl), e1(mxvl), e2(mxvl), e3(mxvl),
+     & e4(mxvl), e5(mxvl), e6(mxvl), sign(mxvl), radical,
+     & stiff, const, g(mxvl), expm1, c1,
+     & c2(mxvl), c3(mxvl), temp, denom,  
+     & twothd, fnine, third, half, one, two 
+c     
+      data  twothd, fnine, third, half, one, two
+     & / 0.6666666667d00, 0.444444444444444d00, 0.3333333333333d00,
+     &    0.5d00, 1.0d00, 2.0d00 /
+c
+c             compute the tangent modulus matrix
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+       if( .not. nonlinear_flags(i) ) cycle
+         ev(i) = third * ( strain(i,1) + strain(i,2) + strain(i,3) )
+         e1(i) = strain(i,1) - ev(i)
+         e2(i) = strain(i,2) - ev(i)
+         e3(i) = strain(i,3) - ev(i)
+         e4(i) = strain(i,4) * half
+         e5(i) = strain(i,5) * half
+         e6(i) = strain(i,6) * half
+         sign(i) = sigeff(i) / sigyld(i)
+      end do
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( .not. nonlinear_flags(i) ) cycle
+        if( sign(i) .le. k2(i) ) then
+          radical = sqrt( rnc(i)*rnc(i) - (sign(i)-signc(i))**2 )
+          stiff   = (sign(i) - signc(i))/radical -
+     &                twothd*(half-nu(i))
+          const   = one/epseff(i) - e(i)/sigeff(i)/stiff
+          g(i)    = -fnine * sigeff(i) * const / epseff(i)
+     &                /epseff(i)
+        else
+          expm1 = exp(i) - one
+          c1    = sign(i)**expm1
+          denom = twothd * ( -half + nu(i) ) + exp(i) * c1
+          temp  = -fnine * sigeff(i) * expm1 * c1 / epseff(i)
+     &              / epseff(i) /epseff(i)
+          g(i)  = temp / denom
+        end if
+        c2(i) = twothd * sigeff(i) / epseff(i)
+        c3(i) = third * ( -c2(i) + e(i)/(one-two*nu(i)) )
+      end do
+c
+c             3-D (row ordering x, y, z, xy, yz, xz)
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+       if( .not. nonlinear_flags(i) ) cycle
+       cep(i,1,1) = ( c3(i) + g(i)*e1(i)*e1(i) + c2(i) ) 
+       cep(i,2,1) = ( c3(i) + g(i)*e2(i)*e1(i) ) 
+       cep(i,3,1) = ( c3(i) + g(i)*e3(i)*e1(i) )
+       cep(i,2,2) = ( c3(i) + g(i)*e2(i)*e2(i) + c2(i) ) 
+       cep(i,3,2) = ( c3(i) + g(i)*e3(i)*e2(i) ) 
+       cep(i,3,3) = ( c3(i) + g(i)*e3(i)*e3(i) + c2(i) ) 
+       cep(i,1,2) = cep(i,2,1)
+       cep(i,1,3) = cep(i,3,1)
+       cep(i,2,3) = cep(i,3,2)
+       cep(i,1,4) = ( g(i)*e1(i)*e4(i) ) 
+       cep(i,1,5) = ( g(i)*e1(i)*e5(i) )
+       cep(i,1,6) = ( g(i)*e1(i)*e6(i) )
+       cep(i,2,4) = ( g(i)*e2(i)*e4(i) )
+       cep(i,2,5) = ( g(i)*e2(i)*e5(i) )
+       cep(i,2,6) = ( g(i)*e2(i)*e6(i) )
+       cep(i,3,4) = ( g(i)*e3(i)*e4(i) )
+       cep(i,3,5) = ( g(i)*e3(i)*e5(i) )
+       cep(i,3,6) = ( g(i)*e3(i)*e6(i) )
+       cep(i,4,1) = cep(i,1,4)
+       cep(i,5,1) = cep(i,1,5)
+       cep(i,6,1) = cep(i,1,6)
+       cep(i,4,2) = cep(i,2,4)
+       cep(i,5,2) = cep(i,2,5)
+       cep(i,6,2) = cep(i,2,6)
+       cep(i,4,3) = cep(i,3,4)
+       cep(i,5,3) = cep(i,3,5)
+       cep(i,6,3) = cep(i,3,6)
+       cep(i,4,4) = ( g(i)*e4(i)*e4(i) + c2(i)*half ) 
+       cep(i,4,5) = ( g(i)*e4(i)*e5(i) ) 
+       cep(i,4,6) = ( g(i)*e4(i)*e6(i) )
+       cep(i,5,5) = ( g(i)*e5(i)*e5(i) + c2(i)*half ) 
+       cep(i,5,6) = ( g(i)*e5(i)*e6(i) ) 
+       cep(i,6,6) = ( g(i)*e6(i)*e6(i) + c2(i)*half ) 
+       cep(i,5,4) = cep(i,4,5)
+       cep(i,6,4) = cep(i,4,6)
+       cep(i,6,5) = cep(i,5,6)
+      end do
+c
+      return
+      end
+
