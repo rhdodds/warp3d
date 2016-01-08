@@ -18,7 +18,7 @@ find_line( 2, "      11              ");
 #
 @parts = split( / +/, $line);
 #
-$answer = "54.248897";
+$answer = "54.245932";
 $partno = 3;
 #
 $message = " ";
