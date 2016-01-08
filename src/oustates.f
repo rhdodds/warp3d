@@ -172,7 +172,7 @@ c
         call omp_set_dynamic( .false. )
         if( local_debug ) start_time = omp_get_wtime()
 c
-c$OMP PARALLEL DO PRIVATE( blk, now_thread, felem, elem_type,
+c$OMP PARALLEL DO  PRIVATE( blk, now_thread, felem, elem_type,
 c$OMP&                     mat_type, int_points, span, hist_size )
 c$OMP&            SHARED( nelblk, elblks,iprops, history_blk_list, l
 c$OMP&                     local_debug, warp3d_matl_model, st_values,
@@ -439,14 +439,19 @@ c
 c
 c                       local declarations
 c
-      integer :: elem, k   
+      integer :: elem, k  
+#dbl      double precision :: small_tol, zero
+#sgl      real :: small_tol, zero
+      data small_tol, zero / 1.0d-80, 0.0d00 / 
 c  
-c           convert to sngl for ascii output so exponents 
-c           have only 2 digits.
+c           zero v. small values t prevent 3-digit exponents
+c           in formatted output.
 c
 c           Patran binary files are single precision
 c    
-      if ( patran_file .and. oubin ) then
+      where( abs( st_values ) .lt. small_tol ) st_values = zero
+c      
+      if( patran_file .and. oubin ) then
          do elem = 1, noelem
            do k = 1, num_states 
              sngl_values(k) = sngl( st_values(k,elem) )
@@ -472,15 +477,14 @@ c
 c      
       if( flat_file .and. text_file ) then
          do k = 1, noelem
-           write(flat_file_number,9100) 
-     &      sngl( st_values(1:num_states,k) )
+           write(flat_file_number,9100) st_values(1:num_states,k)
          end do
       end if
 c
       return
 c
  920  format(2i8,/,(6e13.6))
- 9100 format(100e15.6)
+ 9100 format(200e15.6)
 c      
       end subroutine  oustates_wrt
 
