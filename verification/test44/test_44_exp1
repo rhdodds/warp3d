@@ -95,9 +95,10 @@ c
    adaptive solution on
    maximum iterations 25
    convergence test norm res tol 0.001 max resid tol 0.1
+   line search on details
    time step 1.0e06
    trace solution on
-   extrapolate off
+   extrapolate on
    material messages off
    consistent q-matrix on
    bbar stabilization factor 0.0
