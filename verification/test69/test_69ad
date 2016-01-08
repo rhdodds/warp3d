@@ -281,11 +281,12 @@ nonlinear analysis parameters
    maximum iterations 10
    minimum iterations 1
    convergence test norm res tol 0.0001 $ really tight for checking !!!
+   line search on details
+   extrapolate on
    time step  0.1
    trace solution on
    adaptive solution off
    batch messages off
-   extrapolate off
    material messages off
    show details on
    consistent q-matrix off
