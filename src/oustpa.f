@@ -41,6 +41,9 @@ c
       character* 80 string, strng1, stepstring*6
       dimension titl(80), titl1(80)
       equivalence (title,titl), (title1,titl1)
+#dbl      double precision :: small_tol, zero
+#sgl      real :: small_tol, zero
+      data small_tol, zero / 1.0d-80, 0.0d00 /
 c
       patran_file = oubin .or. ouasc
       stepno = ltmstp ! more descriptive name for use here
@@ -89,7 +92,9 @@ c
          write(bnfile) titl1
 c
 c                       nodal results records. only those with non-zero
-c                       counts are in this domain
+c                       counts are in this domain. we zero very small 
+c                       values to prevent 3 digit exponents in 
+c                       formatted output.
 c
          do nod = 1, nonode
            if ( nodal_values(nod)%count .eq. 0 ) cycle
@@ -121,12 +126,12 @@ c
          do nod = 1, nonode
           if ( nodal_values(nod)%count .eq. 0 ) cycle
           snode_values => nodal_values(nod)%node_values
+          where( abs(snode_values) .lt. small_tol ) snode_values = zero
           if ( use_mpi .and. numprocs .gt.1 ) then
             write(fmfile,930) nod, nodal_values(nod)%count
             write(fmfile,940) snode_values(1:num_vals)
           else
-            write(fmfile,920) nod,
-     &       (sngl(snode_values(i)),i=1,num_vals)
+            write(fmfile,920) nod, snode_values(1:num_vals)
           end if
          end do
       end if
@@ -155,6 +160,8 @@ c
          do nod = 1, nonode
            if ( nodal_values(nod)%count .eq. 0 ) cycle
            snode_values => nodal_values(nod)%node_values
+           where( abs(snode_values) .lt. small_tol )
+     &            snode_values = zero
            if( stream_file) write(flat_file_number) dble(nod), 
      &               dble(nodal_values(nod)%count),
      &               snode_values(1:num_vals)
@@ -166,7 +173,9 @@ c
          do nod = 1, nonode
             if ( nodal_values(nod)%count .eq. 0 ) cycle
             snode_values => nodal_values(nod)%node_values
-            if( stream_file) write(flat_file_number)
+            where( abs(snode_values) .lt. small_tol )
+     &             snode_values = zero
+             if( stream_file) write(flat_file_number)
      &                    snode_values(1:num_vals)
             if( text_file) write(flat_file_number,9100) 
      &               snode_values(1:num_vals)
