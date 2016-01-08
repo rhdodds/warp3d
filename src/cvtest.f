@@ -4,7 +4,7 @@ c     *                      subroutine cvtest                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/12/2015 rhd              *
+c     *                   last modified : 11/6/2015 rhd              *
 c     *                                                              *
 c     *     perform convergence tests specified                      *
 c     *     by the user. if any one of the convergence criteria is   * 
@@ -21,7 +21,7 @@ c
      &                   adapt_load_fact, diverging_flag )          
       use mod_mpc, only : tied_con_mpcs_constructed, mpcs_exist
       use stiffness_data, only : d_lagrange_forces
-
+      use main_data, only : diverge_check_strict
       implicit integer (a-z)
 #dbl      double precision
 #sgl      real
@@ -49,10 +49,9 @@ c
       avg_force = zero
 c
 c                       compute norm of residual forces. compare
-c                       with values from prior iterations. if values
-c                       increase for 2 consecutive iterations,
-c                       the global Newton iterations are considered
-c                       to be non-convergent. set flag and return.
+c                       with values from prior iterations. examine user
+c                       specified conditions to adapt no if solution
+c                       appears to be diverging.
 c                       note save attribute for vector of prior norms
 c                       terms in res() for absolute constraints are
 c                       zero at this point.
@@ -81,7 +80,11 @@ c
 c
       norm_resids_for_checking(iter) = sum
       diverging_flag = .false.
-      if( iter .ge. 3 ) then
+      if( diverge_check_strict .and. iter .ge. 2 ) then 
+        val_2 = norm_resids_for_checking(iter)
+        val_1 = norm_resids_for_checking(iter-1)
+        diverging_flag = val_2 .ge. val_1
+      elseif( iter .ge. 3 ) then
         val_3 = norm_resids_for_checking(iter)
         val_2 = norm_resids_for_checking(iter-1)
         val_1 = norm_resids_for_checking(iter-2)
