@@ -28,7 +28,7 @@ c
      &                      rload, dload, inverse_incidences,
      &                      load_pattern_factors, elem_eq_loads,
      &                      eq_node_force_indexes, eq_node_forces,
-     &                      node_load_defs, crdmap, cnstrn,
+     &                      node_load_defs, crdmap, cnstrn_in,
      &                      temper_nodes_ref
 c
       implicit integer (a-z)
@@ -64,8 +64,7 @@ c
      &  step_factor, total_factor, dummy
       logical debug, mf_ratio_change, user_mf_ratio_change
       character * 80  user_file_name 
-#sgl      data zero / 0.0 /
-#dbl      data zero / 0.0d00 /
+      data zero / 0.0d00 /
       data debug / .false. /
 c
 c        1) initialization:
@@ -90,7 +89,8 @@ c
 c
       call eqivld_resolve_extrapolate(
      &   mf_tot, mf_nm1_tot, mf_ratio_change, step, lodnum, numlod,
-     &   user_cnstrn_stp_factors, debug, out, nodof, cstmap, cnstrn )
+     &   user_cnstrn_stp_factors, debug, out, nodof, cstmap,
+     &   cnstrn_in )
 c
 c        3) loop over all loading conditions (patterns). if that pattern
 c           contributes to the incremental load for this step,
@@ -348,8 +348,7 @@ c
 #dbl      double precision
 #sgl      real
      &  zero
-#sgl      data zero / 0.0 /
-#dbl      data zero / 0.0d00 /
+       data zero / 0.0d00 /
 c
 c           step_load_data lists the user specified patterns and multipliers
 c           for all load steps.
@@ -385,14 +384,14 @@ c
      &     mf_tot, mf_nm1_tot, mf_ratio_change, now_step,
      &     nonlinear_loading,
      &     num_loading_conds, user_cnstrn_stp_factors, debug, iout,
-     &     nodof, cstmap, cnstrn )
+     &     nodof, cstmap, cnstrn_in )
       implicit none
 c
       integer now_step, nonlinear_loading, num_loading_conds,
      &        iout, nodof, cstmap(*)
 #dbl      double precision
 #sgl      real
-     &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio, cnstrn(*)
+     &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio, cnstrn_in(*)
       real user_cnstrn_stp_factors(*)
       logical debug, mf_ratio_change
 
@@ -402,8 +401,7 @@ c
      &   zero, one, cfnm1, cfn, con_ratio, toler
       logical  non_zero_mf, non_zero_mf_nm1, all_zero_cons,
      &         loading_patterns_exist
-#sgl      data zero, one, toler / 0.0, 1.0, 1.0e-05 /
-#dbl      data zero, one, toler / 0.0d00, 1.0d00, 1.0d-05 /
+      data zero, one, toler / 0.0d00, 1.0d00, 1.0d-05 /
 c
 c           mf_tot and mf_nm1_tot are the variables used
 c           by extrapolation and the adaptive step sizing algorithm.
@@ -543,7 +541,7 @@ c
       all_zero_cons = .true.
       do i = 1, nodof
         if( cstmap(i) .eq. 0 ) cycle
-        if( abs( cnstrn(i) ) .gt. zero ) all_zero_cons = .false.
+        if( abs( cnstrn_in(i) ) .gt. zero ) all_zero_cons = .false.
       end do
       if( all_zero_cons ) then
             exit_point = 2
