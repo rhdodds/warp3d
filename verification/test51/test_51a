@@ -145,6 +145,8 @@ c
    maximum iterations 8
    minimum iterations 1
    convergence test norm res tol 0.05 maximum residual tol 0.5
+   extrapolate on
+   line search on
    time step  1.0e10
    trace solution on
    adaptive solution on
