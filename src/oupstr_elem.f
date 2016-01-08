@@ -17,23 +17,23 @@ c
      &                      stream_file, text_file, compressed )
       use main_data, only : cohesive_ele_types
       implicit integer (a-z)
-      logical stress, oubin, ouasc, flat_file,
-     &                      stream_file, text_file, compressed  
+      logical :: stress, oubin, ouasc, flat_file,
+     &           stream_file, text_file, compressed  
 $add common.main
 c
 c                       locally allocated. the big one is
 c                       elem_results.
 c
-      logical  bbar_flg, geo_non_flg, long_out_flg, nodpts_flg,
-     &         center_output, first_block, last_block, cohesive_elem
+      logical ::  bbar_flg, geo_non_flg, long_out_flg, nodpts_flg,
+     &            center_output, first_block, last_block, cohesive_elem
 c
 c
-#dbl      double precision
-#sgl      real
-     &     zero, elem_results
+#dbl      double precision ::
+#sgl      real ::
+     &     zero, elem_results, small_tol
       allocatable elem_results(:,:)
-      integer  elem_out_map(mxelmp)
-      data zero / 0.0d0 /
+      integer :: elem_out_map(mxelmp)
+      data zero, small_tol / 0.0d0, 1.0d-80 /
 c
 c
       allocate( elem_results(mxvl,mxstmp) )
@@ -117,6 +117,10 @@ c                       output the element results
 c                       to a file compatable with patran for post
 c                       processing.
 c
+c                       zero small values to prevent 3-digit exponents
+c                       in formated output
+c
+         where( abs(elem_results) .lt. small_tol ) elem_results = zero
          call oust_elem( stress, oubin, ouasc, num_vals, elem_results,
      &                   mxvl, span, first_block, felem, last_block,
      &                   flat_file,stream_file, text_file, 
@@ -126,6 +130,7 @@ c
       end do
 c
 c
+      where( abs(elem_results) .lt. small_tol ) elem_results = zero
       last_block = .true.
       call oust_elem( stress, oubin, ouasc, num_vals, elem_results,
      &                mxvl, span, first_block, felem, last_block,
