@@ -1740,6 +1740,10 @@ c
 c
 c
  1700 continue
+      num_error = num_error + 1
+      write(out,9169)
+ 9169 format(/1x,'>>>>> error: expecting keywords: next step .',
+     &       /14x,'command ignored.'/)
       go to 9999
 c
 c
@@ -1770,8 +1774,8 @@ c
       num_error = num_error + 1
 c
       write(out,9176)
- 9176 format(/1x,'>>>>> error: predict command must be followed ',
-     &           'by keywords on or off.'/14x,'predict command ',
+ 9176 format(/1x,'>>>>> error: extrapolate command must be followed ',
+     &           'by keywords on or off.'/14x,'command ',
      &           'will be ignored.'/)
       go to 9999
 c
@@ -2474,8 +2478,9 @@ c
      & /,12x,'steps. Non-proportional loads w/ extrapolation may lead',
      & /,12x,'to convergence issues.',
      & ' To improve convergence: ', /,
-     & 14x,'-> Extrapolation cancelled for this load step',/,
-     & 14x,'-> Linear stiffness used at start of step',/)
+     & 14x,'-> Extrapolation cancelled for only this load step',/,
+     & 14x,'-> This also forces use of the linear [D]s at',
+     &  ' start of step',/)
  9900 format(7x,'>> Warning: see previous type 100 message')
       goto 9999
 c
