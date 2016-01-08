@@ -4,7 +4,7 @@ c     *                      subroutine rstgp1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/2/2012  rhd              *
+c     *                   last modified : 1/2/2016 rhd               *
 c     *                                                              *
 c     *     supervise the computation of strains, stresses and       *
 c     *     accompaning stress data at an integration point          *
@@ -43,7 +43,7 @@ c
      &           adaptive, geonl, bbar, material_cut_step,
      &           local_debug, adaptive_flag
 c
-      data local_debug / .false. /
+      data local_debug / .false. / 
 c
       internal_energy   = local_work%block_energy
       plastic_work      = local_work%block_plastic_work
@@ -235,8 +235,8 @@ c
 c --------------------------------------------------------------------
 c
 c          calculate the internal energy and plastic work
-c          y integrating the densities over the deformed volume of the element.
-c          urcs_blk_n1(..,7) is really the current (total) energy
+c          y integrating the densities over the deformed volume of the.
+c          elment. urcs_blk_n1(..,7) is really the current (total) energy
 c          density per unit deformed volume - look above...
 c          increment of plastic work density stored in plastic_work_incr
 c
@@ -494,9 +494,9 @@ c     *                subroutine drive_01_update                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 06/24/12 RHD                    *
+c     *              last modified : 12/21/2015 rhd                  *
 c     *                                                              *
-c     *     this subroutine drives material model #1 to              *
+c     *     drives material model #1 (bilinear) to                   *
 c     *     update stresses and history for all elements in the      *
 c     *     block for gauss point gpn                                *
 c     *                                                              *
@@ -504,35 +504,40 @@ c     ****************************************************************
 c
 c
       subroutine drive_01_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
+     &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du 
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                      parameter declarations
 c
-
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      real ::    props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+#dbl      double precision ::  uddt_displ(mxvl,nstr)
+#sgl      real ::              uddt_displ(mxvl,nstr)
 $add include_sig_up
 c
 c                       locally defined variables
 c
-#dbl      double precision
-#sgl      real
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, mat_type, number_points, curve_set,
+     &           hist_size_for_blk, curve_type, elem_type, i
+c
+#dbl      double precision ::
+#sgl      real ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero,  ddummy(1), gp_alpha, ymfgm, et
+     &  zero,  ddummy(1), gp_alpha, ymfgm, et, uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
-      logical geonl, local_debug, temperatures, segmental,
-     &        temperatures_ref, fgm_enode_props
+      logical :: geonl, local_debug, temperatures, segmental,
+     &           temperatures_ref, fgm_enode_props
 c
-      data local_debug, zero / .false., 0.0 /
+      data zero / 0.0d0 /
 c
 c           vectorized mises plasticity model with constant hardening
 c           modulus. the model supports temperature dependence of
@@ -552,12 +557,24 @@ c
       step              = local_work%step
       iter              = local_work%iter
       now_blk           = local_work%blk
+      mat_type          = local_work%mat_type
       temperatures      = local_work%temperatures
       temperatures_ref  = local_work%temperatures_ref
       segmental         = local_work%segmental
       number_points     = local_work%number_points
       curve_set         = local_work%curve_set_number
       fgm_enode_props   = local_work%fgm_enode_props
+      hist_size_for_blk = local_work%hist_size_for_blk
+c
+      local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 3
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type,
+     &                   temperatures, temperatures_ref, segmental,
+     &                   number_points, curve_set, 
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
 c
 c          determine if the material elastic and properties are
 c          described by segmental curve(s) and if they are temperature
@@ -565,7 +582,7 @@ c          or strain rate dependent [=0 no dependence, =1 temperature
 c          dependent, =2 strain-rate dependent (not used here)]
 c
       curve_type = -1
-      if ( segmental ) call set_segmental_type( curve_set, curve_type,
+      if( segmental ) call set_segmental_type( curve_set, curve_type,
      &                                          local_work%eps_curve )
 c
 c          determine if some material properties are specified using
@@ -578,7 +595,7 @@ c          isotropic alpha can be specified as fgm properties
 c          interpolated from nodal values. note we have to
 c          recompute h-prime after the correct e and tan_e are found.
 c
-      if ( fgm_enode_props ) then
+      if( fgm_enode_props ) then
 c
           call  set_fgm_solid_props_for_block(
      &            span, felem, type, gpn, nnode,
@@ -606,6 +623,7 @@ c
      &            local_work%enode_mat_props, 7,
      &            local_work%fgm_flags(1,7) )
 c
+@!DIR$ LOOP COUNT MAX=###  
           do i = 1, span
             local_work%e_vec(i)  = local_work%e_vec_n(i)
             local_work%nu_vec(i) = local_work%nu_vec_n(i)
@@ -626,6 +644,7 @@ c
             local_work%h_vec(i) = (ymfgm*et)/(ymfgm-et)
           end do
 c
+          if( local_debug ) write(iout,9020)
       end if
 c
 c           get increment of temperature at gauss point for elements
@@ -638,6 +657,7 @@ c
      &        gp_temps, temperatures, local_work%temps_node_to_process,
      &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
+      if( local_debug ) write(iout,9030)
 c
 c          get temperature dependent young's modulus, poisson's
 c          ratio, uniaxial yield stress and constant plastic
@@ -645,7 +665,7 @@ c          modulus for the temperature at n and n+1. Some
 c          properties are not for this model but need to be passed
 c          to satisfy syntax of call.
 c
-        if ( curve_type .eq. 0 .or. curve_type .eq. 1 ) then
+      if( curve_type .eq. 0 .or. curve_type .eq. 1 ) then
           call set_up_segmental( span, gp_temps, local_work%e_vec,
      &        local_work%nu_vec, local_work%alpha_vec,
      &        local_work%e_vec_n, local_work%nu_vec_n,
@@ -663,30 +683,38 @@ c
 c
          call set_up_h_prime( span, local_work%h_vec,
      &                        local_work%sigyld_vec, felem )
-        end if
+         if( local_debug ) write(iout,9040)
+      end if
 c
-c          subtract out the thermal strain increment from uddt (the
-c          strain increment for step)
+c          get the thermal strain increment (actually negative of increment)
 c
-      if ( temperatures )
-     &               call gp_temp_eps( span, uddt,
+      uddt_temps = zero
+      if ( temperatures ) then
+        call gp_temp_eps( span, uddt_temps,
      &                    local_work%alpha_vec, gp_dtemps ,
      &                    gp_temps, gp_rtemps,
      &                    local_work%alpha_vec_n )
+        if( local_debug ) write(iout,9050)
+      end if
+c    
+c            uddt_displ - strain increment due to displacement increment
+c            uddt_temps - (negative) of strain increment just due 
+c                         to temperature change
 c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to dompute
-c          internal forces for applied nodal displacements and
-c          temperatures - material history is unaffected by
-c          iter = 0
-c
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &    gbl_cep_blocks(now_blk)%vector,
-     &    uddt, local_work%urcs_blk_n(1,1,gpn),
-     &    local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-      else
+      uddt = uddt_displ + uddt_temps
+      cep  = zero
+c      
+      do i = 1, span
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+c    
+c            now standard update process. use nonlinear update and [D]
+c            computation for iter = 0 and extrapolation or iter > 1
+c            for iter = 0 and no extrapolation, use linear-elastic [D]
+c            with props at n+1.
+
+      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+       if( local_debug ) write(iout,9060)
        call mm01( span, felem, gpn, step, iter, local_work%e_vec,
      &           local_work%nu_vec, local_work%beta_vec,
      &           local_work%h_vec, local_work%lnelas_vec,
@@ -697,15 +725,466 @@ c
      &           local_work%elem_hist1(1,1,gpn),
      &           local_work%rtse(1,1,gpn), gp_dtemps,
      &           local_work%e_vec_n, local_work%nu_vec_n  )
-      endif
+       call cnst1( span, cep, local_work%rtse(1,1,gpn),
+     &            local_work%nu_vec,
+     &            local_work%e_vec, local_work%elem_hist1(1,2,gpn),
+     &            local_work%elem_hist1(1,5,gpn), local_work%beta_vec,
+     &            local_work%elem_hist1(1,1,gpn), 
+     &            local_work%elem_hist1(1,4,gpn), felem, iout )
+      else  ! linear-elastic update
+        if( local_debug ) write(iout,9070)
+        call drive_01_update_a
+      end if
 c
+c          save the [D] matrices (lower-triangle)
+c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
+      if( local_debug ) write(iout,9080)
+c      
       return
 c
- 9600 format(' >> Fatal Error: loop to iterate on plastic-strain'
-     & /,    '                  rates did not converge. Job aborted')
+ 9000 format(1x,'.... debug mm01. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
+     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
+     &    l3,i4 ) 
  9610 format(' >> rate iterations to converge: ',i3 )
+ 9020 format(10x,'...fgm properties determined...')             
+ 9030 format(10x,'...temperatures computed at integration point...')             
+ 9040 format(10x,'...temperatures dependent properties computed...')             
+ 9050 format(10x,'...thermal strains computed...') 
+ 9060 format(10x,'...update stresses nonlinear procedure...' )            
+ 9070 format(10x,'...update stresses use linear [D]...' )            
+ 9080 format(10x,'...[D]s saved to global structure...')
 c
+      contains
+c     ========      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_01_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/21/2015 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_01_update_a
+      implicit none
+c
+      integer :: k, m, i
+#dbl      double precision :: one, two, e, nu, c1, c2, c3, c4
+#sgl      real :: one, two, e, nu, c1, c2, c3, c4
+      data one, two / 1.0d00, 2.0d00 /
+c
+c              get linear-elastic [D] with potentially temperature
+c              dependent properties
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e  = local_work%e_vec(i)
+         nu = local_work%nu_vec(i)
+         c1 = (e/((one+nu)*(one-two*nu)))
+         c2 = (one-nu)*c1
+         c3 = ((one-two*nu)/two)*c1
+         c4 = nu*c1
+         cep(i,1,1)= c2
+         cep(i,2,2)= c2
+         cep(i,3,3)= c2
+         cep(i,4,4)= c3
+         cep(i,5,5)= c3
+         cep(i,6,6)= c3
+         cep(i,1,2)= c4
+         cep(i,1,3)= c4
+         cep(i,2,1)= c4
+         cep(i,3,1)= c4
+         cep(i,2,3)= c4
+         cep(i,3,2)= c4
+      end do
+c
+c              stresses at n+1 using linear-elastic [D]
+c 
+       call drive_01_update_b( span, mxvl, uddt, cep, 
+     &                        local_work%urcs_blk_n(1,1,gpn),
+     &                        local_work%urcs_blk_n1(1,1,gpn),
+     &                        local_work%killed_status_vec )
+c     
+      return
+      end subroutine drive_01_update_a
+c
+      end subroutine drive_01_update
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_01_update_b                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/21/2015 rhd             *
+c     *                                                              *
+c     *     support routine for mm01 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_01_update_b( span, mxvl, uddt,
+     &                              local_cep, stress_n, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6), zero
+      data zero / 0.0d00 /
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements
+c
+      stress_np1 = stress_n
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
+      return
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_02_update                   *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/27/2015 rhd             *
+c     *                                                              *
+c     *     this subroutine drives material model 02 to              *
+c     *     update stresses and history for all elements in the      *
+c     *     block for an integration point                           *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine drive_02_update( gpn, props, lprops, iprops,
+     &                            local_work, uddt_displ, iout )
+      use segmental_curves, only : max_seg_points
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du 
+c
+      implicit none
+$add param_def
+c
+c                      parameter declarations
+c
+      real ::    props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+#dbl      double precision ::  uddt_displ(mxvl,nstr)
+#sgl      real ::              uddt_displ(mxvl,nstr)
+$add include_sig_up
+
+c
+c                       locally defined variables
+c
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, elem_type, mat_type,
+     &           hist_size_for_blk, i
+c
+#dbl      double precision ::
+#sgl      real ::
+     &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
+     &  zero,  gp_alpha, cep(mxvl,6,6), ddtse(mxvl,6), nowtemp
+c
+      logical :: geonl, local_debug, temperatures,
+     &           temperatures_ref, fgm_enode_props, signal_flag
+c
+      data zero / 0.0d0 /
+c
+c          deformation plasticity model. properties are invariant of
+c          temperature and loading rate. properties may vary spatially
+c          for fgms - values here are interploated at the current
+c          integration point.
+c
+      span              = local_work%span
+      felem             = local_work%felem
+      step              = local_work%step
+      iter              = local_work%iter
+      now_blk           = local_work%blk
+      type              = local_work%elem_type
+      order             = local_work%int_order
+      ndof              = local_work%num_enode_dof
+      nnode             = local_work%num_enodes
+      mat_type          = local_work%mat_type
+      signal_flag       = local_work%signal_flag
+      fgm_enode_props   = local_work%fgm_enode_props
+      temperatures      = local_work%temperatures
+      temperatures_ref  = local_work%temperatures_ref
+      hist_size_for_blk = local_work%hist_size_for_blk
+c      
+      local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 3
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type,
+     &                   temperatures, temperatures_ref,
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
+c
+c          for fgms, interpolate values of material properties
+c          at the current gauss point (overwrite the constant values).
+c          at present only e, nu, sig_yld, n_power and
+c          isotropic alpha can be specified
+c          as fgm properties interpolated from nodal values.
+c
+      if( fgm_enode_props ) then
+c
+          call  set_fgm_solid_props_for_block(
+     &            span, felem, type, gpn, nnode,
+     &            local_work%e_vec, local_work%shape(1,gpn),
+     &            local_work%enode_mat_props, 1,
+     &            local_work%fgm_flags(1,1) )
+          call  set_fgm_solid_props_for_block(
+     &            span, felem, elem_type, gpn, nnode,
+     &            local_work%nu_vec, local_work%shape(1,gpn),
+     &            local_work%enode_mat_props, 2,
+     &            local_work%fgm_flags(1,2) )
+          call  set_fgm_solid_props_for_block(
+     &            span, felem, elem_type, gpn, nnode,
+     &            local_work%alpha_vec(1,1), local_work%shape(1,gpn),
+     &            local_work%enode_mat_props, 3,
+     &            local_work%fgm_flags(1,3) )
+          call  set_fgm_solid_props_for_block(
+     &            span, felem, elem_type, gpn, nnode,
+     &            local_work%sigyld_vec(1), local_work%shape(1,gpn),
+     &            local_work%enode_mat_props, 7,
+     &            local_work%fgm_flags(1,7) )
+          call  set_fgm_solid_props_for_block(
+     &            span, felem, elem_type, gpn, nnode,
+     &            local_work%n_power_vec(1), local_work%shape(1,gpn),
+     &            local_work%enode_mat_props, 8,
+     &            local_work%fgm_flags(1,8) )
+@!DIR$ LOOP COUNT MAX=###  
+          do i = 1, span
+            gp_alpha  = local_work%alpha_vec(i,1)
+            local_work%alpha_vec(i,1)   = gp_alpha
+            local_work%alpha_vec(i,2)   = gp_alpha
+            local_work%alpha_vec(i,3)   = gp_alpha
+            local_work%alpha_vec(i,4)   = zero
+            local_work%alpha_vec(i,5)   = zero
+            local_work%alpha_vec(i,6)   = zero
+          end do
+          if( local_debug ) write(iout,9020)
+      end if      
+c
+c           get increment of temperature at gauss point for elements
+c           in the block, the temperature at end of step and the
+c           reference temperature.
+c
+      call gauss_pt_temps(
+     &        local_work%dtemps_node_blk, gpn, type, span, order,
+     &        nnode, gp_dtemps, local_work%temps_node_blk,
+     &        gp_temps, temperatures, local_work%temps_node_to_process,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        gp_rtemps )
+      if( local_debug ) write(iout,9030)
+c
+c          process iter > 0 or iter=0 and extrapolated du. mm02 
+c          uses total strains adjusted for total
+c          temperature strains to compute stresses @ n+1.
+c
+      if( temperatures ) then 
+         do i = 1, span
+           nowtemp = gp_temps(i) - gp_rtemps(i)
+           ddtse(i,1) = local_work%ddtse(i,1,gpn) -
+     &                  local_work%alpha_vec(i,1)*nowtemp
+           ddtse(i,2) = local_work%ddtse(i,2,gpn) -
+     &                  local_work%alpha_vec(i,2)*nowtemp
+           ddtse(i,3) = local_work%ddtse(i,3,gpn) -
+     &                  local_work%alpha_vec(i,3)*nowtemp
+           ddtse(i,4) = local_work%ddtse(i,4,gpn) -
+     &                  local_work%alpha_vec(i,4)*nowtemp
+           ddtse(i,5) = local_work%ddtse(i,5,gpn) -
+     &                  local_work%alpha_vec(i,5)*nowtemp
+           ddtse(i,6) = local_work%ddtse(i,6,gpn) -
+     &                  local_work%alpha_vec(i,6)*nowtemp
+         end do
+         if( local_debug ) write(iout,9090)
+      else
+         ddtse = local_work%ddtse(1:span,1:6,gpn)
+      end if
+c
+      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+         if( local_debug ) write(iout,9060)
+         call mm02( step, iter, felem, gpn, local_work%e_vec,
+     &           local_work%nu_vec, local_work%sigyld_vec,
+     &           local_work%n_power_vec,local_work%urcs_blk_n(1,1,gpn),
+     &           local_work%urcs_blk_n1(1,1,gpn),
+     &           ddtse(1,1),  ! total strain @ n+1
+     &           local_work%elem_hist(1,1,gpn),
+     &           local_work%elem_hist1(1,1,gpn), span, iout,
+     &           signal_flag )
+         call cnst2( felem, gpn, local_work%e_vec, local_work%nu_vec,
+     &               local_work%sigyld_vec, local_work%n_power_vec,
+     &               ddtse, local_work%elem_hist1(1,1,gpn), 
+     &               cep, span, iout )
+      else
+        if( local_debug ) write(iout,9070)
+        cep  = zero
+        call drive_02_update_a
+      end if
+c
+c          save the [D] matrices (lower-triangle)
+c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
+      if( local_debug ) write(iout,9080)
+c      
+      return
+c      
+ 9000 format(1x,'.... debug mm02. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
+     &    l3,i4 ) 
+ 9610 format(' >> rate iterations to converge: ',i3 )
+ 9020 format(10x,'... fgm properties determined...')             
+ 9030 format(10x,'... temperatures computed at integration point ...')             
+ 9040 format(10x,'... temperatures dependent properties computed ...')             
+ 9050 format(10x,'... thermal strains computed ...') 
+ 9060 format(10x,'... update stresses nonlinear procedure ...' )            
+ 9070 format(10x,'... update stresses use linear [D] ...' )            
+ 9080 format(10x,'...[ D]s saved to global structure ...')
+ 9090 format(10x,'... temperature effects subtracted ...') 
+c      
+      contains
+c     ========      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_02_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/26/2015 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_02_update_a
+      implicit none
+c
+      integer :: k, m, i
+#dbl      double precision :: one, two, e, nu, c1, c2, c3, c4
+#sgl      real :: one, two, e, nu, c1, c2, c3, c4
+      data one, two / 1.0d00, 2.0d00 /
+c
+c              get linear-elastic [D] with potentially temperature
+c              dependent properties
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e  = local_work%e_vec(i)
+         nu = local_work%nu_vec(i)
+         c1 = (e/((one+nu)*(one-two*nu)))
+         c2 = (one-nu)*c1
+         c3 = ((one-two*nu)/two)*c1
+         c4 = nu*c1
+         cep(i,1,1)= c2
+         cep(i,2,2)= c2
+         cep(i,3,3)= c2
+         cep(i,4,4)= c3
+         cep(i,5,5)= c3
+         cep(i,6,6)= c3
+         cep(i,1,2)= c4
+         cep(i,1,3)= c4
+         cep(i,2,1)= c4
+         cep(i,3,1)= c4
+         cep(i,2,3)= c4
+         cep(i,3,2)= c4
+      end do
+c
+c              stresses at n+1 using linear-elastic [D]
+c 
+       call drive_02_update_b( span, mxvl, ddtse, cep, 
+     &                        local_work%urcs_blk_n1(1,1,gpn),
+     &                        local_work%killed_status_vec )
+c     
+      return
+      end subroutine drive_02_update_a
+c
+      end subroutine drive_02_update
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_02_update_b                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/26/2015 rhd             *
+c     *                                                              *
+c     *     support routine for mm02 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_02_update_b( span, mxvl, ddtse,
+     &                              local_cep, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_np1(mxvl,6), ddtse(mxvl,6), zero
+      data zero / 0.0d00 /
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements
+c
+      stress_np1 = zero
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * ddtse(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
+      return
+      end
+      
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_02_update                   *
@@ -721,7 +1200,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine drive_02_update( gpn, props, lprops, iprops,
+      subroutine drive_02_update_old( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
@@ -885,71 +1364,67 @@ c
 c
       return
       end
+      
 c     ****************************************************************
 c     *                                                              *
 c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 03/18/04 rhd                     *
+c     *             last modified : 11/9/2015 rhd                    *
 c     *                                                              *
-c     *     this subroutine drives material model 03 to              *
-c     *     update stresses and history for all elements in the      *
-c     *     for gauss point gpn                                      *
+c     *     drives material model 03 to update stresses and history  *
+c     *     for all elements in the block at 1 integration point     *
+c     *     (gpn)                                                    *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_03_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
+     &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points, max_seg_curves,
      &                             now_blk_relem, sigma_curve_min_values
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du 
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                      parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      real ::    props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+#dbl      double precision ::  uddt_displ(mxvl,nstr)
+#sgl      real ::              uddt_displ(mxvl,nstr)
 $add include_sig_up
 c
 c                       locally defined variables
 c
-#dbl      double precision
-#sgl      real
+#dbl      double precision ::
+#sgl      real ::
      &  dtime, internal_energy, beta_fact, eps_bbar, ddt(mxvl,nstr),
      &  q(mxvl,nstr,nstr), stress_n(nstrs,mxvl),
      &  stress_n1(nstrs,mxvl), p_trial(mxvl), q_trial(mxvl), dfn1(mxvl),
      &  yld_func(mxvl), step_scale_fact, plastic_work, gp_temps(mxvl),
      &  gp_dtemps(mxvl), plastic_eps_rates(mxvl), gp_rtemps(mxvl),
      &  zero, gp_alpha, et, ymfgm, copy_sigyld_vec(mxvl),
-     &  trans_factor, curve_min_value
+     &  trans_factor, curve_min_value, uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
-      logical null_point(mxvl), cut_step, process_block,
-     &        adaptive, geonl, bbar, material_cut_step,
-     &        local_debug, signal_flag, adaptive_flag,
-     &        power_law, temperatures, allow_cut, segmental,
-     &        model_update, temperatures_ref, fgm_enode_props
+      logical :: null_point(mxvl), cut_step, process_block,
+     &           adaptive, geonl, bbar, material_cut_step,
+     &           local_debug, signal_flag, adaptive_flag,
+     &           power_law, temperatures, allow_cut, segmental,
+     &           model_update, temperatures_ref, fgm_enode_props
 c
-      type :: arguments
-#r60        sequence
-        integer :: iter, abs_element, relem, ipoint, iout
-        logical :: allow_cut, segmental, power_law,
-     &             rate_depend_segmental, signal_flag, cut_step
-#sgl        real :: dtime, step_scale_fact
-#dbl        double precision :: dtime, step_scale_fact
-      end type
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, mat_type, number_points, curve_set,
+     &           hist_size_for_blk, curve_type, elem_type, i,
+     &           numrows_stress      
 c
-      type (arguments) ::args
-
-      data zero, local_debug / 0.0, .false. /
-      data trans_factor / 0.95 /
+      data zero, trans_factor / 0.0d00, 0.95d00 /
 c
       dtime             = local_work%dt
       internal_energy   = local_work%block_energy
@@ -983,7 +1458,16 @@ c
       adaptive          = adaptive_flag .and. step .gt. 1
       fgm_enode_props   = local_work%fgm_enode_props
       hist_size_for_blk = local_work%hist_size_for_blk
-
+c
+      local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 1
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type, adaptive_flag,
+     &                   temperatures, temperatures_ref, segmental,
+     &                   number_points, curve_set, power_law,
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
 c
       curve_type = -1
       if ( segmental ) call set_segmental_type( curve_set, curve_type,
@@ -998,7 +1482,7 @@ c          isotropic alpha can be specified
 c          as fgm properties interpoalted from nodal values. note
 c          we have to recompute h-prime after the correct e is found.
 c
-      if ( fgm_enode_props ) then
+      if( fgm_enode_props ) then
 c
           call  set_fgm_solid_props_for_block(
      &            span, felem, type, gpn, nnode,
@@ -1051,6 +1535,7 @@ c
             local_work%h_vec(i)         = (ymfgm*et)/(ymfgm-et)
           end do
 c
+          if( local_debug ) write(iout,9020)
       end if
 c
 c          get temperature increment at the gauss point for all elements
@@ -1064,6 +1549,7 @@ c
      &        local_work%temps_node_to_process,
      &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
+      if( local_debug ) write(iout,9030)
 c
 c          get temperature dependent elastic and flow properites.
 c          build local copy of stress vs. plastic strain curve
@@ -1072,7 +1558,7 @@ c          set yield stress at zero plastic strain.  Some
 c          properties are not for this model but need to be passed
 c          to satisfy syntax of call.
 c
-      if ( curve_type .eq. 0 .or. curve_type .eq. 1 ) then
+      if( curve_type .eq. 0 .or. curve_type .eq. 1 ) then
          call set_up_segmental( span, gp_temps, local_work%e_vec,
      &        local_work%nu_vec, local_work%alpha_vec,
      &        local_work%e_vec_n, local_work%nu_vec_n,
@@ -1090,24 +1576,148 @@ c
 c
          call set_up_h_prime( span, local_work%h_vec,
      &                        local_work%sigyld_vec, felem )
+         if( local_debug ) write(iout,9040)
       end if
 c
-c          subtract out the thermal strain increment from uddt.
+c          compute negative of incremental thermal strains
 c
-      if ( temperatures )
-     &   call gp_temp_eps( span, uddt, local_work%alpha_vec,
-     &                     gp_dtemps,
-     &                     gp_temps, gp_rtemps,
+      uddt_temps = zero
+      if( temperatures ) then
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                     gp_dtemps, gp_temps, gp_rtemps,
      &                     local_work%alpha_vec_n )
-
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector(1),
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        return
-       end if
+        if( local_debug ) write(iout,9050)
+      end if
+c
+c    
+c            uddt_displ - strain increment due to displacement increment
+c            uddt_temps - (negative) of strain increment just due 
+c                         to temperature change
+c
+      uddt = uddt_displ + uddt_temps
+      cep  = zero
+      do i = 1, span
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+c    
+c                set up local stress array at state 'n'. used by 
+c                nonlinear update.
+c
+      numrows_stress = nstrs
+      call drive_03_update_d( span, numrows_stress, stress_n,
+     &               local_work%urcs_blk_n(1,1,gpn), mxvl )
+c 
+      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+        if( local_debug ) write(iout,9060)
+        call drive_03_update_a
+        call drive_03_update_c( span, numrows_stress, stress_n1,
+     &               local_work%urcs_blk_n1(1,1,gpn), mxvl )
+      else  ! linear-elastic update
+        if( local_debug ) write(iout,9070)
+        call drive_03_update_b
+      end if
+c
+c          save the [D] matrices (lower-triangle)
+c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
+      if( local_debug ) write(iout,9080)
+c
+ 9000 format(1x,'.... debug mm03. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...adaptive_flag, temperatures, temperatures_ref: ',
+     &               3l2,
+     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
+     &     /,10x,'...power_law, fgm_enode_props, hist_size_for_blk: ',
+     &    2l3,i4 ) 
+ 9020 format(10x,'...fgm properties determined...')             
+ 9030 format(10x,'...temperatures computed at integration point...')             
+ 9040 format(10x,'...temperatures dependent properties computed...')             
+ 9050 format(10x,'...thermal strains computed...') 
+ 9060 format(10x,'...update stresses nonlinear procedure...' )            
+ 9070 format(10x,'...update stresses use linear [D]...' )            
+ 9080 format(10x,'...[D]s saved to global structure...')
+c
+      return
+c
+      contains
+c     ========      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_03_update_b                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/9/2015 rhd
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_03_update_b
+      implicit none
+c
+      integer :: k, m, i
+#dbl      double precision :: one, two, e, nu, c1, c2, c3, c4
+#sgl      real :: one, two
+      data one, two / 1.0d00, 2.0d00 /
+c
+c              get linear-elastic [D] with potentially temperature
+c              dependent properties
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e  = local_work%e_vec(i)
+         nu = local_work%nu_vec(i)
+         c1 = (e/((one+nu)*(one-two*nu)))
+         c2 = (one-nu)*c1
+         c3 = ((one-two*nu)/two)*c1
+         c4 = nu*c1
+         cep(i,1,1)= c2
+         cep(i,2,2)= c2
+         cep(i,3,3)= c2
+         cep(i,4,4)= c3
+         cep(i,5,5)= c3
+         cep(i,6,6)= c3
+         cep(i,1,2)= c4
+         cep(i,1,3)= c4
+         cep(i,2,1)= c4
+         cep(i,3,1)= c4
+         cep(i,2,3)= c4
+         cep(i,3,2)= c4
+      end do
+c
+c              stresses at n+1 using linear-elastic [D]
+c 
+      call drive_03_update_e( span, mxvl, uddt, cep,
+     &                        local_work%urcs_blk_n(1,1,gpn),
+     &                        local_work%urcs_blk_n1(1,1,gpn),
+     &                        local_work%killed_status_vec )
+c     
+      return
+      end subroutine drive_03_update_b     
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_03_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/9/2015 rhd              *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_03_update_a
+      implicit none
+c
+      type :: arguments
+        integer :: iter, abs_element, relem, ipoint, iout
+        logical :: allow_cut, segmental, power_law,
+     &             rate_depend_segmental, signal_flag, cut_step
+#sgl        real :: dtime, step_scale_fact
+#dbl        double precision :: dtime, step_scale_fact
+      end type
+c
+      type (arguments) ::args
 c
 c
 c          for rate dependent response defined by a set of segmental
@@ -1173,11 +1783,6 @@ c         in stress update code.
 c
 c --------------------------------------------------------------------
 c
-c                set up local stress array at state 'n'
-c
-      numrows_stress = nstrs
-      call rstgp1_d( span, numrows_stress, stress_n,
-     &               local_work%urcs_blk_n(1,1,gpn), mxvl )
 c
 c                set up processing for all elements in block at
 c                this gauss point. elements can be linear,
@@ -1192,9 +1797,9 @@ c                done here. we can't change local_work since the
 c                next gp could be using the same vector.
 c
       copy_sigyld_vec(1:span) = local_work%sigyld_vec(1:span)
-      if ( .not. segmental ) then
+      if( .not. segmental ) then
         do i = 1, span
-         if ( local_work%n_power_vec(i) .gt. zero )
+         if( local_work%n_power_vec(i) .gt. zero )
      &    copy_sigyld_vec(i) = copy_sigyld_vec(i) * trans_factor
         end do
       end if
@@ -1213,7 +1818,7 @@ c
      &       local_work%e_vec_n, local_work%nu_vec_n,
      &       hist_size_for_blk  )
 c
-      if ( .not. process_block ) go to 1000
+      if( process_block ) then
 c
 c                 we use the args derived type here to reduce the number of
 c                 parameters passed to mm03 since it is called many times.
@@ -1233,8 +1838,8 @@ c
       args%rate_depend_segmental = curve_type .eq. 2
 c
       do i = 1, span
-        if ( null_point(i) ) cycle
-        if ( .not. local_work%nonlinear_flag(i) ) cycle
+        if( null_point(i) ) cycle
+        if( .not. local_work%nonlinear_flag(i) ) cycle
         now_blk_relem = i
         args%abs_element = felem+i-1
         args%relem = i
@@ -1256,42 +1861,146 @@ c
      &         yld_func(i), p_trial(i), q_trial(i), mxvl,
      &         hist_size_for_blk, curve_min_value, span )
         material_cut_step = material_cut_step .or. args%cut_step
-      end do
+      end do ! on span
 c
       local_work%material_cut_step = material_cut_step
+      if( material_cut_step ) return
+
+      end if   ! on process_block      
 c
-c                save stresses at n+1 into block data structure.
-c                step cut flag for block if material model
-c                failed to converge and it wants a load step
-c                size reduction
-c
- 1000 continue
-      call rstgp1_c( span, numrows_stress, stress_n1,
-     &               local_work%urcs_blk_n1(1,1,gpn), mxvl )
-c
+      call cnst3(
+     &  felem, gpn, iter, local_work%e_vec,
+     &  local_work%nu_vec, local_work%q1_vec, local_work%q2_vec,
+     &  local_work%q3_vec, local_work%nuc_vec,
+     &  local_work%nuc_s_n_vec, local_work%nuc_e_n_vec,
+     &  local_work%nuc_f_n_vec,
+     &  local_work%rtse(1,1,gpn), local_work%elem_hist(1,1,gpn), 
+     &  local_work%elem_hist1(1,1,gpn), cep, span, iout )
+c     
+      do i = 1, span
+        if( local_work%killed_status_vec(i) ) then
+            cep(i,1:6,1:6) = zero
+            stress_n1(1:nstrs,i) = zero
+        end if
+      end do
 c
       return
 c
- 9000 format('>>> Fatal Error: the nonlinear elastic material',
-     &     /,'                 is not compatible with large',
-     &     /,'                 displacement elements.',
-     &     /,'                 job terminated....' )
- 9100 format(i5,7f15.6,/,5x,7f15.6,/,5x,6f15.6,/,5x,6f15.6)
- 9110 format(1x,'Elem    /',20('-'),
-     &        ' unrot. Cauchy @ n, unrot. Cauchy @ n+1,',
-     &        ' ddt, uddt', 20('-'),'/')
- 9500 format('  Internal energy inside of (rstgp1)    = ',e16.6,
-     &     /,'  Plasstic work inside of (rstgp1)      = ',e16.6)
- 9600 format(' >> Fatal Error: loop to iterate on plastic-strain'
-     & /,    '                  rates did not converge. Job aborted')
- 9610 format(' >> rate iterations to converge: ',i3 )
- 9820 format(///,
-     &       '>> FATAL ERROR: strain computation routines requested',
-     &     /,'                immediate step size reduction due to',
-     &     /,'                invalid determinant of a deformation',
-     &     /,'                jacobian. the user has not allowed step',
-     &     /,'                size reductions. analysis terminated.',
-     &     /// )
+      end subroutine drive_03_update_a
+      end subroutine drive_03_update 
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_03_update_e                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/9/2015 rhd              *
+c     *                                                              *
+c     *     support routine for mm03 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_03_update_e( span, mxvl, uddt,
+     &                              local_cep, stress_n, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6), zero
+      data zero / 0.0d00 /
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements
+c
+      stress_np1 = stress_n
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
+      return
+      end
+
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_03_update_c                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/9/2015 rhd
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_03_update_c( span, nstrs, stress_n1, 
+     &                              urcs_blk_n1, mxvl )
+      implicit none
+c      
+      integer :: span, nstrs, mxvl
+#dbl      double precision ::
+#sgl      real ::
+     &  stress_n1(nstrs,*), urcs_blk_n1(mxvl,*)
+c
+      integer :: k, i
+c
+      do k = 1, nstrs  !  not necessarily = 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           urcs_blk_n1(i,k) = stress_n1(k,i)
+         end do
+      end do
+c
+      return
+      end
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_03_update_d                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 11/9/2015 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_03_update_d( span, nstrs, stress_n, 
+     &                              urcs_blk_n, mxvl )
+      implicit none
+c
+      integer ::  span, nstrs, mxvl
+#dbl      double precision :: 
+#sgl      real ::
+     &  stress_n(nstrs,*), urcs_blk_n(mxvl,*)
+c
+      integer :: k, i     
+c
+      do k = 1, nstrs    !  not necessarily = 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_n(k,i) = urcs_blk_n(i,k)
+         end do
+      end do
+c
+      return
       end
 c     ****************************************************************
 c     *                                                              *
@@ -1299,43 +2008,51 @@ c     *                 subroutine drive_04_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/13/14 rhd               *
+c     *                   last modified : 10/26/2015 rhd             *
 c     *                                                              *
-c     *     this subroutine drives material model 04 to              *
-c     *     update stresses and history for all elements in the      *
-c     *     for gauss point gpn                                      *
+c     *     drive model 04 interface-cohesive to                     *
+c     *     update stresses, history, [D]s for all elements in the   *
+c     *     block for gauss point gpn                                *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_04_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
+      use main_data, only : matprp, lmtprp, extrapolated_du,
+     &                      non_zero_imposed_du 
       use segmental_curves, only : max_seg_points
       use elem_block_data, only  : gbl_cep_blocks => cep_blocks
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
-c                      parameter declarations
+c              parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      integer ::  gpn, iout
+      real    ::  props(mxelpr,*)   ! all same but readonly
+      logical ::  lprops(mxelpr,*)
+      integer ::  iprops(mxelpr,*)
+#dbl      double precision :: uddt(mxvl,nstr)
+#sgl      real :: uddt(mxvl,nstr)
 $add include_sig_up
 c
-c                       locally defined variables
+c              locally defined variables
 c
-#dbl      double precision
-#sgl      real
-     &  time_n, dtime, ddummy(mxvl)
-      integer idummy(mxvl)
+#dbl      double precision ::
+#sgl      real ::
+     &  time_n, dtime,  cep(mxvl,6,6), ddummy(mxvl), ds1,
+     &  ds2, dn, tns1, tns2, tnn, zero  
+c 
+      integer :: i, idummy(mxvl), span, felem, step, now_blk, iter,
+     &           nnode, knumthreads, kthread, imxvl
 
-      logical fgm_enode_props, nonlocal, temperatures,
-     &        temperatures_ref
+      logical :: fgm_enode_props, nonlocal, temperatures,
+     &           temperatures_ref, local_debug
+c     
+      data zero / 0.0d00 /
 c
+      local_debug       = .false.
       span              = local_work%span
       felem             = local_work%felem
       step              = local_work%step
@@ -1347,30 +2064,110 @@ c
       temperatures      = local_work%temperatures
       temperatures_ref  = local_work%temperatures_ref
       knumthreads       = local_work%num_threads
-      kthread           = omp_get_thread_num() + 1
+      kthread           = local_work%now_thread
 c
       time_n = local_work%time_n
       dtime  = local_work%dt
 c
       nonlocal = local_work%is_cohes_nonlocal
-      imxvl = mxvl
+      imxvl    = mxvl   ! protect mxvl
+      if( gpn .eq. 1 ) local_work%elem_hist1 = zero
 c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to dompute
-c          internal forces for applied nodal displacements and
-c          temperatures - material history is unaffected by
-c          iter = 0
-
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 2, 6, igpn )
-        return
-       end if
-
-       if( gpn .eq. 1 ) local_work%elem_hist1 = 0.0
+c              get updated stresses and new [D]
+c              - usual process for iter >=1 or extrapolated
+c                incremental displacements
+c              - iter = 0. get linear [D]s. update
+c                stresses for user imposed incremental
+c                displacements
+c
+c              model does not have temperature dependence as yet
+c
+      if( iter .ge. 1 .or. extrapolated_du ) then
+         call drive_04_update_std
+      else
+         call drive_04_update_iter_0_no_extrapolate       
+         do i = 1, span
+           ds1  = uddt(i,1)
+           ds2  = uddt(i,2)
+           dn   = uddt(i,3)
+           tns1 = local_work%urcs_blk_n(i,1,gpn)
+           tns2 = local_work%urcs_blk_n(i,2,gpn)
+           tnn  = local_work%urcs_blk_n(i,3,gpn)
+           local_work%urcs_blk_n1(i,1,gpn) = tns1 +
+     &         cep(i,1,1)*ds1 + cep(i,1,2)*ds2 + cep(i,1,3)*dn
+           local_work%urcs_blk_n1(i,2,gpn) = tns2 +
+     &         cep(i,2,1)*ds1 + cep(i,2,2)*ds2 + cep(i,2,3)*dn
+           local_work%urcs_blk_n1(i,3,gpn) = tnn +
+     &         cep(i,3,1)*ds1 + cep(i,3,2)*ds2 + cep(i,3,3)*dn
+          end do    
+      end if
+c
+c              store the lower-triangle of the 3x3 symmetric [D] each
+c              element. subroutine should be inlined
+c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &                       gbl_cep_blocks(now_blk)%vector, 
+     &                       6, cep )
+c
+      if( local_debug ) then
+         write(iout,9000)
+         write(iout,*) " .... extrapolated_du: ",extrapolated_du
+         do i = 1, span
+           write(iout,9100) felem+i-1, gpn
+           write(iout,9110) cep(i,1:3,1:3)
+         end do
+      end if
+c            
+      return
+c
+9000  format(5x,'drive_04_update. returned [D]s')
+9100  format(10x,'...element, gpn: ',i7,i3)
+9110  format(3(15x,3f10.3,/))
+c       
+       contains
+c      ========       
+c     ****************************************************************
+c     *                                                              *
+c     *         subroutine drive_04_update_iter_0_no_extrapolate     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 10/26/2015 rhd             *
+c     *                                                              *
+c     *     drive model 04 interface-cohesive to                     *
+c     *     update stresses and history for all elements in the      *
+c     *     for gauss point gpn                                      *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine drive_04_update_iter_0_no_extrapolate
+c
+c                linear and non-linear cohesive model
+c
+      call lcnst4(
+     &   step, local_work%cohes_type, span, mxvl, nstr, gpn, felem,
+     &   iout, time_n, dtime, cep, local_work%intf_prp_block )
+c
+      return
+      end subroutine drive_04_update_iter_0_no_extrapolate
+       
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_04_update_std               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 10/26/2015 rhd             *
+c     *                                                              *
+c     *     drive model 04 interface-cohesive to                     *
+c     *     update stresses and history for all elements in the      *
+c     *     for gauss point gpn                                      *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine drive_04_update_std
 c
 c                linear and non-linear cohesive model
 c
@@ -1398,6 +2195,27 @@ c
      h    local_work%nonlocal_stvals_bott_n(1,1),
      i    local_work%top_solid_matl(1),
      j    local_work%bott_solid_matl(1) )
+        call cnst4(
+     &   step, iter, felem, gpn, iout, span, imxvl, time_n, dtime,
+     &   nonlocal, knumthreads, kthread, local_work%cohes_type,
+     &   local_work%intf_prp_block,
+     &   local_work%ddtse(1,1,gpn), 
+     &   local_work%elem_hist(1,1,gpn),
+     &   local_work%elem_hist1(1,1,gpn),
+     &   cep, 
+     &   local_work%cohes_temp_ref(1), 
+     &   local_work%cohes_dtemp(1), 
+     &   local_work%cohes_temp_n(1),
+     &   local_work%top_surf_solid_elements(1), 
+     &   local_work%bott_surf_solid_elements(1),
+     &   local_work%top_surf_solid_stresses_n(1,1),
+     &   local_work%bott_surf_solid_stresses_n(1,1),
+     &   local_work%top_surf_solid_eps_n(1,1), 
+     &   local_work%bott_surf_solid_eps_n(1,1),
+     &   local_work%nonlocal_stvals_top_n(1,1), 
+     &   local_work%nonlocal_stvals_bott_n(1,1), 
+     &   local_work%top_solid_matl(1),
+     &   local_work%bott_solid_matl(1) )
       else
         call mm04(
      g    step, iter, span, felem, gpn, iout, imxvl, time_n, dtime,
@@ -1422,19 +2240,41 @@ c
      h    ddummy(1),
      i    idummy(1),
      j    idummy(1) )
+        call cnst4(
+     &   step, iter, felem, gpn, iout, span, imxvl, time_n, dtime,
+     &   nonlocal, knumthreads, kthread, local_work%cohes_type,
+     &   local_work%intf_prp_block,
+     &   local_work%ddtse(1,1,gpn), 
+     &   local_work%elem_hist(1,1,gpn),
+     &   local_work%elem_hist1(1,1,gpn),
+     &   cep, 
+     &   local_work%cohes_temp_ref(1), 
+     &   local_work%cohes_dtemp(1), 
+     &   local_work%cohes_temp_n(1),
+     &   idummy(1),
+     &   idummy(1),
+     &   ddummy(1),
+     &   ddummy(1),
+     &   ddummy(1),
+     &   ddummy(1),
+     &   ddummy(1),
+     &   ddummy(1),
+     &   idummy(1),
+     &   idummy(1) )
       end if
 c
       return
-      end
+      end subroutine drive_04_update_std
+      end subroutine drive_04_update
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 07/31/2011                 *
+c     *                   last modified : 12/31/2015 rhd             *
 c     *                                                              *
-c     *     this subroutine drives material model 05 to              *
+c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
 c     *     for gauss point gpn                                      *
 c     *                                                              *
@@ -1442,39 +2282,46 @@ c     ****************************************************************
 c
 c
       subroutine drive_05_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
+     &                            local_work, uddt_displ, iout )
       use main_data, only : matprp, lmtprp
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du 
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                      parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      real    ::  props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+#dbl      double precision ::  uddt_displ(mxvl,nstr)
+#sgl      real ::              uddt_displ(mxvl,nstr)
 $add include_sig_up
 c
 c
 c                       locally defined variables
 c
-#dbl      double precision
-#sgl      real
-     &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime, sig_tol,
-     &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
-     &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
-
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, mat_type, number_points, curve_set,
+     &           hist_size_for_blk, curve_type, elem_type, i,
+     &           matnum
 c
-      logical signal_flag, local_debug, temperatures,
-     &        temperatures_ref, adaptive_possible, cut_step_size_now,
-     &        segmental, nonlin_hard, generalized_pl
-      data local_debug, zero / .false., 0.0 /
+#dbl      double precision ::
+#sgl      real ::
+     &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
+     &  zero, gp_alpha, dtime, sig_tol, ddummy,
+     &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
+     &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl),
+     &  uddt_temps(mxvl,nstr), uddt(mxvl,nstr), cep(mxvl,6,6)
+c
+      logical :: signal_flag, local_debug, temperatures,
+     &           temperatures_ref, adaptive_possible, geonl,
+     &           cut_step_size_now, fgm_enode_props,
+     &           segmental, nonlin_hard, generalized_pl
+      data local_debug, zero / .false., 0.0d00 /
 c
 c                  NOTE:  at present, all elements in the block must be
 c                         same cyclic material defined by the user.
@@ -1490,7 +2337,10 @@ c
       iter              = local_work%iter
       now_blk           = local_work%blk
       type              = local_work%elem_type
+      ndof              = local_work%num_enode_dof
+      geonl             = local_work%geo_non_flg
       order             = local_work%int_order
+      mat_type          = local_work%mat_type
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
@@ -1498,10 +2348,22 @@ c
       segmental         = local_work%segmental
       number_points     = local_work%number_points
       curve_set         = local_work%curve_set_number
+      fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%adaptive_flag .and.
      &                    step .gt. 1
       cut_step_size_now = .false.
       hist_size_for_blk = local_work%hist_size_for_blk
+c
+      local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 3
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type,
+     &                   temperatures, temperatures_ref, segmental,
+     &                   number_points, curve_set, 
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
+
 c
 c          determine if the material elastic and properties are
 c          temperature dependent. The temperature dependent props
@@ -1510,8 +2372,8 @@ c          gp_delta_u. Points on a curve are defined in to
 c          data to satisfy all error checks but are not used here.
 c
       curve_type = -1
-      if ( segmental ) call set_segmental_type( curve_set, curve_type,
-     &                                          local_work%eps_curve )
+      if( segmental ) call set_segmental_type( curve_set, curve_type,
+     &                                         local_work%eps_curve )
 c
 c           get increment of temperature at gauss point for elements
 c           in the block, the temperature at end of step and the
@@ -1523,12 +2385,13 @@ c
      &        gp_temps, temperatures, local_work%temps_node_to_process,
      &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
+      if( local_debug ) write(iout,9030)
 c
 c          get temperature dependent young's modulus, poisson's
 c          ratio, alpha, gp_sigma_0, gp_h_u, gp_beta_u, gp_delta_u
 c          for the temperature at n and n+1
 c
-      if ( curve_type .eq. 1 ) then
+      if( curve_type .eq. 1 ) then
          call set_up_segmental( span, gp_temps, local_work%e_vec,
      &        local_work%nu_vec, local_work%alpha_vec,
      &        local_work%e_vec_n, local_work%nu_vec_n,
@@ -1543,31 +2406,96 @@ c
      &        local_work%gp_delta_u_vec_n,
      &        gp_dtemps,
      &        ddummy, gpn, mxvl )
+         if( local_debug ) write(iout,9040)
       end if
 c
-c            subtract out the thermal strain increment from uddt (the
-c            strain increment for step)
+c            get the thermal strain increment (actually negative 
+c            of increment)
 c
-      if ( temperatures ) then
-        call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec_n )
+      uddt_temps = zero
+      if( temperatures ) then
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    gp_dtemps, gp_temps, gp_rtemps,
+     &                    local_work%alpha_vec_n )
+        if( local_debug ) write(iout,9050)
       end if
+c    
+c            uddt_displ - strain increment due to displacement increment
+c            uddt_temps - (negative) of strain increment just due 
+c                         to temperature change
 c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to dompute
-c          internal forces for applied nodal displacements and
-c          temperatures - material history is unaffected by
-c          iter = 0
+      uddt = uddt_displ + uddt_temps
+      cep  = zero
+c      
+      do i = 1, span
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+c
+c            now standard update process. use nonlinear update and [D]
+c            computation for iter = 0 and extrapolation or iter > 1
+c            for iter = 0 and no extrapolation, use linear-elastic [D]
+c            with props at n+1.
 
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        return
+      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+       if( local_debug ) write(iout,9060)
+       call drive_05_update_c
+       if ( adaptive_possible .and. cut_step_size_now ) then
+          local_work%material_cut_step = .true.
+          return
        end if
+       call cnst5( span, felem, gpn, iter, iout, mxvl, nstr,
+     &            local_work%e_vec, local_work%nu_vec,
+     &            local_work%mm05_props,
+     &            local_work%rtse(1,1,gpn),
+     &            local_work%elem_hist(1,1,gpn),
+     &            local_work%elem_hist1(1,1,gpn),
+     &            local_work%urcs_blk_n1(1,1,gpn),
+     &            cep,
+     &            local_work%gp_h_u_vec, local_work%gp_beta_u_vec,
+     &            local_work%gp_delta_u_vec,
+     &            gp_tau_vec )
+      else  ! linear-elastic update
+        if( local_debug ) write(iout,9070)
+        call drive_05_update_a
+      end if
 c
+c          save the [D] matrices (lower-triangle)
+c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
+      if( local_debug ) write(iout,9080)
+c 
+      return
+c      
+ 9000 format(1x,'.... debug mm05. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
+     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
+     &    l3,i4 ) 
+ 9030 format(10x,'...temperatures computed at integration point...')             
+ 9040 format(10x,'...temperatures dependent properties computed...')             
+ 9050 format(10x,'...thermal strains computed...') 
+ 9060 format(10x,'...update stresses nonlinear procedure...' )            
+ 9070 format(10x,'...update stresses use linear [D]...' )            
+ 9080 format(10x,'...[D]s saved to global structure...')
+c     
+      contains
+c     ========  
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_05_update_c                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/31/2015 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_05_update_c
+      implicit none
 c
 c            build local data vectors for nonlinear_hardening option
 c            to maintain consistency with generalized_plasticity option.
@@ -1576,23 +2504,19 @@ c            the nh option could have e, nu and alpha defined as temperature
 c            dependent by the user thru curves (but we really don't show that
 c            option in the manual.
 c
+@!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
         nh_sigma_0_vec(i) = local_work%sigyld_vec(i)
         nh_q_u_vec(i)     = matprp(55,matnum)
         nh_b_u_vec(i)     = matprp(56,matnum)
         nh_h_u_vec(i)     = matprp(57,matnum)
         nh_gamma_u_vec(i) = matprp(59,matnum)
+        gp_tau_vec(i)     = matprp(56,matnum)
       end do
 c
       nonlin_hard      = matprp(58,matnum) .gt. zero
       generalized_pl   = matprp(58,matnum) .lt. zero
       sig_tol          = matprp(60,matnum)
-c
-c            build remaining local data vectors generalized_plasticity.
-c
-      do i = 1, span
-        gp_tau_vec(i) = matprp(56,matnum)
-      end do
 c
 c
 c            available data for passing to cyclic model
@@ -1686,7 +2610,6 @@ c            generalized plasticty. Some data values will be meaningless
 c            (e.g. all the gp_.. vectors if the nonlinear_hardening
 c            option is being used).
 c
-c
       call mm05( step, iter, felem, gpn, mxvl, hist_size_for_blk,
      &           nstrs, nstr, span, iout,
      &           signal_flag, adaptive_possible, cut_step_size_now,
@@ -1722,30 +2645,133 @@ c
      &           local_work%elem_hist(1,1,gpn),
      &           local_work%elem_hist1(1,1,gpn) )
 c
-      if ( adaptive_possible .and. cut_step_size_now ) then
-          local_work%material_cut_step = .true.
-      end if
+      return
+      end subroutine drive_05_update_c     
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_05_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/31/2015 rhd             *
+c     *                                                              *
+c     ****************************************************************
 c
+      subroutine drive_05_update_a
+      implicit none
+c
+      integer :: k, m, i
+#dbl      double precision :: one, two, e, nu, c1, c2, c3, c4
+#sgl      real :: one, two, e, nu, c1, c2, c3, c4
+      data one, two / 1.0d00, 2.0d00 /
+c
+c              get linear-elastic [D] with potentially temperature
+c              dependent properties
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e  = local_work%e_vec(i)
+         nu = local_work%nu_vec(i)
+         c1 = (e/((one+nu)*(one-two*nu)))
+         c2 = (one-nu)*c1
+         c3 = ((one-two*nu)/two)*c1
+         c4 = nu*c1
+         cep(i,1,1)= c2
+         cep(i,2,2)= c2
+         cep(i,3,3)= c2
+         cep(i,4,4)= c3
+         cep(i,5,5)= c3
+         cep(i,6,6)= c3
+         cep(i,1,2)= c4
+         cep(i,1,3)= c4
+         cep(i,2,1)= c4
+         cep(i,3,1)= c4
+         cep(i,2,3)= c4
+         cep(i,3,2)= c4
+      end do
+c
+c              stresses at n+1 using linear-elastic [D]
+c 
+       call drive_05_update_b( span, mxvl, uddt, cep, 
+     &                        local_work%urcs_blk_n(1,1,gpn),
+     &                        local_work%urcs_blk_n1(1,1,gpn),
+     &                        local_work%killed_status_vec )
+c     
+      return
+      end subroutine drive_05_update_a
+c
+      end subroutine drive_05_update
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_05_update_b                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/21/2015 rhd             *
+c     *                                                              *
+c     *     support routine for mm01 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_05_update_b( span, mxvl, uddt,
+     &                              local_cep, stress_n, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6), zero
+      data zero / 0.0d00 /
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements
+c
+      stress_np1 = stress_n
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
       return
       end
+
 c     ****************************************************************
 c     *                                                              *
 c     *            subroutine drive_06_update  (creep)               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/30/2015 rhd             *
+c     *                   last modified : 10/18/2015 rhd             *
 c     *                                                              *
-c     *     drives material model 06 to                              *
-c     *     update stresses and history for all elements in the      *
-c     *     for gauss point gpn                                      *
+c     *     drives material model 06 to update stresses and history  *
+c     *     for all elements in the block for gauss point gpn        *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_06_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
-      use main_data, only : matprp, lmtprp
+     &                            local_work, uddt_displ, iout )
+      use main_data, only : matprp, lmtprp, extrapolated_du,
+     &                      non_zero_imposed_du 
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
@@ -1758,8 +2784,8 @@ c
       real     :: props(mxelpr,*)   ! all 3 are same but read-only
       logical  :: lprops(mxelpr,*)
       integer  :: iprops(mxelpr,*)
-#dbl      double precision :: uddt(mxvl,nstr)
-#sgl      real             :: uddt(mxvl,nstr)
+#dbl      double precision :: uddt_displ(mxvl,nstr)
+#sgl      real             :: uddt_displ(mxvl,nstr)
 $add include_sig_up
 c
 c                       locally defined variables
@@ -1767,10 +2793,11 @@ c
 #dbl      double precision ::
 #sgl      real ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime, real_npts
+     &  zero, gp_alpha, dtime, real_npts, uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_ref
+     &           temperatures_ref, process, compute_creep_strains
       data zero /  0.0d00 /
 c
       dtime             = local_work%dt
@@ -1803,12 +2830,13 @@ c
      &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
-c            subtract out the thermal strain increment from uddt (the
-c            strain increment for step)
+c            compute (negative) of thermal strain increment 
 c
-      if ( temperatures ) then
-        call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )
+      uddt_temps = zero
+      if( temperatures ) then
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec, 
+     &                    gp_dtemps, gp_temps, gp_rtemps, 
+     &                    local_work%alpha_vec )
       end if
 c      
 c            init block of nonlocal state variables. values array always
@@ -1816,7 +2844,30 @@ c            allocated but with size (1,1) for std. local analyses.
 c            just makes passing args simpler. 
 c
       if( local_work%block_has_nonlocal_solids ) 
-     &   local_work%nonlocal_state_blk = zero ! array
+     &    local_work%nonlocal_state_blk = zero ! array
+c    
+c            uddt_displ - strain increment due to displacement increment
+c            uddt_temps - (negative) of strain increment just due 
+c                         to temperature change
+c
+c            iterno > 0 : add the two parts. give to mm06
+c            iterno = 0 :  and global extrapolate ...
+c              on: - add, use updated stresses computed by mm06
+c                  - return updated [D]s
+c             off: - pass only uddt_temps to mm06
+c                  - mm06 will include creep strain increment in uddt
+c                  - return linear-elastic [D]s
+c
+      compute_creep_strains = .false.
+      if( iter .ge. 1 ) uddt = uddt_displ + uddt_temps
+      if( iter .eq. 0 ) then
+        if( extrapolated_du ) then
+           uddt = uddt_displ + uddt_temps
+        else !  iter = 0, no extrapolate
+           uddt = uddt_temps
+           compute_creep_strains = .true.
+        end if
+      end if
 c      
       call mm06( step, iter, felem, gpn, mxvl, hist_size_for_blk,
      &           nstrs, nstr, span, iout, dtime, 
@@ -1831,29 +2882,24 @@ c
      &           local_work%killed_status_vec,
      &           local_work%block_has_nonlocal_solids,
      &           local_work%nonlocal_state_blk(1,1),
-     &           nonlocal_shared_state_size ) ! value in param_def
+     &           nonlocal_shared_state_size, ! value in param_def
+     &           cep, compute_creep_strains )  
 c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to compute
-c          internal forces for applied nodal displacements,
-c          temperatures and creep - material history is unaffected by
-c          iter = 0. WARP3D does not store any updated values
+c          save the [D] matrices (lower-triangle)
+c          computed by mm06. see comments above for special
+c          computations with iter=0 and no extrapolation.
 c
-      if( iter .eq. 0 ) then
-        igpn = gpn ! just for protection
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &    gbl_cep_blocks(now_blk)%vector,
-     &    uddt, local_work%urcs_blk_n(1,1,gpn),
-     &    local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        go to 9999  !  no further processing of block for this gpn
-      end if
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
 c
-c          if processing nonlocal values, put element values into
-c          the global (non-blocked) data structure. average over
-c          integration points saved in global structure (1 set of 
-c          nonlocal state values per element). compute the average when
-c          just finished last integration point for elements
-c
+      if( iter == 0 ) then
+        if( extrapolated_du ) go to 9999 ! all updated
+        uddt = uddt + uddt_displ ! temps + creep strain incr + imposed du
+        call drive_06_update_a( span, mxvl, uddt, cep,
+     &                          local_work%urcs_blk_n1(1,1,gpn) )
+        go to 9999
+      end if   
+c     
       if( .not. local_work%block_has_nonlocal_solids ) go to 9999
 c 
       n = nonlocal_shared_state_size ! for convenience from param_def
@@ -1896,6 +2942,48 @@ c
  9010 format(/,'      processing nonlocal values. # values: ',i2 )      
 c
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_06_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 10/18/2015                 *
+c     *                                                              *
+c     *     support routine for creep material driver.               *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_06_update_a( span, mxvl, uddt,
+     &                              local_cep, stress_np1 )                
+      implicit none
+c      
+      integer :: span, mxvl
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6)
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains creep increment +
+c              thermal increment + increment from imposed
+c              nodal displacements
+c
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c         
+      return
+      end
 
 c     ****************************************************************
 c     *                                                              *
@@ -1903,9 +2991,9 @@ c     *                 subroutine drive_07_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/18/02                   *
+c     *                   last modified : 1/2/2016 rhd               *
 c     *                                                              *
-c     *     this subroutine drives material model 07 to              *
+c     *     drives material model 07 (mises + hydrogen) to           *
 c     *     update stresses and history for all elements in the      *
 c     *     for gauss point gpn                                      *
 c     *                                                              *
@@ -1913,35 +3001,41 @@ c     ****************************************************************
 c
 c
       subroutine drive_07_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
-      use main_data, only : matprp, lmtprp
+     &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                      parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      real ::    props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+#dbl      double precision ::  uddt_displ(mxvl,nstr)
+#sgl      real ::              uddt_displ(mxvl,nstr)
 $add include_sig_up
-c
 c
 c                       locally defined variables
 c
-#dbl      double precision
-#sgl      real
-     &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, mat_type, number_points, curve_set,
+     &           hist_size_for_blk, curve_type, elem_type, i
 c
-      logical signal_flag, local_debug, temperatures,
-     &        temperatures_ref
-      data local_debug, zero / .false., 0.0 /
+#dbl      double precision ::
+#sgl      real ::
+     &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
+     &  zero, gp_alpha,  uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6)
+c
+      logical :: geonl, local_debug, temperatures, segmental,
+     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           adaptive_possible, cut_step_size_now
+c
+      data zero / 0.0d0 /
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -1951,11 +3045,24 @@ c
       now_blk           = local_work%blk
       type              = local_work%elem_type
       order             = local_work%int_order
+      ndof              = local_work%num_enode_dof
+      geonl             = local_work%geo_non_flg
       nnode             = local_work%num_enodes
+      mat_type          = local_work%mat_type
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
       temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
+      fgm_enode_props   = local_work%fgm_enode_props
+      adaptive_possible = local_work%allow_cut    
+c
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type,
+     &                   temperatures, temperatures_ref,
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
 c
 c           get increment of temperature at gauss point for elements
 c           in the block, the temperature at end of step and the
@@ -1971,27 +3078,26 @@ c
 c            subtract out the thermal strain increment from uddt (the
 c            strain increment for step)
 c
+      uddt_temps = zero
       if ( temperatures ) then
-        call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    gp_dtemps,
      &                    gp_temps, gp_rtemps, local_work%alpha_vec )
       end if
 c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to dompute
-c          internal forces for applied nodal displacements and
-c          temperatures - material history is unaffected by
-c          iter = 0
 
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        return
-       end if
-c
-      call mm07( step, iter, felem, gpn, mxvl,  hist_size_for_blk,
+      uddt = uddt_displ + uddt_temps
+      cep  = zero
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+c      
+      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+       if( local_debug ) write(iout,9060)
+       cut_step_size_now = .false.
+       call mm07( step, iter, felem, gpn, mxvl,  hist_size_for_blk,
      &           nstrs, nstr, span, iout,
      &           signal_flag, adaptive_possible, cut_step_size_now,
      &           local_work%mm07_props,
@@ -2002,9 +3108,154 @@ c
      &           local_work%urcs_blk_n1(1,1,gpn),
      &           uddt, local_work%elem_hist(1,1,gpn),
      &           local_work%elem_hist1(1,1,gpn) )
+       local_work%material_cut_step = cut_step_size_now
+       if( cut_step_size_now ) return
+       call cnst7( span, felem, gpn, iter, iout, mxvl, nstr,
+     &            local_work%e_vec, local_work%nu_vec,
+     &            local_work%sigyld_vec, local_work%n_power_vec,
+     &            local_work%mm07_props,
+     &            local_work%rtse(1,1,gpn),
+     &            local_work%elem_hist(1,1,gpn),
+     &            local_work%elem_hist1(1,1,gpn),
+     &            local_work%urcs_blk_n1(1,1,gpn), cep )
+      else  ! linear-elastic update
+        if( local_debug ) write(iout,9070)
+        call drive_07_update_a
+      end if
 c
+c          save the [D] matrices (lower-triangle)
+c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
+      if( local_debug ) write(iout,9080)
+c      
       return
-      end
+c
+ 9000 format(1x,'.... debug mm07. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
+     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
+     &    l3,i4 ) 
+ 9610 format(' >> rate iterations to converge: ',i3 )
+ 9020 format(10x,'...fgm properties determined...')             
+ 9030 format(10x,'...temperatures computed at integration point...')             
+ 9040 format(10x,'...temperatures dependent properties computed...')             
+ 9050 format(10x,'...thermal strains computed...') 
+ 9060 format(10x,'...update stresses nonlinear procedure...' )            
+ 9070 format(10x,'...update stresses use linear [D]...' )            
+ 9080 format(10x,'...[D]s saved to global structure...')
+c
+      contains
+c     ========      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_07_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/2/2016 rhd               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_07_update_a
+      implicit none
+c
+      integer :: k, m, i
+#dbl      double precision :: one, two, e, nu, c1, c2, c3, c4
+#sgl      real :: one, two, e, nu, c1, c2, c3, c4
+      data one, two / 1.0d00, 2.0d00 /
+c
+c              get linear-elastic [D] with potentially temperature
+c              dependent properties
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e  = local_work%e_vec(i)
+         nu = local_work%nu_vec(i)
+         c1 = (e/((one+nu)*(one-two*nu)))
+         c2 = (one-nu)*c1
+         c3 = ((one-two*nu)/two)*c1
+         c4 = nu*c1
+         cep(i,1,1)= c2
+         cep(i,2,2)= c2
+         cep(i,3,3)= c2
+         cep(i,4,4)= c3
+         cep(i,5,5)= c3
+         cep(i,6,6)= c3
+         cep(i,1,2)= c4
+         cep(i,1,3)= c4
+         cep(i,2,1)= c4
+         cep(i,3,1)= c4
+         cep(i,2,3)= c4
+         cep(i,3,2)= c4
+      end do
+c
+c              stresses at n+1 using linear-elastic [D]
+c 
+       call drive_07_update_b( span, mxvl, uddt, cep, 
+     &                        local_work%urcs_blk_n(1,1,gpn),
+     &                        local_work%urcs_blk_n1(1,1,gpn),
+     &                        local_work%killed_status_vec )
+c     
+      return
+      end subroutine drive_07_update_a
+c
+      end subroutine drive_07_update
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_07_update_b                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/2/2016 rhd               *
+c     *                                                              *
+c     *     support routine for mm07 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_07_update_b( span, mxvl, uddt,
+     &                              local_cep, stress_n, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6), zero
+      data zero / 0.0d00 /
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements
+c
+      stress_np1 = stress_n
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
+      return
+      end     
 
 c     ****************************************************************
 c     *                                                              *
@@ -2012,7 +3263,7 @@ c     *            subroutine drive_umat_update  (umat)              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/4/2013 rhd              *
+c     *                   last modified : 10/27/2015 rhd             *
 c     *                                                              *
 c     *     drives material model 08 (Abaqus umat) to update         *
 c     *     stresses and history for all elements in block at        *
@@ -2022,7 +3273,8 @@ c     ****************************************************************
 c
 c
       subroutine drive_umat_update( gpn, local_work, uddt, qn1, iout )
-      use main_data, only : matprp, lmtprp, nonlocal_analysis
+      use main_data, only : matprp, lmtprp, nonlocal_analysis,
+     &                      extrapolated_du, non_zero_imposed_du 
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1,
      &                            gbl_cep_blocks => cep_blocks
@@ -2044,23 +3296,25 @@ c
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero, one, gp_alpha, ddsddt(6), drplde(6), drpldt,
      &  big, pnewdt, predef(1), dpred(1), time(2), dtime,
-     &  stress(6), stress_copy(6), stran(6), dstran(6),
+     &  stress(6), stran(6), dstran(6),
      &  abq_props(50), temp_n, dtemp,
      &  statev(500), sse, spd, scd, coords(3), celent,
      &  dfgrd0(9), dfgrd1(9), dfgrd0_array(3,3), dfgrd1_array(3,3),
-     &  drot(9), ddsdde(36),
+     &  drot(9), ddsdde(6,6),
      &  gp_coords(mxvl,3), symm_part_ddsdde(21), total_work_np1,
      &  plastic_work_np1, identity(9), check_key, t5, t6,
      &  temp_0, temp_n_0, s1, s2, ps(3), an(3,3),
      &  unrotated_cauchy(mxvl,6), real_npts,
      &  nonloc_ele_values(nonlocal_shared_state_size),
-     &  sys_vals(nonlocal_shared_state_size)
+     &  sys_vals(nonlocal_shared_state_size), dstran_temps_only(6),
+     &  dstran_displ_only(6), uddt_temps(mxvl,nstr)
 c
       equivalence (dfgrd0, dfgrd0_array),  (dfgrd1, dfgrd1_array)
 c
       logical :: signal_flag, local_debug, debug_now, temperatures,
      &        temperatures_ref, init_sig_eps, init_history,
-     &        chk_umat_support, chk, chk2, do_nonlocal
+     &        chk_umat_support, chk, chk2, do_nonlocal,
+     &        process_flag
       integer :: map(6)
       character * 8 :: cmname
       data zero, one, big, check_key / 0.0d00, 1.0d00, 1.0d06,
@@ -2088,7 +3342,7 @@ c
       hist_size_for_blk = local_work%hist_size_for_blk
 c
       knumthreads       = local_work%num_threads
-      kthread           = omp_get_thread_num() + 1
+      kthread           = local_work%now_thread 
 c
       max_nstatv  = 500      ! dimensioned size above
       local_debug =  .false.
@@ -2112,14 +3366,10 @@ c               from linear stiffness if that's current computation
 c               history was set in lnstff.
 c
       if( init_sig_eps ) then
-       call rstgp1_zero( local_work%urcs_blk_n, mxvl*nstrs*mxgp )
-       call rstgp1_zero( local_work%strain_n, mxvl*nstr*mxgp )
+       local_work%urcs_blk_n = zero
+       local_work%strain_n = zero
       end if
-c
-      if( init_history ) then
-        call rstgp1_zero( local_work%elem_hist,
-     &                    span*hist_size_for_blk*ngp )
-      end if
+      if( init_history ) local_work%elem_hist = zero
 c
 c           1c. values that remain constant over each element in
 c               block. WARP3D uses last 21 entries
@@ -2161,8 +3411,7 @@ c
      &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
-c           3. subtract out the thermal strain increment from uddt (the
-c              strain increment for step)
+c           3. get negative of temp increments for step
 c
 c              WARP3D takes care of removing thermal strains from total
 c              and incremental strains when the user specifies coefficient
@@ -2178,11 +3427,13 @@ c
 c              We call the code to compute/subtract thermal strains
 c              here even if alpha happens to be zero.
 c
-      if ( temperatures ) ! global flag set by loads processor
+      uddt_temps = zero ! replaced by -alpha * delta T
+      if( temperatures ) ! global flag set by loads processor
 c                           to indicate user-specified temp changes over
 c                           load step
-     &    call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )
+     &    call gp_temp_eps( span, uddt_temps, local_work%alpha_vec, 
+     &                      gp_dtemps, gp_temps, gp_rtemps, 
+     &                      local_work%alpha_vec )
 c
 c           4. (x,y,z) coordinates at this integration point for all
 c              elements in the block. umat specification requires the
@@ -2254,7 +3505,7 @@ c
       statev(nstatv+1)    = check_key
 c
 c               5.3 set stresses at n, strains at n and strain
-c                   increment. adjust for themral components and
+c                   increment. adjust for thermal components and
 c                   swap order of xz, yz shear terms to match Abaqus.
 c                   thermal part of incremental strain handled above.
 c                   WARP3D processing here for strain at n requires
@@ -2264,12 +3515,21 @@ c                   WARP3D input if umat handles temperature effects.
 c                   alpha below will then be zero.
 c
       do j = 1, 6
-       stress(map(j)) = local_work%urcs_blk_n(ielem,j,gpn)
-       stress_copy(map(j)) = local_work%urcs_blk_n(ielem,j,gpn)
-       stran(map(j))  = local_work%strain_n(ielem,j,gpn) -
+       nj = map(j)
+       stress(nj) = local_work%urcs_blk_n(ielem,j,gpn)
+       stran(nj)  = local_work%strain_n(ielem,j,gpn) -
      &                  local_work%alpha_vec(ielem,j) * temp_n_0
-       dstran(map(j)) = uddt(ielem,j)
+       dstran_temps_only(nj) = uddt_temps(ielem,j)
+       dstran_displ_only(nj) = uddt(ielem,j)
+       dstran(nj) = uddt_temps(ielem,j) + uddt(ielem,j)
       end do
+c
+      process_flag = .false.
+      if( kiter .eq. 0 .and. .not. extrapolated_du ) then
+        dstran(1:6) =  dstran_temps_only(1:6)
+        process_flag = .true.
+      end if
+             
 c
 c               5.4 global coordinates of integration point and
 c                   characteristic element length per Abaqus spec.
@@ -2282,7 +3542,7 @@ c
 c               5.5 umats expect material stiffness to
 c                   be initialized zero
 c
-      ddsdde(1:36) = zero
+      ddsdde = zero
 c
 c               5.6 zero starting values of specific energy,
 c                   dissipation. afterwards update WARP3D data
@@ -2352,43 +3612,34 @@ c
 c
 c              5.10 kiter = 0 processing. WARP3D uses iter = 0
 c                   to compute stresses and then internal forces for
-c                   imposed displacements and temperature
-c                   increments. We use [Dt] from end of converged
-c                   solution for previous step n * change in mechanical
-c                   strain increment for imposed displ/temp increment.
-c                   the umat removes thermal strain increments for
-c                   imposed temp change when the umat handles thermal
-c                   effects. otherwise WARP3D handled temp effects
-c                   at top of this routine.
+c                   imposed displacements, temperature increments,
+c                   and creep strain increments (+ other "initial"
+c                   strain effects from the umat.
+c                   here we store the [D] returned from the umat
+c                   (could be linear [D]). add stress increment from
+c                   imposed non-zero displacement increment for the
+c                   load step - we do not want umat to see those values
+c                   which are often acting on just a few elements
+c                   no need to store histories, nonlocal etc since this
+c                   just to estimate load increment for step for
+c                   other than directly applied forces/pressures
 c
-c                   pull [Dt] from global blocks of [Dt]s. expand to 6x6
-c                   form from the 21 term vector symmetric form. multiply
-c                   into dstran, add to starting stresses and cycle to
-c                   next element in block. [cep] has WARP3D row order.
-c                   stress returned has WARP3D row order.
-c
-c                   use stresses_copy since umat may have modified the
-c                   stress vector passed to it (it should not if user reads
-c                   our kiter - 0 info).
-
       if( kiter .eq. 0 ) then
-c
+        call rstgp1_make_symmetric_store( ddsdde, symm_part_ddsdde )
         start_loc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
         do k = 1, 21
-          symm_part_ddsdde(k) =
-     &             gbl_cep_blocks(now_blk)%vector(start_loc+k)
+         gbl_cep_blocks(now_blk)%vector(start_loc+k) = 
+     &           symm_part_ddsdde(k)
         end do
+c      
+        if( process_flag .and. non_zero_imposed_du ) 
+     &     stress = stress + matmul( ddsdde, dstran_displ_only )
 c
-        call rstgp1_umat_cep_dstran( stress_copy, dstran,
-     &                               symm_part_ddsdde )
-        local_work%urcs_blk_n1(ielem,1:6,gpn) = stress_copy(1:6)
-c
-        if( debug_now ) then
-          write(iout,9106) stress_copy(1:6)
-        end if
-c
+        local_work%urcs_blk_n1(ielem,1:4,gpn) = stress(1:4)
+        local_work%urcs_blk_n1(ielem,5,gpn)   = stress(6)
+        local_work%urcs_blk_n1(ielem,6,gpn)   = stress(5)
+        if( debug_now ) write(iout,9106) stress(1:6)
         cycle ! to process next element in block
-c
       end if
 c
 c               5.11 if wanted, check UMAT support routines
@@ -2407,8 +3658,8 @@ c
 c
 c               5.11.1 check for umat wanting step reduction
 c
-      if ( local_work%allow_cut .and.  (pnewdt .lt. one) )
-     &     local_work%material_cut_step = .true.
+      if( local_work%allow_cut .and.  (pnewdt .lt. one) )
+     &    local_work%material_cut_step = .true.
 c
 c               5.12 update WARP3D stress data structure at n+1
 c                    copy updated state variables into WARP3D
@@ -2446,7 +3697,7 @@ c
       call rstgp1_make_symmetric_store( ddsdde, symm_part_ddsdde )
       start_loc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
       do k = 1, 21
-       gbl_cep_blocks(now_blk)%vector(start_loc+k) = 
+        gbl_cep_blocks(now_blk)%vector(start_loc+k) = 
      &           symm_part_ddsdde(k)
       end do
 c
@@ -2563,13 +3814,13 @@ c
 
 c     ****************************************************************
 c     *                                                              *
-c     *     subroutine drive_09_update  (available)                  *
+c     *                 subroutine drive_09_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/29/12                   *
+c     *                   last modified : 1/2/2016 rhd               *
 c     *                                                              *
-c     *     this subroutine drives material model 09 to              *
+c     *     drives material model 09:; <available> to                *
 c     *     update stresses and history for all elements in the      *
 c     *     for gauss point gpn                                      *
 c     *                                                              *
@@ -2577,35 +3828,41 @@ c     ****************************************************************
 c
 c
       subroutine drive_09_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
-      use main_data, only : matprp, lmtprp
+     &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                      parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      real ::    props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+#dbl      double precision ::  uddt_displ(mxvl,nstr)
+#sgl      real ::              uddt_displ(mxvl,nstr)
 $add include_sig_up
-c
 c
 c                       locally defined variables
 c
-#dbl      double precision
-#sgl      real
-     &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, mat_type, number_points, curve_set,
+     &           hist_size_for_blk, curve_type, elem_type, i
 c
-      logical signal_flag, local_debug, temperatures,
-     &        temperatures_ref
-      data local_debug, zero / .false., 0.0 /
+#dbl      double precision ::
+#sgl      real ::
+     &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
+     &  zero, gp_alpha,  uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6), weight, dj(128)
+c
+      logical :: geonl, local_debug, temperatures, segmental,
+     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           adaptive_possible, cut_step_size_now
+c
+      data zero / 0.0d0 /
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -2615,11 +3872,24 @@ c
       now_blk           = local_work%blk
       type              = local_work%elem_type
       order             = local_work%int_order
+      ndof              = local_work%num_enode_dof
+      geonl             = local_work%geo_non_flg
       nnode             = local_work%num_enodes
+      mat_type          = local_work%mat_type
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
       temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
+      fgm_enode_props   = local_work%fgm_enode_props
+      adaptive_possible = local_work%allow_cut    
+c
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type,
+     &                   temperatures, temperatures_ref,
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
 c
 c           get increment of temperature at gauss point for elements
 c           in the block, the temperature at end of step and the
@@ -2635,52 +3905,193 @@ c
 c            subtract out the thermal strain increment from uddt (the
 c            strain increment for step)
 c
+      uddt_temps = zero
       if ( temperatures ) then
-        call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    gp_dtemps,
      &                    gp_temps, gp_rtemps, local_work%alpha_vec )
       end if
 c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to dompute
-c          internal forces for applied nodal displacements and
-c          temperatures - material history is unaffected by
-c          iter = 0
 
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        return
-       end if
-
+      uddt = uddt_displ + uddt_temps
+      cep  = zero
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+c      
+      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+       if( local_debug ) write(iout,9060)
+       cut_step_size_now = .false.
+c       call mm09( step, iter, felem, gpn, mxvl,  hist_size_for_blk,
+c     &           nstrs, nstr, span, iout,
+c     &           signal_flag, adaptive_possible, cut_step_size_now,
+c     &           local_work%mm07_props,
+c     &           local_work%e_vec, local_work%tan_e_vec,
+c     &           local_work%nu_vec, local_work%sigyld_vec,
+c     &           local_work%n_power_vec, local_work%rtse(1,1,gpn),
+c     &           local_work%urcs_blk_n(1,1,gpn),
+c     &           local_work%urcs_blk_n1(1,1,gpn),
+c     &           uddt, local_work%elem_hist(1,1,gpn),
+c     &           local_work%elem_hist1(1,1,gpn) )
+       local_work%material_cut_step = cut_step_size_now
+       if( cut_step_size_now ) return
+c       call cnst9( span, felem, gpn, iter, iout, mxvl, nstr,
+c     &            local_work%e_vec, local_work%nu_vec,
+c     &            local_work%sigyld_vec, local_work%n_power_vec,
+c     &            local_work%mm07_props,
+c     &            local_work%rtse(1,1,gpn),
+c     &            local_work%elem_hist(1,1,gpn),
+c     &            local_work%elem_hist1(1,1,gpn),
+c     &            local_work%urcs_blk_n1(1,1,gpn), cep )
+      else  ! linear-elastic update
+        if( local_debug ) write(iout,9070)
+        call drive_09_update_a
+      end if
 c
-      call mm09( step, iter, felem, gpn, mxvl, hist_size_for_blk,
-     &           nstrs, nstr, span, iout,
-     &           signal_flag, adaptive_possible, cut_step_size_now,
-     &           local_work%umat_props,
-     &           local_work%e_vec, local_work%tan_e_vec,
-     &           local_work%nu_vec, local_work%sigyld_vec,
-     &           local_work%n_power_vec, local_work%rtse(1,1,gpn),
-     &           local_work%urcs_blk_n(1,1,gpn),
-     &           local_work%urcs_blk_n1(1,1,gpn),
-     &           uddt, local_work%elem_hist(1,1,gpn),
-     &           local_work%elem_hist1(1,1,gpn),
-     &           local_work%killed_status_vec )
+c          save the [D] matrices (lower-triangle)
 c
+      call rstgp1_store_cep( span, mxvl, gpn, 
+     &         gbl_cep_blocks(now_blk)%vector, 21, cep )
+      if( local_debug ) write(iout,9080)
+c      
       return
-      end
 c
+ 9000 format(1x,'.... debug mm09. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
+     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
+     &    l3,i4 ) 
+ 9610 format(' >> rate iterations to converge: ',i3 )
+ 9020 format(10x,'...fgm properties determined...')             
+ 9030 format(10x,'...temperatures computed at integration point...')             
+ 9040 format(10x,'...temperatures dependent properties computed...')             
+ 9050 format(10x,'...thermal strains computed...') 
+ 9060 format(10x,'...update stresses nonlinear procedure...' )            
+ 9070 format(10x,'...update stresses use linear [D]...' )            
+ 9080 format(10x,'...[D]s saved to global structure...')
+c
+      contains
+c     ========      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_09_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/2/2016 rhd               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_09_update_a
+      implicit none
+c
+      integer :: k, m, i
+#dbl      double precision :: one, two, e, nu, c1, c2, c3, c4
+#sgl      real :: one, two, e, nu, c1, c2, c3, c4
+      data one, two / 1.0d00, 2.0d00 /
+c
+c              get linear-elastic [D] with potentially temperature
+c              dependent properties
+c      
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e  = local_work%e_vec(i)
+         nu = local_work%nu_vec(i)
+         c1 = (e/((one+nu)*(one-two*nu)))
+         c2 = (one-nu)*c1
+         c3 = ((one-two*nu)/two)*c1
+         c4 = nu*c1
+         cep(i,1,1)= c2
+         cep(i,2,2)= c2
+         cep(i,3,3)= c2
+         cep(i,4,4)= c3
+         cep(i,5,5)= c3
+         cep(i,6,6)= c3
+         cep(i,1,2)= c4
+         cep(i,1,3)= c4
+         cep(i,2,1)= c4
+         cep(i,3,1)= c4
+         cep(i,2,3)= c4
+         cep(i,3,2)= c4
+      end do
+c
+c              stresses at n+1 using linear-elastic [D]
+c 
+       call drive_09_update_b( span, mxvl, uddt, cep, 
+     &                        local_work%urcs_blk_n(1,1,gpn),
+     &                        local_work%urcs_blk_n1(1,1,gpn),
+     &                        local_work%killed_status_vec )
+c     
+      return
+      end subroutine drive_09_update_a
+c
+      end subroutine drive_09_update
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_09_update_b                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/2/2016 rhd               *
+c     *                                                              *
+c     *     support routine for mm07 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_09_update_b( span, mxvl, uddt,
+     &                              local_cep, stress_n, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6), zero
+      data zero / 0.0d00 /
+c
+      integer i, k, m
+c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements
+c
+      stress_np1 = stress_n
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
+      return
+      end     
 c
 c     ****************************************************************
 c     *                                                              *
-c     *     subroutine drive_10_update  (crystal     plasticity)     *
+c     *     subroutine drive_10_update  (crystal plasticity)         *
 c     *                                                              *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/23/12                   *
+c     *                   last modified : 12/8/15                    *
 c     *                                                              *
 c     *     this subroutine drives material model 10 to              *
 c     *     update stresses and history for all elements in the      *
@@ -2690,36 +4101,40 @@ c     ****************************************************************
 c
 c
       subroutine drive_10_update( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
-      use main_data, only : matprp, lmtprp
+     &                            local_work, uddt_displ, iout )
+      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp,
+     &                      extrapolated_du, non_zero_imposed_du 
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                      parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     &  uddt(mxvl,nstr)
+      integer :: gpn, iout
+      real    :: props(mxelpr,*)   ! all 3 are same but read-only here
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+#dbl      double precision :: uddt_displ(mxvl,nstr)
+#sgl      real :: uddt_displ(mxvl,nstr)
 $add include_sig_up
 c
 c
 c                       locally defined variables
 c
-#dbl      double precision
-#sgl      real
+      integer :: ncrystals, iter, span, felem, step, type, order, 
+     &           nnode, hist_size_for_blk, now_blk,
+     &           i, j, matnum, k, start_loc, m, n
+#dbl      double precision ::
+#sgl      real ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime
+     &  zero, gp_alpha, dtime, uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6), cep_vec(36), tol
 c
-      logical signal_flag, local_debug, temperatures,
-     &        temperatures_ref
-      data local_debug, zero / .false., 0.0 /
-      integer :: ncrystals
+      logical :: signal_flag, local_debug, temperatures,
+     &           temperatures_ref, check_D
+      data zero / 0.0d0 /
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -2734,6 +4149,16 @@ c
       temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       now_blk           = local_work%blk
+      matnum            = local_work%matnum
+      local_debug       = .false. ! now_blk == 1  .and. gpn .eq. 1
+      check_D           = .false.
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, step, 
+     &                   iter, now_blk,
+     &                   temperatures, temperatures_ref,
+     &                   hist_size_for_blk 
+      end if
 c
 c           get increment of temperature at gauss point for elements
 c           in the block, the temperature at end of step and the
@@ -2750,37 +4175,320 @@ c            subtract out the thermal strain increment from uddt (the
 c            strain increment for step) (We're actually going to do this
 c            internally)
 c
+      uddt_temps = zero
       if ( temperatures ) then
-        call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    gp_dtemps,
      &                    gp_temps, gp_rtemps, local_work%alpha_vec )
       end if
+c    
+c            uddt_displ - strain increment due to displacement 
+c                         increment
+c            uddt_temps - (negative) of strain increment just due 
+c                         to temperature change
+c            for iter > 1, do a usual nonlinear stress update. 
+c                          consistent tangent is in terms 1-36 
+c                          of history @ n+1 for the integration point
+c            for iter = 0 and extrapolated, usual nonlinear update
 c
-c          for iter = 0 we just use the stored [Dt] to compute 
-c          stress increment. These stresses are used to dompute 
-c          internal forces for applied nodal displacements and 
-c          temperatures - material history is unaffected by
-c          iter = 0
-
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        return
-       end if
-c
-      call mm10(  gpn, local_work%span, local_work%ncrystals,
+      uddt = uddt_displ + uddt_temps
+      if( iter >= 1 .or. extrapolated_du ) then  ! nonlinear update
+      if( local_debug )  write(iout,9110) felem, gpn, span
+       call mm10( gpn, local_work%span, local_work%ncrystals,
      &            hist_size_for_blk,
      &            local_work%elem_hist(1,1,gpn),
      &            local_work%elem_hist1(1,1,gpn),
      &            local_work, uddt, gp_temps,
-     &            gp_dtemps, iout)
+     &            gp_dtemps, iout, signal_flag )
+      if( local_debug )  write(iout,9120) felem, gpn, span
+      return    
+      end if     
+c
+C            iter = 0 and not extrapolated.
+c            get [D] elastic for CP. Must be symmetric
+c      
+      call drive_10_update_b
+c      
+      if( check_D ) then
+        tol = 0.01d00
+        do i = 1, span
+          do j = 1, 6
+            if( cep(i,j,j) .lt. tol ) then
+               write(iout,*) ' .. fatal @ 1 in drive_10_update'
+               call die_abort
+            end if
+          end do ! on j
+          do j = 1, 6
+            do k = 1, 6
+             if( abs( cep(i,j,k) - cep(i,k,j) )
+     &           .gt. 1.0d-8 ) then       
+               write(iout,*) ' .. fatal @ 2 drive_10_update'
+               call die_abort
+             end if
+            end do ! on k
+          end do ! on j
+        end do  ! on i  
+      end if ! on cehck_D
+      
+      if( local_debug ) then
+       write(iout,*) ".... linear elastic [D] for",
+     &                 " CP in drive_10_update "
+       do i = 1, span
+          write(iout,*) '    ... element: ', felem+i-1
+            write(iout,9100) cep(i,1:6,1:6)
+       end do   
+      end if
+c
+c            store symmetric part of [D] elastic in global blocks.
+c            required since hist @ n+1 is not saved for iter = 0.
+c            [D] for CP model should never have been stored in history.
+c            this wastes some space can't be changed w/o lots of
+c            work in the CP routines
+c
+@!DIR$ LOOP COUNT MAX=### 
+      do i = 1, span
+        call drive_10_update_c( cep(1,1,1), mxvl, i, cep_vec, 6 )
+        local_work%elem_hist1(i,1:36,gpn) = cep_vec(1:36)
+      end do
+c
+      call drive_10_update_a( span, mxvl, uddt, cep,
+     &                   local_work%urcs_blk_n(1,1,gpn),
+     &                   local_work%urcs_blk_n1(1,1,gpn),
+     &                   local_work%killed_status_vec )
+c
+      return
+     
+c
+ 9000 format(1x,'.... debug mm10. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'... dtime, type, order, nnode:     ',e14.6,3i5,
+     &     /,10x,'... step, iter, now_blk:           ',3i5,
+     &     /,10x,'... temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'... hist_size_for_blk: ',i4 ) 
+ 9100 format(10x,6e14.5)
+ 9110 format(10x,'... call mm10 for felem, gpn, span: ',3i10) 
+ 9120 format(10x,'... returned from mm10 for felem, gpn, span: ',3i10) 
+      contains
+c     ========      
+      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_10_update_b                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/8/2015 rhd              *
+c     *                                                              *
+c     *     support routine for mm10 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_10_update_b            
+      use crystal_data, only : c_array, angle_input, crystal_input,
+     &                         data_offset
+      implicit none
+c      
+      integer :: i, elnum, ci, osn, cnum, ati, aci, tc, a, b
+      double precision, allocatable :: cp_stiff(:,:,:,:), 
+     &                                 cp_g_rot(:,:,:,:)
+      double precision :: angles(3), totalC(6,6), Cci(6,6), Srot(6,6),
+     &                    Ct(6,6), g(3,3)
+      integer, allocatable :: ncrystals(:)
+      character :: aconv*5, atype*7
+c      
+      allocate( cp_stiff(mxvl,6,6,max_crystals) )
+      allocate( cp_g_rot(mxvl,3,3,max_crystals) )
+      allocate( ncrystals(mxvl) )
+c      
+      do i = 1, span
+          ncrystals(i) = imatprp(101,matnum)
+          elnum = felem+i-1
+          do ci = 1, ncrystals(i)
+            if( imatprp(104,matnum) .eq. 1 ) then
+                  cnum = imatprp(105,matnum)
+            elseif( imatprp(104,matnum) .eq. 2 ) then
+                  osn = data_offset(elnum)
+                  cnum = crystal_input(osn,ci)
+                  if( (cnum .gt. max_crystals) .or.
+     &                  (cnum .lt. 0) ) then
+                   write (iout,9501) cnum
+                   call die_gracefully
+                  end if
+            else
+                  write(iout,9502)
+                  call die_gracefully
+            end if
+            cp_stiff(i,1:6,1:6,ci) = c_array(cnum)%elast_stiff
+c            
+            if( imatprp(107,matnum) .eq. 1 ) then
+                  angles(1) = dmatprp(108,matnum)
+                  angles(2) = dmatprp(109,matnum)
+                  angles(3) = dmatprp(110,matnum)
+            elseif( imatprp(107,matnum) .eq. 2 ) then
+                  osn = data_offset(elnum)
+                  angles(1:3) = angle_input(osn,ci,1:3)
+            else
+                  write(iout,9502)
+                  call die_gracefully
+            end if
+            aci = imatprp(102,matnum)
+            ati = imatprp(103,matnum)
+c              use helper to get the crystal -> reference rotation
+            if( ati .eq. 1 ) then
+                  atype = "degrees"
+            elseif( ati .eq. 2) then
+                  atype = "radians"
+            else
+                  write(iout,9503)
+                  call die_gracefully
+            end if
+c
+            if( aci .eq. 1 ) then
+                  aconv = "kocks"
+            else
+                  write(iout,9504)
+                  call die_gracefully
+            end if
+            call mm10_rotation_matrix( angles, aconv, atype,
+     &            cp_g_rot(i,1:3,1:3,ci),  iout)
+            end do ! over ncrystals
+      end do   !   over span
+c 
+      cep = zero ! this is local to drive_10_update_b
+c
+      do i = 1, span
+        tc = 0
+        totalC = zero
+        do ci = 1, ncrystals(i)
+            g = cp_g_rot(i,1:3,1:3,ci)
+            Ct = cp_stiff(i,1:6,1:6,ci)
+            Srot = zero
+            call mm10_RT2RVE( transpose(g), Srot)
+            Cci = matmul( Ct, transpose(Srot) )
+            Cci = matmul( Srot, Cci )
+            totalC = totalC + Cci
+            tc = tc + 1
+         end do
+c       
+         totalC = totalC / dble(tc) ! average over all crystals
+c
+         cep(i,1:3,1:3) = totalC(1:3,1:3)
+         cep(i,4,4) = totalC(4,4)
+         cep(i,5,5) = totalC(5,5)
+         cep(i,6,6) = totalC(6,6)
+c       
+      end do  ! over span
+c      
+      deallocate( cp_stiff, cp_g_rot, ncrystals )
+      return      
+c
+9501  format(/1x,
+     &'>>>>> FATAL ERROR: detected in drive_10_update_b',
+     & /,16x,'invalid crystal number detected: ',i3,
+     & /,16x,'job aborted' )
+9502  format(/1x,
+     &'>>>>> FATAL ERROR: detected in drive_10_update_b',
+     & /,16x,'invalid/inconsistent crystal input',
+     & /,16x,'job aborted' )
+9503  format(/1x,
+     &'>>>>> FATAL ERROR: detected in drive_10_update_b',
+     & /,16x,'unexpected/unknown angle measure',
+     & /,16x,'job aborted' )
+9504  format(/1x,
+     &'>>>>> FATAL ERROR: detected in drive_10_update_b',
+     & /,16x,'unexpected/unknown angle convention',
+     & /,16x,'job aborted' )
+c 
+      end subroutine drive_10_update_b
+      end subroutine drive_10_update
+      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_10_update_c                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/8/2015 rhd              *
+c     *                                                              *
+c     *     support routine for mm10 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_10_update_c( source, nrows, row, dest, nterms )
+      implicit none
+c      
+      integer :: nrows, row, nterms
+#dbl      double precision ::
+#sgl      real ::
+     &  source(nrows,nterms,nterms), dest(nterms)
+c
+      integer :: i, j, k
+c      
+      k = 0
+c
+      do i = 1, 6
+        do j = 1, 6
+          k = k + 1
+          dest(k) = source(row,j,i)
+        end do
+      end do
 c
       return
       end
+      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_10_update_a                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/8/2015 rhd              *
+c     *                                                              *
+c     *     support routine for mm10 material driver.                *
+c     *     should be inlined                                        *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine drive_10_update_a( span, mxvl, uddt,
+     &                              local_cep, stress_n, stress_np1,
+     &                              killed_status )                
+      implicit none
+c      
+      integer :: span, mxvl
+      logical :: killed_status(*)
+#dbl      double precision ::
+#sgl      real ::
+     &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
+     &  uddt(mxvl,6), zero
+      data zero / 0.0d00 /
 c
+      integer i, k, m
 c
+c              for each element in block, update stresses by
+c              [D-elastic] * uddt. uddt contains thermal increment +
+c              increment from imposed nodal displacements.              
+c
+      stress_np1 = stress_n
+c      
+      do k = 1, 6
+       do m = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+         do i = 1, span
+           stress_np1(i,k) = stress_np1(i,k) + 
+     &                       local_cep(i,m,k) * uddt(i,m)
+         end do
+       end do
+      end do   
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do i = 1, span
+        if( killed_status(i) ) stress_np1(i,1:6) = zero
+      end do
+c         
+      return
+      end
 c
 c     ****************************************************************
 c     *                                                              *
@@ -3141,88 +4849,26 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *             subroutines rstgp1_umat_cep_dstran               *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 4/15/12                    *
-c     *                                                              *
-c     *    support for drive_umat. included here for easy inlining   *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine rstgp1_umat_cep_dstran( stress, dstran, symm_vector )
-      implicit none
-c
-c               parameters
-c
-#dbl      double precision ::
-#sgl      real ::
-     & stress(6), dstran(6), symm_vector(21)
-c
-c               locals
-c
-#dbl      double precision ::
-#sgl      real ::
-     & dnow(6,6), t5, t6
-c
-      integer :: i, j, k
-c
-c               make dstran and stress have WARP3D row ordering
-c               for xz and yz shear terms
-c
-      t5 = dstran(5); t6 = dstran(6); dstran(5) = t6; dstran(6) = t5
-      t5 = stress(5); t6 = stress(6); stress(5) = t6; stress(6) = t5
-c
-c               make 6x6 form of [Dt] from packed vector form of
-c               symmetric storage. update stress by incremental
-c               change. dstran is mechanical strain increment over
-c               step.
-c
-      k = 1
-      do i = 1, 6
-        do j = 1, i
-          dnow(i,j) = symm_vector(k)
-          dnow(j,i) = dnow(i,j)
-          k = k + 1
-        end do
-      end do
-c
-      do i = 1, 6
-       do k = 1, 6
-          stress(i) = stress(i) + dnow(i,k) * dstran(k)
-       end do
-      end do
-c
-      return
-      end
-c
-c     ****************************************************************
-c     *                                                              *
 c     *             subroutine rstgp1_make_symmetric_store           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/26/12                   *
+c     *                   last modified : 10/27/20015 rhd            *
 c     *                                                              *
 c     *                   support for umat processing                *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine rstgp1_make_symmetric_store( matrix, symm_vector )
       implicit none
-#dbl      double precision
-#sgl      real
-     & matrix(6,6), symm_vector(21)
+      
+#dbl      double precision :: matrix(6,6), symm_vector(21)
+#sgl      real :: matrix(6,6), symm_vector(21)
 c
-#dbl      double precision
-#sgl      real
-     & tp(6,6), symm_version(6,6), half
-      integer i, j, k, map(6)
-#sgl      data half / 0.5 /
-#dbl      data half / 0.5d00 /
+#dbl      double precision :: tp(6,6), symm_version(6,6), half
+#sgl      real ::tp(6,6), symm_version(6,6), half
+      integer :: i, j, k, map(6)
+      data half / 0.5d00 /
       data map / 1,2,3,4,6,5 /
 c
 c         1. compute transpose of 6 x 6 matrix
@@ -3240,24 +4886,46 @@ c
         end do
       end do
 c
-      k = 1
-      do i = 1, 6
-        do j = 1, i
-          symm_vector(k) = symm_version(i,j)
-          k = k + 1
-        end do
-      end do
+c      k = 1
+c      do i = 1, 6
+c        do j = 1, i
+c          symm_vector(k) = symm_version(i,j)
+c          k = k + 1
+c        end do
+c      end do
+
+      symm_vector(1)  = symm_version(1,1)
+      symm_vector(2)  = symm_version(2,1)
+      symm_vector(3)  = symm_version(2,2)
+      symm_vector(4)  = symm_version(3,1)
+      symm_vector(5)  = symm_version(3,2)
+      symm_vector(6)  = symm_version(3,3)
+      symm_vector(7)  = symm_version(4,1)
+      symm_vector(8)  = symm_version(4,2)
+      symm_vector(9)  = symm_version(4,3)
+      symm_vector(10) = symm_version(4,4)
+      symm_vector(11) = symm_version(5,1)
+      symm_vector(12) = symm_version(5,2)
+      symm_vector(13) = symm_version(5,3)
+      symm_vector(14) = symm_version(5,4)
+      symm_vector(15) = symm_version(5,5)
+      symm_vector(16) = symm_version(6,1)
+      symm_vector(17) = symm_version(6,2)
+      symm_vector(18) = symm_version(6,3)
+      symm_vector(19) = symm_version(6,4)
+      symm_vector(20) = symm_version(6,5)
+      symm_vector(21) = symm_version(6,6)
 c
       return
       end
 
 c     ****************************************************************
 c     *                                                              *
-c     *                     subroutines rstgp1s                      *
+c     *    supporting routines for rstgp1 (to be inlined)            *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/1/12 (no folling)        *
+c     *               last modified : 10/18/15                       *
 c     *                                                              *
 c     *  support routines for rstgp1. include here so they can be    *
 c     *  inlined.                                                    *
@@ -3315,51 +4983,6 @@ c
 c
       end
 
-
-      subroutine rstgp1_c( span, nstrs, stress_n1, urcs_blk_n1, mxvl )
-      integer :: span
-#dbl      double precision ::
-#sgl      real ::
-     &  stress_n1(nstrs,*), urcs_blk_n1(mxvl,*)
-c
-      do k = 1, nstrs  !  not necessarily = 6
-@!DIR$ LOOP COUNT MAX=###  
-         do i = 1, span
-           urcs_blk_n1(i,k) = stress_n1(k,i)
-         end do
-      end do
-c
-      return
-      end
-
-      subroutine rstgp1_d( span, nstrs, stress_n, urcs_blk_n, mxvl )
-      integer span
-#dbl      double precision
-#sgl      real
-     &  stress_n(nstrs,*), urcs_blk_n(mxvl,*)
-c
-      do k = 1, nstrs    !  not necessarily = 6
-@!DIR$ LOOP COUNT MAX=###  
-         do i = 1, span
-           stress_n(k,i) = urcs_blk_n(i,k)
-         end do
-      end do
-c
-      return
-      end
-
-      subroutine rstgp1_zero( vec, n )
-      integer n
-#dbl      double precision
-#sgl      real
-     &  vec(n)
-#dbl      double precision
-#sgl      real
-     &  zero
-      data zero / 0.0d00 /
-      vec(1:n) = zero
-      return
-      end
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine recstr_cep_uddt_for_block         *
@@ -3463,4 +5086,85 @@ c
       end do
 c      
       return
+      end
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine rstgp1_store_cep                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 10/25/2015 rhd             *
+c     *                                                              *
+c     *  store full cep from mm.. routine into symmetric global data *
+c     *  structure for elements in block for gauss point gpn         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rstgp1_store_cep( span, mxvl, gpn, gbl_ceps_blk, 
+     &                             nrow_ceps_blk, local_cep )                
+      implicit none
+c
+      integer :: span, mxvl, gpn, nrow_ceps_blk 
+#dbl      double precision ::
+#sgl      real ::
+     &  gbl_ceps_blk(nrow_ceps_blk,span,*), local_cep(mxvl,6,6)
+c
+      integer i, k, ii, jj
+c
+      if( nrow_ceps_blk .eq. 21 ) then ! symmetric [D] 6x6
+@!DIR$ LOOP COUNT MAX=###  
+        do i = 1, span
+          gbl_ceps_blk(1,i,gpn)  = local_cep(i,1,1)
+          gbl_ceps_blk(2,i,gpn)  = local_cep(i,2,1)
+          gbl_ceps_blk(3,i,gpn)  = local_cep(i,2,2)
+          gbl_ceps_blk(4,i,gpn)  = local_cep(i,3,1)
+          gbl_ceps_blk(5,i,gpn)  = local_cep(i,3,2)
+          gbl_ceps_blk(6,i,gpn)  = local_cep(i,3,3)
+          gbl_ceps_blk(7,i,gpn)  = local_cep(i,4,1)
+          gbl_ceps_blk(8,i,gpn)  = local_cep(i,4,2)
+          gbl_ceps_blk(9,i,gpn)  = local_cep(i,4,3)
+          gbl_ceps_blk(10,i,gpn) = local_cep(i,4,4)
+          gbl_ceps_blk(11,i,gpn) = local_cep(i,5,1)
+          gbl_ceps_blk(12,i,gpn) = local_cep(i,5,2)
+          gbl_ceps_blk(13,i,gpn) = local_cep(i,5,3)
+          gbl_ceps_blk(14,i,gpn) = local_cep(i,5,4)
+          gbl_ceps_blk(15,i,gpn) = local_cep(i,5,5)
+          gbl_ceps_blk(16,i,gpn) = local_cep(i,6,1)
+          gbl_ceps_blk(17,i,gpn) = local_cep(i,6,2)
+          gbl_ceps_blk(18,i,gpn) = local_cep(i,6,3)
+          gbl_ceps_blk(19,i,gpn) = local_cep(i,6,4)
+          gbl_ceps_blk(20,i,gpn) = local_cep(i,6,5)
+          gbl_ceps_blk(21,i,gpn) = local_cep(i,6,6)
+        end do
+      elseif( nrow_ceps_blk .eq. 6 ) then ! symmetric [D] 3x3
+@!DIR$ LOOP COUNT MAX=###  
+        do i = 1, span
+          gbl_ceps_blk(1,i,gpn)  = local_cep(i,1,1)
+          gbl_ceps_blk(2,i,gpn)  = local_cep(i,2,1)
+          gbl_ceps_blk(3,i,gpn)  = local_cep(i,2,2)
+          gbl_ceps_blk(4,i,gpn)  = local_cep(i,3,1)
+          gbl_ceps_blk(5,i,gpn)  = local_cep(i,3,2)
+          gbl_ceps_blk(6,i,gpn)  = local_cep(i,3,3)
+        end do
+      elseif( nrow_ceps_blk .eq. 36 ) then ! non-symmetric [D] 6x6
+          k = 1 
+@!DIR$ LOOP COUNT MAX=###  
+          do i = 1, span
+            do ii = 1, 6
+              do jj = 1, 6
+                gbl_ceps_blk(k,i,gpn)  = local_cep(i,ii,jj)
+                k = k +1
+              end do
+            end do   
+          end do
+      else
+       write(*,9000)
+       call die_abort
+      end if
+c
+      return
+ 9000 format(/,3x,">>> FATAL ERROR: wrong. size. rstgp1_store_cep",
+     &       /,3x,"                 job aborted" )       
       end
