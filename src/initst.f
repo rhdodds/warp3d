@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/14/2015 rhd              *
+c     *                   last modified : 11/25/2015 rhd             *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -31,11 +31,16 @@ c
      &                      modified_mpcs, umat_serial,
      &                      convergence_history, 
      &                      run_user_solution_routine, cp_unloading,
-     &                      divergence_check, asymmetric_assembly,
+     &                      divergence_check, diverge_check_strict,
+     &                      asymmetric_assembly,
      &                      pardiso_first, output_command_file,
      &                      output_step_bitmap_list,
      &                      material_model_names, batch_mess_fname,
-     &                      creep_model_used
+     &                      creep_model_used, extrapolate,
+     &                      extrap_off_next_step, line_search,
+     &                      ls_details, ls_min_step_length, 
+     &                      ls_max_step_length, ls_rho, ls_slack_tol
+c
       
       use stiffness_data
       use file_info
@@ -299,7 +304,6 @@ c
       prnres         =  .false.
       prlres         =  .false.
       updstf         =  .false.
-      force_k_update =  0
       growth_k_flag  = .false.
       adaptive_flag  = .false.
       qbar_flag      = .true.
@@ -312,9 +316,6 @@ c
       dt             =  one
       total_model_time  =  zero
       nostif         =  .false.
-      linstf_nxt_step = .false.
-      lnkit1         =  .false.
-      divergence_check = .true.
       linmas         =  .false.
       lkcomp         =  .false.
       tkcomp         =  .false.
@@ -323,8 +324,14 @@ c
       newtrn         =  .false.
       newcns         =  .false.
       halt           =  .true.
-      predct         =  .true.
-      prdmlt         =   zero
+      extrapolate    =  .true.
+      extrap_off_next_step  = .false.
+      line_search    =  .true.
+      ls_details     =  .false.
+      ls_min_step_length = 0.01d00
+      ls_max_step_length = one
+      ls_rho         = 0.7d00
+      ls_slack_tol   = 0.5d00
       accsol         =  .false.
       incflg         =  .false.
       ifvcmp         =  .false.
@@ -339,6 +346,8 @@ c
       sparse_stiff_output = .false.
       sparse_stiff_binary = .true.
       sparse_stiff_file_name(1:) = 'sparse_stiffness_output'
+      divergence_check = .true.
+      diverge_check_strict = .false.
 c
 c                       initialize solver parameters
 c
@@ -383,6 +392,7 @@ c
 c
 c                       initialize the total change in displacements.
 c
+      u(1:mxdof) = zero
       du(1:nodof) = zero
 c
 c                       initialize domain integral
