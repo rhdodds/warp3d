@@ -17,7 +17,7 @@ find_line( 2, "      11              ");
 #    line with element 11 gp 5 partial stresses
 #
 @parts = split( / +/, $line);
-$answer = "54.248897";
+$answer = "54.245932";
 $partno = 2;
 #
 $message = " ";
