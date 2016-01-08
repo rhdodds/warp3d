@@ -10,7 +10,7 @@ open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
 #
-find_line( 1, ">> solution for step:      19 converged:  4" );
+find_line( 1, ">> solution for step:      19 converged:  3" );
 find_line( 2, "    62  " );
 #skip_lines( 1, 1 );
 #
