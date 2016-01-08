@@ -4228,6 +4228,9 @@ incidences
 c
 c
 blocking  automatic display
+c
+c       *** old veectorized blocking if ever needed again ***
+c
 c     1   128     1
 c     2   128   129
 c     3   128   257
@@ -5250,9 +5253,10 @@ c
    maximum iterations 8
    minimum iterations 2
    convergence test norm res tol 0.01
+   extrapolate on
+   line search on details   
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off
@@ -5260,7 +5264,6 @@ c
    consistent q-matrix on
    time step 1.0e06
    trace solution on
-   extrapolate off     $ recommended for ctoa growth
 c
  crack growth parameters
    type of crack growth node_release
