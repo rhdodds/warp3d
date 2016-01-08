@@ -129,7 +129,7 @@ c
       dstran(1) = dstran(1) - cte * dtemp
       dstran(2) = dstran(2) - cte * dtemp
       dstran(3) = dstran(3) - cte * dtemp
-      if( kiter .eq. 0 ) return
+c      if( kiter .eq. 0 ) return   ! for new WARP3D solution model
 c
 c           elastic material constants
 c
