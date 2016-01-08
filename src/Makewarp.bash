@@ -4,7 +4,7 @@
 #
 #     Makewarp.bash (third version)
 #
-#     created: mcm June 2011, modified: May 2014
+#     created: mcm June 2011, modified: Dec 2015 RHD
 #
 #     Description:
 #           Bash script to interactively drive compilation of Linux and Mac
@@ -209,8 +209,8 @@ function linux_help
 {
 
       printf "Simple mode will take built-in defaults (which should work for version\n"
-      printf "13.x of the Intel compilers on Intel Linux systems), and checks\n"
-      printf "to ensure they will work on your system.\n"
+      printf "14.x, 15.x, 16.x of the Intel compilers on Intel Linux systems),\n"
+      printf "and checks to ensure they will work on your system.\n"
       printf "Advanced mode will prompt you for all the configuration variables, but does\n"
       printf "provide default values.\n\n"
 
@@ -271,7 +271,7 @@ function linux_simple
 # Check the version of the Intel fortran compiler
 # Variable minv is the lowest version to allow without warn
 #
-      minv=13.0
+      minv=43.0
       fv=`ifort -v 2>&1`
       fv=${fv:7:5}
       result=`expr $fv \>= $minv`
@@ -493,7 +493,7 @@ printf "Quitting...\n\n"
 exit 1
 }
 #
-minv=13.0
+minv=14.0
 fv=`ifort -v 2>&1`
 fv=${fv:7:5}
 result=`expr $fv \>= $minv`
@@ -626,7 +626,7 @@ hypre_dir=$WARP3D_HOME/linux_packages/source/hypre_code_dir
 #
 printf "\nSelect supported platform:\n"
 PS3="Select choice: "
-select opt in 'Linux (64-bit)' 'Mac OS X (10.9.x)' 'Windows (7,8)' 'Exit'
+select opt in 'Linux (64-bit)' 'Mac OS X' 'Windows (7-10)' 'Exit'
 do
       case $REPLY in
             1 )   printf "\n"
