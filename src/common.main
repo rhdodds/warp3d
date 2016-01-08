@@ -37,7 +37,7 @@ c
 c=======================================================================
 c
       common/lsgenr/ prnres,updstf,nostif,halt,lkcomp,
-     & linstf_nxt_step,linmas,newstf,tkcomp,newcns,accsol,predct,
+     & linmas,newstf,tkcomp,newcns,accsol,
      & zrocon, newtrn,newmas,lnkit1,incflg,ifvcmp,cnldcp,prlres,
      & input_ok, adaptive_flag, new_constraints, batch_messages,
      & signal_flag, scalar_blocking, growth_k_flag,
@@ -109,7 +109,7 @@ c
 c=======================================================================
 c
       common/isgenr/ in,out,histep,lowstp,ltmstp,restrt,
-     & force_k_update, num_warn, num_error, num_fatal,
+     & num_warn, num_error, num_fatal,
      & solver_flag, old_solver_flag, solver_memory
 c
 c======================================================================
@@ -173,8 +173,8 @@ c
       logical stpchk, trace, convrg, lprops(mxelpr,mxel)
 c
       logical prnres,updstf,nostif,halt,lkcomp,linmas,
-     &    linstf_nxt_step, newstf,tkcomp,newcns,prlres,accsol,predct,
-     &    zrocon, newtrn,newmas,lnkit1,incflg,ifvcmp,cnldcp,
+     &    newstf,tkcomp,newcns,prlres,accsol,
+     &    zrocon, newtrn,newmas,incflg,ifvcmp,cnldcp,
      &    input_ok, adaptive_flag, new_constraints, batch_messages,
      &    signal_flag, scalar_blocking, growth_k_flag, qbar_flag,
      &    solver_out_of_core, show_details, new_analysis_param,
