@@ -1,9 +1,0 @@
-c
-  restart from file "pipe_crush_100.db"
-c
-   compute displacements for loading test     step  101
-   output patran formatted displacements stresses                           
-   output displacements 271 272 287 288 303 304 216 215 200 199 232 231
-   output reactions 271 272 287 288 303 304 216 215 200 199 232 231
-c 
- stop
