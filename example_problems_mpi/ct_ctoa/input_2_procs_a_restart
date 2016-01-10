@@ -1,9 +1,0 @@
-c
-restart from file 'nasa_ct2_db'
-
-   output patran binary displacements stresses
-c 
-   compute displacements for loading test     step   31
-   output displacements 2221 2222 2223 1215 1202 1206                
-   output reactions 2221 2222 2223                                 
-stop
