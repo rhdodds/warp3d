@@ -11,7 +11,7 @@ open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
 #
-find_line( 1, " step:     200 converged:  3 iters" );
+find_line( 1, " step:     200 converged:  2 iters" );
 find_line( 2, "Totals: ");
 #
 #    line with reactions is current. print value
