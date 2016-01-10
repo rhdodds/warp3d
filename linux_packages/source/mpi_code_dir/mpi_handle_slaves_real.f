@@ -76,16 +76,10 @@ c
          call wmpi_send_basic
          goto 9000
 c
-c           do = 3: execute lnstff, the routine which generates the linear
-c                   stiffness matrix for each element.  Element stiffnesses
-c                   are only calculated for the elements that the processor
-c                   owns.
+c           do = 3: available. deprecated the call to lnstff.
 c
  300     continue
-         if(debug)write (out,'("=> Proc",i3," do lnstff")') myid
-         dumi = 1
-         dumj = 1
-         call lnstff( dumi, dumj )
+         if(debug)write (out,'("=> Proc",i3," <available>")') myid
          goto 9000
 c
 c           do = 4: execute tanstf, the routine which generates the tangent

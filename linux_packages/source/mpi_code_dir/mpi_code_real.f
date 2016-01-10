@@ -497,19 +497,19 @@ c          if this is the the root processor, then recieve data from each
 c          processor.
 c
       if ( root_processor ) then
-	 do proc = 1, numprocs -1
-	    call MPI_RECV ( vec_tmp, procdof2glob(proc)%num_dof,
+        do proc = 1, numprocs -1
+         call MPI_RECV ( vec_tmp, procdof2glob(proc)%num_dof,
      &          MPI_VAL, proc, 1, MPI_COMM_WORLD, status, ierr)
             do i = 1, procdof2glob(proc)%num_dof
                vec(procdof2glob(proc)%dof(i)) =
      &             vec(procdof2glob(proc)%dof(i)) + vec_tmp(i)
             enddo
-	 enddo
+        enddo
       else
 c
 c           if this is a slave processor, send local info to root
 c
-	 num_dof = local_nodes%num_local_nodes * mxndof
+      num_dof = local_nodes%num_local_nodes * mxndof
          do i = 1, num_dof
             vec_tmp(i) = vec(local_nodes%local2global(i))
          enddo
@@ -2249,9 +2249,9 @@ c                    open
 c
          if ( dof .gt. nodof ) then
             if ( open ) then
-	       size_dof_chunks(block) =
+              size_dof_chunks(block) =
      &              nodof - start_dof_chunks ( block )
-	       tot_size = tot_size + size_dof_chunks(block)
+              tot_size = tot_size + size_dof_chunks(block)
             endif
             exit
          endif
@@ -2273,7 +2273,7 @@ c                    was, then set the size of the chunk.
 c
             if ( open ) then
                size_dof_chunks(block) = dof - start_dof_chunks(block)+1
-	       tot_size = tot_size + size_dof_chunks(block)
+               tot_size = tot_size + size_dof_chunks(block)
                open = .false.
             endif
          endif
@@ -3663,18 +3663,19 @@ c
 c               now allocate and fill the mappings for each slave proc
 c
       do proc = 1, numprocs - 1
-	 procdof2glob(proc)%num_dof = num_local_nodes(proc)*mxndof
-	 allocate (procdof2glob(proc)%dof(num_local_nodes(proc)*mxndof),
+          procdof2glob(proc)%num_dof = num_local_nodes(proc)*mxndof
+          allocate( 
+     &       procdof2glob(proc)%dof(num_local_nodes(proc)*mxndof),
      &       stat = alloc_stat)
          if ( alloc_stat .ne. 0 ) then
             write(out,9900)
             call die_abort
             stop
          end if
-	 do i = 1, procdof2glob(proc)%num_dof
+         do i = 1, procdof2glob(proc)%num_dof
             procdof2glob(proc)%dof(i) = proc_nodes(proc)%local2global(i)
-         enddo
-      enddo
+         end do
+      end do
 c
 c            for each processor, have the processor allocate
 c            the appropriate data structure, then have the
@@ -4405,10 +4406,10 @@ c
       sharing_procs = 0
       owning_procs = 0
       do proc = 0, numprocs - 1
-	 if ( proc .eq. procnum) cycle
-	 if ( own%sharing_count(proc) .gt. 0 )
+        if ( proc .eq. procnum) cycle
+        if ( own%sharing_count(proc) .gt. 0 )
      &        sharing_procs = sharing_procs  + 1
-	 if ( own%shared_count(proc) .gt. 0 )
+        if ( own%shared_count(proc) .gt. 0 )
      &        owning_procs = owning_procs + 1
       enddo
 c
@@ -4475,12 +4476,11 @@ c
          new%sharing_count(i) = old%sharing_count(i)
          if (new%sharing_count(i) .eq. 0 ) cycle
 c
-	 allocate (new%sharing_procs(i)%ptr(new%sharing_count(i)),
+         allocate (new%sharing_procs(i)%ptr(new%sharing_count(i)),
      &        stat = allo_stat )
-	 if ( allo_stat .ne. 0) then
-	     write(out,*) '>>>> allocate error in copy_own'
-	     call die_abort
-	     stop
+         if ( allo_stat .ne. 0) then
+            write(out,*) '>>>> allocate error in copy_own'
+            call die_abort
          endif
 c
          do j=1, new%sharing_count(i)
@@ -4498,12 +4498,11 @@ c
          new%shared_count(i) = old%shared_count(i)
          if (new%shared_count(i) .eq. 0 ) cycle
 c
-	 allocate (new%shared_owner(i)%ptr(new%shared_count(i)),
+         allocate (new%shared_owner(i)%ptr(new%shared_count(i)),
      &        stat = allo_stat )
-	 if ( allo_stat .ne. 0) then
-	     write(out,*) '>>>> allocate error in copy_own'
-	     call die_abort
-	     stop
+         if ( allo_stat .ne. 0) then
+            write(out,*) '>>>> allocate error in copy_own'
+            call die_abort
          endif
 c
          do j=1, new%shared_count(i)
