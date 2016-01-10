@@ -4,9 +4,9 @@ c     *                      subroutine gptns1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *               last modified : 06/18/12 rhd                   *
+c     *               last modified : 1/10/2016 rhd                  *
 c     *                                                              *
-c     *     this subroutine computes the contributon to the tangent  *
+c     *     computes the contributon to the tangent                  *
 c     *     stiffnes matrices for a block of similar elements in     *
 c     *     uniform global coordinates for a single gauss point.     *
 c     *                                                              *
@@ -155,9 +155,12 @@ c
 c                       Check to see if we're actually a damaged interface
 c                       model.  If we are, apply damage to the tangent.
 c
-      if( local_work%is_inter_dmg ) then
-        call drive_11_cnst(gpn, local_iout, local_work)
-      end if
+c                       commented out until Mark M wants to purse this 
+c                       effor
+c
+c      if( local_work%is_inter_dmg ) then
+c        call drive_11_cnst(gpn, local_iout, local_work)
+c      end if
 c
 c                       convert [Dt] from unrotated cauchy to cauchy
 c                       at current deformed configuration for geometric
@@ -292,15 +295,13 @@ c     *                      subroutine drive_01_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  12/21/2015 rhd            *
+c     *                   last modified : 1/10/2016 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_01_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
 $add param_def
 $add include_tan_ek
@@ -311,72 +312,17 @@ c
 c      
 c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
-      integer :: span, now_blk, ielem, sloc, k, felem
+      integer :: span, now_blk, ielem, k, felem
       logical :: local_debug 
-      
 c      
       span    = local_work%span
-      weight  = local_work%weights(gpn)
       now_blk = local_work%blk
       felem   = local_work%felem
 c      
       local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-c              pull 21 terms of lower-triangle for this element
-c              global cep block is 21 x span x num integration
-c              points
-c
-c              expand to 6 x 6 symmetric [D] and scale by
-c              integration weight factor
-c
-c
-@!DIR$ LOOP COUNT MAX=###  
-      do ielem = 1, span
-        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-        f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
-        end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
-      end do
-      
+      call extract_D_symmetric( gpn, local_work )
+c      
       if( local_debug ) then
         write(iout,9000) now_blk, felem, gpn, span
         do ielem = 1, span
@@ -400,15 +346,13 @@ c     *                      subroutine drive_02_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  12/26/2015 rhd            *
+c     *                   last modified :  1/10/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_02_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
 $add param_def
 $add include_tan_ek
@@ -419,72 +363,17 @@ c
 c      
 c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
-      integer :: span, now_blk, ielem, sloc, k, felem
+      integer :: span, now_blk, ielem, k, felem
       logical :: local_debug 
-      
 c      
       span    = local_work%span
-      weight  = local_work%weights(gpn)
       now_blk = local_work%blk
       felem   = local_work%felem
 c      
       local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-c              pull 21 terms of lower-triangle for this element
-c              global cep block is 21 x span x num integration
-c              points
-c
-c              expand to 6 x 6 symmetric [D] and scale by
-c              integration weight factor
-c
-c
-@!DIR$ LOOP COUNT MAX=###  
-      do ielem = 1, span
-        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-        f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
-        end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
-      end do
-      
+      call extract_D_symmetric( gpn, local_work )
+c      
       if( local_debug ) then
         write(iout,9000) now_blk, felem, gpn, span
         do ielem = 1, span
@@ -508,16 +397,14 @@ c     *                      subroutine drive_03_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  11/9/2015 rhd             *
+c     *                   last modified :  1/10/2016 rhd             *
 c     *                                                              *
-c     *                   mises and gurson                           *                                                              *
+c     *                      mises and gurson                        *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_03_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
 $add param_def
 $add include_tan_ek
@@ -525,70 +412,8 @@ c
 c                     parameter declarations
 c
       integer :: gpn, iout 
-c      
-c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
-      integer :: span, now_blk, ielem, sloc, k 
-      
-c      
-      span    = local_work%span
-      weight  = local_work%weights(gpn)
-      now_blk = local_work%blk
-c
-c              pull 21 terms of lower-triangle for this element
-c              global cep block is 21 x span x num integration
-c              points
-c
-c              expand to 6 x 6 symmetric [D] and scale by
-c              integration weight factor
-c
-c
-@!DIR$ LOOP COUNT MAX=###  
-      do ielem = 1, span
-        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-        f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
-        end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
-      end do
+      call extract_D_symmetric( gpn, local_work )
       return
 c
       end
@@ -680,15 +505,13 @@ c     *                      subroutine drive_05_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  12/31/2015 rhd            *
+c     *                   last modified :  1/10/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_05_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
 $add param_def
 $add include_tan_ek
@@ -699,72 +522,17 @@ c
 c      
 c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
-      integer :: span, now_blk, ielem, sloc, k, felem
+      integer :: span, now_blk, ielem, k, felem
       logical :: local_debug 
-      
 c      
       span    = local_work%span
-      weight  = local_work%weights(gpn)
       now_blk = local_work%blk
       felem   = local_work%felem
 c      
       local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
 c
-c              pull 21 terms of lower-triangle for this element
-c              global cep block is 21 x span x num integration
-c              points
-c
-c              expand to 6 x 6 symmetric [D] and scale by
-c              integration weight factor
-c
-c
-@!DIR$ LOOP COUNT MAX=###  
-      do ielem = 1, span
-        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-        f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
-        end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
-      end do
-      
+      call extract_D_symmetric( gpn, local_work )
+c      
       if( local_debug ) then
         write(iout,9000) now_blk, felem, gpn, span
         do ielem = 1, span
@@ -788,7 +556,7 @@ c     *                      subroutine drive_06_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  10/18/2015                *
+c     *                   last modified :  1/10/2016 rhd             *
 c     *                                                              *
 c     *     drive [D] consistent update for creep
 c     *                                                              *
@@ -797,8 +565,6 @@ c
 c
       subroutine drive_06_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
 $add param_def
 $add include_tan_ek
@@ -806,70 +572,9 @@ c
 c                     parameter declarations
 c
       integer :: gpn, iout 
-c      
-c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
-      integer :: span, now_blk, ielem, sloc, k 
-      
-c      
-      span    = local_work%span
-      weight  = local_work%weights(gpn)
-      now_blk = local_work%blk
+      call extract_D_symmetric( gpn, local_work )
 c
-c              pull 21 terms of lower-triangle for this element
-c              global cep block is 21 x span x num integration
-c              points
-c
-c              expand to 6 x 6 symmetric [D] and scale by
-c              integration weight factor
-c
-c
-@!DIR$ LOOP COUNT MAX=###  
-      do ielem = 1, span
-        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-        f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
-        end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
-      end do
       return
 c
       end
@@ -879,15 +584,13 @@ c     *                      subroutine drive_07_cnst                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  1/2/2015 rhd              *
+c     *                   last modified :  1/10/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_07_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
 $add param_def
 $add include_tan_ek
@@ -898,72 +601,17 @@ c
 c      
 c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
-      integer :: span, now_blk, ielem, sloc, k, felem
+      integer :: span, now_blk, ielem, k, felem
       logical :: local_debug 
-      
 c      
       span    = local_work%span
-      weight  = local_work%weights(gpn)
       now_blk = local_work%blk
       felem   = local_work%felem
 c      
-      local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 3
+      local_debug = .false. ! felem .eq. 1 .and. gpn .eq. 
 c
-c              pull 21 terms of lower-triangle for this element
-c              global cep block is 21 x span x num integration
-c              points
-c
-c              expand to 6 x 6 symmetric [D] and scale by
-c              integration weight factor
-c
-c
-@!DIR$ LOOP COUNT MAX=###  
-      do ielem = 1, span
-        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-        f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
-        end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
-      end do
-      
+      call extract_D_symmetric( gpn, local_work )
+c      
       if( local_debug ) then
         write(iout,9000) now_blk, felem, gpn, span
         do ielem = 1, span
@@ -982,11 +630,99 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
+c     *              subroutine extract_D_symmetric                  *
+c     *           - service routine. should be inlined -             *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  1/10/2016 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine extract_D_symmetric( gpn, local_work )
+c
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      implicit none
+$add param_def
+$add include_tan_ek
+c
+c                     parameter declarations
+c
+      integer :: gpn, iout 
+c      
+c                     local variables
+c
+#dbl      double precision :: weight, symm_part_cep(21), f
+#sgl      real :: weight, symm_part_cep(21), f
+      integer :: span, now_blk, ielem, sloc, k, felem
+c      
+      span    = local_work%span
+      weight  = local_work%weights(gpn)
+      now_blk = local_work%blk
+      felem   = local_work%felem
+c      
+c              pull 21 terms of lower-triangle for this element
+c              global cep block is 21 x span x num integration
+c              points
+c
+c              expand to 6 x 6 symmetric [D] and scale by
+c              integration weight factor
+c
+@!DIR$ LOOP COUNT MAX=###  
+      do ielem = 1, span
+        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+        f = weight * local_work%det_jac_block(ielem,gpn)
+        do k = 1, 21
+         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+        end do
+        local_work%cep(ielem,1,1) = symm_part_cep(1)
+        local_work%cep(ielem,2,1) = symm_part_cep(2)
+        local_work%cep(ielem,2,2) = symm_part_cep(3)
+        local_work%cep(ielem,3,1) = symm_part_cep(4)
+        local_work%cep(ielem,3,2) = symm_part_cep(5)
+        local_work%cep(ielem,3,3) = symm_part_cep(6)
+        local_work%cep(ielem,4,1) = symm_part_cep(7)
+        local_work%cep(ielem,4,2) = symm_part_cep(8)
+        local_work%cep(ielem,4,3) = symm_part_cep(9)
+        local_work%cep(ielem,4,4) = symm_part_cep(10)
+        local_work%cep(ielem,5,1) = symm_part_cep(11)
+        local_work%cep(ielem,5,2) = symm_part_cep(12)
+        local_work%cep(ielem,5,3) = symm_part_cep(13)
+        local_work%cep(ielem,5,4) = symm_part_cep(14)
+        local_work%cep(ielem,5,5) = symm_part_cep(15)
+        local_work%cep(ielem,6,1) = symm_part_cep(16)
+        local_work%cep(ielem,6,2) = symm_part_cep(17)
+        local_work%cep(ielem,6,3) = symm_part_cep(18)
+        local_work%cep(ielem,6,4) = symm_part_cep(19)
+        local_work%cep(ielem,6,5) = symm_part_cep(20)
+        local_work%cep(ielem,6,6) = symm_part_cep(21)
+        local_work%cep(ielem,1,2) = symm_part_cep(2)
+        local_work%cep(ielem,1,3) = symm_part_cep(4)
+        local_work%cep(ielem,1,4) = symm_part_cep(7)
+        local_work%cep(ielem,1,5) = symm_part_cep(11)
+        local_work%cep(ielem,1,6) = symm_part_cep(16)
+        local_work%cep(ielem,2,3) = symm_part_cep(5)
+        local_work%cep(ielem,2,4) = symm_part_cep(8)
+        local_work%cep(ielem,2,5) = symm_part_cep(12)
+        local_work%cep(ielem,2,6) = symm_part_cep(17)
+        local_work%cep(ielem,3,4) = symm_part_cep(9)
+        local_work%cep(ielem,3,5) = symm_part_cep(13)
+        local_work%cep(ielem,3,6) = symm_part_cep(18)
+        local_work%cep(ielem,4,5) = symm_part_cep(14)
+        local_work%cep(ielem,4,6) = symm_part_cep(19)
+        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do
+c
+      return
+      end       
+c     ****************************************************************
+c     *                                                              *
 c     *                   subroutine drive_umat_cnst                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 05/14/12                   *
+c     *                   last modified : 10/1/2015 rhd              *
 c     *                                                              *
 c     *          drive [D] consistent update for warp3d umat         *
 c     *                                                              *
@@ -1081,8 +817,7 @@ c
 c
       subroutine drive_10_cnst( gpn, iout, local_work )
 c
-      use main_data, only : matprp, lmtprp, extrapolated_du,
-     &                      non_zero_imposed_du 
+      use main_data, only : matprp, lmtprp
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
 c      
       implicit none
@@ -1205,9 +940,11 @@ c
 c
       dmg_loc = 1+local_work%macro_sz
 c
-      call cnst11( gpn, span, local_work%cep(1:span,1:6,1:6), 
-     &            local_work%elem_hist(1:span,dmg_loc,gpn),
-     &            local_work%sv, local_work%lv, local_work%tv, iout)
+c                Note: commented out until Mark resumes work on this
+c
+c      call cnst11( gpn, span, local_work%cep(1:span,1:6,1:6), 
+c     &            local_work%elem_hist(1:span,dmg_loc,gpn),
+c     &            local_work%sv, local_work%lv, local_work%tv, iout)
 c
       return
       end
@@ -1219,7 +956,6 @@ c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 09/25/2015 rhd             *
-c     *                                 : 01/31/96                   *
 c     *                                                              *
 c     *     performs the multiplication of the                       *
 c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
@@ -1298,6 +1034,7 @@ c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
 c     *                   last modified : 12/9/13                    *
+c     *        deprecated. retained for possible future reference    * 
 c     *                                                              *
 c     *     B * D * B.T for the asymmetric case.  Handles all        *
 c     *     elements, at least for now.                              *
@@ -1478,74 +1215,6 @@ c
       return
       end
 
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                  subroutine tanstf_store_cep                 *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 9/25/2015 rhd              *
-c     *                                                              *
-c     *        support for storing plain [D] w/o weights             *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine tanstf_store_cep( span, mxvl, gpn,
-     &   cep_sym_size, local_cep_block, global_cep_block, factors )
-      implicit none
-c
-      integer span, mxvl, gpn, nrow_cep_for_matl,
-     &        cep_sym_size, nrow, ielem, k, i, j
-#dbl      double precision
-#sgl      real
-     &    local_cep_block(mxvl,6,6),
-     &    global_cep_block(cep_sym_size,span,*), factors(*)
-c
-c         local_cep_block contains the 6x6 [D] for this
-c         integration point (gpn) for all elements in the block.
-c         it is symmetric and already
-c         has the integration weight factor already included. cancel that
-c         with factors to just leave the simple [D]. store the lower
-c         triangle of [D] in global_cep_block.
-c
-c         Note: the block local [D] is always 6x6 allocated even for
-c         cohesive elements.
-c
-c         Use two sets of loops to expose actual sizes to compiler
-c
-      if( cep_sym_size .eq. 6 ) go to 1000
-c
-      k = 1
-      do i = 1, 6
-        do j = 1, i
-@!DIR$ LOOP COUNT MAX=###  
-          do ielem = 1, span
-            global_cep_block(k,ielem,gpn) = local_cep_block(ielem,i,j)
-     &                                       * factors(ielem)
-          end do
-          k = k + 1
-        end do
-      end do
-      return
-c
- 1000 continue       ! cohesive elements
-      k = 1
-      do i = 1, 3
-        do j = 1, i
-@!DIR$ LOOP COUNT MAX=###  
-          do ielem = 1, span
-            global_cep_block(k,ielem,gpn) = local_cep_block(ielem,i,j)
-     &                                       * factors(ielem)
-          end do
-          k = k + 1
-        end do
-       end do
-      return
-c
-      end
-
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine ctran1                       *
@@ -1560,7 +1229,6 @@ c     *     one relating the cauchy stress rate and the rate of      *
 c     *     (spatial) deformation strain for a block of elements.    *
 c     *                                                              *
 c     ****************************************************************
-c
 c
       subroutine ctran1( span, cep, qn1, cs, qbar, dj, w, is_umat,
      &                   umat_stress_type, is_crys_pls  )

@@ -29,51 +29,15 @@ c
        real (h_prec), allocatable :: due(:,:)                 ! mxvl,mxedof
        real (h_prec), allocatable :: urcs_blk_n1(:,:,:)       ! mxvl,nstrs,mxgp
        real (h_prec), allocatable :: rot_blk_n1(:,:,:)        ! mxvl,9,mxgp
-       real (h_prec), allocatable :: rtse(:,:,:)              ! mxvl,nstr,mxgp
        real (h_prec), allocatable :: elem_hist1(:,:,:), elem_hist(:,:,:)
-       real (h_prec), allocatable :: ddtse(:,:,:)             ! mxvl,nstr,mxgp
-
        real (h_prec), allocatable :: cohes_rot_block(:,:,:)   ! mxvl,3,3
-       real (h_prec), allocatable :: intf_prp_block(:,:)      ! mxvl,50
-       real (h_prec), allocatable :: temps_node_blk(:,:)      ! mxvl,mxndel
-       real (h_prec), allocatable :: dtemps_node_blk(:,:)     ! mxvl,mxndel
-       real (h_prec), allocatable :: temps_ref_node_blk(:,:)  ! mxvl,mxndel
-       real (h_prec), allocatable :: cohes_temp_ref(:)        ! (mxvl)
-       real (h_prec), allocatable :: cohes_dtemp(:)           ! (mxvl)
-       real (h_prec), allocatable :: cohes_temp_n(:)          ! (mxvl)
-       real (h_prec), allocatable :: enode_mat_props(:,:,:)   ! mxndel,mxvl,mxndpr
-       real (h_prec), allocatable :: fgm_flags(:,:)           ! mxvl,mxndpr
 c
        real (h_prec), allocatable :: cep(:,:,:)               ! mxvl,nstr,nstr
        real (h_prec), allocatable :: qn1(:,:,:)               ! mxvl,nstr,nstr
        real (h_prec), allocatable :: cs_blk_n1(:,:)           ! mxvl,nstr
-       real (h_prec), allocatable :: mm05_props(:,:)          ! mxvl,10
-       real (h_prec), allocatable :: mm06_props(:,:)          ! mxvl,5
-       real (h_prec), allocatable :: mm07_props(:,:)          ! mxvl,10
 c
-       real (h_prec), allocatable :: e_v(:), beta_v(:), nu_v(:),
-     1          sigyld_v(:), n_power_v(:), f0_v(:), q1_v(:), q2_v(:),
-     2          q3_v(:), nuc_s_n_v(:), nuc_e_n_v(:), nuc_f_n_v(:),
-     3          e_block(:), nu_block(:), weights(:)  ! mxgp on weights
+       real (h_prec), allocatable :: weights(:)  ! mxgp on weights
 c
-       real (h_prec), allocatable ::   ! nonlocal cohesive support
-     &            top_surf_solid_stresses_n1(:,:),             ! (mxvl,nstrs)
-     &            bott_surf_solid_stresses_n1(:,:),            ! (mxvl,nstrs)
-     &            top_surf_solid_eps_n1(:,:),                  ! (mxvl,nstr)
-     &            bott_surf_solid_eps_n1(:,:),                 ! (mxvl,nstr)
-     &            nonlocal_stvals_bott_n1(:,:),                ! (mxvl,nxx)
-     &            nonlocal_stvals_top_n1(:,:)                  ! (mxvl,nxx)
-c
-c             where nxx above = nonlocal_shared_state_size
-c
-c
-
-       integer, allocatable :: top_surf_solid_elements(:),     ! (mxvl)
-     &                         bott_surf_solid_elements(:),
-     &                         top_solid_matl(:),
-     &                         bott_solid_matl(:)
-
-
        real (h_prec) :: beta_fact, eps_bbar, dt, time_n
        real (h_prec), dimension(3) :: sv, lv, tv
 
@@ -99,9 +63,8 @@ c
      &            is_umat, is_solid_matl, is_deform_plas,
      &            is_crys_pls, is_cohes_nonlocal, is_inter_dmg
 c
-c     Added stuff for CP
-      integer, allocatable :: ncrystals(:)               ! mxvl
-
+c     Added stuff for CP, if any
+c
       end type
 c
       type (nonlinear_ek_work) :: local_work
