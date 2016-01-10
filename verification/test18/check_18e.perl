@@ -19,7 +19,7 @@ skip_lines( 1, 1 );
 #
 $line = <infile>;  @parts = split( / +/, $line);
 #
-$answer = "0.2743E+01";
+$answer = "0.2696E+01";
 $partno = 10;
 #
 $message = " ";
