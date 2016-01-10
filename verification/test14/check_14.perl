@@ -18,7 +18,7 @@ find_line( 1, "   1000    " );
 #
 @parts = split( / +/, $line);
 #
-$answer = "-0.332154";
+$answer = "-0.332151";
 $partno = 3;
 #
 $message = " ";
