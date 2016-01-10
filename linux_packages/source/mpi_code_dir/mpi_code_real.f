@@ -5,7 +5,7 @@ c     *                      subroutine wmpi_init                    *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : rhd 1/24/2015 rhd          *
+c     *                   last modified : rhd 1/9/2016 rhd           *
 c     *                                                              *
 c     *     This routine initializes MPI on all processors at the    *
 c     *     beginning of a MPI warp run.  It also creates the        *
@@ -1218,7 +1218,6 @@ c
          call edest_init
          call history_cep_init( 0, 1 )
          call rotation_init( 0, 1 )
-         call rts_init( 0, 1 )
          call strains_init( 0, 1 )
          call stresses_init( 0, 1 )
          call element_volumes_init( 0, 1 )
@@ -2704,20 +2703,9 @@ c
                endif
             endif
 c
-c                         if do = 3, get elastic stress vectors
+c                         if do = 3, <available>
 c
          else if ( do .eq. 3 ) then
-c
-            if ( rts_blk_list(blk) .eq. 0) cycle
-            block_size = span * ngp * nstr
-            if (root_processor) then
-               rts_blocks(blk)%ptr(1:block_size) = zero
-               call MPI_RECV(rts_blocks(blk)%ptr(1),block_size,
-     &              MPI_VAL,elblks(2,blk),14,MPI_COMM_WORLD,status,ierr)
-            else
-               call MPI_SEND(rts_blocks(blk)%ptr(1),block_size,
-     &              MPI_VAL,0,14,MPI_COMM_WORLD,ierr)
-            endif
 c
 c                         if do = 4, get strains
 c
@@ -2867,24 +2855,6 @@ c
                if ( allocated(rot_n1_blocks)) then
                   call MPI_SEND(rot_n1_blocks(blk)%ptr(1),block_size,
      &                 MPI_VAL,elblks(2,blk),16,MPI_COMM_WORLD,ierr)
-               endif
-            endif
-         endif
-c
-c                               elements (trial) elastic stress vectors
-c
-c
-         if ( rts_blk_list(blk) .ne. 0) then
-            block_size = span * ngp * nstr
-            if ( slave_processor ) then
-               if ( allocated(rts_blocks)) then
-                  call MPI_RECV(rts_blocks(blk)%ptr(1),block_size,
-     &                 MPI_VAL,0,14,MPI_COMM_WORLD,status,ierr)
-               endif
-            else
-               if ( allocated(rts_blocks)) then
-                  call MPI_SEND(rts_blocks(blk)%ptr(1),block_size,
-     &                 MPI_VAL,elblks(2,blk),14,MPI_COMM_WORLD,ierr)
                endif
             endif
          endif
