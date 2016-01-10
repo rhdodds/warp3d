@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 12/3/2015 rhd               *
+c     *                   last modified: 1/9/2016 rhd                *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -491,19 +491,21 @@ c
                go to 1000
       end if
 c
-c          MPI:
-c            send all the worker processors information determined from
-c            the equation solve to help them continue with the newton
-c            iterations.
-c
-      call wmpi_send_itern
+c          run strain-stress-internal force update. include line
+c          search in this process if option in on.
+c          an "instrumented" line search is available for research
+c          work on algortihms
 c
 c      call mnralg_ls_instrumented
       call mnralg_ls
-c      
-      if(  material_cut_step ) then ! from a material model
-       if ( adaptive  ) then
-         if ( show_details ) write(out,9420)
+c  
+c          did a faiure occur in strain computation for finite
+c          strains (e.g. inverted element) or a material stress
+c          update process faile ? then use adaptive immediately.
+c    
+      if(  material_cut_step ) then ! from a material model across all ranks
+       if( adaptive  ) then
+         if( show_details ) write(out,9420)
          go to 50
        else
          call abort_job
@@ -547,7 +549,7 @@ c          converge.
 c
       if( show_details ) write(out,9410) step
  50   continue
-      if ( adaptive ) then
+      if( adaptive ) then
           info%adaptive_used = .true.
           call adapt_check( scaling_adapt, 1, step, out )
           if( adapt_result .eq. 1 ) go to 100
@@ -1063,7 +1065,7 @@ c     *                mnralg_ls_get_s                               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/25/2015                 *
+c     *                   last modified : 1/9/2016 rhd               *
 c     *                                                              *
 c     *    support routines to make ls code clean. these will be     *
 c     *    inlined by compiler                                       *
@@ -1073,10 +1075,19 @@ c
       subroutine mnralg_ls_update_res_0
       implicit none
 c      
-      du(1:nodof) = du(1:nodof) + idu(1:nodof)  
+      du(1:nodof) = du(1:nodof) + idu(1:nodof) 
+c
+c          MPI:
+c            send all the worker processors information determined from
+c            the equation solve to help them continue with the newton
+c            iterations. just du at present. drive ... supervises
+c            ranks to compute strains, stresses, new internal forces.
+c
+      call wmpi_send_itern
+c
       call drive_eps_sig_internal_forces( step, iter,
      &                                    material_cut_step )
-      if( material_cut_step ) return
+      if( material_cut_step ) return ! reduced from all ranks
       call contact_find
       call upres( iter, out, nodof, dt, nbeta, num_term_loads,
      &            sum_loads, mgload, mdiag, pbar, du, v, a, 
@@ -1089,10 +1100,20 @@ c
 #dbl      double precision :: alpha, du0(*) 
 #sgl      real :: alpha, du0(*)    
 c      
-      du(1:nodof) = du0(1:nodof) + alpha*idu(1:nodof)  
+      du(1:nodof) = du0(1:nodof) + alpha*idu(1:nodof)
+c
+c          MPI:
+c            send all the worker processors information determined from
+c            the equation solve to help them continue with the newton
+c            iterations. just du at present. drive ... supervises
+c            ranks to compute strains, stresses, new internal forces.
+c            iterations.
+c
+      call wmpi_send_itern
+c
       call drive_eps_sig_internal_forces( step, iter,
      &                                    material_cut_step )
-      if( material_cut_step ) return
+      if( material_cut_step ) return ! reduced from all ranks
       call contact_find
       call upres( iter, out, nodof, dt, nbeta, num_term_loads,
      &            sum_loads, mgload, mdiag, pbar, du, v, a, 
