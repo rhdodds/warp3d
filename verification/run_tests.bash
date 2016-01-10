@@ -355,7 +355,6 @@ exit
 # Check to make sure the WARP3D_HOME variable is set
 [ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
 
-printf "\n\n**** Run verification tests for WARP3D ****\n\n"
 #
 machine=`uname`
 printf ">> machine id from uname: $machine"
@@ -366,11 +365,14 @@ if [ "$MACHINE_TYPE" = '0' ]; then
    echo -e "\n>> OSX and Linux verification..."
 fi
 #
+printf "\n>> Note: comparison and output values may be different in the last 1 or 2"
+printf "\n>> ----- signficant digits with various number of threads"
+#
 if [ "$MACHINE_TYPE" = '2' ]; then
    echo -e "\n>> Windows 64 verification..."
 fi
 #
- printf "\n> Select a problem...\n\n"
+ printf "\n\n> Select a problem...\n\n"
 m_test14="Test 14: (Linear elastic impact, sparse iterative solver)"
 m_test18="Test 18: (Gurson model growth, impact loading, restart)"
 m_test24="Test 24: (hollow sphere, skew constraints, int press, large displ) "
