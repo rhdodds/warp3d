@@ -765,7 +765,7 @@ c     *                                                              *
 c     *                      subroutine store_blocks                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
-c     *                   last modified : 02/1/98                    *
+c     *                   last modified : 1/9/2016 rhd               *
 c     *                                                              *
 c     *     write data into restart file for the requested data      *
 c     *     structures which following the element blocking          *
@@ -775,9 +775,9 @@ c
       subroutine store_blocks( fileno, proc_type )
 c
       use elem_block_data, only : history_blocks, rot_n1_blocks,
-     &                            rts_blocks, eps_n_blocks,
+     &                            eps_n_blocks,
      &                            urcs_n_blocks, history_blk_list,
-     &                            rot_blk_list, rts_blk_list,
+     &                            rot_blk_list, 
      &                            eps_blk_list, urcs_blk_list,
      &                            element_vol_blocks,
      &                            cep_blocks, cep_blk_list
@@ -816,16 +816,9 @@ c
       end do
       return
 c
-c            element trial elastic stress vectors at gauss points
-c            for element blocks with material types 1 or 3
+c            <available>
 c
  300  continue
-      do blk = 1, nelblk
-        if ( rts_blk_list(blk) .eq. 1 ) then
-            write(fileno) rts_blocks(blk)%ptr
-            write(fileno) check_data_key
-        end if
-      end do
       return
 c
 c            element strains at gauss points - all elements

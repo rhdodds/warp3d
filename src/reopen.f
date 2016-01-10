@@ -276,7 +276,6 @@ c                         blocked data structures for
 c                             material point histories and [D]
 c                             stresses
 c                             material point rotations
-c                             trial elastic stresses
 c                             strains
 c                             element volumes
 c
@@ -288,8 +287,6 @@ c
       call rotation_init( fileno, 2 )
       write(out,9060)
       call chk_data_key( fileno, 5, 1 )
-      call rts_init( fileno, 2 )
-      write(out,9070)
       call chk_data_key( fileno, 5, 2 )
       call strains_init( fileno, 2 )
       write(out,9080)
@@ -784,7 +781,6 @@ c
  9050 format(15x,'> material histories and [D] blocks read...')
  9055 format(15x,'> stress blocks read...')
  9060 format(15x,'> material rotation blocks read...')
- 9070 format(15x,'> material trial elastic stress blocks read...')
  9080 format(15x,'> strain blocks read...')
  9090 format(15x,'> element volume blocks read...')
  9100 format(15x,'> material curves read...')
@@ -1778,178 +1774,6 @@ c
 c
  9900 format('>>> FATAL ERROR: memory allocate failure...')
  9910 format('                 rotation_init: @',i2,/,
-     &       '>>> Job terminated....')
-c
-      end
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine rts_init                     *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 02/4/98                    *
-c     *                                                              *
-c     *     create the blocked data structure for storage of element *
-c     *     trial elastic stress vectors at gauss points to support  *
-c     *     stress updating for nearly all material models           *
-c     *     blocks which require space. initialize or read from      *
-c     *     restart file                                             *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine rts_init( fileno, proc_type )
-c
-      use elem_block_data, only : rts_blocks, rts_nm1_blocks,
-     &                            rts_blk_list
-c
-      implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
-     &    zero
-      logical  process, myblk
-      data zero / 0.0 /
-c
-c
-c            proc_type :  = 1, create data arrays only and zero
-c                         = 2, create and read from save file
-c                         = 3, create space for rts_nm1_blocks
-c            fileno:      = save file number. needed only for
-c                           proc_type = 2
-c
-c            the data structure is a vector for each element
-c            block (dynamically allocated). the vectors are
-c            hung from a dynamically allocated pointer vector
-c            of length nelblk.
-c
-c            determine if any blocks of elements have material model
-c            other than 2. if so, we have to create the
-c            blocked data structures for material point, trial elastic
-c            stress vectors
-c
-      if ( .not. allocated(rts_blk_list) ) then
-         allocate( rts_blk_list(nelblk),stat=alloc_stat )
-         if ( alloc_stat .ne. 0 ) then
-           write(out,9900)
-           write(out,9910) 8
-           call die_abort
-           stop
-          end if
-          rts_blk_list(1:nelblk) = 0
-      end if
-c
-      do blk = 1, nelblk
-        felem      = elblks(1,blk)
-        mat_type   = iprops(25,felem)
-        process    = mat_type .ne. 2
-        if ( process ) go to 50
-      end do
-c
-c            no blocks require processing
-c            just leave.
-c
-      return
-c
-c            must do something with rts. branch on process type
-c
- 50   continue
-      go to ( 100, 100, 1000 ), proc_type
-c
- 100  continue
-      allocate( rts_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
-           write(out,9900)
-           write(out,9910) 1
-           call die_abort
-           stop
-      end if
-c
-      do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if (root_processor) myblk = .true.
-        if (.not. myblk) cycle
-c
-        felem       = elblks(1,blk)
-        mat_type   = iprops(25,felem)
-        process    = mat_type .ne. 2
-        if ( .not. process ) cycle
-        span       = elblks(0,blk)
-        ngp        = iprops(6,felem)
-        block_size = span * ngp * nstr
-        allocate( rts_blocks(blk)%ptr(block_size),
-     &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
-           write(out,9900)
-           write(out,9910) 3
-           call die_abort
-           stop
-        endif
-        if ( proc_type .eq. 1 ) then
-           call zero_vector( rts_blocks(blk)%ptr(1), block_size )
-        end if
-        if ( proc_type .eq. 2 ) then
-               read(fileno) rts_blocks(blk)%ptr(1:block_size)
-               call chk_data_key( fileno, 350, blk )
-        end if
-        rts_blk_list(blk) = 1
-      end do
-      return
-c
-c            allocate rts_nm1_blocks.
-c
- 1000 continue
-      allocate( rts_nm1_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
-           write(out,9900)
-           write(out,9910) 1
-           call die_abort
-           stop
-      end if
-c
-      do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if (root_processor) myblk = .true.
-        if (.not. myblk) cycle
-c
-        felem       = elblks(1,blk)
-        mat_type   = iprops(25,felem)
-        process    = mat_type .ne. 2
-        if ( .not. process ) cycle
-        span       = elblks(0,blk)
-        ngp        = iprops(6,felem)
-        block_size = span * ngp * nstr
-        allocate( rts_nm1_blocks(blk)%ptr(block_size),
-     &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
-           write(out,9900)
-           write(out,9910) 3
-           call die_abort
-           stop
-        end if
-        call zero_vector( rts_nm1_blocks(blk)%ptr(1), block_size )
-      end do
-      return
-c
- 9900 format('>>> FATAL ERROR: memory allocate failure...')
- 9910 format('                 rts_init: @',i2,/,
      &       '>>> Job terminated....')
 c
       end

@@ -4,7 +4,7 @@ c     *                      subroutine rplstr                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/8/2015 rhd              *
+c     *                   last modified : 1/9/2016 rhd               *
 c     *                                                              *
 c     *     stores globally the recovered material                   *
 c     *     and stress states.                                       *
@@ -15,16 +15,15 @@ c
       subroutine rplstr( span, felem, ngp, mat_type, iter, geonl,
      &                   local_work, blk )  
       use elem_block_data, only : history1_blocks, rot_n1_blocks,
-     &                            rts_blocks, eps_n1_blocks,
+     &                            eps_n1_blocks,
      &                            urcs_n1_blocks, history_blk_list
 
       use segmental_curves, only : max_seg_points, max_seg_curves 
       implicit integer (a-z)
 $add common.main
 $add include_sig_up
-      logical :: process_rts, process_hist, save_history_1,
+      logical :: process_hist, save_history_1,
      &           save_history_2
-
 c
 c                   parameter declarations
 c
@@ -36,15 +35,12 @@ c             replace stress/strain data:
 c
 c               1) unrotated cauchy stresses at n+1 (all models)
 c
-c               2) deviatoric components of trial elastic stress
-c                  increment over step (if model uses them)
-c
-c               3) ddtse comes back from element strain routine with
+c               2) ddtse comes back from element strain routine with
 c                  total strains at n+1 (all models)
 c 
-c               4) [R,n+1] for geonl models
+c               3) [R,n+1] for geonl models
 c
-c               5) history data updated to n+1
+c               4) history data updated to n+1
 c
 c             iter = 0 indicates the "pre" step computations used
 c             by the load step processor to get estimated stresses
@@ -57,14 +53,11 @@ c             computation. Except for the CP model since it hides the
 c             [D] matrix in there.
 c
 c
-      process_rts  = mat_type .ne. 2  ! note the .ne. 
-c
       process_hist = mat_type .eq. 1  .or.  mat_type .eq. 2 .or.
      &               mat_type .eq. 3  .or.  mat_type .eq. 4 .or.
      &               mat_type .eq. 5  .or.  mat_type .eq. 6 .or.
      &               mat_type .eq. 7  .or.  mat_type .eq. 8 .or.
      &               mat_type .eq. 10
-      
 c
       call rp_scstr( local_work%urcs_blk_n1, 
      &            urcs_n1_blocks(blk)%ptr(1), ngp, nstrs,  span)
@@ -72,25 +65,12 @@ c
       call rp_scstr( local_work%ddtse, eps_n1_blocks(blk)%ptr(1),
      &            ngp, nstr, span )
 c
-      if( iter .gt. 0 ) then
-         if( process_rts ) then
-           call rp_scstr( local_work%rtse, rts_blocks(blk)%ptr(1), ngp,
-     &                 nstr, span )
-         end if
-         if( geonl ) then
-           call rp_scstr( local_work%rot_blk_n1, 
+      if( iter .gt. 0 .and. geonl ) 
+     &      call rp_scstr( local_work%rot_blk_n1, 
      &               rot_n1_blocks(blk)%ptr(1), ngp, 9, span )
-         end if
-      else
-         if( geonl ) then
-           call gastr( local_work%rot_blk_n1, rot_n1_blocks(blk)%ptr(1),
-     &                 ngp, 9, span )
-          end if
-      end if
 c
       save_history_1 = process_hist .and. iter > 0
-      save_history_2 = mat_type .eq. 10
-c      if( process_hist .and. iter .gt. 0 ) then
+      save_history_2 = mat_type .eq. 10 ! [D] is hidden in history ...
       if( save_history_1  .or.  save_history_2 ) then
         hist_size = history_blk_list(blk)
         call rp_scstr_history( local_work%elem_hist1(1,1,1),

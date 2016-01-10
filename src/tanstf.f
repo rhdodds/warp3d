@@ -368,7 +368,7 @@ c     *                subroutine estiff_allocate                    *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                last modified : 9/27/2015 rhd                 *
+c     *                last modified : 1/9/2016 rhd                  *
 c     *                                                              *
 c     *     create the blocked data structure for storage of element *
 c     *     stiffness matrices                                       *
@@ -380,7 +380,7 @@ c     ****************************************************************
 c
       subroutine estiff_allocate( type )
 c
-      use elem_block_data, only:  estiff_blocks, pcm_blocks 
+      use elem_block_data, only:  estiff_blocks 
       use main_data, only: asymmetric_assembly
 c
       implicit integer (a-z)
@@ -502,7 +502,7 @@ c
      &                            temperatures_ref,
      &                            temper_nodes_ref
 c
-      use elem_block_data, only:  history_blocks, rts_blocks,
+      use elem_block_data, only:  history_blocks, 
      &                            rot_n1_blocks, history1_blocks,
      &                            eps_n1_blocks, urcs_n1_blocks,
      &                            history_blk_list
@@ -607,15 +607,6 @@ c
       case( 1 )  ! bilinear
 c     =========
 c
-c           gather the deviatoric components of the trial elastic
-c           stress increment for the step. this used by material
-c           model 1 for consistent tangent stiffness evaluation.
-c           gather plasticity parameters and state variables for
-c           the vectorized plasticity model
-c
-        call gastr( local_work%rtse, rts_blocks(blk)%ptr(1), ngp, nstr,
-     &               span )
-
 c
       case( 2 )   ! deformation plasticity
 c     =========
@@ -651,8 +642,6 @@ c
          call dptstf_copy_history(
      &         local_work%elem_hist(1,1,1), history_blocks(blk)%ptr(1),
      &         ngp, hist_size, span )
-         call gastr( local_work%rtse, rts_blocks(blk)%ptr(1),
-     &               ngp, nstr, span )
 c
       case( 8 )   ! umat. nothing to do for now.
 c     =========

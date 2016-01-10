@@ -1245,8 +1245,7 @@ c
 c
       use main_data, only       : du_nm1
       use elem_block_data, only : rot_n_blocks, rot_n1_blocks,
-     &                            rts_blocks, rts_nm1_blocks,
-     &                            rot_blk_list, rts_blk_list
+     &                            rot_blk_list
 c
       implicit integer (a-z)
 $add common.main
@@ -1260,14 +1259,6 @@ c                        data they own.
 c
        call wmpi_alert_slaves ( 18 )
 c
-c                      reset the rts vectors as necessary.
-c                      these are deviators of trial elastic stresses
-c                      computed at the gauss point during the most
-c                      recent stress update. they are needed to
-c                      form the consistent tangent matrix. here we
-c                      save the just computed values for the converged
-c                      load step. note that we only allocate blocks
-c                      actually used.
 c
 c                      we also save the current 3x3 rotation matrices
 c                      from the most recent polar decompositions as
@@ -1275,32 +1266,17 @@ c                      the values for start of new step.
 c
 c                      Note that for each block, we handle the data
 c                      only if the list entry for the block is 1, for
-c                      instance rts_blk_list(blk)=1.  This provides a simple
+c                      instance rot_blk_list(blk)=1.  This provides a simple
 c                      mechanism to skip unallocated blocks due either to
 c                      processor assignment or material model.
 c
-      if ( .not. allocated(rts_blocks) ) go to 100
-      if ( .not. allocated(rts_nm1_blocks) ) then
-        call rts_init( 0, 3 )
-      end if
-      do blk = 1, nelblk
-        if ( rts_blk_list(blk) .eq. 1 ) then
-          felem      = elblks(1,blk)
-          span       = elblks(0,blk)
-          ngp        = iprops(6,felem)
-          block_size = span * ngp * nstr
-          call vec_ops( rts_nm1_blocks(blk)%ptr(1),
-     &                  rts_blocks(blk)%ptr(1), dummy, block_size, 5 )
-        end if
-      end do
 c
- 100  continue
       if ( .not. allocated(du_nm1) ) then
         allocate( du_nm1(nodof), stat=alloc_stat )
         if ( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
-	   call die_abort
+           call die_abort
            stop
         end if
       end if
@@ -1348,11 +1324,10 @@ c
       use main_data,       only : du_nm1, nonlocal_analysis
       use elem_block_data, only : history_blocks, history1_blocks,
      &                            rot_n_blocks, rot_n1_blocks,
-     &                            rts_blocks, rts_nm1_blocks,
      &                            eps_n_blocks, eps_n1_blocks,
      &                            urcs_n_blocks, urcs_n1_blocks,
      &                            history_blk_list, rot_blk_list,
-     &                            rts_blk_list, eps_blk_list,
+     &                            eps_blk_list,
      &                            urcs_blk_list, nonlocal_flags,
      &                            nonlocal_data_n, nonlocal_data_n1
       implicit integer (a-z)
@@ -1381,15 +1356,8 @@ c                      reset:
 c                       1) the structural history data,
 c                       2) 3x3 rotations for material points (geo.
 c                          nonlin elements) and
-c                       3) rts vector for mm01, mm03. these are
-c                          deviators of trial elastic stresses
-c                          computed at the gauss point during the most
-c                          recent stress update. they are needed to
-c                          form the consistent tangent matrix. here we
-c                          reload the values present at the start
-c                          of this load step
-c                       4) strains
-c                       5) unrotated cauchy stresses
+c                       3) strains
+c                       4) unrotated cauchy stresses
 c
 c                      Note that for each block, we do the copy of data
 c                      only if the list entry for the block is .ne. 0, for
@@ -1405,7 +1373,6 @@ c
         rot_size   = span * ngp * 9
         eps_size   = span * ngp * nstr
         sig_size   = span * ngp * nstrs
-        rts_size   = span * ngp * nstr
         if ( hist_size .gt. 0 )
      &      call vec_ops( history1_blocks(blk)%ptr(1),
      &                    history_blocks(blk)%ptr(1), dummy,
@@ -1414,10 +1381,6 @@ c
      &      call vec_ops( rot_n1_blocks(blk)%ptr(1),
      &                    rot_n_blocks(blk)%ptr(1), dummy,
      &                    rot_size, 5 )
-        if ( rts_blk_list(blk) .eq. 1 )
-     &      call vec_ops( rts_blocks(blk)%ptr(1),
-     &                    rts_nm1_blocks(blk)%ptr(1), dummy,
-     &                    rts_size, 5 )
         if ( eps_blk_list(blk) .eq. 1 )
      &      call vec_ops( eps_n1_blocks(blk)%ptr(1),
      &                    eps_n_blocks(blk)%ptr(1), dummy,
@@ -1914,349 +1877,3 @@ c
      & '>> computing tangent stiffness step, iteration:    ',i5,i3)
 c
       end
-
-c
-c
-c    code below is my attempt to also include Crisfield's SEARCH
-c    algorithm/code in addition to simple backtracking.
-c
-c    Sort of works but there are definitely bugs to be crushed.
-c
-c    Code included here for the record in case we want to 
-c    bring back and fix at some point.
-c
-c      
-cc     ****************************************************************
-cc     *                                                              *
-cc     *                      subroutine mnralg_ls                    *
-cc     *                                                              *
-cc     *                       written by : rhd                       *
-cc     *                                                              *
-cc     *                   last modified : 11/15/2015                 *
-cc     *                                                              *
-cc     *    run line search for this global Newton iteration if       *
-cc     *    user requested                                            *
-cc     *                                                              *
-cc     ****************************************************************
-cc
-cc
-c      subroutine mnralg_ls  
-c      implicit none
-cc
-cc              local variables
-cc
-c#dbl      double precision :: 
-c#sgl      real ::
-c     &      s_value, s0_value, r_value, alpha, rho, slack_toler,
-c     &      alpha_min, s_values(0:30), r_values(0:30), zero,
-c     &      eta_values(30), prodr(30), amp, etmxa, etmna
-c#dbl      double precision, allocatable :: du0(:)
-c#sgl      real, allocatable :: du0(:)
-c     
-c      logical :: ls_debug, no_line_search, backtrack
-c      integer :: ls_ell, i, ils, ico, iwrit, iwr, nlsmxp 
-c      data zero / 0.0d00 /
-cc           
-c      if( show_details ) write(iout,9210) step, iter
-cc      
-c      ls_debug = .true.
-c      backtrack = .not. ls_crisfield
-c      if( ls_debug ) write(iout,8900) step, iter
-c      rho = ls_rho
-c      no_line_search = .not. line_search
-c      slack_toler = ls_slack_tol
-c      alpha_min   = ls_min_step_length
-c      ls_request_adaptive = .false.
-cc
-cc              we always compute s0 even if the user does not 
-cc              request line search. if s0 > 0 we issue a 
-cc              warning message that the global NR is in in an uphill
-cc              situation. 
-cc
-cc              if s0 >=0 start next Newton iteration 
-cc              even if user requested line search. 
-cc
-cc              may want to consider immediate adaptive.
-cc
-cc              skip MPC dof if present in s computations.
-cc              use separate loops for efficiency.
-cc     
-c      s0_value = zero
-c      if( allocated( d_lagrange_forces ) ) then
-c        do i = 1, nodof  
-c         if( cstmap(i) .ne. 0 ) cycle ! abs constraint
-c         if( d_lagrange_forces(1) .ne. zero ) cycle
-c         s0_value = s0_value  - res(i)*idu(i)
-c        end do
-c      else  ! no mpcs active      
-c        do i = 1, nodof   !   fix for MPCs
-c         if( cstmap(i) .ne. 0 ) cycle ! abs constraint
-c         s0_value = s0_value  - res(i)*idu(i)
-c        end do
-c      end if
-cc      
-c      if( s0_value > 0 .and. show_details )  
-c     &       write(iout,9010) s0_value, step, iter
-c      if( s0_value >= zero .or. no_line_search ) then    
-c         du(1:nodof) = du(1:nodof) + idu(1:nodof)  
-c         call drive_eps_sig_internal_forces( step, iter,
-c     &                                    material_cut_step )
-c         if( material_cut_step ) return
-c         call contact_find
-c         call upres( iter, out, nodof, dt, nbeta, num_term_loads,
-c     &            sum_loads, mgload, mdiag, pbar, du, v, a, 
-c     &            ifv, res, cstmap, dstmap, load )
-c         return
-c      end if   
-c      if( ls_debug ) write(iout,9000) s0_value
-cc          
-cc              search loop to find acceptable search length alpha
-cc                 
-c      allocate( du0(1:nodof) )
-c      du0(1:nodof) = du(1:nodof)  ! since residual/contact/... use du
-cc      
-c      if( ls_crisfield ) then   
-c         eta_values(1) = 0.0d00
-c         eta_values(2) = 1.0d00
-c         prodr(1)      = 1.0d00
-c         ico = 0
-c         do ils = 1, 10
-c           write(iout,*) '.... ils: ', ils
-c           du(1:nodof) = du0(1:nodof) + 
-c     &                   eta_values(ils+1) * idu(1:nodof)
-c           call drive_eps_sig_internal_forces( step, iter,
-c     &                                 material_cut_step )
-c           if( material_cut_step ) then
-c              deallocate( du0 )
-c              return
-c           end if
-c          call contact_find
-c          call upres( iter, out, nodof, dt, nbeta, num_term_loads,
-c     &         sum_loads, mgload, mdiag, pbar, du, v, a, 
-c     &         ifv, res, cstmap, dstmap, load )
-c         s_value = zero
-c         if( allocated( d_lagrange_forces ) ) then
-c           do i = 1, nodof  
-c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
-c             if( d_lagrange_forces(1) .ne. zero ) cycle
-c             s_value = s_value  - res(i)*idu(i)
-c           end do
-c         else  ! no mpcs active      
-c           do i = 1, nodof   !   fix for MPCs
-c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
-c             s_value = s_value  - res(i)*idu(i)
-c           end do
-c         end if
-c           
-c          prodr(ils+1) = s_value / s0_value
-c          if( abs(prodr(ils+1)) < slack_toler ) then
-c             deallocate( du0 )
-c             write(iout,*) '... crisfield converged...'
-c             return 
-c          end if
-c         amp = 2.0d0
-c         etmxa = 10.0d00
-c         etmna = 0.05d00
-c         iwrit = 1
-c         iwr = iout
-c         nlsmxp = 25
-c         call mnralg_crisfield_search( ils, prodr,
-c     &                         eta_values, amp,
-c     &                          etmxa, etmna, iwrit, iwr, ico, 
-c     &                          nlsmxp )  
-c         write(iout,*) '.... ils,  s_value,  prodr(ils+1): ',
-c     &            ils,  s_value,  prodr(ils+1)
-c         write(iout,*) '.... ico, new eta: ', ico, eta_values(ils+2)
-c         end do
-c         write(iout,*) '... crisfield not eta value after 10 iters'
-c         call die_abort
-c       end if         
-c      
-c      
-c      
-c      
-c      alpha = 1.0d00
-c      ls_ell = 1
-c      s_values = zero
-c      s_values(0) = s0_value
-c      r_values = 1.0d00
-c      
-c      do ! step length search
-cc    
-cc              1. new alpha (step length). get s-value.
-cc                 omit mpcs of present. material routines
-cc                 may want immediate adaptive.
-cc      
-c         if( ls_debug ) write(iout,8910) ls_ell, alpha
-c         du(1:nodof) = du0(1:nodof) + alpha * idu(1:nodof)
-c         call drive_eps_sig_internal_forces( step, iter,
-c     &                                 material_cut_step )
-c         if( material_cut_step ) then
-c            deallocate( du0 )
-c            return
-c         end if
-c         call contact_find
-c         call upres( iter, out, nodof, dt, nbeta, num_term_loads,
-c     &         sum_loads, mgload, mdiag, pbar, du, v, a, 
-c     &         ifv, res, cstmap, dstmap, load )
-c         s_value = zero
-c         if( allocated( d_lagrange_forces ) ) then
-c           do i = 1, nodof  
-c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
-c             if( d_lagrange_forces(1) .ne. zero ) cycle
-c             s_value = s_value  - res(i)*idu(i)
-c           end do
-c         else  ! no mpcs active      
-c           do i = 1, nodof   !   fix for MPCs
-c             if( cstmap(i) .ne. 0 ) cycle ! abs constraint
-c             s_value = s_value  - res(i)*idu(i)
-c           end do
-c         end if
-c         s_values(ls_ell) = s_value
-cc        
-cc              2. compute r-ratio. check for convergence of step
-cc                 length
-c         
-c         r_value = abs( s_values(ls_ell) / s_values(0) )
-c         if( ls_debug ) write(iout,9030) s_value, r_value
-c         r_values(ls_ell) = r_value
-c         if( r_value < slack_toler ) then
-c             if( ls_debug ) write(iout,8920) slack_toler
-c             if( show_details ) write(iout,9200) alpha,  step, iter 
-c             deallocate( du0 )
-c             return 
-c         end if             
-cc        
-cc              3. get new step length. simple back track for now.
-cc                 check if smaller than min step length.
-cc                 up to top of search loop.
-cc
-c         alpha = rho * alpha  ! simple back track.
-c         if( alpha .lt. alpha_min ) then
-c             if( show_details ) write(iout,9100) ls_ell, 
-c     &                 step, iter, r_value, alpha 
-c             deallocate( du0 )
-c             ls_request_adaptive = .true.
-c             return
-c         end if      
-c         ls_ell = ls_ell + 1
-c      end do
-cc
-c      return
-cc
-c 8900 format(6x,'.... entered line search routine. step, iter: ',
-c     &  i6,i3)
-c 8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
-c 8920 format(20x,'satisfied search tolerance of: ',f10.3)
-c 9000 format(3x,'       ... s0 value: ' e14.6)
-c 9010 format(7x,
-c     &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
-c     & /,7x,'   using step length 1.0 this iteration')
-c 9030 format(20x,'new s, r:  ',2f10.4)
-c 9100 format(7x,          
-c     &    '>> line search did not converge. iterations: ',i3,3x,i5,i3,
-c     &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,
-c     &/7x,'      triggering adaptive load steps' )
-c 9200 format(7x,
-c     & '>> line search completed. step length: ',f6.3,6x,i5,i3)
-c 9210 format(7x,
-c     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
-c 9220 format(7x,     
-c     & '      ... finished line search. iterations, step length: ',
-c     &   i2,1x,f7.4)
-cc 
-c           
-c      end subroutine mnralg_ls 
-c      
-c      end subroutine mnralg
-c      
-c      
-c      
-c      
-c      subroutine mnralg_crisfield_search( ils, prodr, eta, 
-c     &                             amp, etmxa, 
-c     &                             etmna, iwrit, iwr, ico, nlsmxp )
-c      implicit none
-cc
-cc              parameters
-cc
-c      integer ::  ils, iwrit, iwr, ico, nlsmxp 
-c      double precision :: prodr(nlsmxp), eta(nlsmxp), amp, etmxa, 
-c     &                    etmna, etmxt
-cc
-cc              locals
-cc
-c      integer :: i, ineg, ipos
-c      double precision :: etaneg, etmaxp, etaint, etaalt, etaext
-cc      
-c      ineg    = 999
-c      etaneg  = 1.0d05
-c      etmaxp = 0.0d00
-cc      
-c      do i = 1, ils + 1
-c       if( eta(i) .gt. etmaxp ) etmaxp = eta(i)
-c       if( prodr(i) .ge. 0.0d00 ) cycle
-c       if( eta(i) .gt. etaneg ) cycle
-c       etaneg = eta(1)
-c       ineg = i
-c      end do
-cc
-c      if( ineg .ne. 999 ) then  ! B
-c        ipos = 1
-c        do i = 1, ils + 1
-c          if( prodr(i) .lt. 0.0d00 ) cycle
-c          if( eta(i) .gt. eta(ineg) ) cycle
-c          if( eta(i) .lt. eta(ipos) ) cycle
-c          ipos = i
-c        end do
-cc
-c        etaint = prodr(ineg)*eta(ipos) - prodr(ipos)*eta(ineg)                   
-c        etaint = etaint / ( prodr(ineg) - prodr(ipos) )
-c        etaalt = eta(ipos) + 0.2d00*(eta(ineg) - eta(ipos) )
-c        if( etaint .lt. etaalt ) etaint = etaalt
-c        if( etaint .lt. etmna ) then  ! A
-c           etaint = etmna
-c           if( ico .eq. 1 ) then
-c             ico = 2
-c             write(iwr,1010)
-c           elseif( ico .eq.0 ) then
-c             ico = 1
-c           end if
-c        end if   !  A
-cc
-c        eta(ils+2) = etaint
-c        if( iwrit .eq. 1 ) then
-c          write(iwr,1001) ( eta(i), i = 1, ils + 2 ) 
-c          write(iwr,1002) ( prodr(i), i = 1, ils + 1 )
-c        end if
-c        return
-cc
-c      elseif( ineg .eq. 999 ) then !  B
-c        etmxt = amp * etmaxp
-c        if( etmxt .gt. etmxa ) etmxt = etmxa
-c        etaext = prodr(ils+1) * eta(ils) - prodr(ils) * eta(ils+1)
-c        etaext = etaext / ( prodr(ils+1) - prodr(ils) ) 
-c        eta(ils+2) = etaext
-c        if( etaext .le. 0.0d00   .or.  etaext .gt. etmxt ) 
-c     &           eta(ils+2) = etmxt   
-c        if( eta(ils+2) .eq. etmxa  .and. ico .eq. 1 ) then
-c          write(iwr,1003)
-c          ico = 2
-c          return
-c        end if
-c        if( eta(ils+2) .eq. etmxa ) ico = 1
-c        if( iwrit .eq.1 ) then
-c           write(iwr,1001) ( eta(i), i = 1, ils + 2 ) 
-c           write(iwr,1002) ( prodr(i), i = 1, ils + 1 )
-c        end if
-c      end if  ! B
-cc
-c      return
-cc      
-c 1010 format(10x,'... Crisfield. min step length reached twice')
-c 1001 format(10x,'... Crisfield. etas: ',(5g11.3))
-c 1002 format(10x,'... Crisfield. ratios: ', (5g11.3) )
-c 1003 format(10x,'... Crisfield. max step length again')
-cc
-c      end  
-c

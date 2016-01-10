@@ -1190,7 +1190,7 @@ c     *                   subroutine dupstr_blocked                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 2/22/13  rhd               *
+c     *                   last modified : 1/9/2016 rhd               *
 c     *                                                              *
 c     *     creates a separate copy of element                       *
 c     *     blocked data necessary for global stress vector recovery *
@@ -1204,7 +1204,7 @@ c
      & geonl, step, iter, belinc, bcdst, ce_0, ce_n, ce_mid, ce_n1,
      & ue, due, local_work )
 c
-      use elem_block_data, only:  history_blocks, rts_blocks,
+      use elem_block_data, only:  history_blocks,
      &                            eps_n_blocks, urcs_n_blocks,
      &                            history_blk_list
       use main_data,       only:  dtemp_nodes, dtemp_elems,
@@ -1401,9 +1401,6 @@ c
 c
 c           vectorized mises plasticty model.
 c
-        if ( iter .eq. 0 )
-     &     call recstr_gastr( local_work%rtse, rts_blocks(blk)%ptr(1),
-     &                        ngp, nstr, span )
 @!DIR$ LOOP COUNT MAX=###  
         do i = 1, span
            matl_no = iprops(38,felem+i-1)

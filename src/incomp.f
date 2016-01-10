@@ -53,9 +53,6 @@ c                support material nonlinearity models.
 c            o   rotation matrices at gauss points to
 c                support finite strain/large displacement
 c                analyses.
-c            o   trial elastic stress vectors needed to
-c                build consistent tangent moduli for
-c                material model types 1 and 3.
 c            o   strains for all elements
 c            o   stresses for all elements
 c            o   cdest indexes for all elements.
@@ -71,7 +68,6 @@ c
       call mem_allocate( 7 )
       call history_cep_init( 0, 1 )
       call rotation_init( 0, 1 )
-      call rts_init( 0, 1 )
       call strains_init( 0, 1 )
       call stresses_init( 0, 1 )
       call cdest_init

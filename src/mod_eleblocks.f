@@ -5,7 +5,7 @@ c     *                     elem_block_data                          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/09/2013 mcm             *
+c     *                   last modified : 1/9/2016 rhd               *
 c     *                                                              *
 c     *     define the data structures for element data stored       *
 c     *     in blocks                                                *
@@ -71,13 +71,6 @@ c
      &         allocatable :: eps_n_blocks, eps_n1_blocks
         integer, dimension (:), allocatable, save :: eps_blk_list
 c
-c                global vectors of element trial elastic stresses
-c               -------------------------------------------------
-c
-        type (blocks_ptr_type), save, dimension(:),
-     &         allocatable :: rts_blocks, rts_nm1_blocks
-        integer, dimension (:), allocatable, save :: rts_blk_list
-c
 c               element rotation matrices at Gauss points for finite
 c               strains
 c               ----------------------------------------------------
@@ -94,9 +87,7 @@ c
         integer, dimension (:), allocatable, save :: history_blk_list
 c
 c               material dependent [D] at each integration point in element
-c               block form. internalley we call [D] "cep". these are used
-c               to compute element stresses for inmposed temperatures and
-c               displacements during iter = 0. for solid elements,
+c               block form. internalley we call [D] "cep". 
 c               store 21 terms of symmetric part. for cohesive, store
 c               symmetric part of 3x3
 c               ----------------------------------------------------------
@@ -104,10 +95,6 @@ c
         type (blocks_allocatable_type), save, dimension(:),
      &         allocatable :: cep_blocks
         integer, dimension (:), allocatable, save :: cep_blk_list
-c
-c        type (blocks_allocatable_type), save, dimension(:),
-c     &         allocatable :: def_gradient_n_blocks
-c        integer, dimension (:), allocatable, save :: def_gradient_blk_list
 c
 c               number of gauss points for elements in blocks
 c               ---------------------------------------------
@@ -126,16 +113,11 @@ c
         type (array_blocks_ptr_type), save, dimension(:),
      &         allocatable :: mass_blocks
 c
-c               element stiffness & conjugate gradient matrices
-c               -----------------------------------------------
+c               element stiffness
+c               -----------------
 c
         type (array_blocks_ptr_type), save, dimension(:),
      &         allocatable :: estiff_blocks
-c
-c
-        type (array_blocks_ptr_type), save, dimension(:),
-     &         allocatable :: pcm_blocks
-c
 c
 c               element internal forces
 c               -----------------------
