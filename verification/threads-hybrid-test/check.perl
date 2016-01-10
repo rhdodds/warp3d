@@ -20,7 +20,7 @@ find_line( 1, "node               u  ");
 @parts = split( / +/, $line);
 
 #
-$answer = "0.029781";
+$answer = "0.029779";
 $partno = 4;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
