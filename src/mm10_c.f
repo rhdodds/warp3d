@@ -38,7 +38,7 @@ c      solver package
       double precision  rjac(6+props%num_hard,2*(6+props%num_hard)),
      &                  rwork(9*(6+props%num_hard)),
      &                  rcdwrk(3*(6+props%num_hard)),
-     &                  qrwork(6*(6+props%num_hard))
+     &                  qrwork(props%num_hard*(6+props%num_hard))
       double precision  scalex(6+props%num_hard)
       integer           icdwrk(6+props%num_hard)
 $add include_mm10
@@ -51,11 +51,10 @@ c      Convergence parameters: Newton with geometric line search
       parameter(mmin = 1)
       atol = props%atol
       atol1 = props%atol1
-      rtol = 1e-9 !props%rtol
+      rtol = props%rtol
       rtol1 = props%rtol1
-      xetol = 1e-3 !props%xtol
-      props%method = 10
-      xtol1 = 1e-6 !props%xtol1
+      xetol = props%xtol
+      xtol1 = props%xtol1
       miter = props%miter
       zerotol = 1.d-12
       ttind = 1 ! index of tt to print while debugging
@@ -856,7 +855,6 @@ c     Lapack blocked
 c-------------------------------------------------------------
 
       call dormqr('L','T',n,1,n,A,lda,tau,qty,n,work,wsiz,info)
-
       return
       end
 
@@ -3239,6 +3237,9 @@ c      endif
      *               qtf,rcond,qrwork,qrwsiz,njcnt,iter,fstjac,ierr)
 c        - choose the next iterate xp by a global strategy
 
+      if( priter .gt. 0 ) then
+
+      endif
          if( ierr .gt. 0 ) then
 c           jacobian singular or too ill-conditioned
             call mm10_nweset(n,xc,fc,fcnorm,xp,fp,fpnorm,gcnt,priter,

@@ -26,7 +26,7 @@ c
       double precision, dimension(6,6) :: S, erot
       double precision, dimension(max_uhard) :: vec1,vec2
       double precision :: maxslip, ec_dot, n_eff, rs, ec_slip, 
-     &                    mm10_rs
+     &                    mm10_rs,pt1,curslip
       double precision, dimension(max_slip_sys) :: dgammadtau
 c
 c     Store the slip increments
@@ -75,9 +75,11 @@ c     identifier of that system, and how many systems have rates
 c     on the same order of magnitude as that one.
       maxslip = 0.d0
       sysID = 0
+c      props%nslip = 12
       do i=1,props%nslip
-        if(dabs(np1%slip_incs(i)).gt.maxslip) then
-          maxslip = dabs(np1%slip_incs(i))
+        curslip = dabs(np1%slip_incs(i))
+        if(curslip.gt.maxslip) then
+          maxslip = curslip
           sysID = i
         endif
       end do
@@ -85,12 +87,15 @@ c     on the same order of magnitude as that one.
       np1%u(7) = dble(sysID)
 c
       numAct = 0
+      maxslip = pt1*maxslip
       do i=1,props%nslip
-        if(dabs(np1%slip_incs(i)).ge.0.1d0*maxslip) then
+        curslip = dabs(np1%slip_incs(i))
+        if(curslip.ge.maxslip) then
           numAct = numAct + 1
         endif
       end do
       np1%u(8) = dble(numAct)
+c      write(*,*) 'props%nslip', props%nslip
 c
 c     Take care of miscellaneous things
 c

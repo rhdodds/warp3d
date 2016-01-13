@@ -1196,7 +1196,7 @@ $(OD)/mm10_c$O : mm10_c.f $(OD)/mod_crystals$O param_def include_mm10
 
 $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(FILTER) < mm10_d.f > filt_mm10_d.f
-	$(F90) /O3 /Qip /Ob1 /c filt_mm10_d.f
+	$(F90) /O2 /Qip /Ob1 /c filt_mm10_d.f
 	$(MVC) filt_mm10_d$O  mm10_d$O
 	$(MVC) mm10_d$O $@
 
