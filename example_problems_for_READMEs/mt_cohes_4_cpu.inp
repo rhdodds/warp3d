@@ -1,0 +1,230 @@
+!  
+!  
+!         Nasa MT, 12" wide, no bending
+!  
+!         crack growth analysis in a M(T) specimen using
+!         interface elements and cohesive constitutive model
+!         the model is 1/8 symmetric (out-of-plane displacements are
+!         prevented by guide plates in tests)
+!  
+!         material is 2024-t3 aluminum, full thickness=0.09 in.
+!  
+!         problem units are kips and inches
+!  
+!         4 Layer MT Model -  Uniform Mesh Along the thickness
+!         model is defined with 4 domains to run 4 way parallel
+!         using mpi
+!  
+!         hypre solver used
+!  
+!         Crack plane element size = 0.01", a/W = 0.42
+!  
+!         analysis set up to run for the first 10 of 1000 load steps.
+!         small displacement "linear" element formulations used
+!
+!         Updated: 1/13/2016. added line search request, separated into
+!                             data files to make clear the input here.
+!                             added output commands file
+!  
+structure mt
+!  
+stress-strain curve 1  $ 2024-t3 aluminum
+  0.00483  50.0,
+  0.015    56.5,
+  0.04     62.5,
+  0.1      68.5,
+  0.16     71.0,
+  0.2      71.0,
+ 10.2     271.0
+!  
+material al2024t3
+    properties mises e 10352 nu 0.3 yld_pt 50 curve 1
+!  
+!  
+!            Fracture energy: exp(1) * sig-max * delta-crit
+!            For Mode I, input delta-crit as 1/2 of total value.
+!            Gc based on Kc = 42  ksi (in)^1/2
+!            uses the "exponential" shaped  traction-separation curve
+!  
+material interface
+    properties cohesive exp1_intf,
+      delta_crit 0.000285227393 sig_max 100  beta_coh 0.0 killable
+!  
+number of nodes 17220 elements  13044
+!  
+elements
+        1 -    208,
+     3321 -   3640,
+     9861 -  10008  type inter_8 linear material interface,
+                    order 2x2gs $ gauss integration for interface elements
+      209 -   3320,
+     3641 -   9860,
+    10009 -  13044  type l3disop  linear material al2024t3,
+                    order 2x2x2 bbar center_output short
+*echo off
+*input from file "mt_cohes_coord_incid.inp" 
+!
+ blocking   $    scalar, 4 way mpi execution
+       1     128       1       0
+       2      80     129       0
+       3     128     209       0
+       4     128     337       0
+       5     128     465       0
+       6     128     593       0
+       7     128     721       0
+       8     128     849       0
+       9     128     977       0
+      10     128    1105       0
+      11     128    1233       0
+      12     128    1361       0
+      13     128    1489       0
+      14     128    1617       0
+      15     128    1745       0
+      16     128    1873       0
+      17     128    2001       0
+      18     128    2129       0
+      19     128    2257       0
+      20     128    2385       0
+      21     128    2513       0
+      22     128    2641       0
+      23     128    2769       0
+      24     128    2897       0
+      25     128    3025       0
+      26     128    3153       0
+      27      40    3281       0
+      28     128    3321       1
+      29     128    3449       1
+      30      64    3577       1
+      31     128    3641       1
+      32     128    3769       1
+      33     128    3897       1
+      34     128    4025       1
+      35     128    4153       1
+      36     128    4281       1
+      37     128    4409       1
+      38     128    4537       1
+      39     128    4665       1
+      40     128    4793       1
+      41     128    4921       1
+      42     128    5049       1
+      43     128    5177       1
+      44     128    5305       1
+      45     128    5433       1
+      46     128    5561       1
+      47     128    5689       1
+      48     128    5817       1
+      49     128    5945       1
+      50     128    6073       1
+      51     128    6201       1
+      52     128    6329       1
+      53      44    6457       1
+      54     128    6501       3
+      55     128    6629       3
+      56     128    6757       3
+      57     128    6885       3
+      58     128    7013       3
+      59     128    7141       3
+      60     128    7269       3
+      61     128    7397       3
+      62     128    7525       3
+      63     128    7653       3
+      64     128    7781       3
+      65     128    7909       3
+      66     128    8037       3
+      67     128    8165       3
+      68     128    8293       3
+      69     128    8421       3
+      70     128    8549       3
+      71     128    8677       3
+      72     128    8805       3
+      73     128    8933       3
+      74     128    9061       3
+      75     128    9189       3
+      76     128    9317       3
+      77     128    9445       3
+      78     128    9573       3
+      79     128    9701       3
+      80      32    9829       3
+      81     128    9861       2
+      82      20    9989       2
+      83     128   10009       2
+      84     128   10137       2
+      85     128   10265       2
+      86     128   10393       2
+      87     128   10521       2
+      88     128   10649       2
+      89     128   10777       2
+      90     128   10905       2
+      91     128   11033       2
+      92     128   11161       2
+      93     128   11289       2
+      94     128   11417       2
+      95     128   11545       2
+      96     128   11673       2
+      97     128   11801       2
+      98     128   11929       2
+      99     128   12057       2
+     100     128   12185       2
+     101     128   12313       2
+     102     128   12441       2
+     103     128   12569       2
+     104     128   12697       2
+     105     128   12825       2
+     106      92   12953       2
+!  
+*input from file "mt_cohes_constraints.inp" $ non-zero values at key nodes
+*echo on 
+!  
+ loading test
+   nonlinear
+      steps 1-2000 constraints 1.0 
+!  
+ nonlinear analysis parameters
+   solution technique hypre
+   hypre tolerance 1.0e-6
+   hypre threshold 0.1
+   hypre balance 0.9
+   time step 1.0e06 $   static analysis
+   maximum iterations 10
+   minimum iterations 2
+   convergence test norm res tol 0.001 max resid tol 0.1
+   line search on
+   extrapolate on
+   adaptive on
+   trace solution on
+   consistent q-matrix on
+   bbar stabilization factor 0.0
+!  
+!          cohesive elements deleted from model when their
+!          "effective" relative displacement = 5.7 x the effective
+!          displacement at peak cohesive stress.
+!  
+!          adaptive load control limits the increment in effective,
+!          relative displacement for cohesive elements to < 0.2 x the
+!          relative displacement at peak cohesive stress
+!  
+!          remaining forces on nodes of killed cohesive elements are
+!          released to zero in 5 load steps
+!  
+  crack growth parameters
+      type of crack growth cohesive
+      critical effective cohesive displacement multiplier  5.74386
+      print status on order elements 1 - 208
+      print status on order elements 3321 - 3640
+      print status on order elements 9861 - 10008
+      force release type steps
+      release steps 5
+      adaptive load control on maximum relative displacement change 0.20
+!
+output model flat patran convention text,
+   file "model_description_flat"
+! 
+output commands file "mt_cohes_get_results.inp" steps 10-1000 by 10
+!
+compute displacements for loading test step 10
+save to file "mt_cohes_step_10.db"
+!  
+ stop  $ remove this to let model run to completion
+ compute displacements for loading test step 1000
+! !  
+ stop

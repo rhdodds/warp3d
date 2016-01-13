@@ -1,0 +1,127 @@
+!  
+!  
+!      ductile crack growth in a shallow notch se(b)
+!      ============================================
+!  
+!              W=2 in,  span/2=4 in, B=0.001 in, a/W=0.15
+!              uses crack growth by element extinction
+!  
+!      nonlinear material, large displacements, bbar,
+!      large amounts of ductile crack growth with the Gurson-
+!      Tvergaard material model. the finite element model
+!      has one-layer of elements with w=0 constraints everywhere
+!      to impose plane-strain conditions.
+!  
+!      computational "cell" size is D=200 um. due to symmetry then
+!      the elements in the Gurson layer are 100 um x 100 um in size.
+!  
+!      we intentionally use large increments of imposed displacements
+!      at the load point to create severe conditions for the
+!      material model integration schemes and the adaptive solution
+!      procedures. approximately 14 elements are killed in the first
+!      40 load steps. After step ~30 lots of adaptive solutions are
+!      present due to negative deformation jacobians in near tip
+!      elements, strain increments > 100 * eps-0 in near-tip
+!      elements, integration failure in the material model.
+!  
+!      the algorithms are designed to do whatever adaptivity
+!      is required to push forward with the solution. the user
+!      can then re-analyze the model with a much more realistic
+!      (smaller) load step size.
+!  
+!      J-integral values are computed occasionally during loading.
+!  
+!      a restart file is also written along the way after every
+!      10 or so load increments.
+!  
+!      here we employ catastrophic, strain-controlled nucleation
+!      to smoothly relax stresses in elements just prior to
+!      actually killing them.
+!  
+!      the material in linear + power law with n=10, E/sig-0=500,
+!      nu=0.3. initial porosity in the cell is 0.005.
+!  
+structure seb
+!  
+material steel
+ properties mises e 29000 nu 0.3 yld_pt 58.0 n_power 10,
+            rho 0.0
+!  
+material void_strip
+ properties gurson e 29000 nu 0.3 yld_pt 58.0 n_power 10,
+            f_0 0.005 q1 1.25 q2 1.0 q3 1.5625 rho 0.0,
+            killable
+!              killable, e_n 0.4 s_n 0.05 f_n 0.50 nucleation
+!  
+number of nodes 1568 elements 715
+!  
+elements
+   1-60 type l3disop nonlinear material void_strip order 2x2x2,
+             bbar center_output
+   61-715 type l3disop nonlinear material steel order 2x2x2,
+               bbar center_output
+!  
+*echo off
+*input from file "test_18_coords_incid.inp"
+!
+blocking automatic display
+!
+*input from file "test_18_constraints.inp"
+!  
+ loading bend
+  nonlinear
+    step 1-100 constraints 1.0  
+!  
+  nonlinear analysis parameters
+   solution technique direct sparse
+   time step 100000
+   maximum iterations 5
+   convergence test norm res tol 0.01
+   adaptive solution on
+   extrapolate on
+   line search on
+   trace solution on
+   consistent q-matrix on
+   bbar stabilization factor 0.0
+!  
+  crack growth parameters
+   type of crack growth gurson
+   print status on order  1 31 2 32 3 33 4 34 5 35 6 36 7 37 8 38,
+                         9 39 10 40 11 41 12 42 13 43 14 44 15 45,
+                        16 46 17 47 18 48 19 49 20 50
+   kill sequentially on order 1 31 2 32
+  force release type traction-separation
+  crack plane normal y coord 0.0
+  cell height 0.004
+  release fraction 0.1
+  critical porosity 0.2
+!  
+*echo on
+   compute displacements for loading bend step 1-10
+  output displacements 5 7 15
+   compute displacements for loading bend step 11
+  output displacements 5 7 15
+   compute displacements for loading bend step 12
+  output displacements 5 7 15
+   compute displacements for loading bend step 13
+  output displacements 5 7 15
+   compute displacements for loading bend step 14
+  output displacements 5 7 15
+   compute displacements for loading bend step 15
+  output displacements 5 7 15
+   compute displacements for loading bend step 16
+  output displacements 5 7 15
+   compute displacements for loading bend step 17
+  output displacements 5 7 15
+   compute displacements for loading bend step 18
+  output displacements 5 7 15
+   compute displacements for loading bend step 19
+  output displacements 5 7 15
+   compute displacements for loading bend step 20
+  output displacements 5 7 15
+   save
+!  
+   compute displacements for loading bend step 30
+   *input "test_18_get_j.inp"
+   save to file 'seb_db'
+   stop
