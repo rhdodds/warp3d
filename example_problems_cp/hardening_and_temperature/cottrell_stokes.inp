@@ -97,19 +97,19 @@ loading test
   steps 156-215 tractions 10.0
   steps 216-250 tractions 1.0
 !
-nonlinear analysis parameters
+nonlinear analysicas parameters
    solution technique asymmetric direct
    assembly asymmetric on
    maximum iterations 10
    minimum iterations 2
    convergence test norm res tol 0.05  $0.075
    nonconvergent solutions stop
+   line search on
+   extrapolate on
    adaptive on
-   linear stiffness for iteration one on  $ needed for load reversals
    consistent q-matrix off
    time step 1.0
-   extrapolate on $ needed for the finite-strain effects
-! 
+!   
  output commands use file "get_results.inp" steps all
 !
  compute displacements for loading test step 30

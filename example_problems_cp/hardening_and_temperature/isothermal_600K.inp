@@ -102,10 +102,10 @@ nonlinear analysis parameters
    convergence test norm res tol 0.05
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
+   extrapolate on
+   line search on
    consistent q-matrix off
    time step 1.0
-   extrapolate on $ needed here for finite-strains
 !
  output commands use file "get_results.inp" steps all
 !

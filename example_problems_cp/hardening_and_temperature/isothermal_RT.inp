@@ -100,11 +100,11 @@ nonlinear analysis parameters
    minimum iterations 2
    convergence test norm res tol 0.05
    nonconvergent solutions stop
+   line search on
+   extrapolation on
    adaptive on
-   linear stiffness for iteration one off
-   consistent q-matrix off
+   consistent q-matrix on
    time step 1.0
-   extrapolate on $ needed for the finite-strain effects
 ! 
  output commands use file "get_results.inp" steps all
 !
@@ -113,7 +113,7 @@ nonlinear analysis parameters
  nonlinear analysis parameters
   time step 0.1
 !
- compute displacements for loading test step 73
+ compute displacements for loading test step 70
 !
  stop
 
