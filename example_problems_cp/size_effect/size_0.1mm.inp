@@ -94,11 +94,11 @@ constraints
    convergence test norm res tol 0.02
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
+   line search on
+   extrapolate on
    bbar stabilization factor 0.0
    consistent q-matrix off
    time step 1.0e06
-   extrapolate on
 ! 
  output model flat patran convention text file "size_0.1mm.text"
 ! 
