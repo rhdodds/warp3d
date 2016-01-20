@@ -4,7 +4,7 @@ c     *                      subroutine infile                       *
 c     *                                                              *
 c     *                       written by : AG                        *
 c     *                                                              *
-c     *                   last modified : 03/08/94                   *
+c     *                   last modified :  01/20/2016 rhd            *
 c     *                                                              *
 c     *     this subroutine gets the name of a file for input        *
 c     *     as part of the *input from file command                  *
@@ -18,81 +18,77 @@ c
       use file_info
       implicit integer (a-z)             
 $add common.main
-      real dumr
-      character*8 dums
-      character*80 filnam, infil
-      logical ok, nameok
-      logical endcrd,label,matchs,string
-#dbl      double precision
-#sgl      real
-     &   dumd
+      real :: dumr
+      character(len=8) :: dums
+      character(len=80) :: filnam, infil
+      logical :: ok, nameok, endcrd,label,matchs,string
+#dbl      double precision :: dumd
+#sgl      real :: dumd
 c
 c                       if "from terminal" or "from display"
 c                       then set keyboard as input  device
 c
-      if (matchs('from',4)) call splunj
-      if (matchs('terminal',5)) then
+      if( matchs('from',4) ) call splunj
+      if( matchs('terminal',5) ) then
          filcnt = 1
          call setin (inlun(filcnt))
          in = inlun(filcnt)
-         go to 2010
+         return
       endif
-      if (matchs('display',5)) then
+      if( matchs('display',5) ) then
          filcnt = 1
          call setin (inlun(filcnt))
          in = inlun(filcnt)
-         go to 2010
+         return
       endif
 c
 c                       file is the input device:
 c                         check to see if the file name is given,
 c                         then get name as label or string
 c
-      if (matchs('file',4)) call splunj
+      if( matchs('file',4) ) call splunj
       if (endcrd(dum)) then
          call errmsg(175,dum,dums,dumr,dumd)
-         goto 2010
+         return
       endif
       filnam = ' '
       infil = ' '
-      if (label(dum)) then
+      if( label(dum) ) then
          call entits (filnam,filchr)
          infil = filnam(1:filchr)
-      else if (string(dum)) then
+      else if( string(dum) ) then
          call entits (filnam,filchr)
          call tilde (filnam,infil,nameok)
-         if (.not.nameok) then 
+         if( .not.nameok ) then 
             call errmsg(189,dum,infil,dumr,dumd)
-            goto 2010
+            return
          endif
       else
          call errmsg(175,dum,dums,dumr,dumd)
-         goto 2010
+         return
       endif     
 c
 c			check if file is there, then increase
 c			file number and open
 c
-      inquire ( file = infil, iostat = ierror, exist = ok)
-      if (ierror.gt.0) then
+      inquire( file = infil, iostat = ierror, exist = ok )
+      if( ierror .gt. 0 ) then
          call errmsg(176,dum,infil,dumr,dumd)
-         goto 2010
-      else if (.not. ok) then
+         return
+      else if( .not. ok ) then
          call errmsg(177,dum,infil,dumr,dumd)
-         goto 2010
+         return
       endif
       filcnt = filcnt + 1
-      if (filcnt.gt.max_opened_input_files) then
+      if( filcnt .gt. max_opened_input_files ) then
          call errmsg(178,dum,dums,dumr,dumd)
-         filcnt=filcnt-1
-         goto 2010
+         filcnt = filcnt-1
+         return
       endif
-      open(unit=inlun(filcnt), file = infil, status = 'old')
+      open( unit=inlun(filcnt), file = infil, status = 'old' )
       in = inlun(filcnt)
       call setin(inlun(filcnt))
-      write (out,9000) infil
-c
- 2010 continue
+      write(out,9000) trim( infil )
 c
       return
  9000 format (1x,'>>>>> input file is: ',a)

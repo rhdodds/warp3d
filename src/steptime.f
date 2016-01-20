@@ -31,7 +31,7 @@ c
       real :: wcputime, wwalltime, dumr, percent, time_so_far
       external :: wcputime, wwalltime
       logical ldum1, ldum2, debug, quit_now
-      data percent, debug / .90, .true./
+      data percent, debug / .90, .false./
 c
       select case( status )
       case( 1 )
