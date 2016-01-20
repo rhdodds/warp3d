@@ -29,7 +29,7 @@ c
 #l64      parameter (mxnod=2000000,mxel=2500000,mxndel=20,max_threads=2048,
 #mac      parameter (mxnod=1000000,mxel=1000000,mxndel=20,max_threads=64,
 !win     &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=100000,mxlc=5000,
-!win     &    mxmat=25,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
+!win     &    mxmat=500,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
 !win     &    mxoupr=30,ntrc=10,mxconn=100,mxvl=128,mxnmgp=10,
 !win     &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
 !win     &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,
@@ -38,7 +38,7 @@ c
 c
 #win      parameter (mxnod=1500000,mxel=1500000,mxndel=20,max_threads=64,
 #win     &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=100000,mxlc=5000,
-#win     &    mxmat=25,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
+#win     &    mxmat=500,mxlsz=mxnod/3,mxelmp=30,mxstmp=30, mxstc=10,
 #win     &    mxoupr=30,ntrc=10,mxconn=50,mxvl=128,mxnmgp=10,
 #win     &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
 #win     &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,

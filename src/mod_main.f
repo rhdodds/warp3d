@@ -237,12 +237,12 @@ c                 material properties array. these sizes correspond to
 c                 mxmtpr x  mxmat in param_def and must always
 c                 be consistent !
 c
-      integer imatprp(300,25)
-      real  matprp(300,25)
-      logical lmtprp(300,25)
-      double precision dmatprp(300,25)
+      integer imatprp(300,500)
+      real  matprp(300,500)
+      logical lmtprp(300,500)
+      double precision dmatprp(300,500)
       equivalence (matprp,lmtprp)
-      character (len=24), dimension(300,25) :: smatprp
+      character (len=24), dimension(300,500) :: smatprp
 c
 c
 c
