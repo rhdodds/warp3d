@@ -3,13 +3,13 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: December 2015
+                      Last Update: January 20, 2016
 
 *** LATE BREAKING NEWS ***
 
 The ready-to-run executables included in this distribution were built
-on Ubuntu 14.04 LTS using Intel Composer XE Fortran  15.0.2 (16.x also
-works). The MPI version is Intel MPI 4.1.3.045.
+on Ubuntu 14.04.03 LTS using Intel Composer XE Fortran  16.0.1 (15.x and 14.x also
+work). For the threads + MPI version, the MPI version is Intel MPI 4.1.3.045.
 
 These executables also run on RedHat 7.0. Re-compiling (really re-linking)
 may be needed on earlier versions of RedHat.
@@ -20,9 +20,9 @@ may be needed on earlier versions of RedHat.
 *** NOTES: ***
 
 The precompiled versions of WARP3D are built for Linux using the Intel Fortran
-Composer XE 2015 compiler suite and the Intel MPI (Message Passing Interface)
-software system. Version 11.3 Update 1 of the MKL library is used
-to insure features of the newest processors are used.
+Composer XE 2016 compiler suite and the Intel MPI (Message Passing Interface)
+software system. Version 11 of the MKL library is used
+to insure access to features of the newest processors.
 
 The Intel Fortran compiler system is ** NOT ** required on your system to use
 the ready-to-run executable for threads only included in the distribution. 
@@ -113,7 +113,8 @@ Type 2: executable is warp3d.mpi_omp
 B.  Installing the precompiled versions of WARP3D
     ---------------------------------------------
 
-1.  We recommend you scan through the README files before proceeding.
+1.  We recommend you look through the README file  and this file 
+    before proceeding.
 
 2.  Obtain the WARP3D distribution for Linux/OS X from the WARP3D website:
    
@@ -121,7 +122,7 @@ B.  Installing the precompiled versions of WARP3D
 
 3.  Extract the tarball (for example, use: tar xvzf warp3d.....tar.gz).
 
-4.  This will create a directory called something like "warp3d-17.6.4".
+4.  This will create a directory called something like "warp3d-17.7.0".
 
 5.  Move this directory (which contains the complete WARP3D package) to the
     desired location on your filesystem. Change access permissions as desired.
@@ -140,16 +141,17 @@ B.  Installing the precompiled versions of WARP3D
     redo this step every time you open a new terminal window.
 
 8.  Modify the variable LD_LIBRARY_PATH that enables the linker to find the
-    various external shared libraries. For a bash shell:
+    various shared libraries included in the Linux distribution. 
+    For a bash shell:
 
-      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WARP3D_HOME/linux_packages/lib
+      export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 
     Recommendation: do not modify this environment variable in your
     ~/.bashrc.  Instead modify it in a "wrapper script" used
     to run WARP3D.  Example wrapper scripts are provided (files are
     warp3d_script_*).
     
-9.  Pull various libraries from the WARP3D web site. In a bash shell,
+9.  Pull various shared libraries from the WARP3D web site. In a bash shell,
    
        $ cd $WARP3D_HOME
        $ ./install_libs_from_remote
@@ -159,7 +161,7 @@ B.  Installing the precompiled versions of WARP3D
      
      The MKL libs are backward compatible with the Fortran compiler and
      hardware processors. E.g. version 15.x of the compiler maybe 
-     used with version 11.3 of MKL, even though 11.3 was released with version
+     used with version 11x3 of MKL, even though 11.x was released with version
      16 of the compiler.
        
 10. If you plan to use the MPI (hybrid) version, verify that MPI is set up
@@ -188,9 +190,9 @@ C.  Quickstart: Precompiled Type-1 threads-only version
 
     warp3d_exe=$WARP3D_HOME/run_linux_em64t/warp3d.omp
     cd $WARP3D_HOME/example_problems_for_READMEs
-    export OMP_NUM_THREADS=4
-    export MKL_NUM_THREADS=4
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WARP3D_HOME/linux_packages/lib
+    export OMP_NUM_THREADS=4     << or a larger value
+    export MKL_NUM_THREADS=4     << or a larger value
+    export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
     ulimit -s 100000   <<<   Some Linux versions will need this
     $warp3d_exe < test_18a
     $warp3d_exe < test_18b
@@ -243,7 +245,7 @@ C.  Quickstart: Precompiled Type-1 threads-only version
 D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
     --------------------------------------------------------------------------
 
-1.  We recommend you scan through the README files.
+1.  We recommend you look through the README files.
 
 2.  Perform all steps in section "B" to install the precompiled version
     of WARP3D.
@@ -263,9 +265,9 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
 
 
     cd $WARP3D_HOME/example_problems_for_READMEs
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WARP3D_HOME/linux_packages/lib
+    export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
     export NUM_WARP3D_RANKS=4
-    export OMP_NUM_THREADS=2
+    export OMP_NUM_THREADS=2 
     export MKL_NUM_THREADS=2
     ulimit -s 100000      <<<   Some Linux versions will need this
     export MPI_TYPE_MAX=4096
@@ -320,9 +322,11 @@ Steps:
 2.  Add the linux_packages/lib directory to LIBRARY_PATH.
     In a bash shell:
 
-    export LIBRARY_PATH=$LIBRARY_PATH:/path/to/warp3d/linux_packages/lib
+    export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 
-    This variable is safe to modify in ~/.bashrc
+    We recommend putting this command in a Bash shell script that 
+    drives the compile or just in the terminal window where the compile
+    is done. 
 
 3.  Put your UMAT routine and all support routines it calls into the 
     four (4) user_routines....f  files located in the src directory. 
@@ -342,16 +346,30 @@ Steps:
 
 Important note on LD_LIBRARY_PATH:
 
-If you have access to the Intel MKL libraries on the local machine and would like to
-use the version optimized for that hardware, omit exporting the
-LD_LIBRARY_PATH variable before running. This *should* switch from the dynamic-link
-versions distributed in the linux_packages/lib directory to the
-versions installed on the local machine.
+You must have the Intel Fortran compiler system (which includes MKL
+library) installed on the machine where you run the compile/link process.
+ifort expects to find all the MKL libraries where indicated by the system 
+MKLROOT variable.
 
-However, we include the most current release of the required
-(redistributable) libraries in MKL. WARP3D always uses the
-MKL libraries located in $WARP3D_HOME/linux_packages/lib  *unless* you
-delete or rename this library.
+We include the limited MKL redistributable (runtime) libraries in the directory
+$WARP3D_HOME/linux_packages/lib.  These enable people who do not have the Intel
+Fortran compiler/MKL system installed to run WARP3D.
+
+At runtime, the WARP3D executable uses the MKL libraries located in
+$WARP3D_HOME/linux_packages/lib --- even if you have Intel Fortran/MKL
+installed.
+
+This is accomplished by the above command  
+
+  export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
+  
+Note that the WARP3D library is inserted BEFORE the system LD_LIBRARY_PATH
+which references the installed ifort/MKL libraries if they exist.
+
+If you want WARP3D to use the MKL libraries in the installed Intel FORTRAN/
+MKL system at runtime, simply reverse the order of libraries appearing in the 
+above statement. The system MKL libraries will be found first.
+
 
 -----------------------------------------------------------------------------
 
@@ -362,12 +380,7 @@ To build the hybrid version of WARP3D, this Intel software must be installed:
 
   1.  A recent version of the Intel Fortran Composer XE system. This package
       includes the Intel Fortran compiler "ifort" and the MKL math library
-      (has the Pardiso solver). We work with the most current
-      release (15.0.2) of the Intel ifort compiler. Older versions may work,
-      though optimization issues may arise. Each release of the compiler
-      can require tweaking of optimization levels (-O#) in the makefile. We
-      experiment with the key *.f files to obtain correct execution at
-      the highest optimization level for this release of the compiler
+      (has the Pardiso solver).
 
   2.  Intel's MPI distribution (impi). Our processes work correctly with
       impi 4.0 update 3 and have been tested on Red Hat Enterprise Linux
@@ -378,12 +391,15 @@ Steps:
 
 1.  Perform all the steps listed in section "B" above.
 
-2.  Add the linux_packages/lib directory to LIBRARY_PATH. In a bash shell:
+2.  Add the linux_packages/lib directory to LIBRARY_PATH.
+    In a bash shell:
 
-    export LIBRARY_PATH=$LIBRARY_PATH:/path/to/warp3d/linux_packages/lib
+    export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 
-    This variable is safe to modify in ~/.bashrc.
-
+    We recommend putting this command in a Bash shell script that 
+    drives the compile or just in the terminal window where the compile
+    is done. 
+    
 3.  You may wish to recompile (not required) two of the open-source
     external libraries used in the MPI version of WARP3D: hypre and METIS.
     To do this, navigate to the linux_packages/source directory
@@ -404,11 +420,8 @@ Steps:
 
 Important note on LD_LIBRARY_PATH:
 
-If you have access to the Intel MKL libraries on the local machine and would like to
-use the version optimized for that hardware, omit exporting the
-LD_LIBRARY_PATH variable before running. This *should* switch from the dynamic-link
-versions distributed in the linux_packages/lib directory to the
-versions installed on the local machine.
+See discussion on this in previous section.
+
 
 G.  Run the Verifications Suite of Test Problems
     --------------------------------------------
