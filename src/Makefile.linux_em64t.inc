@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: January 7, 2016
+#   Last modifications: January 21, 2016
 #
 #
 #   Description:
@@ -14,14 +14,12 @@
 #     of the two drivers (Makefile.linux_em64t.omp or
 #     Makefile.linux_em64t.mpi_omp)
 #
-#     Uses Intel ifort compiler, MKL library, and Intel MPI 3.2 and
-#     up Library.
+#     Uses Intel ifort compiler, MKL library
+#     And Intel MPI 4.x library if building the MPI + threads version
 #
 #     The "COMPILER" macro value is set in the user convenience
 #     file "Makewarp.bash"
 #
-#     This script requires that the Intel compiler suite (F-90, MKL)
-#     and the Intel MPI library be installed.
 #
 #     Updated: 4/17/2013 remove the nasa and vss solvers,
 #              the old l-d-u profile solver
@@ -65,12 +63,13 @@
 #                script before the Makefile.linux_em64t.omp or .mpi_omp
 #                is invoke using makefile.
 #
+#                MKLROOT is a global variable set whn the user
+#                runs the Intel provided bash shell script to set all
+#                variables needed to run the compiler system
+#
 #                ODIR, MPIOPT, HYLIB, HYINC and OPENMP parameters are set by
 #                the "pre" makefiles: Makefile.linux_em64t.omp
 #                or Makefile.linux_em64t.mpi
-#
-#
-#                Intel F90 (fort) compiler options
 #
 F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz -xHOST
 F90INC = -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
