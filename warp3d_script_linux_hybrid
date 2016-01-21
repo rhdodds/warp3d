@@ -86,10 +86,21 @@ fi
 #
 warp3d_exe="$WARP3D_HOME/run_linux_em64t/warp3d.mpi_omp"
 #
-#           set LD_LIBRARY_PATH
+#           set LD_LIBRARY_PATH. Examine the ordering...
 #
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WARP3D_HOME/linux_packages/lib
+#           Note: at runtime, WARP3D will use the MKL library
+#                 files located in linux_packages/lib included in the
+#                 WARP3D distribution.
+#                 ** This applies even if you have the
+#                 ** Intel compiler system installed on your machine.
+#                 We distribute the most current versions of the
+#                 the required MKL libraries. These are backwards
+#                 compatible with older Intel processors.
 #
+#                 Intel grants redistribution rights to these
+#                 libraries.
+#
+export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 #
 export NUM_WARP3D_RANKS=$1
 export OMP_NUM_THREADS=$2
