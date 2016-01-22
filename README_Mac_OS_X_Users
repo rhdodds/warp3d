@@ -1,32 +1,41 @@
+ 
 
-
-        Highest Level Read Me for (Mac) OS X (Intel64) Users File for WARP3D
+        Highest Level Read Me for (Mac) OSX  Users File for WARP3D
         --------------------------------------------------------------------
 
-                      Last Update: July 31, 2015 (RHD)
+                      Last Update: January 21, 2016
 
 ==========================================================================
 
-*** NOTES: ***
+*** Latest NOTES: ***
 
-WARP3D is built for Mac OS X using the Intel F90 Composer XE 2015 compiler suite
-version ifort (IFORT) 15.0.1
+WARP3D is built for Mac OSX using the Intel Fortran Composer XE 2016 
+compiler suite version ifort (IFORT) 16.0.1 (and concurrent MKL)
 
-The Intel compiler system is * NOT * required on your system to use the
+The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on 10.10.4
-The executable should run on all 10.10.x
+This distribution was built & verified on OSX 10.10.5. The executable should 
+run on all 10.10.x, 10.11.x.
+
+We build the executable using statically-linked MKL libraries and
+compiler options for generic Intel processors. These executables run across
+all Macs (laptops, iMacs, MacPros).
+
+If you have the Intel compiler system installed, you likely will gain some 
+additional performance by re-compiling. The re-building scripts included in 
+the distribution request compiling for optimal performance on the current 
+hardware (we remove that option to build the executables for distribution).
 
 ============================================================================
 
 Quick Start Using the Ready-to-Run Executable
 ---------------------------------------------
 
-1. We recommend that you scan thru the README file first for information on
-   downloading and installing WARP3D for OS X in Section 1.
+1. We recommend that you look thru the README file first for information on
+   downloading and installing WARP3D for OSX in README Section 1.
 
 2. The WARP3D files are all located in the
    directory "warp3d_distribute_###" created by the unzip process
@@ -37,22 +46,23 @@ Quick Start Using the Ready-to-Run Executable
         on your system.
       - just click on the ...tar.gz file in the Finder to uncompress and
         untar the distribution
-      - the unzip process does not create directories/files
+      - the unzip process does NOT create directories/files
         in any other locations on your system.
-      - Administrator access is not required to
+      - Administrator access is NOT required to
         unzip/install unless the distribution directory is to
         be located in a system level directory, e.g., Applications
 
 2. The WARP3D distribution includes a ready-to-run executable.
    This file (warp3d.omp) is located in the run_mac_os_x subdirectory.
+   This is a statically-linked executable.
 
 3. WARP3D does not have a graphical user interface (GUI). The program
    is initiated from the command line in a shell program.
-   On OS X this means the Terminal program which starts a bash shell.
+   On OSX this means the Terminal program which starts a bash shell.
 
-4. The OS X version of WARP3D supports parallel execution in all areas thru
+4. The OSX version of WARP3D supports parallel execution in all areas thru
    threads only. At this time, we do not support MPI execution
-   on OS X. The Paradiso solver from the Intel MKL library is included
+   on OSX. The Paradiso solver from the Intel MKL library is included
    in WARP3D and provides very high performance in its sparse direct and sparse
    iterative algorithms on multi-processor, multi-core Apple computers.
 
@@ -117,26 +127,26 @@ Quick Start Using the Ready-to-Run Executable
    the input file.
 
 8. Chapter 7 of the User Manual includes a section on executing
-   WARP3D on OS X to make use of multi-cores/processors. Please
+   WARP3D on OSX to make use of multi-cores/processors. Please
    refer to that section for the latest information to execute
-   WARP3D on OS X systems. The first section of Chapter 7
+   WARP3D on OSX systems. The first section of Chapter 7
    describes the general concepts of parallel execution implemented
    into WARP3D.
 
-Re-Building the OS X Executable for WARP3D
-------------------------------------------
+Re-Building the OSX Executable for WARP3D
+-----------------------------------------
 
-1. The Intel FORTRAN Composer XE system must be installed on OS X.
-   This software includes the Math Kernel Library (MKL) and the Paradiso solver.
+1. The Intel FORTRAN Composer XE system must be installed on OSX.
+   This software includes the Math Kernel Library (MKL) and the Pardiso solver.
    The "ifort" command must be recognized in a Terminal shell.
 
-   At present, we use Composer XE 2015 which shows version 15.0.1 of ifort.
-   Older versions may also work * BUT *
-   optimization issues may arise. With each release of the compiler
-   we tweak optimization levels (-O#) in the makefile. We
-   experiment with the key *.f files to obtain correct execution at
-   the highest optimization level for this release of the compiler. The highest
-   levels that produce code do vary between compiler releases.
+   At present, we use Composer XE 2016 which shows version 16.0.1 of ifort.
+   Older versions may also work * BUT * optimization issues may arise. 
+   With each release of the compiler, we tweak optimization levels (-O#) 
+   in the makefile. We experiment with the key *.f files to obtain 
+   correct execution at the highest optimization level for this release
+   of the compiler. The highest levels that produce code do vary
+   between compiler releases.
 
 2. Add an environment variable called WARP3D_HOME which points to the directory
    you unpacked WARP3D into. For the bash shell
@@ -161,13 +171,14 @@ Re-Building the OS X Executable for WARP3D
    environment variables needed to build WARP3D.
 
 5. Other software tools are included in the distribution, e.g. the Patran -to-
-   WARP3D translator program. Each of these tools is located in a separate
-   directory and has a compile script similar to Makewarp.bash.
+   WARP3D translator program, warp3d2exii which builds an Exodus .exo file
+   for the model and computed results. Each of these tools is located 
+   in a separate directory and has a compile script similar to Makewarp.bash.
 
 Running Verification Suite of Analyses
 --------------------------------------
 
-1. The directory verification has a number of problems to exercise
+1. The directory "verification" has a number of problems to exercise
    a broad coverage of the WARP3D code.
 
 2. Once WARP3D is installed and tested, the
@@ -176,7 +187,9 @@ Running Verification Suite of Analyses
 3. The Bash shell script run_tests.bash runs analyses using threads only 
    parallel execution. The script runs interactively and prompts for
    various information. After an analysis is completed, the script examines
-   output files to insure the result match know good solutions.
+   output files to insure the results match known good solutions.
+   Clear messages are output if the solutions do not match - shows the 
+   computed value and the known good value.
 
 
 
