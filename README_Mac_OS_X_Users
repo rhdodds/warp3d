@@ -171,7 +171,7 @@ Re-Building the OSX Executable for WARP3D
    environment variables needed to build WARP3D.
 
 5. Other software tools are included in the distribution, e.g. the Patran -to-
-   WARP3D translator program, warp3d2exii which builds an Exodus .exo file
+   WARP3D translator program. And warp3d2exii that builds an Exodus .exo file
    for the model and computed results. Each of these tools is located 
    in a separate directory and has a compile script similar to Makewarp.bash.
 
