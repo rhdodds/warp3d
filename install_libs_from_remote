@@ -17,9 +17,6 @@ file_2="http://www.dropbox.com/s/y5z0s6qzsdqdtd8/pat2exII_external_libs.tar.gz"
 wget --no-check-certificate -O warp_external_libs.tar.gz $file_1
 tar xvzf warp_external_libs.tar.gz
 rm warp_external_libs.tar.gz
-
-cd $WARP3D_HOME/pat2exII
-#wget http://warp3d.googlecode.com/files/pat2exII_external_libs.tar.gz
-wget --no-check-certificate -O pat2exII_external_libs.tar.gz $file_2
-tar xvzf pat2exII_external_libs.tar.gz
-rm pat2exII_external_libs.tar.gz
+cp -r warp_external_libs/include linux_packages/
+cp -r warp_external_libs/lib linux_packages/
+rm -r warp_external_libs
