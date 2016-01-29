@@ -57,6 +57,15 @@
 #                        isolated the culprit routine into a new mm10_d.f
 #                        and compiled at -O2 which runs fine.
 #
+#
+#    NOTE:   we specify the -xHOST Fortran option. the compiler will
+#            generate code for the highest perfromance instruction set of the 
+#            CPU on your computer.
+#
+#            Remove this option is you wish the compiler to generate
+#            instructions for the broadest range (old !) Intel
+#            processors
+#
 # *****************************************************************************
 #
 #                COMPILER parameter is set by the Makewarp.bash
