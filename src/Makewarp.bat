@@ -82,12 +82,23 @@ set build_mode=64
 ::      support MPI and WARP3D on Windows.
 ::
   echo -- Uninstalling MPI code...
-  del .\mpi_code.f
+  del .\mpi_code.f 
+  del .\mpi_handle_slaves.f
+  del .\mod_local_stiffness.f
+  del .\distributed_assembly.f
 ::
   set xdir=..\linux_packages\source\mpi_code_dir
 ::
   copy %xdir%\mpi_code_dummy.f .\mpi_code.f /y
   echo        - mpi_code_dummy.f
+  copy %xdir%\mpi_handle_slaves_dummy.f .\mpi_handle_slaves.f /y
+  echo        - mpi_handle_slaves.f
+  copy %xdir%\mod_local_stiffness_dummy.f .\mod_local_stiffness.f /y
+  echo        - mod_local_stiffness.f
+  copy %xdir%\distributed_assembly_dummy.f .\distributed_assembly.f /y
+  echo        - distributed_assembly.f
+: 
+:
 ::
   echo -- MPI code uninstalled...
   echo.
