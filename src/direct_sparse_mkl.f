@@ -333,13 +333,16 @@ c                      -> input numerical values of coeffs
 c                      -> Factor a matrix into L and L transpose
 c                   For iterative, we do possible factoriztion and
 c                   solve together in one call.
+c                    
+c                   For now, ignore the provided hint about when
+c                   are good times to refactor
 c
  1000 continue
       if( use_iterative ) then
         num_calls = num_calls + 1; call thyme( 25, 1 )
         phase = 23 ! iterative solve for displ
         iparm(4) = 52
-        if( suggested_new_precond ) iparm(4) = 0 ! new factorization
+c        if( suggested_new_precond ) iparm(4) = 0 ! new factorization
         call warp3d_pardiso_mess( 9, out, 
      &        error, mkl_ooc_flag, cpu_stats, iparm )
         call pardiso( pt, maxfct, mnum, mtype, phase, neq,
@@ -383,7 +386,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *  Messages during equation solving with the Intel MKL pkg.    *
 c     *                                                              *
-c     *  written by: rh   modified by: rhd  last modified: 7/27/10   *
+c     *  written by: rh   modified by: rhd  last modified: 2/15/2016 *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -413,7 +416,11 @@ c
          end if
          if( cpu_stats )  then
            write(iout,9482) wcputime(1)
-           write(iout,2010) dble(iparm(18))/1000.d0/1000.d0/1000.d0
+           if( iparm(18) < 0 ) then
+             write(iout,2012) 
+           else
+             write(iout,2010) dble(iparm(18))/1000.d0/1000.d0
+           end if
            write(iout,2020) dble(iparm(19))/1000.d0
            write(iout,2022) dble(iparm(15))/1000.d0/1000.d0
          end if
@@ -468,6 +475,7 @@ c
          end if
          if( cpu_stats ) then
            write(iout,9600) iparm(20)
+           write(iout,9602) wcputime(1)
          else 
            write(iout,9610) iparm(20)
          end if
@@ -479,7 +487,9 @@ c
       return
 c
  2010 format(
-     &  15x,'terms in factored matrix (B):    ', f9.2)
+     &  15x,'terms in factored matrix (M):    ', f9.2)
+ 2012 format(    
+     &  15x,'terms in factored matrix:          > 2.15B')
  2020 format(
      &  15x,'factorization op count (GFlop):  ', f9.2)
  2022 format(
@@ -510,7 +520,9 @@ c
      & /, 15x, 'pre-conditioner: -- requires in-memory operation --' )
  9600  format(
      &  15x,'conjugate gradient-Krylov iters  ', i9)
- 9610  format(7x,
+ 9602  format(      
+     &  15x,'Krylov iterations done        @ ',f10.2 )
+9610  format(7x,
      & '>> conjugate gradient-Krylov iterations:           ',i5)
 c
       end
