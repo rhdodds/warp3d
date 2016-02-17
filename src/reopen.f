@@ -1783,12 +1783,10 @@ c     *                      subroutine init_maps                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/1/98                    *
+c     *                   last modified : 2/16/2016 rhd              *
 c     *                                                              *
-c     *     create a data structure that provides the block number   *
-c     *     for an element and the relativ element within the block  *
-c     *     column 1 provides the block number, column 2 the         *
-c     *     relative element within the block                        *
+c     *     allocate space for various mapping data structures.      *
+c     *     if reastarting, read data from the restart file.         *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -1928,7 +1926,7 @@ c     *                                                              *
 c     *                   last modified : 02/1/98                    *
 c     *                                                              *
 c     *     create a data structure that provides the block number   *
-c     *     for an element and the relativ element within the block  *
+c     *     for an element and the relative element within the block *
 c     *     column 1 provides the block number, column 2 the         *
 c     *     relative element within the block                        *
 c     *                                                              *
