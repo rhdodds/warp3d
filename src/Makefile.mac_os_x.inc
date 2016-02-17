@@ -55,7 +55,7 @@
 #   rhd - add user_routines_module.f, update dependencies for
 #         user_routines_...f, reorder some rules 
 #         for convenience
-#   rhd   add -xHOST to compiler options
+#   rhd   add -xHost to compiler options
 #   rhd - replace mm10 with mm10a, b, c
 #         add rstgp1 dependency on mod_crystals
 #         use -inline-level=1 on some very long .f files
@@ -69,7 +69,7 @@
 #
 #
 #
-#    NOTE:   we specify the -xHOST Fortran option. the compiler will
+#    NOTE:   we specify the -xHost Fortran option. the compiler will
 #            generate code for the highest perfromance instruction set of the 
 #            CPU on your computer.
 #
@@ -93,7 +93,7 @@
 #        Intel F90 (fort) compiler options. see also Makefile.mac_os_x.omp
 #
 F90OPTS1 =  -fpconstant -fixed -72 -traceback -no-inline-factor
-F90OPTS2 =  -module $(ODIR) -ftz -xHOST
+F90OPTS2 =  -module $(ODIR) -ftz -xHost
 PROFILEOPT =
 #
 F90      = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) $(PROFILEOPT)

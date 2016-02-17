@@ -46,7 +46,7 @@
 #                        user_routines_...f, reorder some rules 
 #                        for convenience
 #                        add rstgp1 dependency on mod_crystals
-#             11/29/2015 add -xHOST to compiler options
+#             11/29/2015 add -xHost to compiler options
 #             12/22/2015 replace mm10 with mm10a, b, c
 #                        use -inline-level=1 on some very long .f files
 #                        to reduce unnecessarily long compile times w/o 
@@ -58,7 +58,7 @@
 #                        and compiled at -O2 which runs fine.
 #
 #
-#    NOTE:   we specify the -xHOST Fortran option. the compiler will
+#    NOTE:   we specify the -xHost Fortran option. the compiler will
 #            generate code for the highest perfromance instruction set of the 
 #            CPU on your computer.
 #
@@ -80,7 +80,7 @@
 #                the "pre" makefiles: Makefile.linux_em64t.omp
 #                or Makefile.linux_em64t.mpi
 #
-F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz -xHOST
+F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz -xHost
 F90INC = -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #
 PROFILEOPT =
