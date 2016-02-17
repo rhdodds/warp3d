@@ -195,16 +195,14 @@ c
       contains
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine oumodel_flat_patran          *
+c     *                subroutine oumodel_flat_patran                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/10/2014                 *
+c     *                   last modified : 02/16/2016 rhd             *
 c     *                                                              *
 c     *    output element information to flat file using the Patran  *
 c     *    convention for element type, node ordering.               *
-c     *    the "block" number for an element is the number of the    *
-c     *    user-defined material in the input file                   *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -214,32 +212,76 @@ c
 c
 c         local declarations
 c
+      integer, parameter :: emap_size=50
       integer :: warp_to_pat_20(20), pat_incid(30),
-     &           warp_to_wed15(15), inter_tri12_to_wedge15(12)
+     &           warp_to_wed15(15), inter_tri12_to_wedge15(12),
+     &           elem_types_to_exo_blk_map(emap_size)
       integer :: elem, incptr, etype, num_enodes, matnum,
-     &           pat_etype, node, id 
+     &           pat_etype, node, id, eleblk, span, ispan, felem,
+     &           blk_knt_exo, blk_for_exo
       logical :: hex, tet, wedge,
      &           interface_hex,  interface_tri,
-     &          interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5
+     &           interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5
       data warp_to_pat_20 / 5,1,4,8,6,2,3,7,13,12,16,20,14,10,15,
      &                     18,17,9,11,19 /
       data warp_to_wed15  / 1,2,3,4,5,6,7,8,9,13,14,15,10,11,12/
       data inter_tri12_to_wedge15 / 1,2,3,7,8,9,4,5,6,13,14,15 /
-      
-c           
-      do elem = 1, noelem
-         pat_incid(1:27) = 0
-         incptr        = incmap(elem) - 1
-         etype         = iprops(1,elem)
-         num_enodes    = iprops(2,elem)
-         matnum        = iprops(38,elem)
-         call set_element_type( etype, ldum1, hex, wedge, tet, ldum2,
-     &                          ldum3, ldum4, ldum5, interface_elem )
-         interface_hex = interface_elem .and. num_enodes .eq. 8
-         interface_tri = interface_elem .and. 
-     &                  (num_enodes .eq. 6 .or. num_enodes .eq. 12) 
 c
-         if ( interface_hex ) then
+c              for each element, we write the element type number
+c              following the Patran scheme, block number for ParaView
+c              (.exo) and the element incidences to follow the Patran 
+c              numbering scheme.
+c
+c              EXO block number. Starts with 1 with max value = max
+c              number of different element types appearing in the 
+c              model. All elements of the same etype are assigned to 
+c              the same EXO block. The EXO is not connected to the
+c              WARP3D block number that groups elements for processing.
+c
+c              the code here builds a local vector as WARP3D blocks
+c              are processed to store the EXO block numbers as they
+c              are assigned.
+c
+c              at some point, we may want to make more EXO blocks
+c              by assigning all element of the same etyp and material
+c              to a block. However, this has the potential to create
+c              a large number of EXO blocks. In ParaView, all those
+c              blocks would need to checked on/off for visibilty.
+c
+      blk_knt_exo = 0
+      elem_types_to_exo_blk_map = 0
+      if( nelblk <= 0 ) then 
+         write(out,9110)
+         call die_abort
+      end if
+c   
+      do eleblk = 1, nelblk
+       span       = elblks(0,eleblk)
+       felem      = elblks(1,eleblk)
+       etype      = iprops(1,felem)
+       if( etype .gt. emap_size ) then
+         write(out,9100)
+         call die_abort
+       end if   
+       if( elem_types_to_exo_blk_map(etype). eq. 0 ) then
+         blk_knt_exo = blk_knt_exo + 1
+         elem_types_to_exo_blk_map(etype) = blk_knt_exo
+       end if 
+       blk_for_exo =  elem_types_to_exo_blk_map(etype) 
+       num_enodes  = iprops(2,felem)
+       matnum      = iprops(38,felem) ! not used at present
+       call set_element_type( etype, ldum1, hex, wedge, tet, ldum2,
+     &                        ldum3, ldum4, ldum5, interface_elem )
+       interface_hex = interface_elem .and. num_enodes .eq. 8
+       interface_tri = interface_elem .and. 
+     &                 (num_enodes .eq. 6 .or. num_enodes .eq. 12) 
+c   
+       do ispan = 1, span
+         elem      = felem + ispan - 1
+         pat_incid = 0
+         incptr    = incmap(elem) - 1
+c
+         if( interface_hex ) then
             pat_etype = 8
             do node = 1, 8
                pat_incid(node) = incid(incptr + node)
@@ -247,7 +289,7 @@ c
             num_enodes = 8
          end if
 c
-         if ( interface_tri ) then
+         if( interface_tri ) then
             pat_etype = 7
             if( num_enodes .eq. 6 ) then  ! trint6
               do node = 1, 6
@@ -264,9 +306,9 @@ c                  10, 11, 12 missing
             end if
          end if
 c
-         if ( hex ) then
+         if( hex ) then
             pat_etype = 8
-            if ( etype .eq. 1 ) then
+            if( etype .eq. 1 ) then
               do node = 1, 20
                 pat_incid(warp_to_pat_20(node)) = incid(incptr + node)
               end do
@@ -278,16 +320,16 @@ c
             end if
          end if
 c
-         if ( tet ) then  ! node scheme same
+         if( tet ) then  ! node scheme same
              pat_etype = 5
              do node = 1, num_enodes
                 pat_incid(node) = incid(incptr + node)
              end do
          end if
 c
-         if ( wedge ) then
+         if( wedge ) then
              pat_etype = 7
-             if ( num_enodes .eq. 15 ) then
+             if( num_enodes .eq. 15 ) then
                do node = 1, num_enodes
                  pat_incid(warp_to_wed15(node)) = incid(incptr + node)
                end do
@@ -298,22 +340,28 @@ c
              end if
          end if
 c
-         if ( debug ) write(out,5000) elem,
+         if( debug ) write(out,5000) elem,
      &        (incid(id), id=incptr+1,incptr+num_enodes),
      &        (pat_incid(id), id=1,num_enodes)
 c
          if( text ) write(out_file,9040) 
-     &              pat_etype, matnum, pat_incid(1:27)
+     &              pat_etype, blk_for_exo, pat_incid(1:27)
          if( stream ) write(out_file)
-     &              pat_etype, matnum, pat_incid(1:27)
+     &              pat_etype, blk_for_exo, pat_incid(1:27)
 c     
-      end do ! element loop for Patran option
+       end do ! over block loop for Patran elem type option
+      end do ! over blocks 
 c
       return    
 c
  5000 format(4x,'>>>  Incidences for element : ',i6 //
      &        4x,'     WARP3D  : ',20i6 /
      &        4x,'     PATRAN  : ',20i6)
+ 9100 format('>> FATAL ERROR: vector overflow: oumodel_flat_patran',
+     &  /,   '                job terminated' )
+ 9110 format('>> FATAL ERROR: element, coordinates, incidences, and',
+     &  /,   '                blocking must be defined before this',
+     &  /,   '                command. **job terminated**' )
  9040 format(i4,i4,27i8)
 c        
       end subroutine oumodel_flat_patran
@@ -324,12 +372,10 @@ c     *                      subroutine oumodel_flat_warp3d          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/13/2014                 *
+c     *                   last modified : 02/16/2016 rhd             *
 c     *                                                              *
 c     *    output element information to flat file using the WARP3D  *
 c     *    convention for element type, node ordering.               *
-c     *    the "block" number for an element is the number of the    *
-c     *    user-defined material in the input file                   *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -339,15 +385,61 @@ c
 c
 c         local declarations
 c
-      integer :: wrp_incid(30)
-      integer :: elem, incptr,etype, num_enodes, matnum, id, node
+      integer, parameter :: emap_size=50
+      integer :: wrp_incid(30), elem_types_to_exo_blk_map(emap_size)
+      integer :: elem, incptr,etype, num_enodes, matnum, id, node,
+     &           eleblk, span, ispan, felem,
+     &           blk_knt_exo, blk_for_exo      
+c 
+c
+c              for each element, we write the element type number
+c              following the WARP3D scheme, block number for ParaView
+c              (.exo) and the element incidences to follow the WARP3D 
+c              numbering scheme.
+c
+c              EXO block number. Starts with 1 with max value = max
+c              number of different element types appearing in the 
+c              model. All elements of the same etype are assigned to 
+c              the same EXO block. The EXO is not connected to the
+c              WARP3D block number that groups elements for processing.
+c
+c              the code here builds a local vector as WARP3D blocks
+c              are processed to store the EXO block numbers as they
+c              are assigned.
+c
+c              at some point, we may want to make more EXO blocks
+c              by assigning all element of the same etyp and material
+c              to a block. However, this has the potential to create
+c              a large number of EXO blocks. In ParaView, all those
+c              blocks would need to checked on/off for visibilty.
+c
+      blk_knt_exo = 0
+      elem_types_to_exo_blk_map = 0
+      if( nelblk <= 0 ) then 
+         write(out,9110)
+         call die_abort
+      end if
 c      
-      do elem = 1, noelem
+      do eleblk = 1, nelblk
+       span       = elblks(0,eleblk)
+       felem      = elblks(1,eleblk)
+       etype      = iprops(1,felem)
+       if( etype .gt. emap_size ) then
+         write(out,9100)
+         call die_abort
+       end if   
+       if( elem_types_to_exo_blk_map(etype). eq. 0 ) then
+         blk_knt_exo = blk_knt_exo + 1
+         elem_types_to_exo_blk_map(etype) = blk_knt_exo
+       end if 
+       blk_for_exo =  elem_types_to_exo_blk_map(etype) 
+       num_enodes  = iprops(2,felem)
+       matnum      = iprops(38,felem) ! not used at present
+c    
+       do ispan = 1, span
+         elem = felem + ispan - 1
          wrp_incid(1:30) = 0
          incptr        = incmap(elem) - 1
-         etype         = iprops(1,elem)
-         num_enodes    = iprops(2,elem)
-         matnum        = iprops(38,elem)
          do node = 1, num_enodes
             wrp_incid(node) = incid(incptr + node)
          end do
@@ -356,17 +448,23 @@ c
      &        (wrp_incid(id), id=1,num_enodes)
 c
          if( text ) write(out_file,9040) 
-     &              etype, matnum, wrp_incid(1:27)
+     &              etype, blk_for_exo, wrp_incid(1:27)
          if( stream ) write(out_file)
-     &               etype, matnum, wrp_incid(1:27)
+     &               etype, blk_for_exo, wrp_incid(1:27)
+       end do ! on ispan
 c     
-      end do ! element loop 
+      end do ! element blocks loop 
 c
       return  
 
  5000 format(4x,'>>>  Incidences for element : ',i6 //
      &        4x,'     WARP3D  : ',20i6 /
      &        4x,'     PATRAN  : ',20i6)
+ 9100 format('>> FATAL ERROR: vector overflow: oumodel_flat_warp3d',
+     &  /,   '                job terminated' )
+ 9110 format('>> FATAL ERROR: element, coordinates, incidences, and',
+     &  /,   '                blocking must be defined before this',
+     &  /,   '                command. **job terminated**' )
  9040 format(i4,i4,27i8)
 c
       end subroutine oumodel_flat_warp3d
