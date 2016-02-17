@@ -1,3 +1,4 @@
+
 c
 c *******************************************************************
 c *                                                                 *
@@ -570,7 +571,7 @@ c    *                                                              *
 c    *          subroutine mm04_cavit_driver                        *
 c    *                                                              *
 c    *            written by : rhd   6/9/2014                       *
-c    *            updated: 3/4/2014  rhd                            *	
+c    *            updated: 2/14/2016 rhd                            *	
 c    *                                                              *
 c    *     drive stress update of cavity cohesive model             *  
 c    *                                                              *
@@ -639,8 +640,8 @@ c             a set of values for each element in block.
 c          
       if( here_debug ) write(iout,9015)
       call mm04_cavit_sig_update( 
-     &     step, iter, span, felem, gpn, iout, mxvl, dtime, nonlocal,
-     &     props, intfprps,
+     &     step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
+     &     nonlocal, props, intfprps,
      &     trac_n, trac_n1, reladis, delrlds, history, history1,
      &     top_surf_stresses_n, bott_surf_stresses_n,
      &     top_nonlocal_vars, bott_nonlocal_vars, 
@@ -831,8 +832,8 @@ c    *                                                              *
 c    ****************************************************************
 c
       subroutine mm04_cavit_sig_update(
-     & step, iter, span, felem, gpn, iout, mxvl, dtime, nonlocal,
-     & props, intfprps,
+     & step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
+     & nonlocal, props, intfprps,
      & trac_n, trac_n1, reladis, delrlds, history, history1,
      & top_surf_stresses_n, bott_surf_stresses_n,
      & top_nonlocal_vars, bott_nonlocal_vars, local_debug,
@@ -846,8 +847,8 @@ c
 #dbl      double precision ::
 #sgl      real ::
      1 trac_n(mxvl,*), delrlds(mxvl,*), intfprps(mxvl,*),
-     2 trac_n1(mxvl,*), reladis(mxvl,*),
-     3 history(span,history_len), history1(span,history_len), dtime,
+     2 trac_n1(mxvl,*), reladis(mxvl,*), history(span,history_len),
+     3 history1(span,history_len), time_n, dtime,
      4 top_surf_stresses_n(mxvl,6), bott_surf_stresses_n(mxvl,6),
      5 top_nonlocal_vars(mxvl,*), bott_nonlocal_vars(mxvl,*)
       logical nonlocal
@@ -912,7 +913,7 @@ c
       include_nucleation    = .false.
       debug_newton          = .false.
       include_cavity_growth = .true.
-      compute_solid_local   = .false.
+      compute_solid_local   = .false. 
 c      
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 
      &                  ( step .eq. 599 )
