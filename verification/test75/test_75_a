@@ -55,7 +55,6 @@ blocking automatic size = 128
    convergence test norm res tol 0.01
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off

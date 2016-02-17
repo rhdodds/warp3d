@@ -68,7 +68,6 @@ loading test
    line search on details
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    bbar stabilization factor 0.0
    consistent q-matrix off
    time step 1.0e06
