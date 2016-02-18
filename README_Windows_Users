@@ -2,7 +2,7 @@
 
                Highest Level README for Windows Users
 
-                last Update: January 22, 2016
+                last Update: February 18, 2016
                              cleanup
                              continued issues with libiomp5md.dll
                              now using Intel Fortran 2016
@@ -30,6 +30,12 @@ additional performance by re-compiling. The re-building scripts included in
 the distribution request compiling for optimal performance on the current 
 hardware (we remove that option to build the executables for distribution).
 
+*** Late Breaking News ***
+
+Verification problem test17 partb fails intermittently only on Windows.
+This model tests a simple mesh with tied contact to link tet10 elements
+with hex20 elements. The problem runs correctly on Linux and OSX. 
+Under investigation.
 
 ==========================================================================
 
