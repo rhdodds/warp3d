@@ -142,6 +142,7 @@ c           compute the updated strains and stresses for all elements
 c           in the block. outer loop is over integration points, inner
 c           loop at lower levels is over elements in block.
 c
+c      
       do gpn = 1, ngp
         local_work%gpn = gpn
         if ( geonl ) call rstgp1( props, lprops, iprops,

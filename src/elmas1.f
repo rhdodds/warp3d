@@ -38,12 +38,8 @@ c                       compute the element diagonal mass matrix.
 c                       compute the trace of the consistent diagonal
 c                       mass matrix.           
 c
-      do i = 1, span
-        trace(i) = zero
-        scale(i) = zero
-      end do
-c
-c
+      trace = zero
+      scale = zero
       do j = 1, nnode
        do i = 1, span
          trace(i) = trace(i) + mel(j,i)
@@ -57,7 +53,7 @@ c                    degrees of freedom (total masses =
 c                    3 * total mass of elements).
 c
       do i = 1, span
-        if ( abs(trace(i)) .gt. mass_tol ) 
+       if ( abs(trace(i)) .gt. mass_tol ) 
      &        scale(i) =  emass(i) / trace(i)
       end do
 

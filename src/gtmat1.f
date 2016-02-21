@@ -37,8 +37,7 @@ c
      & allocatable :: rnh(:,:,:), fnh(:,:,:), theta(:,:),
      &                dfh(:), dfn(:)
 c
-#dbl      data zero, one / 0.0d00, 1.0d00 /
-#sgl      data zero, one / 0.0, 1.0 /
+      data zero, one / 0.0d00, 1.0d00 /
 c
       span  = local_work%span
       felem = local_work%felem
@@ -49,6 +48,11 @@ c
 c
       allocate( rnh(mxvl,ndim,ndim), fnh(mxvl,ndim,ndim), dfh(mxvl),
      &          theta(mxvl,mxtnsz), dfn(mxvl) )
+	  rnh = zero
+	  fnh = zero
+	  dfh = zero
+	  theta = zero
+	  dfn = zero
 c
 c           compute the deformation gradient at states
 c           (n + 1/2) and (n + 1) relative to the config

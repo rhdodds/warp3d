@@ -632,7 +632,7 @@ c     *                   subroutine recstr_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  9/29/2015 rhd             *
+c     *                   last modified :  2/20/2016 rhd             *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -647,6 +647,8 @@ c
 
 $add common.main
 $add include_sig_up
+      double precision zero
+	  data zero / 0.0d00 /
 c
       local_mt = local_work%mat_type
 c
@@ -679,6 +681,8 @@ c
         allocate( local_work%fn(mxvl,3,3),
      &  local_work%fn1(mxvl,3,3),
      &  local_work%dfn1(mxvl) )
+	    local_work%fn1 = zero
+		local_work%dfn1 = zero
       end if
       
       
@@ -707,8 +711,11 @@ c
          write(out,9000) 4
          call die_abort
       end if
+	  local_work%det_j       = zero
+	  local_work%rot_blk_n1  = zero
+	  local_work%urcs_blk_n1 = zero
+	  local_work%urcs_blk_n  = zero
 c
-
       allocate( local_work%ddtse(mxvl,nstr,mxgp),
      1   local_work%strain_n(mxvl,nstr,mxgp),
      2   local_work%dtemps_node_blk(mxvl,mxndel),
@@ -788,6 +795,7 @@ c
          write(out,9000) 11
          call die_abort
       end if
+	  local_work%trne = zero
 c
       if( local_mt .eq. 10 .or. local_mt .eq. 11 ) then
         allocate( local_work%debug_flag(mxvl),

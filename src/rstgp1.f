@@ -33,7 +33,7 @@ c                       locally defined variables
 c
 #dbl      double precision ::
 #sgl      real ::
-     &  internal_energy, beta_fact, eps_bbar, plastic_work
+     &  internal_energy, beta_fact, eps_bbar, plastic_work, zero
 #dbl      double precision,
 #sgl      real,
      & allocatable :: ddt(:,:), uddt(:,:), qnhalf(:,:,:),
@@ -43,7 +43,7 @@ c
      &           adaptive, geonl, bbar, material_cut_step,
      &           local_debug, adaptive_flag
 c
-      data local_debug / .false. / 
+      data local_debug, zero / .false., 0.0d00 / 
 c
       internal_energy   = local_work%block_energy
       plastic_work      = local_work%block_plastic_work
@@ -68,8 +68,16 @@ c
       iout              = local_work%iout
       if( local_debug ) write(iout,*) '... in rstgp1'
 c
+c        allocate and zero. only span rows are used but
+c        array operators (e.g uddt = ..) will operate on
+c        full content and access uninitialized values.
+c
       allocate( ddt(mxvl,nstr), uddt(mxvl,nstr),
      &          qnhalf(mxvl,nstr,nstr), qn1(mxvl,nstr,nstr) )
+      ddt    = zero
+      uddt   = zero
+      qnhalf = zero
+      qn1    = zero
 c
 c        process cohesive elements separately
 c
@@ -4965,7 +4973,7 @@ c
       if( itype .ne. 1 ) go to 100
 @!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-         internal_energy = internal_energy + gp_energies(i) *
+        internal_energy = internal_energy + gp_energies(i) *
      &                     dfn1(i) * det_j(i)
          plastic_work    = plastic_work +
      &                     gp_plast_work(i) * dfn1(i) * det_j(i)

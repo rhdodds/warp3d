@@ -7,9 +7,10 @@ c     *          or resulting from the tied-contact processor        *
 c     *                                                              *
 c     *                                                              *
 c     *                       written by  : bjb                      *
-c     *                      last modifed : rhd                      *
+c     *                      last modifed : 2/19/2016 rhd            *
 c     *                                                              *
-c     *                   last modified : 07/28/2011                 *
+c     * edit: add optional checks for uninitialized variables in     *
+c     * k_coeffs (through its various resizings)                     *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -44,24 +45,29 @@ c
 c
 c        1. Create new data structures for mpcs and expanded eqns
 c
+      call mpc_chk_nan( 10 )
       call mpc_new_structures(neqns, max_dep, abs_trm, dstmap,
      &                        dof_eqn_map)
+      call mpc_chk_nan( 11 )
       if( ldebug ) write(*,*) '...@ 3 mpc_insert_terms ...'
 c
 c        2. Find and re-organize the full dependent equations and 
 c              all the new non-zero terms to be added to [K]
 c
       call mpc_find_dep_terms(neqns, k_ptrs, abs_trm, max_dep, max_len)
+      call mpc_chk_nan( 12 )
       if( ldebug ) write(*,*) '...@ 4 mpc_insert_terms ...'
 c
 c        3. Sort and copy new terms back into old data structures
 c
       call mpc_copy_new_terms(neqns, k_ptrs, abs_ptr)
+      call mpc_chk_nan( 13 )
       if( ldebug ) write(*,*) '...@ 5 mpc_insert_terms ...'
 c
 c        4. Find the locations in k_coeffs for modification routine
 c
       call mpc_find_locations(neqns, k_ptrs, k_diag, abs_ptr, max_len)
+      call mpc_chk_nan( 14 )
       if( ldebug ) write(*,*) '...@ 6 mpc_insert_terms ...'
 c
 c        deallocate temporary memory
@@ -71,6 +77,34 @@ c
 c
       return
       end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *   run a check on contents of k_coeffs for NaN entry.         *
+c     *   useful for debugging                                       *
+c     *                                                              *
+c     *                       written by  : bjb                      *
+c     *                                                              *
+c     *                   last modified : 01/19/04                   *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mpc_chk_nan( iwhere )
+      use stiffness_data, only : k_coeffs, dep_locations, ncoeff,
+     &                           ind_locations, diag_locations
+      implicit none 
+      integer :: i, iwhere
+c	  
+      return
+      write(*,*) '... checking NaN @ ', iwhere     
+      do i = 1, size(k_coeffs)
+        if( .not. isnan( k_coeffs(i) ) ) cycle
+          write(*,*) '  NaN found. i: ', i
+          call die_abort
+      end do
+      return
+      end
+      
 c
 c
 c     ****************************************************************
@@ -587,7 +621,9 @@ c     * inserts the new non-zero terms into the old data structures  *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 01/20/04                  *
+c     *                    last modified : 02/19/2016 rhd            *
+c     *                                                              *
+c     * edit: zero end of new k_coeffs so no uninitializeds          *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -630,6 +666,7 @@ c
       temp_len = ncoeff + neqns
       old_ind = k_indexes
       old_cof = k_coeffs
+      call mpc_chk_nan( 15 )
 c
 c        initialize counters and structures, move data now in 'eqn_row'
 c        structures into stiffness matrix structures being sure to note
@@ -643,7 +680,7 @@ c
       cof_idx  = 1
       new_idx  = 0
       ind_temp = 0
-      cof_temp = 0.0
+      cof_temp = 0.0d00
       abs_ptr(1) = 1
       do eqn = 1, neqns
          if (dep_check(eqn) .gt. 0) then
@@ -735,6 +772,7 @@ c
       end if
       k_indexes(1:ncoeff) = ind_temp(1:ncoeff)
       k_coeffs(1:ncoeff)  = cof_temp(1:ncoeff)
+      k_coeffs(ncoeff+1:) = 0.0d00
       newcount = new_idx
       if (allocated(new_locations))  deallocate(new_locations)
       if (allocated(new_indexes))    deallocate(new_indexes)
@@ -762,7 +800,9 @@ c     *              increases the size of temp [K] vectors          *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 01/31/04                  *
+c     *                    last modified : 02/19/2016 rhd            *
+c     *                                                              *
+c     * edit: zero to end of new cof_temp to prevent uninitializeds  *          
 c     *                                                              *
 c     ****************************************************************
 c
@@ -812,6 +852,7 @@ c        copy data from temp space, deallocate temp space
 c
       ind_temp(1:temp_len-add) = itmp(1:temp_len-add)
       cof_temp(1:temp_len-add) = dtmp(1:temp_len-add)
+      cof_temp(temp_len-add+1:) = 0.0d00
       deallocate (itmp,dtmp)
 c
       return
@@ -1169,6 +1210,9 @@ c
                if (ind_ptr .eq. 0) then
                   k_diag(ind) = k_diag(ind) + mlt*dep_trm
                else
+c                  write(*,*) ' at critical line'
+c                  write(*,*) ind_ptr, mlt, dep_trm, size(k_coeffs)
+c                  write(*,*) k_coeffs(ind_ptr)
                   k_coeffs(ind_ptr) = k_coeffs(ind_ptr) + mlt*dep_trm
                end if
                ind_loc_idx = ind_loc_idx + 1
@@ -1180,8 +1224,8 @@ c
             end if
          end do
          dep_rhs(dep) = p_vec(dep)
-         p_vec(dep) = 0.0
-         k_diag(dep) = 1.0
+         p_vec(dep) = 0.0d00
+         k_diag(dep) = 1.0d00
          dep_loc_idx = dep_loc_idx + len
          trm_ptr = trm_ptr + ntrms
       end do
@@ -1242,7 +1286,7 @@ c
          new_ind = new_indexes(cnt)
          if (new_loc .eq. ptr+1) then
             k_indexes(new_loc) = new_ind
-            k_coeffs(new_loc)  = 0.0
+            k_coeffs(new_loc)  = 0.0d00
             ptr = new_loc
             cycle
          end if
@@ -1251,7 +1295,7 @@ c
             k_coeffs(loc)  = cof_tmp(loc-cnt+1)
          end do
          k_indexes(new_loc) = new_ind
-         k_coeffs(new_loc)  = 0.0
+         k_coeffs(new_loc)  = 0.0d00
          ptr = new_loc
       end do
       do loc = ptr+1, ncoeff
@@ -1342,7 +1386,9 @@ c     *                    for subsequent solves                     *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 01/22/04                  *
+c     *                    last modified : 02/19/2016 rhd            *
+c     *                                                              *
+c     *  edit: zero to end of new k_coeffs to prevent uninitialized  *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -1407,13 +1453,12 @@ c
          call errmsg2(48,dumi,dums,dumr,dumd)
          call die_abort
       end if
-      k_indexes = 0
-      k_coeffs  = 0.0
 c
 c        copy data from temp space, deallocate temp space
 c
       k_indexes(1:ncoeff) = ind_tmp(1:ncoeff)
       k_coeffs(1:ncoeff)  = cof_tmp(1:ncoeff)
+      k_coeffs(ncoeff+1:) = 0.0d00
       deallocate(ind_tmp,cof_tmp)
 c
       return
