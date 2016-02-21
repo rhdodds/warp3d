@@ -4,7 +4,7 @@ c     *                                                              *
 c     *  assemble & solve linear equations for a Newton iteration    *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 11/21/2015 rhd             *
+c     *                   last modified : 2/19/2016 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -207,8 +207,8 @@ c
       if( .not. parallel_assembly_used )  
      &  deallocate( k_diag, k_coeffs, k_ptrs, k_indexes, p_vec )
 c
-c          4.  for distributed assembly/solve, reorder the equations
-c              -----------------------------------------------------      
+c          4.  for distributed assembly/solve, reorder solution vector
+c              -------------------------------------------------------      
 c
 c              to eliminate the effects of the remapping
 c              to improve load balancing
@@ -264,9 +264,9 @@ c          7.  re-define number of non-zero coefficients in the
 c              equations as solved.
 c              -------------------------------------------------
 c
-c              needed only if we inserted mpcs. The next time thru the solver
-c              this now "correct" count of the number of terms
-c              saves a lot of work during re-insertion of the
+c              needed only if we inserted mpcs. The next time thru
+c              the sover this now "correct" count of the number of
+c              terms. saves a lot of work during re-insertion of the
 c              mpc coefficients.
 c
       if( tied_con_mpcs_constructed .or. mpcs_exist ) 
@@ -622,7 +622,7 @@ c
      &      save_k_indexes(1:ncoeff), nnz, k_ptrs(1:neqns+1), 
      &      k_indexes(1:2*ncoeff + neqns))
         if( cpu_stats .and. show_details ) write(out,9999) wcputime(1)
-        k_coeffs = zero !   vector zero
+        k_coeffs = zero 
         call assem_by_row_a( neqns, nnz, num_threads, eqn_node_map,
      &                     dof_eqn_map, k_ptrs, k_indexes, iprops,
      &                     dcp, noelem, k_coeffs )
@@ -631,14 +631,14 @@ c
 c             3b. assemble symmetric  equilibrium equations 
 c                 in sparse format using a row-by-row algorithm 
 c                 rather than a conventional element-by-element. 
-c                 allocate space for only the non-zero terms plus
-c                 an neqns long working vector.
+c                 rows are assembled in parallel.
 c
+        k_coeffs = zero
         call assem_by_row( neqns, num_threads, eqn_node_map,
      &                     dof_eqn_map, k_diag, k_coeffs,
      &                     k_indexes, k_ptrs, iprops,
      &                     dcp, noelem )
-      end if ! for asymmetric assembly
+      end if ! for asymmetric/symmetric assembly
 c
       if( cpu_stats .and. show_details ) write(out,9470) wcputime(1)
       if( local_debug ) write(out,*) ' @ 5'
