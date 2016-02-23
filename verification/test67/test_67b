@@ -1253,7 +1253,7 @@ list 'right' x=14.01   $  "     "     "
  nonlinear analysis parameters
    solution technique direct sparse 
    time step 1.0e06  $ static analysis
-   maximum iterations 5
+   maximum iterations 9
    minimum iterations 1
    convergence test norm res tol 0.01
    nonconvergent solutions stop
