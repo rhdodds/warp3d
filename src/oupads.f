@@ -4,7 +4,7 @@ c     *                      subroutine oupads                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/10/04 (rhd)              *
+c     *                   last modified : 3/3/2016 rhd               *
 c     *                                                              *
 c     *     this subroutine adds the nodal results from a block of   *
 c     *     non-conflicting, similar elements into the total nodal   * 
@@ -36,7 +36,7 @@ c
 #dbl      double precision
 #sgl      real 
      &   zero
-      data zero / 0.0 /
+      data zero / 0.0d0 /
 c
 c                       look at nodes present on each element of
 c                       this block. if the vector of node average
@@ -46,6 +46,7 @@ c                       accessed in the processing of the element
 c                       block.
 c
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###            
        do i = 1, span
          snode = belinc(j,i)
          if ( .not. associated(nodal_values(snode)%node_values) ) then
@@ -63,6 +64,7 @@ c
       do k = 1, num_vals
          map = outmap(k)
          do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###            
           do i = 1, span
             snode = belinc(j,i)
             snode_values => nodal_values(snode)%node_values
@@ -73,6 +75,4 @@ c
 c
       return
       end
-
-
-
+      

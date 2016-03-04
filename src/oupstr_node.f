@@ -4,7 +4,7 @@ c     *                      subroutine oupstr_node                  *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/13/2014 rhd              *
+c     *                   last modified : 3/3/2016 rhdd              *
 c     *                                                              *
 c     *     drives output of stress or strain nodal results to       *
 c     *     (1) patran files in either binary or formatted forms or  *
@@ -51,7 +51,7 @@ c
 c                       create structure size vector of derived types.
 c                       set count for each node to zero. nullify
 c                       pointers to all nodal vectors.
-c
+c 
       allocate( nodal_values(nonode) )
       do node = 1, nonode
        nodal_values(node)%count = 0
@@ -141,7 +141,7 @@ c
       do_average =  serial .or. (use_mpi .and. numprocs .eq. 1)
 c
       if( do_average ) then
-      do snode = 1, nonode
+       do snode = 1, nonode
          count = nodal_values(snode)%count
            if( count .eq. 0 ) then  ! probably node w/ only cohesive
             allocate( nodal_values(snode)%node_values(mxstmp) )
@@ -156,7 +156,7 @@ c
            snode_values(map) = snode_values(map) / rn_count
          end do
          call ouext2( snode_values(1), 1, 1, stress )
-      end do
+       end do ! on snode
       end if
 c
 c                       output the averaged total nodal results
@@ -176,8 +176,10 @@ c                       deallocate all instances of the derived type
 c                       then the structure size vector
 c
       do node = 1, nonode
-       if ( nodal_values(node)%count .ne. 0 )
-     &    deallocate(nodal_values(node)%node_values)
+       if ( nodal_values(node)%count .ne. 0 ) then
+        snode_values => nodal_values(node)%node_values
+         deallocate(nodal_values(node)%node_values)
+       end if  
       end do
       deallocate( nodal_values )
 c

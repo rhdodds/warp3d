@@ -4,10 +4,11 @@ c     *                      subroutine ouprks                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 7/26/12 rhd                 *
+c     *                   last modified: 3/3/2016 rhd                *
 c     *                                                              *
 c     *   drives stress or strain output quantities for a block of   *
-c     *   similar elements in preparation for patran results file    *
+c     *   similar elements in preparation for patran or flat         *
+c     *   results file                                               *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -16,13 +17,14 @@ c
      &                   nnode, geonl,
      &                   do_stresses, mat_type, center_output,
      &                   num_short_stress, num_short_strain, element )
+            use elblk_data, only : elestr
+
       implicit integer (a-z)
 $add common.main
       logical do_stresses, geonl, center_output, element
 #dbl      double precision
 #sgl      real
      &   nowtime
-
 c
 c
 c                       technically, the output configuration flag 
@@ -55,7 +57,7 @@ c                       Note: mises stress and equivalent strain
 c                       will be replaced with values computed from
 c                       the averaged computavalues later.
 c
-      if ( element ) then
+      if( element ) then
         call oumkcv( span, ngp, do_stresses, num_short_stress + 1,
      &               num_short_strain + 1 )
       end if
@@ -73,7 +75,7 @@ c                       averaged components of the stress or strain tensor.
 c                       this will keep extrapolated mises values and 
 c                       equivalent strains from ever becoming negative.
 c
-      if ( .not. element ) then
+      if( .not. element ) then
         call ounds1( span, type, order, nnode, ngp, do_stresses,
      &               num_short_stress + 1, num_short_strain + 1 )
       end if
