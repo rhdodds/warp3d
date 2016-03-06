@@ -1,0 +1,99 @@
+#
+#  Axial extension of a notched round bar -- creep material
+#  --------------------------------------------------------
+#
+#  Norton power-law creep model
+#
+#
+#  Axi-symmetric model of a small notch tensile specimen.
+#  This is the 0.25" diameter specimen with 0.004 in. elements in
+#  the notch region. The model is set up with square elements for
+#  the lower row of 0.004 in. size elements. The transformation
+#  matrix is for a 1 degree rotation about the axis of revolution.
+#  This was accomplished by sweeping the a 2-D model of 4-node elements
+#  in Patran about the Y-axis. However, Patran would not allow a zero
+#  radius for nodes during this process. Nodes on the axis were
+#  made to have r=0.00001 in. After sweeping about the Z-axis,
+#  the nodes were reset to r=0.0. For the 8-node Warp3D elements 
+#  with a face collapsed to a line on r=0, there are 8 unique 
+#  node ids.
+#
+#  Model is top-half, axisymmetric (1-degree slice)
+#
+#  Full bar dimensions:
+#    Height:           2.00 in.   50.8 mm
+#    Outside diameter: 0.50 in.   12.7 mm
+#    Throat diameter:  0.25 in.    6.35 mm
+#    Slot height:      0.50 in.   12.7 mm
+#
+#  Coordinates have units: mm
+#  Time: hours
+#
+#  The material behavior for this example is described by:
+#
+#      E = 150,000 MPa 
+#      n = 6  nu = 0.285
+#      creep coefficient: B = 1.0e-16 MPa**(-n)/secs
+#
+#  Impose axial extension for 15 hrs, then hold extension
+#  and let bar relax.
+#       
+structure nbar
+#
+ material norton
+ properties creep e 150000. nu 0.285 n_power 6.0,
+            B 1.0e-16 rho 0
+# 
+number of nodes 916 elements 405
+#
+elements
+#
+  1-405 type l3disop  material norton,
+            order 2x2x2 bbar center_output short
+#
+*echo off            
+*input "coords_mm.inp"
+*input "incidences.inp"
+#
+blocking automatic size=16 ! for testing
+#
+*input "constraints_boundary.inp"
+# 
+#      include imposed axial displacements on remote end
+#
+   452 453 454 455 456 457 458,  
+   910 911 912 913 914 915 916  v 1.0  $ mm
+# 
+*echo on
+#
+ loading pull 
+  nonlinear
+    step 1-15 constraints  0.01
+    step 16-50 constraints 0.0
+#
+ nonlinear analysis parameters
+   time step 1.0   hrs
+   solution technique direct sparse 
+   maximum iterations 8
+   minimum iterations 1
+   convergence test norm res tol 0.001 $ really tight for testing
+   adaptive off
+   extrapolate on
+   line search on details
+   material messages off
+   batch messages off
+!
+compute displacements loading pull step 50
+ output flat text node stresses
+ output flat text node strains
+ output flat text element stresses
+ output flat text element strains
+ output flat text element states
+ output flat text displacements
+
+output patran formatted displacements
+output patran formatted node stresses
+output patran formatted node strains
+output patran formatted element stresses
+output patran formatted element strains
+stop

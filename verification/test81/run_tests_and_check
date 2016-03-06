@@ -1,0 +1,110 @@
+#!/bin/bash
+
+
+#**************************************************************
+#*                                                            *
+#*      cleanup_files                                         *
+#*                                                            *
+#**************************************************************
+
+function cleanup_files {
+#
+/bin/rm -f  *_out 
+/bin/rm -f  *~ >& /dev/null
+/bin/rm -f energy  >& /dev/null
+/bin/rm -f *_db >& /dev/null
+/bin/rm -f wn*  >& /dev/null
+/bin/rm -f we*  >& /dev/null
+/bin/rm -f *.neut  >& /dev/null
+/bin/rm -f states*  >& /dev/null
+/bin/rm -f *flat.text  >& /dev/null
+/bin/rm -f temp*
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      run_and_compare                                       *
+#*                                                            *
+#**************************************************************
+
+function run_and_compare {
+#
+echo "  ... running test_81..."
+"$warp3d_exe" $num_threads  < test_81 > test_81_out
+#
+echo "  ... WARP3D jobs completed..."
+#
+tail -1 wns00050_text > temp1
+perl check_81_flat_node_stresses.perl
+
+tail -1 wne00050_text > temp2
+perl check_81_flat_node_strains.perl
+
+tail -1 wee00050_text > temp3
+perl check_81_flat_element_strains.perl
+
+tail -1 wes00050_text > temp4
+perl check_81_flat_element_stresses.perl
+
+tail -1 wnd00050_text > temp5
+perl check_81_flat_displacements.perl
+
+tail -1 wem00050_text_creep > temp6
+perl check_81_flat_states.perl
+
+sed -e 's/-/ -/' wnfd00050 | tail -1 > temp7
+perl check_81_patran_displacements.perl
+
+sed -e 's/-/ -/' wnfe00050 |tail -5 > temp8
+perl check_81_patran_node_strains.perl
+
+sed -e 's/-/ -/' wnfs00050 |tail -6 > temp9
+perl check_81_patran_node_stresses.perl
+
+tail -4 wefe00050 > temp10
+perl check_81_patran_element_strains.perl
+
+
+tail -5 wefs00050 > temp11
+perl check_81_patran_element_stresses.perl
+
+
+#
+cleanup_files
+#
+}
+
+
+#**************************************************************
+#*                                                            *
+#*      main programs                                         *
+#*                                                            *
+#**************************************************************
+#
+echo " "; echo " ";
+#
+machine=`uname`
+echo ">> machine id: " $machine
+num_threads=$NUM_THREADS
+cleanup_files
+#
+if [ "$MACHINE_TYPE" = '0' ]; then
+   echo -e "   OSX and Linux verification..."
+   warp3d_exe="$WARP3D_EXE"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '1' ]; then
+   echo -e "\n Windows 32-bit verification..."
+   warp3d_exe="$WARP3D_EXE_32"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '2' ]; then
+   echo -e "   Windows verification..."
+   warp3d_exe="$WARP3D_EXE_64"
+   run_and_compare
+fi
+#
+#
+echo -e "\n>>> All done with test_81 ...\n\n"
+exit

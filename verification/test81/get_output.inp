@@ -1,0 +1,20 @@
+*echo off
+c
+c     output request file for axi-symmetric of notched tensile bar
+c
+c     elements 15 29 14 28 13  27 12 are on Y=0 layer with 15 at the
+c              incident on the axis of revolution
+c              45 is just above 15
+c
+c     nodes 452 is on top end where displacements are imposed
+c     node 91 is at root of notch on Y=0
+c
+c     elements 212 371 are remote from notch and will give average
+c     remote stress
+c
+*echo on
+c output  stresses 15 29 14 28 13 27 12
+output stresses 14
+output noheader eformat displacements 453 293
+output reactions 452-458 910-916
+output flat text element states
