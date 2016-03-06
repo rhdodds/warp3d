@@ -50,7 +50,7 @@ c     *                 subroutine mm06                              *
 c     *                                                              *
 c     *              Norton power-law creep model                    *
 c     *                                                              *
-c     *           last modified: 10/18/2015 rhd                      *
+c     *           last modified: 3/5/2016 rhd                        *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -118,6 +118,7 @@ c
 c          statev(1) - effective creep strain (total) 
 c          statev(2) - effective creep strain rate wrt real time
 c                      (mm06n must have the normalized rate)
+c          statev(3) - increment of effective creep eps over step
 c
       debug = felem .eq. 1  .and. gpn .eq. 8
       debug = .false.
@@ -175,6 +176,7 @@ c
       props(1) = e_vec(i)  ! emod
       props(2) = nu_vec(i)
       props(3) = n_power_vec(i)
+      props(4) = block_props(i,1)
 c
 c             the normalized mm06n code does not know about B. 
 c             we normalize time to accommodate. strain rates 
@@ -218,8 +220,10 @@ c            nonlocal state values returned are creep rate wrt real time
 c            and total creep strain
 c      
       if( do_nonlocal ) then
-        nonlocal_state(i,1) = statev(2) 
-        nonlocal_state(i,2) = statev(1)
+        nonlocal_state(i,1) = statev(2) ! eff creep eps rate - real time
+        nonlocal_state(i,2) = statev(1) ! eff creep eps
+        nonlocal_state(i,3) = props(3)  !   n
+        nonlocal_state(i,4) = props(4)  !   B
       end if 
 c
       call cnst6n( local_rtse, ddsdde, statev, nrm_dtime, 

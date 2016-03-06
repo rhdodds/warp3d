@@ -4,7 +4,7 @@ c *                                                                          *
 c *    mm10.f                                                                *
 c *                                                                          *
 c *         written by : mcm                                                 *
-c *         last modified : 1/3/2015 rhd                                     *
+c *         last modified : 3/5/2016 rhd rhd                                 *
 c *                                                                          *
 c *         Stress/strain update routines AND HELPERS for crystal plasticity *
 c *         material modeled via Beaudoin et al.                             *
@@ -15,221 +15,243 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                 module mm10_defs                             *
+c     *                       module mm10_defs                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 12/11/13                    *
+c     *                   last modified: 3/5/2016 rhd                *
 c     *                                                              *
-c     *    small module to hold crystal update data structs          *
+c     *       small module to hold crystal update data structs       *
 c     *                                                              *
 c     ****************************************************************
 c
       module mm10_defs
-            implicit integer (a-z)
-$add param_def
-c           Massive list of properties
-            type :: crystal_props
-                  double precision :: rate_n, tau_hat_y, G_0_y, burgers,
-     &                  p_v, q_v, boltzman, theta_0, eps_dot_0_v,
-     &                  eps_dot_0_y,
-     &                  p_y, q_y, 
-     &                  tau_a, tau_hat_v, G_0_v,
-     &                  k_0, mu_0, D_0, T_0, tau_y, tau_v, voche_m,
-     &                  u1, u2, u3, u4, u5, u6
-                  double precision :: atol, atol1, rtol, rtol1,
-     &                                xtol, xtol1
-                  double precision, dimension(3,3) :: g
-                  double precision :: ms(6,max_slip_sys),
-     &                  qs(3,max_slip_sys), ns(3,max_slip_sys)
-                  double precision, dimension(6,6) :: stiffness
-                  integer :: angle_type, angle_convention, nslip, 
-     &                  h_type, miter, gpp, s_type, cnum, method,
-     &                  st_it(3)
-                  integer :: num_hard
-                  logical :: real_tang, solver, strategy, debug, gpall
-                  integer :: out
-            end type
-            type :: crystal_state
-                  double precision, dimension(3,3) :: R, Rp
-                  double precision, dimension(6) :: stress, D, eps
-                  double precision, dimension(3) :: euler_angles
-                  double precision, dimension(max_slip_sys) :: tau_l,
-     &                  slip_incs
-                  double precision, dimension(3,3,3) :: gradFeinv
-                  double precision, dimension(6,6) :: tangent
-                  double precision, dimension(max_uhard) :: tau_tilde
-                  double precision, dimension(max_uhard) :: tt_rate
-                  double precision :: temp, tinc,
-     &                   dg, tau_v, tau_y,
-     &                   mu_harden, work_inc, p_work_inc, p_strain_inc
-                  double precision :: ms(6,max_slip_sys),
-     &                  qs(3,max_slip_sys), qc(3,max_slip_sys)
-                  double precision, dimension(max_uhard) :: u
-                  integer :: step, elem, gp, iter
-            end type
+c      
+      implicit integer (a-z)
+$add param_def  
+c              includes all key size limits for WARP3D (e.g. mxvl)
+c
+c              Massive list of properties
+c
+      type :: crystal_props
+        double precision :: rate_n, tau_hat_y, G_0_y, burgers,
+     &        p_v, q_v, boltzman, theta_0, eps_dot_0_v, eps_dot_0_y,
+     &        p_y, q_y, tau_a, tau_hat_v, G_0_v,
+     &        k_0, mu_0, D_0, T_0, tau_y, tau_v, voche_m,
+     &        u1, u2, u3, u4, u5, u6
+        double precision :: atol, atol1, rtol, rtol1, xtol, xtol1
+        double precision, dimension(3,3) :: g
+        double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys), 
+     &                      ns(3,max_slip_sys)
+        double precision, dimension(6,6) :: stiffness
+        integer :: angle_type, angle_convention, nslip, 
+     &        h_type, miter, gpp, s_type, cnum, method,
+     &        st_it(3), num_hard, out
+        logical :: real_tang, solver, strategy, debug, gpall
+      end type
+c      
+      type :: crystal_state
+        double precision, dimension(3,3) :: R, Rp
+        double precision, dimension(6) :: stress, D, eps
+        double precision, dimension(3) :: euler_angles
+        double precision, dimension(max_slip_sys) :: tau_l, slip_incs
+        double precision, dimension(3,3,3) :: gradFeinv
+        double precision, dimension(6,6) :: tangent
+        double precision, dimension(max_uhard) :: tau_tilde
+        double precision, dimension(max_uhard) :: tt_rate
+        double precision :: temp, tinc, dg, tau_v, tau_y,
+     &                      mu_harden, work_inc, p_work_inc,
+     &                      p_strain_inc
+        double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
+     &                      qc(3,max_slip_sys)
+        double precision, dimension(max_uhard) :: u
+        integer :: step, elem, gp, iter
+      end type
+c      
       end module
 
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                 subroutine mm10                              *
+c     *                      subroutine mm10                         *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 12/11/13                     *
+c     *                   last modified: 3/5/2016 rhd                *
 c     *                                                              *
-c     *    crystal plasticity stress-strain update                   *
+c     *              crystal plasticity stress-strain update         *
 c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10(gp, span, ncrystals, hist_sz,
-     &            history_n, history_np1,
-     &            local_work, uddt, gp_temps, 
-     &            gp_temp_inc, iout, display_matl_messages )
-            use segmental_curves, only: max_seg_points
-            use mm10_defs
-            implicit integer (a-z)
-$add include_sig_up
-            double precision, intent(in) :: uddt(mxvl,nstr)
-            double precision, intent(in) :: gp_temps(mxvl),
-     &                                      gp_temp_inc(mxvl)
-            integer, intent(in) :: iout
-            logical, intent(in) :: display_matl_messages
-            integer :: span, ncrystals(mxvl), hist_sz, gp
-            double precision :: history_n(span,hist_sz)
-            double precision :: history_np1(span,hist_sz)
+      subroutine mm10( gp, span, ncrystals, hist_sz, history_n,
+     &                 history_np1, local_work, uddt, gp_temps, 
+     &                 gp_temp_inc, iout, display_matl_messages,
+     &                 do_nonlocal, nonlocal_state, maxnonlocal )
 c     
-            integer :: i,c,co,cn
-            double precision, dimension(6) :: sig_avg
-            double precision, dimension(6,6) :: tang_avg
-            double precision, dimension(max_slip_sys) :: slip_avg
-            double precision :: t_work_inc, p_work_inc,p_strain_inc
-            type(crystal_props) :: cc_props
-            type(crystal_state) :: cc_n, cc_np1
-            logical :: debug, gpall, locdebug
+      use segmental_curves, only: max_seg_points
+      use mm10_defs
+c            
+      implicit integer (a-z)
+$add include_sig_up
 c
-            debug = .false.
+c                 parameter definitions
 c
-            if (debug) write (*,*) "In mm10"
+      integer, intent(in) :: gp, span, hist_sz, iout, maxnonlocal,
+     &                       ncrystals(mxvl) 
+      logical, intent(in) :: display_matl_messages, do_nonlocal
+c      
+      double precision, intent(in) :: 
+     &      uddt(mxvl,nstr), gp_temps(mxvl), gp_temp_inc(mxvl)
+      double precision, intent(inout) :: 
+     &      history_n(span,hist_sz), history_np1(span,hist_sz),
+     &      nonlocal_state(mxvl,maxnonlocal)  
 c
-c                 Loop on gauss points
-            local_work%material_cut_step = .false.
-            do i=1,span
-c                       Initialize the element history if it's step
-                  if (local_work%step .eq. 1) then
-c                        if (debug) write(*,*) "Init GP history"
-                        call mm10_init_general_hist(history_n(i,1:72))
-                        call mm10_init_uout_hist(history_n(i,73:75))
-                        call mm10_init_slip_hist(history_n(i,76:
-     &                        76+max_slip_sys-1))
-                  end if
-c                       Fix a problem with the rotations
-c                       I feel this really should be done elsewhere
-                  if (.not. local_work%geo_non_flg) then
-                    local_work%rot_blk_n1(i, 1:9, gp) = 
-     &                  (/1.d0, 0.d0, 0.d0, 0.d0, 1.d0, 0.d0, 
-     &                    0.d0, 0.d0, 1.d0/)
-                  end if
-
-c                  if (debug) write (*,*) "Updating local ", i
-                  sig_avg = 0.d0
-                  slip_avg = 0.d0
-                  t_work_inc = 0.d0
-                  p_work_inc = 0.d0
-                  p_strain_inc = 0.d0
-                  tang_avg = 0.d0
-c                       Loop on crystals
-                  do c=1,ncrystals(i)
-c     write(*,*) 'gp'
-c      write(*,*) gp
-      debug = local_work%debug_flag(i)
-c      Set flag for specific step, element, iteration, ...
-      locdebug = (debug 
-     & .and.((local_work%c_props(i,c)%st_it(3).eq.-2).or.
-     &       (local_work%c_props(i,c)%st_it(3).eq.
-     & i-1+local_work%felem))
-     & .and.((local_work%c_props(i,c)%st_it(1).eq.-2).or.
-     &       (local_work%c_props(i,c)%st_it(1).eq.local_work%step))
-     & .and.((local_work%c_props(i,c)%st_it(2).eq.-2).or.
-     &       (local_work%c_props(i,c)%st_it(2).eq.local_work%iter)))
-                      co = 76+max_slip_sys+(c-1)*(30+max_slip_sys
-     &                     +3*max_uhard)
-                      cn = 76+max_slip_sys+(c)*(30+max_slip_sys
-     &                     +3*max_uhard)-1
-                      if (locdebug) write(*,*) "Setting up properties"
-                      call mm10_init_cc_props(local_work%c_props(i,c),
-     &                        local_work%angle_type(i), 
-     &                        local_work%angle_convention(i),
-     &                        local_work%debug_flag(i),cc_props)
-                      cc_props%out = iout
+c                 locals
 c
-                      if (local_work%step .eq. 1) then
-                        if (locdebug) write(*,*) "Init history 0"
-                        call mm10_init_cc_hist0(cc_props, 
-     &                     local_work%c_props(i,c)%init_angles(1:3),
-     &                     history_n(i,co:cn))
-                      end if
-                      if (locdebug) write(*,*) "Copying n to struct"
-                      call mm10_copy_cc_hist(history_n(i,co:cn),
-     &                   history_n(i,37:63),
-     &                   history_n(i,64:72),
-     &                   cc_props, cc_n)
+      integer :: i, c, co, cn, now_element
+      double precision, dimension(6) :: sig_avg
+      double precision, dimension(6,6) :: tang_avg
+      double precision, dimension(max_slip_sys) :: slip_avg
+      double precision :: t_work_inc, p_work_inc,p_strain_inc, zero            
+      type(crystal_props) :: cc_props
+      type(crystal_state) :: cc_n, cc_np1
+      logical :: debug, gpall, locdebug
+c      
+      data zero / 0.0d0 /
 c
-                      call mm10_setup_np1(
-     &                  local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6), 
-     &                  local_work%dt, gp_temps(i), local_work%step,
-     &                  i-1+local_work%felem, local_work%iter, 
-     &                  local_work%gpn,cc_np1)
+      debug = .false.
 c
-                      if (locdebug) write (*,*) "Updating crystal ", c
-                      call mm10_solve_crystal(cc_props, cc_np1, cc_n,
-     &                  local_work%material_cut_step, iout, .false.,0)
+      if( debug ) write (iout,*) "In mm10"
 c
-                      if (local_work%material_cut_step) return
-c                       
-c                     Add stuff into the average
-                      sig_avg = sig_avg + cc_np1%stress
-                      tang_avg = tang_avg + cc_np1%tangent
-                      slip_avg = slip_avg + cc_np1%slip_incs
-                      t_work_inc = t_work_inc + cc_np1%work_inc
-                      p_work_inc = p_work_inc + cc_np1%p_work_inc
-                      p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
-c      write(*,*) 'gp'
-c      write(*,*) gp
+c                 we have data passed for integration point # gp for
+c                 all (span) elements in this block. the CP updating
+c                 routines process only a single int point. loop to
+c                 process that point for all elements in block.
 c
-c                     Store the CP history for this crystal
-                      call mm10_store_cryhist(cc_props, cc_np1, cc_n, 
-     &                  history_np1(i,co:cn))
-                  end do
+c                 for small strain analysis, rot_blk_n1 set to identity
+c                 now by warp3d.
 c
-c                 Do the division for the averages
-                  sig_avg = sig_avg / DBLE(ncrystals(i))
-        
-c       if (locdebug) write(*,*) "stress", sig_avg
-                  tang_avg = tang_avg / DBLE(ncrystals(i))
-c       if (locdebug) write(*,*) "tang", tang_avg
-                  slip_avg = slip_avg / DBLE(ncrystals(i))
-                  t_work_inc = t_work_inc / DBLE(ncrystals(i))
-                  p_work_inc = p_work_inc / DBLE(ncrystals(i))
-                  p_strain_inc = p_strain_inc / DBLE(ncrystals(i))
+      local_work%material_cut_step = .false.
+c            
+      do i = 1, span
 c
-c                 Actually store the GP data
+        now_element = local_work%felem + i - 1            
 c
-                  call mm10_store_gp(sig_avg, 
-     &               local_work%urcs_blk_n1(i,1:6,gp),
-     &               tang_avg, history_np1(i,1:36),
-     &               slip_avg, history_n(i,76:76+max_slip_sys-1),
-     &               history_np1(i,76:76+max_slip_sys-1),
-     &               t_work_inc, p_work_inc, p_strain_inc, 
-     &               local_work%urcs_blk_n(i,7:9,gp),
-     &               local_work%urcs_blk_n1(i,7:9,gp),
-     &               local_work%rot_blk_n1(i,1:9,gp),
-     &               history_np1(i,64:72))
-            end do
+c             step = 1, init element history
 c
-            return
+        if( local_work%step .eq. 1 ) then
+              if( debug ) write(iout,*) "Init GP history"
+              call mm10_init_general_hist( history_n(i,1:72) )
+              call mm10_init_uout_hist( history_n(i,73:75) )
+              call mm10_init_slip_hist( history_n(i,76:
+     &              76+max_slip_sys-1) )
+        end if
+c
+        if( debug ) write(iout,*)
+     &             'Updating element: ', now_element
+        sig_avg      = zero
+        slip_avg     = zero
+        t_work_inc   = zero
+        p_work_inc   = zero
+        p_strain_inc = zero
+        tang_avg     = zero
+c        
+c             loop on all crystals at integration point
+c
+        do c = 1, ncrystals(i)
+          debug = local_work%debug_flag(i)
+          locdebug = (debug 
+     &               .and.((local_work%c_props(i,c)%st_it(3)
+     &               .eq.-2).or.
+     &               (local_work%c_props(i,c)%st_it(3).eq.
+     &                i-1+local_work%felem))
+     &               .and.((local_work%c_props(i,c)%st_it(1)
+     &               .eq.-2).or.
+     &               (local_work%c_props(i,c)%st_it(1).eq.
+     &               local_work%step))
+     &               .and.((local_work%c_props(i,c)%st_it(2)
+     &               .eq.-2).or.
+     &               (local_work%c_props(i,c)%st_it(2)
+     &               .eq.local_work%iter)))
+          locdebug = .false.
+          co = 76+max_slip_sys+(c-1)*(30+max_slip_sys
+     &           +3*max_uhard)
+          cn = 76+max_slip_sys+(c)*(30+max_slip_sys
+     &           +3*max_uhard)-1
+          if( locdebug ) write(iout,*) "Setting up properties"
+          call mm10_init_cc_props( local_work%c_props(i,c),
+     &              local_work%angle_type(i), 
+     &              local_work%angle_convention(i),
+     &              local_work%debug_flag(i), cc_props )
+          cc_props%out = iout
+c
+          if( local_work%step .eq. 1 ) then
+            if( locdebug ) write(iout,*) "Init history 0"
+            call mm10_init_cc_hist0( cc_props, 
+     &           local_work%c_props(i,c)%init_angles(1:3),
+     &           history_n(i,co:cn) )
+          end if
+          if( locdebug ) write(iout,*) "Copying n to struct"
+          call mm10_copy_cc_hist( history_n(i,co:cn),
+     &         history_n(i,37:63),
+     &         history_n(i,64:72),
+     &         cc_props, cc_n )
+          call mm10_setup_np1(
+     &        local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6), 
+     &        local_work%dt, gp_temps(i), local_work%step,
+     &        i-1+local_work%felem, local_work%iter, 
+     &        local_work%gpn,cc_np1 )
+          if( locdebug) write(iout,*) "Updating crystal ", c
+          call mm10_solve_crystal( cc_props, cc_np1, cc_n,
+     &        local_work%material_cut_step, iout, .false., 0 )
+          if( local_work%material_cut_step ) return
+c             
+c             accumulate sums for subsequent averaging
+c
+            sig_avg      = sig_avg + cc_np1%stress
+            tang_avg     = tang_avg + cc_np1%tangent
+            slip_avg     = slip_avg + cc_np1%slip_incs
+            t_work_inc   = t_work_inc + cc_np1%work_inc
+            p_work_inc   = p_work_inc + cc_np1%p_work_inc
+            p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
+c
+c             store the CP history for this crystal
+c
+            call mm10_store_cryhist( cc_props, cc_np1, cc_n, 
+     &                  history_np1(i,co:cn) )
+        end do ! over all crystals at int point
+c        
+c             finalize averages over all crystals at point
+c
+        rncry = dble( ncrystals(i) )
+        sig_avg      = sig_avg / rncry
+        tang_avg     = tang_avg /  rncry
+        slip_avg     = slip_avg / rncry
+        t_work_inc   = t_work_inc / rncry
+        p_work_inc   = p_work_inc / rncry
+        p_strain_inc = p_strain_inc / rncry
+        if( locdebug ) write(iout,*) "stress", sig_avg
+        if( locdebug ) write(iout,*) "tang", tang_avg
+c        
+c             store results for integration point into 
+c             variables passed by warp3d
+c
+        call mm10_store_gp (sig_avg, 
+     &     local_work%urcs_blk_n1(i,1:6,gp),
+     &     tang_avg, history_np1(i,1:36),
+     &     slip_avg, history_n(i,76:76+max_slip_sys-1),
+     &     history_np1(i,76:76+max_slip_sys-1),
+     &     t_work_inc, p_work_inc, p_strain_inc, 
+     &     local_work%urcs_blk_n(i,7:9,gp),
+     &     local_work%urcs_blk_n1(i,7:9,gp),
+     &     local_work%rot_blk_n1(i,1:9,gp),
+     &     history_np1(i,64:72) )
+c     
+      end do ! over span
+c
+      return
+c      
       end subroutine
 c
 c --------------------------------------------------------------------

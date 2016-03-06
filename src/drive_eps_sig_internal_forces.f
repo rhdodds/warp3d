@@ -4,7 +4,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/29/2015 rhd              *
+c     *                   last modified : 4/5/2016 rhd               *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -16,6 +16,12 @@ c     *      Blocks are processed in parallei; using threads (OMP),  *
 c     *      domains in parallel using MPI                           *
 c     *                                                              *
 c     ****************************************************************
+c
+c
+c
+c              files containing code in this tree:
+c                rstgp1.f, dupstr.f rknstr.f gtlsn1.f rplstr.f
+c
 c
 c
       subroutine drive_eps_sig_internal_forces( step, iter,

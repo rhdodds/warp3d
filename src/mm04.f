@@ -937,7 +937,10 @@ c
       T_n = history(i,5) !prior normal traction stress
 c
 c             step 2: obtain nonlocal variables passed from creep
-c                     material model (umat at this time)
+c                     material model (creep model and CP model)
+c                     get creep exponent "n" from solid material
+c                     after step 1. CP model passes an effective
+c                     n value.
 c                     
       top_sigma_m  = ( top_surf_stresses_n(i,1) +
      &                 top_surf_stresses_n(i,2) +
@@ -946,6 +949,9 @@ c
      &                 bott_surf_stresses_n(i,2) +
      &                 bott_surf_stresses_n(i,3) ) / three
       sigma_m = half * ( top_sigma_m + bott_sigma_m )
+      props%n_pow  = intfprps(1,49)
+      if( step > 1 ) props%n_pow = half * ( top_nonlocal_vars(i,3) + 
+     &                                      bott_nonlocal_vars(i,3) )
 c
       sig_top(1:6)    = top_surf_stresses_n(i,1:6)
       top_sigma_e     = mm04_cavit_mises( sig_top )
