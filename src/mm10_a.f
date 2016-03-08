@@ -4,7 +4,7 @@ c *                                                                          *
 c *    mm10.f                                                                *
 c *                                                                          *
 c *         written by : mcm                                                 *
-c *         last modified : 3/5/2016 rhd rhd                                 *
+c *         last modified : 3/7/2016 tjt                                 *
 c *                                                                          *
 c *         Stress/strain update routines AND HELPERS for crystal plasticity *
 c *         material modeled via Beaudoin et al.                             *
@@ -77,7 +77,7 @@ c     *                      subroutine mm10                         *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 3/5/2016 rhd                *
+c     *                   last modified: 3/7/2016 tjt                *
 c     *                                                              *
 c     *              crystal plasticity stress-strain update         *
 c     *                                                              *
@@ -215,6 +215,16 @@ c
             t_work_inc   = t_work_inc + cc_np1%work_inc
             p_work_inc   = p_work_inc + cc_np1%p_work_inc
             p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
+c
+c             nonlocal state values returned are creep rate wrt real time
+c             and total creep strain
+c
+      if( do_nonlocal ) then
+            nonlocal_state(i,1) = cc_np1%u(11) !effective creep rate wrt real time
+c            nonlocal_state(i,2) = cc_np1%u(14) !effective creep strain
+            nonlocal_state(i,3) = cc_np1%u(12) !effective creep exponent
+            nonlocal_state(i,4) = cc_np1%u(14) !effective B
+      end if 
 c
 c             store the CP history for this crystal
 c
@@ -442,7 +452,7 @@ c
       info_vector(1) = -100     ! set by special version above
       info_vector(2) = -100    ! set by special version above
       info_vector(3) = -100    ! set by special version above 
-      info_vector(4) = 41+max_slip_sys+max_uhard
+      info_vector(4) = 43+max_slip_sys+max_uhard
 c
       return
       end
@@ -1374,7 +1384,7 @@ c
       integer :: i
       logical, save :: do_print = .false.
 c
-      num_states = 41 + max_slip_sys + max_uhard
+      num_states = 43 + max_slip_sys + max_uhard
       num_comment_lines = 0
 c     
       state_labels(1) = "euler-1"
@@ -1445,15 +1455,21 @@ c
       state_labels(41) = ""
       state_descriptors(41) = "n_eff"
 
+      state_labels(42) = ""
+      state_descriptors(42) = "eff. stress"
+
+      state_labels(43) = ""
+      state_descriptors(43) = "B_eff"
+
       do i = 1, max_slip_sys
-            write(state_labels(i+41), 9000) i
-            state_descriptors(i+41) = "integrated slip"
+            write(state_labels(i+43), 9000) i
+            state_descriptors(i+43) = "integrated slip"
       end do
 
       do i = 1, max_uhard
-            write(state_labels(i+max_slip_sys+41), 9020)
+            write(state_labels(i+max_slip_sys+43), 9020)
      & i
-            state_descriptors(i+max_slip_sys+41) =
+            state_descriptors(i+max_slip_sys+43) =
      &  "inter. hardening var."
       end do
 c
@@ -1610,8 +1626,10 @@ c           28:36                   R
 c           37:39                   active slip systems   
 c           40                      effective creep rate
 c           41                      n_eff for creep
-c           41+1:41+max_slip_sys    slip history      76:76+max_slip_sys-1
-c           41+max_slip_sys+1:end    hardening      76:76+max_slip_sys-1
+c           42                      effective stress
+c           43                      B_eff for creep
+c           43+1:43+max_slip_sys    slip history      76:76+max_slip_sys-1
+c           43+max_slip_sys+1:end    hardening      76:76+max_slip_sys-1
 c          
 c           Unfortunately we don't store ncrystals in the history, so
 c           we need to access it in the material properties
@@ -1694,8 +1712,8 @@ c
 c           Results 40:41: effective creep, first Gauss point
 c    
       s = sc + 30 + max_slip_sys + max_uhard + 11
-      e = sc + 30 + max_slip_sys + max_uhard + 12
-      one_elem_states(40:41) = ( 
+      e = sc + 30 + max_slip_sys + max_uhard + 14
+      one_elem_states(40:43) = ( 
      &      history_dump(s:e,1,relem) )
 c
 c           Results 39+1:39+max_slip_sys : the slip totals, 
@@ -1704,7 +1722,7 @@ c           required  and averaged over Gauss points
 c
       s = 76
       e = 76 + nslip - 1
-      one_elem_states(41+1:41+max_slip_sys) = 
+      one_elem_states(43+1:43+max_slip_sys) = 
      &         sum( history_dump(s:e,1:int_points,relem),2 ) / 
      &         dble(int_points)
 
@@ -1713,7 +1731,7 @@ c           Results 13: tau_tilde of first crystal, avged
 c
       s = sc + 30 + max_slip_sys + 1
       e = sc + 30 + max_slip_sys + max_uhard
-      one_elem_states(41+1+max_slip_sys:41+max_slip_sys+max_uhard) = 
+      one_elem_states(43+1+max_slip_sys:43+max_slip_sys+max_uhard) = 
      &         sum( history_dump(s:e,1:int_points,relem),2 ) /
      &         dble(int_points)
 c
