@@ -1,0 +1,1152 @@
+%!TEX TS-program = pdflatexmk
+ %
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+\usepackage{array}
+\usepackage{hyperref }
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{\textit{Output Requests}}}
+\fancyfoot[L] {\textit{\small{Chapter {\thechapter}}\ \   (Updated: 2-3-2015)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {{\small{\textit{Model Definition}}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+\newcommand{\tb} {\textbf}
+\newcommand{\nf} {\normalfont}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\bardelta}{\bar \delta}
+\newcommand{\barDelta}{\bar \Delta}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\nid}{\noindent}
+
+\newcommand{\tl}{\textless\xspace}
+\newcommand{\tg}{\textgreater\xspace}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ol}{\overline}
+\newcommand{\mdash}{\mbox{-}}
+\newcommand{\clrr}{\color{red}}
+\newcommand{\clrb}{\color{black}}
+\newcommand{\Fig}{Fig.\xspace}
+\newcommand{\Figs}{Figs.\xspace}
+
+\newcommand{\q}{\qquad}
+
+
+\newenvironment{offsetpar}[1]%
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{11}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Output Requests}
+%\layout
+
+\nin The output command provides computational results and model information in eight forms:
+\small
+\squishlist
+\item \ul{conventional printed output:} with optional page and column headers using a narrow
+(80) or wide (132) column format. Exponential formatting of floating point
+values is available as an option. Output is directed to the window executing WARP3D or to a
+text file (ASCII).
+\item  \ul{packets:} a sequential binary (unformatted)  file of computed 
+results organized into structured packets. Written using Fortran I/O.
+A very convenient output form  to support development of customized
+post-processing programs that search through results, compute secondary
+quantities, build input files for plotting software, etc.  
+\item \ul{Patran compatible nodal result files:} of displacements, velocities, accelerations, temperatures,
+ and averaged values of  strains, stresses in either binary (unformatted) or ASCII (text)
+formats. These sequential files are readable without modification by 
+Patran\footnote{MSC Software Corporation.\nolinkurl{www.mscsoftware.com}}
+for post-processing and include the required header lines.
+The unformatted files are written using Fortran I/O and have the usual, compiler-dependent
+metadata defining records.
+\item \ul{Patran compatible element result files:} of strains, stresses at the element center in either binary 
+(unformatted) or ASCII (text)
+formats. These sequential files are readable without modification by Patran for post-processing
+ and include the required header lines.
+The unformatted files are written using Fortran I/O and have the usual, compiler-dependent
+metadata defining records.
+\item \ul{Flat text files of results compatible with Python, Excel, and Python:} (1) nodal values
+of displacements, velocities, accelerations, temperatures, and (averaged across elements) strains, stresses,
+and (2)  element center values of  strains, stresses, and internal material model state variables
+(\eg elastic strain components in a plasticity material model). Simple flat text files suitable for reading directly, for
+example with \ti{loadtxt} in Python, importing into Excel and reading with standard file I/O 
+operators in Matlab, Mathematica, C, C++, Fortran. Files may contain comment lines as desired. 
+On Linux and OS X versions of WARP3D, the option exists to also write only the compressed (.gz)
+results files (Python \ti{loadtxt} automatically uncompresses the .gz files).
+\item \ul{Flat results files in stream (binary) form:} (1) nodal values
+of displacements, velocities, accelerations, temperatures, and (averaged across elements)  strains, stresses,
+and (2)  element center values of  strains, stresses, and internal material model state variables
+(\eg elastic strain components in a plasticity material model). WARP3D writes these
+files with Fortran 2003 code using \ti{access=stream}
+which omits the usual record structuring information 
+included in \ti{access=sequential}. The file is thus compatible with standard
+binary read operations in C and C++ (and Fortran 2003). In Python the file may
+be read directly using \ti{fromfile}. Files do not contain any header lines
+or sizing information, only numerical results. Other programs can also readily read 
+these flat stream files including
+Matlab, Mathematica and others.
+\item \ul{Patran neutral file (ASCII) for the model}: the standard, packet-based file that
+includes model sizes, nodal coordinates, 
+element types, associated material, incidences, and (absolute) constraints.
+\item \ul{Flat file with model description}: includes model sizes, nodal coordinates, 
+element types, input material number, and incidences. Similar in purpose to a Patran neutral file
+but without the packet-based structure. Options are available for both ASCII \ti{text} 
+and binary \ti{stream} files. The \ti{text} file may be compressed into \ti{.gz} form. The flat
+model description file(s) are designed specifically for very efficient reading by Python programs
+(see comments above about flat results files).
+\item \ul{ASCII file:} summarizing various energy terms for each completed load
+step.
+\squishend
+\normalsize
+
+\nid Output commands may be specified using a combination
+of two approaches: (1) 
+commands given immediately after the \ti{compute} command for a 
+load step, and/or (2) a separate file of \ti{output}
+commands that will be executed
+automatically after completion of each step in a specified list of load (time) 
+steps.
+This second form is especially useful for analyses with a large
+number of steps during which the same output commands
+are desired after all load steps or after load steps at some
+regular frequency, \ie after every 10 steps.
+The two output approaches may be mixed together to achieve
+the desired result output, \eg use (2) for output following a pattern of 
+load steps or every step and (1) to output at additional results 
+after less frequent steps.
+
+In the first approach, \ti{output} commands are given immediately 
+after the \ti{compute} command for a 
+load step -- WARP3D does not retain results for 
+other than the current load step. For example,
+\small
+\begin{verbatim}
+   .
+  compute displacements loading test for steps 10-20
+  output displacements nodes 100-20 by -2
+  compute displacements loading test for steps 21-30
+   .
+ \end{verbatim}
+ \normalsize
+The \ti{output} command above prints results only for load step 20. No
+results are printed for steps 10-19 using the above command sequence. However
+\ti{packet} type 
+output maybe generated during solution for steps 10-19 as described
+subsequently.
+
+In the second approach, a file containing \ti{output} commands (and comment lines)
+is specified with a list of load steps, \eg
+\small
+\begin{verbatim}
+   .
+  output commands file "get_ouput" after steps 10-1000 by 10
+  compute displacements loading test for steps 1000
+   .
+ \end{verbatim}
+ \normalsize
+\nid The \ti{output} commands contained in file \ti{get\_output} are
+executed at completion of load steps 10, 20, 30, ... 1000. The commands file
+may contain as many \ti{ouput} commands described in this section as
+needed. The full description of the command is
+\begin{align*}
+& \hv{\ul{output}\ {\ul{comm}ands}\  (\ul{use})\ (\ul{file})\ \ <file name:string>
+\ (\ul{after})\ \ul{step}s\  <integerlist>  }
+\end{align*}
+\nid Note that the keyword \ti{steps} is required before the list of step numbers.
+
+\nid The \ti{output commands file ...} may be repeated as needed in the model definition -- only
+the last specified file name and list of steps are retained
+ and are available across an analysis restart. Additional (separate)  \ti{output} commands may be
+ specified after \ti{compute} commands as needed.
+\subsection{Printed Output}
+\nin
+The command to request printed results directed to the current
+output device has the form
+\begin{align*}
+& \hv{\ul{output}\ \ [<options>]\ <quantity>\ (\ul{for})  }
+\begin{Bmatrix}
+\hv{\ul{node}s} \\ \hv{\ul{elem}ents} 
+\end{Bmatrix} \ \hv{<integer\ list>}
+\end{align*}
+
+\nin
+where \tl{quantity}\tg is \ti{one} of the following types of results: 
+\ti{\ul{displ}acements},
+\ti{\ul{velo}cities}, 
+\ti{\ul{accel}erations}, \ti{\ul{temp}eratures}, \ti{\ul{strain}s}, 
+\ti{\ul{stress}es}, \ti{\ul{react}ions}. The repeatable  \tl{options}\tg include
+\ti{\ul{wide}}, \ti{\ul{eform}at}, \ti{\ul{prec}ision}, \ti{\ul{nohead}er}, 
+\ti{\ul{total}s}\ (\ul{\ti{only}}).
+
+The destination for printed results is the current output device specified by the
+user. The output device is either a sequential, formatted (ASCII) file or 
+the terminal/command window in which WARP3D began execution. An
+output file is declared using: (1) standard output via I/O redirection
+(\ie the \tl \ti{file name})
+convention of Windows, Linux, OS X on the program invocation line 
+in the shell window, or (2) through the \ti{*output to \tl{file}\tg}command available in 
+WARP3D (refer to Section 2.15 for a description of all *
+commands). 
+
+\nin More notes on use of the \ti{output} command:
+\small
+\squishlist
+\item By default, output routines  format numerical values and headers
+to fit on an 8.5 in. $\times$ 11 in page oriented in portrait mode. The \ti{wide} option
+permits extension of output up to 132 columns for printing in the
+landscape orientation
+\item Numerical results are printed with an f12.6 format. An e12.5 format is
+requested with the \ti{eformat} option. These \ti{precision} option increases these fields
+to f26.16 and e26.16.
+\item The \ti{noheader} option suppresses the printing of all identifying labels.
+This simplifies greatly the development of post-processing type programs that
+read through the ASCII result files using Python, Perl, ...
+\item When a list of \ti{elements} is specified for output of displacements,
+velocities, accelerations, temperatures or reactions, results are printed for the nodes
+of each element in the list (not the merged set of nodes for all elements in the
+list). 
+\item Only lists of elements are permitted for output of strains and stresses.
+\item When the \tl{integer list}\tg of elements or nodes is omitted, results are
+printed for all elements or nodes of the model.
+\item \ti{Reactions} are external forces required for equilibrium at constrained
+nodal dof. At unconstrained nodal dof they are the remaining force imbalance
+due to nonlinear response and or linear equation solving. These forces include
+the effects of inertia loading on the model. Separate algebraic sums of the $X, Y,
+ Z$ components of these forces are printed following the nodal results to assist
+in the checking of reactions. The \ti{totals only} option suppresses printing of
+reaction values for individual nodes in the node list -- only the summed values
+are printed. 
+\item All strain-stress quantities refer to the global Cartesian coordinate
+system for the model. 
+\item All displacements, velocities, accelerations, reactions are in the global
+$X, Y, Z$ coordinate system even when a local coordinate system is specified at
+nodes.
+\item The location/number of strain points for output is specified via the element
+logical properties: \ti{gausspts}, \ti{nodpts} or \ti{center\_output} (see element
+descriptions in Chapter 3). Node point values are
+extrapolated from the interior integration point values. The center-point values are numerical
+averages of integration point values. The default output location is \ti{gausspts}.
+\item The number of strain-stress items printed for each element is specified in the element
+properties. The element logical property \ti{long} requests an extended
+set of strain-stress results at the output points. The additional quantities
+include principal values, direction cosines for principal directions, state variables provided
+by the material models, etc. The \ti{short} output option in the element properties
+is the default. 
+\squishend
+\normalsize
+
+\nin The following tables define the printed output values:
+\small
+\vspace{0.1in}
+\hrule
+\nin \ul{\bf{Strain output}}:
+
+\nin \ti{short} option values
+
+\nin $\veps_{x},\, \veps_{y},\, \veps_{z},\, \gamma_{xy},\, \gamma_{yz},\, \gamma_{xz}$  
+ (where $\gamma_{ij} = 2\veps_{ij}$; note ordering of transverse strains)
+
+\nin $\veps_{eff} =\frac{\sqrt{2}}{3} \sqrt{ (\veps_x - \veps_y)^2+(\veps_y - \veps_z)^2 +(\veps_x - \veps_z)^2
++ 1.5 ( \gamma_{xy}^2 +  \gamma_{yz}^2 + \gamma_{xz}^2)}$
+
+\nin \ti{long} option includes these additional values
+
+\nin $I_1 = \veps_x + \veps_y + \veps_z$ 
+
+\nin $I_2 = -\veps_{xy}^2-\veps_{yz}^2-\veps_{xz}^2 + \veps_x\veps_y+
+ \veps_y\veps_z+ \veps_x\veps_z$
+ 
+ \nin $I_3 = \veps_x \left ( \veps_y\veps_z - \veps_{yz}^2 \right ) - 
+       \veps_{xy} \left ( \veps_{xy}\veps_z - \veps_{yz}\veps_{xz} \right ) +
+       \veps_{xz} \left ( \veps_{xy}\veps_{yz} - \veps_y\veps_{xz} \right ) $ 
+       
+\nin $\veps_1 \le \veps_2 \le \veps_3$ (principal values)
+
+\nin $\ell_1, m_1, n_1$  (direction cosines for $\veps_1$)
+
+\nin $\ell_2, m_2, n_2$ (direction cosines for $\veps_2$)
+
+\nin $\ell_3, m_3, n_3$ (direction cosines for $\veps_3$)
+
+\vspace{0.1in}
+\hrule
+\nin \ul{\bf{Stress output}}:
+
+\nin \ti{short} option values
+
+\nin $\sigma_{x},\, \sigma_{y},\, \sigma_{z},\, \sigma_{xy},\, \sigma_{yz},\, \sigma_{xz}$  
+ (note ordering of transverse shear stresses)
+
+\nin $\sigma_{vm} =\frac{1}{\sqrt{2}} \sqrt{ (\sigma_x - \sigma_y)^2+(\sigma_y - \sigma_z)^2 +(\sigma_x - \sigma_z)^2
++ 6 ( \sigma_{xy}^2 +  \sigma_{yz}^2 + \sigma_{xz}^2)}$
+
+\nin $c_1, c_2, c_3$ (state/history variables provided by material model output routine)
+
+\nin \ti{long} option includes these additional values
+
+\nin $I_1 = \sigma_x + \sigma_y + \sigma_z$ 
+
+\nin $I_2 = - ( \sigma_{xy}^2+\sigma_{yz}^2+\sigma_{xz}^2 )+ \sigma_x\sigma_y+
+ \sigma_y\sigma_z+ \sigma_x\sigma_z$
+ 
+ \nin $I_3 = \sigma_x \left ( \sigma_y\sigma_z - \sigma_{yz}^2 \right ) - 
+       \sigma_{xy} \left ( \sigma_{xy}\sigma_z - \sigma_{yz}\sigma_{xz} \right ) +
+       \sigma_{xz} \left ( \sigma_{xy}\sigma_{yz} - \sigma_y\sigma_{xz} \right ) $ 
+       
+\nin $\sigma_1 \le \sigma_2 \le \sigma_3$ (principal values)
+
+\nin $\ell_1, m_1, n_1$  (direction cosines for $\sigma_1$)
+
+\nin $\ell_2, m_2, n_2$ (direction cosines for $\sigma_2$)
+
+\nin $\ell_3, m_3, n_3$ (direction cosines for $\sigma_3$)
+\vspace{0.1in}\hrule \vspace{0.1in}
+\normalsize
+
+
+\nin Examples of output commands are
+\small
+\begin{verbatim}
+  output wide eformat precision displacements for nodes 1-300 by 2
+  output stresses elements 900-1500 by 2 300-500
+  output accelerations for elements 20-40 100-300 by 3
+  output temperatures for nodes 3-900 by 3
+\end{verbatim}
+\normalsize
+where values are printed in the order indicated by the \tl{integer list}\tg.
+
+\subsection{Binary Packets File}
+\nin
+ASCII files of printed results as described in the above section are formatted for
+direct examination by analysts using a text processor, for sending to a 
+printer, for e-mailing to a collaborator, etc. However, the files are not well
+suited for use by custom post-processing programs written in a programming
+language (C, C++, Fortran) or a scripting language (Python, Perl). Users frequently
+develop such programs to gather information, for example, to generate input files for 
+plotting software.
+
+To provide a much cleaner and directly accessible representation 
+of the results for these purposes, WARP3D
+can generate a sequential, binary file of results in
+the form of \ti{packets}. The binary file is written via Fortran I/O as an 
+unformatted file type.\footnote{Fortran unformatted I/O has a logical record 
+structure. Each read/write statement processes at least one logical record
+of potentially variable length which may contain one or more physical records of the file. Fortran I/O
+hides the physical structuring of the file. To maintain the logical record structure,
+Fortran I/O routines insert additional information in the file. Unformatted files in 
+C and C++ do not have this concept of logical records. Consequently, post-processing 
+codes in C/C++ must recognize and process the additional structuring information 
+present in the Fortran style, unformatted files. }
+A packet contains a specific type of result, \eg nodal
+reactions, written over several logical records in the file. The first (header) record
+of each packet has an identical format which contains the packet type (an
+integer), the load step number, the Newton iteration number and the 
+number of subsequent
+logical records in the file for that packet. This approach enables
+post-processing programs to skip easily over packets of no interest or not yet
+supported by the post-processing program (\eg use the 
+statement \ti{read(packets\_file)} with no listed variables to skip all information in the next logical 
+record).  This approach also enables the WARP3D
+developers to implement new types of packets without breaking 
+already available programs for post-processing written by users.
+
+By default, various WARP3D processors \ti{do not} write results into a packets file. The user
+must first authorize packets processing and provide the name of the file to
+contain the packets. The crack growth processors, for example, then insert
+packets into the file at each load step without further action by the user. The \ti{output} command,
+given after a \ti{compute displacement ...} command, 
+provides the \ti{packet} option to request insertion of
+result packets into the file, \eg displacements at a list of nodes.
+
+The command to enable-disable the generation of packets and the name of the
+packets file is part of the \ti{nonlinear solution parameters} described in Section
+2.10. The command has the form
+\begin{align*}
+& \hv{\ul{binary}\ \ul{pack}ets }
+\begin{Bmatrix}
+\hv{\ul{on}} \\ \hv{\ul{off}}
+\end{Bmatrix}
+\hv{(\ul{file} <file\ name:string>)}
+\end{align*}
+
+\nin where \ti{file name} must be present with the \ti{on} option. If the specified file exists,
+the file is opened in \ti{append} mode.
+WARP3D retains the packet file name and the \ti{on}, \ti{off}
+option as part of the analysis restart database. An example is 
+\small
+\begin{verbatim}
+  nonlinear analysis parameters
+     solution type direct sparse 
+          .
+     binary packets on file "packets_pipe_crack"
+          .
+\end{verbatim}
+\normalsize
+
+The \ti{output} command also provides the \ti{packets} option to have output processors insert
+packets into the file. Commands to request output of packets may be intermixed
+with output commands to generate printed results. The command to request packets
+generation has the form
+\begin{align*}
+& \hv{\ul{output}\ \ul{packet}s \ <quantity>\ (\ul{for})  }
+\begin{Bmatrix}
+\hv{\ul{node}s} \\ \hv{\ul{elem}ents} 
+\end{Bmatrix} \ \hv{<integer\ list>}
+\end{align*}
+
+\nin where \tl{quantity}\tg is \ti{one} of the following types of results: 
+\ti{\ul{displ}acements},
+\ti{\ul{velo}cities}, 
+\ti{\ul{accel}erations}, \ti{\ul{temp}eratures}, \ti{\ul{strain}s}, 
+\ti{\ul{stress}es}, \ti{\ul{react}ions}. 
+
+\nin Notes on use of the \ti{output packets} command:
+
+\small
+\squishlist
+\item When a list of elements is specified for output of displacements,
+velocities, accelerations or reactions, packets are inserted for the nodes of
+each element in the list (not the merged set of nodes for all elements in the
+list). 
+\item Only lists of elements are permitted for output of packets containing
+strains and stresses. 
+\item Packets for temperatures are available only for lists of nodes.
+Two values are
+provided for each node: (a) total temperature (initial + all increments),
+(b) initial (reference) temperature defined with the \ti{initial conditions} command in
+the model input.
+\item When the \tl{integer list}\tg of elements or nodes is omitted, the output
+processor inserts packets for all elements or nodes of the model.
+\item \ti{Reactions} denote external forces required for equilibrium at constrained
+nodal dof. At unconstrained nodal dof, they denote the remaining force imbalance
+due to nonlinear response and/or linear equation solving. These forces include
+the effects of inertia loading on the model. Separate algebraic sums of the $X, Y,
+ Z$ components of these forces are inserted in packets following the nodal
+results to assist in the checking of reactions. The \ti{totals only} option
+given in the command before or after the word \ti{packets}
+suppresses inclusion of individual node reactions in the packets; only the summed values
+appear in the reaction packets.
+\item All strain-stress quantities refer to the global Cartesian coordinate
+system for the model. 
+\item All displacements, velocities, accelerations, reactions are in the global
+$X, Y, Z$ coordinate system even when a local coordinate system is specified at
+nodes.
+\item The location/number of strain points for the packet is specified via the element
+logical properties: \ti{gausspts}, \ti{nodpts} or \ti{center\_output} (see element
+descriptions in Chapter 3). Node point values are
+extrapolated from the interior integration point values. The center-point values are numerical
+averages of integration point values. The default output location is \ti{gausspts}.
+\item The number of strain or stress values for each element is specified in the element
+properties. The element logical property \ti{long} requests an extended
+set of strain-stress results at the output points. The additional quantities
+include principal values, direction cosines for principal directions, state variables provided
+by the material models, etc. The \ti{short} output option in the element properties
+is the default. 
+\item Output to packets for domain integral results is invoked by including a
+command in the domain definition (see Chapter 4). It is still necessary, however,
+ to enable the generation of packets using the \ti{binary packets on ...}
+ command described above.
+\squishend
+\normalsize
+
+\nin Tables in the previous section summarize the element strain and stress
+packet quantities (they are same as printed values). Examples of commands for packet
+generation are
+\small
+\begin{verbatim}
+  output packets displacements for nodes 1-300 by 2
+  output packets stresses elements 900-1500 by 2 300-500
+  output packets accelerations for elements 20-40 100-300 by 3
+\end{verbatim}
+\normalsize
+\nin
+Appendix F describes each type of result packet currently implemented. The
+appendix also includes a complete Fortran program that demonstrates an approach to
+read and process the binary packets file. Most users should find this program a
+very good starting point to develop their own customized post-processor program.
+
+\subsection{Patran Compatible Result Files}
+\nin
+The Patran software has extensive capabilities to post-process
+finite element results. Patran reads and displays results computed
+by various finite element codes and communicated  through nodal and element
+result files. The simple structure of Patran results files makes
+them quite popular to store/share computed results with other
+modeling and post-processing software. WARP3D provides the
+capability to write such Patran compatible results files to support
+post-processing tasks. The command to request 
+Patran compatible result files has the form
+\begin{align*}
+& \hv{\ul{output}\ \ul{patran}   }
+\begin{Bmatrix}
+\hv{\ul{binary}} \\ \hv{\ul{format}ted} 
+\end{Bmatrix} 
+\begin{Bmatrix}
+\hv{\ul{nodal}} \\ \hv{\ul{element}} 
+\end{Bmatrix} \ \hv{<quantity>}
+\end{align*}
+\nin
+where \tl{quantity}\tg is \ti{one} of the following types of results: 
+\ti{\ul{displ}acements},
+\ti{\ul{velo}cities}, 
+\ti{\ul{accel}erations}, \ti{\ul{react}ions}, \ti{\ul{temp}eratures}, \ti{\ul{strain}s}, 
+\ti{\ul{stress}es}. 
+
+Both \ti{binary}\footnote[1]{Patran does
+not properly read \ti{binary} files on Windows at this time.} and \ti{formatted} results are
+sequential files created with Fortran open statements and written with
+Fortran write statements (the binary file is type \ti{unformatted} in Fortran).  Binary
+files often have a substantially smaller size but may not be portable between
+Windows and Linux/OS X. Formatted (ASCII) files provide the portability but with
+larger sizes and further can be examined easily with standard text editors, e-mailed, etc.
+
+WARP3D generates the Patran compatible results files with assigned names that begin with four
+letters followed by the 5 digit load step number. Nodal result files begin with
+the letters \ti{wn}; element result files with the letters \ti{we}. The \ti{n} and \ti{e} letter is
+followed by the letter \ti{b} for binary files or the letter \ti{f} for formatted files.
+The fourth letter in the file name denotes the physical quantity: \ti{d} -
+displacements, \ti{v} - velocities, \ti{a} - accelerations, \ti{t} - temperatures,
+\ti{r} - reaction forces, \ti{e} - strains and \ti{s} - stresses. Element 
+results files are available only
+for strains and stresses. For example, the file \ti{webs00005} contains element
+stress results for step 5 in a binary file.
+
+The Patran result files have the structure of a two-dimensional array.
+Each row has the data for a single node or element. The array columns set the
+values for each node  or element.  For nodal files of displacements, velocities,
+accelerations and reactions, each node has 3 data columns for the global
+$X, Y, Z$ components. 
+
+Temperature results are available only in a \ti{nodal} results file. Two values are
+provided for each node. Data column 1 has the total temperature (initial + all increments)
+$T= T_0 + \sum \Delta T$.
+Data column 2 has the total temperature - the
+initial (reference) temperature $T-T_0$.
+
+Figure 2.10 summarizes the data column assignments for Patran strain-stress
+results files. The first six strain-stress values that appear at each model node
+ are the numerical average for the contribution
+of each element at the node. The strain-stress invariants, principal values and
+directions are computed from these averaged nodal values. The effective strain,
+Mises equivalent stress, energy density and the three material model state
+variables are first extrapolated from integration points to the nodes and then
+averaged. 
+
+Element result files for strains and stresses adopt the column assignments
+listed in Fig. 2.10. A single set of values given for
+each element is obtained by simple averaging of integration point values within each
+element. The first six strain-stress values that appear for the element are the
+numerical average for the contribution of each integration point. The strain-stress
+invariants, principal values and direction cosines are computed from these averaged
+values. The effective strain and Mises equivalent stress are computed from the
+averaged values of the components. The energy density and the three material
+model state variables are the average of integration point values.
+
+Appendix A provides skeleton Fortran programs to read the binary and formatted
+forms of the nodal results files. WARP3D generated (ASCII) versions of these
+files are compatible with the current version of Patran and all
+versions of Patran for the past decade. The Patran results file formats are
+relatively simple and enjoy widespread adoption as a common format
+for sharing finite element results.
+
+\begin{table}[htb]
+\centering
+\setlength{\extrarowheight}{5.0pt}
+\small
+\begin{tabular}[htb] { | p{1.2 in} | p{1.2 in} ||  p{1.2 in} | p{1.2 in} | }
+\hline
+\quad Data Column & \quad Strain Value & \quad Data Column & \quad Stress Values  \\
+\hline 
+\q 1 & \q  $\veps_x$ & \q  1 & \q $\sigma_x$ \\
+\q 2 & \q  $\veps_y$ & \q  2 & \q $\sigma_y$ \\
+\q 3 & \q  $\veps_z$ & \q  3 & \q $\sigma_z$ \\
+\q 4 & \q  $\gamma_{xy}$ & \q  4 & \q $\sigma_{xy}$ \\
+\q 5 & \q  $\gamma_{yz}$ & \q  5 & \q $\sigma_{yz}$ \\
+\q 6 & \q  $\gamma_{xz}$ & \q  6 & \q $\sigma_{xz}$ \\
+\q 7 & \q  $\veps_{eff}$ & \q  7 & \q $U_0$ \\
+\q 8 & \q  $I_1$ & \q  8 & \q $\sigma_{vm}$ \\
+\q 9 & \q  $I_2$ & \q  9 & \q $c_1$ \\
+\q 10 & \q  $I_3$ & \q  10 & \q $c_2$ \\
+\q 11 & \q  $\veps_1$ & \q  11 & \q $c_3$ \\
+\q 12 & \q  $\veps_2$ & \q  12 & \q $I_1$ \\
+\q 13 & \q  $\veps_3$ & \q  13 & \q $I_2$ \\
+\q 14 & \q  $\ell_1$ & \q  14 & \q $I_3$ \\
+\q 15 & \q  $m_1$ & \q  15 & \q $\sigma_1$ \\
+\q 16 & \q  $n_1$ & \q  16 & \q $\sigma_2$ \\
+\q 17 & \q  $\ell_2$ & \q  17 & \q $\sigma_3$ \\
+\q 18 & \q  $m_2$ & \q  18 & \q $\ell_1$ \\
+\q 19 & \q  $n_2$ & \q  19 & \q $m_1$ \\
+\q 20 & \q  $\ell_3$ & \q  20 & \q $n_1$ \\
+\q 21 & \q  $m_3$ & \q  21 & \q $\ell_2$ \\
+\q 22 & \q  $n_3$ & \q  22 & \q $m_2$ \\
+ &  & \q  23 & \q $n_2$ \\
+&  & \q  24 & \q $\ell_3$ \\
+&  & \q  25 & \q $m_3$ \\
+&  & \q  26 & \q $n_3$ \\
+\hline
+\end{tabular}
+\caption{\small Fig. 2.10 -- Column numbers and strain-stress values for Patran compatible 
+and \ti{flat} result files (ASCII, binary and stream)}
+\normalsize
+\end{table}
+
+\nin \ul{Notes on Patran result files:}
+\small
+\squishlist
+\item strains
+and stresses at nodes are obtained using a two step process: (1) extrapolation
+of integration point values to element nodes and then (2) numerical averaging of
+values for all elements connected to a node. Each element connected to the node has the
+identical weight factor in computing the average value for a nodal result.
+\item invariants, principal values, direction cosines, the effective strain 
+($\veps_{eff}$), mises effective stress ($\sigma_{vm}$) and the work density ($U_0$) are 
+computed using the averaged nodal results for the strain and stress
+components. This leads to a likely inconsistency in nonlinear solutions. During the 
+solution, stresses
+at element integration points derive from nonlinear constitutive models
+acting on strains computed at the integration points. Such stresses extrapolated to
+the nodes and then averaged for all elements connected to a node likely
+will not match the values that would have been computed by first extrapolating/averaging 
+strains and then updating stresses at model nodes using the nonlinear
+constitutive model. Example: consider the simple mises plasticity material model with 
+perfectly plastic flow. After the extrapolation/averaging process, $\sigma_{vm}$
+at some nodes may exceed the yield stress.
+\item material model state/history
+variables ($c_1$, $c_2$, $c_3$) are the extrapolated and 
+then averaged nodal values. Depending on the material model, the extrapolation/averaging
+of $c_1$, $c_2$, $c_3$ may have no meaningful interpretation.
+\item it is not possible, at present, to specify a list of nodes or elements to appear in
+the Patran results files. Results are written for all nodes or elements in the model.
+\item interface elements.  Zero values are written in the  element results files.
+ For nodal results files, interface elements make no contribution to averaged values.
+ Nodes with only interface elements attached have all result values of zero.
+\squishend
+\normalsize
+
+Patran opens and reads the results files which also include
+the number of nodes or elements and the number of data columns.
+However, there is no inherent connection between the number and ordering 
+of data columns and various physical quantities, \ie Patran is unaware
+that column 12 of the strains file contains the second principal
+strain value. 
+
+To provide this connection, Patran asks the user for the name of a \ti{template} file
+when it opens a results file for post-processing. The (ASCII) template file
+associates each data column with a symbolic name (\eg sigma\_xx) and informs
+Patran of the type of value (scalar, vector, tensor) in each column. Patran then
+displays the symbolic names rather than
+data column numbers in menus for convenience in
+post-processing tasks.
+
+We provide a set of \ti{template} files to facilitate use of Patran for
+post-processing. These are included in the
+WARP3D distribution in the \ti{patran\_templates} directory.
+They should be copied into the appropriate Patran directory
+on your computer, usually the \ti{res\_templates} directory of the Patran
+installation. 
+%=============================================
+\subsection{Flat Text \& Stream (Binary) Result Files}
+\nin
+These \ti{flat} file types are included to simplify use of Python, C, C++, Fortran
+for post-processing
+and importing  results into spreadsheets (the text versions).
+Python is a popular, interpretive and open-source language for
+engineering computations. The extensive mathematical (\eg \ti{numpy}) and 
+graphics (\eg \ti{mathplotlib}) packages readily support  development of 
+customized post-processing capabilities.
+Compiled languages C, C++, Fortran and other mathematical software
+(Matlab and Mathematica) may easily read these text and stream files.
+
+The command to request these \ti{flat} files 
+has the form
+\begin{align*}
+& \hv{\ul{output}\ \ul{flat}   }
+\begin{Bmatrix}
+\hv{\ul{text}} \\ \hv{\ul{stream}} 
+\end{Bmatrix} 
+(\hv{\ul{comp}ressed})
+\begin{Bmatrix}
+\hv{\ul{nodal}} \\ \hv{\ul{element}} 
+\end{Bmatrix} \ \hv{<quantity>}
+\end{align*}
+
+\nin
+where \tl{quantity}\tg is only \ti{one} of the following types of results: 
+\ti{\ul{displ}acements},
+\ti{\ul{velo}cities}, 
+\ti{\ul{accel}erations}, \ti{\ul{react}ions}, \ti{\ul{temp}eratures}, \ti{\ul{strain}s}, 
+\ti{\ul{stress}es}, \ti{\ul{states}}. Material  \ti{states} output is available only for the
+\ti{element} option. No list of nodes or elements is allowed -- results 
+are written for all nodes/element into the files.
+
+WARP3D generates the flat results files with assigned names that: (1) begin with three
+letters, (2)  followed by the 5 digit load step number, (3) then \ti{\_stream}
+or \ti{\_text}.  The text files may be compressed with \ti{gzip} during storage and
+will have the suffix \ti{.gz}.
+
+Nodal result files begin with
+the letters \ti{wn}; element result files with the letters \ti{we}. The \ti{n} 
+or \ti{e} letter is
+followed by the third letter in the file name that denotes the physical quantity: \ti{d} -
+displacements, \ti{v} - velocities, \ti{a} - accelerations, \ti{t} - temperatures,
+\ti{r} - reaction forces, \ti{e} - strains and \ti{s} - stresses. For example, 
+the file \ti{wes00005\_stream} contains element
+stress results for step 5 in the \ti{stream}  binary file. Similarly, 
+\ti{wne001243\_text.gz} contains (averaged) nodal strain
+ results for step 1243 in the text form following compression. Files of material states
+ values for elements are named, for example, \ti{wem00005\_stream} and 
+ \ti{wem00005\_text}, and with compression \ti{wem00005\_text.gz}.
+
+ Element results files are available only for strains, stresses and states.
+
+The flat result files have the structure of a two-dimensional array.
+Each row has the data for a single node or element. The array columns set the
+values for each node  or element.  For nodal files of displacements, velocities,
+accelerations and reactions, each node has 3 data columns for the global
+$X, Y, Z$ components. 
+
+Temperature results are available only in a \ti{nodal} results file. Two values are
+provided for each node. Data column 1 has the total temperature (initial + all increments).
+Data column 2 has the
+initial (reference) temperature defined with the \ti{initial conditions} command in
+the model input.
+
+Figure 2.10 summarizes the data column assignments for flat (and Patran) strain-stress
+results files. The first six strain-stress values that appear at each model node
+ are the numerical average for the contribution
+of each element at the node. The strain-stress invariants, principal values and
+directions are computed from these averaged nodal values. The effective strain,
+Mises equivalent stress, energy density and the three material model state
+variables are first extrapolated from integration points to the nodes and then
+averaged. 
+
+Element result files for strains and stresses adopt the column assignments
+listed in Fig. 2.10. A single set of values given for
+each element is obtained by simple averaging of integration point values within each
+element. The first six strain-stress values that appear for the element are the
+numerical average for the contribution of each integration point. The strain-stress
+invariants, principal values and direction cosines are computed from these averaged
+values. The effective strain and Mises equivalent stress are computed from the
+averaged values of the components. The energy density and the three material
+model state variables are the average of integration point values.
+
+Element result files for material states require a different scheme since the number and
+type of state variables are different for the various builtin material models and for a
+(possibly) user supplied umat. Consider a finite element model which has multiple materials defined. 
+They use, for example, the builtin material models \ti{bilinear}, \ti{mises}, 
+and \ti{cp} (the crystal plasticity model). 
+WARP3D then writes three header files named  \ti{states\_header\_bilinear},
+\ti{states\_header\_mises\_gurson}, and  \ti{states\_header\_crystal\_plasticity}.
+These are simple text files which define the number and identifying labels
+for each state variable output for that material model. At each load(time) step, three
+files of element states are written, one for each material model.
+The result files for load (time) step 5
+would then be \ti{wem00005\_text\_bilinear}, \ti{wem00005\_text\_mises\_gurson},
+and  \ti{wem00005\_text\_crystal\_plasticty}.  Stream files have \ti{text}
+replaced by \ti{stream}. Values are written in each file for
+\ti{all} elements in the model -- not just those assigned a material with that material model.
+In \ti{wem00005\_text\_bilinear}, for example, all elements assigned the 
+mises/gurson or crystal plasticity material have all zero values for the bilinear state
+variables. This approach maintains simplicity and consistency across various material models at
+the expense of (potentially) larger  results files.
+
+Most builtin material models provide some type of states output. See the 
+evolving descriptions in Chapter 3 for the
+various material models. Until these are all updated, the \ti{states\_header\_...} files
+produced during output generation provide the most up-to-date description of the currently available
+states variables for reading and post-processing. For example, the 
+\ti{states\_header\_mises\_gurson} file as of this writing has the following content. Lines 
+beginning with \# lines are comment lines. There are 6 state variables  defined 
+with the short (max 8 character) label
+followed by a longer description.
+
+\small
+\begin{verbatim}
+#
+#  header file for state variable output
+#  WARP3D material: mises_gurson        
+#   
+#  Notes on Mises material model:
+#    sig_flow - current equivalent flow stress
+#    porosity - 0.0
+#    state: -1 actively linear elastic
+#            1 actively plastic
+#            value is average over integration points
+#    q - not defined for mises
+#  
+#  Notes on Gurson material model:
+#    sig_flow - dense matrix equivalent stress
+#    state - same as above for mises
+#    q - mises equiv stress for continuum
+#   
+#
+#  8 character state labels and longer descriptors
+#  material model number, number of state variables 
+#
+     6
+     1  epspls    Eq. plastic strain                                          
+     2  sig_flow  See states_header file                                      
+     3  H'        Plastic modulus                                             
+     4  porosity  Porosity (f)                                                
+     5  state     See states_header file                                      
+     6  q         See states header file                                      
+\end{verbatim}
+\normalsize
+
+
+\nin Appendix K provides skeleton Python programs to read the text and stream
+files. 
+
+\nin \ul{Notes on \ti{flat} result files:}
+\small
+\squishlist
+\item strains
+and stresses at nodes are obtained using a two step process: (1) extrapolation
+of integration point values to element nodes and then (2) numerical averaging of
+values for all elements connected to a node. Each element connected to the node has the
+identical weight factor in computing the average value for a nodal result.
+\item invariants, principal values, direction cosines, the effective strain 
+($\veps_{eff}$), mises effective stress ($\sigma_{vm}$) and the work density ($U_0$) are 
+computed using the averaged nodal results for the strain and stress
+components. This leads to a likely inconsistency in nonlinear solutions. During the 
+solution, stresses
+at element integration points derive from nonlinear constitutive models
+acting on strains computed at the integration points. Such stresses extrapolated to
+the nodes and then averaged for all elements connected to a node likely
+will not match the values that would have been computed by first extrapolating/averaging 
+strains and then updating stresses at model nodes using the nonlinear
+constitutive model. Example: consider the simple mises plasticity material model with 
+perfectly plastic flow. After the extrapolation/averaging process, $\sigma_{vm}$
+at some nodes may exceed the yield stress.
+\item material model state/history
+variables ($c_1$, $c_2$, $c_3$) are the extrapolated and 
+then averaged nodal values. Depending on the material model, the extrapolation/averaging
+of $c_1$, $c_2$, $c_3$ may have no meaningful interpretation.
+\item results are written in the files for all nodes or elements in the model.
+\item interface elements.  Zero values are written in the  element strain-stress
+results files. Values are written for the element states files.
+ For nodal results files, interface elements make no contribution to averaged values.
+ Nodes with only interface elements attached have all result values of zero.
+\squishend
+\normalsize
+
+%=======================================
+\subsection{Patran Compatible Neutral File for Model}
+\nin The Patran \ti{neutral} file is a widely adopted format
+to describe the various parts of a finite element model (coordinates, constraints,
+etc.). This ASCII file contains \ti{packets} of information, \eg the coordinates
+of a node are stored in a packet. There are 20+ types of such
+packets with model information. The simple ASCII format of the file insures
+portability and ease of use. 
+
+The \ti{patwarp} program (Appendix C) provided with the WARP3D distribution
+reads Patran neutral files and generates the corresponding
+WARP3D input file using the commands described in this chapter.
+
+Occasionally a WARP3D input file is generated by some other means and a
+Patran neutral file for the model is needed. The command described here 
+generates the neutral file containing just the essential information for the
+model.
+
+The command to request generation of a Patran neutral file has the form
+\begin{align*}
+& \hv{\ul{output}\ \ul{patran} \ \ul{neutral}\ (<name\ of\ file:label\ or\ string>)  }
+\end{align*}
+
+\nin If a name for the neutral file is omitted, the default name is \ti{structure\_name.neutral}
+where \ti{structure\_name} is the label supplied in the \ti{structure} command of the
+WARP3D input file (\eg \ti{beam.neutral}). When the specified filename already exists, the
+current time (hr:min:sec) is appended to the filename (\eg beam.neutral\_12:00:01).
+
+The following information about the model is included in the neutral file:
+\small
+\squishlist
+\item neutral file header records required by Patran
+\item number of nodes and elements
+\item coordinates of all model nodes
+\item element types and incidences for all model elements (see additional info below)
+\item constraints (zero and non-zero) imposed on model nodes
+\squishend 
+\normalsize
+
+\noindent At present, no loading information is written to the neutral file.
+
+\noindent The following procedures are used to write types and incidences
+\small
+\squishlist
+\item The 8 and 20-node hex elements are
+written as Patran type = 8
+\item  9, 12 and 15-node hex transition elements are written as Patran type = 8 
+but with zeroes in the incidence lists for the missing mid-side nodes
+\item Tetrahedral elements are written as Patran type = 5
+\item Interface elements \ti{inter\_8} are written as Patran type = 8
+\item Interface elements \ti{trint6}  are written as Patran type = 7 (wedge)
+\item Interface elements \ti{trint12}   are written as Patran type = 7 (wedge) with
+15 nodes. Patran does not have a 12-node wedge element. Patran \ti{wedge15} nodes 10, 11 and 12
+are written as zero
+\item The Patran configuration code (CONFIG) for the
+element is assigned the material number given to the element during WARP3D input. The first material 
+defined in the input file is material 1, the second defined material is 2, etc.
+\squishend 
+\normalsize
+
+%=======================================
+\subsection{Flat Model Description Files}
+\nin The Patran \ti{neutral} file described above features a highly structured system of
+packets, which although very flexible, is quite slow to parse for large models using
+only standard features of Python.  A key advantage is the capability to add new types of packets without
+breaking existing programs.
+
+This section describes an alternate file type for the model description
+having a simple \ti{flat} format without packets and which is readable in Python using
+very efficient techniques. The file may also be imported directly into 
+spreadsheets. This flat file may be written in \ti{text} format with ASCII data or
+binary \ti{stream} format. The \ti{text} version may be compressed into \ti{.gz} form.
+The \ti{stream} format is readily processed in C, C++ programs -- the file contains only data
+without the usual record marks of Fortran \ti{unformatted} files.
+
+The command to request a \ti{flat} file for the model description  
+has the form
+\begin{align*}
+& \hv{\ul{output}\ \ul{model}\ (\ul{flat})   }
+\begin{Bmatrix}
+\hv{\ul{warp3d}} \\ \hv{\ul{patran}} 
+\end{Bmatrix} 
+(\hv{\ul{conv}ention})
+\begin{Bmatrix}
+\hv{\ul{text}} \\ \hv{\ul{stream}} 
+\end{Bmatrix} 
+(\hv{\ul{comp}ressed)\ \ul{file}\ <name>}
+\end{align*}
+
+\nin
+where the keyword \ti{file} is required and the    $<$name$>$ may be either
+a $<$label$>$ or a $<$string$>$. An extension \ti{.text} or \ti{.str} is appended by WARP3D
+to the file name. The compressed text file thus becomes $<$name$>$.text.gz. Compression 
+is not supported for (1) \ti{stream} files, (2) the Windows version of WARP3D. 
+
+WARP3D and Patran element types, \eg the integer number for the 20-node hex element,
+and the ordering of nodes in the element 
+connectivity list are not always identical. Thus the option to select between them
+is included in the command as the \ti{warp3d convention} or \ti{patran convention},
+where \ti{convention} is an optional word.
+
+The file format is shown here for the \ti{.text} version. The \ti{stream}  version omits
+comment lines at the beginning.
+\small
+\begin{verbatim}
+   #
+   #  Structure: .... name from input file....
+   #
+   #  Created: .... date ......
+   #
+   #  Convention: ...warp3d.... or ....patran   
+   #
+       <number nodes>   <number elements>
+   <x> <y> <z> 
+   <x> <y> <z>
+         .
+         .
+    <element type>   <material no.>      <27 integers with incidences>
+         .
+         .
+\end{verbatim}
+\normalsize
+\nin No node numbers or element numbers are included. Both node and element data
+are in sequential order.    
+A least one blank separates all data values. 
+
+The $<$material no.$>$  is as follows. Suppose the model definition has three
+materials defined named \ti{mat\_1}, \ti{mat\_2}, \ti{mat\_3} (and in that
+physical order in the input commands) The value of  $<$material no.$>$ is then 1, 2, 
+or 3 depending on the material assigned to the element in the input.
+
+Every element line has 27 entries for the incidences (nodes connected to the element).
+Many of them will be zero for the simpler element types. The 8-node hex element 
+\ti{l3disop} has 8
+node numbers listed followed by 19 zeroes. The ordering of nodes listed in the element
+connectivity list depends on the selection of \ti{warp3d} or \ti{patran}. See the previous section
+for more details on Patran element types.
+
+WARP3D element types are:
+\small
+\begin{verbatim}
+     1     20-node hex
+     2      8-node hex
+     3     12-node hex transition
+     4     15-node hex transition
+     5      9-node hex transition
+     6     10-node tetrahedron
+     7     15-node wedge   (implementation in-progress)
+    12      8-node interface
+    13      4-node tetrahedron
+    14      6-node triangular interface
+    15     12-node triangular interface
+    17      6-node wedge (implementation in-progress)
+\end{verbatim}
+\normalsize
+
+\subsection{Energy File}
+\nin Once the solution for a load step has converged, WARP3D appends newly updated values
+of various energy quantities for the model. This file is named \ti{energy} and is
+located in the directory in which WARP3D was initiated. On restart analyses, WARP3D opens
+the energy file in append mode and adds additional results as computations continue.
+
+\subsection{Convert Binary Packets to ASCII}
+\nin The unformatted (binary) sequential file of packets is portable between Linux and OS X systems. 
+Such portability does not exist between Windows  and  Linux/OS X systems. To provide some
+increased portability, the \ti{convert binary packets} command is available to write an ASCII version of the
+binary packets file. The command has the form
+
+\small
+\begin{align*}
+& \hv{\ul{conv}ert\ (\ul{bin}ary)\  (\ul{pack}ets) }
+\begin{Bmatrix}
+\hv{[<packet\ number:integer>]} \\ \hv{\ul{all}} 
+\end{Bmatrix} 
+ \ \hv{(\ul{to})}\ \hv{(\ul{file})}\ \hv{<label\ or\ string>}
+\end{align*}
+\normalsize
+
+\nin A list of specific packet types may be specified or \ti{all} packet types -- the default if no packet list
+is specified. If omitted, the default name for the generated ASCII file is the name of the binary packets
+file with the extension \texttt{.tpf}. An existing ASCII file with the specified name is overwritten.  An example is
+\small
+\begin{verbatim}
+  convert binary packets 1-10 20 22 to file 'converted_file.tpf'
+\end{verbatim}
+\normalsize
+
+\nin A summary of 
+converted packets prints upon completion of the operation.  The following table lists packet types
+converted at present with the command. Other packet types if present are ignored.
+
+The \ti{convert binary packets} command
+is intended to given immediately prior to the \ti{stop} command during the analysis. 
+
+
+\begin{table}[htb]
+\centering
+\setlength{\extrarowheight}{5.0pt}
+\small
+\begin{tabular}[htb] { | p{2.2 in} | p{0.3 in} ||  p{2.2 in} | p{0.3 in} | }
+\hline
+\ \  Packet Type &  No. &  \ \  Packet Type &  No.  \\
+\hline 
+ nodal displacements &   1 & CTOA growth: non-constant release & 18 \\
+nodal velocities & 2 &  CTOA: constant release & 19 \\
+nodal accelerations & 3 & killed Gurson elements & 20 \\
+nodal reactions & 4 & killed SMCS elements &21 \\
+Gurson elements: no adaptive & 5 & SMS elements: no load reduction & 22 \\
+Gurson elements: adaptive & 6 & SMS elements: auto load reduction & 23 \\
+cohesive elements (simple) & 7 &accumulated loading factors & 24 \\
+CTOA growth: constant front & 8  & [currently unused] & 25 \\
+CTOA growth: non-constant front & 9  & [currently unused] & 26 \\
+killed cohesive elements   & 10 & $I$-integral results: SIFs & 27 \\
+displacement for element nodes & 11 & $I$-integral results: $T$-stresses & 28 \\
+velocities for element nodes & 12 & \ \ & \ \\
+accelerations for element nodes & 13 & \ \ & \ \\
+reactions for element nodes & 14 & \ \ & \ \\
+element stresses & 15 & \ & \ \\
+element strains & 16 & \ & \ \\
+$J$-integral results & 17 & \ & \ \\
+\hline
+\end{tabular}
+\caption{\small Fig. 2.11 -- Supported packet types with the \ti{convert binary packets} command.}
+\normalsize
+\end{table}
+
+
+
+\end{document}
+
+ 
+

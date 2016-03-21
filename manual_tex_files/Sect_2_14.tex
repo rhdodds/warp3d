@@ -1,0 +1,286 @@
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{User's Guide - \textit{WARP3D}}
+\rhead{\textit{Table Command}}
+\fancyfoot[L] {\textit{Chapter {\thechapter}}}
+\fancyfoot[C] {\thesection-\thepage}
+\fancyfoot[R] {\textit{Table Command}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+
+\newcommand{\tb} {\textbf}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\noi}{\noindent}
+
+
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{13}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Table Command}
+
+\noi The \ti{table} command provides the capability to store
+significant amounts of numerical data in a convenient
+2-D array format and to
+define various aspects of the model. This new capability
+is designed to be extended simply and rapidly as new areas for
+the application of tables evolve in the code. At present, the \ti{table} command
+supports the simplified definition of aerodynamic pressure loadings on element
+surfaces for unsteady, high-speed flight following the concepts of third order
+``piston theory". 
+\subsection{General Form}
+\noi A table defines a 2-D array of numerical values. All tables
+have the following components:
+\squishlist
+\item a user-specified name for identification (up to 24 characters)
+\item a specified number of data rows that will be input
+\item the ``type" (or purpose) of table, \eg \ti{piston}
+\item the identifying label (name) for each column of data in the table; this feature
+enables users to order columns of a given type based on their preference
+(the \ti{type} of table implicitly sets the required number of data 
+values for each row)
+\item a sequence of input lines with the numerical values for each row of the table
+\squishend
+
+The command to initiate a \ti{table} definition has the form:
+\begin{align*}
+& \hv{\ul{table}\ <table\ id:label>\ \ul{rows}\ <integer>\ \ul{type}\ <label> }
+\end{align*}
+\noi and is followed by a command to define the names and ordering of
+data columns in the table
+\begin{align*}
+& \hv{\ul{columns}\ [ <column\ id:label> (,) ] }
+\end{align*}
+\noi where the list may (as required) span across multiple input lines continued
+with commas. The label \ul{type} sets the number of columns for each row and names
+of each column given in the following sections.
+There is no pre-defined limit on the number of 
+definable data rows in a table.
+
+\noi \ul{Note}: an existing table is over-written with a new definition.
+
+All subsequent data lines then have the general form
+\begin{align*}
+& \hv{[ <column\ value: numr> (,) ] }
+\end{align*}
+\noi An example table definition is 
+\small
+\begin{verbatim}
+  table example rows 30 type app_3
+    columns A_1 B_1  C_1
+      0.0 -3.0 6.2
+      1.0 4.33 -9.11
+      -20.0 42.0 -100.004
+       .
+       .
+       .
+      -45.6 100.1 61.4
+\end{verbatim}
+\normalsize
+\
+
+\noi \ul{Note}: The preceding example does not define an actual table in WARP3D.
+
+\noi When a table contains many rows, it may prove convenient
+to place the data rows into a separate file and then use the 
+WARP3D \ti{*input ...} utility command as in
+\small
+\begin{verbatim}
+  table example rows 3000 type app_3
+    columns A_1 B_1  C_1
+     *input from file 'big_data_file'
+\end{verbatim}
+\normalsize
+
+The save and restart capabilities in WARP3D fully support the table features.
+
+\subsection{Table Type: \ti{piston}}
+
+\noindent Aircraft structural elements generate unsteady aerodynamic pressure loads 
+related to the fluid velocity and the local deformation. Piston theory provides
+a simple method to calculate approximate aerodynamic pressures at relatively large
+flight Mach numbers on nearly plane surfaces at a low inclination to the free stream. 
+WARP3D incorporates a third order version of piston theory as described 
+in [\ref{R:LH1956}, \ref{R:AZ1956}] to
+define the instantaneous pressure loading on surfaces of solid elements exposed
+to the flow stream. The pressure is determined by
+
+\begin{equation}\label{eqn:3rdpist}
+\dfrac{p}{p_3} = 1 + \gamma \left[ M_3 \bar{V}_p
++ \dfrac{\gamma+1}{4} M_3^2 \bar{V}_p^2 
++ \dfrac{\gamma+1}{12} M_3^3 \bar{V}_p^3 
+\right] \,
+\end{equation}
+
+\noindent where $p$ sets the local pressure on the aircraft surface, 
+$p_3$ represents the undisturbed flow pressure at the panel's leading edge, $\gamma$ denotes 
+the isentropic exponent (equal to the specific heat ratio of air), 
+and $M_3$ provides the Mach number. The term $\bar{V}_p$ indicates
+the normalized "piston" velocity, defined as having a 
+direction normal to the approach flow at the panel leading edge:
+
+\begin{equation}\label{eqn:normVp}
+ \bar V_p = \left( \dfrac{1}{U_3} \dfrac{\partial w}{\partial t}  + \dfrac{\partial w}{\partial s} \right) \, 
+\end{equation}
+
+\noindent where $U_3$ denotes the velocity (magnitude) at the panel's leading edge. 
+The term $w$ indicates the displacement perpendicular  to the aircraft's 
+surface. Eq (\ref{eqn:normVp}) includes partial derivatives of $w$ 
+with respect to time and the direction of fluid flow, $s$. 
+
+Piston loads are re-computed at the beginning of every load (time) step
+in the solution to reflect the current displacement derivatives with respect to
+time and flow direction in $\bar{V}_p$ and also possible changes in 
+parameters required in
+Eq (\ref{eqn:3rdpist}). The surface pressures from the piston loading 
+do not change during equilibrium iterations over a load (time) step. 
+Piston pressure values ($p$) are based on the geometry
+and displacements at the parametric center of the element surface. 
+
+Piston loading histories are defined in a table using the \ti{type} command 
+\ti{piston}. The 8 data columns to define a piston loading are:
+\squishlist
+\item \ti{time} model time (secs). Time must start at zero and increase
+monotonically
+\item \ti{mach} mach number ($M_3$)
+\item \ti{flow\_pressure}  ($p_3$)
+\item \ti{velocity} flow velocity ($U_3$)
+\item \ti{isentropic} ($\gamma$)
+\item \ti{x\_direction} global $X$-component of flow direction ($s_x$)
+\item \ti{y\_direction} global $Y$-component of flow direction ($s_y$)
+\item \ti{z\_direction} global $Z$-component of flow direction ($s_z$)
+\squishend
+\ul{Note:} ($x,y,z$) components will be normalized to define a 
+unit direction vector.
+
+Piston properties for model solution times between tabular values will be
+computed via linear interpolation. At model solution times beyond the last table row,
+piston properties remain fixed at the values specified for the last row.
+
+An example table definition for piston loading is 
+\small
+\begin{verbatim}
+ table simulation_1 rows 5 type piston
+  columns time flowpressure mach velocity isentropic,
+               xdirection ydirection zdirection
+  0.0 0.006548 1.82093 22888.0 1.4 1.0 0.0 0.0
+  0.5 0.006453 1.83688 23058.0 1.4 1.0 0.0 0.0
+  1.0 0.006358 1.85281 23227.0 1.4 1.0 0.0 0.0
+  2.0 0.006358 1.85281 23227.0 1.4 1.0 0.0 0.0
+  3.0 0.000000 1.85281 23227.0 1.4 1.0 0.0 0.0
+\end{verbatim}
+\normalsize
+
+Tables of type piston simplify definitions of the aerodynamic
+loading histories applied to the faces of solid elements in the finite element model 
+(see Chapter 3 for loadings on solids elements). An example is
+\small
+\begin{verbatim}
+loading model_set_1  
+ element loads
+      16 face 4 pressure -1.0
+      5 16 19 20 face 1 piston simulation_1
+      3-10 body by -1.3
+\end{verbatim}
+\normalsize
+\noi The associated table (here, \verb+simulation_1+) must be set 
+prior to defining an element loading of type piston. 
+
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small
+\noindent[\refstepcounter{sectrefs}\label {R:LH1956}\thesectrefs]~M. J. Lighthill.
+Oscillating airfoils at high mach numbers. \ti{Journal of Aeronautical Sciences}, 
+Vol. 20, No. 6, June 1953, pp. 402--406. 
+\medskip
+
+\noindent[\refstepcounter{sectrefs}\label {R:AZ1956}\thesectrefs]~H. Ashley and G. 
+Zartarian.Piston Theory -- A New Aerodynamic Tool for the Aeroelastician.
+\ti{Journal of Aeronautical Sciences}, Vol. 23, No. 12, December 1956, pp. 1109--1118.
+
+\end{document}
+
+ 
+

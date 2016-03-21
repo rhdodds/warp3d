@@ -1,0 +1,1256 @@
+%
+\documentclass[10pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+%
+%
+%   margins and inter-paragraph spacing
+%
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+%\usepackage{hyphenat}
+%\usepackage{listings}
+
+%----------------------------------------------
+%
+%          --- header and footer contents ---
+%
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Binary Packets File}}}
+\fancyfoot[L] {\small{\ti{Appendix F}\ \   (Updated: 3/15/2013)}}
+\fancyfoot[C] {\small{F.\thepage}}
+\fancyfoot[R] {\small{\ti{Binary Packets File}}}
+
+
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+%----------------------------------------------
+
+%   ---  local commands ---
+
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\patwarp}{\ti{patwarp\xspace}}
+\newcommand{\eg}{\ti{e.g.},\xspace}
+\newcommand{\ie}{\ti{i.e.},\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\ti}{\emph}
+
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+%
+%     --- set chapter number or appendix letter ---
+%
+%-------------------------------------
+\def\thechapter  {\Alph{chapter}}
+\setcounter{chapter}{6} % means 6th alphabet letter
+\newcounter{sectrefs}
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+\LARGE
+\hfill
+\textbf{Appendix F}
+\rule[0.15in]{450pt}{0.5mm}
+\LARGE
+\begin{flushright}
+ \textbf{
+{\fontfamily{phv}\selectfont Binary Packets File}}
+\end{flushright}
+\normalsize
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+Section 2.12.2 outlines the concepts of the \ti{binary packets file} and defines 
+commands to control the type and amount of data
+written to the file during WARP3D execution. This 
+appendix describes each of the available packets. The source
+code for a complete Fortran
+program illustrate reading and processing a binary packets file
+is included in the WARP3D distribution.
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{File Characteristics }
+
+WARP3D creates and writes the packets file using the standard capabilities in Fortran 
+for sequential, unformatted I$/$O. The file thus has the structure of \ti{logical} records, 
+where each read$/$write statement in Fortran processes at least one logical 
+record. Logical records in a file may have variable length (number of bytes)
+as required to store the data located 
+in the record. The Fortran statement to open the binary packets file is:
+\begin{verbatim}
+        open(unit=packet_file_no, file=packet_file_name,   
+       &     access='sequential',form='unformatted',status='old' )
+\end{verbatim}
+Integer values in the binary file are all 32-bits. All floating point values are
+64-bit (\ie double precision).
+
+The binary packets 
+file produced on one hardware platform may or may not be readable on 
+another platform. For example, files produced on a Linux system
+likely will not be readable on a Windows system (and vice-versa) even though
+WARP3D is built with the Intel Fortran compiler system on
+both platforms. Files produced
+on two different Linux systems (\eg RedHat and SuSE) are most often 
+compatible. Linux and OS X binary files are compatible.
+
+Fortran unformatted files have the record
+lengths stored within the file. Each logical record
+may have many physical records as dictated by features of the storage device
+and the features of the runtime, Fortran I/O system on that platform. The
+existence of physical records is fully hidden from Fortran codes as are details
+of the additional data in the file to identify-separate logical records. C and C++ 
+unformatted files \ti{do not} have this notion of logical records -- the file is just
+a flat linear sequence of bytes. Consequently, C and C++ programs written for post-processing
+the packets file must handle the additional file data included by the Fortran I$/$O system
+to define logical record lengths.
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Header Record}
+Each packet has an identical header record with the following data values:
+\squishlist
+\item the packet type:  integer
+\item number of additional \ti{logical} records of data for the packet:  integer
+\item the load step number:  integer
+\item the Newton iteration number:  integer
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 1: \ti{nodal displacements}}
+The packet contains the $u,v,w$ global displacements for each node 
+appearing in the $<$integerlist$>$ of the \ti{output packets 
+displacements nodes $<$integerlist$>$ } command. 
+Results for each node appear on a separate logical record. The number of additional 
+packet records on the header record thus indicates the number of 
+nodes with results in the packet.
+\squishlist
+\item the node number:  integer
+\item $u$ displacement:  floating point
+\item $v$ displacement:  floating point
+\item $w$ displacement:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 2: \ti{nodal velocities}}
+The packet contains the $\dot u, \dot v, \dot w$ global velocities for each 
+node appearing in the $<$integerlist$>$ of the \ti{output packets 
+velocities nodes $<$integerlist$>$ } command. Results for each 
+node appear on a separate logical record. The number of additional 
+packet records on the header record thus indicates the number 
+of nodes with results in the packet.
+\squishlist
+\item the node number:  integer
+\item $\dot u$ velocity:  floating point
+\item $\dot v$ velocity:  floating point
+\item $\dot w$ velocity:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 3: \ti{nodal accelerations}}
+The packet contains the $\ddot u, \ddot v, \ddot w$ global accelerations for 
+each node appearing in the $<$integerlist$>$ of the \ti{output packets 
+accelerations nodes $<$integerlist$>$ } command. Results for each node 
+appear on a single logical record. The number of additional packet records 
+on the header record thus indicates the number of nodes with results in the packet.
+\squishlist
+\item the node number:  integer
+\item $\ddot u$ acceleration:  floating point
+\item $\ddot v$ acceleration:  floating point
+\item $\ddot w$ acceleration:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 4: \ti{nodal reactions}}
+The packet contains the $X, Y, Z$ global reactions for each node appearing 
+in the $<$integerlist$>$ of the \ti{output packets reactions 
+nodes $<$integerlist$>$ } command. Results for each node appear on 
+a single logical record. The last logical record of the packet provides the 
+algebraic sums for each reaction component for the corresponding nodes. 
+The number of additional packet records on the header record thus indicates 
+the number of nodes+1 with results in the packet.  The number of additional 
+packet records is 1 when the \ti{totals only} option is used within 
+the \ti{output} command.
+\squishlist
+\item the node number:  integer
+\item $R_x$ reaction:  floating point
+\item $R_y$ reaction:  floating point
+\item $R_z$ reaction:  floating point
+\squishend
+\noindent Last record of packet
+\squishlist
+\item $\sum R_x$ reactions for nodes in packet:  floating point
+\item $\sum R_y$ reactions for nodes in packet:  floating point
+\item $\sum R_z$ reactions for nodes in packet:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 5: \ti{gurson elements w/o adaptive load control}}
+At the end of each load step in analyses which have ``gurson" elements for 
+crack growth, WARP3D provides a printed table of key values for each 
+gurson element. A ``gurson" element is any solid
+element in the model which has the gurson plasticity model and
+which is marked for possible extinction (\ie \ti{killable}) in the 
+material properties. The same table is written concurrently as a packet if the 
+user has authorized packet file operations. The number of packet records 
+equals the number of gurson elements appearing in the printed list following 
+each load step. A gurson element appears in the list when the current 
+porosity ($f$) exceeds the initial porosity ($f_0$). This packet outputs data for 
+gurson elements when the adaptive load control option is not employed 
+in the \ti{crack growth parameter }input, \ie \ti{adaptive 
+load control off }(default setting in WARP3D when not specified). 
+The packet record for each gurson element provides the following data.
+\squishlist
+\item the element number:  integer
+\item $f_0$:  initial porosity:  floating point
+\item $f$:  current porosity (averaged over element integration points):  floating point
+\item $\bar \varepsilon^p$:  average plastic strain in the matrix material:  floating point
+\item $\bar \sigma$:  average equivalent stress in the matrix material:  floating point
+\item $\sigma_{m}$:  average macroscopic mean stress:  floating point
+\item the status of the mean stress: integer. ( =0, the mean 
+stress increased during the current load step;
+=1, the mean stress decreased during the current load step)
+\item $\sigma_{e}$:  average macroscopic mises stress:  floating point
+\item the status of the mises stress:  integer.
+( =0, the mises stress increased during the current load step; 
+=1, the mises stress decreased during the current load step)
+\squishend
+%
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 6: \ti{gurson elements: adaptive load control}}
+At the end of each load step in analyses which have gurson 
+elements for crack growth, WARP3D provides a printed table of key values 
+for each gurson element. A ``gurson" element is any solid
+element in the model which has the gurson plasticity model and
+which is marked for possible extinction (\ie \ti{killable}) in the 
+material properties. The same table is written concurrently as a packet 
+if the user has authorized packet file operations. The number of packet records 
+equals the number of gurson elements appearing in the printed list following 
+each load step. A gurson element appears in the list when the current porosity 
+($f$) exceeds the initial porosity ($f_0$). This packet outputs data for gurson 
+elements when the adaptive load control option is employed in the 
+\ti{crack growth parameter }input, \ie \ti{adaptive load control on}. 
+The packet record for each gurson element provides the following data.
+\squishlist
+\item the element number:  integer
+\item $f_0$:  initial porosity:  floating point
+\item $f$:  current porosity (averaged over element integration points):  floating point
+\item $\bar \varepsilon^p$:  average plastic strain in the matrix material:  floating point
+\item $\bar \sigma$:  average equivalent stress in the matrix material:  floating point
+\item $\sigma_{m}$:  average macroscopic mean stress:  floating point
+\item the status of the mean stress: integer. ( =0, the mean 
+stress increased during the current load step;
+=1, the mean stress decreased during the current load step)
+\item $\sigma_{e}$:  average macroscopic mises stress:  floating point
+\item the status of the mises stress:  integer.
+( =0, the mises stress increased during the current load step; 
+=1, the mises stress decreased during the current load step)
+\item the increase in average porosity ($f$) during the current load step:  floating point 
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 7: \ti{interface-cohesive elements }}
+After each load step in analyses having interface-cohesive elements for crack 
+growth, WARP3D provides a printed table of key values for each cohesive element. 
+The same table is written concurrently as a packet if the user has authorized packet 
+file operations. The number of packet records equals the number 
+of interface-cohesive elements 
+appearing in the printed list following each load step. 
+
+See the descriptions of packet types 31 and 32 for stress (\ie tractions) 
+and strains (\ti{displacement jumps across the interface}) for interface-cohesive
+elements produced by usual \ti{output} commands.
+
+\noindent \ul{\ti{exp1\_intf} formulation} (elements are included only if the
+$\bar T \ge 0.5 \bar T_p$)
+\squishlist
+\item the element number:  integer
+\item the cohesive option:  integer ($=4$ for the \ti{exp1\_intf} option)
+\item normal component of cohesive traction ($||\bmf{T}_n||$):  floating point
+\item total shear component of cohesive traction ($||\bmf{T}_t||$:  floating point
+\item normal component of displacement jump in cohesive element ($\Delta_n$):  floating point
+\item shear component of displacement jump in cohesive element($||\bmf{\Delta}_t||$:  floating point
+\item effective traction in cohesive element ($\bar T$) :  floating point
+\item effective displacement jump in cohesive element ($\bar \Delta$) :  floating point
+\item marker character (usually an *) :  1 character , \ie character *1 marker
+\squishend
+\noindent The traction and displacement jump values for the element are the 
+average values for the the integration points of the element. The ``special'' character 
+is ether (1) blank or (2) an * when the averaged, element effective 
+displacement jump has exceeded the value 
+corresponding to peak effective stress. 
+
+\noindent \ul{\ti{PPR} formulation} (elements are included if any 
+integration points $> 50\%$ peak traction values)
+\squishlist
+\item the element number:  integer
+\item the cohesive option:  integer ($=6$ for the \ti{PPR} option)
+\item normal component of cohesive traction ($T_n$):  floating point
+\item shear component of cohesive traction ($T_t$):  floating point
+\item normal component of displacement jump in cohesive element ($\Delta_n$):  floating point
+\item shear component of displacement jump in cohesive element($\Delta_t$):  floating point
+\item averaged normal traction over element / $T_{n-p}$ :  floating point
+\item averaged shear traction over element  / $T_{t-p}$ :  floating point
+\item number of element integration points at which $T_n \ge T_{n-p}$: integer
+\item number of element integration points at which $T_t \ge T_{t-p}$: integer
+\squishend
+\noindent The traction and displacement jump values for the element are the 
+average values for the the integration points of the element. 
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 8: \ti{ctoa growth: constant front summary}}
+At the end of each load step in analyses which have crack growth 
+using the constant front CTOA algorithm, WARP3D provides a printed table that 
+summarizes the status of each current ``master'' node. There exists one master 
+node for each active crack front in the analysis. This same table of information is 
+also written to this packet type (when packet output is on). The number of packet 
+records equals the number of active master nodes and equals the number of 
+active crack fronts. The packet record for each master node provides the following data.
+\squishlist
+\item the master node number:  integer
+\item the current opening angle (total) in degrees:  floating point
+\item that status of the master node:  integer. ( =0, the front has yet to grow and the 
+critical angle refers to the initiation angle;  =1, the front is growing and the critical angle 
+refers to the growth angle)
+\item $100\ \times$ the current opening angle $/$  critical angle:  floating point
+\squishend
+\noindent The packet is generated \ti{after} the load step finishes 
+so the results in the packet refer to the load step just completed.
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 9: \ti{ctoa growth: non-constant front summary}}
+At the end of each load step in analyses which have crack growth using the 
+general CTOA algorithm, WARP3D provides a printed table that summarizes 
+the status of each current node along the crack front(s). Each node along a 
+front has one or more ``neighbor'' nodes which leads to computation of the 
+current opening angles. Growth at the node occurs when any of the angles 
+formed with neighboring nodes exceeds the critical angle. This same table 
+of information is also written to this packet type (when packet output is on).
+The number of packet records equals the sum of [ crack front nodes $\times$ (number of 
+neighbor nodes on the crack front -1) ]. The -1 factor arises since each crack 
+front node has at least one neighbor node. The packet record for each crack 
+front node provides the following data.
+\squishlist
+\item the crack front node number:  integer
+\item the neighbor node number: integer
+\item the current opening angle (total) in degrees:  floating point
+\item that status of the master node:  integer. ( =0, the front has yet to grow and the 
+critical angle refers to the initiation angle;  =1, the front is growing and the critical angle 
+refers to the growth angle)
+\item $100\ \times$ the current opening angle $/$  critical angle:  floating point
+\squishend
+\noindent The packet is generated \ti{after} the load step finishes so the results in the packet 
+refer to the load step just completed.
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 10: \ti{newly extincted interface-cohesive elements}}
+At the end of each load step in analyses having interface-cohesive elements 
+for crack growth, WARP3D indicates which, if any, cohesive elements 
+were newly extincted during the step (\ie killed). The user must indicate whether or not
+an interface-element may be extincted in an analysis through the keyword
+\ti{killable} in the specified
+properties of the cohesive material definition. WARP3D essentially removes the 
+element from the model, 
+thereby causing crack growth equal to the surface area of the interface element. 
+When the analysis extincts an element, the indication 
+of removal is written concurrently as a packet if the user has authorized 
+packet file operations. 
+The number of packet records equals the number of newly extincted elements.
+The packet record for each newly ``extincted'' cohesive 
+element provides the following data.
+\squishlist
+\item the element number:  integer
+\item cohesive model formulation: integer ($=4$ for simple exponential model; 
+$= 6$ for PPR model)
+\item two data values, both floating point, for exponential model:
+  (1) ratio of the average effective displacement to the peak effective 
+  displacement, $avg(\bar \Delta)/ \bar \Delta_p$;  
+  (2) ratio of the average cohesive traction to the peak cohesive 
+  traction, $avg(\bar T) / \bar T_p$
+\squishend
+\ \ or,
+\squishlist
+\item two data values, both floating point, for PPR model: (1) average 
+normal traction for 
+element integration points / peak value on the normal traction-separation 
+curve, $avg(T_n) / T_{n-p}$;
+  (2) average shear traction for element integration points / peak value on 
+  the shear traction-separation curve, $avg(T_t) / T_{t-p}$
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 11: \ti{displacements for element nodes}}
+The packet contains the $u, v, w$ global displacements for each node 
+for elements appearing in the $<$integerlist$>$ of the \ti{output 
+packets displacements elements  $<$integerlist$>$ } command. 
+Results for each node of an element appear on a single logical record. 
+The number of additional packet records on the header record thus 
+indicates the number of elements $\times$ the number of nodes on those elements.
+\squishlist
+\item the element number:  integer
+\item the structure node number for the element:  integer
+\item $u$ displacement:  floating point
+\item $v$ displacement:  floating point
+\item $w$ displacement:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 12: \ti{velocities for element nodes}}
+The packet contains the $\dot u, \dot v, \dot w$ global velocities for each node 
+for elements appearing in the $<$integerlist$>$ of the \ti{output 
+packets velocities elements  $<$integerlist$>$ } command. Results for 
+each node of an element appear on a single logical record. The number 
+of additional packet records on the header record thus indicates the 
+number of elements $\times$ the number of nodes on those elements.
+\squishlist
+\item the element number:  integer
+\item the structure node number for the element:  integer
+\item $\dot u$ velocity:  floating point
+\item $\dot v$ velocity:  floating point
+\item $\dot w$ velocity:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 13: \ti{accelerations for element nodes}}
+The packet contains the $\ddot u, \ddot v, \ddot w$ global accelerations for 
+each node for elements appearing in the $<$integerlist$>$ of 
+the \ti{output packets accelerations elements  $<$integerlist$>$ } 
+command. Results for each node of an element appear on a separate 
+logical record. The number of additional packet records on the header 
+record thus indicates the number of elements $\times$ the number of nodes 
+on those elements.
+\squishlist
+\item the element number:  integer
+\item the structure node number for the element:  integer
+\item $\ddot u$ acceleration:  floating point
+\item $\ddot v$ acceleration:  floating point
+\item $\ddot w$ acceleration:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 14: \ti{reactions for element nodes}}
+The packet contains the $R_x, R_y, R_z$ global reactions for each node 
+for elements appearing in the $<$integerlist$>$ of the 
+\ti{output packets reactions elements $<$integerlist$>$ } command. 
+Results for each node appear on a separate logical record. The last 
+logical record of the packet provides the algebraic sums for each reaction component 
+for the corresponding nodes. The number of additional packet records on the 
+header record thus indicates 1 + the number of elements~the number 
+of nodes on those elements. The number of additional packet records is 1 
+when the \ti{totals only} option is used within the \ti{output} command.
+\squishlist
+\item the element number:  integer
+\item the structure node for the element:  integer
+\item $R_x$ reaction:  floating point
+\item $R_y$ reaction:  floating point
+\item  $R_x$ reaction:  floating point
+\squishend
+\noindent Last record of packet:
+\squishlist
+\item  $\sum R_x$ reactions for nodes in packet:  floating point
+\item  $\sum R_y$ reactions for nodes in packet:  floating point
+\item  $\sum R_z$ reactions for nodes in packet:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 15: \ti{element stresses}}
+The packet contains stress values for elements appearing in 
+the $<$integerlist$>$ of the \ti{output packets stresses
+ elements $<$integerlist$>$ }command. The location of stress 
+ output is specified by the element logical properties: 
+ \ti{gausspts}, \ti{nodpts} or \ti{center\_output}
+ (see for example, Section 3.1.3). Twenty-six stress values are 
+ output for each Gauss point, element node or element center point. 
+ These 26 values are stored in one logical record on the file. 
+ Figure 2.9 summarizes the 26 values. 
+
+\noindent The number of additional packet records indicated on the 
+header record for output at the:
+\squishlist
+\item \ti{gausspts} -- equals the number of elements $\times$ the 
+number of Gauss points within those elements. 
+\item \ti{nodpts} -- equals the number of elements $\times$ the number of 
+nodes on those elements.
+\item \ti{center\_output} -- equals the number of elements within 
+the $<$integerlist$>$. 
+\squishend
+\noindent Elements appearing in the $<$integerlist$>$ may have 
+a different type, material model, etc. The values on each record (in order) are:   
+\squishlist
+\item the element number:  integer
+\item the Gauss point number, the node number or `0' indicating \ti{center\_output}:  integer
+\item $\sigma_x$:  floating point
+\item $\sigma_y$:  floating point
+\item $\sigma_z$:  floating point
+\item $\sigma_{xy}$:  floating point
+\item $\sigma_{yz}$:  floating point
+\item $\sigma_{xz}$:  floating point
+\item $U_0$ (work density):  floating point
+\item $\sigma_{vm}$ (\ti{mises} effective stress):  floating point
+\item $c_1$ (state variable from material model):  floating point
+\item $c_2$ (state variable from material model):  floating point
+\item $c_3$ (state variable from material model):  floating point
+\item $I_1$  (first stress invariant):  floating point
+\item $I_2$  (second stress invariant):  floating point
+\item $I_3$  (third stress invariant):  floating point
+\item $\sigma_1$ (principal stress, $\sigma_1 \le \sigma_2 \le \sigma_3$):  floating point
+\item $\sigma_2$( principal stress, $\sigma_1 \le \sigma_2 \le \sigma_3$):  floating point
+\item $\sigma_3$ (principal stress, $\sigma_1 \le \sigma_2 \le \sigma_3$ ):  floating point
+\item $l_1$ (cosine for direction 1):  floating point
+\item $m_1$  (cosine for direction 1):  floating point
+\item $n_1$  (cosine for direction 1):  floating point
+\item $l_2$  (cosine for direction 2):  floating point
+\item $m_2$  (cosine for direction 2):  floating point
+\item $n_2$  (cosine for direction 2):  floating point
+\item $l_3$  (cosine for direction 3):  floating point
+\item $m_3$  (cosine for direction 3):  floating point
+\item $n_3$  (cosine for direction 3):  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 16: \ti{element strains}}
+The packet contains strain values for elements appearing in 
+the $<$integerlist$>$ of the \ti{output packets strains elements 
+$<$integerlist$>$ }command. The location of strain output is specified 
+by the element logical properties: \ti{gausspts}, \ti{nodpts} or 
+\ti{center\_output} (see for example, Section 3.1.3). Twenty-six strain 
+values are output for each Gauss point, element node or element center point. 
+These 26 values are stored in one logical record on the file. Figure 2.8 
+summarizes the 26 values. 
+
+\noindent The number of additional packet records indicated on the 
+header record for output at the:
+\squishlist
+\item \ti{gausspts} -- equals the number of elements $\times$ the 
+number of Gauss points within those elements. 
+\item \ti{nodpts} -- equals the number of elements $\times$ the number of 
+nodes on those elements.
+\item \ti{center\_output} -- equals the number of elements within 
+the $<$integerlist$>$. 
+\squishend
+\noindent Elements appearing in the $<$integerlist$>$ may have 
+a different type, material model, etc. The values on each record (in order) are:   
+\squishlist
+\item the element number:  integer
+\item the Gauss point number, the node number or `0' indicating \ti{center\_output}:  integer
+\item $\varepsilon_x$:  floating point
+\item $\varepsilon_y$:  floating point
+\item $\varepsilon_z$:  floating point
+\item $\gamma_{xy}$:  floating point
+\item $\gamma_{yz}$:  floating point
+\item $\gamma_{xz}$:  floating point
+\item $\varepsilon_{eff}$:  (effective strain):  floating point
+\item $I_1$  (first strain invariant):  floating point
+\item $I_2$  (second strain invariant):  floating point
+\item $I_3$  (third strain invariant):  floating point
+\item $\varepsilon_1$ (principal strain, $\varepsilon_1 \le \varepsilon_2 \le \varepsilon_3$):  floating point
+\item $\varepsilon_2$( principal strain, $\varepsilon_1 \le \varepsilon_2 \le \varepsilon_3$):  floating point
+\item $\varepsilon_3$ (principal strain, $\varepsilon_1 \le \varepsilon_2 \le \varepsilon_3$ ):  floating point
+\item $l_1$ (cosine for direction 1):  floating point
+\item $m_1$  (cosine for direction 1):  floating point
+\item $n_1$  (cosine for direction 1):  floating point
+\item $l_2$  (cosine for direction 2):  floating point
+\item $m_2$  (cosine for direction 2):  floating point
+\item $n_2$  (cosine for direction 2):  floating point
+\item $l_3$  (cosine for direction 3):  floating point
+\item $m_3$  (cosine for direction 3):  floating point
+\item $n_3$  (cosine for direction 3):  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 17: \ti{J-integral results}}
+The packet contains results for the currently-defined domain constructed using 
+the \ti{domain} command. Domain definition data is contained in the first 
+logical record following the header record. Domain integral results for 
+individual rings (domains) are contained in the following logical records. When 
+the domain definition employs automatic rings (domains) to define multiple domains,
+the packet contains the average, minimum and maximum domain-integral 
+totals. Following output of $J$-values, WARP3D writes stress intensity factor 
+values $K_I, K_{II}$, and $K_{III}$ to the packet for each domain.
+
+\noindent The number of additional packet records indicated on the header record for:
+\squishlist
+\item \ti{a single ring (automatic or user-defined)} $=3$.
+\item \ti{multiple automatically-defined rings} $= (2\ \times$ the number of rings $)+\ 2$.
+\squishend
+\noindent The values in the first record after the header are:   
+\squishlist
+\item the number of rings: integer
+\item the domain ID: character (24 chars)
+\item the structure name: character (8 chars)
+\item the loading name: character (8 chars)
+\item the load step number: integer
+\squishend
+
+\noindent The values in the record(s) corresponding to each ring are (see Chapter 4):   
+\squishlist
+\item domain integral term 1: floating point
+\item domain integral term 2: floating point
+\item domain integral term 3: floating point
+\item domain integral term 4: floating point
+\item domain integral term 5: floating point
+\item domain integral term 6: floating point
+\item domain integral term 7: floating point
+\item domain integral term 8: floating point
+\item domain integral total: floating point
+\item number of elements skipped or killed: integer
+\squishend
+\noindent For multiple rings, the values in the next record of the packet are:   
+\squishlist
+\item average of domain integral totals: floating point
+\item minimum domain integral total: floating point
+\item maximum domain integral total: floating point
+\squishend
+\noindent Additional record(s) corresponding to each ring include:  
+\squishlist
+\item pure mode-I stress intensity factor for plane stress: floating point
+\item pure mode-I stress intensity factor for plane strain: floating point
+\item pure mode-II stress intensity factor for plane stress: floating point
+\item pure mode-II stress intensity factor for plane strain: floating point
+\item pure mode-III stress intensity factor: floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 18: \ti{ctoa growth: non-constant front node release event}}
+After each load step in analyses which have crack growth using the 
+general CTOA algorithm, WARP3D checks for crack front nodes that 
+exceed the critical angle (for initiation or continued growth). The code provides 
+a printed table that summarizes the status of each current node along the 
+crack front(s) that exceeds the critical angle and is to be 
+released at that time. This same table of information is also written 
+to this packet type (when packet output is on). The number of packet 
+records equals the 1 + the number of crack front nodes being released at this point.
+
+\noindent  The values in the first record after the header are:   
+\squishlist
+\item (1) the critical angle (degrees) for continued growth, (2)
+the critical angle (degrees) for initiation of growth, and 
+(3) the (+,-) angle variation (a percentage of the critical value) within which 
+nodes are released: 3 floating point numbers
+\squishend
+\noindent  The packet record for each crack front node provides the following data.
+\squishlist
+\item the crack front node number:  integer
+\item the current opening angle (total) in degrees:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 19: \ti{ctoa growth: constant front node release    event}}
+After each load step in analyses which have crack growth using the 
+constant-front CTOA algorithm, WARP3D checks the ``master'' node for 
+each current front that exceeds the critical angle (for initiation or continued 
+growth). The code provides a printed table that summarizes the status of 
+each master node that exceeds the critical angle and the associated front 
+to be released at that time. This same table of information is also written 
+to this packet type (when packet output is on). The number of packet records 
+equals the 1 + the number of crack fronts being released at this point and 
+the associated interim nodes for the master node. Interim nodes appear 
+when the crack is grown forward more than one element. This occurs 
+when the user-specified criterion of $L_c > L_e$ is in effect (see Section 5.3).
+
+\noindent  The values in the first record after the header are:   
+\squishlist
+\item (1)the critical angle (degrees) for continued growth, (2) the 
+critical angle (degrees) for initiation of growth, and (3) the (+,-) 
+angle variation (a percentage of the critical value) within which 
+nodes are released: 3 floating point numbers
+\squishend
+\noindent  The packet record for each crack front node provides the following data.
+\squishlist
+\item the crack front master or interim node number:  integer ( =0, the node is a 
+master node; =1, the node is an ``interim'' node associated with the most 
+recent record for a master node)
+\item the current opening angle (total) in degrees:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 20: \ti{newly extincted gurson elements}}
+After each load step in analyses having ``gurson" elements 
+for crack growth, WARP3D indicates which, if any, additional gurson elements 
+were extincted (\ie killed). A gurson element is any solid element
+in the model with the \ti{gurson} plasticity model and which has the 
+material property \ti{killable} invoked. The user must indicate whether or not
+a solid element may be extincted in an analysis through the keyword
+\ti{killable} in the specified
+properties of the gurson material definition.
+WARP3D essentially removes the element from the model, 
+causing crack growth. When the analysis extincts an element, the indication of 
+removal is concurrently written as a packet if the user has authorized packet 
+file operations. The number of packet records equals the number 
+of newly extincted elements.
+The packet record for each newly extincted gurson 
+element provides the following data.
+\squishlist
+\item the element number:  integer
+\item $f_0$:  initial porosity defined in the material:  floating point
+\item $f$:  porosity (averaged over element integration points):  floating point
+\item $\sigma_m$: average macroscopic mean stress:  floating point
+\item $\sigma_e$:  average macroscopic mises stress:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 21: \ti{newly extincted stress-modified critical strain elements}}
+After each load step in analyses having ``smcs" elements 
+for crack growth, WARP3D indicates which, if any, additional smcs elements 
+were extincted (\ie killed). The user must indicate whether or not
+a solid element may be extincted in an analysis through the keyword
+\ti{killable} in the specified
+properties of the plasticity material definition.
+WARP3D essentially removes the element from the model, 
+causing crack growth. When the analysis extincts an element, the indication of 
+removal is concurrently written as a packet if the user has authorized packet 
+file operations. The number of packet records equals the number 
+of newly extincted elements.
+The packet record
+ for each newly extincted ``smcs" element provides the following data.
+\squishlist
+\item the element number:  integer
+\item $\bar \varepsilon^p$:  plastic strain (averaged over element 
+integration points):  floating point
+\item $\bar \varepsilon^p_c$: critical plastic strain:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 22: \ti{stress-modified critical strain elements: 
+no automatic load reduction}}
+Aftger each load step in analyses having ``smcs" elements for crack growth, 
+WARP3D provides a printed table of key values for each such smcs element. The 
+same table is written concurrently as a packet if the user has authorized 
+packet file operations. The number of packet records equals the number 
+of smcs elements appearing in the printed list following each load step. A 
+smcs element appears in the list when the current average plastic strain 
+($\bar \varepsilon^p$) exceeds 0. This packet outputs data for smcs elements 
+when the automatic
+load reduction option is not employed in the \ti{crack growth 
+parameter }input, \ie \ti{automatic load reduction off }(default setting 
+in WARP3D when not specified). The packet record for each smcs element 
+provides the following data.
+\squishlist
+\item the element number:  integer
+\item $\bar \varepsilon^p$:  average plastic strain (over element 
+integration points):  floating point
+\item $\bar \varepsilon^p_c$:  current critical plastic strain: 
+ floating point
+\item $\sigma_m$:  average mean stress (over element 
+integration points):  floating point
+\item $\sigma_e$: average mises equivalent stress (over 
+element integration points):  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 23: \ti{stress-modified critical strain elements: 
+automatic load reduction}}
+After each load step in analyses which have ``smcs" elements for crack 
+growth, WARP3D provides a printed table of key values for each smcs element. 
+The same table is written concurrently as a packet if the user has authorized 
+packet file operations. The number of packet records equals the number of 
+smcs elements appearing in the printed list following each load step. A 
+smcs element appears in the list when the current average plastic 
+strain ($\bar \varepsilon^p$) exceeds 0. This packet outputs data for 
+smcs elements when 
+the automatic load reduction option is employed in the \ti{crack 
+growth parameter} input, \ie \ti{automatic load reduction on}. 
+The packet record for each smcs element provides the following data.
+\squishlist
+\item the element number:  integer
+\item $\bar \varepsilon^p$:  plastic strain (averaged over element 
+integration points):  floating point
+\item $\bar \varepsilon^p_c$:  current critical plastic strain: 
+ floating point
+\item $\sigma_m$:  averaged mean stress (over element 
+integration points):  floating point
+\item $\sigma_e$: averaged mises equivalent stress (over 
+element integration points):  floating point
+\item the averaged increase in plastic strain ($\bar \varepsilon^p$) during 
+the current load step:  floating point 
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 24: \ti{accumulated loading pattern factors for load step}}
+The user specifies the contribution of one or more loading patterns and 
+constraints to establish the incremental load for each analysis step. 
+When the crack growth processors, for example, reduce the magnitude 
+of the loading increments, the user often has difficulty tracking the 
+actual loads applied on the model. WARP3D updates the \ti{actual} 
+multipliers for loading patterns and constraints imposed on the model. 
+The code prints this table following each load step. This packet type 
+provides the same information. The number of packet records equals 
+the number of loading patterns with non-zero \ti{accumulated} factors, 
+including the ``constraints''. Each packet record contains the following data.
+\squishlist
+\item the loading pattern name as a character string (a12) -- imposed 
+displacements through constraints are named ``constraints''
+\item the accumulated multiplier for this pattern: floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 27: \ti{interaction-integral results: stress intensity factors}}
+The packet contains results for the currently-defined domain constructed 
+using the \ti{domain} command. Domain definition data is contained in 
+the first logical record following the header record. Interaction integral 
+results for individual rings (domains) are contained in the following logical records. 
+The final records contain $J$-values computed for each ring (domain) using 
+the stress intensity factors obtained through the interaction integral procedure.
+(Note: \ti{rings} and \ti{domains} are synonymous.)
+
+\noindent The number of additional packet records indicated on the header record for:
+\squishlist
+\item \ti{a single ring (automatic or user-defined)} $= 7$.
+\item \ti{multiple automatically-defined rings} $= 1 + 5 \times$(the number of 
+rings $+1$) $+$ the number of rings.
+\squishend
+\noindent The values in the first record after the header are:
+\squishlist
+\item the number of rings: integer
+\item the domain ID: character (24 chars)
+\item the structure name: character (8 chars)
+\item the loading name: character (8 chars)
+\item the load step number: integer
+\squishend
+\noindent Although the domain command in Chapter 4 may suppress either plane-stress 
+or plane-strain output to the WARP3D output file, packet output 
+contains data for plane stress and plane strain. Therefore, all of the 
+following data for this packet type is repeated five times. Each 
+repetition corresponds, respectively, to interaction-integral output for: 
+mode-I plane stress, mode-I plane strain, mode-II plane stress, 
+mode-II plane strain, and mode-III (anti-plane shear). For each of 
+these five sets of data, the values in the record(s) corresponding to 
+each ring are (see Chapter 4):   
+\squishlist
+\item interaction integral term 1:  floating point
+\item interaction integral term 2:  floating point
+\item interaction integral term 3:  floating point
+\item interaction integral term 4:  floating point
+\item interaction integral term 5:  floating point
+\item interaction integral term 6:  floating point
+\item interaction integral term 7:  floating point
+\item interaction integral term 8:  floating point
+\item interaction integral total:  floating point
+\item stress intensity factor:  floating point
+\item number of elements skipped or killed:  integer
+\squishend
+\noindent For multiple rings, the next record of the packet stores:
+\squishlist
+\item average of interaction integral totals:  floating point
+\item minimum interaction integral total:  floating point
+\item maximum interaction integral total:  floating point
+\squishend
+\noindent Additional record(s) corresponding to each ring include:  
+\squishlist
+\item $J$-value for plane stress: floating point
+\item $J$-value for plane strain: floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 28: \ti{interaction-integral results: T-stresses}}
+The packet contains results for the currently-defined domain constructed 
+using the \ti{domain} command. Domain definition data is contained 
+in the first logical record following the header record. Interaction integral 
+results for individual rings (domains) are contained in the following
+logical records. (Note: \ti{rings} and \ti{domains} are synonymous.)
+
+\noindent The number of additional packet records indicated on the header record for:
+\squishlist
+\item \ti{a single ring (automatic or user-defined)} $=3$.
+\item \ti{multiple automatically-defined rings} $=1+2\times$(the number of rings$+2$).
+\squishend
+\noindent The values in the first record after the header are:   
+\squishlist
+\item the number of rings: integer
+\item the domain ID: character (24 chars)
+\item the structure name: character (8 chars)
+\item the loading name: character (8 chars)
+\item the load step number: integer
+\squishend
+\noindent All of the following data for this packet type is 
+repeated twice. Repetitions correspond to $T$-stress 
+interaction-integral output for plane stress and plane strain, 
+respectively. For each of these two sets of data, the values in the 
+record(s) corresponding to each ring are (see Chapter 4):   
+\squishlist
+\item interaction integral term 1:  floating point
+\item interaction integral term 2:  floating point
+\item interaction integral term 3:  floating point
+\item interaction integral term 4:  floating point
+\item interaction integral term 5:  floating point
+\item interaction integral term 6:  floating point
+\item interaction integral term 7:  floating point
+\item interaction integral term 8:  floating point
+\item interaction integral total:  floating point
+\item $T$-stress $T_{11}$:  floating point
+\item $T$-stress $T_{33}$:  floating point
+\item number of elements skipped or killed:  integer
+\squishend
+\noindent For multiple rings, the next record of the packet stores:
+\squishlist
+\item average of $T_{11}$-values:  floating point
+\item minimum of $T_{11}$-values:  floating point
+\item maximum of $T_{11}$-values:  floating point
+\item average of $T_{33}$-values:  floating point
+\item minimum of $T_{33}$-values:  floating point
+\item maximum of $T_{33}$-values:  floating point
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 29: \ti{nodal temperatures}}
+The packet contains the temperatures for each node 
+appearing in the $<$integerlist$>$ of the \ti{output packets 
+temperatures nodes $<$integerlist$>$ } command. 
+Results for each node appear on a separate logical record. The number of additional 
+packet records on the header record thus indicates the number of 
+nodes with results in the packet.
+\squishlist
+\item the node number:  integer
+\item current temperature ($T$) --  temperature $T_0$ 
+specified in the \ti{initial conditions} for the model +
+all incremental changes ($\Delta T$) defined through load steps:  floating point
+\item $T_0$ temperature specified in the \ti{initial conditions} for the model (see Section 2.9). 
+Values are zero if no
+initial conditions specified
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 30: \ti{temperatures for element nodes}}
+The packet contains the temperatures for each node 
+of elements appearing in the $<$integerlist$>$ of the \ti{output 
+packets temperatures elements  $<$integerlist$>$ } command. 
+Results for each node of an element appear on a single logical record. 
+The number of additional packet records on the header record thus 
+indicates the number of elements $\times$ the number of nodes on those elements.
+\squishlist
+\item the element number:  integer
+\item the structure node number for the element:  integer
+\item current temperature ($T$) --  temperature $T_0$ 
+specified in the \ti{initial conditions} for the model +
+all incremental changes ($\Delta T$) defined through load steps:  floating point
+\item $T_0$ temperature specified in the \ti{initial conditions} for the model (see Section 2.9). 
+Values are zero if no
+initial conditions specified
+\squishend
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 31: \ti{tractions for interface-cohesive elements}}
+The packet contains traction values for interface elements appearing in 
+the $<$integerlist$>$ of the \ti{output packets stresses
+ elements $<$integerlist$>$ }command. By default, traction 
+ values are output at the element integration points -- to request a single
+ set of averaged values at the element center list the keyword \ti{center\_output}
+ in the element proeprties.
+ 
+\noindent The number of additional packet records indicated on the header 
+record for output at the:
+\squishlist
+\item integration points -- equals the number of elements $\times$ the number of integration 
+ points within those elements. \ti{This the default output location.}.
+ \item center\_output --  equals the number of elements within the $<$integerlist$>$.
+ \squishend
+
+Key traction values output at each integration point or the center are: $T_{t1}$, 
+$T_{t2}$, $T_s$ and $T_n$.  Additional values, based on the type of cohesive 
+material model associated with the element, follow these common four
+values. See tables in Section 3.3 for listing and
+definition of all output values. 
+
+The following summarizes the values at each location 
+based on the cohesive model type.
+
+
+\noindent \ti{\ul{linear\_intf} (6 values per integration point or 6 values for the center)}
+
+\squishlist
+\item $T_{t1}$, $T_{t2}$, $T_s$ and $T_n$
+\item $\Gamma = 1/2 \, ( \bmf{T}^T \cdot \bmf{\Delta} )$
+\item $\Gamma_{ur} \equiv 0$
+\squishend
+
+
+\noindent \ti{\ul{exp1\_intf} (8 values per integration point or 8 values for the center)}
+
+\squishlist
+\item $T_{t1}$, $T_{t2}$, $T_s$ and $T_n$
+\item $\bar T$ and $\bar T / \bar T_p$
+\item $\Gamma = \int_0^{\bmf{\Delta}} \bmf{T}^T\, d \bmf{\Delta}$
+\item $\Gamma_{ur} = \Gamma -1/2 \, ( \bmf{T}^T \cdot \bmf{\Delta} ) $
+\squishend
+
+
+\noindent \ti{\ul{ppr\_intf} (8 values per integration point or 8 values for the center)}
+
+\squishlist
+\item $T_{t1}$, $T_{t2}$, $T_s$ and $T_n$
+\item $T_s/T_{s-p}$ and $T_n / T_{n-p}$
+\item $\Gamma = \int_0^{\bmf{\Delta}} \bmf{T}^T\, d \bmf{\Delta}$
+\item $\Gamma_{ur} = \Gamma -1/2 \, ( \bmf{T}^T \cdot \bmf{\Delta} ) $
+\squishend
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Type 32: \ti{displacement jumps for interface-cohesive elements}}
+The packet contains displacement jump (\ie strain) values for interface elements appearing in 
+the $<$integerlist$>$ of the \ti{output packets stresses
+ elements $<$integerlist$>$ }command. By default, displacement jump 
+ values are output at the element integration points -- to request a single
+ set of averaged values at the element center list the keyword \ti{center\_output}
+ in the element proeprties.
+ 
+\noindent The number of additional packet records indicated on the header 
+record for output at the:
+\squishlist
+\item integration points -- equals the number of elements $\times$ the number of integration 
+ points within those elements. \ti{This the default output location.}.
+ \item center\_output --  equals the number of elements within the $<$integerlist$>$.
+ \squishend
+
+Key displacement jump values output at each integration point or the center are: $\Delta_{t1}$, 
+$\Delta_{t2}$, $\Delta_s$ and $\Delta_n$.  Additional values, based on the type of cohesive 
+material model associated with the element, follow these common four
+values. See tables in Section 3.3 for listing and
+definition of all output values. 
+
+The following summarizes the values at each location 
+based on the cohesive model type.
+
+
+\noindent \ti{\ul{linear\_intf} (4 values per integration point or 4 values for the center)}
+
+\squishlist
+\item $\Delta_{t1}$,  $\Delta_{t2}$, $\Delta_s$ and $\Delta_n$
+\squishend
+
+
+\noindent \ti{\ul{exp1\_intf} (6 values per integration point or 6 values for the center)}
+
+\squishlist
+\item $\Delta_{t1}$,  $\Delta_{t2}$, $\Delta_s$ and $\Delta_n$
+\item $\bar \Delta$
+\item $\bar \Delta / \bar \Delta_p$
+\squishend
+
+
+\noindent \ti{\ul{ppr\_intf} (6 values per integration point or 6 values for the center)}
+
+\squishlist
+\item $T_{t1}$, $T_{t2}$, $T_s$ and $T_n$
+\item $T_s/T_{s-p}$ and $T_n / T_{n-p}$
+\item $\Delta_s / \Delta_{s-p}$
+\item $\Delta_n / \bar \Delta_{n-p}$
+\squishend
+
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Packet Reader (Fortran Program)}
+The Fortran source code for an example packet reader program is included in the
+WARP3D distribution in the directory \ti{packet\_dir}. This example
+program is designed to run interactively in a shell window. On startup, it queries for
+a list of packet types to be processed during execution (other packet types
+in the binary packets file are ignored). The routines to process each
+packet type read values from the packet file and write some or all of
+the data values. We expect most users will modify extensively this example
+program to suit their needs.
+
+The example program may be compiled simply, for example, using the Intel Fortran 
+compiler using (the entire program is in a single text file)
+\begin{verbatim}
+     ifort  packet_reader.f -o packet_reader.go
+\end{verbatim}
+
+\end{document}
+
+

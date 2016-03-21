@@ -1,0 +1,1019 @@
+%!TEX TS-program=pdflatexmk
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Hex Elements}}}
+\fancyfoot[L] {\small{\ti{Chapter {\thechapter}}\ \   (Updated: 9-4-2012)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\ti{Elements and Material Models}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newenvironment{offsetpar}[1]
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{figure}{0}
+\setcounter{chapter}{3}
+\setcounter{section}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%
+%--------------------------------------
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+
+\begin{document}
+
+
+\LARGE
+\hfill
+\textbf{Chapter \thechapter}
+\rule[0.15in]{450pt}{0.5mm}
+\LARGE
+\begin{flushright}
+ \textbf{
+{\fontfamily{phv}\selectfont Elements and Material Models}}
+\end{flushright}
+\normalsize
+
+%
+%------------------------------------------------------------------------------
+\section{Isoparametric Hex Elements}
+%------------------------------------------------------------------------------
+
+These isoparametric, hexahedral  ``brick" elements with linear
+and quadratic displacement fields provide the fundamental 
+meshing capability for solids in WARP3D. The 8-node 
+element (\ti{l3disop}) employs a conventional tri-linear displacement field. With the
+$\bmf{\ol B}$ modifications 
+of Hughes [\ref{R:TH1979}], the element exhibits minimal volumetric locking under 
+fully incompressible material response and exhibits slightly improved 
+bending response. This element performs well under finite deformations 
+encountered near severe discontinuities and crack fronts. A simple 
+stabilization scheme may be invoked should hour-glassing modes appear 
+(infrequently experienced in this elements). Unfortunately, 
+the element exhibits shear locking when subjected to very strong bending fields.
+
+The 20-node element provides a quadratic displacement field with the ability 
+to model crack front singularities in a focused mesh with element shapes collapsed 
+into wedges. With a reduced order of Gauss quadrature, this element  
+resolves accurately the strong bending fields without shear locking; 
+moreover, the reduced 
+integration order also eliminates volumetric locking under fully plastic deformation. 
+Thin shell structures are modeled accurately with just one element through the 
+thickness when combined with the reduced integration -- unless the analysis 
+requires precise resolution of through thickness yielding. In such cases 
+multiple elements defined through the thickness becomes necessary to locate Gauss points 
+near the outer surfaces.
+
+The 9, 12 and 15-node elements have selected quadratic edges 
+that enable transitions between the 8 and 20-node elements while 
+maintaining full displacement compatibility. The \ti{patwarp} program 
+converts user-defined 8-node 
+elements into these transition elements based on shared faces/edges 
+between 8 and 20-node elements in the model. In the Patran neutral
+file (produced by Patran or other mesh generators), simply connect
+8-node and 20-node elements without concerns for displacement compatibility.
+
+Transitions from coarse to fine meshes of the same element type or 
+different element types may also be accomplished using the tie-mesh 
+approach with multipoint constraints (Section 2.7).
+
+The element formulations support geometrically nonlinear analysis (large 
+displacements, rotations, finite strains), materially nonlinear analysis and 
+combined geometric/material nonlinear analysis. 
+
+For dynamic analyses, the diagonal (lumped) mass matrix derives from 
+scaled terms of the consistent mass matrix.
+
+All element computations take place in the global coordinate system for 
+the model. Strains and stresses output by the model reference the 
+global coordinate axes.
+
+For modeling initially sharp crack fronts, these elements are frequently 
+degenerated or collapsed into a wedge shape. While this modeling 
+technique causes no problems for a small-strain analysis, difficulties 
+in Newton convergence of the global solution may be experienced 
+when the collapsed elements have the geometric nonlinear formulation. 
+The remedy involves modeling the crack front as a very small 
+tube (\ie a keyhole) or to model the crack tip as an initially 
+blunt notch with a root radius comparatively small compared to the 
+crack length or remaining ligament length.
+
+
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[scale=0.6,angle=0]{Fig_Section_3_1_1.pdf} 
+\caption{{\small Fig. \thefigure\ Local node ordering for the isoparametric 
+hex elements. Isoparametric coordinates for the element corner nodes are listed.}
+\label{fig:hex_1}}
+%
+\end{center}
+\end{figure}
+%
+%
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.6,angle=0]{Fig_Section_3_1_2.pdf} 
+\caption{{\small Fig. \thefigure. Local node ordering for the isoparametric 
+hex transition element \ti{ts9isop} element. Isoparametric 
+coordinates for the element corner 
+nodes are listed.} \label{fig:hex_2}}
+%
+\end{center}
+\end{figure}
+%
+%------------------------------------------------------------------------------
+\subsection{Node and Integration Point Ordering}
+%------------------------------------------------------------------------------
+Figures \ref{fig:hex_1} and \ref{fig:hex_2} show the ordering of nodes 
+for the elements and the orientation of 
+parametric axes $( \xi , \eta , \zeta )$. The 9, 12, 15 and 20-node elements retain the same 
+numbering for the 8 corner nodes defined for the \ti{l3disop} element. Note: the node 
+ordering for the 20-node element matches that used in Abaqus.
+
+These elements have mass, stiffness and internal forces computed using quadrature. 
+Figure \ref{fig:hex_int_pts} tabulates the locations of integration points in 
+parametric coordinates. 
+The 8-node element is always evaluated using a conventional (2,2,2) Gauss quadrature. 
+The same (2,2,2) is defined as the default order for the 9, 12, 15 and 20-node elements. 
+For these elements, two additional integration rules are provided as options: a 
+9-point rule and a 14-point rule. The 9 and 14 point rules are especially useful 
+for the 20-node brick to suppress hourglass modes. Fracture mechanics models 
+constructed with 20-node elements tend to develop hourglass modes in those 
+elements located on the crack plane just behind the front. Hourglass modes 
+can also appear in those elements with multiple ï¿½ï¿½freeï¿½ faces, especially those 
+subjected to applied loading. The 9 point and 14 point rules offer a remedy 
+for the hour glass modes but at the cost of some increased 
+computation time and memory storage.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.6,angle=0]{Fig_Section_3_1_3.pdf} 
+\caption{{\small Fig. \thefigure. Location of integration points in 
+isoparametric coordinates.}\label{fig:hex_int_pts}}
+%
+\end{center}
+\end{figure}
+%
+
+To eliminate potential errors due to strongly varying element shapes, the mass 
+matrix and equivalent forces for applied body forces are evaluated with 
+the 14-point rule for the 9, 12, 15 and 20-node elements. Similarly, the 
+equivalent loads for applied face tractions are evaluated using a (3, 3)
+Gauss rule. These procedures are applied independent of the integration 
+order specified by the user. The user specified integration order is applied 
+for stiffness and internal force computations and for strain-stress updating.
+
+Element results are frequently output at the center point which corresponds 
+to parametric location $( \xi =0, \eta=0 , \zeta=0 )$.
+
+Isoparametric elements provide a powerful capability to model the geometry 
+of irregularly shaped bodies. The parent element in parametric coordinates 
+is mapped into the global Cartesian space using (current) coordinates of the 
+nodes and the linear interpolation functions. The element behavior remains 
+adequate unless the mapped shape becomes unreasonable (either the initial, 
+undeformed shape or the current shape for geometric nonlinear analyses). 
+Corner angles on each face must be 
+$>0^\textrm{o}$ and $<180^\textrm{o}$. The best element 
+response is obtained for angles within the 
+range $90^\textrm{o} \pm30^\textrm{o}$. Very large aspect 
+ratios should be avoided if possible. The best element behavior derives 
+from a cubical shape; however, rectangular prism shapes with aspect 
+ratios of 10-20 are commonly used without undue loss of accuracy, 
+especially if the strain field varies gently in the longer direction.
+
+Element routines check for badly distorted elements by examining the 
+determinant of the coordinate Jacobian at the integration points (using 
+the current nodal coordinates for geometric nonlinear analysis). Zero 
+or negative values indicate a severely distorted element. Messages 
+identifying these problems are printed with information about the element.
+
+For edges of elements having mid-side nodes, the nodes must be 
+located initially within a narrow range from the geometric center 
+of the element edge -- unless mid-side nodes are intentionally moved to the
+quarter-point at a crack front for linear-elastic analyses.
+%
+%------------------------------------------------------------------------------
+\subsection{Element Properties}
+%------------------------------------------------------------------------------
+Table 3.1 summarizes the user-assignable values that control element behavior. 
+Element properties are defined by the name of the property, a $<$label$>$, 
+followed by a value. Logical properties are set .true. simply by the appearance 
+of the property name. The default behavior for the \ti{l3disop} element is: 
+small-strain formulation, (2,2,2) Gauss integration, $\bmf{\ol B}$
+formulation, and output of 
+a short list of strains-stresses at the Gauss points. For the \ti{ts9isop}, \ti{ts12isop}, 
+\ti{ts15isop} and \ti{q3disop} elements, the default behavior is: small-strain 
+formulation, (2,2,2) Gauss integration, and output of a short list of 
+strains-stresses at the Gauss points. 
+
+%
+%=================================================
+\begin{table}[htb]	
+\centering
+{
+\setlength{\extrarowheight}{2.5pt}
+\begin{tabular}{ | l | c |  c | c | }
+\hline
+Element property & Keyword & Mode & Default Value \\
+\hline \hline
+Geometrically \ti{linear} formulation &linear &logical  &True  \\ \hline
+Geometrically \ti{nonlinear} formulation &nonlinear &logical  &False  \\ \hline
+Material associated with element &material &label  &none  \\ \hline
+Order of integration  & order & string  & ``2x2x2''$^\dag$  \\ \hline
+Use $\bmf{\ol B}$ formulation  & bbar & logical  & True$^*$  \\ \hline
+Do not use $\bmf{\ol B}$ formulation  &  no\_bbar & logical  & False$^*$  \\ \hline
+Output $( \sigma_{ij},\, \veps_{ij})$ at integration points  & gausspts & logical  & True  \\ \hline
+Output $( \sigma_{ij},\, \veps_{ij})$ at element nodes  & nodpts & logical  & False \\ \hline
+Output $( \sigma_{ij},\, \veps_{ij})$ at element center  & center\_output & logical  & False \\ \hline
+Output minimal set of  $( \sigma_{ij},\, \veps_{ij})$ values  & short & logical  & True \\ \hline
+Output full set of $( \sigma_{ij},\, \veps_{ij})$ values  & long & logical  & False \\ \hline
+\end{tabular}}
+
+\small {\dag 9pt\_rule and 14pt\_rule are available for 9, 12, 15, and 20-node elements }
+
+\small {$^*\bmf{\ol B}$ is not applicable (or needed) for 9, 12, 15 and 20-node elements}
+\normalsize
+	
+%
+\caption{Table \thesection.1 
+Properties for the \ti{hex} isoparametric elements.}
+\label{table:elem_props}
+\end{table}
+
+%
+%------------------------------------------------------------------------------
+\subsection{Output Options}
+%------------------------------------------------------------------------------
+Printed strain-stress results may be obtained at the integration points (default), 
+the element nodes or at the parametric center-point of the element (0,0,0). 
+Figures in Section 2.12 define each of the strain-stress values output by the element.
+When the (2,2,2) Gauss integration rule is specified, 
+nodal values of $( \sigma_{ij},\, \veps_{ij})$ are computed 
+by extrapolation of Gauss point values using linear, Lagrangian polynomials. 
+
+When other integration orders are specified, the nodal values are defined 
+simply as the mean values of the integration point values since no clear 
+extrapolation procedure exists (values output at all nodes of an element are identical). 
+Values of invariants, principal values and directions are computed from these 
+extrapolated nodal values. Nodal values of effective strain, Mises stress, energy 
+density and state variables dependent on the associated material model are also
+the corresponding mean values. 
+
+The center-point values of $( \sigma_{ij},\, \veps_{ij})$ are the simple numerical average of 
+Gauss point values. Values of invariants, principal values and directions 
+are computed from these averaged, center-point values. Values of 
+effective strain, Mises stress, energy density and state variables dependent 
+on the associated material model are simply averaged.
+The short option requests printing of a reduced set of output values. The 
+invariants, principal values and direction cosines are omitted. 
+This is the default output option.
+
+\ul{Note}:  in analyses with nonlinear material behavior, the stress values output at
+element nodes are \ti{not} those obtained by processing extrapolated or
+averaged nodal strains through
+the nonlinear material model routines. This can lead, for example, to extrapolated or
+averaged stresses at a node that do satisfy a yield criterion. 
+%
+%------------------------------------------------------------------------------
+\subsection{Mass Formulation}
+%------------------------------------------------------------------------------
+The element (diagonal) mass matrix is evaluated once at the start of 
+computations for the first load step. Entries of the lumped mass are 
+proportional to the diagonal entries of the element consistent mass. The 
+proportionality factor preserves the total mass of the element, \eg the 
+sum of the diagonal terms for the $\ddot v_i$ accelerations equals the element mass. 
+This procedure always generates positive values for the lumped mass and 
+leads to optimal convergence rates with mesh refinement (see [\ref{R:ZT2005}])
+
+The mass matrix diagonal term for each of the three accelerations at 
+node $i$ is then
+%
+
+\begin{equation}\label{eqn:1}
+m_{ii}^e = \alpha \int_{V_e} \rho N_i^2\, dV_e
+\end{equation}
+
+%
+\noindent  where $\rho$ denotes the 
+mass density of the undeformed material. $N_i$ denotes the usual 
+interpolating function for the element node $i$. The scaling factor $\alpha$ 
+is given by
+
+\begin{equation}\label{eqn:2}
+\alpha =  \int_{V_e} \rho\, dV_e \bigg / \left [ \sum_k^{nen}
+\int_{V_e} \rho N_k^2\, dV_e
+\right ]
+\end{equation}
+
+%
+\noindent where $nen$ denotes the number of element nodes. A full 
+integration order is employed to evaluate these integrals.
+%
+%------------------------------------------------------------------------------
+\subsection{Element Loads}
+%------------------------------------------------------------------------------
+Loads available for these elements include body forces, face tractions, 
+face pressures and uniform temperature changes. In addition, imposed 
+nodal temperatures may define a non-uniform temperature 
+field over the element. Nodal and element temperature loads 
+may be active simultaneously and can be mixed with other types 
+of element loadings. A sequence of element load definitions has the form
+%
+
+\begin{align*}
+&\hv{\ul{element}\ (\ul{loads})} \\
+&\hv{\ \ <elements: list>\ <type\ of\ loading\ and\ parameters>}\\
+&\hv{\ \ <elements: list>\ <type\ of\ loading\ and\ parameters>}\\
+&\qquad\qquad{\bmf{\cdot}}\\
+&\qquad\qquad{\bmf{\cdot}}
+\end{align*} 
+%
+
+\noindent where the $<$type of element loading$>$ is a body force, a face traction,
+a face (normal) pressure, an aerodynamic pressure (piston loading),
+or a constant temperature over the element volume.
+%
+
+\noindent \bf{Body Forces}\rm
+
+\noindent Body forces are specified by the intensity (units of $F/L^3$) and the 
+direction along one of the coordinate axes. The body force 
+intensity is constant over the element. The body force loads 
+are defined by the command
+%
+
+\begin{align*}
+&\hv{\ul{body}\  (\ul{force}s)\ } \left [
+\begin{Bmatrix}
+\hv{\ul{bx}} \\ \hv{\ul{by}} \\ \hv{\ul{bz}}      
+\end{Bmatrix}
+(=)\ \hv{<force\ intensity:number>(,)} \right ]
+\end{align*} 
+%
+
+\noindent \bf{Face Tractions}\rm
+
+
+\noindent Tractions applied to the faces of elements may have a direction 
+along one of the global coordinate axes or a direction normal to 
+the specified face. Figure \ref{fig:hex_faces} defines the face numbers. The 
+commands define the loaded face of the element, the loading 
+intensity (units of $F/L^2$), and the loading direction. When the traction 
+is aligned with one of the coordinate axes, the command has the form
+%
+
+\begin{align*}
+&\hv{\ul{face}\ (\ul{abaq}us)\ <face\ number:integer>\ (\ul{tract}ions)\ } \left [
+\begin{Bmatrix}
+\hv{\ul{tx}} \\ \hv{\ul{ty}} \\ \hv{\ul{tz}}      
+\end{Bmatrix}
+(=)\ \hv{<intensity:number>(,)} \right ]
+\end{align*} 
+
+%
+\noindent The \ti{abaqus} option applies for hex elements and loadings intended for
+WARP3D faces (4,5). These faces are flipped from the Abaqus 
+numbering (see Fig. \ref{fig:hex_faces}). With this option, the input translators
+change the specified face number 5 to 4 and 4 to 5 before continuing as a convenience
+for users having Abaqus input files for the model.
+
+For a normal (pressure) loading, use a command of the form
+%
+
+\begin{align*}
+&\hv{\ul{face}\ (\ul{abaq}us) <face\ number:integer>\ \ul{press}ure\ (=)\ <intensity:number> }
+\end{align*} 
+
+%
+\noindent where a positive value for the intensity denotes a load directed into 
+the face, \ie a positive pressure loads the face in compression.
+%
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.7,angle=0]{Fig_Section_3_1_4.pdf} 
+\caption{{\small Fig. \thefigure. Face numbers for applying tractions 
+to the isoparametric elements.}\label{fig:hex_faces}}
+%
+\end{center}
+\end{figure}
+
+\noindent \bf{Piston Model Pressures}\rm 
+
+\noindent 
+Aircraft structural elements generate unsteady aerodynamic pressure loads 
+related to the fluid velocity and the local deformation. Piston theory provides
+a simple method to calculate approximate aerodynamic pressures at relatively large
+flight Mach numbers on nearly plane surfaces at a low inclination to the free stream. 
+WARP3D incorporates a third order version of piston theory as described 
+in [\ref{R:LH1956}, \ref{R:AZ1956}] to
+define the instantaneous pressure loading on surfaces of solid elements exposed
+to the flow stream. The pressure is determined by
+
+\begin{equation}\label{eqn:3rdpist}
+\dfrac{p}{p_3} = 1 + \gamma \left[ M_3 \bar{V}_p
++ \dfrac{\gamma+1}{4} M_3^2 \bar{V}_p^2 
++ \dfrac{\gamma+1}{12} M_3^3 \bar{V}_p^3 
+\right] \,
+\end{equation}
+
+\noindent where $p$ sets the local pressure on the aircraft surface, 
+$p_3$ represents the undisturbed flow pressure at the panel's leading edge, $\gamma$ denotes 
+the isentropic exponent (equal to the specific heat ratio of air), 
+and $M_3$ provides the Mach number. The term $\bar{V}_p$ indicates
+the normalized piston velocity, defined as having a 
+direction normal to the approach flow at the panel leading edge:
+
+\begin{equation}\label{eqn:normVp}
+ \bar V_p = \left( \dfrac{1}{U_3} \dfrac{\partial w}{\partial t}  + \dfrac{\partial w}{\partial s} \right) \, 
+\end{equation}
+
+\noindent where $U_3$ denotes the velocity (magnitude) at the panel's leading edge. 
+The term $w$ indicates the displacement perpendicular  to the aircraft's 
+surface. Eq (\ref{eqn:normVp}) includes partial derivatives of $w$ 
+with respect to time and the direction of fluid flow, $s$. 
+
+Piston loads are re-computed at the beginning of every load (time) step
+in the solution to reflect the current displacement derivatives with respect to
+time and flow direction in the
+above equation and also possible changes in parameters required in
+Eq (\ref{eqn:3rdpist}). The surface pressures from the piston loading 
+do not change during equilibrium iterations over a load (time) step. 
+Piston pressure values ($p$) are based on the geometry
+and displacements at the parametric center of the element surface. 
+
+The following command sets piston loads on element surfaces: 
+
+\begin{align*}
+&\hv{\ul{face}\ (\ul{abaq}us) <face\ number:integer>\ \ul{pist}on\ <table:string> }
+\end{align*} 
+
+\noindent A table of type \ti{piston} must be defined prior to 
+defining the piston loading command. The piston table provides a 
+loading history based on flow pressure, Mach number, velocity, 
+isentropic exponent, and the fluid flow direction with time. 
+
+\color{black} \noindent \bf{Uniform Temperature}\rm
+
+\noindent A uniform temperature change over the element 
+may be imposed through element loads. The command has the form
+%
+
+\begin{align*}
+&\hv{\ul{temper}ature\ (=)\ <value:number>\ (,) }
+\end{align*} 
+
+%
+\noindent \bf{Multiple Loads Defined on Same Element}\rm
+
+\noindent Element loads are additive -- if the same element number and loading 
+direction appear in two different loading commands the sum of 
+two loads is applied to the model. An example sequence 
+to define a loading condition and a set of element loads is
+
+\small \begin{verbatim}
+       element loads
+         1-40 620-800 by 2 face 6 pressure -2.1 temperature 32.4
+         140 face 3 tractions tx -0.5 ty 14.34 tz 42.6
+         3256-4000 body forces bz 12.3 bx -32.4
+         20 body force bx -3
+\end{verbatim}\normalsize
+
+\noindent In the above example, element 20 has a normal 
+pressure on face 6, a temperature increment,
+and a body force in the $x$ direction. 
+Specifications for different loading types for a list of elements 
+may be combined onto a single line if desired.
+
+\noindent \bf{Large Displacement Effects on Loads}\rm
+
+\noindent When the analysis includes geometric nonlinear effects 
+(large displacements), equivalent loads for the incrementally 
+applied surface tractions and pressures are re-computed at the beginning 
+of each load step using the current (deformed) geometry of the elements.
+%
+
+%------------------------------------------------------------------------------
+\subsection{Strains-Stresses for Large Displacement Formulation}
+%------------------------------------------------------------------------------
+The \ti{nonlinear} property requests a geometrically nonlinear element formulation. 
+Stress values output by the element are then the Cauchy (true) stresses. The 
+Cauchy stress defines tractions over internal surfaces in the \ti{deformed} configuration 
+with stress components, $\sigma_{ij}$, aligned with the global 
+coordinate axes for the model. The symmetric Cauchy stress tensor is defined by
+the equilibrium conditions 
+%
+
+\begin{equation}\label{eqn:3}
+\int_S \bmf{n \cdot \sigma }\, dS = 
+\int_V \left ( \frac{\partial}{\partial \bmf{x}} \right ) \bmf{\cdot \,\sigma}\, dV
+\end{equation}
+
+\noindent where $\bmf{n}$ defines a unit outward normal to the deformed surface $S$, and 
+$V$ denotes the deformed volume of the body.
+
+The increment of strain that advances the solution from load step $n$ to $n+1$ is 
+given by
+%
+
+\begin{equation}\label{eqn:4}
+\Delta \bmf{\veps}= \bmf{ B} \left( \bmf{x}_{n+\frac{1}{2}} \right ) \Delta \bmf{u}
+\end{equation}
+
+\noindent where the $\bmf{B}$ (linear-strain) displacement matrix is evaluated 
+at the mid-step 
+deformed configuration of the element. Then $\Delta \bmf{\veps}$ corresponds to a 
+finite increment of the rate of 
+deformation tensor, $\bmf{D}_{n+1/2}\cdot \Delta t$, over the step. For the 8-node,
+linear displacement element, $\bmf{B}$ in the above is replaced by $\bmf{\overline B}$.
+The corresponding increment of \ti{unrotated} strain, $\Delta \bmf{d}$,
+is given by (see Chapter 1 discussion on finite-strain plastictiy)
+
+\begin{equation}\label{eqn:50}
+\Delta \bmf{d} = \bmf{R}^T_{n+\frac{1}{2}}\, 
+\bmf{D}_{n+\frac{1}{2}}\, \bmf{R}_{n+\frac{1}{2}} \, \Delta t
+\end{equation}
+
+\noindent where $\bmf{R}$ is the rotation component of the polar decomposition
+of the deformation gradient $\bmf{F=RU}$. Increments ${\Delta \bmf{d}}$
+over load steps all refer to the orthogonal coordinate system $\bmf{B_u}$
+on the right side of the polar decomposition figure in finite-strain discussions in Chapter 1.
+These increments may be summed and then rotated to the final (deformed)
+configuration for output purposes via the current ($n=k$)  $\bmf{R}$  
+
+\begin{equation}\label{eqn:51}
+\bmf{\bar D} = \bmf{R} \left ( {\sum_{n=1}^{n=k}\Delta \bmf{d}} \right )\bmf{R}^T
+\end{equation}
+
+%
+\noindent where the symmetric tensor denoted $\bmf{\bar D}$ then defines an 
+approximate logarithmic strain measure for the current 
+deformed configuration expressed with components in the global coordinate axes. 
+Shear terms in the output follow the usual engineering definition, \ie 
+$\Delta \gamma_{xy}= 2 \times \Delta \veps_{xy}$.
+
+An example illustrates interpretation of the strain output. Using hex elements,
+define a simple axial bar 
+with initial length $L_0$ and a deformed length denoted $L$ at each stage of deformation.
+The bar lies initially along the global $X$-axis and is loaded to significant 
+elastic-plastic elongation
+using a number of load steps. The output strain $\veps_{xx}$ for this
+elongation loading corresponds to the usual
+logarithmic (true) strain provided a sufficient number of load steps are used 
+to approximate the defining integral
+
+\begin{equation}\label{eqn:52}
+\veps_{xx} =  \sum \Delta \bmf{d}_{11} =  \sum \frac{\Delta u}{L} \approx \int \frac{dL}{L}
+\end{equation}
+
+Now define additional load steps with displacement constraints that impose 
+a $+90$-degree rigid rotation of the bar around the $Z$-axis. The rotation process defined
+by Eq (\ref{eqn:51}) provides output strain values with $\veps_{yy}$ now 
+having the $\veps_{xx}$
+value prior to the rotation. Similarly, the output $\veps_{xx}$ has the
+$\veps_{yy}$ value prior to rotation. The output values of Cauchy stress follow
+a similar result from the imposed rigid-body rotation (\ie $\sigma_{yy}$ is
+the (true) axial stress).
+
+%------------------------------------------------------------------------------
+
+\subsection{The $\bmf{\overline B}$ Formulation (8-node element)}
+%------------------------------------------------------------------------------
+Many methods to alleviate volumetric locking under nearly incompressible material
+behavior in fully integrated, linear elements have been 
+proposed in the literature. The so-called $\bmf{\overline B}$ framework 
+(Hughes [\ref{R:TH1979}]) implemented for the \ti{l3disop} element in WARP3D is outlined below.
+
+The strains are divided into deviatoric and dilatational parts in the following manner.
+%
+
+\begin{equation}\label{eqn:5}
+\veps_{ij} = \veps_{ij}^{dev} +  \veps_{ij}^{dil}\quad \quad 
+ \veps_{ij}^{dil} = \frac{1}{3} \delta_{ij} \sum_{k=1}^{k=3} \veps_{kk} \quad\quad
+ \veps_{ij}^{dev} = \veps_{ij} - \veps_{ij}^{dil}
+\end{equation}
+%
+
+\noindent The strain-displacement matrix, $\bmf{B}$, is divided divided into  
+dilatational and deviatoric parts in the same manner as
+%
+
+\begin{equation}\label{eqn:6}
+\bmf{B} = \left [\bmf{B}_1\ \bmf{B}_2\ \ldots\ \bmf{B}_n \right ]
+\end{equation}
+%
+where,
+%
+
+\begin{equation}\label{eqn:7}
+   \bmf{B}_i =
+       \left [
+          \begin{matrix}
+             B_1 & 0 & 0 \\
+             0 & B_2 & 0 \\
+             0 & 0 & B_3 \\
+             B_2 & B_1 & 0 \\
+             0 & B_3 & B_2 \\
+             B_3 & 0 & B_1 
+         \end{matrix}
+        \right ]
+        \qquad
+  \bmf{B}_i^{dil} = \frac{1}{3}
+       \left [
+          \begin{matrix}
+             B_1 & B_2 & B_3 \\
+             B_1 & B_2 & B_3 \\
+             B_1 & B_2 & B_3 \\
+             0 & 0 & 0  \\
+             0 & 0 & 0 \\
+             0 & 0 & 0  
+         \end{matrix}
+        \right ]
+        \qquad
+ \bmf{B}_i^{dev} = \bmf{B}_i - \bmf{B}_i^{dil}       
+\end{equation}
+%
+
+\noindent with the subscript $i$ omitted for clarity on each term inside the $[\ ]$ and
+
+%
+\begin{equation}\label{eqn:8}
+B_{i1}=\frac{\partial N_i}{\partial x} \qquad
+B_{i2}=\frac{\partial N_i}{\partial y} \qquad
+B_{i3}=\frac{\partial N_i}{\partial z}
+\end{equation}
+%
+
+The dilatational contribution to the stiffness causes locking for near 
+incompressible conditions and is replaced the dilatational 
+part of the strain-displacement matrix with a modified dilatational 
+part, $\bmf{\overline B}^{dil}$. The strain-displacement matrix is 
+replaced by $\bmf{\overline B}$ defined as:
+
+\begin{equation}\label{eqn:9}
+ \bmf{\ol B}_i = \bmf{B}_i^{dev} + \bmf{\ol B}_i^{dil}       
+  \qquad
+   \textrm{where } \bmf{\ol B}_i^{dil} = \frac{1}{3}
+       \left [
+          \begin{matrix}
+             \ol B_1 & \ol B_2 & \ol B_3 \\
+             \ol B_1 & \ol B_2 & \ol B_3 \\
+             \ol B_1 & \ol B_2 & \ol B_3 \\
+             0 & 0 & 0  \\
+             0 & 0 & 0 \\
+             0 & 0 & 0  
+         \end{matrix}
+        \right ]
+        \qquad
+\end{equation}
+%
+\noindent where again the subscript $i$ on each term in the $[\ ]$ has been omitted. 
+The $\bmf{\ol B}$ matrix can then be written out explicitly in 
+the following form (with subscript $i$ omitted inside $[\ ]$)
+%
+\begin{equation}\label{eqn:9}
+   \bmf{\ol B}_i =\frac{1}{3}
+       \left [
+          \begin{matrix}
+             2 B_1 + \ol B_1 & \ol B_2 - B_2 & \ol B_3 - B_3 \\
+             \ol B_1 - B_1 & 2 B_2 + \ol B_2 & \ol B_3 - B_3 \\
+             \ol B_1 - B_1 & \ol B_2 - B_2 & 2 B_3 + \ol B_3 \\
+             3 B_2 & 3 B_1 & 0  \\
+             0 & 3 B_3 & 3 B_2 \\
+             3 B_3 & 0 & 3 B_1 
+         \end{matrix}
+        \right ]
+\end{equation}
+
+\noindent \bf{Mean Dilatation}\rm
+
+\noindent Several  options for defining $\ol{\bmf{B}}_i^{dil}$ have 
+been proposed in the literature. Here we use the ``mean dilatation" approach suggested 
+by Nagtegaal, et al. [\ref{R:NPR1974}]. A volume averaged 
+(mean) $\widetilde {\bmf{B}}_i$ matrix is computed 
+over the element as
+
+%
+\begin{equation}\label{eqn:10}
+   \bmf{\widetilde B}_i =\frac{1}{V_e} \int_{V_e}  \bmf{ B}_i \, d V_e 
+\end{equation}
+
+\noindent with $\ol{\bmf{B}}_i^{dil}$ at each Gauss point taken as the 
+dilatational component 
+of  $\widetilde {\bmf{B}}_i$ as in Eq. (3.10). To save computations, only 
+the three terms needed from  $\widetilde {\bmf{B}}_i$ to compute
+$\ol{\bmf{B}}_i^{dil}$ are actually evaluated
+%
+
+\begin{equation}\label{eqn:11}
+\ol B_{i1} = \frac{\partial \ol N_i}{\partial x} = \frac{1}{V_e} \int_{V_e} \frac{\partial  N_i}{\partial x}  \, d V_e 
+\end{equation}
+
+%
+\begin{equation}\label{eqn:12}
+\ol B_{i2} = \frac{\partial \ol N_i}{\partial y} = \frac{1}{V_e} \int_{V_e} \frac{\partial  N_i}{\partial y}  \, d V_e 
+\end{equation}
+
+%
+\begin{equation}\label{eqn:13}
+\ol B_{i3} = \frac{\partial \ol N_i}{\partial z} = \frac{1}{V_e} \int_{V_e} \frac{\partial  N_i}{\partial z}  \, d V_e 
+\end{equation}
+
+\noindent using the standard (2,2,2) Gauss quadrature. 
+
+This formulation provides an element with the same dilatational strain 
+and mean stress at each of the (2,2,2)  Gauss points. When plane strain 
+constraints are imposed on the $\ol{\bmf{B}}$ element, the $\veps_z$
+is not restricted to 0 at
+ each Gauss point, but is only restricted to 0 over the element as a 
+ whole, \ie for \ti{center\_output} the $\veps_z$ value is zero.
+ 
+\noindent \bf{Large Displacement Form}\rm
+
+\noindent When large displacement effects are present, 
+the current coordinates of the element nodes are adopted to 
+form $\ol{\bmf{B}}$ to compute virtual strains for internal force computation as in 
+
+%
+\begin{equation}\label{eqn:14}
+\bmf{IF}_e = 
+ \int_{V_e} \bmf{\ol B}^T \left ( \bmf{x}_{n+1}\right ) \bmf{\sigma}_{n+1}\, d V_e
+\end{equation}
+%
+
+\noindent where $\bmf{\sigma}$ denotes the Cauchy stresses and 
+$V_e$ the current (deformed) element volume at $n+1$.
+
+\noindent \bf{Hourglass Stabilization}\rm
+
+\noindent The $\ol{\bmf{B}}$ modification which enforces 
+constant pressure throughout the element can 
+introduce spurious hourglass modes. A classic example 
+which illustrates this element behavior involves 
+finite compression of a plane-strain block, where the 
+ends are restrained from lateral expansion. The 
+differences between deformed shapes with and without 
+the $\ol{\bmf{B}}$ modification are quite surprising.
+
+A simple stabilization procedure suggested by Nakamura and
+Parks [\ref{R:NP1988}]
+often helps to suppress this behavior. A specified fraction of the 
+usual $\bmf{B}_i^{dil}$  replaces a similar fraction 
+of $\ol{\bmf{B}}_i^{dil}$ as
+
+%
+\begin{equation}\label{eqn:15}
+   \bmf{\ol B}_i =\bmf{B}_i^{dev} + \bmf{\ol B}_i^{dil}  \ \  +
+   \ \  \varepsilon \left [ \bmf{B}_i^{dil} -\bmf{\ol B}_i^{dil} \right ]
+\end{equation}
+
+\noindent When $\veps=0.0$, the full $\ol{\bmf{B}}$ form of 
+the element is obtained; when  $\veps=1.0$, the 
+conventional  $\bmf{B}$ matrix for the 8-node element results. 
+No extra computational costs incur for $\veps > 0$.
+
+Users specify the value of $\veps$ in the nonlinear solution parameters for the analysis 
+with the command (see Section 2.10 on Solution Parameters) 
+\ti{bbar stabilization factor }$<$numr$>$.
+The default value of $\veps$ is 0.0.
+
+\noindent \bf{Mean Dilatation for Deformation Gradients, $\bmf{\ol F}$}\rm
+
+\noindent Some material models require access to the deformation 
+gradients at $n$ and $n+1$ for direct computation of strain-like
+terms (\eg the UMAT material model and various crystal
+plasticity models). A mean-dilatation form for the deformation gradient
+$\bmf{\ol F}$ at an integration point is computed using the modification
+
+%
+\begin{equation}\label{eqn:Fbar}
+   \bmf{\ol F} =\bmf{F} \left ( \frac{\bar J}{J} \right )^{\frac{1}{3}}
+\end{equation}
+
+\noindent where $J = det(\bmf F)$ and the $\bar J$ is the average value of
+$J$ over the deformed  element volume computed by
+
+%
+\begin{equation}\label{eqn:Jbar}
+   \bar J =\frac{V}{V_0}= \frac{1}{V_0} \int_{V_0} J \,dV_0~.
+\end{equation}
+
+\noindent and $V_0$ is the undeformed element volume. Note that use of  $\bmf{\ol F}$
+does not affect $\bmf R$ computed in the polar decomposition.
+%------------------------------------------------------------------------------
+\subsection{Collapsed Elements for Fracture Analyses}
+%------------------------------------------------------------------------------
+\noindent For linear-elastic crack analyses, it often proves convenient to model a 
+sharp crack tip that does not open under loading. To support this modeling 
+option, simply collapse one face of a hex element to a line by repeating node 
+numbers in the incidence list. In Fig. \ref{fig:hex_1}, for example, this option can be 
+invoked by assigning the same structure node number for element nodes 4 
+and 8 of the \ti{l3disop} element and a different structure node number for elements 
+nodes 1 and 5.
+
+During input processing, the input translators issue a warning message for each 
+element with repeated nodes in an element incidence list. When this 
+modeling approach is intentional, just ignore the warning messages.
+
+For nonlinear analyses, crack front elements often have a face collapsed to a
+line but with unique node numbers retained for all nodes. This scheme 
+allows blunting deformations of the crack front under increased loading. 
+The crack front elements thus have a topologically unique definition but 
+geometrically coincident nodes (at least before loading). This modeling 
+approach creates no difficulties in the element computations.
+
+%------------------------------------------------------------------------------
+\subsection{Temperature Gradients in Linear Displacement Elements}
+%------------------------------------------------------------------------------
+\noindent When users specify temperatures at nodes of the model, non-zero temperature 
+gradients may occur across elements. Elements with linear displacement 
+approximations behave very poorly under such loadings (\ie they exhibit 
+shear locking). To alleviate this behavior, the element processors that 
+compute strains first average the temperatures on the element nodes 
+(imposed through the structure level nodal temperature loadings) to construct a 
+uniform temperature change over the element. This value is added to 
+any specified uniform temperature change imposed through the element 
+uniform temperature loads (described above). 
+%------------------------------------------------------------------------------
+
+\subsection{Material Property Gradients in Linear Displacement Elements}
+%------------------------------------------------------------------------------
+\noindent Materials with temperature dependent elastic properties or functionally 
+graded materials (elastic properties specified at model nodes) can generate strong 
+gradients of strain and stress within elements subjected to otherwise simple loadings. 
+Elements with linear displacement fields may develop severe locking under such 
+conditions. To help alleviate this effect, a single set of material properties is 
+constructed and used in the computations for all the Gauss points of each element 
+with linear displacement fields. A model constructed with these elements then 
+accommodates the gradient effects through the usual jumps in strain-stress values across 
+element boundaries. 
+
+Simple averaging of FGM properties specified for the model 
+nodes incident on the element or averaging of the temperatures for the element 
+nodes before element level computations accomplishes this smoothing effect.
+This averaging process is performed for all solid (hex) elements 
+but the \ti{q3disop} element.
+
+%------------------------------------------------------------------------------
+\subsection{Examples}
+%------------------------------------------------------------------------------
+\noindent The following examples illustrate the specification 
+of hex elements in a model.
+\small \begin{verbatim}
+       structure cct
+       c
+       material a533b 
+         properties ....
+       c
+       number of nodes 25642 22092
+       c
+       elements
+         14000-22092 type l3disop  nonlinear material a533b order 2x2x2,
+                             long bbar center_output
+         2000-4000 type q3disop  linear material a533b order 2x2x2,
+                             long nodpts
+       c
+                                            
+\end{verbatim}\normalsize
+%
+
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small
+
+\noindent[\refstepcounter{sectrefs}\label {R:TH1979}\thesectrefs]~T. R.
+Hughes. Generalization of selective integration procedures to anisotropic and nonlinear media.
+\ti{International Journal for Numerical Methods in Engineering},
+Vol 15, No 9, pages 1413-Ð1418, 1980. DOI: 10.1002/nme.1620150914
+
+\medskip
+
+\noindent[\refstepcounter{sectrefs}\label {R:ZT2005}\thesectrefs]~O. C. Zienkiewicz
+and  R. L. Taylor. Finite Element Method For Solid And Structural Mechanics. 6th Edition.
+Butterworth-Heinemann. 2005.
+
+\medskip
+
+\noindent[\refstepcounter{sectrefs}\label {R:NPR1974}\thesectrefs]~J.C. Nagtegaal, D.M. Parks, 
+J.R. Rice. On numerically accurate finite element solutions in the fully plastic range.
+\ti{Computer Methods in Applied Mechanics and Engineering}, Vol 4, No 2, pp. 153--177, 1974.
+DOI 10.1016/0045-7825(74)90032-2.
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:LH1956}\thesectrefs]~M. J. Lighthill.
+Oscillating airfoils at high mach numbers. \ti{Journal of Aeronautical Sciences}, 
+Vol. 20, No. 6, June 1953, pp. 402--406. 
+\medskip
+
+\noindent[\refstepcounter{sectrefs}\label {R:AZ1956}\thesectrefs]~H. Ashley and G. 
+Zartarian.Piston Theory -- A New Aerodynamic Tool for the Aeroelastician.
+\ti{Journal of Aeronautical Sciences}, Vol. 23, No. 12, December 1956, pp. 1109--1118.
+
+\noindent[\refstepcounter{sectrefs}\label {R:NP1988}\thesectrefs]~T. Nakamura and D. M. Parks.
+Three-Dimensional Stress Field Near the Crack Front of a Thin Elastic Plate. \ti{Journal
+of Applied Mechanics}, Vol. 55, No 4,  pp. 805--813, 1988.
+
+\end{document}
+
+

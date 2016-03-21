@@ -1,0 +1,369 @@
+%
+\documentclass[10pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+%
+%
+%   --- margins and inter-paragraph spacing ---
+%
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+%
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{xspace}
+\usepackage{needspace}
+%---------------------------------------------
+%
+%----------------------------------------------
+%
+%          --- header and footer contents ---
+%
+\usepackage[us,12hr]{datetime}
+\usepackage{fancyhdr} \pagestyle{fancy}
+%\setlength\headheight{15pt}
+%\lhead{User's Guide - \ti{WARP3D}}
+%\rhead{\ti{Revision History}}
+\fancyfoot[L] {\small{\ti{Executive Summary}}}
+\fancyfoot[C] {\small{\thepage}}
+%\fancyfoot[R] {\small{\ti{Updated: 12-17-2015}}}
+\fancyfoot[R] {  \small{\ti{Updated: \today\ at \currenttime}}}
+\renewcommand{\headrulewidth}{0.0 pt}
+
+
+%   
+\frenchspacing
+%
+%   ---  local commands ---
+%
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\patwarp}{\ti{patwarp\xspace}}
+\newcommand{\eg}{\ti{e.g.},\xspace}
+\newcommand{\ie}{\ti{i.e.},\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\ti}{\emph}
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+%
+%   ---  page numbering ---
+%
+\pagenumbering{roman}
+\setcounter{page}{1}
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+\noindent
+\begin{center}
+\large
+ \textbf{
+{\fontfamily{phv}\selectfont \ul{Executive Summary}}}\\[0.2in]
+\Huge
+\textbf{
+{\fontfamily{phv}\selectfont WARP3D}}\\[0.2in]
+
+\normalsize
+\textit{
+{An Open-Source Research Code for}}\\[0.2in]
+\large
+\textbf{
+{\fontfamily{phv}\selectfont 3-D Nonlinear Finite Element Analysis of Solids\\
+for Fracture and Fatigue Processes}}
+\end{center}
+\normalsize
+%
+%
+WARP3D is under continuing development as a ready-to-run research code for the solution of large-scale, 
+3-D solid models subjected to static and dynamic loads. The code includes
+specific features oriented toward the investigation of fatigue and ductile fracture in metals.
+\begin{center}
+\line(1,0){250}
+\end{center}
+
+
+\noindent \textbf{Mechanics: Elements, Constitutive Models, Algorithms}
+\squishlist
+\item
+a library of isoparametric hex, tet and interface-cohesive elements
+\item
+user defined multi-point constraints; absolute constraints in global and non-global coordinates
+\item
+ tied-contact capability to connect topologically dissimilar but geometrically congruent meshes using automatically constructed multi-point constraints
+\item
+a robust finite strain formulation for solid elements and interface-cohesive elements using rotation neutralized rates based on
+polar decomposition of \textbf{F}
+\item
+a general $J$-integral computation facility with inertia, crack face loading, thermal loading, functionally graded and anisotropic materials
+\item
+a general interaction integral procedure to compute Mode I, II and III stress intensity factors and $T$-stress for cracks in homogeneous and non-homogeneous materials (\ie functionally graded materials, FGMs) 
+\item3-D element extinction and node release facilities to model discrete crack growth
+\item
+general node release with relaxation of reaction forces -- separate from automated crack growth procedures
+\item
+linear and nonlinear modeling of functionally graded materials -- material properties defined at nodes of the model rather than conventional element-by-element
+\item
+nonlinear material models including viscoplastic and temperature effects; the 
+Gurson-Tvergaard plasticity model for void growth (with rate and temperature effects), 
+finite-strain plasticity including the effects of solute hydrogen on the micro-scale flow properties, an advanced model for cyclic plasticity of metals including nonlinear kinematic-isotropic hardening, more generalized complex cyclic behavior 
+(Cottrell-Stokes) and temperature dependent cyclic properties; Norton-Bailey power creep
+\item 
+ability to integrate existing Abaqus  \ti{UMAT} routines for user-defined material behavior with only cosmetic changes needed. Other Abaqus compatible \ti{user} routines \eg UEXTERNALDB are supported in addition to WARP3D
+specific user-routines not having a direct counterpart in Abaqus.
+\item
+a crystal plasticity material model for rate and temperature dependent 
+simulation of microscale plastic flow in metals: fcc (12 slip systems), bcc (12 slip systems), bcc48 (48
+slip systems), and a single slip system for teaching. A variety of constitutive models to
+define shear strain-rates to  shear stresses are available. Includes options for
+simple gradient-based geometric hardening, which incorporates the effect of
+necessary dislocations on the hardening properties of the material.
+
+\item
+linear and nonlinear cohesive constitutive models for use with interface elements to model spontaneous crack formation and extension in 3D. The Paulino-Park-Roesler option provides a comprehensive treatment of mixed-mode fracture 
+\item 
+element body forces, face tractions, face pressures, temperatures, piston-theory unsteady face pressures, geometry dependent face pressures, user-defined nodal-loads routine
+\item
+displacement extrapolation, line search and automatic, adaptive solution strategies to enhance convergence of global Newton iterations, local constitutive updates and to control growth rates of material damage
+\item
+adaptive load control to facilitate extensive crack growth analyses using interface-cohesive elements, crack-tip opening angles (CTOA), and computational cell approaches using a Gurson constitutive model or stress-modified critical strain criteria.
+\item
+contact between the deformable finite element model and a library of rigid surfaces (planes, cylinders, spheres) which maybe assigned velocity vectors
+\squishend
+
+\needspace{4\baselineskip}
+\noindent \textbf{Parallel Execution}
+\squishlist
+\item
+parallel execution using either shared memory and OpenMP [Linux, Windows, OSX]
+ or a hybrid mode with explicit message passing (MPI) and 
+ OpenMP for very large models on distributed memory systems [Linux only]
+\item
+Pardiso (threaded) sparse direct and sparse iterative solver from Intel MKL [Linux, Windows, OSX]
+\item
+\ti{hypre} (iterative) solver from Lawrence Livermore National Laboratory for MPI-based 
+solution of very large models. Supported on Linux platforms.
+Stiffness assembly process is  performed using a
+distributed approach across the MPI ranks. The \ti{hypre}
+solver includes an option for the BoomerAMG pre-conditioner
+(parallel implementation of algebraic multigrid).
+\squishend
+
+\noindent{\textbf{Pre- \& Post- Processing}}
+\squishlist
+\item
+a translator program (\ti{patwarp}) written in Fortran is provided 
+that generates a WARP3D input file from a Patran neutral file. For MPI-based
+executions, \ti{patwarp} performs a domain decomposition 
+of the mesh and includes the domain assignments in the input file;
+\item
+WARP3D outputs simple \ti{flat} files of node and element results in \ti{text} or
+\ti{stream} formats. Displacements, velocities, accelerations, temperatures, strains, stresses may be
+output at nodes. Strain, stresses and material state variables may be output for elements.
+The files are readily processed by simple Python, C++, C, Fortran
+programs and may be imported directly into Excel;
+\item
+a translator program (\ti{warp3d2exii})  written  in Python
+is provided that builds an EXODUS II database from the flat results files and the flat model
+description file (suitable for use with ParaView);
+\item
+a generalized \ti{packet} output facility in binary format to support rapid development 
+of customized post-processing operations
+\item WAR3D can write a Patran neutral file for the model and a simple flat file
+describing the model (without the packet structuring of a Patran neutral file)
+\item
+WARP3D outputs Patran formatted and binary 
+result files for displacements, velocities, accelerations, temperatures,
+strains, stresses. These may
+be imported directly into Patran and other post-processors that
+support Patran result files;
+\squishend
+
+\noindent{\textbf{Supported Platforms}}
+
+\noindent
+Pre-compiled, ready-to-run  executables are included in open-source
+distribution. All source code and driver scripts included for 
+re-building to incorporate local modifications. Extensive verification problems 
+are included in a simple automated testing suite.
+\squishlist
+\item
+Linux: 64-bit. Threads-only version (OpenMP) and hybrid version (MPI + OpenMP)
+\item
+OS X: Threads-only version (OpenMP). 10.10,x, 1011.x
+\item
+Windows 64-bit.  Threads-only version (OpenMP). 
+\squishend
+
+\noindent{\textbf{License}}
+
+\noindent
+University of Illinois/NCSA, Open Source License. Copyright (c) 
+2012 University of Illinois at Urbana-Champaign. (see last page of this Executive Summary
+for details)
+
+\begin{center}
+\line(1,0){250}
+\end{center}
+
+\begin{center}
+\bf{WARP3D SUMMARY}
+\end{center}
+
+
+WARP3D executes in a parallel on computers with multiple processors and 
+with multiple cores per processor. The parallel implementation makes use of 
+industry standards: (1) OpenMP for shared memory (threads), (2) Message Passing 
+Interface (MPI) to support a multiple level hierarchy of parallel execution on 
+distributed hardware (clusters) with local parallel execution using shared memory via OpenMP.
+
+The nonlinear, dynamic equilibrium equations are solved using an 
+incremental-iterative, implicit formulation with full Newton iterations, line search
+and adaptive-substepping
+to eliminate residual nodal forces. Time history integration of the nonlinear 
+equations of motion is accomplished with Newmark’s $\beta$-method. 
+Analyses with WARP3D thus exhibit the numerical stability for large time 
+(load) steps provided by the implicit formulation. All computational 
+aspects of the code (element stiffnesses, element strains, stress updating, 
+element internal forces, contact, fracture parameter computation) are 
+implemented in an element-by-element, blocked data structure and
+algorithmic architecture. Such blocking  greatly improves parallel 
+efficiency of these element level 
+computations, with a thread assigned to perform all computations for a 
+block of elements completely independent of other threads assigned to 
+other blocks. The larger-size, inner-most loops made possible by the 
+element blocking structure also create many opportunities for compilers 
+to optimize local cache memory and register use and to employ 
+pipelining (vector) hardware features
+within each thread. For the very largest models, domain decomposition 
+of the mesh provides yet another level of parallel
+execution, with each domain partitioned into element blocks. WARP3D 
+thus provides three 
+levels of parallel execution from very coarse grain to very fine grain.
+
+WARP3D executes in batch and interactive modes. Traditional batch mode 
+execution is most useful for large analyses on supercomputers that 
+enforce job queuing policies. On Linux, Mac and Windows workstations, the code 
+is often executed in background (\&) mode for long jobs and then 
+interactively during an analysis restart to obtain selected output. 
+Options exist to write information files describing the solution 
+status at completion of each Newton iteration during long 
+analyses executed in batch mode.
+
+WARP3D takes input data from a variety of sources under control of the user. 
+A Patran-to-WARP3D translator program (\ti{patwarp}) is included to convert 
+a Patran neutral file for the model into a WARP3D input file. Input commands 
+to define the model, loading history, solution parameters, compute and output 
+requests have a format-free, English-like structure. Input files may include 
+extensive user comments and thus are generally self-documenting. Output 
+consists of traditional printed displacements, strains, stresses, etc.; nodal 
+and element results files in standard Patran format (binary or ascii) written 
+directly by WARP3D; simpler flat files of node and element
+results written in text or stream formats,
+and a binary “packets” file of selected results to 
+facilitate post-processing. A convenient restart capability provides the 
+facility to segment a long job over multiple runs and to create analysis 
+recovery files in the event of hardware failures or should the solution not converge. 
+
+\clearpage
+\begin{center}
+\line(1,0){250}
+\end{center}
+
+\noindent \textbf{Details of University of Illinois/NCSA Open-Source License}
+
+\small
+\noindent Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal with
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+\squishlist
+\item
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimers.
+\item
+Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimers in the
+documentation and/or other materials provided with the distribution.
+\item
+Neither the names of the WARP3D Team, University of Illinois at
+Urbana-Champaign, nor the names of its contributors may be used to
+endorse or promote products derived from this Software without specific
+prior written permission. 
+\squishend
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE
+SOFTWARE. 
+
+\noindent \textbf{Copyrights and Licenses for Third Party Software Distributed with WARP3D}
+
+\noindent The WARP3D software contains code written by third parties.  Such software will
+have its own individual license file in the directory in which it appears.
+This file will describe the copyrights, license, and restrictions which apply
+to that code.
+
+The disclaimer of warranty in the University of Illinois Open Source License
+applies to all code in the WARP3D Distribution, and nothing in any of the
+other licenses gives permission to use the names of the WARP3D Team or the
+University of Illinois to endorse or promote products derived from this
+Software.
+
+\noindent The following pieces of software have additional or alternate copyrights,
+licenses, and/or restrictions:
+\begin {verbatim}
+Program                 WARP3D Directory
+-------                 ----------------
+hypre                   linux_packages/source/hypre-2.7.0b
+metis                   linux_packages/source/metis-4.0
+Intel MKL libraries     linux_packages/lib
+\end{verbatim}
+
+\normalsize
+\begin{center}
+\line(1,0){250}
+\end{center}
+
+
+\end{document}
+
+

@@ -1,0 +1,213 @@
+%!TEX TS-program=pdflatexmk
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Nodal Coordinates}}}
+\fancyfoot[L] {\small{\ti{Chapter {\thechapter}}\ \   (Updated: 12-15-2011)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\ti{Model Definition}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newenvironment{offsetpar}[1]
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{figure}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{3}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%
+%--------------------------------------
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+
+\begin{document}
+
+%
+%------------------------------------------------------------------------------
+\section{Nodal Coordinates}
+%------------------------------------------------------------------------------
+The coordinates of nodes are specified relative to the global 
+Cartesian reference axes. During model definition, the command 
+\ti{coordinates} initiates the translation of nodal coordinate data.
+Any number of \ti{coordinates} commands may be given prior
+to a compute request. The existing coordinates for nodes 
+are simply overwritten by any newly specified values. 
+The input syntax is
+\begin{align*}
+&\hv{\ul{coord}inates\ (\ul{clear}) } \\
+& \qquad \hv{<node\ number:integer>}\ \left [
+\begin{Bmatrix}
+\hv{x} \\ \hv{y} \\ \hv{z}
+\end{Bmatrix}
+\hv{<value:number>}(,) \right ]\\ \\
+&\qquad \hv{<node\ number:integer>\ \left[ <value:number> (,)\right]}
+\end{align*}
+
+\noindent where the second form applies the default ordering of entries 
+$X\mbox{-}Y\mbox{-}Z$. 
+\ti{When using the second form, coordinates not specified take on the 
+last previously defined values.} For example, the sequence
+
+\small \begin{verbatim}
+    coordinates 
+      4 3.2 5.2 6.4 
+      10 4.1
+\end{verbatim}\normalsize
+
+\noindent defines the $Y$ coordinate of node 10 as 5.2 and 
+the $Z$ coordinate of node 10 as 6.4. 
+This feature may be suppressed by appending the word \ti{clear} to the 
+coordinates command line. 
+The default coordinates for every node are then 0.0 unless explicitly input. 
+With this option for the above example, node 10 is assigned 
+coordinates of 4.1, 0.0, 0.0 rather than 4.1, 5.2, 6.4.
+
+The default $X\mbox{-}Y\mbox{-}Z$ ordering for the second 
+input form may be modified by the default command
+
+\begin{align*}
+& \hv{\ul{coord}inates } \\
+& \qquad \hv{\ul{default}}\ \left [
+\begin{Bmatrix}
+\hv{x} \\ \hv{y} \\ \hv{z}
+\end{Bmatrix}
+\right ] \\
+& \qquad \hv{<node\ number:integer>\ \left[ <value:number> (,)\right]}
+\end{align*}
+
+\noindent where any number of \ti{default} commands may be given.
+
+
+Some examples illustrating various options to define nodal coordinates are given below.
+\small \begin{verbatim}
+    coordinates
+      4 x 2.5 y 3.0 z 4.1
+     10 z Ð20 y 40 x 20
+     11 Ð5.23 6.23 
+    default z y x
+      3 15.3 14.2 10.5 
+    default x y z
+     10 Ð13.5 10.5 Ð20.4
+\end{verbatim}\normalsize
+
+At any point during input of the coordinates, the \ti{dump} 
+command is available to request a listing of current coordinates for 
+all nodes of the model.
+
+\small \begin{verbatim}
+    coordinates 
+      4 x 2.5 y 3.0 z 4.1 
+     10 z Ð20 y 40 x 20 
+     11 Ð5.23 6.23 
+     dump 
+     default z y x
+        3 15.3 14.2 10.5 
+     default x y z
+       10 Ð13.5 10.5 Ð20.4 
+     dump
+\end{verbatim}\normalsize
+
+
+
+\end{document}
+
+

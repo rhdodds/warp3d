@@ -1,0 +1,459 @@
+%
+\documentclass[10pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+%
+%
+%   margins and inter-paragraph spacing
+%
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+%\usepackage{hyphenat}
+%\usepackage{listings}
+
+%----------------------------------------------
+%
+%          --- header and footer contents ---
+%
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Flat result Files}}}
+\fancyfoot[L] {\small{\ti{Appendix K}\ \   (Updated: 9/25/2014)}}
+\fancyfoot[C] {\small{K.\thepage}}
+\fancyfoot[R] {\small{\ti{Flat Result Files}}}
+
+
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+%----------------------------------------------
+
+%   ---  local commands ---
+
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\patwarp}{\ti{patwarp\xspace}}
+\newcommand{\eg}{\ti{e.g.},\xspace}
+\newcommand{\ie}{\ti{i.e.},\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\ti}{\emph}
+
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+%
+%     --- set chapter number or appendix letter ---
+%
+%-------------------------------------
+\def\thechapter  {\Alph{chapter}}
+\setcounter{chapter}{11} % means 6th alphabet letter
+\newcounter{sectrefs}
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+\LARGE
+\hfill
+\textbf{Appendix K}
+\rule[0.15in]{450pt}{0.5mm}
+\LARGE
+\begin{flushright}
+ \textbf{
+{\fontfamily{phv}\selectfont Flat Model and Result Files for Python, Excel, Matlab \& Others}}
+\end{flushright}
+\normalsize
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+Section 2.12.6 describes the command to generate a \ti{flat} model description
+file and the format of that file.  The simple format makes possible efficient
+reading of the file in Python, C, C++, and other scripting/programming
+languages. An example Python script here illustrates reading of the
+model into simple arrays.
+
+
+Section 2.12.4 outlines the concepts of  \ti{flat} result files in
+\ti{text} and \ti{stream} (binary) forms to simplify further the access to WARP3D
+results using Python and other software
+including Excel, Matlab, Mathematica, and standard languages C, C++, Fortran.
+
+The flat files have no additional information in a readable format about the
+model, for example, the number of nodes and elements.
+The concept is to have a simple 2D array of data on the file,
+where each row contains results for a model node or an element (without
+node numbers or element numbers being stored).\footnote{See later section for handling of 
+files produced during MPI-based executions.}
+
+The flat text file produced by WARP3D has comment lines at the head of the
+file which start with a \# consistent
+with the capabilities of the \ti{loadtxt} function in Python. Before importing into
+Excel, these comments lines may need to be deleted.
+The stream file contains only double precision numbers (\ie float64).
+
+The processing time to load large text result files with Python can be considerable.
+A 500,000  node result file may take 15+ secs to load (wall time) on a fast machine
+using  \ti{loadtxt}. 
+The equivalent stream file may require $<$ 0.05 secs (wall time) using
+\ti{fromfile}.
+
+The averaging process to create nodal values and element centroidal
+values and the data stored in each column of a row  are
+described in Section 2.12.4. The remainder of this short appendix provides
+example Python code fragments to read the text and stream files
+into 2D array types (\ti{numpy}).
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Model Description File }
+
+The format of the file is described in Section 2.12.6.
+Here is a Python code segment.  This code reads a model 
+description file for a model with 50K nodes and 50K
+elements in about 1 second of wall time.
+\small
+\begin{verbatim}
+from numpy import *
+import os
+import time
+#
+#         Example program to read the flat model description file 
+#         into simple numpy arrays. design here is for speed.
+#
+print( "\n... Example to read a flat model descritpion file\n")
+t0 = time.time()
+#
+directory = "./"
+text_fname = directory + "model_flat.text"
+file = open( text_fname, 'r' )
+#
+#         skip the 7 comment lines 
+#
+for i in xrange(7):
+  line = file.readline()
+#
+#         number of nodes, elements
+#
+num_nodes = fromfile(file, dtype=int32, sep=" ", count=1)
+num_elements = fromfile(file, dtype=int32, sep=" ", count=1)
+print( "... Number of nodes, elements: %7d  %7d" 
+       % ( num_nodes, num_elements ) )
+#
+#         read x, y, z coordinates into a [num_nodes,3] array
+#         print a few values
+#
+print( "... Reading coordinates..." )
+coords = fromfile( file, dtype=float64, sep=" ", 
+                   count=3*num_nodes).reshape(num_nodes,3)
+print( "\tNode 1 coords:      %20.9e  %20.9e  %20.9e" % 
+       ( coords[0,0], coords[0,1], coords[0,2] ) )
+print( "\tNode 2 coords:      %20.9e  %20.9e  %20.9e" % 
+       ( coords[1,0], coords[1,1], coords[1,2] ) )
+last = num_nodes - 1
+print( "\tNode last coords:   %20.9e  %20.9e  %20.9e" % 
+       ( coords[last,0], coords[last,1], coords[last,2] ) )
+#
+#         read element data into a num_elements x 29 array.
+#         print values for last element
+#
+print( "... Reading element data..." )
+edata = fromfile( file, dtype=int32, sep=" ", 
+                  count=29*num_elements).reshape(num_elements,29)
+last = num_elements -1
+print( "\tLast element values:" )
+print( "\t  etype, material number: %5d  %5d" % 
+      ( edata[last,0], edata[last,1] ) )
+print( "\t  incidences:")
+loc = 2
+for i in xrange(3):
+   if i > 0 :
+     print( "\n" ),  # trailing , suppresses \n
+   print( "\t\t" ),
+   for j in xrange(9):
+     print( "%7d " % (edata[last,loc]) ),
+     loc += 1
+print( "\n" )
+     
+file.close()
+print("... Walltime used (secs): %8.2f" % ( time.time() - t0 ) )
+print("... All done")
+exit(0)
+\end{verbatim}
+\normalsize
+
+\noindent
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+
+\section{Text Result Files }
+
+Text files of nodal results contain one row of data for each node of the model -- each value
+is written in E format.
+Element result files contain one row of data (E format) for each element (centroidal values).
+The following segment of Python code illustrates reading of a flat text file of nodal stresses. 
+The entire array
+is read using \ti{loadtxt}, then columns of data are broken out into arrays and vectors with
+more convenient names for subsequent processing, plotting, etc. \ti{loadtxt} allows comment 
+lines anywhere in the file
+beginning with \# in column 1. The number of model nodes is not defined in the flat file and is here
+set directly in the Python code.
+
+The first few lines of the data file will have the appearance below -- in this example load step 152 with
+WARP3D compressing the text file into .gz format.  WARP3D writes the comments lines
+into the file. \ti{loadtxt} automatically uncompresses the the text file.
+\small
+\begin{verbatim}
+#
+#   WARP3D nodal results in flat text file: stresses
+#   Structure name:  seb
+#   Model nodes, elements: 23473  29645
+#   Date: 4/7/2014
+#
+#   Load(time) step: 00152
+#
+ 0.49752e+02  0.65232e+01  ....  26 columns of data ..... 0.43063e+00  0.43058e+01 
+          .
+          .
+          1 row for each node
+          .
+          . 
+\end{verbatim}
+\normalsize
+
+Here is a Python code segment. 
+\small
+\begin{verbatim}
+from numpy import *
+import os
+import time
+#
+directory = './'
+text_fname = directory + "wns00152_text.gz"
+#
+num_nodes = 23473
+num_values = 26  # number of columns
+#
+start_time = time.time()
+data = zeros( [num_nodes,26], float64 ) # pre-allocate to correct size
+data = loadtxt(text_fname, dtype=float64, comments='#')
+end_time = time.time()
+print "\t\t Time for file load with loadtxt: %10.3f (secs)"% ( 
+     end_time-start_time ) 
+#
+#    extract columns of results table as needed with 
+#    convenient names
+# 
+sigma_xx = data[:,0] 
+sigma_yy = data[:,1]  
+sigma_zz = data[:,2]  
+tau_xy      = data[:,3]  
+tau_yz      = data[:,4]  
+tau_xz      = data[:,5]
+mises       = data[:,7]
+material_c3 = data[:,10]
+....
+....     code to process results, print results, make plots, etc.
+....
+
+exit(0)
+\end{verbatim}
+\normalsize
+
+\noindent
+Loops may be readily added to process all nodal stress result files to extract results,
+plot results, etc.
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Stream Result Files }
+
+Stream (binary) files contain double precision (float64) values one after the other with no
+additional identifying of header  information on the file.  The Python code segment to read the
+above results stored in stream format is shown here. Note the \ti{reshape} operator as part of
+\ti{fromfile} to map the data into a 2D array with the specified number of rows and columns.
+
+
+\small
+\begin{verbatim}
+from numpy import *
+import os
+import time
+#
+directory = './'
+stream_fname = directory + "wns00152_stream"
+#
+num_nodes = 23473
+num_values = 26  # number of columns
+#
+start_time = time.time()
+fileobj = open(stream_fname, mode='rb')
+num_vals_to_read = num_nodes*num_values
+data = fromfile(file=fileobj,count=num_vals_to_read, 
+                   dtype=float64).reshape(num_nodes, num_values)
+end_time = time.time() 
+print "\t\t Time for read, arrange stream file: %10.3f (secs)"% ( 
+     end_time-start_time ) 
+#
+#    extract columns of results table as needed with 
+#    convenient names
+# 
+sigma_xx = data[:,0] 
+sigma_yy = data[:,1]  
+sigma_zz = data[:,2]  
+tau_xy      = data[:,3]  
+tau_yz      = data[:,4]  
+tau_xz      = data[:,5]
+mises       = data[:,7]
+material_c3 = data[:,10]
+....
+....     code to process results, print results, make plots, etc.
+....
+
+exit(0)
+\end{verbatim}
+\normalsize
+
+
+%
+%---------------------------------------------------------------------------
+%        section
+%---------------------------------------------------------------------------
+%
+\section{Result Files from MPI-based execution}
+
+MPI-based executions distribute the model definition 
+and results across the MPI ranks.
+The handling of distributed results in response to an
+\ti{output flat ...}
+command is described below. The processing issues here are identical to those for
+generation, and subsequent combination, of Patran result files during an MPI-based execution.
+
+\subsection{Nodal values of vector quantities}
+WARP3D maintains the values of key (vector type) nodal values for all model nodes on rank 0.
+These include:  displacements, velocities, accelerations, reactions and temperatures.
+Rank 0 may then generate flat files that have the same content and formats 
+as those produced in analyses without MPI-based
+execution. Example: a model has 40 domains and thus runs on 40 MPI ranks. An
+\ti{output flat text displacements} command generates a single file of
+results for a load step. 
+
+\subsection{Nodal values of averaged strains and stresses}
+Each rank has strain-stress values only for the elements it owns. In each 
+rank, element results are extrapolated to the
+nodes and values from elements are summed at the nodes 
+(but not averaged) -- nodes internal to the domain and nodes on the domain
+boundary that are shared with other domains.
+A flat file is then written by each domain (rank) with the name that contains the rank number as a suffix.
+Example: a model has 40 domains and runs on 40 MPI ranks.  Results are requested for load step 50 with a
+command of the form \ti{output flat text compressed nodal stresses}. Forty files with names of the form
+wns00050\_text0023.gz  are generated (here 23 is the specific rank number and text files 
+have been compressed with gzip by WARP3D).\footnote{Automatic compression of text files 
+by WARP3D is not available in Windows.}
+
+The flat file generated by a rank contains results only for the internal and boundary nodes of the domain.
+In each of these files of {partial} nodal results for the model, 2 additional data columns are added before
+strain-stress values for each node: (1) the node number and (2) the count of the number of elements in the
+domain that added extrapolated values
+to the node. The remainder of the nodal values (summed element contributions)
+are those as described in tables included in Chapter 2 (output).
+The additional two columns of data are required to build a complete, single
+set of averaged nodal values for the model once all partial flat fields are completed.
+
+Programs external to WARP3D are provided to perform the combination, averaging and generation of
+a single, flat file of averaged strain-stress results for the entire model at the load step.
+
+To maintain the homogeneous structure of the flat file concept, the 2 additional data columns are 
+written in double precision (float64) for \ti{stream} files and E-format for \ti{text} files.
+
+\subsection{Element values of strains and stresses}
+Each rank has results only for the elements it owns and writes a partial, flat file of centroidal strain-stress 
+values. Example: a model has 40 domains and runs on 40 MPI ranks.  Results are requested for load step 50 with a
+command of the form \ti{output flat text compressed element stresses}. Forty files with names of the form
+wes00050\_text0023.gz  are generated (here 23 is the specific rank number and text files 
+have been compressed with gzip).The file contains results only for the elements owned by domain 23. 
+
+The flat files for element results have the element number included before the usual strain-stress
+values as described in tables included in Chapter 2 (output). 
+
+Programs external to WARP3D are provided to combine all the partial, domain flat files of
+element results into a single file that contain values for all elements at a load step.
+
+To maintain the homogeneous structure of the flat file concept, the 1 
+additional data column (element number) is 
+written in double precision (float64) for \ti{stream} files and E-format for \ti{text} files.
+
+
+\end{document}

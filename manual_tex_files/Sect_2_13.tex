@@ -1,0 +1,141 @@
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{User's Guide - \textit{WARP3D}}
+\rhead{\textit{Analysis Restart}}
+\fancyfoot[L] {\textit{Chapter {\thechapter}}}
+\fancyfoot[C] {\thesection-\thepage}
+\fancyfoot[R] {\textit{Analysis Restart}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+
+\newcommand{\tb} {\textbf}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\noi}{\noindent}
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{12}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Analysis Restart}
+%\layout
+\noi {\bf{\ti{Create a Restart File}}}
+
+\noi To maintain the highest possible performance, WARP3D allocates all data structures 
+in memory during execution and does not use databases on disk to temporarily hold (swap) data 
+arrays. At completion of the solution for a load step, the user may request 
+creation of a binary (sequential) file of all data required to resume execution 
+at that point in the solution. Only the results and status of the most recently 
+completed load step are stored in the restart database.
+The default form of the save command is simply:
+\begin{align*}
+& \hv{{\ul{save}}\ }
+\end{align*}
+\noi The data file created with this command has the name: @\_db where @ denotes 
+the first 8 characters of the $<$structure id$>$ (see Section 2.1).
+An explicit name for the restart file may be specified with the command
+\begin{align*}
+& \hv{\ul{save}\ (\ul{to})\ \ul{file})\ <file\ name: label\ or\ string>}
+\end{align*}
+\noi where a $<$string$>$ must be used if the file name starts 
+with/or contains special characters,\eg the restart file named \ti{ct\_23.wrp} must be enclosed within 
+single or double quotes. 
+
+Examples of the \ti{save} command are
+\small
+\begin{verbatim}
+       save 
+       save to file bar_step_450 
+       save to file "ct_230.wrp"
+\end{verbatim}
+\normalsize
+\noi Restart file sizes increase with the model size and solution characteristics. 
+Restart files for large models may easily reach hundreds of MB to 
+multiple GB in size.
+In a typical analysis, the solution is advanced some number of load steps then a 
+restart file generation is requested. Execution can be continued
+which makes the restart file provide a solution check-point. 
+WARP3D can be also be terminated after writing the restart file and
+then executed later to 
+output results for the load step in a restart file and/or to
+continue the solution for additional load/time steps. The explicit naming 
+feature for restart files enables creation of a series of unique restart files at various 
+points in the analysis.
+
+
+\noi {\bf{\ti{Access a Restart File}}}
+
+\noi To restart execution of WARP3D, the first (non-comment) command must be
+\begin{align*}
+& \hv{\ul{retrieve}\ \ul{structure}\ <structure\ id: label>}\\
+& \hv{\ul{restart}\ \ul{structure}\ <structure\ id: label>}\\
+\end{align*}
+\noi or using an explicit name for the restart file
+\begin{align*}
+& \hv{ \ul{retrieve}\ (\ul{from})\ \ul{file}\ <file\ name:label\ or\ string> } \\ 
+& \hv{ \ul{restart}\ (\ul{from})\ \ul{file}\ <file\ name:label\ or\ string> } \\ 
+\end{align*}
+\noi where a $<$string$>$ must be used if the file name starts with/or contains 
+special characters. The keywords \ti{retrieve} and \ti{restart} are 
+synonyms in this command.
+Once the restart file is opened and read into memory, WARP3D 
+displays a message indicating the load step number $n$ for the restart file 
+and the model solution time completed in the analysis. 
+Commands to request output, to analyze additional load steps, to define
+new load steps, define new loads, solution parameters, etc. 
+may then be given as usual.
+
+\end{document}
+
+ 
+

@@ -1,0 +1,156 @@
+%
+%
+\input{common_preamble.tex}
+%
+%----------------------------------------------
+%
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{\textit{Parallel Execution}}}
+\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 5-10-2013)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Threads-Only Execution}}}
+%
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{7}
+\setcounter{section}{1}
+%
+%
+\begin{document}
+%
+\section{Threads-Only Execution (Windows, Linux, OS X)}
+\noindent
+The threads-only approach provides parallel execution in the processing
+blocks of elements, in the Pardiso equation solvers and in the element-by-element
+conjugate gradient solver. Input files are identical for this approach on the three
+platforms. The operating system commands to start execution are the same on
+Linux and OS X, but different on Windows. Refer to Section 2.10 for a more in-depth
+discussion of equation solvers.
+
+On each platform, WARP3D is an executable program that does not have a 
+graphical user interface. Consequently, the process to execute WARP3D begins with 
+the user entering commands into a shell program -- the Bash shell on
+Linux/OS X and the command shell on Windows. The subsections here provide details for
+each platform.
+
+\subsubsection {Windows}
+WARP3D supports current 64 bit versions of the Windows operating 
+system (Windows 7, ...) 
+executing on Intel and AMD processors. 
+
+The command shell is generally located at
+c:\textbackslash Windows\textbackslash System32\textbackslash cmd.exe.
+Once the shell command window is open, enter commands to change 
+to the directory where the WARP3D input file(s) for the analysis are located. 
+You will also need to know where the WARP3D executable is located. 
+For this discussion, we assume WARP3D has been installed with the 
+executable located at c:\textbackslash 
+WARP3D\textbackslash run\_windows\_64\textbackslash warp3d.exe, and that 
+the input files for analysis are located in the directory d:\textbackslash analysis\_project. 
+The following commands can be entered at the command shell prompt (a \% here):
+
+\footnotesize
+\begin{verbatim}
+%set warp3d=”c:\WARP3D\run_windows_64\warp3d.exe”
+%cd d:\analysis_project
+%set MKL_NUM_THREADS=8
+%set OMP_NUM_THREADS=8
+% %warp3d% <input_file >output_file
+\end{verbatim}
+\normalsize
+
+\nin The same commands above may be entered into a \ti{.bat} file using Notepad, 
+Word, etc. (for example,  runwarp3d.bat) and then executed by simply typing 
+runwarp3d.bat at the command shell prompt. To see examples of many features 
+available in bat files, examine the Makewarp.bat file included under 
+the src directory in the WARP3D distribution.
+
+In these commands above, the \%set warp3d... defines a short-cut 
+(shell variable) to access the WARP3D executable. The subsequent \%warp3d\% references 
+the contents of the shell variable.
+The key commands above are the \%set MKL.. and \%set OMP.. which define 
+variables (just within the command shell) to the number of threads that 
+the MKL solver will use and the number of threads used in all 
+parts of WARP3D that run parallel using OpenMP (\ie OMP). These values 
+can also be set from within the WARP3D input file as illustrated below. 
+
+On the line above that invokes WARP3D, the $<$ and $>$ are I/O redirection 
+operators uniform across nearly all types of command shells. If 
+the $<$ (input) file is omitted, WARP3D begins interactive 
+execution in the command shell window, issues a prompt 
+character ($>$) and waits for the user to enter an input line.
+
+Many people today work across Linux, OS X and Windows environments; 
+they often find the non-standard command and scripting language of the Windows 
+command shell quite cumbersome. Fortunately, a large portion of the 
+standard Linux command and shell system has been ported to Windows, 
+is very robust, and is free. This system is known as Cygwin (http://www.cygwin.com/). 
+Cygwin supports all the major Linux command shells 
+(bash, csh, tcsh, .... The following commands are taken from 
+a simple Bash shell script to start execution of WARP3D (with Cygwin) 
+on a Windows system:
+
+\footnotesize
+\begin{verbatim}
+#!/bin/bash -f
+#
+#     run  WARP3D on Windows
+#
+warp_dir="d:/WARP3D_development/warp3d_project"
+export MKL_NUM_THREADS=4 
+export OMP_NUM_THREADS=4
+$warp_dir/run_windows_64/warp3d.exe  <input_file >output_file
+exit
+\end{verbatim}
+\normalsize
+
+%-------------------------------------------------------------------------------------
+
+\subsubsection{Linux and OS X}
+The threads-only version of WARP3D runs  
+on Linux and OS X. In this section, 
+let the threads-only executable be named warp3d.omp (for OpenMP) 
+
+Prior to starting WARP3D, the user sets the shell environment variables to indicate 
+the number of threads allocated for use by the Pardiso (MKL) solver and the number of threads 
+for use by those parts of WARP3D. The number of MKL threads and the number of 
+OpenMP threads can be identical or different as the analyst desires. 
+Most often the number of MKL and OpenMP threads are assigned the same value. The
+following example illustrates this process enclosed within a simple shell
+script file.
+
+\footnotesize
+\begin{verbatim}
+#!/bin/bash -f
+#
+#     run WARP3D on Linux or OS X
+#
+export WARP3D_HOME=/Users/jsmith/warp3d_distribution
+export MKL_NUM_THREADS=8 
+export OMP_NUM_THREADS=8
+$WARP3D_HOME/run_linux_em64t/warp3d.omp  <input_file >output_file 
+   or
+$WARP3D_HOME/run_mac_os_x/warp3d.omp  <input_file >output_file 
+exit
+\end{verbatim}
+\normalsize
+ 
+\nin The analysis input file need not request use of 
+ a specific sparse solver; WARP3D defaults to the Pardiso (MKL) sparse direct solver 
+ automatically: 
+
+\small
+\begin{verbatim}
+  nonlinear analysis parameters
+   solution technique sparse direct
+   maximum iterations 5
+   minimum iterations 1
+        .
+        .
+\end{verbatim}
+\normalsize
+  
+\end{document}

@@ -1,0 +1,376 @@
+ %!TEX TS-program = pdflatexmk
+ %
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{User's Guide - \textit{WARP3D}}
+\rhead{\textit{Loads}}
+\fancyfoot[L] {\textit{Chapter {\thechapter}\ \   (Updated: 2-6-2015)        }}
+\fancyfoot[C] {\thesection-\thepage}
+\fancyfoot[R] {\textit{Model Definition}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+
+\newcommand{\nin} {\noindent}
+\newcommand{\noi}{\noindent}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newcommand{\mdash}{\mbox{-}}
+\newcommand{\clrr}{\color{red}}
+\newcommand{\clrb}{\color{black}}
+\newcommand{\Fig}{Fig.\xspace}
+\newcommand{\Figs}{Figs.\xspace}
+
+
+
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{7}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Loads (Including Temperatures \& Non-Zero Displacements)}
+
+Loads and temperature changes may be applied to the nodes and elements of a model. 
+Element loads, which are dependent on the type of finite element, and changes of nodal 
+temperatures are converted to equivalent nodal forces by element processing routines. 
+
+Nodal loads and element loads are grouped together to define loading \ti{patterns}. 
+The loading patterns define the spatial variation and reference amplitudes of 
+loads on a model. The displacement constraints defined on the model also represent 
+a loading pattern but with a built-in
+name, \ie \ti{constraints}. Examples of loading patterns include self-weight, an internal/external 
+pressure and a localized temperature increase/decrease. 
+
+Once loading patterns are specified, a \ti{nonlinear} loading condition is defined
+[the term
+\ti{dynamic} may be used as a synonym for \ti{nonlinear} if desired for clarity
+in some analyses]. A nonlinear/dynamic loading
+consists of a sequential number of load steps (can be many thousands of
+steps as needed). An incremental-iterative solution procedure is performed
+to obtain the displacements, velocities accelerations, strains, stresses, $\dots$ at
+step $n+1$ starting with the the solution available at step $n$ and the user-specified,
+\ti{incremental} (step) loading imposed on the model over $n \rightarrow n+1$.
+For dynamic analyses, a load step ($n \rightarrow n+1$) is the same as a 
+time step $t_n \rightarrow t_{n+1}$. 
+
+The incremental load applied to the model over a load step
+is formed by combining the equivalent nodal forces/displacements
+from the loading patterns with pattern scaled by an
+appropriate factor. For example,
+suppose the pattern loading for the internal pressure has a magnitude of the
+final, total pressure to be considered in the analysis.
+To obtain a converged, nonlinear solution, the total pressure may need to be
+increased gradually over some number of load steps -- say 100.  The
+user then specifies 100 load steps with the reference (pattern)
+loading for the pressure specified to have a 0.01 scale factor in 
+each step. Alternatively, the pattern loadings are often defined to represent
+a unit value of some loading on the model, \eg a 1 MPa internal
+pressure over certain surfaces. This can simplify the specification of scale factors
+in the definition of loading steps.
+
+WARP3D computes the incremental solution for each load step 
+assuming the model response is dynamic and nonlinear. 
+A linear dynamic analysis has no material nonlinearities, geometric 
+nonlinearities or contact present in the model
+definition (computed residual forces at nodes following the first
+Newton iteration of the step are all zero). A static linear or nonlinear analysis is accomplished as a 
+dynamic analysis by specifying: (1) a very large time increment or (2) zero mass 
+for the model. The user selects one
+of the two procedures by setting the time increment or the model mass. A static, linear
+analysis would most often be performed using just 1 load step.
+
+The first sections below describe the commands to define nodal forces and element loads that
+construct a loading pattern. Commands are then defined to specify load steps in a 
+nonlinear/dynamic analysis (or step 1 of a static, linear analysis).
+
+
+%--------------------------------------
+\subsection{Loading Patterns}
+%--------------------------------------
+\noi  A new loading pattern is defined through a command of the form
+loading
+
+\begin{align*}
+& \hv{\ul{loading}}\ \ \hv{<loading\ identifier:label>}\\
+\end{align*}
+\noi where the loading identifier is used in subsequent commands to identify the loading, for
+example, in compute and output requests. Only the first eight characters of the identifier
+are processed; all loading patterns must have unique identifiers.
+When an existing loading pattern is referenced in this command, the input translators
+delete all previously defined node and element loadings for the pattern.
+Specified temperature values for nodes and elements in the pattern loading represent
+incremental changes relative to the initial temperature distribution specified for time zero
+(start of load step 1) using the initial conditions command (see Section 2.9).
+
+
+%--------------------------------------
+\subsection{Nodal Loads}
+%--------------------------------------
+\noi  A sequence of nodal load definitions has the form
+\begin{align*}
+& \hv{\ul{nodal}\ (\ul{loads})} \\
+&\hv{<node\ list:list>}\ \left [
+\begin{Bmatrix}
+\hv{  \ul{force\_x}} \\ \hv{\ul{force\_y}}  \\ \hv{\ul{force\_z}} \\ \hv{\ul{temper}ature}
+\end{Bmatrix}
+\hv{(=)<value:numr>}(,) \right ]
+\end{align*}
+
+\noi Nodal loads are additive; if the same node and direction appear 
+in two different loading commands within the pattern, the sum 
+of the two loads is applied to the model. An example
+sequence to define a loading condition and a set of nodal forces is
+
+\small
+\begin{verbatim}
+   loading unit_pull
+      nodal loads
+           1-40 60-90 force_z -2.3 force_x 14 temperature -42.3
+           3240 3671 4510-5000 force_z -3.12
+           35 temperature 145.0 force_x 2
+ \end{verbatim}
+\normalsize
+
+\noi In the above example, node 35 has a total force in the $X$-direction of
+16 (14 from the first line 2 from the last line), in addition to a net temperarture
+change of 102.7.
+Nodal forces are always applied in the global coordinate system and are thus unaffected
+by the deformed geometry.
+
+
+\noi {\bf{\ti{User-Defined Nodal Loads Routine}}}
+
+\noi The nodal forces and temperatures for a pattern loading may be defined through
+a user-written function included in the WARP3D program. Appendix I provides
+details of developing such a routine and how to include it in WARP3D.
+
+To request that a user-routine be invoked to define nodal loads
+rather than the type of input shown above, specify the command 
+sequence 
+\begin{align*}
+& \hv{\ul{nodal}\ (\ul{loads})} \\
+&\ \ \ \hv{user\_routine\ (file <file\ name:label or s<string>)}
+\end{align*}
+
+\noi The user-routine is called during the solution process for every load step
+whenever the pattern multiplier is non-zero. This enables the user-routine to
+modify the nodal forces and temperatures in the pattern loading as needed
+for potentially complex modeling conditions. A file name may also be supplied as
+indicated above. This file name is passed by 
+WARP3D to the \ti{user\_nodal\_loads} subroutine. The file presumably will contain information
+needed/used by the user subroutine to compute the nodal forces and/or temperatures.
+
+%--------------------------------------
+\subsection{Element Loads}
+%--------------------------------------
+\noi  A sequence of element load definitions has the form 
+\begin{align*}
+&\hv{\ul{element}\ (\ul{loads})}\\
+&\ \ \hv{<elements:list>\ <type\ of\ element\ loading>}\\
+&\ \ \hv{<elements:list>\ <type\ of\ element\ loading>}\\
+&\ \ \ \ \ . \\
+&\ \ \ \ \ . 
+\end{align*}
+\noi where the $<$type of element loading$>$ is either a body force, a face traction with constant
+direction, a face pressure, or a uniform temperature change for the entire element. The
+types of element loads and commands to define them are dependent on the type of element.
+Refer to Chapter 3 for this information.
+
+When the analysis includes geometric nonlinear effects (large displacements), 
+equivalent loads for the incrementally applied surface tractions are re?computed at the beginning
+of each load step using the current (deformed) geometry of the elements (see discussion in
+Section 1.6).
+
+%--------------------------------------
+\subsection{Step Loads}
+%--------------------------------------
+\noi  The loading type designated dynamic or (equivalently) 
+nonlinear defines the combinations
+of pattern loads for each time step in a dynamic 
+analysis or each load step in a static non?
+linear analysis. These commands have the form
+\begin{align*}
+& \hv{\ul{loading} <loading\ identifier:label>} \\
+&\ \ \hv{\ul{nonlinear}}\\
+&\ \ \ \ \hv{\ul{step}s <steps:list> [ \ <pattern\ id:label>\ <multiplier:numr>(,)\ ]}
+\end{align*}
+\noi where the keyword dynamic may be substituted as a synonym for nonlinear. 
+Nodal and element loads cannot be specified within a nonlinear/dynamic loading 
+definition above. 
+The multiplier value must follow each pattern id -- a multiplier value is required input. 
+As indicated, multiple pattern loads may be combined with different multipliers to define a load
+increment for a time step in a dynamic analysis or a load step in a static nonlinear analysis.
+
+Only one loading condition of type nonlinear or dynamic should be 
+defined for an analysis.
+
+By default the existing constraint definitions are included in each load step 
+with a multiplier of 1.0. The constraints used in solution for a load step 
+are the constraints defined at the actual solution time for the step 
+(users can redefine the constraints data at any time -- 
+the 1.0 multiplier applies to the currently defined constraints at step solution time). The
+user may include constraints as a loading pattern with a multiplier other than 1.0.
+
+An example of this command sequence is
+\small
+\begin{verbatim}
+   loading crush
+      nonlinear
+          steps 1-10 unit_pressure 2.3 unit_tens -1.2 constraints 1.0
+          steps 11-200 pull 0.2 constraints 2.3
+               . 
+               .
+ \end{verbatim}
+\normalsize
+\noi where the loading patterns \ti{unit\_pressure}, 
+\ti{unit\_tens} and \ti{pull} have been defined previously.
+Although the steps are defined in ascending sequence in the above example, the steps may
+be defined in any order; the final set of steps must comprise a sequential list.
+
+\noi {\bf{\ti{Modifying Step Definitions}}}
+
+\noi During the course of a nonlinear or dynamic analysis, it is often necessary to define 
+additional steps or to modify the definition of steps yet to be analyzed. For example, previously
+defined, but unsolved, load steps may need to have a reduced multiplier based on current
+convergence properties.
+
+Unsolved steps within a nonlinear/dynamic loading condition may be redefined and
+additional (new) steps defined at anytime by simply entering the above command sequence
+with appropriate load step definitions. Only the steps requiring a change need to be entered.
+
+%--------------------------------------
+\subsection{Displacement Control Loading}
+%--------------------------------------
+\noi  A nonlinear/dynamic loading condition with appropriate step definitions must be always
+be specified for a model. If the model is loaded only by non-zero imposed
+displacements, there are no loading patterns defined. The keyword \ti{constraints} is
+listed in the definition of load steps as in this example which gradually reduces the
+magnitude of displacements imposed in each step as the analysis progresses.
+\small
+\begin{verbatim}
+  loading crush
+     nonlinear
+       steps 1-10 constraints 2.0
+       steps 11-50 constraints 1.5
+       steps 51-100 constraints 0.5
+       steps 101-200 constraints 0.25
+           .
+           .
+ \end{verbatim}
+\normalsize
+
+\noi Unless explicitly included as in the above example, \ti{constraints}
+included by default with a 1.0 multiplier. Note also that the \ti{constraints}
+information may be re-defined between load steps (see Section 2.7).
+
+
+           
+%\noi {\bf{\ti{Effects of Step Multipliers}}}
+%
+%\noi The pattern multiplier (1.0 above) plays no role in the solution of displacement control 
+%loadings unless the extrapolate option of the nonlinear solution algorithm is invoked 
+%(extrapolate is on by default). When the extrapolate option is in effect, the incremental 
+%displacements computed from the solution over step n?1 to n are scaled and applied to the model
+%to start the iterative (Newton) solution from n to n+1. The displacement scaling factor is
+%computed from the specified step multipliers for steps n (say fn) and n+1 (fn+1) as fn+1fn.
+%Thus only the ratios of the multipliers are significant for displacement control with 
+%extrapolate on. When the non?zero constraints are modified during a displacement control analysis,
+%the loading step multipliers must be modified accordingly by the user; otherwise the 
+%extrapolation ratio (fn+1fn) is computed incorrectly.
+%
+%To illustrate, consider the following example. Non?zero constraints are specified to load
+%the model. The dummy loading pattern and nonlinear loading are defined as above with
+%step multipliers of 1.0 for load steps 1-10. After step 10, the user modifies the constraints
+%to reduced the imposed increment (uniformly) by one?half, possibly to reduce the number
+%of Newton iterations for convergence in subsequent steps. Load steps 11, 12, 13, ... must
+%have a multiplier of 0.5 for correct extrapolation. In step 11, the extrapolation multiplier
+%is $0.5/1.0=0.5$ while in steps 12, 13, ... the multiplier again becomes 1.0.
+
+
+% ----------------- end of real text ----------------------------------
+\end{document}
+
+ 
+

@@ -1,0 +1,163 @@
+%!TEX TS-program=pdflatexmk
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Element Incidences}}}
+\fancyfoot[L] {\small{\ti{Chapter {\thechapter}}\ \   (Updated: 12-15-2011)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\ti{Model Definition}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newenvironment{offsetpar}[1]
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{figure}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{4}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%
+%--------------------------------------
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+
+\begin{document}
+
+%
+%------------------------------------------------------------------------------
+\section{Element Incidences (Connectivity)}
+%------------------------------------------------------------------------------
+Each node of an element in the model must be ``mapped" onto the corresponding 
+global node. Element incidences establish this correspondence. During model 
+definition, the command \ti{incidences} initiates the translation of 
+element incidence data. Any number of \ti{incidences} commands may 
+be given prior to a \ti{compute} request. The existing incidences 
+for elements are simply overwritten by any newly specified values. 
+The input syntax is
+\begin{align*}
+&\hv{\ul{incid}ences} \\
+&\qquad \hv{<element\ number:integer>\ \left[ <global\ node\ i:integer\ list> (,)\right]}
+\end{align*}
+\noindent where $<$global node i$>$ denotes the number of the global 
+node to which the element node i is attached. 
+Note that the list of global node numbers may be specified as an $<$integer list$>$.
+\noindent An example of the incidences command is
+\small \begin{verbatim}   incidences 
+      1 13-20 
+      2 5 40 65 83 92 120 44 98 
+      3	140-144 178 162 183
+\end{verbatim}\normalsize
+\noindent The number of entries in the $<$integer list$>$ must equal the number of nodes 
+on the element (8 for \ti{l3disop}, 12 for \ti{ts12isop}, etc.). Error messages are issued 
+by the input processor if the number of nodes is less than required, 
+if a node number exceeds the number of structure nodes, etc. 
+A warning message is issued if the same node appears more 
+than once in the integer list even though collapsed elements are supported.
+
+The ordering of nodes for each element is shown in Chapter 3 where the 
+element library is described.
+\noindent \ul{Note}: the incidence data must precede the \ti{blocking} information 
+described in the next section. This ordering requirement enables 
+consistency checking of the blocking data.
+
+\end{document}
+
+

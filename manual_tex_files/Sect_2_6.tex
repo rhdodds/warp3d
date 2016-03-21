@@ -1,0 +1,391 @@
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{User's Guide - \textit{WARP3D}}
+\rhead{\textit{Element Blocking}}
+\fancyfoot[L] {\textit{Chapter {\thechapter}\ (Updated 5-11-2013)}}
+\fancyfoot[C] {\thesection-\thepage}
+\fancyfoot[R] {\textit{Model Definition}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+
+\newcommand{\tb} {\textbf}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\ol}{\overline}
+\newcommand{\veps}{\varepsilon}
+\newenvironment{offsetpar}[1]
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{5}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Element Blocking}
+%\layout
+\subsection{Concept}
+\noindent All element level 
+computations in WARP3D proceed on a block-by-block 
+basis to facilitate thread-based (shared-memory) parallel execution. Elements in the
+model must be assigned to a block, and elements within a block must be
+numbered sequentially. The explicit blocking of elements
+for computation represents a 
+key feature of the WARP3D software architecture. When executing in
+parallel, a processor core (thread) is assigned to perform all required 
+computations for
+elements within a block, for example, computing new tangent stiffness
+matrices. If WARP3D is assigned 16 threads at the start of execution,
+computations are performed simultaneously on 16 blocks of 
+elements.
+The processing of elements by blocks in this approach for parallel
+execution greatly reduces the run-time overhead to create and delete the
+threads for the program given the comparatively large amount of real
+work performed within a thread. Further, all element blocks have 
+independent data structures and may be processed in any order --- which 
+increases parallel efficiency by allowing threads to process blocks
+without waiting for other threads to finish their blocks. Testing reveals essentially
+ideal, linear speedups for processing of element blocks.
+
+The maximum number 
+of elements permitted in a block is set by a compile-time variable in the WARP3D 
+source code and is now generally 128\footnote
+{Larger block sizes may cause a runtime violation of the system limit
+on the stack size per thread -- often 8 MB. In a bash shell, we recommend using the 
+command ``\ti{ulimit -s unlimited}" before starting WARP3D to remove the per thread limit
+on stack size}. The block sizes affect
+the efficiency of execution. Small block sizes increase the number
+of blocks to be processed and shorten the length of innermost do loops,
+\it{i.e.}\rm, more overhead work to setup threads-loops for blocks and less work
+per block.
+With larger sizes, the temporary data structures for a block may overflow the local
+cache memory on a processor leading to a performance penalty.  
+
+Each computer
+system has a a range of block sizes that yield better performance, which
+can be found by running a large
+model with varying block sizes. However, such knowledge is not crucial for successful,
+efficient executions. As an example, a model with 64,000 20-node brick elements
+having the large displacement formulation was executed for a range of block sizes. 
+The cpu times required for generation of the element tangent
+stiffness matrices were recorded for execution using a single thread. The computer
+was a top-end Intel processor. The solution with a block size
+of 128 yielded the lowest cpu time. Let that time be a relative 1.0. Relative
+times for other block sizes were: 32 (1.07); 64 (1.01); 256 (1.68), and
+512 (2.04).
+
+With current hardware designs, we recommend maximum 
+block sizes of 128 for all models and have
+fixed the current limit on block size in the code at 128. 
+
+
+\subsection{Simplified, Automatic Blocking: \rm{\ti{Available starting in 17.3.2}}}
+
+\noindent The most frequent analyses performed 
+by  WARP3D users are
+completed with the thread-based, parallel version (OpenMP, no MPI) and with the
+Pardiso sparse solver -- direct or iterative implementations
+[see also Section 2.10]. This form of
+parallel execution is available on Windows, Linux and Mac OS X computers.
+MPI execution is available as an option only on Linux computers.
+
+WARP3D provides automatic assignment of elements to blocks for this
+very common situation. Nodes and elements are \ti{not} renumbered in this process.
+The command has the form
+\begin{align*}
+&\hv{\ul{blocking}\ \ \ul{automatic}\  (\ul{size}(=)<integr>)\ (\ul{display})} 
+\end{align*}
+\noindent Examples of the command are
+\small
+\begin{verbatim}
+  blocking automatic
+  blocking automatic size 64 display  
+\end{verbatim} 
+\normalsize
+\noindent The blocking command must be given after input of the element incidences
+and before the first \ti{compute} command. The default value of \ti{size} is 128.
+The optional \ti{display} requests a tabular listing of the blocking assignments.
+
+WARP3D assigns elements sequentially to blocks starting with element 1 and
+opening new blocks as
+needed. Elements in a block must: (1) be the same type, (2) be associated
+with  the same
+user-defined material in the input, (3) have same linear or nonlinear
+displacement formulation, (4) have the same integration order and (5) have or
+not have the $\bf{\bar B}$ formulation for 8-node brick elements.
+
+The following subsections describe less common situations for analyses that use the 
+element-by-element (EBE) iterative solver and/or use the MPI + threads version for
+parallel execution on Linux. In these situations, users must provide all the
+blocking information which is most often produced by a separate
+pre-processor program.
+
+
+\subsection{Command and Requirements}
+
+The assignment of elements to blocks is most conveniently handled by 
+the pre-processor software employed to create the finite element model. 
+The \it{patwarp}\ \rm  program, for example, converts a Patran neutral file
+(a text file) into a 
+WARP3D input file and performs the element-to-block assignments (see Appendix C). 
+
+\noindent The block assignment commands have the form
+\begin{align*}
+&\hv{\ul{blocking}}\\
+&\quad  \hv{<blk:integer>\ <blk\ size:integer>\ <first\ elem\ in\ blk:integer>}
+\
+\end{align*}
+\normalsize   
+Blocking data must be input after input of the element incidences 
+to enable internal checks on the  correctness of blocking
+assignments.
+
+The following example input describes the blocking assignments 
+for a model having 25,970 elements and a maximum block size of 128. This is
+a typical blocking command when all elements are the same type, the same
+material model, etc.
+
+\small
+\begin{verbatim}
+  blocking   
+       1     128       1
+       2     128     129
+       3     128     257
+       4     128     385
+       5     128     513
+       6     128     641
+             .
+             .
+             .
+     201     128   25601
+     202     128   25729
+     203     114   25857
+\end{verbatim} 
+\normalsize
+
+The following rules define the proper assignment of elements to blocks. 
+All elements in a block:
+\small
+\begin{itemize}
+\item must be sequentially numbered within the block
+\item must be the same type; \it{e.g.}\rm, l3disop
+\item must have the same kinematic formulation (linear or nonlinear)
+\item must have the same material computational model, \it{e.g.}\rm, gurson (see note below 
+about segmental curves)
+\item must have the same integration order (\it{e.g.}\rm\  $2 \times 2 \times 2$)
+\end{itemize}
+
+\normalsize
+
+\noindent All elements in a block must have the same computational material model from the 
+WARP3D material model library described in the next chapter. 
+Users declare ``materials" in the input (\it{e.g.}\rm, a36\_steel, al\_2024) and then 
+associate the 
+materials with elements. 
+
+For these material models: \ti{deformation}, \ti{bilinear}, \ti{mises}, 
+\ti{gurson} and \ti{cohesive},
+elements within a block can be associated with 
+different materials but all of the materials must use the same computational 
+material model, \it{e.g.}\rm, 
+\ti{mises}, \ti{gurson}, $\dots$. This enables elements in a block to 
+all follow a mises plasticity model, 
+for example, with power-law hardening where Young's modulus, Poisson's 
+ratio, yield stress, hardening exponent could vary between elements in the 
+same block through the use of different materials.
+
+For these material models: \ti{cyclic}, \ti{mises\_hydrogen} and \ti{umat}, all elements
+in a block must refer to the \ul{same material} defined previously in the
+input. This is a more restrictive limitation
+on element assignment to blocks fort these material models
+and will be removed in a future release.
+
+When the properties of a “material” are defined by a segmental stress-strain 
+curve or a set of stress-strain curves, the materials associated with elements 
+in a block must all reference the same stress-strain curve or set of curves.
+
+In the blocking example above, it is quite straightforward to assign elements to blocks of the
+same size, except for the last block. In more complex cases where the elements
+are different types, where there are multiple types of material models, etc., the blocks
+can have widely varying sizes as needed to comply the assignment ``rules"
+bulleted above.
+
+The above discussion applies to executions of WARP3D on a single processor/core
+or on any number of processors/cores with the standard version
+of WARP3D that uses only threads (shared-memory) during execution
+[see Chapter 7 for a full discussion on the various methods-procedures
+to execute WARP3D in parallel].
+
+\subsection{Blocking with Domain Decomposition}
+For extremely large models, WARP3D provides another level of parallel
+execution through the ``hybrid" version of the code (MPI + threads). The model is 
+partitioned (decomposed) into domains, with each domain assigned to an
+MPI rank (process). Each domain is further partitioned into blocks of elements
+as described in the previous section.
+The assignment of elements to blocks now becomes more 
+complex. Chapter 7 describes the details and commands
+for parallel execution using the hybrid version of WARP3D. The brief
+discussion here describes the necessary concepts. 
+
+Elements are first assigned to the domains of
+the model. Storage and computations for a domain often are mapped onto
+a specified computer hardware cluster or onto a specified group of processors
+through operating system commands external to WARP3D. The user determines
+the best number of domains for the analysis
+based on the available hardware configuration and the
+size/characteristics of the finite element model. 
+
+The domain number for each element block is simply appended as a new integer value
+in the commands shown in the above section. Domain numbers start at 0 (zero).
+For example, suppose element block 1300 belongs to domain 84 and has 128 elements
+starting with element 324,840. The input line in the blocking data would be
+
+\small
+\begin{verbatim}
+  blocking   
+             .
+             .
+             .
+     1300 128  324840  84
+             .
+             .
+             .
+   \end{verbatim} 
+\normalsize
+
+
+The element-to-domain 
+assignment proves key for execution efficiency during the 
+stiffness assembly and equation solving processes. Good 
+domains provide the smallest
+number of connecting (shared) model nodes over the boundary
+surfaces with adjacent
+domains -- achieving this goal
+this is a topological optimization problem. The overhead during
+execution to communicate solution data across 
+domains grows significantly with the number of
+nodes on the boundary surfaces of the domains. 
+Once all elements in the model are assigned to a domain,
+the usual blocking process described above,  with the same
+rules, is performed separately for
+each domain, where all the elements in a block must reside in the same domain.
+
+Given these additional
+complexities for solutions with domain partitioning, we very strongly suggest using the
+interactive \it{patwarp}\rm\ program (Appendix C) to perform the
+element-to-domain assignment and the blocking assignments. This
+standalone program asks the user a series of questions about partitioning
+(number of domains, etc.).
+The \it{patwarp}\rm\ program runs a topological optimization first to assign
+elements to domain, then assigns elements to blocks while insuring
+elements in a block conform to all
+the above rules, sets the ordering of internal vs. external
+blocks in a domain, etc. -- and finally writes
+the WARP3D input file. 
+
+The domain and blocking construction
+invariably requires that \it{patwarp}\rm\ re-number elements in the
+model (but not the nodes) to achieve a mesh that optimally conforms
+to the domain and blocking rules. At the user's request, 
+\it{patwarp}\rm\ will write a new Patran neutral file for the entire
+model that reflects the revised element numbering. It also provides
+a special Patran compatible, element results file that has the domain and block
+number for each element in the model. Users can invoke the Patran 
+results processing capabilities together with this file to produce color
+images of the model displaying the domains and blocks.
+
+
+
+%
+%In earlier versions of WARP3D for Cray (vector computers), 
+%an additional requirement on the blocking assignment came into
+%effect when the pre-conditioned conjugate gradient, iterative equation solver 
+%was used (Section 2.10). Elements within
+%a block were not permitted to share a common node. This enabled a highly
+%efficient, parallel scheme for the ``gather" process during the 
+%conjugate gradient iterations using the vector hardware units (the only route
+%to parallel execution). This last requirement nearly always 
+%necessitated a re-numbering of elements in the model to eliminate
+%node conflicts within blocks. The 
+%\it{patwarp}\rm\ pre-processor, for example, employs a simple red-black 
+%strategy to re-number elements before constructing the WARP3D input file.
+%With this approach, the ending blocks typically have a decreasing number of elements
+%as it becomes more difficult to find elements not sharing a node. This example
+%for a 520 element model illustrates this effect on the blocking 
+%\begin{verbatim}
+%  blocking
+%     1   120     1
+%     2   112   121
+%     3   109   233
+%     4   100   342
+%     5    42   442
+%     6    24   484
+%     7    11   508
+%     8     2   519
+%\end{verbatim}
+%\normalsize
+%Although WARP3D no longer operates on these obsolete ``vector" type computers,
+%there are indications that vector processing units may return in evolving
+%computer designs through dedicated graphics processing units (GPUs) [late 2009].
+%\it{We retain this option in the blocking, but it is not required at
+%present for threaded (shared-memory) parallel or MPI-based
+%parallel execution.}\rm
+
+
+\end{document}
+
+ 
+

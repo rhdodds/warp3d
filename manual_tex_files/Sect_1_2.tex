@@ -1,0 +1,1405 @@
+
+
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex} 
+
+
+%----------------------------------------
+\usepackage{amsmath} 
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+\usepackage{rotating}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{Illustrative Problems}}
+\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 9-5-2014)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Illustrative Problems}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+\usepackage{bm}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\degree } {\mathrm{o} }  %bold math symbol
+\newcommand{\ttt} {\texttt}  %typewriter text
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\mathchardef\mhyphen="2D
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\vepsilon}{\varepsilon}
+\newcommand{\etal}{\ti{et al.}\xspace}
+\newcommand{\Fig}{{Fig.}\xspace}
+\newcommand{\nid}{\noindent}
+\newcommand{\noi}{\noindent}
+\newcommand{\vareps}{\varepsilon}
+\newcommand{\cauchyu}{\boldsymbol{\sigma}_{u}}
+\newcommand{\cauchy}{\boldsymbol{\sigma}}
+
+\newenvironment{offsetpar}[1]%
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+\newcounter{Lcount}
+\newcommand{\squishnum}{
+\begin{list}{\arabic{Lcount}. }
+{ \usecounter{Lcount}
+\setlength{\itemsep}{0pt}
+\setlength{\parsep}{3pt}
+\setlength{\topsep}{3pt}
+\setlength{\partopsep}{0pt}
+\setlength{\leftmargin}{1in}
+\setlength{\labelwidth}{1em}
+\setlength{\labelsep}{0.5em} } }
+
+\makeatletter
+\renewcommand*\env@matrix[1][\arraystretch]{%
+  \edef\arraystretch{#1}%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{*\c@MaxMatrixCols c}}
+\makeatother
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{1}
+\setcounter{section}{1}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+%
+%--------------------------------------
+
+
+
+
+\begin{document}
+
+\section{Illustrative Problems}
+%\layout
+This section describes a number of example problems to illustrate the
+use of WARP3D. Each example incorporates new modeling
+capabilities, features and input commands. Brief explanations are included as 
+needed -- most of 
+the input commands are self-explanatory. Many example analyses with input
+files ready-to-run are included in the WARP3D distribution.
+
+\ul{\ti{The best way to learn about WARP3D is to use it ! Let's get started.}}
+
+\subsection{Two element model}
+Figure {\ref{fig:2elementinput}  shows a very simple 2 element mesh to 
+illustrate the overall concept of
+defining a model to WARP3D, requesting a solution followed by
+output requests. Many features and 
+capabilities of WARP3D are not shown for simplicity in this first
+example.
+
+%
+\begin{figure}
+\begin{center}
+\includegraphics[trim=0.0in 0.3in 0.5in 0.7in, clip=true,scale=0.8,angle=0]{figures_example_1/input.pdf} 
+\caption{{\small Fig. \thefigure\ 2 element example problem to illustrate key concepts in
+model definition/solution with WARP3D. All input shown. The nearly column aligned
+data is only for clarity in reading.}
+\label{fig:2elementinput}}
+%
+\end{center}
+\end{figure}
+%
+
+Two 8-node isoparametric
+elements are stacked vertically. Nodes on the $y=0$ plane are fixed. The model loading
+comprises three components to be each applied incrementally and sequentially over
+three \ti{steps}: (1) a uniform pressure over the
+top surface of element 2, (2) forces applied to nodes on the top surface,
+and (3) a linear temperature gradient  from the top surface to the base. The 
+material is linear-elastic and isotropic. The linear strain-displacement relations
+are used and the analysis is quasi-static. The
+material mass density is set to zero. The time step may then be set to any
+convenient value since there are no inertia effects and the material 
+behavior is time invariant. The entire input file is listed on the figure. 
+
+\nid The essential input commands and the usual ordering are:
+\small
+\squishlist
+\item	structure name -- used on headers for output and to include in the default
+names of various files  generated during execution.
+\item definition of  \ti{materials} for association with elements in the model. 
+Materials provide linear-elastic properties, material density, 
+nonlinear properties and a \ti{type} of constitutive model.
+\item number of nodes and elements in model -- nodes and elements
+must be numbered sequentially starting at 1.
+\item	$X\mbox{-}Y\mbox{-}Z$ coordinates for all nodes in the model 
+global coordinate system.
+\item	connectivity of elements nodes to structure nodes -- termed 
+\ti{incidences}.
+\item assignment of  elements to \ti{blocks} for analysis. The \ttt{automatic} option is
+ sufficient for all analyses run in parallel using only threads.
+\item constraints are the displacement boundary conditions.
+\item three  loading \ti{patterns} for the model. Loading patterns consist of nodal forces; 
+element body forces, face tractions, face pressures which are converted to 
+equivalent nodal forces; nodal and element temperature changes relative (here)
+to a zero reference state.
+\item a nonlinear/dynamic loading which defines the increment of load to 
+be applied during each load(time) step. Loading increments for a step are 
+defined using the loading patterns with multipliers.
+\item parameters to control the nonlinear/dynamic solution process, \eg 
+the time increment, the type of equation solver 
+(direct, iterative), maximum number of Newton iterations, 
+convergence tolerances, etc. (the minimal options are shown here)
+\item a request to compute displacements for a list of load steps (listing step 3 here
+means first solve steps 1 and 2). At the end of step 3, the total loading
+applied to the model 
+comprises $10.0\ \times$ \ttt{top\_pressure} $\ -\ 2.0\ \times$ \ttt{top\_torque} 
+$ +\ 500.0\ \times $\ttt{temp\_grad}.
+\item requests to output computed node and element results. Results 
+for use by humans are directed (here) to the current output device with 
+appropriate pagination, headers, labels, etc.
+\item save command to create a file enabling a restart analysis with the
+solution for step 3 as the stating point. 
+\item	 stop terminates program execution.
+\squishend
+\normalsize
+
+WARP3D commands are format free and may begin anywhere within the first 20 spaces 
+on the line. Only the first 80 characters on a line are processed.
+One or more blanks separate data items. A \ti{C}, \ti{c}, \# or ! in column 1
+followed by a space denotes 
+a comment line and is ignored by the input translator.  A \$ may be used to terminate a line
+which makes the remainder of a line a comment.
+A comma (,) at the end of a line indicates that the input for that command continues 
+on the next line. Blank lines are ignored by the input translator. 
+Decimal points are optional and may be omitted if not needed to specify the fractional part of a number. 
+A \ttt{<list>} sometimes termed \ttt{<integer\ list>}  provides a shorthand method to specify 
+integer values (usually node or element numbers). Examples are 1, 3, 6, 10, 12 and 1-10 by 2 
+(which implies 1, 3, 5, 7, 9) and combinations, \eg 10-1000 by 2 2000 2002 2004 6000-9000 by 10.
+
+The apparent column alignment of input commands listed in \Fig \ref{fig:2elementinput}
+is simply for readability.
+
+The input commands comprise keywords and data values. The ordering of commands is quite
+flexible, \eg \ttt{coordinates} may be given before the \ttt{element} definitions but not before the
+\ttt{number} command; \ttt{constraints} may appear anywhere after the \ttt{number} command; the three
+loading patterns (\ttt{top\_pressure}, \ttt{top\_torque}, \ttt{temp\_grad})  may be given 
+in any order; the list of \ttt{nonlinear analysis parameters} may be given 
+in any order, etc. In the \ttt{constraints} command for example, the \ttt{u  v w}
+values may be listed in any order.
+Use of the underscore (\_) character often improves readability and is treated as an ordinary
+character.
+
+Textual data values in this example: \ttt{bar}, \ttt{metal}, \ttt{top\_pressure}, \ttt{test}, etc. are termed a
+\ttt{<label>} in the WARP3D input system. Labels must begin with an alphabetic character and not contain special
+characters (. ; ! \$ \# \* \{ \} etc.) The \ti{save} command in this example illustrates use of 
+a \ttt{<string>} data type to include special characters where desired for convenience (strings are
+enclosed in single or double quotes).
+
+To continue with this example, let the input definition shown in \Fig \ref{fig:2elementinput}
+be defined in the file name \ttt{warp3d.inp} -- there is \ti{no} 
+significance attached to the \ttt{.inp} extension of the file name; it is simply 
+for convenience when examining lists
+of files in a directory.
+
+The analysis is executed in a display window (\eg Bash shell on Linux and OS X, command prompt shell in
+Windows or a Bash shell in Windows under the Cygwin system)
+%
+\begin{verbatim}
+   % warp3d 1 < warp3d.inp  > out
+\end{verbatim}  
+%
+\nid where \% is the shell prompt character. \ttt{warp3d} is the name of a 
+shell script that checks/set environment variables,
+sets the location of the WARP3D executable program, etc. Example versions of the \ttt{warp3d}
+shell script are included in the WARP3D distribution. Here, 1 thread is used for execution. Usual
+I/O re-direction sets standard input and output. With this command, WARP3D runs
+interactively; the shell prompt returns once WARP3D completes execution. Append an
+\& at the end of the line to have the job run in background independent of the display window.
+
+The contents of file \ttt{out} are shown in \Fig \ref{fig:2elementoutput1} and 
+continued in \Fig\ref{fig:2elementoutput2}. Input commands are mixed with messages
+from WARP3D together with the requested output values. Some WARP3D messages are 
+deleted here to reduce space requirements in the figures. The information for the solution of
+each load (time) step is shown as the analysis progresses. Here the solution is linear-elastic such
+that no (Newton) equilibrium iterations are necessary  -- the residual nodal forces after iteration 1
+of each step are zero.
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0.3in 0.5in 0.7in, clip=true,scale=0.8,angle=0]{figures_example_1/output_pg1.pdf} 
+\caption{{\small Fig. \thefigure\ Output for 2 element example problem. 
+Some non-essential lines are deleted and
+replaced with ... for clarity}
+\label{fig:2elementoutput1}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0.3in 0.5in 0.7in, clip=true,scale=0.8,angle=0]{figures_example_1/output_pg2.pdf} 
+\caption{{\small Fig. \thefigure\ Continuation of output
+ for 2 element example problem. Some non-essential lines are deleted and
+replaced with ... for clarity}
+\label{fig:2elementoutput2}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+
+\subsubsection{Additional discussion of input}
+
+
+\nid The directory \ttt{manual\_examples\_chpt\_1/example\_1} in the WARP3D
+distribution contains the input file for this example (warp3d.inp).
+
+\nid \ti{\ul{Materials} }
+
+\nid  Materials are defined to be associated with finite elements in the model. A material definition
+comprises the name of the material model and values of properties for that model. Multiple
+materials may be necessary for a complex model representing an object
+fabricated from different physical materials. In this first example, the material model \ttt{bilinear} available in
+WARP3D is employed. This model uses mises plasticity with mixed isotropic-kinematic
+ hardening (see Section 3.5 for details).  Properties for the \ttt{bilinear} model include
+ \ttt{e, nu, yld\_pt, alpha, rho} specified here. Properties may be given in any order.
+ For this first example, the yield stress is set to
+ a large value to enforce linear-elastic behavior.
+ 
+WARP3D has a number of built-in material models like \ttt{bilinear} that may be associated with any
+of the solid elements. Several \ttt{cohesive} materials may be associated with \ttt{interface}
+elements as one approach to model progressive fracturing processes. 
+
+Plasticity type models that require the user to define uniaxial stress-strain curves utilize the
+\ttt{stress-strain curve} command to define points along a linear, segmental curve to include temperature
+or strain-rate dependence as needed. Input commands for the material then reference a defined \ttt{stress-strain}
+curve.
+
+For materials to be associated with solid elements WARP3D supports a \ti{user-defined} material model or
+\ti{umat} (see Appendix I).
+
+\nid \ti{\ul{Elements} } 
+
+\nid Each finite element in the model must be one of the available
+element types as described in Chapter 3. These include hex
+elements with a variable number of nodes and names \eg \ttt{l3disop, q3disop, ts14isop, ...} and tet elements
+(\ttt{tet4, tet10}). Interface elements are named \ttt{inter\_8, trint6, trint12, ...}.
+
+Following the element type in the input is the keyword \ttt{linear} or \ttt{nonlinear}, which specifies the
+linear or nonlinear strain-displacement formulation to be used. In WARP3D, \ttt{nonlinear} is analogous to 
+NLGEOM in Abaqus.
+
+The strain-displacement formulation is followed by the keyword \ttt{material} then the name
+of the previously defined material. 
+
+The element definition is completed with keywords for the element properties and the values.
+Here the element properties used are: \ttt{order}, \ttt{bbar} and \ttt{short}. The quantities \ttt{bbar} and
+\ttt{short} are \ti{logical} element properties -- appearance of  the keyword makes the values ``true". 
+\ttt{bbar} invokes the so-called $\overline B$ element formulation to reduce volumetric locking
+behavior (\ttt{bbar} has a default value of ``true"). \ttt{no\_bbar} disables this formulation. 
+\ttt{short} requests a reduced set of output values for strains-stresses. See Section 3.1.2
+for a full description of properties for the \ttt{l3disop} element. The element property
+
+Element input must appear before \ttt{incidences}.
+
+\nid \ti{\ul{Coordinates} }
+
+\nid The default ordering is \ttt{ x,  y,  z}. Preface a coordinate value with labels \ttt{x y} or \ttt{z} to override
+the default ordering. Nodes may appear in any order. Most often coordinates are placed into
+a separate file (\eg \ttt{coordinates.inp}) for convenience and then referenced with a 
+command
+
+\small\begin{verbatim}
+  *input from file "coordinates.inp"
+\end{verbatim}\normalsize
+\nid
+where the typical contents of a coordinates input file has the form
+\small\begin{verbatim}
+    *echo off
+    coordinates
+      1    ..   .. ...
+      2  .. ..  
+      ...
+      ...
+    *echo on
+\end{verbatim}\normalsize
+\nid This is the first example use of the special * (star) commands in WARP3D. A number of such commands
+are available to invoke useful services (see Section 2.15). In this case, the input translators switch
+to read/process commands from the file \ttt{coordinates.inp} until an end-of-file condition is reached when
+the translators simply return to reading the previous file. Such \ttt{*input from ... } commands can be
+nested as proves convenient. The \ttt{*echo off/on} commands suppress the writing of large
+numbers of coordinate definition lines to the output file.
+
+\nid \ti{\ul{Incidences} }
+
+\nid Chapter 3 describes the ordering of nodes on each available element to be defined in the 
+incidences data. Elements maybe entered in any order. Use a comma to continue long
+lines of node numbers over multiple physical lines. Incidence data, like coordinates data,
+are most often placed in a separate file (\eg \ttt{incidences.inp}) 
+for convenience and referenced with a command  \ttt{ *input from file "incidences.inp"}
+
+\nid \ti{\ul{Blocking} }
+
+\nid To improve parallel performance, WARP3D processes elements in \ti{blocks} usually with 64, 128, or
+256 elements per block. Elements in a block are numbered sequentially, must be the same type
+(\eg \ti{l3disop} as in this example), use the same material (\ti{metal} here), use the same
+numerical integration order, same small or large displacement formulation, etc.
+Section 2.6 provides details; Chapter 7 further explains concepts of parallel
+execution in WARP3D and the usefulness of blocking. For most analyses, the automatic blocking
+command used in this example suffices. The block size may be specified with the 
+option \ttt{size = <value>} appended after the keyword \ttt{automatic}. The assignment of elements to 
+blocks does not renumber the elements -- block sizes are adjusted to accommodate changes in element types, 
+different materials, etc.
+
+For parallel execution using MPI+threads, meshes are first partitioned into domains and then domains into blocks.
+The \ttt{blocking} command is then expanded to include the domain numbers.
+
+\nid \ti{\ul{Constraints} }
+
+\nid The displacement boundary conditions here enforce simple zero changes at the prescribed nodes.
+Non-zero displacements are imposed with equal simplicity.  Section 2.7
+describes the \ttt{plane} command to set displacement values over all nodes that lie  on a plane, \eg to impose
+symmetry conditions. Constraints may also be imposed in non-global coordinate systems. Multi-point
+constraints may be defined to enforce a linear relationship between displacement values at multiple nodes. 
+Transitions from coarse to refined mesh densities and between different element types may be accomplished
+with the \ti{mesh tying} capabilities of the constraints system. Consistent with the incremental-iterative, implicit
+solution in WARP3D, the defined constraints are treated as \ti{incremental} values imposed over each
+load(time) step. The notion of \ti{incremental} constraints is a key concept in WARP3D. Example: the \ttt{constraints}
+input has \ttt{5 u 0.1} -- by default after 10 load steps, node 5 will have a \ttt{u} displacement = 1.0. Whenever the \ttt{constraints}
+command is given, all previously defined absolute and multipoint constraints are deleted. New input values
+define the incremental displacement values for the next load(time) step. 
+
+\nid \ti{\ul{Loading patterns} }
+
+\nid The notion of loading patterns evolves from the structural engineering background of the WARP3D
+developers where structural models are often analyzed for combinations of simple (pattern) loadings
+such as dead, live, wind, snow, earthquake, thermal, etc.  A loading pattern consists of some
+mixture of applied nodal forces, applied nodal temperatures and distributed loads applied to element
+surfaces, and body forces from elements. Any number of such loading patterns may be defined. Note that
+non-zero displacement loading of the model takes place through the constraints. Most often, pattern loads
+are defined such that the maximum intensity in the definition has a unit value -- unit pressure on element surfaces,
+temperature fields with maximum temperature value of unity, etc.
+
+\nid \ti{\ul{Nonlinear/dynamic loading} }
+
+\nid There exists one loading condition declared with the type \ttt{nonlinear} or \ttt{dynamic} -- these are synonyms.
+The increment of loading imposed on the model over each load(time) step is then defined by a combination of
+loading patterns and the constraints. The constraints are \ti{automatically} applied with a 1.0 multiplier
+if not mentioned in the incremental definition for a load(time) step.  A more complex command than the simple one
+used in this example is: \ttt{steps 20-2000 constraints 1.5 axial\_tension -3.2 unit\_pressure 10.5}. Non-zero 
+entries in the constraints 
+definitions at the point in the solution for a load(time) step are multiplied by 1.5 for application at the next
+step. Load steps may be redefined any time up to the point when that step is analyzed.
+
+\nid \ti{\ul{Nonlinear solution parameters} }
+This example shows only the minimum needed options for the simplest solutions. Section 2.10 provides 
+descriptions for all available solution parameters. Several of the most important include: choice of 
+linear equation solver, adaptive solutions that subdivide a load step automatically into smaller increments
+should the global Newton iterations fail, convergence criterion for the Newton iterations, levels of messages
+output by WARP3D to track the nonlinear solutions, etc. As a research code, WARP3D provides ready access to
+alter options controlling the incremental-iterative solution process. Default values often suffice
+for new users.
+
+\nid \ti{\ul{Compute commands} }
+
+\nid The solution drivers in WARP3D automatically fill-in the solution of load (time)
+steps as needed to satisfy the list of steps included in the command. Example: \ttt{compute displacements
+loading test steps 500-1000}. Suppose the solution has advanced through step 295. The solution
+for load steps 296-499 will be computed automatically in response to this \ttt{compute} 
+command.
+
+Compute commands are also used to request computation of domain 
+and interaction  integral values (Chapter 5).
+
+\nid \ti{\ul{Output commands} }
+
+\nid Computed results most often are output to: (1) the text output file specified in the
+shell command via standard out to invoke WARP3D, (2) another text file
+defined via an \ttt{*output to file ...} command just prior to output commands, (3) flat files of nodal 
+and element results in text or stream format, (4) formatted and/or unformatted files of
+element and nodal results readable directly by Patran and other programs
+that can read Patran-style result files (text and binary formats), (5) unformatted files of result
+\ti{packets} to be processed by a user-written program. The \ti{flat} files have a very simple 2D array structure
+with all values for a node or element contained on one line of the file. The text version of the
+flat files can be imported directly into Excel. The text and stream versions are readily imported
+into Python arrays. The \ti{packets} files are binary files (can be converted to text if requested)
+with computed information stored in separate packets where a large number of packet types (\eg stresses for
+an element, reactions for a node, a $J$-integral value, etc.)
+are described in Appendix F.  Use of packet files does require investment by the user to tailor for their specific
+purpose an example packet processing program included in the WARP3D distribution. This effort pays-off
+in large parameter studies, for example, to extract results and to build input files for plotting programs.
+
+Once WARP3D computes the solution for a load(time) step, output of all desired quantities
+must be done before computations begin for the next step -- only results for the current load(time) step are
+maintained. For analyses with a large number of load(time) steps and with frequent 
+need for output, the large number of commands to compute/output becomes cumbersome. 
+The feature \ttt{output commands
+use file ...} resolves this issue. A separate file containing only output commands is created 
+by the user, \eg \ttt{get\_results.inp}. Then the command
+%
+
+\small\begin{verbatim}
+  output commands use file "get_results.inp" after steps 10-1000 by 10
+  compute displacements loading test step 1000
+\end{verbatim}  \normalsize
+%
+\nid drives the nonlinear solution through step 1000 with output generated following
+steps 10, 20, 30, ...1000 using all the \ttt{output} commands contained in file
+\ttt{get\_results.inp}.
+
+\nid \ti{\ul{Analysis restart} }
+
+\nid A file to enable restarting  the analysis may be written at completion of the
+solution for a load(time) step. This is a binary (unformatted) sequential file that fully restores
+the solution state to enable analysis continuation. Restart files are not transportable across computer
+architectures (\eg a Windows restart file will not work on Linux).  This example illustrates use
+of the \ttt{save} command to create a file for restart after load(time) step 3. These commands 
+will restart this example and request some additional output, define new load steps 4-10,
+request solution for steps 4-10 and create a new restart file
+
+\small\begin{verbatim}
+  restart from file "simple.save"
+  output flat text displacements
+  loading test 
+    nonlinear
+       steps 4-10 top_pressure 1.2
+  compute displacements for loading test step 10
+  save to file "simple_after_step_10.save"
+  stop
+\end{verbatim}  \normalsize
+
+
+\nid \ti{\ul{Other commands not yet discussed} }
+
+\nid These include stress-strain curves, contact surfaces, crack growth procedures, 
+computation of domain and interaction integral values (\eg $J$)
+at crack fronts, initial conditions for the model (displacements, velocities, temperatures), user-lists that
+can greatly shorten input and additional * commands. 
+
+\nid \ti{\ul{Notes for users familiar with Abaqus} }
+
+\nid For implicit solutions, Abaqus employs the concept of \ti{steps} to define 
+complex loading histories on
+a model. A \ti{step} has a start and end (model) time, start and end 
+loading/displacement/temperature etc.
+levels.  A step is subdivided
+into equal or variably sized \ti{increments} to accomplish the 
+incremental-iterative nonlinear solution.
+Each \ti{increment} has some number of global Newton \ti{iterations} to 
+advance the solution from one increment to
+the next. A key feature of the \ti{step} concept in Abaqus includes the 
+ability to change analysis type, for example, static to
+dynamic, static for pre-loading followed by a buckling or frequency 
+analysis, etc.
+
+WARP3D is a far less comprehensive program and employs only \ti{steps} 
+and \ti{iterations}. A step in WARP3D combines
+the role of steps and increments in Abaqus. Each step in WARP3D defines an increment 
+of loading to be applied on the model with iterations to achieve the nonlinear solution for the step.
+
+\subsection{Upsetting of a cylindrical disk}  
+
+\nid The cylindrical metal disk shown in \Fig \ref{fig:upset_1} is crushed (upset) 
+in the vertical direction for a significant
+portion of the initial height through the prescribed 
+downward motion of a rigid contact surface (\ie a punch). The axisymmetric geometry
+is modeled here with a $1/8^{th}$ symmetric finite element mesh of 8-node solids. The top surface of the
+disk is fixed to the punch. This problem has become a commonly used example to exercise finite-strain
+plasticity implementations, element handling of incompressible deformations and simple rigid
+body contact [\ref{R:NV1984}, \ref{R:SH1998}]. The element mesh, symmetry boundary conditions,  and
+uniaxial (true) stress - (log) strain curve are shown in the figures. The yield stress is taken as 1.0
+for simplicity with $E/\sigma_{ys}=1000$. The rigid contact plane
+is assigned a velocity in the global $-y$ direction to crush the disk. At large deformations, outside elements
+on the top row fold over and contact the rigid surface.  The disk height is reduced by 3
+units in the symmetric
+model (6 of the total 12 units of height for the full disk). 
+The upsetting can continue for an additional
+amount before several of the top row elements become inverted.
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=1.5in 1.0in 1.0in 0.8in, clip=true,scale=0.9,angle=0]{figures_example_2/fig_disk_upset_1.pdf} 
+\caption{{\small Fig. \thefigure\ Disk upsetting analysis. (a) overall disk geometry, (b) $1/8^{th}$ symmetric FE
+model with 8-node brick elements, (c) uniaxial true stress -- log strain curve for material,
+(d) imposed punch \ti{vs} time through rigid surface}
+\label{fig:upset_1}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+The WARP3D input file is shown in \Fig \ref{fig:upset2}. Nodal coordinates and incidences are located in separate files
+(not shown). The \ttt{*input from file ..} command is used to have the input translators
+read the those files.
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=1.0in 1.0in 1.0in 0.8in, clip=true,scale=0.9,angle=0]{figures_example_2/fig_disk_upset_2.pdf} 
+\caption{{\small Fig. \thefigure\ Disk upsetting analysis. (a) input file \ttt{warp3d.inp}
+and (b) file of output commands \ttt{get\_output.inp} }
+\label{fig:upset2}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+\nid The directory \ttt{manual\_examples\_chpt\_1/example\_2} in the WARP3D
+distribution contains the files for this example. 
+For convenience, the input data is separated into files to define the mesh
+and output commands. The main input file is named \ttt{warp3d.inp}. Files 
+may have any desired/descriptive names; the \ttt{.inp} suffix is not required. Other files are 
+included during execution using
+\ttt{*input from file "<file name>"} commands in \ttt{warp3d.inp}. The \ttt{*input ...} may be nested
+as convenient. Several Python scripts (*.py) are included as 
+examples to extract results and make the plots.
+
+The model definition begins with input of a stress-strain curve assigned the numerical id of 1 -- up to 
+20 such curves may be defined (Section 2.2).  Strain-stress pairs are given with the first pair defining
+the yield point. These are \ti{total} log strain and true (Cauchy) stress values. The last point provides 
+a very small, positive slope through strain levels never reached. The \ttt{metal} material uses the
+built-in \ttt{mises} plasticity model (Section 3.6). Note that the yield stress and modulus must
+define a point consistent with the first point defined on the stress-strain curve.
+
+Element definitions specify the \ttt{nonlinear} option for 
+finite strains and finite rotations of material points.
+
+The definition of key constraints (excluding the punch) is facilitated using the
+\ttt{plane} command as shown.
+
+The nonlinear loading is named \ttt{upset} and is defined to have a maximum of 100 load steps (increments)
+with only \ttt{constraints} imposed. The actual loading will be enforced by
+contact between the punch and the top row of elements. With all the defined, incremental constraints equal to
+zero, the \ttt{1.0} multiplier here has no actual role. 
+
+The \ttt{nonlinear solution parameters} contain additional entries for this severe loading.
+Newton iteration parameters: the maximum iteration count is set at 8 given the rather large deformations
+at each step and the convergence tolerance for the Euclidean norm of the  residual nodal forces is set to 0.01
+(\ie 0.0001\%) -- tighter tolerances here lead to negligible changes in the computed results. The \ttt{adaptive}
+solution strategy is turned on in anticipation of possible convergence issues for the large deformations and during
+contact (element folding) at the punch.  Adaptive sub-incrementing is triggered if the residuals increase over 3
+consecutive iterations or the maximum number of iterations is exceeded.
+
+The \ttt{consistent q-matrix on} enhances significantly the global convergence
+rate in this solution. The matrix $\mathbf{Q}$ impacts characteristics of 
+the tangent stiffness for the material in finite strain
+computations -- usually this option in set to \ttt{on} for finite strain 
+simulations (see Section 1.9). With \ttt{off} this
+solution requires twice as many global Newton iterations and adaptive 
+reductions of some load step increments.
+
+\ttt{trace solution on} causes WARP3D to emit messages to the current 
+output device (file) indicating the solution 
+status. The \ttt{batch} \ttt{messages on} option causes the file \ttt{disk.}\ttt{batch\_messages} 
+to be created and updated during 
+solution, where \ttt{disk} is the model name here. This file is opened, 
+written to and closed each time a 
+solution status message is output. This simplifies monitoring for long executions.
+
+The input next defines a rigid contact surface.
+Chapter 6 describes the rigid body modeling of contact available in WARP3D. Here a \ttt{plane} contact
+surface (\ie the punch)
+is defined with initial position matching the undeformed top surface of the disk.  The size of the plane
+is sufficiently large to block penetration of nodes near the top of the disk as they undergo large displacements.
+A velocity vector in \ti{global}
+coordinates with unit magnitude
+translates the rigid plane in the $-y$ direction to upset the disk. Note the coordinates of 3 points
+to define the rectangular plane set the $+y$ direction of the plane point positively in the upsetting
+direction. This type of orientation is required by the contact algorithms. A stiffness value defines the penalty number
+used to prevent penetration through the rigid surface. Several values may be tried to understand
+affects on the solution -- too small a value allows penetration while a much too large value
+degrades conditioning of the assembled tangent stiffness. In this example, 
+a multiple of $E A/ L\approx 80$ provides a 
+starting point for values of the penalty stiffness with $E=1000$,
+$A\approx 1$ and $L=12$.
+
+Two user-defined lists (\ie sets) are next specified to simplify output requests. A variety of methods
+are available to construct such lists as described in Section 2.16.
+
+Output of results is desired at the completion of each load step. The \ttt{output commands use file ..}
+feature makes this quite simple. Here the separate file \ttt{get\_ouput.inp} contains usual
+\ttt{output} commands which will be executed at completion of each load (time) step (the \ttt{steps
+all} option used here).
+
+The remaining commands adjust the amount ($\Delta v$) that the rigid plane (punch) moves
+downward  in each
+load(time) step. One objective in this example is to demonstrate the robustness of the WARP3D finite-strain
+plasticity computations -- thus a relatively few steps (40) are defined to upset the disk by approximately
+50\% of the original height ($v_{total} =-3$ units in the symmetric model). The controlling
+quantities are the plane velocity (-1.0) and the time increment for the step. Here the plane velocity remains
+fixed at -1.0 (for convenience) with adjustments made to the time increment as the solution
+progresses.
+The first load step requires a comparatively small downward movement of the punch for
+global convergence, $\Delta v =  10^{-5}$, to establish
+contact with the disk and to initially load the disk in compression. The time increment 
+is then adjusted to $\Delta t = 0.05$
+($\Delta v =  -0.05$ units) for steps 2-5. The change is initiated by giving
+the \ttt{nonlinear analysis parameters} command followed by the new
+time increment -- all other analysis parameters remain unchanged.
+Thereafter values of $\Delta t = 0.08$
+($\Delta v =  -0.08$) are used for a total of 40 time steps at which the punch has moved
+downward by 3.0 units and the model simulation time is 3.0 as well (from the selection of
+a unit velocity of the contact surface). 
+
+The selection of 40 steps satisfies two requirements: (1) the comparison solution 
+[\ref{R:NV1984}] used 44 steps to reach 
+$\Delta v_{total}=-2.64$ in the FE model, and (2) a plot showing details of the punch 
+force \ti{vs} punch displacement is also
+desired for comparison. The WARP3D solution algorithms will converge using
+fewer than 40 load(time) steps but physical features of the
+response maybe lost in the truncated loading history.
+
+The total number of Newton iterations is 151 for an average 3.8 iterations per step. 
+Decreasing the convergence tolerance from 0.01 to 0.001 increases the number
+of Newton iterations to 243 and triggers the adaptive sub-stepping at load(time) step 24.
+The punch force at step 40 decreases by 0.004\%.
+
+Figure \ref{fig:upset3} shows the deformed mesh to true scale and a plot of the punch force
+\ti{vs}
+punch displacement. The results agree closely with those of the reference solution.
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0.5in 1.0in 0.7in, clip=true,scale=0.9,angle=0]{figures_example_2/fig_disk_upset_3.pdf} 
+\caption{{\small Fig. \thefigure\ Disk upsetting analysis. (a) comparison of predicted
+punch force with punch displacement; WARP3D and reference solution, (b) deformed mesh
+at step 40 to true scale and distribution of mises equivalent stress }
+\label{fig:upset3}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+\subsection{Linear-Elastic Fracture: Crack-Tip Parameters}  
+
+\nid Figure \ref{fig:rpvlinear1}a shows a cylindrical vessel with a bolted header/dome
+of the type found in pressurized water
+reactors for commercial power generation. The thick wall is fabricated
+from a ferritic steel with a thin, inner cladding layer of stainless steel to reduce
+corrosion. Figure  \ref{fig:rpvlinear1}b shows a simplified, half-symmetric 3D FE model of the 
+vessel (w/o the header) often used as a starting point for the analyses of axial and circumferential cracks, both 
+internal and surface breaking. 
+
+To simplify further for purposes of illustrating various features for fracture
+analysis in WARP3D, the model contains a shallow, completely circumferential crack of uniform depth
+that penetrates through the cladding and into the ferritic base material. Further, the crack is located 
+remote from any penetrations of the vessel and the
+joint with the header. With 
+(1) internal pressure loading and (2) temperature gradients that vary only with position
+($r_g$) everywhere through the wall, the FE model becomes axisymmetric and could be modeled with
+2D, axisymmetric elements. 
+
+Here we construct a 3D model using three layers of identical 8-node elements in the global hoop
+($\theta_g$) direction to illustrate various computational capabilities. A model with one such layer
+of elements would suffice equally as well for these idealized conditions. The top half of the model is defined as
+shown in Fig. \ref{fig:rpvlinear2}a with $Y_g=0$ as a symmetry plane. Similarly, $Z_g=0$ (\ie $\theta_g=0$) 
+is a symmetry 
+plane and non-global constraints must be defined to enforce zero displacement normal to the 
+$\theta_g=3^{\degree}$ plane of nodes. This definition of positive $\theta_g$ is taken for convenience.
+The mesh has
+a small hole at the top of the dome with radius 193 mm ($\phi_g=5^{\degree}$) to 
+remove collapsed 3D elements  on the
+generator axis. This reduces the axial force from pressure by less than 0.5\%. The cylinder height at the juncture
+with the  (hemispherical)
+header $=9.2 \times t_w$ such that the bending moment generated by the 
+header-cylinder radius mismatch decays to a vanishingly small value on the $Y_g=0$
+plane. The choice of 9.2 is one of convenience in meshing operations; a factor $> 7-8$ should
+be sufficient (see [\ref{R:F1973}]). 
+ The use of tied contact
+(Section 2.7.6) simplifies transition to a coarser mesh as indicated in Fig. \ref{fig:rpvlinear2}b.
+Figure \ref{fig:rpvlinear3} shows the crack front modeled with a region of wedge 
+shaped, focused elements having a small 
+radius to support finite-strain nonlinear analyses if needed. 
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 2.0in 1.5in 0.1in, clip=true,scale=0.9,angle=0]
+{figures_example_3/figure_1_concept} 
+\caption{{\small Fig. \thefigure\ Reactor pressure vessel. (a) much simplified 
+illustration, (b) half-symmetric, 3D model without header/dome 
+often a starting point for more detailed analyses. Current example
+considers a circumferential crack around the complete inside at a location in the so-called beltline
+region remote from any geometric discontinuities.}
+\label{fig:rpvlinear1}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0.5in 0.4in 0.0in, clip=true,scale=0.8,angle=0]
+{figures_example_3/figure_2_mesh} 
+\caption{{\small Fig. \thefigure\ (a) 3D finite element model of $3^\degree$ segment
+for axisymmetric analysis. (b) closer view
+near crack front showing mesh transition using tied contact. (c) near front 
+region on $\theta_g = 3^\degree$ plane showing internal pressure acting on crack
+face. Total crack depth 10 mm ($a/t_w=0.044$). }
+\label{fig:rpvlinear2}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+The axisymmetric, displacement boundary conditions require $w=0$ at all nodes
+on the $Z_g=0$ plane and a zero displacement
+normal to the $\theta_g=3^\degree$ plane. To enforce the second, non-global constraint,  
+a local coordinate system ($X_\ell, Y_\ell, Z_\ell$)
+is defined at all these nodes such that $Z_\ell$ is
+normal to the plane, $X_\ell$ is aligned with $r_g$ and $Y_\ell = Y_g$, \ie 
+$Z_\ell= X_\ell \otimes Y_\ell$.
+The needed axisymmetric constraint on these nodes is then $w=0$. Printed output at all model
+nodes is in the global coordinates.
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 1.5in 2.5in 0.1in, clip=true,scale=0.8,angle=0]
+{figures_example_3/figure_3_near_tip_mesh} 
+\caption{{\small Fig. \thefigure\ View very near the crack front on $\theta_g=3^\degree$ plane. 
+Small radius of crack front is visible.  The $v$ displacements at node A indicated on 
+$\theta_g=0, 3^\degree$ planes can be used to check domain integral derived values of $K_I$. Element/node
+stresses, $\sigma_{xx}$, along the crack face on  $\theta_g=0^\degree$ provide an estimate for the
+$T$-stress (\ie $T_{11}$). Nodes marked with yellow dots are 
+used to define the first domain at the crack front. Elements incident on these nodes
+are in the 1st domain. Domains 2, 3, ... are generated automatically using just topology
+information. See also Section 4.3.4 for definition of crack-tip nodes when
+a non-zero initial radius is used.  }
+\label{fig:rpvlinear3}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+Two linear-elastic materials (clad and base) are defined for the analysis. These 
+materials have different elastic modulus and thermal expansion coefficients. The subsequent
+nonlinear analyses include temperature-dependent properties for these materials.
+
+The vessel operates at steady conditions of 288C (550F)
+uniform temperature over the wall and 15.2 MPa internal pressure (2.2 ksi) including pressure acting on
+the crack faces. Of primary interest here 
+is the situation of very rapid cool down of the inner wall. To approximate
+such severe conditions, a quadratic temperature variation is defined over the wall --
+the outside surface (insulated) remains at 288C with the inner wall dropping to 100C while the internal
+pressure remains unchanged. \ti{Actual} pressure loading and wall 
+temperatures are strongly time dependent for various normal and abnormal
+operating scenarios, 
+and involve complex heat exchange processes on the cladding surface. None of these
+complexities are included here in this simplified, illustrative problem. The 
+stress-intensity factor generated by the
+thermal gradient is several times larger than caused by the
+internal pressure acting alone at the steady-state temperature. 
+Contraction of the clad and base material at the inner surface from the
+imposed temperature gradient exert significant tensile, axial stresses on the
+shallow crack front. The larger CTE of the clad material increases this effect
+a small amount in the example material properties adopted here.
+The linear analysis  for such a severe temperature gradient predicts stresses
+larger than the yield level of the lower-strength clad material. Once yielded, the
+clad material becomes limited in the intensity of axial
+stresses exerted on the crack front. 
+
+$J$-integral values are computed with the domain integration 
+procedures/commands described in Chapter 4. Domains are defined at some 
+distance from the front to insure path independence -- although this is not
+necessary for the linear analyses where $J$-values are unchanged from domain (ring) 2 
+at the front outwards with increasing $r_c$ -- see Fig. \ref{fig:rpvlinear3}}.
+Stress-intensity ($K_I$) values are obtained
+from these $J$-values using the plane-strain conversion $K_I=\sqrt{E J/(1-\nu^2)}$.
+
+
+Table 1.3.1 summarizes key geometry, material and FE mesh quantities of interest for the model.
+
+
+Physical units employed in the model definition are: mm, MPa, $^\degree \mathrm{C}$. Computed 
+displacements are thus in mm, stresses in MPa and reaction forces at nodes in N. Computed/printed
+$J$-integral values thus have units of  $\mathrm{kJ/m^2}$, where
+$\mathrm{175\, kJ/m^2=1\, kip\mhyphen in/in^2}$. Computed/printed $K_I$ values $\div\,\sqrt{10^3}$
+have customary units $\mathrm{MPa\sqrt{m}}$, where $1\, \mathrm{MPa\sqrt{m}}= 
+\mathrm{0.91\, ksi\sqrt{in}}$.
+
+For convenience, the large volume of input data is separated into files to define the mesh, 
+constraints, loading and domain definitions. The directory \ttt{manual\_examples\_chpt\_1} in the WARP3D
+distribution contains all files for this linear analysis and the subsequent nonlinear analyses of this
+model. Subdirectory \ttt{example\_3\_linear} contains the
+files for this linear analysis. The main input file is named \ttt{warp3d.inp}. Files 
+may have any desired/descriptive names; the \ttt{.inp} suffix is not required. Other files are 
+included during execution using
+\ttt{*input from file "<file name>"} commands in \ttt{warp3d.inp}. The \ttt{*input ...} may be nested
+as convenient.
+The following lists the files created for the analysis.
+
+\squishlist
+\item \ti{mesh\_coords.inp}. ($X_g, Y_g, Z_g$) coordinates for all nodes.
+\item \ti{mesh\_incid.inp}. Connectivities of elements to nodes.
+\item \ti{tied\_contact.inp}. Definition of two \ti{master} surfaces and 
+two corresponding \ti{slave} surfaces for this model. Master 
+surfaces are on the coarse side of mesh transitions; slave surfaces on the more refined side. Surfaces
+consist of element numbers and faces of those elements. Section 3.1 provides face information
+for hex elements. A
+\ti{tie mesh} command then lists each master surface and the connected slave surface; here there
+are two entries in the lists.
+\item \ti{unit\_internal\_pressure.inp}. Define a unit pressure over the inside
+surface of the model. List has element numbers and loaded faces. Net axial force for the
+$\theta_g=3^\degree$ model is 0.12804 MN (average axial stress 4.66 MPa).
+\item \ti{unit\_crack\_face\_pressure.inp}. Define a unit pressure on each element over the crack
+face. The crack-front length in the model is $s_c= 2 (R_i + a/2) \pi /120 = 116.5\ \mathrm{mm}$,
+for a total crack face area $= 10 \times 116.5=1165\ \mathrm{mm}^2$, vertical force for 
+unit pressure = 0.001165 MN.
+\item \ti{unit\_temp\_gradient.inp}. Define a temperature at every node of the model representing a change,
+$\Delta T(r_g)$ from the uniform, steady temperature of 288C. 
+The largest change is -1C at all nodes on the inner surface and 
+0C at all nodes on the outer surface. See equation in Table 1.3.1. 
+A \ti{user\_routine} is often employed to
+define complex spatial and temporal temperature variations  in these
+type of models (see Section 2.8.2).
+The temperature change acting alone is self-equilibrating and thus generates
+no next axial force in the model.
+\item \ti{domain\_define\_compute.inp}. Define the domains and request
+$J$-integral and $I$-integral (interaction)  computation at the four corner
+node locations along the crack front ($\theta=0, 1, 2, 3$-degrees). A list of nodes
+at the finite-root radius  is specified to enable the automatic construction of domains 
+at that location
+and assignment of $q$-values at nodes (see Fig. \ref{fig:rpvlinear3}).
+\squishend
+
+Unit-value pressure and temperature loadings are defined simply for
+convenience. Scaled values are specified in the load steps to
+impose the actual loading intensity.
+
+\ttt{warp3d.inp} makes extensive use of the user-define list command to define/store
+long lists of nodes and elements (see Section 2.16).  For simplicity,
+the solution is computed separately in three analyses for each of the three loadings.
+%
+%=================================================
+
+%\begin{tabular*}{0.75\textwidth}{ | c | c | c | r | }
+
+
+
+\begin{table}[htb]	
+\centering
+{
+\setlength{\extrarowheight}{2.5pt}
+\small
+\begin{tabular}{ | p{4in} | p{2in} | }
+\hline
+\textbf{Quantity} & \textbf{Values} \\
+\hline \hline
+Inner, outer radius & $R_i=2220$ mm, $R_o=$2445 mm \\ \hline
+$R_i/R_o$ & 0.91 \\ \hline
+Total thickness, clad and base metal thickness & $t_w=225$, $t_c=6$, $t_b=219$ mm  \\ \hline
+Height of cylinder part of model&2070 mm $= 9.2 \times t_w$  \\ \hline
+Hole radius at top of dome  & $R_{hole}=193$ mm  \\ \hline
+Crack depth & 10 mm; $a/t_w=0.044$ \\ \hline
+Crack-front initial radius & $\rho_0 = 0.00375$ mm \\ \hline
+Steady-state internal pressure, uniform wall temperature  &  15.2 MPa, 288C  \\ \hline
+Clad properties &   \\ \hline
+\hspace{2em}$E$& 157,200 MPa\\ \hline
+\hspace{2em}$\nu$ & 0.3 \\ \hline
+\hspace{2em}CTE & $17 \times 10^{-6}/^\degree$C \\ \hline
+Base properties &   \\ \hline
+\hspace{2em}$E$&  193,000 MPa\\ \hline
+\hspace{2em}$\nu$ & 0.3 \\ \hline
+\hspace{2em}CTE & $14 \times 10^{-6}/^\degree$C \\ \hline
+Nominal axial stress (15.2 MPa pressure) & 70.8 MPa \\ \hline 
+Nominal hoop stress (15.2 MPa pressure) @ $R_i, R_o$ & 158, 143 MPa \\ \hline 
+Temperature gradient over $t_w$; $-1^\degree$C over $R_i$, 0 over $R_o$& $\Delta T(r_g) = -\left [ (r_g-R_o)/t_w\right ]^2$  \\ \hline 
+Nodes on $R_i, Y_g=0$. $v$ must be identical
+  for symmetry. $\theta_g=0, 1, 2, 3^\degree$. & 2609, 5647, 11183, 16719  \\ \hline
+Nodes to compute $K_I$ from $v$ @ $r_c=0.0474\ \mathrm{mm}$ on $\theta_c=\pi$.
+    $\theta_g=0, 1, 2, 3^\degree$.  & 3730, 9926, 15462, 20998 \\ \hline
+\end{tabular}}
+\normalsize
+	
+%
+\caption{Table 1.3.1 
+Quantities for the linear-elastic vessel analysis.}
+\label{table:linear-vessel}
+\end{table}
+
+\nid \ti{\ul{Nominal stresses in cylinder} }
+
+\nid In the absence of a crack, the nominal hoop stress is given by
+%
+\begin{equation}\label{E:nomstress}
+\sigma_\theta (r_g) = \frac{R_i^2 (r_g^2+R_i^2 )\, p }{r_g^2 (R_o^2-R_i^2)}\ .
+\end{equation}
+%
+\nid For $p=$15.2 MPa, $\sigma_\theta (r_g=R_i) = 158$ MPa, $\sigma_\theta (r_g=R_i+a) = 157$ MPa,
+and $\sigma_\theta (r_g=R_o) = 143$ MPa. 
+
+For the internal pressure, the average axial stress is given by $15.2 \times 4.66=70.8$ MPa (see bullet four
+above for unit pressure values).
+
+\nid \ti{\ul{Computed reaction forces} }
+
+\nid Comparison of computed reactions at nodes on $Y_g=0$ for the $\theta_g=3^\degree$
+model with known applied forces provides a simple statics check. Loading is 15.2 MPa internal pressure
+and $\Delta T=188^o$ on inside surface -- no change at outside surface.
+\squishlist
+\item \ti{Crack-face pressure}. Net applied axial force: 0.01771 MN; computed reaction 0.017699 MN. 
+\item \ti{Internal pressure}. Net applied axial force: 1.9462 MN; computed reaction 1.9462 MN. 
+\item $\Delta T$. Net applied axial force: 0.0; computed reaction $0.49 \times 10^{-8}$ MN. 
+\squishend
+
+\nid \ti{\ul{Computed $K_I$-values} }
+
+\nid Stress-intensity factors are computed separately for each of the three loadings using three 
+approaches: (1) from $J$-values determined using the domain integral method 
+(convert $J$ to $K_I$ assuming plane-strain conditions), (2) directly from domain interaction integrals
+(pressure loadings only), and (3) by matching of the $v$ displacements at one or more nodes
+behind the crack front on $\theta_c=\pi$ to values for the 1st term of the asymptotic field.
+The current implementation of the
+domain interaction integrals does not support thermal loadings.
+
+Table 1.3.1 lists the nodes used to compute $K_I$-values from the $v$ displacements using this
+expression
+%
+\begin{equation}\label{E:KIfromv}
+K_I(r_c,\theta_c=\pi) = \frac{2 \,G \,v(r_c)}{(\kappa + 1) \sqrt{\dfrac{r_c}{2\pi}}}
+\end{equation}
+%
+\nid where $\kappa=3-4\,\nu$ for plane-strain and $G=0.5 \,E / (1+\nu)$.
+
+Table 1.3.2 summarizes the $K_I$-values and also lists values for the thermal gradient loading
+(1) with the clad material replaced by the base material, \ie homogenous material properties
+over the model; and (2) with CTE = 0 for the clad to understand the relative
+contribution of the clad and base thermal contraction on the
+crack front. For a matching $\mathrm{CTE_{clad}=CTE_{base}}$,  $K_I$ 
+decreases by about  6\%. With  $\mathrm{CTE_{clad}=0}$, $K_I$ decreases by more than
+60\% indicating the large contribution of thermal contraction in the clad towards loading
+the crack front.
+
+For the internal pressure loading, a comparison can also be made to a short edge crack in a long 
+rectangular plate under remote tension loading,
+%
+\begin{equation}\label{E:edgecrack}
+K_I = 1.12 \,\sigma_{axial}\sqrt{\pi a} = 1.12 \times 70.8 \sqrt{\pi \times 0.010} = 14.0\ \mathrm{MPa\sqrt{m}}
+\end{equation}
+%
+\nid  As  expected for this
+vessel geometry with $a/t=0.044$, the short edge crack solution for the SE(T) 
+approximates the vessel conditions quite well.
+
+\nid \ti{\ul{Computed $T$-stress values} }
+
+\nid The domain interaction integral method as implemented presently in WARP3D computes the $T$-stress 
+only for mechanical loadings. Table 1.3.2 shows the $T$-stress values from the interaction
+integral for the crack face loading and the internal pressure loading.
+
+$T$-stress values may also be estimated  from the FE 
+displacements/stresses in near-front elements (see [\ref{R:APS1998}]). Use of the directly computed
+$\sigma_r$ on $\theta_c=\pi$ as the $T$-stress value requires exceptionally refined mesh resolution to obtain
+values comparable in accuracy to those from the interaction integral approach.
+
+The $T$-stress is thus estimated using (radial) nodal displacements
+from the expression
+%
+\begin{equation}\label{E:Tstressdispl}
+T= \sigma_r ( r_c\rightarrow 0, \theta_c=\pi) = \vareps_r E + \nu \sigma_\theta
+\end{equation}
+%
+\nid where $\vareps_r$ is computed by a central difference approximation
+using displacements at nodes on $\theta_c=\pi$. In [\ref{R:APS1998}], $T$-stress
+values become relatively constant once nodes at distances $r_c/a\approx 0.04$ 
+and larger are employed
+in the above expression. For the present (axisymmetric) model, the challenge becomes 
+setting the value of hoop stress --
+in plane-strain models we have the simpler condition $T=E^\prime \vareps_{xx}$. The
+hoop stress in the uncracked cylinder for internal pressure (15.2 MPa) at the 
+crack front location is 157 MPa (see section above). The FE hoop stresses in elements
+along $\theta_c=\pi$ behind the crack show a nearly uniform value of 150 MPa at
+distances in the vicinity of $r_c/a = 0.04$ (the traction-free crack faces
+must relax the hoop stress values near $\theta_c=\pm \pi$.  Using the above approach with
+$\sigma_\theta=157$, the estimated $T$-stress from radial displacements is -42 MPa
+compared to -53 MPa from the domain integral method. Using $\sigma_\theta=150$
+the estimated $T$-stress becomes  -43 MPa.  The comparison is 
+not nearly as good for the face loading where the values are also much smaller.
+These $T$-stress values are small compared
+to the base metal yield strength. 
+
+$T$-stress estimates for the $\Delta T$ loading lie
+in the $-80 \rightarrow -90$ MPa range and vary some 
+with the adopted hoop stress which changes
+along $\theta_c=\pi$.
+
+The negative $T$-stress values are as expected with the shallow crack geometry.
+
+Table 1.3.2 summarizes the $T$-stress values computed for the three loadings using the
+interaction integral and displacement approaches. The FE hoop stress on 
+$\theta_c=\pi$ is used in Eq. (\ref{E:Tstressdispl}).
+
+\begin{table}[htb]	
+\centering
+{
+\setlength{\extrarowheight}{2.2pt}
+\small
+\begin{tabular}{ | p{3.2in} | p{2.5in} | }
+\hline
+\textbf{Quantity} & \textbf{Values} \\
+\hline \hline
+Vertical reaction @ $Y_g=0$:  &  \\ \hline
+\hspace{2em}crack-face pressure & Exact: 0.017708 MN; FE: 0.017699 MN \\ \hline
+\hspace{2em}internal pressure & Exact: 1.9462 MN; FE: 1.9462 MN \\ \hline
+\hspace{2em}$\Delta ( T )$ & Exact: 0.0 MN; FE: $0.49 \times 10^{-8}$ MN \\ \hline
+$K_I$ values: &  \\ \hline
+\hspace{1em}15.2 MPa face pressure from $J$, $I^\ddag$, displacement & 3.02, 3.03, 3.14 MPa$\sqrt{\mathrm{m}}$ \\ \hline
+\hspace{1em}15.2  MPa internal pressure from $J$, $I$, displacement & 13.5, 13.5, 13.6  MPa$\sqrt{\mathrm{m}}$ \\ \hline
+\hspace{1em}$\Delta T^\dag$ from $J$, displacement & 95.1, 96.3 MPa$\sqrt{\mathrm{m}}$ \\ \hline
+Material CTE mismatch effect $K_I$ values: &  \\ \hline
+\hspace{2em}$\Delta T^\dag$ $\mathrm{CTE_{clad}>CTE_{base}}$  & 95.1 MPa$\sqrt{\mathrm{m}}$ \\ \hline
+\hspace{2em}$\Delta T^\dag$ $\mathrm{CTE_{clad}=CTE_{base}}$ & 89.6 MPa$\sqrt{\mathrm{m}}$ \\ \hline
+\hspace{2em}$\Delta T^\dag$ $\mathrm{CTE_{clad}=0}$ & 33.3, 33.6 MPa$\sqrt{\mathrm{m}}$ \\ \hline
+$T$-stress values: &  \\ \hline
+\hspace{1em}15.2 MPa face pressure from $I$, displacement & 8.5, -0.9 MPa \\ \hline
+\hspace{1em}15.2 MPa internal pressure from $I$, displacement & -53, -43 MPa \\ \hline
+\hspace{1em}$\Delta T^\dag$ from  displacement & -80 to -90  MPa \\ \hline
+\end{tabular}}
+\small
+$^\dag$ -188C decrease on inner surface; 0C change at outer surface. Quadratic $r_g$ variation.	\\
+$I^\ddag$ denotes domain interaction integral.
+%
+\normalsize
+\caption{Table 1.3.2 
+Computed quantities for the linear-elastic vessel analysis.}
+\label{table:linear-vessel-results}
+\end{table}
+
+
+\nid \ti{\ul{Notes on input files}}
+
+\nid Figure \ref{fig:rpvlinearinput1} lists the \ti{warp3d.inp} highest level file
+to define the model, request solution and output results. Most all of the comment
+lines are removed to save space. The \ti{list} command is used extensively to
+define convenient names for long lists of node/element numbers. As indicated
+by the marker A, the \ti{list} commands have features to construct lists of nodes that
+satisfy certain geometric requirements; here the nodes that lie on the $\theta_g=3^\degree$
+plane.  At marker B, three definitions are given for load step 1 of the analysis. Two of the three are
+commented to run an analysis [recall that all solutions in WARP3D are assumed to be
+nonlinear and dynamic].  The clad and base materials have a large yield stress to prevent
+yielding and the time step is very large to eliminate inertia effects (note also that the material
+mass densities are not specified and have default values = 0).
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0in 0in 0.1in, clip=true,scale=0.8,angle=0]
+{figures_example_3/figure_4_warp3d_inp} 
+\caption{{\small Fig. \thefigure\ Highest level input file 
+for linear analysis of the pressure vessel. }
+\label{fig:rpvlinearinput1}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+\nid Figure \ref{fig:rpvlinearinput2} lists the \ti{tied\_contact.inp}  file
+and a sketch of the \ti{surfaces} of element faces tied together. 
+Any convenient/descriptive names may be assigned to the surfaces --
+here there are four surfaces. The \ti{master} surfaces most often
+are assigned to the coarser side of the mesh transition.
+
+\nid Figure \ref{fig:rpvlinearinput3} lists the \ti{domain\_define\_compute.inp}  file.
+A \ti{domain} is set-up at each of the four corner nodes along the
+crack front at $\theta_g=0,1,2,3^\degree$. In this file, the \ti{compute}
+commands are commented for  $\theta_g=1,2^\degree$ -- these were
+included in the mesh verification tests to insure identical $J$ and $I$ values
+at each location along the front in this axisymmetric model. Other
+comment lines are omitted in this listing to save space. 
+
+The domain definitions each have a command \ti{crack face tractions ty 15.2}.
+When the crack face loading is present, this allows a more accurate evaluation
+of the $I$-integrals than is possible using the equivalent nodal forces
+corresponding to the applied face pressure. This command should be
+commented for other loadings.
+
+The \ti{tangent vector} commands for domains at  $\theta_g=0,3^\degree$ 
+are necessary to maintain path independence of $J,\, I$ values. The chordal
+crack-front segments defined by the linear elements do not intersect the
+$\theta_g=0,3^\degree$ planes at a right angle (see Chapter 4 for 
+more details). Without this command,
+the $J,\,I$ values become increasingly path dependent as domains expand outward
+from the front. At the interior locations, $\theta_g=1,2^\degree$, the average of the
+tangents to the adjacent two chords lies tangent to curved front.
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0in 0in 0.1in, clip=true,scale=0.8,angle=0]
+{figures_example_3/figure_5_tied_contact} 
+\caption{{\small Fig. \thefigure\ Input file to define tied-contact
+for coare-fine mesh transition. }
+\label{fig:rpvlinearinput2}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 0in 0in 0.1in, clip=true,scale=0.8,angle=0]
+{figures_example_3/figure_6_domain_define} 
+\caption{{\small Fig. \thefigure\ Input file to define/request $J,\, I$ at nodes
+along the crack front. }
+\label{fig:rpvlinearinput3}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+\subsection{Nonlinear Fracture: Crack-Tip Parameters}  
+
+\nid Analyses of the reactor pressure vessel described in the previous section are
+extended here to include elastic-plastic material response and temperature-dependent
+strain-stress curves. Representative strain-stress curves for the stainless steel clad and
+ferritic steel base metal are shown in Fig. \ref{fig:rpvsigeps}. The analyses employ 
+the simple \ti{bilinear} mises material
+model which supports only a constant hardening rate; 
+a more realistic, detailed representation of the strain-stress curves is supported by
+the \ti{mises} model (additional data values to describe the shape of 
+the stress \ti{vs.} plastic-strain curves). Modulus values $E$, vary with temperature as
+well but the CTE values remain invariant of temperature.
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 2in 3.0in 0.0in, clip=true,scale=0.9,angle=0]
+{figures_example_3/figure_7_sig_eps_curves} 
+\caption{{\small Fig. \thefigure\ Temperature dependent, constant hardening 
+flow properties for base and clad materials. }
+\label{fig:rpvsigeps}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+
+The loading sequence for nonlinear analysis becomes: (1) set initial, uniform temperature to 288C,
+(2) increase the internal pressure to 15.2 MPa in five equal load steps, then (3) impose the $\Delta T$
+field over the thickness (described in previous section) in 47 equal increments that lower
+the surface of the vessel in increments of -4C
+to 100C while maintaining 288C everywhere on the outside surface. A larger and smaller
+number of load steps may be used for the solution. As the number of load steps decreases,
+consideration must be given to represent adequately the changing flow stress with
+temperature over the wall thickness. 
+
+
+Three nonlinear analyses are executed: (1) with the temperature-dependent material properties of
+Fig. \ref{fig:rpvsigeps}, (2) with the material properties held fixed at room 
+temperature (20C), and (3) with the material properties held fixed 
+at 250C (as an approximation for 288C). Global Newton iterations for each load step of each analysis 
+converge readily as the model response 
+remains effectively in small-scale yielding (SSY). $J$-values are extracted using data on rings 15-20 at the 
+$\theta_g=0^\degree$ crack-front position. $J$-values are identical at each of the other crack-front positions
+as verified in the prior LEFM solutions. $K_J$-values for plotting are computed using the plane-strain conversion 
+with $E^\prime$ equal to the value at the temperature of the crack-front (base material) elements [the
+domain computation routines perform this conversion as a convenience]. Several Python
+scripts (*.py) are included with the input files to illustrate extraction and plotting of the
+results.
+
+WARP3D input to define the material properties is shown in Fig. \ref{fig:rpvsigepsloadinput}a. 
+Multiple materials are defined, \eg \ti{clad\_rm\_temp, clad\_temp\_dependent, ...}
+to simplify editing of input for each of the three cases described above. The loading steps are defined in 
+Fig. \ref{fig:rpvsigepsloadinput}b.
+A separate \ttt{commands.inp} file has a pair of \ti{compute displacements} and $J$-value 
+computation commands for each load step (see the included .py script that makes 
+this convenient file). For convenience, the large volume of input data is separated into files to define the mesh, 
+constraints, loading and domain definitions. The directory \ttt{manual\_examples\_chpt\_1} in the WARP3D
+distribution contains all files for this linear analysis and the subsequent nonlinear analyses of this
+model. Subdirectory \ttt{example\_3\_nonlinear} contains the
+files for this linear analysis. The main input file is named \ttt{warp3d.inp}. Files 
+may have any desired/descriptive names; the \ttt{.inp} suffix is not required. Other files are 
+included during execution using
+\ttt{*input from file "<file name>"} commands in \ttt{warp3d.inp}. The \ttt{*input ...} may be nested
+as convenient. Other support files are included which may be of interest (the model neutral
+file, Python scripts to extract data/make plots, etc.)
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.0in 1.3in 0.8in 0.1in, clip=true,scale=0.9,angle=0]
+{figures_example_3/figure_8_sig_eps_load_input} 
+\caption{{\small Fig. \thefigure\ (a) WARP3D input to define the 6 stress \ti{vs}
+plastic-strain curves with temperature dependence and the corresponding
+materials with temperature dependence, fixed room temperature
+and fixed 250C properties. (b) Input to define the loading steps and the
+list of expanded solution parameters for nonlinear analysis. }
+\label{fig:rpvsigepsloadinput}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+Figure \ref{fig:rpvKJtip}a shows the evolution of $K_J$-values as 
+the temperature of the inside surface decreases from 288C
+to 100C. The loading here represents an \ti{exceptionally strong thermal gradient} with
+a fixed through-wall dependence of temperature on radius  -- taken only as
+a simplification for the purposes of demonstrating the application of WARP3D.
+The values are mildly sensitive to temperature dependence of 
+the material properties -- the cladding yields for each set of material properties. 
+$K_J$ reaches a maximum value of  99 $\mathrm{ MPa\sqrt{m}}$
+for temperature-dependent properties compared to 
+112 $\mathrm{ MPa\sqrt{m}}$ for the linear elastic solution -- about a
+10\% reduction from plasticity.  The solution with CTE $=0$ for the clad material
+shows the strong contribution from contraction in the clad to the $K_J$ values
+at the crack-front. At
+an inner surface temperature of 100C, Fig.  \ref{fig:rpvKJtip}b
+shows a near view of the deformed crack-front region (at true scale) with fringes 
+indicating the accumulated
+plastic strain ($\overline \vareps_p$). The maximum extent of the plastic region is 
+approximately 10-12 mm along the red line at about $\theta_c\doteq70^\degree$ extending
+from the crack front as indicated on the figure. The simple estimate for plastic zone size
+is $r_p\doteq 0.15 (K_J/\sigma_{flow})^2=9$ mm.
+The CTOD at the 100C level is approximately 0.072 mm (72 $\mu$m, 2.8 mils) taken as $2\,\times$ the
+opening displacement of nodes just behind the crack front. This leads to an
+estimated $J$-value: $J\doteq1.5\,\sigma_{flow}\,\delta= 1.5\times420\times 
+(72\times10^{-6})=45\,\mathrm{ kJ/m^2}$ compared to the domain-integral value of 
+44.3 $\mathrm{ kJ/m^2}$. 
+%
+\begin{figure}
+\begin{center}
+\includegraphics[trim=0.5in 0.0in 0.8in 0.0in, clip=true,scale=1.0,angle=0]
+{figures_example_3/figure_9_KJ_values_crack_tip} 
+\caption{{\small Fig. \thefigure\ (a) $K_J$ values from nonlinear analyses using
+four different sets of material properties. Internal pressure remains constant at
+15.2 MPa during temperature reduction over wall thickness. (b) Near front
+deformation (true scale) at end of temperature reduction and fringes of
+accumulated plastic strain. For reference, nominal yield strain is
+$\approx 0.0023$. }
+\label{fig:rpvKJtip}}
+%
+\end{center}
+\end{figure}
+%
+
+Figure \ref{fig:rpvcladyield} shows an overview of plastic strains ahead of the crack front and in the
+cladding. The clad has non-zero plastic strain of magnitude $1\mhyphen2\,\times$ the nominal 
+yield strain of $\approx 0.0018$. A thin layer of base metal immediately 
+adjacent to the clad also appears to experience quite small amounts of yielding,
+
+
+%
+\begin{sidewaysfigure}
+\begin{center}
+\includegraphics[trim=0.5in 2.0in 2.8in 0.1in, clip=true,scale=0.9,angle=0]
+{figures_example_3/figure_10_clad_yielding} 
+\caption{{\small Fig. \thefigure\ Accumulated plastic strains 
+at the end of loading with inside surface at 100C, outside surface 288C and
+internal pressure of 15.2 MPa.  Nominal clad yield strain is 0.002.}
+\label{fig:rpvcladyield}}
+%
+\end{center}
+\end{sidewaysfigure}
+%
+
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small 
+
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:NV1984}\thesectrefs]~J.C. Nagtegaal, and F.E. Veldpaus.
+On the Implementation of Finite Strain Plasticity Equations in a Numerical Model.
+In Numerical Analysis of Forming Processes (edited by J.F. Pittman, O. C. Ziekiewicz, R. D. Wood 
+and J. M. Alexander), p. 351. John Wiley and Sons, New York, 1984.
+
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:SH1998}\thesectrefs]~J.C. Simo and T.J.R. Hughes.  
+Computational Inelasticity (Interdisciplinary Applied Mathematics) (v. 7).  Springer-Verlag New York, Inc. 1998.
+ISBN 0-387-97520-9.
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:F1973}\thesectrefs]~W. Fl{\"u}gge.
+Stress in shells. Springer-Verlag, Berlin. 1973.
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:APS1998}\thesectrefs]~M.R. , M.J. Pavier, and 
+D.J. Smith. Determination of $T$-stress from finite element analysis for mode 
+I and mixed mode I/II loading\ti{International Journal of Fracture}, Vol. 91, No. 3, pp. 283-298, 1998.
+
+\end{document}
+

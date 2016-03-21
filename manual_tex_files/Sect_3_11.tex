@@ -1,0 +1,277 @@
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{Material: \textit{UMAT}}}
+\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 7-26-2012)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Elements and Material Models}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+%\usepackage{epstopdf}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%----------------------------------------------
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newcommand{\mdash}{\mbox{-}}
+\newcommand{\clrr}{\color{red}}
+\newcommand{\clrb}{\color{black}}
+\newcommand{\Fig}{Fig.\xspace}
+\newcommand{\Figs}{Figs.\xspace}
+\newcommand{\umat}{\ti{umat}\xspace}
+
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sect
+
+s}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{3}
+\setcounter{section}{10}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Material Model Type: \textit{umat}}
+%\layout
+\noindent This model provides the complete material
+constitutive response through computations performed by a
+user-supplied subroutine \umat. The Fortran code for the \umat
+and all supporting routines are placed in the file \ti{umats.f} for inclusion
+in the WARP3D executable. The \umat programming interface
+in WARP3D matches that used in Abaqus. Existing \umat routines 
+developed for use with Abaqus can be used with very minimal changes in
+WARP3D. Appendix J describes the \umat interface and
+the mechanism to incorporate the routine(s) as part of the WARP3D
+executable.
+
+This section provides information needed by the user of the 
+\umat to associate elements with the material and 
+its user-definable properties.
+
+The following example illustrates the process
+\small
+\begin{verbatim}
+   structure cct
+  c
+    material inco718
+      properties umat um_1 30000 um_2 0.3 um_3 -1.0 um_4 1.0e-04,
+                              um_5 65.5 um_6 0.0 rho 1.2e-04
+    material hastelloy
+      properties umat um_1 28500 um_2 0.28 um_3 0.0 um_4 2.1e-04,
+                              um_5 18.6 um_6 12.0 rho 0.0 
+                             
+    material steel_w_kinematic_hardening
+      properties cyclic type nonlinear_hardening e 30000 nu 0.3 yld_pt 60,
+        q_u 0.0 b_u 0.0 gamma_u 6000 H_u 5000 sig_tol 0.001 rho 1.1e-04
+ \end{verbatim}
+ \normalsize
+
+\noindent In the above, three materials are defined for subsequent use to set 
+the constitutive properties of finite elements. The first two materials
+specify the \umat routine with different numerical values for the
+six (6) \umat properties. The third material specifies the
+built-in \ti{cyclic} material model included in WARP3D.
+
+\ti{umats} may have up to fifty (50) user-definable property values. They
+have names illustrated above in the form um\_1, um\_2, \dots um\_50. Properties
+are all stored as float-point values, \ie um\_3 -4 is stored as -4.0. The
+physical ordering of property values in the input data lines
+is immaterial since each value is prefaced by the name. WARP3D stores the property
+values in sequential, ascending order and provides them on each call to the
+\umat routine. WARP3D is unaware of the number of property values
+needed by the \umat or acceptable ranges of values. The \umat code is
+responsible for such verification.
+
+
+\subsection {Mass}
+
+\noindent WARP3D handles computation of the element mass matrix and thus
+requires the mass density value (rho) as with the built-in material
+models.
+
+The mass density is constant over the element with the value
+set in the material definition as in the example above for 
+inco718.
+
+
+\subsection {Temperature Effects}
+
+\noindent Two options exist for \umat developers: (1) the \umat
+routine handles all processing of temperature effects with the
+user specifying any required properties through
+um\_1, um\_2, \dots; (2) the user specifies 
+thermal expansion coefficients through the usual
+property values of other (built-in) material models (alpha or alphax,
+alphay, alphaz, ... alphayz) and WARP3D handles temperature
+effects outside the \umat code. 
+
+Option (1) offers the \umat developer an opportunity to 
+make the temperature modeling as complex as necessary,
+\eg temperature dependent values of thermal
+expansion, values that vary with time or spatial
+location of the material points, values read by the 
+\umat from a separate data file, etc. 
+
+Option (2) offers simplicity for \umat
+developers when the thermal expansion coefficients are
+invariant of temperature. The user assigns expansion 
+coefficients as part of the material definition -- just include them
+before or after all the um\_.. values. WARP3D input translators
+set all thermal expansion values to zero by default and stores those
+(zero) values unless the user specifies non-zero values.
+
+%*****************************************************
+\subsection {Model Output}
+%*****************************************************
+During computations, the \umat code may print information
+to the current output device. The information, if any,
+printed during computations is determined by the \umat
+developer. The type and amount of such printed information
+may be controlled by a \umat material property
+as implemented by the developer.
+
+WARP3D outputs the six (6) stress and strain values produced by the
+\umat code. For the geometrically nonlinear
+analysis, the strain values have the logarithmic definition;
+stress values have the Cauchy definition.
+
+The \umat code computes and returns to WARP3D the
+updated work density, $U_0$, at each material point. This value is 
+output by WARP3D with the label  ``eng\_dens''  following the
+six stress components. WARP3D also computes and outputs the 
+mises equivalent stress value from the stress components with the
+label ``mises''
+
+\begin{equation}
+\sigma_{mises}= \frac {\sqrt{2}}{2}
+\sqrt{ (\sigma_{11}-\sigma_{22})^2  +
+(\sigma_{11}-\sigma_{33})^2  +
+(\sigma_{22}-\sigma_{33})^2  + 6 ( \tau^2_{12} +
+ \tau^2_{13} + \tau^2_{23} ) }
+\end{equation}
+
+\noindent where this value is computed independent of the \umat code.
+
+In the strain output, WARP3D computes and outputs an ``eff\_eps''
+value defined by
+
+\begin{equation}
+\veps_{eff}= \frac {\sqrt{2}}{3}
+\sqrt{ (\veps_{11}-\veps_{22})^2  +
+(\veps_{11}-\veps_{33})^2  +
+(\veps_{22}-\veps_{33})^2  + 1.5 ( \gamma^2_{12} +
+ \gamma^2_{13} + \gamma^2_{23} ) }
+\end{equation}
+
+
+\noindent The element stress output also contains three values for the \umat 
+material model ``state" variables or any other values the
+developer wishes to make available to the user. The output labels
+are ``c1'', ``c2'' and ``c3''.
+
+%*****************************************************
+\subsection {Element Blocking}
+%*****************************************************
+As described in Section 2.6, elements are assigned to blocks
+to facilitate parallel processing. For the computational material model \umat,
+all elements in a block must refer to the same material defined
+in an analysis model.
+
+Consider an analysis model with 3 materials defined in the input
+named \ti{mat\_a}, \ti{mat\_b} and \ti{mat\_c}. Each of these materials specifies
+\umat as the computational material model. Different values for each of the
+\umat properties (\eg \ti{um\_1}, \ti{um\_2}, $\dots$) may be defined in the materials
+\ti{mat\_a}, \ti{mat\_b} and \ti{mat\_c}. The blocking requirement
+described here requires that all elements assigned to a block have the same
+associated material, either  \ti{mat\_a}, \ti{mat\_b} or \ti{mat\_c}.
+
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small
+[\refstepcounter{sectrefs}\label {R:FA1965}\thesectrefs]~http://www.3ds.com/products/simulia/portfolio/abaqus/overview/
+
+\end{document}

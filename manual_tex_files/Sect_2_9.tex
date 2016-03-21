@@ -1,0 +1,176 @@
+ %!TEX TS-program = pdflatexmk
+ %
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{User's Guide - \textit{WARP3D}}
+\rhead{\textit{Initial Conditions}}
+\fancyfoot[L] {\textit{Chapter {\thechapter}\ \   (Updated: 12-12-2012)        }}
+\fancyfoot[C] {\thesection-\thepage}
+\fancyfoot[R] {\textit{Model Definition}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+
+\newcommand{\nin} {\noindent}
+\newcommand{\noi}{\noindent}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newcommand{\mdash}{\mbox{-}}
+\newcommand{\clrr}{\color{red}}
+\newcommand{\clrb}{\color{black}}
+\newcommand{\Fig}{Fig.\xspace}
+\newcommand{\Figs}{Figs.\xspace}
+
+
+
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{8}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Initial Conditions for Model}
+
+Users may specifiy certain initial conditions present in the model at time $t=0$ (\ie at the start 
+of load step 1). These include: nodal displacements, nodal velocities and nodal temperatures. 
+When initial conditions are not specified, all initial displacements, velocities and 
+temperatures are set to zero. Initial displacements and velocities may often be 
+required to specify properly the starting conditions for a time-dependent (dynamic) 
+analysis. Similarly, the specification of initial temperatures proves convenient to 
+set up the use of temperature dependent material properties. All temperature 
+changes specified in the loading thus are relative to the specified initial nodal 
+temperatures.
+
+The command initiate the specification of initial conditions is:
+\begin{align*}
+& \hv{\ul{initial}}\ \ \hv{\ul{cond}itions}
+\end{align*}
+\nin This command is followed by a series of statements to specify initial nodal displacements, 
+velocities and/or temperatures. The ordering of commands is immaterial and 
+only the last values entered are retained.
+
+To specify initial nodal displacements, use the command sequence
+\begin{align*}
+& \hv{\ul{displace}ments} \\
+&\ \ \hv{(\ul{node}s)\ <node\ list:list>}\ \left [
+\begin{Bmatrix}
+\hv{  \ul{u}} \\ \hv{\ul{v}}  \\ \hv{\ul{w}} 
+\end{Bmatrix}
+\hv{(=)<value:numr>}(,) \right ]
+\end{align*}
+\nin where the value \ti{all} for the $<$node list:list$>$ is acceptable 
+in the initial conditions. To specify initial velocities, use the command sequence 
+\begin{align*}
+& \hv{\ul{vel}ocities} \\
+&\ \ \hv{(\ul{node}s)\ <node\ list:list>}\ \left [
+\begin{Bmatrix}
+\hv{  \ul{u}} \\ \hv{\ul{v}}  \\ \hv{\ul{w}} 
+\end{Bmatrix}
+\hv{(=)<value:numr>}(,) \right ]
+\end{align*}
+To specify initial temperatures, use the command sequence 
+\begin{align*}
+& \hv{\ul{temp}eratures} \\
+&\ \ \hv{(\ul{node}s)\ <node\ list:list>}\ \hv{\ul{temp}erature (=) <value:number>}
+\end{align*}
+
+\nin An example of the initial conditions command is
+\small
+\begin{verbatim}
+     initial conditions
+       temperatures
+         1-800 temperature 300
+         900-10000 by 2, 12000-14000 by 3 temperature 600
+      velocities
+         all w 100 v 200 u -200
+      displacements
+        900-1400 by 2, 1600-2300 by 5 v -2.1
+\end{verbatim}
+ \normalsize
+
+% ----------------- end of real text ----------------------------------
+\end{document}
+
+ 
+

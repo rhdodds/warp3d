@@ -1,0 +1,2148 @@
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{Material: \textit{cyclic}}}
+\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 8-20-2011)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Elements and Material Models}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+\usepackage{epstopdf}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%----------------------------------------------
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{3}
+\setcounter{section}{9}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Material Model Type: \textit{cyclic}}
+%\layout
+\noindent This material model provides nonlinear stress-strain response to describe 
+the cyclic plasticity behavior in metals. 
+Based on Mises elasto-plasticity, the model approximates the Bauschinger effect, 
+ratcheting behavior, and stress-relaxation. At present, this 
+material model is strain-rate independent. The 
+model employs  an additive decomposition of the strain increments 
+for stress updating, and accommodates both small-strain and finite strain 
+deformation levels through techniques outlined in Chapter 1. 
+
+Two options exist to define the stress-strain response, \textit{nonlinear\_hardening}
+and \textit{generalized\_plasticity} with the following characteristics.
+\\ \\
+\noindent \textit{\textbf{nonlinear\_hardening}}
+\small
+\begin {itemize}
+\item Nonlinear kinematic hardening following the Armstrong and Frederick 
+[\ref{R:FA1965}] rule for evolution of the backstress 
+\item Nonlinear isotropic hardening via a saturating exponential relationship between 
+the radius of the Mises yield cylinder and the accumulated plastic strain
+\item Asymptotic, perfectly-plastic behavior at large plastic strains
+\item Sharp yield point (discontinuous tangent)
+\item Material properties invariant of temperature
+\end{itemize}
+\normalsize
+
+
+\noindent \textit{\textbf{generalized\_plasticity}}
+\small
+\begin {itemize}
+\item Linear kinematic hardening
+\item Linear isotropic hardening
+\item Nonlinear limit function for admissibility provides nonlinear stress-plastic strain response
+\item Asymptotically perfectly plastic or linear hardening behavior at large plastic strains
+\item Soft yield point (continuous tangent)
+\item Model of Lubliner, Taylor, and Auricchio [\ref{R:LTA1993}]
+\item Less computational effort for local stress updating than 
+\textit{nonlinear\_hardening} option
+\item Temperature-dependent material properties and material response 
+\end{itemize}
+\normalsize
+
+For both options, the discrete nonlinear equations reduce to a single scalar 
+equation for the unknown consistency parameter which is solved in closed-form 
+for the \textit{generalized\_plasticity } option and via Newton's method for the 
+\textit{nonlinear\_hardening} option. For both options, an automatic 
+subincrementation procedure 
+improves the accuracy of the updated stresses by subdividing the current 
+estimate of the total strain increment over the load step, with stress 
+updates executed in the material model successively for each subincrement 
+of strain. The strain path for the load step at the material point 
+remains proportional (straight) but the stress path may become 
+curved with proportional segments computed over each subincrement. The 
+adopted number of subincrements relies on a truncation error estimating 
+procedure and a user specified tolerance. A cap is placed on the 
+maximum number of subincrements in the \textit{generalized\_plasticity} model.
+
+The model offers two approaches to describe the production of thermal strain 
+increments in response to temperature changes imposed in the analysis: 
+isotropic and anisotropic. Isotropic refers to the conventional description 
+which uses the same thermal expansion coefficient (alpha) for each 
+normal strain component with zero thermal strain increments generated 
+for the shear components (this thermal expansion coefficient 
+may vary with temperature for the
+\textit{generalized\_plasticity} option -- see Section 2.2). The anisotropic model enables 
+definition of a unique thermal expansion 
+coefficient for each of the 6 strain components; it is intended to 
+support modeling of various initial strain-stress fields, for example, residual 
+stresses imposed through an eigenstrain approach. The anisotropic coefficients 
+do not vary with temperature. The isotropic model for thermal loading can 
+be used in small displacement, large displacement and finite strain analyses. 
+The anisotropic model for thermal loading should generally not 
+be used in large displacement-rotation analyses as the anisotropic 
+coefficients are not rotation neutralized (use of anisotropic 
+coefficients to model initial residual stresses 
+when the initial displacements and rotations remain small is acceptable).
+
+The following sections discuss the model capabilities and features in detail, 
+including the needed input parameters. The 
+next section describes the numerical implementation. The final 
+section reduces the 3D constitutive equations to 1D forms.
+
+%*****************************************************
+\subsection{Stress-Strain Curves}
+%*****************************************************
+Despite the differences noted above and the distinct governing equations, 
+both options have qualitatively similar stress-strain response under 
+cyclic loading. Both options of the \textit{cyclic} model intentionally reproduce 
+strain ratcheting under nonsymmetric stress cycling and stress relaxation 
+under nonsymmetric strain cycling, even under uniaxial and 
+plane-stress conditions. Figure \thesection.1 shows examples of this behavior.
+
+\subsubsection {The \bsf{nonlinear\_hardening} option}
+Before yielding occurs and during inelastic unloading, the material behavior follows 
+a linear-elastic response controlled by the elastic modulus and Poisson's ratio 
+($E$ and $\nu$). When plastic flow occurs, the model provides key cyclic plasticity 
+features through nonlinear kinematic hardening. Figure \thesection.2, based on the 
+work of Lemaitre and Chaboche[\ref{R:LC2000}], illustrates the effect of nonlinear 
+kinematic hardening on both the three-dimensional behavior in deviatoric 
+stress space and the uniaxial tension-compression behavior. In the 
+figure, $\bmf \sigma$ denotes the current stress state, the center of the yield 
+surface (the backstress) is $\bmf\alpha$, and $k$ is the current radius of the yield surface, 
+shown here to be constant. $H$ and $\gamma$ represent material constants 
+that govern the kinematic hardening behavior. The nonlinear kinematic 
+hardening reflects a yield surface that translates within a limit surface; this 
+manifests as exponential saturation in a uniaxial framework. 
+
+%--------------------------
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.7,angle=-90]{Figure_1.eps} 
+\caption*{\small 
+Fig. \thesection.1: Capabilities of this cyclic plasticity model: (a) stress relaxation
+for cyclic non-symmetric strain loading, (b) ratcheting caused by cyclic, non-symmetric 
+stress loading.\normalsize}
+\label{F:cyclic-capabilities}
+\end{center}
+\end{figure}
+%--------------------------
+
+The addition of isotropic hardening may improve the simulation of some 
+materials. Isotropic hardening is implemented as a saturating exponential relationship 
+between the current radius of the yield surface and the accumulated plastic strain 
+(shown in Fig.\;\thesection.3). Here $\sigma_{ys}$ denotes the tensile yield stress; $Q_u$
+($+ \sigma_{ys}$) sets the saturation flow stress in 1-D; and $b_u$ governs the rate at which the
+saturation stress is reached with the 1-D, accumulated plastic strain
+$\bar \epsilon^p_u$.  The 
+tensile yield stress and the initial yield surface radius ($k_0$) are related by 
+$k_0 =  \sqrt{2/3}\; \sigma_{ys}$. At initial yield, the 1-D exponential
+hardening model has a plastic modulus of $b_u \cdot Q_u$, a quantity
+often referred to as $H'$.
+
+\subsubsection {The \bsf{generalized\_plasticity} option}
+Before yielding occurs and during 
+unloading, the material behavior follows a linear-elastic response controlled 
+by the elastic modulus and Poisson's ratio ($E$ and $\nu$).  However, 
+the elastic domain does not define 
+admissibility; an additional surface acts as the limit function. Thus, plastic flow 
+may occur immediately upon reloading if reverse loading has not returned 
+the state to the elastic domain.  Note that, unlike the limit 
+surface depicted for nonlinear kinematic hardening in Fig.\;\thesection.2, 
+this limit surface is explicitly specified and directly governs the 
+nonlinearity of stress-strain response.
+
+Figure \thesection.4 presents the uniaxial stress-strain response of the generalized 
+plasticity model with \emph{kinematic} hardening.  In the figure,  $\sigma_{ys}$ is the 
+uniaxial (tensile) yield stress, $\beta_u$ and $\delta_u$ are 1-D specializations of the
+3-D parameters ($\beta, \delta$) that describe the 
+evolution of the limit surface, and $(1-\tau)H_u$ is the 1-D kinematic hardening modulus.  
+Optional isotropic hardening, with 1-D constant 
+modulus $\tau H_u$, is not shown in the figure. The 
+isotropic hardening is simply a linear relationship between the 
+radius of the yield surface and a measure of the accumulated plastic strain.
+The material properties 
+listed above -- $E$, $\nu$, $\sigma_{ys}$, $H_u$,  $\beta_u$, and $\delta_u$ --
+have a piecewise linear, temperature-dependent response in 
+the generalized plasticity model. The fraction of hardening modulus
+allocated to isotropic hardening $(\tau)$ and to kinematic
+hardening $(1-\tau)$ does not vary with temperature.
+
+%--------------------------
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=0.85,angle=-90]{Figure_2.eps} 
+\caption*{\small Fig. \thesection.2: Illustration of the \textit{nonlinear\_hardening} option for 
+in both three-dimensional space and uniaxial tension-compression,
+after Lemaitre and Chaboche [\ref{R:LC2000}]. Note the
+resumption of plastic deformation on reloading
+from B only after reaching prior maximum stress at A. 
+Also the limiting condition can only have a horizontal asymptote. \normalsize}\label{fig10}
+
+\end{center}
+\end{figure}
+%--------------------------
+
+%*****************************************************
+\subsection {Model Properties}
+%*****************************************************
+Tables \thesection.1 and \thesection.2 list the properties defined for the 
+cyclic material model. The material properties are summarized below.
+The property keywords \textit{nonlinear\_hardening} and 
+\textit{generalized\_plasticity}
+have no associated values. One of them must be specified before the other
+property values are listed.
+
+The mathematical formulations and 
+computational code for both options employ convenient, 3-D
+definitions for the various material constants that appear throughout.
+When the 3-D tensorial definitions are specialized to 1-D as needed
+to use simple tests for calibration of the parameter values, the 1-D
+"equivalent" formulation values and the corresponding 3-D
+values are generally are scaled by $3/2$, $\sqrt{2/3}$, etc.
+
+Users input values for the 1-D, uniaxial 
+specializations of the 3-D material parameters. The code converts these values
+to their 3-D definitions for use in computations.
+%--------------------------
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=1.0,angle=-90]{Figure_3.eps} 
+
+\caption*{\small Fig. \thesection.3: Saturating exponential, isotropic hardening for the
+\textit{nonlinear\_hardening} option (1-D formulation).
+\normalsize}
+
+\end{center}
+\end{figure}
+%--------------------------
+
+
+\subsubsection{\underline{\bsf{nonlinear\_hardening} option}}
+
+\noindent Elastic and yield parameters:
+\begin {itemize}
+\item $E$, $\nu$, $\alpha$ (E, nu, alpha): Young's modulus, Poisson's ratio, thermal expansion coefficient
+(or anisotropic expansion coefficients). The properties E, nu, alpha maybe temperature 
+dependent (see Section 2.2).
+\item $\sigma_{ys}$ (yld\_pt): tensile yield stress upon initial loading 
+$( k_0= \sqrt{2/3} \; \sigma_{ys})$.
+\end{itemize}
+
+\noindent Parameters for isotropic hardening:
+\begin {itemize}
+\item q\_u (1-D): Sets the maximum (saturation) tensile stress reached as
+$\sigma_{ys} +$ q\_u. Set q\_u$= 0$ for 
+no isotropic hardening. $q_{\textrm{3D}}= \sqrt{2/3}\;q_u$.
+\item b\_u (1-D): Sets the rate at which the saturation tensile stress 
+is reached with accumulated (uniaxial) plastic strain. $b_{\textrm{3D}} =
+\sqrt{2/3}\;b_u$.
+\end{itemize}
+
+\noindent Parameters for kinematic hardening. 
+\begin{itemize}
+\item h\_u (1-D): Along with $\gamma_u$, sets the radius of the limit surface. Sets 
+the kinematic hardening modulus at the onset of plastic flow 
+$(\bmf{\alpha} = \bmf{0})$. $h_{\textrm{3D}} = (2/3) h_u$.
+\item gamma\_u (1-D): Along with h\_u, sets the radius 
+of the limit surface. Controls the nonlinearity of the backstress evolution.
+$\gamma_{\textrm{3D}} = \sqrt{2/3}\;\gamma_u$.
+\end{itemize}
+
+\setlength{\hangindent}{0.75in}
+\textit{Notes}: Set $h_u = \gamma_u = 0$  for no kinematic hardening. Set 
+$\gamma_u = 0, h_u > 0$ to model simple bilinear kinematic hardening.
+In 1-D uniaxial loading (no isotropic hardening), the limiting tensile stress is
+$\sigma_u^{max} = \sigma_{ys} + h_u / \gamma_u$.
+
+%=================================================
+\begin{table}[htb]	
+\small
+	\centering
+%		\begin{tabular}{ | l | c |  c | c | }
+		\begin{tabular}{ |p{2.5in} | p{1.5in} | p{0.8in} |p{0.7in} | }
+		\hline
+		Model Property & Keyword & Mode & Default Value \\
+		\hline \hline
+Request \textit{nonlinear\_hardening} option &nonlinear\_hardening &\  &\  \\ \hline
+Young's modulus	& e	& number	& 30,000 \\ \hline
+Poisson's ratio	& nu	 & real	& 0.3 \\ \hline
+Mass density	& rho & 	number	& 0.0 \\ \hline
+Thermal expansion (isotropic)	& alpha & 	number	& 0.0 \\ \hline
+Thermal expansion (an-isotropic) & alphax, alphay, alphaz, alphaxy, alphaxz, alphayz & number & 0.0 \\ \hline
+Tensile yield stress	& yld\_pt	& number	& 0.0 \\ \hline
+Kinematic hardening parameter (1-D)	& h\_u	& number	& 0.0 \\ \hline
+Kinematic hardening parameter (1-D)	& gamma\_u	 & number	& 0.0 \\ \hline
+Isotropic hardening modulus (1-D) & 	q\_u & 	number	& 0.0 \\ \hline
+Isotropic hardening exponent (1-D) & 	b\_u	 & number	& 0.0 \\ \hline
+Subincrementation tolerance	& sig\_tol & 	number &	0.001 \\ \hline
+		\end{tabular}
+  \caption{\small Table \thesection.1 
+Properties for \textit{cyclic} material model: \textit{nonlinear\_hardening} option. (property names are 
+not case sensitive)
+\normalsize}
+	\label{table:nonlinear_hardening}
+\end{table}
+%=====================================================
+
+
+\subsubsection{\underline{\bsf{generalized\_plasticity} option}}
+
+\noindent Elastic and yield parameters (see later notes about temperature dependence):
+\begin {itemize}
+\item $E$, $\nu$, $\alpha$ (E, nu, alpha): Young's modulus, Poisson's ratio, thermal expansion coefficient
+(or anisotropic expansion coefficients).
+\item $\sigma_{ys}$ (yld\_pt): tensile yield stress upon initial loading 
+$( k_0= \sqrt{2/3} \; \sigma_{ys})$.
+\end{itemize}
+
+
+\noindent Hardening and limit surface parameters. Users input values for the 1-D, uniaxial 
+specialization of the 3-D formulation:
+\begin {itemize}
+\item gp\_h\_u (1-D): Sets the terminal hardening rate of the generalized plasticity model under
+monotonic uniaxial loading. 
+\item gp\_tau: Sets the (temperature invariant) fraction of isotropic to kinematic hardening: 
+\begin{equation}
+h_{iu} = \tau h_u ~,
+\end{equation}
+\begin{equation}
+h_{ku} = \left( 1-\tau \right) h_u ~.
+\end{equation}
+\item gp\_beta\_u (1-D): Sets the asymptotic yield stress due to the limit 
+surface evolution (hardening further changes the yield stress 
+but in a constant, non-saturating manner). $\beta_{\textrm{3D}} = \sqrt{2/3} 
+\;\beta_u$.
+\item gp\_delta\_u (1-D): Along with $\beta$, sets the rate at which 
+asymptotic behavior is approached. $\delta_{\textrm{3D}} = (2/3) \delta_{iu}$.
+\end{itemize}
+
+The material properties E, nu, alpha, gp\_sigma\_0 (yld\_pt), gp\_beta\_u, gp\_delta\_u, and
+ gp\_h\_u may all be temperature dependent (see Section 2.2 for specification of values).
+ 
+\textit{Notes}: To degenerate the generalized 
+plasticity model to the bilinear
+plasticity model set gp\_beta\_u = gp\_delta\_u = 0. For 
+isotropic hardening only,  set gp\_tau=1;
+for kinematic hardening only, set gp\_tau = 0; and for uniaxial loading with 
+H=0, the limiting stress is $\sigma_u^{max} = \sigma_{ys} + \beta_u$ 
+and $\delta_u >0$ sets the rate at which
+the limit stress is reached with plastic straining.
+
+
+%==========================================================
+\begin{table}[htb]	
+\small
+	\centering
+%		\begin{tabular}{ | l | c |  c | c | }
+		\begin{tabular}{ |p{2.5in} | p{1.5in} | p{0.8in} |p{0.7in} | }
+		\hline
+		Model Property & Keyword & Mode & Default Value \\
+		\hline \hline
+Request \textit{generalized\_plasticity} option &generalized\_plasticity &\  &\  \\ \hline
+Young's modulus	& e	& number	& 30,000 \\ \hline
+Poisson's ratio	& nu	 & real	& 0.3 \\ \hline
+Mass density	& rho & 	number	& 0.0 \\ \hline
+Thermal expansion (isotropic)	& alpha & 	number	& 0.0 \\ \hline
+Thermal expansion (anisotropic) & alphax, alphay, alphaz, alphaxy, alphaxz, alphayz & number & 0.0 \\ \hline
+Tensile yield stress (1-D)	& yld\_pt	& number	& 0.0 \\ \hline
+Terminal hardening modulus (1-D)	&  gp\_h\_u	& number	& 0.0 \\ \hline
+Fraction of $H_u$ for isotropic hardening & gp\_tau & number &  0.0 \\ \hline
+Limit function parameter (1-D) & 	gp\_beta\_u & 	number	& 0.0 \\ \hline
+Limit function parameter (1-D) & 	gp\_delta\_u	 & number	& 0.0 \\ \hline
+Subincrementation tolerance	& sig\_tol & 	number &	0.001 \\ \hline
+		\end{tabular}
+  \caption{\small Table \thesection.2 
+Properties for \textit{cyclic} material model: \textit{generalized\_plasticity} option. (property names are 
+not case sensitive)
+\normalsize}
+	\label{table:generalized_plasticity}
+\end{table}
+%=========================================================
+
+%*****************************************************
+\subsection {Model Output}
+%*****************************************************
+By default, the material model prints no messages during computations. If 
+requested, the material model prints: (1) the element number and strain 
+point number whenever the effective stress first exceeds the 
+specified yield stress, and (2) the 
+number of subincrements required at each Gauss point 
+undergoing plastic yielding. An excessive number of 
+subincrements may indicate that the global step size is too large. 
+This option for detailed printing is requested with the nonlinear solution 
+parameter \textit{material messages on} (refer to Section 2.10.8).
+
+The model makes available the accumulated work density, $U_0$, at 
+each Gauss point to the element routines for subsequent
+output. $U_0$ at step $n+1$ is evaluated using the trapezoidal rule 
+
+\begin{equation}
+U^{n+1}_0 = U^{n}_0 + \textstyle \frac{1}{2} 
+\displaystyle  \left ( \bmf t^{n+1} + 
+\bmf t^n \right )
+: \Delta \bmf d
+\end{equation}
+
+\noindent where the unrotated Cauchy stresses ($\bmf t $) and unrotated 
+strain increments ($\bmf d$) are adopted for the finite-strain
+formulation.
+
+The element stress output contains three values for the material model ``state" variables.
+These are:
+\squishlist
+\item
+\noindent \textit{mat\_val1}: a measure of the accumulated plastic strain over loading history,
+\begin{equation}
+\bar e^p = \int^t_0 \sqrt{\dot \epsilon^p_{ij}\dot \epsilon^p_{ij}   } \thinspace dt
+\end{equation}
+\item
+\noindent \textit{mat\_val2}: current radius of the yield surface, $k$,
+\begin{alignat}{1}
+\text{\textit{nonlinear\_hardening} option:  } k &=\textstyle \sqrt{\frac {2}{3}}
+ \displaystyle \thinspace 
+ \left [ \sigma_{ys} + Q_u   \left( 1 - exp  
+ \left [-b_u \bar \epsilon^p_u \right ] \right) \right ] \\
+\text{\textit{generalized\_plasticity} option:  } k &= 
+\textstyle \sqrt{\frac{2}{3}}  \displaystyle \thinspace 
+ \left ( \sigma_{ys} + H_{iu} \bar\epsilon^p_u \right )
+ \end{alignat}
+\item
+\noindent \textit{mat\_val3}: state flag, =1 if point is experiencing active 
+plastic loading over the step, = 3 otherwise.
+\squishend
+For reference, the corresponding 1-D value of the accumulated plastic strain is given by
+\begin{equation}
+\bar \epsilon^p_u = \int^t_0 |\dot \epsilon^p_{11}| dt =
+ \sqrt{\textstyle{\frac{2}{3}}}\; \bar e^p~,
+\end{equation}
+and the current Mises equivalent stress is
+
+\begin{equation}
+\sigma_{vm} = \sqrt{\textstyle{\frac{3}{2}}}\;k~.
+\end{equation}
+
+%--------------------------
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[scale=1.0,angle=-90]{Figure_4.eps} 
+
+\caption*{\small Fig. \thesection.4: Illustration of \textit{generalized\_plasticity} 
+model with kinematic hardening in 
+uniaxial tension-compression, after Auricchio and Taylor [\ref{R:AT1995}]. Note: (1) the
+abscissa is plastic strain; (2) resumption of plastic deformation (C) on 
+reloading (from B) prior to attainment
+of the previous maximum stress (A). The limit asymptote is $H_{ku}=(1-\tau)H_u$, which
+can be set to zero to match the large-strain behavior of the
+\textit{nonlinear\_hardening} option.
+\normalsize}
+
+\end{center}
+\end{figure}
+%--------------------------
+%*****************************************************
+\subsection {Element Blocking}
+%*****************************************************
+As described in Section 2.6, elements are assigned to blocks
+to facilitate parallel processing. For the computational material model
+$cyclic$,
+all elements in a block must refer to the same material defined
+in an analysis model.
+
+Consider an analysis model with 3 materials defined in the input
+named $mat\_a$, $mat\_b$ and $mat\_c$. Each of these materials specifies
+$cyclic$ as the computational material model. Different values for each of the
+$cyclic$ properties  (\eg $yld\_pt$)may be defined in the materials
+$mat\_a$, $mat\_b$ and $mat\_c$.  The blocking requirement
+described here requires that all elements assigned to a block have the same
+associated material, either $mat\_a$, $mat\_b$ and $mat\_c$.
+
+
+%*****************************************************
+\subsection {Examples}
+%*****************************************************
+With only a small number of parameters needed to characterize the nonlinear
+behavior, these models are relatively straightforward to calibrate. However, the material parameters
+may not remain generally applicable for loading paths that differ considerably from the data
+used for calibration, \textit{e.g.}, significantly larger or smaller strain ranges
+than those applied during calibration tests.
+
+\subsubsection{\underline{\bsf{nonlinear\_hardening} option}}
+
+This example defines a material with both nonlinear kinematic and nonlinear isotropic
+hardening (note: \textit{material property names are case insensitive, upper-case letters
+may be use to improve readability of input files}).
+
+\small
+\begin{verbatim}
+   structure cct
+  c
+    material steel_w_mixed_hardening
+      properties cyclic type nonlinear_hardening e 30000 nu 0.3 yld_pt 60,
+         q_u 80 b_u 0.01 gamma_u 3000 H_u 5000 sig_tol 0.001
+ \end{verbatim}
+ \normalsize
+ 
+\noindent This next example defines a material with only nonlinear kinematic hardening.
+ \small
+ \begin{verbatim}
+    material steel_w_kinematic_hardening
+      properties cyclic type nonlinear_hardening e 30000 nu 0.3 yld_pt 60,
+        q_u 0.0 b_u 0.0 gamma_u 6000 H_u 5000 sig_tol 0.001
+ \end{verbatim}
+ \normalsize
+ 
+\noindent The following example defines a material with only nonlinear isotropic hardening.
+ \small
+ \begin{verbatim}
+    material isotropic_hardening
+      properties cyclic type nonlinear_hardening e 30000 nu 0.3 yld_pt 60.0, 
+            q_u 80 b_u 0.01 gamma_u 0.0 H_u 0.0 sig_tol 0.001
+ \end{verbatim}
+ \normalsize
+
+
+
+\subsubsection{\underline{\bsf{generalized\_plasticity} option}}
+
+The following example defines a material with nonlinear limit behavior 
+and both linear kinematic and linear isotropic hardening.
+
+\small
+ \begin{verbatim}
+    material mixed_hardening
+      properties cyclic type generalized_plasticity e 30000 nu 0.3 yld_pt 60.0,
+           gp_beta_u 100.0 gp_delta_u 20000 gp_h_u 400.0 gp_tau 0.25 sig_tol 0.001
+\end{verbatim}
+ \normalsize
+ 
+\noindent The following example defines a material with only nonlinear limit behavior and linear kinematic hardening.
+\small
+ \begin{verbatim}
+     material kinematic_hardening
+       properties cyclic type generalized_plasticity e 30000 nu 0.3 yld_pt 60.0,
+           gp_beta_u 100.0 gp_delta_u 20000 gp_h_u 300.0 gp_tau 0.0 sig_tol 0.001
+\end{verbatim}
+ \normalsize
+ 
+\noindent The following example defines a material with only nonlinear limit behavior and linear isotropic  hardening.
+\small
+ \begin{verbatim}
+    material isotropic_hardening
+      properties cyclic type generalized_plasticity e 30000 nu 0.3 yld_pt 60.0,
+           gp_beta_u 100.0 gp_delta_u 20000 gp_h_u 100.0 gp_tau 1.0 sig_tol 0.001
+\end{verbatim}
+ \normalsize
+ 
+\noindent The following example defines a material with only nonlinear limit behavior (no hardening.)
+\small
+ \begin{verbatim}
+    material no_hardening
+      properties cyclic type generalized_plasticity e 30000 nu 0.3 yld_pt 60.0,
+           gp_beta_u 100.0 gp_delta_u 20000 gp_h_u 0.0 gp_tau 0.5 sig_tol 0.001
+\end{verbatim}
+\normalsize
+
+\noindent The following example defines a material with temperature-dependent behavior 
+using stress-strain curves at three isothermal temperatures (see also Section 2.2)
+\small
+ \begin{verbatim}
+c
+ stress-strain curve 1 temperature 100 e 30000 nu 0.3 alpha 0.0001,
+   gp_sigma_0 60.0 gp_beta_u 100.0 gp_delta_u 10000.0 gp_h_u 1000.0
+c
+ stress-strain curve 2 temperature 300 e 25000 nu 0.25 alpha 0.0002,
+  gp_sigma_0 50.0 gp_beta_u 80.0 gp_delta_u 8000.0 gp_h_u 700.0
+c
+ stress-strain curve 3 temperature 500 e 20000 nu 0.2 alpha 0.0005,
+  gp_sigma_0 35.0 gp_beta_u 75.0 gp_delta_u 5000.0 gp_h_u 250.0
+c
+c
+ material gp_temp_dep
+    properties cyclic type generalized_plasticity curves 1-3,
+     rho 7.3e-7 gp_tau 0.2 sig_tol 0.001
+ \end{verbatim}
+\normalsize
+
+
+\subsubsection {Example calibration of an Inconnel 718 alloy}
+During development of this model, room temperature cyclic loading tests of
+an Inconel 718 alloy provided a specific data set for trial calibration of the
+parameters. For the \textit{nonlinear\_hardening} option, the parameters 
+are: e = 185 GPa, nu = 0.3, yld\_pt = 0.674 GPa, 
+h\_u = 412.5 GPa, gamma\_u = 735,
+q\_u = 0, and b\_u = 0. For the \textit{generalized\_plasticity} option the
+parameters are: e = 185 GPa, nu = 0.3, yld\_pt = 0.8 GPa, gp\_beta\_u = 0.51,
+gp\_delta\_u = 38.3, gp\_h\_u=20.56 GPa, and gp\_tau=0. 
+
+%*****************************************************
+\subsection {Plasticity Algorithms - Overview}
+%*****************************************************
+The material model employs a strain driven algorithm for stress updating, 
+based on the current increment of strain, $\Delta \bmf \epsilon =
+ \bmf \epsilon^i_{n+1}
+- \bmf \epsilon_n$, where $n$ is the previously 
+converged global state and $i$ is the current global iteration for step $n+1$. 
+The material model uses a subincrementation procedure to improve the 
+accuracy of the stress update, the first step of which computes the fraction 
+of the step, if any, that remains purely linear-elastic. This procedure passes a 
+deviatoric strain increment to the actual plasticity algorithm which then 
+solves for the discrete consistency parameter, $\lambda \Delta t = \bar \lambda$. 
+The stress and history 
+variables are then updated from the computed $\bar \lambda$. The material model 
+also provides an approximation for the consistent tangent -- the 
+subincrementation process introduces some deviation from a true 
+consistent tangent. The material models and the discrete algorithms 
+are discussed next, independent of the subincrementation procedure. 
+
+%*****************************************************
+\subsection {\bsf{nonlinear\_hardening} option}
+%*****************************************************
+\subsubsection {Yield function and flow rule}
+\noindent The yield function is based on the standard, pressure invariant 
+von Mises surface. Let $\delta\bmf{\epsilon}$, $\bmf{\sigma}$, 
+and $\bmf{\alpha}$ be the strain increment, stress, and the backstress 
+respectively, all symmetric, second order tensors. Defining the 
+deviator tensors and tensor norms as
+\begin{equation}\label{E:deviators_define}
+(){'_{ij}} = () - \frac{{{{()}_{kk}}}}{3}{\delta _{ij}}, 
+\quad  \parallel ( \ ) \parallel = \sqrt{ ( \ )_{ij}( \ )_{ij}}
+\end{equation}
+%
+the yield surface is described by
+\begin{equation}\label{E:ys_1}
+f(\bmf{\sigma}, \bmf{\alpha}, \bar e^p)=
+\parallel \bmf{\sigma}' -\bmf{\alpha} \parallel - k(\bar e^p).
+\end{equation}
+%
+The scalar variable $\bar e^p$ denotes a measure the accumulated plastic strain, 
+based on additive decomposition of the strain tensor into elastic and plastic parts as,
+\begin{equation}
+\bmf{\epsilon}'=(\bmf{\epsilon}')^e+(\bmf{\epsilon}')^p~.
+\end{equation}
+%
+The accumulated plastic strain is then a monotonically increasing 
+function of time, such that 
+\begin{equation}\label{E:equiv_pl_strain}
+\dot{\bar e}^p=\parallel \left( \dot{\bmf{\epsilon}}' \right) ^p \parallel~;
+\quad \bar e^p = \int^t_0 \dot{\bar e}^p \thinspace dt~.
+\end{equation}
+%
+Applying an associative flow rule, the plastic strain rate is written as
+\begin{equation}
+\left( \dot{\bmf{\epsilon}}' \right) ^p =
+\dot{\lambda}\bmf{n}, \quad
+\parallel \left( \dot{\bmf{\epsilon}}' \right) ^p \parallel = 
+\dot{\lambda}, \quad \dot{\lambda} \geq 0~,
+\end{equation}
+%
+where $\lambda$ defines the unknown consistency parameter 
+and $\bmf{n}$ is the unit normal for the yield surface,
+\begin{equation}\label{E:n_define}
+\bmf{n}=\displaystyle \frac{\bmf{\sigma}'-
+\bmf{\alpha}}{\parallel \bmf{\sigma}'-\bmf{\alpha} \parallel}~,
+\quad \parallel \bmf{n} \parallel \equiv 1 ~.
+\end{equation}
+%
+The governing equation for the deviatoric stress rate, $\dot{\bmf{\sigma}}'=
+2G\left( \dot{\bmf{\epsilon}}'\right)^e$, becomes
+
+\begin{equation}\label{E:dev_stress_rate}
+\dot{\bmf{\sigma}}'=2G \left[ \dot{\bmf{\epsilon}}' - 
+\left(\dot{\bmf{\epsilon}}' \right) ^p \right] =
+2G \left( \dot{\bmf{\epsilon}}' - \dot{\lambda}\bmf{n} \right)~.
+\end{equation}
+%
+
+\subsubsection {Strain Hardening}
+
+\noindent The \textit{nonlinear\_hardening} option features both 
+kinematic and isotropic hardening.
+The evolution of the backstress governs the kinematic hardening as
+%
+\begin{equation}\label{E:alpha_dot}
+\dot{\bmf{\alpha}}=
+\dot{\lambda}\left({H}\bmf{n}-\gamma\bmf{\alpha}\right).
+\end{equation}
+%
+The parameters are $H$ with units of stress and the unitless $\gamma$. The
+second term creates the nonlinearity; setting $\gamma=0$ reproduces linear kinematic 
+hardening of the bilinear model. For isotopic hardening, the current radius of the yield
+surface is given by
+%
+\begin{equation}\label{E:kappa_def}
+k\left(\bar e^p \right)= k_0 + 
+Q \left( 1-exp \left [{-b \bar e^p}\right] \right) ~.
+\end{equation}
+
+\noindent Setting $Q=0$ eliminates isotropic hardening. Here, the material
+parameters have their values/definitions for the 3-D formulation. The 1-D specialization
+is treated later in this section.
+
+\subsubsection {Discretization}
+Continuum Eqs.\;\eqref{E:ys_1}, \eqref{E:equiv_pl_strain}, \eqref{E:dev_stress_rate},
+\eqref{E:alpha_dot}, \eqref{E:kappa_def} are discretized using the backward
+Euler method to produce the following system of nonlinear algebraic equations:
+%
+\begin{equation}
+{\bmf{\sigma }}{'_{s + 1}} = 
+{\bmf{\sigma }}{'_s} + 2G\left( {\delta \bmf{\epsilon}'_{s + 1} - 
+\bar \lambda {{\bmf{n}}_{s + 1}}} \right) =
+ {\bmf{\sigma }}_{s + 1}^{trial} - 2G\bar \lambda {{\bmf{n}}_{s + 1}}
+\end{equation}
+
+\begin{equation}
+{{\bmf{\alpha }}_{s + 1}} = 
+{{\bmf{\alpha }}_s} + \bar \lambda \left( {H{{\bmf{n}}_{s + 1}} - 
+\gamma {{\bmf{\alpha }}_{s + 1}}} \right)
+\end{equation}
+
+\begin{equation}
+\left\| {{\bmf{\sigma }}{'_{s + 1}} - 
+{{\bmf{\alpha }}_{s + 1}}} \right\| = k\left( {\bar e_{s + 1}^p} \right)
+\end{equation}
+
+\begin{equation}\label{E:define_epbar_update}
+\bar e^p_{s + 1} = \bar e_s^p + \bar \lambda 
+\end{equation}
+
+\noindent where the subscript $s$ denotes the previously converged state
+and $s+1$ is the current state, with $\delta \bmf{\epsilon}'_{s+1} =
+\bmf{\epsilon}'_{s+1} - \bmf{\epsilon}'_s$, the strain increment over the
+step from $s$ to $s+1$. Note that $s$ is used here to differentiate this 
+subincrement step
+from the global step number $n$, since the subincrementation process uses
+multiple sub-steps for a global step $n \rightarrow n+1$. These equations are
+condensed into a single, nonlinear equation in terms of the discrete consistency
+parameter, $\bar \lambda$,
+
+%
+\begin{equation}\label {E:resid_define}
+\left( {1 + \bar \lambda \gamma } \right)\left[ {k\left( {\bar e_s^p + \bar \lambda } 
+\right) + 2G\bar \lambda } \right] + \bar \lambda H - \left\| 
+{{{\bmf{\xi }}_{s + 1}}} \right\| = r\left( {\bar \lambda } \right) = 0
+\end{equation}
+%
+\noindent where,
+
+%
+\begin{equation}
+{{\bmf{\xi }}_{s + 1}} = \left( {1 + \bar \lambda \gamma } 
+\right){\bmf{\sigma }}_{s + 1}^{trial} - {{\bmf{\alpha }}_s}
+\end{equation}
+%
+
+\noindent This equation is solved via Newton's method (see next section) with the stress,
+backstress, and accumulated plastic strain updated by
+
+\begin{equation}
+{{\bmf{\sigma }}_{s + 1}} = {\bmf{\sigma }}_{s + 1}^{trial} 
+- \frac{{\kappa \left( {\bar \lambda } \right)}}{{\rho \left( {\bar \lambda } 
+\right)}}{{\bmf{\xi }}_{s + 1}}
+\end{equation}
+
+\begin{equation}
+{{\bmf{\alpha }}_{s + 1}} = \frac{1}{{1 + \bar \lambda 
+\gamma }}\left( {{\bmf{\alpha }}_s^{} - \frac{{\kappa \left( 
+{\bar \lambda } \right)}}{{\rho \left( {\bar \lambda } \right)}}{{\bmf{\xi }}_{s + 1}}} \right)
+\end{equation}
+
+\noindent where 
+\begin{equation}
+\kappa \left( {\bar \lambda } \right) = \frac{{2G\bar \lambda }}
+{{k\left( {{\bar e^p} + \bar \lambda } \right)}}, \quad \beta \left( {\bar \lambda } \right) =
+ \frac{{\bar \lambda H}}{{k\left( {{\bar e^p} + \bar \lambda } \right)}}, \quad \rm{and}
+\end{equation}
+
+\begin{equation}
+\rho \left( {\bar \lambda } \right) = \left( {1 + \bar \lambda \gamma } \right)\left[ 
+{1 + \kappa \left( {\bar \lambda } \right)} \right] + \beta \left( {\bar \lambda } \right)
+\end{equation}
+
+\noindent The 3-D measure of accumulated plastic strain is updated using 
+Eq. \eqref{E:define_epbar_update}.
+
+\subsubsection {Solution for the consistency parameter}
+\noindent The nonlinear residual equation, $r (\bar \lambda)=0$, is solved using Newton's 
+method. The $(i+1)^{th}$ estimate of $\bar \lambda$ is computed as
+
+\begin{equation}
+{\bar \lambda ^{i + 1}} = {\bar \lambda ^i} + \left[ {r\left( {{{\bar \lambda }^i}} 
+\right) /r'\left( {{{\bar \lambda }^i}} \right)} \right]
+\end{equation}
+
+\noindent where the derivative, $r' \left( \lambda \right) = dr / d \lambda$, is given by
+
+\begin{equation}
+r'\left( {\bar \lambda } \right) = \gamma \left[ {k\left. 
+{\left( {\bar e_s^p + \bar \lambda } \right.} \right) + 
+2G\bar \lambda } \right] + \bar \lambda \gamma 
+\left[ {\frac{{dk\left( {\bar e^p + \bar \lambda } \right)}}{{d\bar e^p}} 
++ 2G} \right] +  H - 
+\gamma \frac{{\bmf\xi _{s + 1}^i \cdot 
+\bmf\sigma _{s + 1}^{trial}}}{{\left\| {\bmf\xi _{s + 1}^i} \right\|}}
+\end{equation}
+
+\noindent The iterations begin with $\bar \lambda^{(1)} = 0$ and continue until convergence
+as measured by
+
+\begin{equation}
+\left| {r\left( {{{\bar \lambda }^{i + 1}}} \right)} \right| < {\sigma _{ys}}\cdot to{l_\lambda }
+\end{equation}
+
+\noindent where $tol_y = 10^{-6}$.
+Although iterations most often converge quickly due to the quadratic convergence 
+inherent in Newton's method, a large (global) strain step may cause Newton's method 
+to fail. After 15 iterations without convergence, the solution procedure terminates, and the model 
+requests a reduction in global step size if the adaptive solution option 
+is allowed, otherwise the program exits. 
+
+Newton's method may occasionally converge to a negative value for $\bar \lambda$, 
+although a plastic step requires $\bar \lambda > 0$. Simo and Hughes 
+[\ref{R:SH2000}] assert that for a convex yield surface,  $f \left( \bmf\sigma_{trial},
+\bmf\alpha_n, \bar e^p \right )$ $>0$  guarantees the existence of  
+$\bar \lambda > 0$. Thus, if Newton's method determines a $\bar \lambda < 0$, the model applies 
+interval bisection together with Newton's method to find a positive value. The initial interval 
+has a lower bound of $\bar \lambda = 0$.
+An upper bound, $\bar \lambda_f$, is sought such that 
+$r\left(0\right)r\left(\bar \lambda_f\right)<0$, where $r$ is defined in Eq. \eqref{E:resid_define}. 
+The procedure examines up to 4 multiples of an initial guess for $\bar \lambda_f$ (the 
+absolute value of the converged, negative root). If an acceptable upper bound is not found, 
+the model requests a global step size reduction if possible, otherwise the program terminates. 
+Within a suitable interval, the procedure employs Newton's method. If the 
+computed $\bar \lambda$
+falls outside the interval or 10 consecutive Newton iterations occur without convergence, 
+the procedure takes an interval bisection step and computes a new 
+starting $\bar \lambda$ as the mean of the interval. If the procedure 
+executes 10 interval bisection steps without finding a positive root, 
+the material model requests a global step size reduction 
+if adaptive solutions are allowed, otherwise the program terminates.
+
+
+\subsubsection {Consistent tangent}
+The consistent tangent operator, required for calculating the element stiffness matrices, 
+is a fourth order tensor that provides the change in stress with respect 
+to change in strain,
+
+\begin{equation}
+{\bf{C}} = \frac{{d{{\bmf{\sigma }}_{n + 1}}}}{{d{\bmf{\epsilon}_{n + 1}}}}~.
+\end{equation}
+\noindent If state $n+1$ is elastic, $\bf C$ is given by
+
+\begin{equation}
+C_{ijkl}^E = K{\delta _{ij}}{\delta _{kl}} + 2G\left[ {\frac{1}{2}\left( {{\delta _{ik}}{\delta _{jl}} + {\delta _{il}}{\delta _{jk}}} \right) - \frac{1}{3}{\delta _{ij}}{\delta _{kl}}} \right]~.
+\end{equation}
+
+\noindent Otherwise, if state $n+1$ is plastic loading, the tangent operator is
+given by
+
+\begin{equation}\label{E:cons_tan_define}
+C_{ijkl}^P = K{\delta _{ij}}{\delta _{kl}} + a\left[ {{\delta _{ik}}{\delta _{jl}} -
+\frac{1}{3}{\delta _{ij}}{\delta _{kl}}} \right] + b{n_{ij}}{n_{kl}} - 
+c\sigma _{ij}^{trial}n{_{kl}}
+\end{equation}
+
+\begin{equation}
+a = \frac{{2G}}{\rho }\left( {1 + \bar \lambda \gamma  + \beta } \right)
+\end{equation}
+
+\begin{equation}
+b = \frac{{k\zeta }}{\rho }\left( {\kappa \rho ' - \kappa '\rho } \right)
+\end{equation}
+
+\begin{equation}
+c = \gamma \frac{{\zeta \kappa }}{\rho }
+\end{equation}
+
+\begin{equation}
+\zeta  = \frac{{2G\left( {1 + \bar \lambda \gamma } \right)}}{{k' + 2G +  H + 
+\gamma \left( {k + 4G\bar \lambda  - {\bmf{n}} 
+\cdot {\bmf{\sigma }}_{n + 1}^{trial}} \right)}}
+\end{equation}
+
+\noindent where  $k' = dk / d\bar e^p$ and $\bmf n$ is computed as in Eq. \eqref{E:n_define}.
+
+The fourth term of the Eq. \eqref{E:cons_tan_define}, $c \bmf \sigma^{trial} 
+\otimes \bmf n$, is
+generally not symmetric. Thus, the implemented tangent is taken a symmetric
+average
+
+\begin{equation}
+{\left( {C_{ijkl}^P} \right)_{sym}} = \frac{1}{2}\left[ {C_{ijkl}^P + C_{klij}^P} \right]
+\end{equation}
+
+Also, the model computes the tangent from data for the 
+last stress update, \textit{i.e.}, the last subincrement of the total step. 
+Thus the tangent is not fully consistent with the entire global step,
+$\Delta \bmf \epsilon = 
+\bmf\epsilon^i_{n+1} -  \bmf\epsilon_n$. The subincrementation and
+symmetrization of the consistent tangent can lead to a lack of global quadratic 
+convergence for general load paths. However, the convergence is superlinear in general 
+and becomes essentially quadratic for radial load paths and small step sizes. 
+
+%*****************************************************
+\subsection {\bsf{generalized\_plasticity} option}
+%*****************************************************
+\subsubsection {Yield surface, limit function, and flow rule}
+Eqns.\;\eqref{E:deviators_define}-\eqref{E:dev_stress_rate}
+from the \textit{nonlinear\_hardening} option apply as well to the 
+\textit{generalized\_-plasticity} option. The main differences between the two 
+options are: (1) the GP may have constant (kinematic)
+hardening at large plastic strains,  (2) the GP model may have temperature-dependent 
+material properties,  and (3) the GP
+model does not use the 
+yield surface to define admissibility. Instead, a nonlinear 
+limit function, $F$, describes admissible states where 
+
+\begin{equation}
+F = h(f)\left[ {\bmf{n}}:{\bmf{\sigma }}' -\Lambda \dot{\theta}  \right] - \dot \lambda 
+\end{equation}
+
+\begin{equation}
+h(f) = \frac{1}{{\delta \left( {\beta  - f} \right) + \beta H }}
+\end{equation}
+
+\begin{equation}
+\Lambda = \dfrac{1}{H_{k}}\dfrac{dH_{k}}{d\theta}\boldsymbol{\alpha}:\boldsymbol{n}
+ +\frac{dk_{0}}{d\theta}+\frac{dH_{i}}{d\theta}\bar{e}_{p}
+\end{equation}
+
+\noindent such that $\dot \lambda \ge 0$, $F \le 0$, and $\dot \lambda F =0$. 
+The term $\Lambda$ reflects the yield surface variation with temperature, $\theta$. 
+Note that $f$ is the yield function as given in Eq. \eqref{E:ys_1} and
+$\beta$, $ \delta$, and $ H$ are material parameters. $\beta$ 
+and $\delta$ are related to their 1-D (uniaxial) counterparts used for 
+input values and described previously via
+
+
+\begin{equation}
+\beta   = \textstyle  \sqrt {\frac{2}{3}} \displaystyle
+ \beta_u  \quad \rm{and} \quad 
+\delta  = \textstyle \frac{2}{3} \displaystyle \delta_u~.
+\end{equation}
+
+Also note that the total hardening modulus, $H=H_k + H_i$ is also
+related to the 1-D moduli through
+
+\begin{equation}
+{H_k} = \textstyle \frac{2}{3} \displaystyle {H_{ku}};\quad {H_i} =
+\textstyle  \frac{2}{3} \displaystyle {H_{iu}}~.
+\end{equation}
+
+The \textit{generalized\_plasticity} model allows an admissible state to be 
+outside the yield surface since the yield and limit surfaces are not coincident.  
+Thus yielding can occur immediately on re-loading without first traversing 
+a linear-elastic region.  Nonlinear stress-plastic strain response is due 
+entirely to nonlinearity in the limit function.
+
+\subsubsection{Strain hardening} %  ----- GP Strain Hardening
+The \textit{generalized\_plasticity} model features optional 
+linear kinematic and linear isotropic hardening. Evolution of the backstress 
+governs the kinematic hardening (translation of the yield surface) by 
+
+\begin{equation}
+{\dot{\bmf \alpha }} = \dfrac{\dot{H}_{k}}{H_{k}}\boldsymbol{\alpha} + 
+{H_k}{\left( \dot {\bmf{\epsilon}}' \right)^p}
+\end{equation}
+
+The parameter $H_k$  is the kinematic hardening modulus, with units of stress.  
+The isotropic hardening modulus, $H_i$, (units of stress) governs 
+expansion of the yield surface as
+
+\begin{equation}
+k( \bar e^p ) = k_0 + H_i \bar e^p ~.
+\end{equation}
+
+
+\subsubsection {Discretization}
+The \textit{generalized\_plasticity} implementation employs a predictor-corrector 
+strategy for which the trial state assumes all response is linear-elastic. If the 
+actual state is linear-elastic, it must be within the yield surface or lie in 
+an unloading direction 
+$\left( \bmf n \cdot \dot {\bmf {\sigma}}'-\Lambda \dot{\theta} <0\right)$ from 
+the previous state.  The discrete version of the unloading test is 
+
+\begin{equation}
+f_{s+1}^{trial} - f_s < 0
+\end{equation}
+
+\noindent where
+
+\begin{equation}
+f_{s+1}^{trial} = \left\| \bmf{\xi}_{s+1}^{trial} \right\| - k_{s+1}^{trial} = \left\| \bmf{\sigma}_{s+1}^{trial} - \bmf{\alpha}_{s+1}^{trial} \right\| - k_{s+1}^{trial}~,
+\end{equation}
+
+\begin{equation}
+\bmf{\sigma}_{s+1}^{trial} = \dfrac{G_{s+1}}{G_s}\bmf{\sigma}'_s + 2 G_{s+1} \delta  \bmf{\epsilon}'_{s + 1}~,
+\end{equation}
+
+\begin{equation}
+\bmf{\alpha}_{s+1}^{trial} = \dfrac{H_{k,s+1}}{H_{k,s}} \bmf{\alpha}_s~,
+\end{equation}
+
+\begin{equation}
+k_{s+1}^{trial} = k_{0,s+1} + H_{i,s+1} \bar e^p_{s} ~.
+\end{equation}
+
+The subscript $s$ denotes the previously converged state and $s+1$ is current state, 
+with $\delta \bmf \epsilon'_{s+1} = \bmf \epsilon'_{s+1}-\bmf \epsilon'_s$, the strain 
+increment over the step from $s$ to $s+1$. Note that $s$ is 
+used here to differentiate this step from the global step number $n$, since 
+the subincrementation process uses multiple sub-steps for each global 
+step $n \rightarrow n+1$.
+Applying the backward Euler method to the continuum equations 
+yields a single quadratic equation for the consistency 
+parameter $\left( \bar \lambda = \dot \lambda \Delta t \right)$:
+
+\begin{equation}
+a{\bar \lambda ^2} + b\bar \lambda  + c = 0
+\end{equation}
+
+\noindent where
+
+\begin{equation}\label{E:gp_a}
+a = \left( {2G + H} \right)\left( { \delta  - \left( 2G + \Delta H_i \right) } \right)
+\end{equation}
+
+\begin{equation}\label{E:gp_b}
+b = \left( {\delta  +  H} \right)\beta 
+ - \left( {\delta  - \left( 2G + \Delta H_i \right)} \right) f_{s+1}^{trial}
++ \left( {2G + H} \right)\left( f_{s+1}^{trial} - f_s \right)
+\end{equation}
+
+\begin{equation}\label{E:gp_c}
+c =  - \left( f_{s+1}^{trial} \right)
+\left( f_{s+1}^{trial} - f_s \right)~.
+\end{equation}
+
+\noindent The smallest positive root is the correct solution [\ref{R:AT1995}]. In 
+Eqns.\;\eqref{E:gp_a}, \eqref{E:gp_b}, and \eqref{E:gp_c}, the material
+properties equal the temperature-dependent values at $s+1$. The term $\Delta H_i$ reflects
+the change in the isotropic hardening coefficient from $s$ to $s+1$. 
+
+The stress and internal variables are then updated with
+
+\begin{equation}
+{\bmf{\sigma }}{'_{s + 1}} = {\bmf{\sigma }}_{s + 1}^{trial} - 2G_{s+1}\bar \lambda {\bmf{n}}
+\end{equation}
+
+\begin{equation}
+{{\bmf{\alpha }}_{s + 1}} = {{\bmf{\alpha }}_{s+1}^{trial}} + {H_{k,s+1}}\bar \lambda {\bmf{n}}
+\end{equation}
+
+\begin{equation}
+\bar e_{s + 1}^p = \bar e_s^p + \bar \lambda 
+\end{equation}
+
+\noindent where $\bmf n = \bmf \xi^{trial}_{s+1} / \parallel
+ \bmf \xi^{trial}_{s+1} \parallel$. 
+ 
+ 
+\subsubsection {Consistent tangent}
+
+The consistent tangent operator, required for calculating the element stiffness matrices, 
+is a fourth order tensor that provides the change in stress with respect to change in strain,
+\begin{equation}
+{\bf{C}} = \frac{{d{{\bmf{\sigma }}_{n + 1}}}}{{d{\bmf{\epsilon}_{n + 1}}}}~.
+\end{equation}
+\noindent If state $n+1$ is elastic, $\bf C$ is given by
+
+\begin{equation}
+C_{ijkl}^E = K_{n+1}{\delta _{ij}}{\delta _{kl}} + 
+2G_{n+1}\left[ {\frac{1}{2}\left( {{\delta _{ik}}
+{\delta _{jl}} + {\delta _{il}}{\delta _{jk}}} \right) - \frac{1}{3}{\delta _{ij}}{\delta _{kl}}} \right]~.
+\end{equation}
+
+\noindent Otherwise, if state $n+1$ is plastic loading, the tangent operator is
+given by
+
+\begin{equation}\label{E:cons_tan_define_gp}
+C_{ijkl}^P = K_{n+1}{\delta _{ij}}{\delta _{kl}} + a\left[ {{\delta _{ik}}{\delta _{jl}} -
+\frac{1}{3}{\delta _{ij}}{\delta _{kl}}} \right] + b{n_{ij}}{n_{kl}} 
+\end{equation}
+
+\noindent where
+
+\begin{equation}
+a = 2G_{n+1}\left( {1 - \frac{{2G_{n+1}\bar \lambda }}{{\left\| 
+{{\bmf{\xi }}_{n + 1}} \right\| + \left( 2 G_{n+1} + H_{k,n+1} \right) \lambda }}} \right)
+\end{equation}
+
+\begin{equation}
+b = 2G_{n+1}\left( { \frac{{2G_{n+1}\bar \lambda }}{{\left\| 
+{{\bmf{\xi }}_{n + 1}} \right\| + \left( 2 G_{n+1} + H_{k,n+1} \right) \lambda }} - A} \right)
+\end{equation}
+
+\begin{equation}
+A = \dfrac{2 G_{n+1} B_1}{\left( 2 G_{n+1} + H_{n+1} \right) B_1 + B_2}~,
+\end{equation}
+
+\begin{equation}
+B_1 = 2 f_{n+1} - f_n + \left( H_{n+1} + \delta_{n+1} - \Delta H_i \right) \lambda~,
+\end{equation}
+
+\begin{equation}
+B_2 = \left( \delta_{n+1} + H_{n+1} \right) \beta_{n+1} - \left( H_{n+1} + \delta_{n+1} - \Delta H_i \right) f_{n+1}~.
+\end{equation}
+
+The above expression, Eq.\;\eqref {E:cons_tan_define_gp} reveals 
+that the consistent tangent for the 
+\textit{generalized\_plasticity} model remains symmetric.
+
+%*****************************************************
+\subsection {Subincrementation for both \textit{cyclic} options}
+%*****************************************************
+
+The subincrementation procedure first computes the elastic fraction of the 
+global strain increment, $\Delta \bmf \epsilon = 
+\bmf \epsilon^i_{n+1} -   \bmf \epsilon_n$. The fraction $0 \le \eta \le 1$
+is found such that 
+ 
+\begin{equation}\label{E:ys_eta}
+\left\| {{\bmf{\sigma }}{'_n} + 
+2G\eta \Delta {\bmf{\epsilon}'} - {{\bmf{\alpha }}_n}} 
+\right\| - k\left( {\bar e_n^p} \right) = 0
+\end{equation}
+
+\noindent and the state $\bmf \sigma'_n + 2 G \eta \Delta \bmf \epsilon'_{n+1}$ lies on the
+yield surface from global step $n$. Solving for $\eta$ leads to
+a quadratic equation with solution
+
+\begin{equation}\label{E:eta_define}
+\eta  =  - a/b \pm \sqrt {{{\left( {a/b} \right)}^2} + \left( {c/b} \right)} 
+\end{equation}
+
+\noindent where
+
+\begin{equation}
+a = \left( {{{\bmf{\sigma }}_n} - {{\bmf{\alpha }}_n}} \right) \cdot 2G\Delta {{\bmf{\epsilon}'}_{n + 1}},
+\end{equation}
+
+\begin{equation}
+b = 2G\Delta {{\bmf{\epsilon}'}_{n + 1}} \cdot 2G\Delta \bmf \epsilon'_{n+1},
+\end{equation}
+
+\begin{equation}
+c = k{\left( {\bar e_n^p} \right)^2} - \left( {{{\bmf{\sigma }}_n} - {{\bmf{\alpha }}_n}} \right) \cdot \left( {{{\bmf{\sigma }}_n} - {{\bmf{\alpha }}_n}} \right)~.
+\end{equation}
+
+\noindent Note that $c$ is a re-statement of the yield surface, \textit{i.e.}, $c = 0  
+\Leftrightarrow f= 0$
+and $f > 0 \Leftrightarrow c < 0$. Therefore, if $f=0$ (previous step was plastic loading)
+
+\begin{equation}
+\eta  = \frac{{ - a}}{b} \pm \left| {\frac{a}{b}} \right|~.
+\end{equation}
+
+\noindent Since $b>0$ and $\eta \ge 0$,
+\begin{equation}
+\eta=0 \quad \rm{if} \quad a\geq 0 \quad \rm{and} \quad \eta=\displaystyle -
+2\left(\frac{a}{b}\right) \quad \rm{if} \quad a<0~.
+\end{equation}
+
+The requirement that $\eta < 1$ is automatically satisfied, since this 
+procedure is used only if the full strain increment causes the trial stress 
+to lie outside the current yield surface and thus the intersection 
+with the surface must occur before the full increment is applied.
+
+Also, note that $c \ge 0$, since $f >0$ is not allowed, and 
+thus Eq. \eqref{E:eta_define}
+always has at least one positive solution.
+
+For the generalized plasticity model,  Eqn.\;\eqref{E:ys_eta} has a nonlinear form
+due to temperature-dependent material properties. Ridder's method
+provides a satisfactory method to solve
+for $\eta$ in the generalized plasticity model. This method converges rapidly 
+to the solution of Eqn.\;\eqref{E:ys_eta} that incorporates mechanical and thermal 
+loading effects on the yield surface. 
+
+If the elastic fraction is non-zero, the first subincrement is 
+effectively a step from $\bmf \epsilon_n$ to $\bmf \epsilon_n +
+\eta \Delta \bmf \epsilon_{n+1}$. This is a linear-elastic update; the stress 
+at the end of this subincrement is $\bmf \sigma'^{(1)}_{n+1} = \bmf \sigma'_n + 2G \eta \Delta \bmf
+\epsilon'_{n+1}$ and the backstress is $\bmf \alpha^{(1)}_{n+1} = \bmf \alpha_n$,
+where the superscript refers to the subincrement number. 
+Also, the accumulated plastic strain is unchanged from step $n$.
+
+The remaining strain increment, $\left ( 1 - \eta \right )
+\Delta \bmf \epsilon_{n+1}$, causes plastic yielding. The 
+accuracy of the stress state computed at the end of the increment 
+depends, in part, on the size of the plastic fraction of the step.  The premise 
+of subincrementation strategies lies in dividing the total strain 
+increment into several small steps and computing the stress state 
+sequentially for each increment produces a more accurate answer than 
+a single step procedure but does so more efficiently than a global 
+step size reduction. 
+
+The method employed here uses estimates of truncation error to compute the 
+number of subincrements required to satisfy a user supplied 
+tolerance on the stress accuracy. First, the stress is computed for 
+both a single step $( \bmf \sigma^{(1)})$ and a 2-step 
+procedure $( \bmf \sigma^{(2)})$; \textit{i.e.}, a step size 
+of $h$ and $h/2$, respectively. Since the numerical integration of the rate 
+equations is first order accurate, the error can be estimated from 
+the two solutions.  The error is computed as
+
+\begin{equation}
+{E_\sigma } = \mathop {\max }\limits_{i,j = 1,3} 
+\left( {\sigma _{ij}^{(2)} - \sigma _{ij}^{(1)}} \right)~.
+\end{equation}
+
+If the error is greater than the tolerance, the number of subincrements 
+needed to satisfy the tolerance, $s$, is estimated as
+
+\begin{equation}
+s = {\rm{ceil}}\left( {1.1\frac{{2{E_\sigma }}}{{to{l_\sigma }}}} \right)
+\end{equation}
+
+\noindent where $tol_{\sigma} = \sigma_y * sig\_tol$ ($sig\_tol$ is the user specified tolerance)
+and the 1.1 factor insures the tolerance is satisfied. The balance,
+$2 E_{\sigma} / tol_{\sigma} $, artises from an estimate of the step
+size, $h^*$, such that $E \left( h^* \right) = tol_{\sigma}$.
+
+Since at least 2 solutions are generated via this procedure (1-step, 2-step, and 
+possibly $s$-step), extrapolation is simple and can produce an additional 
+order of magnitude in accuracy.  Extrapolation is carried out on 
+a component-wise basis. Let $x$ be any single component of the solution 
+(\textit{e.g.}, $x=\sigma'_{11}$ or $x=\alpha_{23}$) and $n_a$ and $n_b$ be 
+two different numbers of subincrements for which the solution already exists 
+such that $n_a > n_b$.  Then the extrapolated solution is
+
+\begin{equation}
+{x_{a,b}} = a{x_a} - b{x_b}
+\end{equation}
+
+\noindent where
+
+\begin{equation}
+a = \frac{{{n_a}}}{{{n_a} - {n_b}}}~,
+\end{equation}
+
+\noindent and
+
+\begin{equation}
+b = \frac{{{n_b}}}{{{n_a} - {n_b}}}~.
+\end{equation}
+
+\noindent For example, extrapolating 1-step and 2-step solutions
+produces
+
+\begin{equation}
+{x_{2,1}} = \frac{2}{{2 - 1}}{x_2} - \frac{1}{{2 - 1}}{x_1} = 2{x_2} - {x_1}~.
+\end{equation}
+
+The tangent modulus used at the global level is computed according to
+Eqs.\;\eqref{E:cons_tan_define} 
+and \eqref{E:cons_tan_define_gp} considering only the last subincrement.  It does not 
+account for the influence of all the subincrements on the solution or 
+extrapolation so it is not completely consistent with the algorithm.  
+Nevertheless, there is typically only a small reduction in global convergence rate.
+
+%-----------------------------------------------------
+\subsection{Details on 1-D specialization of 3-D plasticity formulation}
+%-------------------------------------------------------
+
+\subsubsection{Stresses}
+The 3-D version of Mises plasticity is specialized to 1-D for identification of material 
+properties from a uniaxial test (tension and/or compression). Define the
+stress tensor and the deviator of the stress tensor
+
+\begin{equation}
+\bmf \sigma =
+ \begin{pmatrix}
+     \sigma_{11} & \sigma_{12} & \sigma_{13} \\
+     \sigma_{21} & \sigma_{22} & \sigma_{23} \\
+     \sigma_{31} & \sigma_{32} & \sigma_{33} \\
+ \end{pmatrix}~,
+\end{equation}
+     
+\noindent and
+
+\begin{equation}
+\sigma_m = \frac{\sigma_{11} + \sigma_{22} + \sigma_{33}}{3}.
+\end{equation}
+
+\noindent The deviator of the stress tensor is then
+
+\begin{equation}
+\bmf \sigma' =
+ \begin{pmatrix}
+     \sigma_{11}-\sigma_m & \sigma_{12} & \sigma_{13} \\
+     \sigma_{21} & \sigma_{22}-\sigma_m & \sigma_{23} \\
+     \sigma_{31} & \sigma_{32} & \sigma_{33}-\sigma_m \\
+ \end{pmatrix}~.
+\end{equation}
+
+\noindent For 1-D loading: $\sigma_{11} \ne 0$ and all other components are zero,
+
+\begin{equation} \label{E:sigmadev_tensor_1D}
+\bmf \sigma'_u =
+ \begin{pmatrix}
+     \sigma_{11}-\frac{\sigma_{11}}{3} & 0 & 0 \\
+      0 & -\frac{\sigma_{11}}{3} & 0 \\
+     0 & 0 & -\frac{\sigma_{11}}{3}\\
+ \end{pmatrix}~.
+\end{equation}
+
+The Mises yield function can be written in the form
+
+\begin{equation}\label{E:vm_define_1}
+\parallel \bmf \sigma' \parallel - k = 0
+\end{equation}
+
+\noindent where $k$ is a material constant with units of 
+stress and is the radius of the Mises yield cylinder. The norm,
+$\parallel \cdot \parallel$, is given by
+
+\begin{equation}
+\parallel \bmf \sigma' \parallel = \sqrt{ \sigma'_{ij} \sigma'_{ij} }~.
+\end{equation}
+
+\noindent Then for 1-D, we have
+
+\begin{equation}
+\parallel \bmf \sigma'_u \parallel = \sqrt{ \textstyle 
+{\frac{2}{3}} }\; |\sigma_{11}|~,
+\end{equation}
+
+\noindent and $k$ becomes identified as
+
+\begin{equation}\label{E:k_sigma_11_define}
+ k = \sqrt{ \textstyle {\frac{2}{3}} }\; |\sigma_{11}|~.
+\end{equation}
+
+\noindent In terms of the uniaxial tensile yield stress, $\sigma_{ys}$, $k_0$ at 
+the onset of yielding becomes 
+$k_0 = \sqrt{2/3} \; \sigma_{ys}$. For simple shear
+loading, all stress components but $\tau = |\sigma_{12}| = |\sigma_{21}|$
+are zero with
+
+\begin{equation}
+\parallel \bmf \sigma'_u \parallel = \sqrt{2} \; |\sigma_{12}| = \sqrt{2} \; \tau~,
+\end {equation}
+
+\noindent with $k_0$ then also becoming identified as 
+
+\begin{equation}\label{E:k_shear_define}
+k_0 = \sqrt{2}\;  \tau_{ys}~.
+\end{equation}
+
+\noindent Equating both definitions of $k_0$, we have
+
+\begin{equation}
+\sqrt{2} \; \tau_{ys} = \sqrt{ \textstyle {\frac{2}{3}} } \; \sigma_{ys}~,
+\end{equation}
+\begin{equation}
+\tau_{ys} = \frac{\sigma_{ys}}{ \sqrt{3}}~.
+\end{equation}
+
+The Mises yield criterion of Eq. \eqref{E:vm_define_1} may be written in
+a variety of other forms by including various constants in both 
+$\parallel \bmf \sigma' \parallel$ and $k$.
+
+In Eq. \eqref{E:vm_define_1}, with $k$ in terms of the shear stress,
+we can also write
+
+\begin{equation}
+\frac{1}{\sqrt{2}} \parallel \bmf \sigma' \parallel -\tau_{ys} = 0~,
+\end{equation}
+\noindent where the first term is identified now with second
+invariant of the deviator stress tensor, $J_2$, giving
+
+\begin{equation}
+\sqrt{J_2} - \tau_{ys} = 0~.
+\end{equation}
+
+Alternatively, Eq. \eqref{E:k_sigma_11_define} can be used in Eq. \eqref{E:vm_define_1}
+in a similar way to write
+
+\begin{equation}
+\parallel \bmf \sigma' \parallel - \sqrt{\textstyle{\frac{2}{3}}} \sigma_{ys}= 0~.
+\end{equation}
+
+\noindent Now multiply through by $\sqrt{3/2}$ to define
+
+\begin{equation}
+\sqrt{\textstyle{\frac{3}{2}}}\parallel \bmf \sigma' \parallel -  \sigma_{ys}= 0~,
+\end{equation}
+
+\noindent where again $J_2$ can be introduced to write the yield function in
+another quite common form
+
+\begin{equation}
+\sqrt{3 J_2} -  \sigma_{ys}= 0~.
+\end{equation}
+
+%---------------------------------------------------
+\subsubsection{Plastic strains}
+%--------------------------------------------------------
+The strains and strain rates (wrt loads or time) are treated with additive decomposition
+
+\begin{equation}
+\bmf \epsilon = \bmf \epsilon^e + \bmf \epsilon^p
+\end {equation}
+
+\noindent and
+
+
+\begin{equation}
+\bmf  {\dot \epsilon} = \bmf {\dot \epsilon}^e + \bmf {\dot\epsilon}^p
+\end {equation}
+
+\noindent where the plastic strains are deviatoric and aligned with
+the deviatoric stresses, \textit{i.e.}, $\dot {\bmf {\epsilon}}^p
+ \propto \parallel \bmf \sigma' \parallel $.
+
+For 3-D plastic deformation, we have
+
+
+\begin{equation}\label{E:epsplas_tensor}
+\bmf \epsilon^p =
+ \begin{pmatrix}
+     \epsilon^p_{11} & \epsilon^p_{12} & \epsilon^p_{13} \\
+     \epsilon^p_{12} & \epsilon^p_{22} & \epsilon^p_{23} \\
+     \epsilon^p_{13} & \epsilon^p_{23} & \epsilon^p_{33} \\
+ \end{pmatrix}~,
+\end{equation}
+
+\noindent where the $trace \left( \bmf \epsilon^p \right )$ 
+$= \epsilon^p_{11} + \epsilon^p_{22}+\epsilon^p_{33}\equiv 0$ to reflect 
+the incompressibility of plastic strains. The norm of plastic strains is given by
+
+\begin{equation}\label{E:norm_epsilon_p_defined}
+\parallel \bmf \epsilon^p \parallel = \sqrt{ \epsilon^p_{ij} \epsilon^p_{ij} }~.
+\end{equation}
+
+\noindent The corresponding rate definition is denoted
+
+\begin{equation}\label{E:e_bar_p_rate_define}
+\dot {\bar e}^p = \parallel \dot{\bmf \epsilon}^p \parallel ~,
+\end{equation}
+
+\noindent where $\parallel \bmf\epsilon^p \parallel$ and
+ $\dot{\bar e}^p$ may have increasing/decreasing (instantaneous) values $\ge 0$ over the
+loading history. Here $\dot {\bar e}^p$ is a measure of the instantaneous rate $\ge 0$ of
+plastic strain accumulation, with the \textit{total} plastic strain accumulation over the
+loading history given by
+
+\begin{equation}\label{E:e_bar_p_define}
+\bar e^p = \int^t_0 \dot {\bar e}^p\;dt~,
+\end{equation}
+
+\noindent with $t$ denoting time or a loading measure.
+
+Specialization to the 1-D, uniaxial case with loading only along the 1-direction yields
+
+\begin{equation}\label{E:epsplas_tensor_1D}
+\bmf \epsilon^p_u =
+ \begin{pmatrix}
+     \epsilon^p_{11} & 0 & 0 \\
+     0 & -0.5\epsilon^p_{11}  & 0 \\
+     0 & 0 &  -0.5\epsilon^p_{11} \\
+ \end{pmatrix}~,
+\end{equation}
+
+\noindent where incompressibility dictates the values for  $\epsilon^p_{22}$ and
+$\epsilon^p_{33}$. The subscript $u$ distinguishes
+specialization to the 1-D (uniaxial) case.  The norm for this 1-D form becomes
+
+\begin{equation}
+ \parallel \bmf \epsilon^p_u \parallel = 
+\sqrt{\textstyle{\frac{3}{2}}} \; | \epsilon^p_{11}| ~.
+\end{equation}
+
+Similarly, the 1-D rate form for the accumulation rate of plastic strain and the
+accumulated plastic strain become
+
+\begin{equation}\label{E:dot_e_bar_p_u_define}
+\dot{\bar e}^p_u = \parallel \dot{\bmf \epsilon}^p_u \parallel =
+\sqrt{\textstyle{\frac{3}{2}}} \; | \dot \epsilon^p_{11}|~,
+\end{equation}
+
+\noindent and
+
+\begin{equation}\label{E:e_bar_p_u_define}
+\bar e^p_u = \int^t_0  \dot{\bar e}^p_u \; dt = 
+\sqrt{\textstyle{\frac{3}{2}}} \; \bar \epsilon^p_u\; \quad \text{where   }
+\bar \epsilon^p_u =\int^t_0  | \dot \epsilon^p_{11}| \; dt~.
+\end{equation}
+
+
+
+
+%%--------------------------------------------------------------------------------
+%\subsubsection{Coupling 1-D and 3-D plastic constitutive models}
+%%--------------------------------------------------------------------------------
+%The 1-D equivalents of the 3-D formulations expressed in Eqs.\;\eqref{E:k_sigma_11_define},   
+%\eqref{E:k_shear_define}, and \eqref{E:e_bar_p_u_define}
+%take on a special significance in defining the constitutive relationship for the
+%3-D plasticity model in terms of the 1-D, uniaxial stress-strain curve. Most often,
+%the lab test result produces an expression of the form
+
+%
+%\begin{equation}
+%\sigma_{11} = \sigma_{11} ( \epsilon_{11} )~.
+%\end{equation}
+
+%The 3-D plasticity constitutive models generally require specification
+%of the tensile part of the uniaxial curve $(\sigma_{11}, \epsilon_{11} >0)$
+%with the result written in the form
+
+%\begin{equation}\label{E:bar_sigma_define}
+%\bar \sigma_u = \bar \sigma_u (  \bar e^p_u  )\;; \quad  \bar e^p_u \ge 0
+%\end{equation}
+
+%\noindent where $\bar \sigma_u$ is always $> 0$ and in rate form as
+
+%\begin{equation}
+%d \bar \sigma_u = H'_u ( \bar e^p_u ) \;d \bar e^p_u
+%\;; \quad  \bar e^p_u , {d\bar e}^p_u\ge 0
+%\end{equation}
+
+%\noindent The code user most often inputs the function $H'_u ( \bar e^p_u )$ to the
+%finite element code, \textit{i.e.}, Abaqus. Alternatively, some codes (WARP3D) require that the user
+%input the full uniaxial stress-strain curve as measured in the test, $\sigma_{11} =
+%\sigma_{11}( \epsilon_{11})$, and the code computes $H'_u ( \bar e^p_u )$ as needed
+%in the analysis using the familiar expression
+
+%\begin{equation}
+%H'_u = \frac{E - E_T(\epsilon_{11})}{E \cdot E_T(\epsilon_{11})}~.
+%\end {equation}
+
+%\noindent Here, $E_T$ is simply $d\sigma_{11} / d\epsilon_{11}$.
+
+%
+
+%--------------------------------------------------------------------------------
+\subsubsection{Reducing 3-D constitutive equations to 1-D: Generalized Plasticity}
+%--------------------------------------------------------------------------------
+The continuum 3-D equations for the Generalized Plasticity (GP) model 
+(with temperature invariant material properties)  are summarized below.
+
+\begin{equation} \label{E:yield_surface}
+f = \parallel \bmf{\sigma}' - \bmf{\alpha} \parallel - k(\bar e^p) 
+\end{equation}
+
+\begin{equation} \label{E:gp_isotropic}
+k(\bar e^p) = k_0+H_i \bar e^p
+\end{equation}
+
+\begin{equation} \label{E:limit_surface}
+F = h(f)[\bmf{n}:\dot{\bmf{\sigma}}']-\dot{\lambda}
+\end{equation}
+
+or alternatively,
+\begin{equation} \label{E:limit_surface}
+F = h(f) \left [\frac{d}{dt} ||\bmf{\sigma}'-\bmf{\alpha}||+ \bmf{n}:\dot{\bmf{\alpha}}\right]-\dot{\lambda}
+\end{equation}
+
+
+\begin{equation}\label{E:h_define}
+h(f) = \frac{f}{\delta(\beta-f)+H\beta}
+\end{equation}
+
+\begin{equation}\label{E:n_define2}
+\bmf n =  \frac {df/d\bmf{\sigma}'} {\parallel df/d\bmf{\sigma}' \parallel} =
+\frac{\bmf \sigma' - \bmf \alpha} {\parallel \bmf \sigma' - \bmf \alpha \parallel }\;;
+\quad \parallel \bmf n \parallel \equiv 1
+\end{equation}
+
+\begin{equation}\label{E:normal_flow}
+\dot{\bmf{\epsilon}}^p=\dot{\lambda}\bmf{n}
+\end{equation}
+
+\begin{equation} \label{E:gp_kinematic}
+\dot{\bmf{\alpha}}=H_k\dot{\lambda}\bmf{n}=H_k\dot{\bmf{\epsilon}}^p
+\end{equation}
+
+\begin{equation}
+H = H_i + H_k
+\end{equation}
+
+\noindent where the norm of $\bmf \epsilon^p$, the norm of its rate, 
+$\dot{\bar e}^p$, and the
+accumulated (monotonically increasing) plastic strain
+measure, $\bar e^p$, are defined as in Eqs.\;\eqref{E:norm_epsilon_p_defined},
+\eqref{E:e_bar_p_rate_define}, and \eqref{E:e_bar_p_define};
+$k_0$ is the radius of the Mises yield cylinder 
+at the onset of plastic flow; $H_i$ and $H_k$ provide constant rates of isotropic and
+kinematic hardening with increasing plastic flow; $\beta$ and $\delta$ are constant
+material parameters. All values above are cast in terms 
+of the 3-D formulation (uniaxial forms are introduced later in this section). 
+
+To identify the hardening parameter $H_i$, Eq.\;\eqref{E:gp_isotropic} is specialized 
+to the 1-D case using Eq.\;\eqref{E:k_sigma_11_define} and Eq.\;\eqref{E:e_bar_p_u_define}
+
+\begin{equation}
+k(\bar e^p_u) = k_0 + H_i  \bar e^p_u~,
+\end{equation}
+
+\noindent which can be written in the form (using Eqs.\;\eqref{E:k_sigma_11_define},
+\eqref{E:e_bar_p_u_define})
+
+\begin{equation}
+k(\bar \epsilon^p_u) = \sqrt{\textstyle {\frac{2}{3}}} \sigma_{ys} + 
+ H_i  \left[ \sqrt{\textstyle{\frac{3}{2}}} \bar \epsilon^p_u \right]~
+\end{equation}
+
+\noindent Now introduce the uniaxial version of the isotropic (constant) hardening parameter 
+as $H_{iu}\equiv(3/2)H_i$, then the isotropic hardening function further reduces to 
+
+\begin{equation}\label{E:H_iu_define}
+k\left(\bar \epsilon^p_u\right) = 
+\sqrt{ \textstyle {\frac{2}{3}} } 
+\left( \sigma_{ys}+
+H_{iu} \bar \epsilon^p_u\right)~,
+\end{equation}
+
+\noindent where the 1-D form $H_{iu}$ is input by the user to define model properties. 
+
+Following Eq.\;(\ref{E:sigmadev_tensor_1D}), define a direction tensor $\bmf{m}$ which relates the uniaxial stress-based variables to their 3-D tensorial counterparts;
+
+\begin{equation}\label{E:m_define}
+\bmf{m}= \frac{1}{3}
+ \begin{pmatrix}
+     2 & 0 & 0 \\
+      0 & -1 & 0 \\
+     0 & 0 & -1\\
+ \end{pmatrix}~.
+\end{equation}
+
+\noindent The 1-D form of the deviator stress tensor 
+can be written
+
+\begin{equation}\label{E:sigma_prime_1D_define}
+ \bmf{\sigma}_u'=\sigma_{11}\bmf{m}\;,
+ \end{equation}
+
+\noindent  where the sense of the deviator takes the sign of
+$\sigma_{11}$. Here, $\rm{Tr}(\bmf{\sigma}_u' )\equiv 0$
+and $||\bmf{\sigma}_u'||=\sqrt{2/3}\; |\sigma_{11}|$
+Similarly, the 1-D form of the backstress may be written most
+conveniently as
+
+\begin{equation}\label{E:alpha_u_defined}
+ \bmf{\alpha}_u=\alpha_{11}\bmf{m}\,.
+\end{equation}
+ 
+\noindent where the $\rm{Tr}(\bmf{m})\equiv 0$ and $||\bmf{\alpha}_u||=\sqrt{2/3}\; |\alpha_{11}|$.
+The direct correspondence between $\sigma_{11}$ and $\alpha_{11}$ simplifies
+subsequent interpretation of (uniaxial) material properties.
+
+Continuing, the 1-D form of the plastic strain tensor can be written
+
+\begin{equation}\label{E:epsilon_p_equiv_define}
+\bmf{\epsilon}^p_u=\textstyle {\frac{3}{2}}\epsilon^p_{11} \bmf{m}\;,
+\end{equation}
+
+\noindent where the sense of $\bmf {\epsilon}^p_u$ takes on the sign of $\epsilon^p_{11}$ 
+[refer to Eq. (\ref{E:epsplas_tensor_1D})]. 
+
+With these 1-D definitions, the yield function in Equation (\ref{E:yield_surface}) becomes
+
+\begin{equation}\label{E:f_define_1D}
+f=|\sigma_{11}-\alpha_{11}|\parallel \bmf{m} \parallel - k(\bar \epsilon^p_u) =  
+\sqrt{\textstyle{\frac{2}{3}}}\left[|\sigma_{11}-\alpha_{11}|-\left(\sigma_{ys}+
+H_{iu} \bar\epsilon^p_u \right) \right],
+\end{equation}
+
+
+\noindent in which all the components have direct one-dimensional significance.
+
+Now consider evolution of the backstress in 1-D.  Using the rate form of
+Eq.\;\eqref{E:epsilon_p_equiv_define}, Eq.\;(\ref{E:gp_kinematic}) reduces to
+
+\begin{equation}
+\dot\alpha_{11}\bmf{m}=\textstyle{\frac{3}{2}} 
+H_k \dot \epsilon^p_{11} \bmf{m}~,
+\end{equation}
+
+\noindent which further simplifies to 
+
+\begin{equation}
+\dot\alpha_{11}=H_{ku}\dot\epsilon^p_{11}~,
+\end{equation}
+
+\noindent since $\bmf m$ is a constant tensor and with the introduction 
+of $H_{ku} \equiv (3/2)H_k$, the uniaxial version of the kinematic 
+hardening parameter, as done previously for the isotropic hardening parameter
+in Eq.\;\eqref{E:H_iu_define}. The quantity $H_{ku}$ is input by the user to define the
+uniaxial equivalent kinematic hardening rate. 
+
+The last step is to solve for $\sigma_{11}$ in terms of $\epsilon^p_{11}$. Using 
+Eq.\;\eqref{E:n_define2} and the definitions above for the 1-D forms of $\bmf \sigma'$
+and $\bmf \alpha$, we can write
+
+
+\begin{equation}\label{E:n_u_define}
+\bmf n_u = \frac{\bmf \sigma'_u - \bmf \alpha_u} 
+{\parallel \bmf \sigma'_u - \bmf \alpha_u \parallel }
+=
+\frac {\sigma_{11} \bmf m - \alpha_{11} \bmf m }{\parallel \sigma_{11} 
+\bmf m - \alpha_{11} \bmf m 
+\parallel }
+= \sqrt{\textstyle{\frac{3}{2}}}\;
+\text{sgn} \left(\sigma_{11} -\alpha_{11} \right) \bmf m~.
+\end{equation}
+
+\noindent Equation\;\eqref{E:normal_flow} becomes 
+(using Eq.\;\eqref{E:epsilon_p_equiv_define})
+\begin{equation}
+\textstyle{\frac{3}{2}}\dot\epsilon^p_{11}\bmf{m}=
+\dot{\lambda}\sqrt{\frac{3}{2}}\;\bmf{m}\;
+ \text{sgn} \left(\sigma_{11} -\alpha_{11} \right) ~,
+\end{equation}
+
+\noindent where the sign of $\dot \epsilon^p_{11}$ sets the sign of
+$\dot \lambda$. Again the scalar terms on either side of the above 
+equation must be equal. Rearranging the scalar equality yields
+
+\begin{equation}\label{E:dot_lambda_u_defined}
+\dot{\lambda}=\sqrt{\textstyle{\frac{3}{2}}}\;\dot\epsilon^p_{11}
+\text{sgn} \left(\sigma_{11} -\alpha_{11} \right) ~.
+\end{equation}
+
+\noindent Also, using the rate form of Eq.\;\eqref{E:sigma_prime_1D_define} 
+and the above form for $\bmf n_u$, we have
+
+\begin{equation}
+\bmf n_u:\dot{\bmf \sigma}_u'=\sqrt{\textstyle{\frac{2}{3}}}\;
+\text{sgn}(\sigma_{11} - \alpha_{11})\;\dot\sigma_{11}.
+\end{equation}
+
+
+Substituting the preceding equations into the limit surface,
+Eq. (\ref{E:limit_surface}), generates the relationship between the 
+uniaxial stress and uniaxial strain: 
+
+\begin{equation}
+h(f)\dot\sigma_{11}=\textstyle{\frac{3}{2}}\dot\epsilon^p_{11}~.
+\end{equation}
+
+\noindent The straightforward path to determine the 1-D (uniaxial) equivalents 
+of the material parameters $\beta$ and $\delta$ is to let $H_i=H_k=0$, which
+makes $\bmf \alpha \equiv \bmf 0$  Then from Eqs.\;\eqref{E:h_define}, \eqref{E:f_define_1D}
+with $\alpha_{11} = H_{iu} = 0$,
+
+\begin{equation}
+h(f) = \frac{f}{\delta(\beta-f)} =  \frac{\sqrt{\frac{2}{3}}\left( \sigma_{11} - \sigma_{ys} \right)}
+{\delta \left[ \beta - \left(\sqrt{\frac{2}{3}} \left\{\sigma_{11} - 
+\sigma_{ys} \right\}\right) \right] }~,
+\end{equation}
+
+\noindent which simplifies to
+
+\begin{equation}
+h(f) = \frac{\sigma_{11}-\sigma_{ys}}
+{\delta \left[\sqrt{\textstyle{\frac{3}{2}}}\beta-
+(\sigma_{11}-\sigma_{ys})\right]}~,
+\end{equation}
+\noindent where $\sigma_{11}\ge \sigma_{ys}$ is assumed for simplicity here to determine
+the remaining material constants $\delta$ and $\beta$.
+
+The separable differential equation 
+
+\begin{equation}
+{\textstyle{\frac{3}{2}}} \dot\epsilon^p_{11} = 
+ \frac{{\sigma_{11}}-\sigma_{ys}}
+{\delta \left[\sqrt{\textstyle{\frac{3}{2}}}\beta-
+(\sigma_{11}-\sigma_{ys})\right]}
+\;\dot\sigma_{11}
+\end{equation}
+
+\noindent is  integrated to compute
+
+\begin{equation}
+\epsilon^p_{11}=\frac{-1}{(3/2)\delta}\left[\sigma_{11}-\sigma_{ys} + 
+\sqrt{\textstyle{\frac{3}{2}}}\beta \;\rm{ln} \left| \frac{\sigma_{11}-\sigma_{ys}-
+\sqrt{\textstyle{\frac{3}{2}}}\beta}{\sqrt{\textstyle{\frac{3}{2}}}\beta} \right| \right]~.
+\end{equation}
+
+\noindent Thus, we can identify the 1-D equivalent definitions 
+for $\beta$ and $\delta$ as $\beta_u \equiv \sqrt{3/2}\;\beta$ and $\delta_u\equiv(3/2)\delta$ such that
+
+\begin{equation}
+\epsilon^p_{11}=\frac{-1}{\delta_u}\left[\sigma_{11}-\sigma_{ys} +
+\beta_u \; \rm{ln} \left| \frac{\sigma_{11}-\sigma_{ys}-\beta_u}{\beta_u} \right| \right]~, 
+\quad \sigma_{11} \ge \sigma_{ys}~.
+\end{equation}
+
+The following table summarizes the 3-D algorithmic entities and their 1-D counterparts, for 
+the Generalized Plasticity model. \textit{Note that WARP3D takes the 1-D equivalent material 
+parameters as input values:} $H_{iu}, H_{ku}, \beta_u, \delta_u$.
+
+\begin{table}[htb]	
+	\centering
+		\begin{tabular}{ | l | c |  c | }
+		\hline
+		Entity & 3-D algorithm & 1-D specialization \\
+		\hline \hline
+accumulated plastic strain & $\bar e^p = \int^t_0 \dot{\bar e}^p dt$ & 
+$\bar e^p_u\equiv \sqrt{\textstyle{\frac{3}{2}}}\bar \epsilon^p_u;\quad 
+\bar \epsilon^p_u = \int^t_0 |\dot \epsilon^p_{11}| dt $ \\
+
+hardening parameter & $H$ & $H_{u}\equiv(3/2)H$ \\
+
+limit function extent parameter & $\beta$ & 
+$\beta_u\equiv\sqrt{\textstyle{\frac{3}{2}}}\beta$ \\
+
+limit function rate parameter & $\delta$ & $\delta_u\equiv(3/2)\delta$ \\
+
+current yield stress & $k(\bar e^p)=k_0+H_i \bar e^p$ & 
+$k \left( \bar \epsilon^p_u \right) = 
+\sqrt{ \textstyle {\frac{2}{3}} } 
+\left( \sigma_{ys}+
+H_{iu} \bar \epsilon^p_u \right)$ \\
+\hline
+		\end{tabular}
+%  \caption{Properties for cyclic Material Model: nonlinear\_hardening option}
+%	\label{table:nonlinear_hardening}
+\end{table}
+
+
+%--------------------------------------------------------------------------------
+\subsubsection{Reducing 3-D constitutive equations to 1-D: Nonlinear Hardening}
+%--------------------------------------------------------------------------------
+The continuum 3-D equations for the Nonlinear Hardening (NH) model are summarized below:
+
+\begin{equation} \label{E:yield_surface_nh}
+f = \parallel \bmf{\sigma}' - \bmf{\alpha} \parallel - k(\bar e^p) ~,
+\end{equation}
+
+\begin{equation} \label{E:isotropic_nh}
+k(\bar e^p) = k_0+ Q \left [ 1- exp \left( -b \bar e^p \right) \right ]~,
+\end{equation}
+
+\begin{equation}\label{E:n_define_nh}
+\bmf n =  \frac {df/d\bmf{\sigma}'} {\parallel df/d\bmf{\sigma}' \parallel} =
+\frac{\bmf \sigma' - \bmf \alpha} {\parallel \bmf \sigma' - \bmf \alpha \parallel }\;;
+\quad \parallel \bmf n \parallel \equiv 1~,
+\end{equation}
+
+\begin{equation}\label{E:normal_flow_nh}
+\dot{\bmf{\epsilon}}^p=\dot{\lambda}\bmf{n}~,
+\end{equation}
+
+\begin{equation} \label{E:kinematic_nh}
+\dot{\bmf{\alpha}}=\dot{\lambda} \left( H\bmf{n} -\gamma \bmf{\alpha} \right)~,
+\end{equation}
+
+\noindent where the norm of $\bmf \epsilon^p$, the norm of its rate, 
+$\dot{\bar e}^p$, and the
+accumulated (monotonically increasing) plastic strain
+measure, $\bar e^p$, are defined as in Eqs.\;\eqref{E:norm_epsilon_p_defined},
+\eqref{E:e_bar_p_rate_define}, and \eqref{E:e_bar_p_define};
+$k_0$ is the radius of the Mises yield cylinder 
+at the onset of plastic flow; $H$ provides a constant rate of kinematic
+hardening with increasing plastic flow; and $\gamma$ provides the nonlinearity
+in the kinematic hardening rate. $Q$ and $b$ introduce an isotropic 
+hardening response that saturates to a constant yield cylinder
+radius, $k_0 + Q$, at
+large values of the accumulated plastic strain. All values above are cast in terms 
+of the 3-D formulation (uniaxial forms are introduced later in this section). 
+
+To identify the isotropic hardening parameters $Q$ and $b$, 
+Eq.\;\eqref{E:isotropic_nh} 
+is specialized to the 1-D case using Eq.\;\eqref{E:k_sigma_11_define} 
+and Eq.\;\eqref{E:e_bar_p_u_define}
+
+\begin{equation}
+k(\bar e^p_u) = k_0 + Q\left [ 1- exp \left( -b \bar e^p_u \right) \right ]~,
+\end{equation}
+
+\noindent which can be written in the form (using Eqs.\;\eqref{E:k_sigma_11_define},
+\eqref{E:e_bar_p_u_define})
+
+\begin{equation}
+k(\bar \epsilon^p_u) = \sqrt{\textstyle {\frac{2}{3}}} \sigma_{ys} + 
+\left(\sqrt{\textstyle {\frac{2}{3}}}\; Q_u \right)
+\left[ 1- exp \left( -\sqrt{\textstyle {\frac{3}{2}}}\;b \bar \epsilon^p_u \right) \right ]~,
+\end{equation}
+
+\noindent where uniaxial definitions of the isotropic hardening parameters are
+introduced such that
+$Q=\sqrt{2/3}\;Q_u$ and in the following $b_u = \sqrt{3/2}\;b$. Here, $\sigma_{ys}$
+and $Q_u$ denote the yield stress and saturation flow stress, respectively,
+in uniaxial tension. The dimensionless term $b_u$ sets the rate at 
+which the saturation flow stress is
+attained with increasing (uniaxial) plastic strain. The 1-D form of the isotropic hardening 
+function thus simplifies to 
+
+\begin{equation}\label{E:Qu_bu_define}
+k\left(\bar \epsilon^p_u\right) = 
+\sqrt{ \textstyle {\frac{2}{3}} } 
+\left( \sigma_{ys}+
+Q_u \left[ 1- exp \left( -b_u \bar \epsilon^p_u \right) \right ]\right)~,
+\end{equation}
+
+\noindent where the 1-D forms $\sigma_{ys}$, $Q_u$ and $b_u$ are input by the user to define model properties. 
+
+
+To determine the 1-D form of the kinematic hardening parameters $H$ and $\gamma$,
+write the rate of backstress, Eq.\;\eqref{E:kinematic_nh}, in the 1-D form
+
+\begin{equation}
+\dot{\bmf{\alpha}}_u = \dot \lambda \left( H \bmf{n}_u - \gamma \bmf{\alpha}_u \right)~.
+\end{equation}
+
+\noindent Now use the 1-D specializations for $\dot{\bmf{\alpha}}_u$, $\bmf{n}_u$, and $\bmf{\alpha}_u$
+from Eqs.\;\eqref{E:alpha_u_defined}, \eqref{E:n_u_define}, and \eqref{E:m_define}
+to write
+
+\begin{equation}
+\dot\alpha_{11} \bmf{m} = \dot\lambda \left (
+\sqrt{\textstyle{\frac{3}{2}}} H \text{sgn} \left(\sigma_{11}-\alpha_{11}\right) \bmf{m}-
+ \gamma \alpha_{11}\bmf{m} \right)~.
+\end{equation}
+
+\noindent Equating terms applied to the constant tensor, $\bmf{m}$, leads to the simplified form
+\begin{equation}
+\dot\alpha_{11} = \dot\lambda \left (
+\sqrt{\textstyle{\frac{3}{2}}} H \text{sgn} \left(\sigma_{11}-\alpha_{11}\right) -
+ \gamma \alpha_{11}\right)~.
+\end{equation}
+
+\noindent Using the 1-D form for the rate of the consistency parameter, $\dot \lambda$, given by
+Eq.\;\eqref{E:dot_lambda_u_defined} yields
+
+\begin{equation}
+\dot{\alpha}_{11} = \sqrt{\textstyle{\frac{3}{2}}}\; \dot\epsilon^p_{11}
+ \text{sgn} \left(\sigma_{11}-\alpha_{11}\right)
+\left (
+\sqrt{\textstyle{\frac{3}{2}}} H \text{sgn} \left(\sigma_{11}-\alpha_{11}\right) -
+ \gamma \alpha_{11}\right)~,
+\end{equation}
+
+\noindent which can be re-arranged to the form
+
+
+\begin{equation}\label{E:define_Hu_gammau}
+\dot{\alpha}_{11} = \left[ \textstyle{\frac{3}{2}} 
+H  -
+\sqrt{\textstyle{\frac{3}{2}}} \;\gamma \alpha_{11} \text{sgn} \left(\sigma_{11}-\alpha_{11}\right)\right] \dot\epsilon^p_{11}~.
+\end{equation}
+
+\noindent The 1-D forms for $H$ and $\gamma$ are seen to be
+$H_u = (3/2)H$ and $\gamma_u = \sqrt{3/2}\;\gamma$. Recall also that 
+$\dot\epsilon^p_{11}$ can be positive or negative. Let $\nu=\pm1$ set the sign of 
+$\dot\epsilon^p_{11}$  based on the direction of loading (tension/compression). We also
+see that $\text{sgn} \left(\sigma_{11}-\alpha_{11}\right)$ carries the same sign
+as the plastic strain rate, \emph{e.g.} in compression yielding both
+$\text{sgn} \left(\sigma_{11}-\alpha_{11}\right)$ and $\dot\epsilon^p_{11}$
+are negative. For simplicity, drop the 11 subscripts and simplify
+
+\begin{equation}\label{E:define_Hu_gammau1}
+\dot\alpha = \nu H |\dot\epsilon^p| - \gamma \alpha |\dot\epsilon^p|~.
+\end{equation}
+
+
+The nonlinear kinematic hardening model with $\gamma >0$ defines a limit
+surface by bounding the backstress magnitude at large plastic strains. The above equation can 
+be re-arranged into a separable form such that 
+\begin{equation}
+\int^{\epsilon^p}_{\epsilon^p_0} \nu d\epsilon^p =
+\int^{\alpha}_{\alpha_0} 
+\frac{d\alpha}
+{ \nu H_u   - 
+\gamma_u \alpha  }~.
+\end{equation}
+
+\noindent Integrating both sides yields
+
+\begin{equation}
+\nu \left( \epsilon^p - \epsilon^p_0\right) = 
+-\frac{1}{\gamma_u}\ln \left [ \nu H_u - \alpha \gamma_u \right]
+ {|}^{\alpha}_{\alpha_0}~.
+\end{equation}
+
+\noindent Re-arrange, take the exponential of both sides, 
+and solve for $\alpha$ to find
+
+\begin{equation}
+\alpha = \nu \frac{H_u}{\gamma_u} + 
+\left( \alpha_0 -\nu \frac{H_u}{\gamma_u}\right )
+\exp\left[-\nu \gamma_u \left ( \epsilon^p - \epsilon^p_0 \right)\right] ~,
+\end{equation}
+
+\noindent where at large plastic strains we have (see also Ref. [3])
+
+\begin{equation}
+\alpha = \alpha^{limit}_{11} = \pm1 \frac{H_u}{\gamma_u}~.
+\end{equation}
+
+\noindent In this limit expression, both $H_u$ and $\gamma_u$ refer to their definitions in the
+1D formulation. Use this limiting expression for $\alpha_{11}$ in the 1-D form of the
+yield function, Eq.\;\eqref{E:f_define_1D}, eliminate isotropic hardening for 
+simplicity and re-arrange to find
+
+\begin{equation}
+k^{limit} = k_0 + \frac{H}{\gamma}~.
+\end{equation}
+\noindent In uniaxial terms,
+\begin{equation}
+\sigma_u^{limit} = \sigma_{ys} + \sqrt{\textstyle{ \frac{3}{2}}} \frac{H}{\gamma}~,
+\end{equation}
+
+\noindent and using the uniaxial definitions for $H$ and $\gamma$ from Eq.\;
+\eqref{E:define_Hu_gammau} we have
+
+\begin{equation}
+\sigma_u^{limit} = \sigma_{ys} +\frac{H_u}{\gamma_u}~.
+\end{equation}
+
+
+The following table summarizes the 3-D algorithmic entities and their 1-D counterparts, for 
+the Nonlinear Hardening model. \textit{Note that WARP3D takes the 1-D equivalent material 
+parameters as input values:} $Q_u$, $b_u$, $H_u$, and $\gamma_u$.
+
+\begin{table}[htb]	
+	\centering
+		\begin{tabular}{ | l | c |  c | }
+		\hline
+		Entity & 3-D algorithm & 1-D specialization \\
+		\hline \hline
+accumulated plastic strain & $\bar e^p = \int^t_0 \dot{\bar e}^p dt$ & 
+$\bar e^p_u\equiv \sqrt{\textstyle{\frac{3}{2}}}\bar \epsilon^p_u;\quad 
+\bar \epsilon^p_u = \int^t_0 |\dot \epsilon^p_{11}| dt $ \\
+
+isotropic parameter & $Q$ & $Q_u \equiv \sqrt{3/2}\; Q$ \\
+
+isotropic parameter & $b$ & $b_u \equiv \sqrt{3/2}\; b$ \\
+
+kinematic parameter & $H$ & $H_u \equiv (3/2) H$ \\
+
+kinematic parameter & $\gamma$ & $\gamma_u \equiv \sqrt{3/2}\; \gamma$ \\
+
+current yield stress ($k, \sigma_u$) & $k_0+ Q \left[ 1 - exp \left( -b  \bar e^p\right)\right]$ & 
+$\sigma_{ys}+
+Q_u \left[ 1 - exp \left( -b_u  \bar \epsilon^p_u\right)\right] $ \\
+\hline
+		\end{tabular}
+%  \caption{Properties for cyclic Material Model: nonlinear\_hardening option}
+%	\label{table:nonlinear_hardening}
+\end{table}
+
+ 
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small
+[\refstepcounter{sectrefs}\label {R:FA1965}\thesectrefs]~P. J. Armstrong and C. O. Frederick. A mathematical representation of the
+multi-axial Baushinger effect. Tech. report C.E.G.B. Report RD/B/N731,
+Berkeley Nuclear Laboratories, R\&D Department, 1965.
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:LTA1993}\thesectrefs]~J. Lubliner, 
+R. L. Taylor, and F. Auricchio. A new model of generalized 
+plasticity and its numerical implementation. \textit{International Journal of Solids 
+and Structures}, 30:3171�3184, 1993.
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:LC2000}\thesectrefs]~J. Lemaitre and 
+J. L. Chaboche. \textit{Mechanics of Solid Materials}. Cambridge 
+University Press, 2000.
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:AT1995}\thesectrefs]~F. Auricchio 
+and R. L. Taylor. Two material models for cyclic plasticity:
+non-linear kinematic hardening and generalized plasticity. \textit{International Journal 
+of Plasticity}, 11:65�96, 1995. 
+
+\medskip
+\noindent[\refstepcounter{sectrefs}\label {R:SH2000}\thesectrefs]~Simo, J.C., 
+Hughes, T.J.R. \textit{Computational
+Inelasticity}. Springer, 2000. ISBN: 978-0-387-97520-7.
+
+
+\end{document}

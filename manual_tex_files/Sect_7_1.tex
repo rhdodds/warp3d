@@ -1,0 +1,237 @@
+%
+
+\input{common_preamble.tex}
+%----------------------------------------------
+%
+%          --- header and footer contents ---
+%
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{\textit{Parallel Execution}}}
+\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 5-10-2013)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Introduction}}}
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{7}
+\setcounter{section}{0}
+
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+
+\LARGE
+\hfill
+\textbf{Chapter \thechapter}
+\rule[0.15in]{450pt}{0.5mm}
+\LARGE
+\begin{flushright}
+ \textbf{
+{\fontfamily{phv}\selectfont Parallel Execution}}
+\end{flushright}
+\normalsize
+
+
+
+\section{Introduction}
+\noindent 
+Parallel processing to perform the analysis of a large, 3-D finite element model offers the 
+potential to reduce significantly the elapsed time needed to compute the solution. 
+WARP3D offers two common parallel processing architectures: 
+(1) threads and shared-memory, and (2) hybrid
+systems which use message
+passing between concurrently executing copies (ranks) of a program combined with
+shared-memory and threads on each rank. Each architecture is described
+briefly here as an introduction to further discussions in this chapter.
+
+
+\subsection{Threads and Shared-Memory}
+The simplest configuration is a processor chip that contains multiple cores, typically 
+now 4, 6, or 8 cores but with an increased number expected in the future. Each of the cores is 
+an independently executing computational unit. Each of the cores has 
+effectively uniform, equal access to the large, main memory system, \ie the cores 
+all share the memory (for example 4-64GB on a small desktop computer). Each 
+core has its own local, high speed cache memory; 
+the operating system and memory hardware work to ensure the coherency of 
+data spread across the core cache memories and the main system memory. 
+
+This design typifies current laptop, desktop and deskside 
+systems running the Windows, Linux and OS X operating systems. 
+The operating system dispatches programs for execution to 
+a core and switches programs across the cores as needed. When a single program 
+contains multiple tasks (called threads) that can be executed 
+simultaneously, for example
+iterations of certain do/for/while loops,
+the operating system dispatches threads to the cores 
+thus achieving parallel execution of the program. In larger compute servers, 
+multiple processor chips will be included on the main board for the system, 
+with each processor chip containing multiple cores (4, 6, 8, ..). Some hardware
+designs extend the capability of each core to execute multiple, concurrent
+threads. Thus a processor chip with 8 cores, each capable of running
+2 threads offers the potential of running 16 concurrent tasks.
+
+WARP3D utilizes the shared-memory (SM) capabilities with threads 
+that can be dispatched and executed concurrently. 
+This is accomplished in various parts of the code primarily (1) through 
+the block structuring of elements (Section 2.6) defined in the 
+input file and (2) through use of the Pardiso linear
+equation solver (thread-based, with sparse direct and iterative
+options). 
+The WARP3D (Fortran) source code includes directives to create and 
+manage threads during execution using the industry standard 
+OpenMP framework. To illustrate this process, consider this 
+simplified code fragment to drive the process of element 
+stiffness computation using the block framework:
+
+\small
+\begin{verbatim}
+    do in parallel block = 1, all_blocks_in_model
+       call compute_elem_stiff_for_a_block( block, …..)
+    end parallel do 
+\end{verbatim}
+\normalsize
+
+Suppose a model has 100 blocks of elements defined in the WARP3D input file and the user 
+has specified that WARP3D can use 5 threads during execution. Usually 
+the number of threads allowed for use is less than or equal to the number of threads
+available on the computer. In the simplest 
+case of execution for the above code, thread 1 processes element block 1, 6, 11, 16, etc. 
+Thread 2 processes blocks 2, 7, 12, 17, etc. The 5 threads run concurrently and 
+can thus reduce significantly the elapsed time to compute all the element stiffness matrices. 
+Inefficiencies arise when the amount of work for the blocks varies (some threads then 
+run longer than others) and the code must wait for all threads to complete their work.
+For example, before starting the stiffness assembly process which also runs in parallel,
+stiffnesses must be completed for all blocks of elements.
+
+The code implements the thread-based, parallel processing of element blocks illustrated 
+above for the computation of: (1) initial linear stiffness and mass, (2) tangent 
+stiffnesses, (3) updated strains and stresses, (4) element (internal) nodal forces 
+for the updated stresses, and (5)  computation of domain integral quantities.
+This high-level parallel execution achieved through 
+element blocking achieves near linear scaling with increasing 
+model sizes and number of threads.
+
+A final, low-level of parallel execution is also achieved through the element 
+blocking. The inner-most loops in all element computations for a block run 
+from 1 through the number of elements in the block. The next higher loop runs over
+integration points for elements in the block. Most serial codes, 
+in contrast, have inner loops over the number of integration points of a single element. 
+The element blocking structure, with much longer inner-loop 
+lengths (64, 128, 256 for example), exposes significant opportunities 
+for compilers to optimize local cache memory, registers and pipelining 
+to achieve essentially vector processing efficiencies at the inner-loop level.
+
+\subsection {Hybrid Systems (MPI + Threads)}
+\nin Computers designed with the shared-memory architecture begin to 
+lose efficiency and the hardware becomes exceedingly complex as the 
+number of processor-chips and cores increases. The maintenance of fast 
+access to the shared, main memory and coherency of local cache 
+memories for the large number of cores requires increasingly complex 
+(expensive) hardware. An alternative design uses a cluster of separate 
+computers connected together most often with dedicated, very high-speed 
+networking hardware. Each of the separate computers has the architecture 
+of a shared-memory computer with its own memory system and disks. 
+The design of a large, comprehensive program to execute in parallel 
+in this type of environment with separate computers communicating 
+over a high-speed network becomes very challenging. 
+
+The approach now adopted as an industry standard for these type of computer 
+systems relies on explicitly-coded message passing over the network. Suppose 
+the cluster has 
+8 separate computers, each with 8 cores running a single
+thread. A copy of WARP3D is started on each core of each computer, 
+with the first copy designated as the \ti{manager} process. The 
+other 63 \ti{worker} copies of WARP3D start execution and then wait for 
+a message from the manager process with a request for something to 
+be computed for the model; \eg element stiffness matrices for a portion 
+of the mesh. The execution continues with the manager and worker copies
+of WARP3D sharing and exchanging data about the solution. The coding 
+for this approach becomes far more complex than the shared-memory 
+approach and requires design of the software from the beginning with 
+parallel execution via message passing. The industry standard 
+software to provide the message passing services is 
+called MPI (Message Passing Interface). MPI provides a 
+host of services to share data, to synchronize the 
+independently executing copies of WARP3D, and to create and release additional
+copies of WARP3D as needed during solution.
+
+All advantages of the shared-memory, parallel execution are used by the 
+manager and worker copies of WARP3D. This provides an efficient, 
+second-level of parallel execution during an analysis, since each of 
+the computers in a cluster is most often a multi-processor, shared-memory 
+computer with each processor having multiple cores.
+
+To support execution using the MPI approach, 
+WARP3D employs a higher-level of 
+model decomposition (also termed partitioning)
+than is provided by the element blocking alone.
+Blocks of elements are aggregated into domains, and there are as 
+many domains as the number of MPI ranks set by the
+user at the onset of execution. 
+In this way, each worker rank owns a domain consisting of 
+element blocks (a block of elements resides entirely in a single domain). 
+When a worker receives an MPI message from the manager 
+to compute element stiffness matrices, it does so for 
+all the blocks it owns using the thread-based parallel concept 
+illustrated in the previous code fragment. This two-level 
+parallel execution for a worker appears as
+
+\small
+\begin{verbatim}
+    do in parallel block = 1, all_blocks_in_model 
+       domain_for_block = domain_list(block)
+       if( domain_for_block .ne. my_mpi_rank ) cycle
+       call compute_elem_stiff_for_a_block( block, ...)
+    end parallel do 
+\end{verbatim}
+\normalsize
+\nin where this same code fragment is executed in thread parallel 
+over the blocks on the manager and on all workers concurrently.
+
+The \ti{hypre}  iterative
+equation solver is invoked to solve the linear equations in each Newton
+iteration. Hypre uses the same MPI ranks during the equation solving
+process (and threads on each rank).
+
+The process of model decomposition into domains represents 
+a topology optimization problem. A good decomposition into $n$ domains 
+minimizes the number of shared nodes between domains to reduce the 
+amount data exchanged during solutions. The \ti{patwarp} support program 
+described in Appendix C provides the services to decompose a large model 
+into domains and each domain into blocks. This requires that the 
+analyst know early on the number of MPI ranks (= number of domains) 
+that will be used for the analysis. 
+
+\subsection{Summary \& Recommendations}
+The WARP3D architecture provides multiple approaches to achieve
+parallel execution during an analysis.
+
+We expect the majority of WARP3D users will employ the threads-only
+style of parallel execution on Windows, Linux and OS X systems. The
+linear solver choices are then Pardiso (direct and iterative). The model
+has blocks of elements but no partitioning into domains. The assignment of
+elements to blocks is readily performed (automatically) by WARP3D (see Section 2.6).
+Analyses of models approaching $10^6$ nodes are feasible with this
+approach on current hardware (mid-2013).
+
+For very large models most often analyzed on larger servers and clusters,
+the preferred approach uses the hypre 
+solver in a domain-decomposition + blocking setup of the model.
+The hybrid (MPI + threads) version of WARP3D
+is available only on Linux systems.
+The \ti{patwarp} program may be used to perform the 
+domain decomposition and element blocking during preparation of an
+input file.
+
+The remaining sections of the is chapter describe needed details
+to utilize each of these approaches.
+
+\end{document}

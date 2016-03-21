@@ -1,0 +1,546 @@
+%
+\documentclass[10pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+%
+%
+%   --- margins and inter-paragraph spacing ---
+%
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+%
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{needspace}
+%--------------------------------------------- 
+%
+%   
+\frenchspacing
+%
+%   ---  local commands ---
+%
+\newcommand{\tb} {\textbf}  
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\patwarp}{\ti{patwarp\xspace}}
+\newcommand{\eg}{\ti{e.g.},\xspace}
+\newcommand{\ie}{\ti{i.e.},\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\ti}{\emph}
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+%
+%   ---  page numbering ---
+%
+\usepackage[us,12hr]{datetime}
+\usepackage{fancyhdr}  \pagestyle{fancy}
+\fancyfoot[L] {\small{\  Updated:  \today\ at \currenttime}}
+%\fancyfoot[L] {\small{ (Updated: 12-17-2015)}}
+\fancyfoot[C] {\small{\thepage}}
+\fancyfoot[R] {\small{\textit{Table of Contents}}}
+\renewcommand{\headrulewidth}{0pt}
+\pagenumbering{roman}
+\setcounter{page}{11}
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+\noindent
+\LARGE
+\begin{center}
+ \textbf{
+{\fontfamily{phv}\selectfont Contents}}
+\end{center}
+\normalsize
+\vspace{-0.1in}
+%
+\begin{center}
+\line(1,0){250}
+\end{center}
+
+\vspace{0.2in}
+
+\large
+\nin \tb{Section No.} \dotfill \tb{Page} \\
+\normalsize
+\\
+\\
+\tb{Executive Summary} \df i\\
+\\
+\tb{Revision History} \df v\\
+\\
+\tb{Acknowledgements}\df x \\
+\\
+\tb{Table of Contents} \df xi\\
+\\
+%
+%            --------------------  Chapter 1 ---------------------------
+%
+\nin \tb{Chapter 1 \hspace{0.15in} Introduction} \df \tb{1.1-1}\\ \\
+1.1\hspace{0.15in}Overiew  \df1.1-1\\
+1.2\hspace{0.15in}Illustrative Problems \df 1.2-1\\
+\hspace*{0.35in}1.2.1 Two-Element Model \df1.2-1\\
+\hspace*{0.35in}1.2.2 Upsetting of a Cylindrical Disk \df1.2-10\\
+\hspace*{0.35in}1.2.3 Linear-Elastic Fracture: Crack-Tip Paramaters \df1.2-14\\
+\hspace*{0.35in}1.2.4 Nonlinear Fracture: Crack-Tip Paramaters \df1.2-25\\
+1.3\hspace{0.15in}Manual Conventions\df 1.3-1\\
+1.4\hspace{0.15in}Nonlinear Equations of Motion \df1.4-1\\
+1.5\hspace{0.15in}Dynamic Analysis: Newmark $\beta$ Method \df1.5-1\\
+1.6\hspace{0.15in}Solution of Nonlinear Equations: Newton Method\df 1.6-1\\
+\hspace*{0.35in}1.6.1 Convergence Criteria \df1.6-3\\
+\hspace*{0.35in}1.6.2 Imposed Displacements and Temperatures \df1.6-4\\
+\hspace*{0.35in}1.6.3 Deformation Dependent Applied Element Loads \df1.6-5\\
+\hspace*{0.35in}1.6.4 Line Search to Augment Global Newton Iterations \df1.6-6\\
+1.7\hspace{0.15in}Linear Equation Solvers\df  1.7-1\\
+\hspace*{0.35in}1.7.1 Overview \df1.7-1\\
+\hspace*{0.35in}1.7.2 Pardiso Sparse Direct Solver: Threads Only \df1.7-1\\
+\hspace*{0.35in}1.7.3 Pardiso Sparse Iterative Solver: Threads Only \df1.7-1\\
+\hspace*{0.35in}1.7.4 Hypre Iterative Solver: MPI Only \df1.7-1\\
+\hspace*{0.35in}1.7.5 Recommendations \df1.7-1\\
+\hspace*{0.35in}1.7.6 References \df1.7-2\\
+1.8\hspace{0.15in}Element Formulations \df 1.8-1\\
+\hspace*{0.35in}1.8.1 Interpolation Functions\df 1.8-1\\
+\hspace*{0.35in}1.8.2 Cartesian Derivatives\df 1.8-2\\
+\hspace*{0.35in}1.8.3 Strain-Displacement $\bmf B$ Matrix \df1.8-3\\
+\hspace*{0.35in}1.8.4 Internal Nodal Force Vector \df1.8-4\\
+\hspace*{0.35in}1.8.5 Strain Increment for Stress Updating\df 1.8-5\\
+\hspace*{0.35in}1.8.6 Strains for Output\df 1.8-5\\
+\hspace*{0.35in}1.8.7 Tangent Stiffness Matrix \df1.8-6\\
+\hspace*{0.35in}1.8.8 Mass Matrix\df 1.8-7\\
+\hspace*{0.35in}1.8.8 References\df 1.8-8\\
+1.9\hspace{0.15in}Finite Strain Plasticity \df 1.9-1\\
+\hspace*{0.35in}1.9.1 Kinematics, Strain-Stress Measures \df1.9-2\\
+\hspace*{0.35in}1.9.2 Elastic-Plastic Decomposition \df1.9-5\\
+\hspace*{0.35in}1.9.3 Stress Update\df 1.9-6\\
+\hspace*{0.35in}1.9.4 Stress Rates and Consistent Tangent Operators\df 1.9-8\\
+\hspace*{0.35in}1.9.5 References \df 1.9-13\\
+\\
+%
+%            --------------------  Chapter 2 ---------------------------
+
+%
+\needspace{2\baselineskip}
+\nin \tb{Chapter 2 \hspace{0.15in} Model Definition} \df \tb{2.1-1}\\
+\\
+2.1\hspace{0.15in}Model Name and Sizes \df 2.1-2\\
+2.2\hspace{0.15in}Material Definitions \df 2.2-1\\
+\hspace*{0.35in}2.2.1\hspace{0.15in}Material Command \df 2.2-1\\
+\hspace*{0.35in}2.2.2\hspace{0.15in}Stress-Strain Curve Command: Temperature Independent \df 2.2-3\\
+\hspace*{0.35in}2.2.3\hspace{0.15in}Stress-Strain Curve Command: Temperature Dependent \df 2.2-5\\
+\hspace*{0.35in}2.2.4\hspace{0.15in}Stress-Strain Curve Command: Strain-Rate Dependent \df 2.2-7\\
+\hspace*{0.35in}2.2.5\hspace{0.15in}Nodal Values of Material Properties for FGMs \df 2.2-9\\
+\hspace*{0.35in}2.2.6\hspace{0.15in}Anisotropic Thermal Expansion Coefficients \df 2.2-10\\
+2.3\hspace{0.15in}Element Types and Properties \df 2.3-1\\
+2.4\hspace{0.15in}Nodal Coordinates \df 2.4-1\\
+2.5\hspace{0.15in}Element Incidences \df 2.5-1\\
+2.6\hspace{0.15in}Element Blocking \df 2.6-1\\
+\hspace*{0.35in}2.6.1\hspace{0.15in}Concept \df 2.6-1\\
+\hspace*{0.35in}2.6.2\hspace{0.15in}Simplified, Automatic Blocking \df 2.6-1\\
+\hspace*{0.35in}2.6.3\hspace{0.15in}Command and Requirements \df 2.6-2\\
+\hspace*{0.35in}2.6.4\hspace{0.15in}Blocking with Domain Decomposition \df 2.6-4\\
+2.7\hspace{0.15in}Nodal Constraints and Nodal Releases \df 2.7-1\\
+\hspace*{0.35in}2.7.1\hspace{0.15in}Absolute Constraints in Global Coordinates \df 2.7-2\\
+\hspace*{0.35in}2.7.2\hspace{0.15in}Non-Global Absolute Constraints \df 2.7-3\\
+\hspace*{0.35in}2.7.3\hspace{0.15in}Multi-Point Constraints (MPCs) \df 2.7-4\\
+\hspace*{0.35in}2.7.4\hspace{0.15in}Constraints in Nonlinear Analyses \df 2.7-5\\
+\hspace*{0.35in}2.7.5\hspace{0.15in}Display of Current Constraint Data \df 2.7-5\\
+\hspace*{0.35in}2.7.6\hspace{0.15in}Tie-Mesh Constraints \df 2.7-5\\
+\hspace*{0.35in}2.7.6\hspace{0.15in}Release Nodes Command \df 2.7-10\\
+2.8\hspace{0.15in}Loads (Including Imposed Temperatures \& Non-zero Displacements) \df 2.8-1\\
+\hspace*{0.35in}2.8.1\hspace{0.15in}Loading Patterns \df 2.8-1\\
+\hspace*{0.35in}2.8.2\hspace{0.15in}Nodal Loads \df 2.8-2\\
+\hspace*{0.35in}2.8.3\hspace{0.15in}Element Loads \df 2.8-3\\
+\hspace*{0.35in}2.8.4\hspace{0.15in}Step Loads \df 2.8-3\\
+\hspace*{0.35in}2.8.5\hspace{0.15in}Displacement Control Loading \df 2.8-4\\
+2.9\hspace{0.15in}Initial Conditions for Model (displacements, velocities, temperatures) \df 2.9-1\\
+2.10\hspace{0.10in}Solution Parameters \df 2.10-1\\
+\hspace*{0.35in}2.10.1\hspace{0.15in}Threads for WARP3D Execution \df 2.10-1\\
+\hspace*{0.35in}2.10.2\hspace{0.15in}Linear Equation Solvers \df 2.10-2\\
+\hspace*{0.35in}2.10.3\hspace{0.15in}Dynamic Analysis Parameters \df 2.10-7\\
+\hspace*{0.35in}2.10.4\hspace{0.15in}Global Newton Iteration Parameters \df 2.10-7\\
+\hspace*{0.35in}2.10.5\hspace{0.15in}Line Search \df 2.10-10\\
+\hspace*{0.35in}2.10.6\hspace{0.15in}Adaptive Step Size Control \df 2.10-11\\
+\hspace*{0.35in}2.10.7\hspace{0.15in}Displacement Extrapolation \df 2.10-12\\
+\hspace*{0.35in}2.10.8\hspace{0.15in}Batch Status Messages \df 2.10-13\\
+\hspace*{0.35in}2.10.9\hspace{0.15in}Wall Clock Time Limit \df 2.10-14\\
+\hspace*{0.35in}2.10.10\hspace{0.15in}Material Model Messages \df 2.10-14\\
+\hspace*{0.35in}2.10.11\hspace{0.15in}Solution Status Messages \df 2.10-15\\
+\hspace*{0.35in}2.10.12\hspace{0.15in}Residual Loads Printing \df 2.10-15\\
+\hspace*{0.35in}2.10.13\hspace{0.15in}$\bar B$ Element Stabilization \df 2.10-15\\
+\hspace*{0.35in}2.10.14\hspace{0.15in}Consistent $\bmf Q$ Matrix \df 2.10-15\\
+\hspace*{0.35in}2.10.15\hspace{0.15in}User Solution Parameters Routine \df 2.10-16\\
+\hspace*{0.35in}2.10.16\hspace{0.15in}Resetting the Global Load Reduction Factor \df 2.10-16\\
+\hspace*{0.35in}2.10.17\hspace{0.15in}Output of Sparse Format Equilibrium Equations \df 2.10-16\\
+\hspace*{0.35in}2.10.18\hspace{0.15in}Output of MPCs for Tied Meshes \df 2.10-18\\
+2.11\hspace{0.10in}Compute Requests \df 2.11-1\\
+2.12\hspace{0.10in}Output Requests \df 2.12-1\\
+\hspace*{0.35in}2.12.1\hspace{0.15in}Printed Output \df 2.12-2\\
+\hspace*{0.35in}2.12.2\hspace{0.15in}Binary Packets File \df 2.12-4\\
+\hspace*{0.35in}2.12.3\hspace{0.15in}Patran Compatible Result Files \df 2.12-6\\
+\hspace*{0.35in}2.12.3\hspace{0.15in}Flat Text \& Stream (Binary) Result Files \df 2.12-8\\
+\hspace*{0.35in}2.12.4\hspace{0.15in}Patran Compatible Neutral File for Model \df 2.12-10\\
+\hspace*{0.35in}2.12.4\hspace{0.15in}Flat Model Description File \df 2.12-11\\
+\hspace*{0.35in}2.12.5\hspace{0.15in}Energy File \df 2.12-12\\
+\hspace*{0.35in}2.12.6\hspace{0.15in}Convert Binary Packets to ASCII \df 2.12-13\\
+2.13\hspace{0.10in}Analysis Restart \df 2.13-1\\
+2.14\hspace{0.10in}Table Command \df 2.15-1\\
+\hspace*{0.35in}2.14.1\hspace{0.15in}General Form \df 2.14-1\\
+\hspace*{0.35in}2.14.2\hspace{0.15in}Table Type: piston \df 2.14-2\\
+2.15\hspace{0.10in}Utility (*) Commands \df 2.15-1\\
+2.16\hspace{0.10in}User Named List Command \df 2.16-1\\
+\hspace*{0.35in}2.16.1\hspace{0.15in}General Form \df 2.14-1\\
+\hspace*{0.35in}2.16.2\hspace{0.15in}Nodes Located on a Coordinate Plane, Lin, or Point\df 2.16-1\\
+\hspace*{0.35in}2.16.3\hspace{0.15in}Nodes Located on a General Plane\df 2.16-2\\
+\hspace*{0.35in}2.16.4\hspace{0.15in}Nodes Located on a Cylindrical Surface\df 2.16-2\\
+\hspace*{0.35in}2.16.5\hspace{0.15in}Nodes Located on a Spherical Surface\df 2.16-3\\
+\hspace*{0.35in}2.16.6\hspace{0.15in}Display Entries in Existing List\df 2.16-4\\
+\\
+\\
+%
+%            --------------------  Chapter 3 ---------------------------
+%
+\needspace{2\baselineskip}
+\nin \tb{Chapter 3 \hspace{0.15in}Elements and Material Models} \df \tb{3.1-1}\\
+\\
+%
+3.1\hspace{0.15in}Element Type: \ti{l3disop, ts9isop, ts12isop, ts15isop, q3disop}  \df 3.1-1\\
+\hspace*{0.35in}3.1.1\hspace{0.15in}Node and Gauss Point Ordering \df 3.1-2\\
+\hspace*{0.35in}3.1.2\hspace{0.15in}Element Properties \df 3.1-4\\
+\hspace*{0.35in}3.1.3\hspace{0.15in}Output Options \df 3.1-4\\
+\hspace*{0.35in}3.1.4\hspace{0.15in}Mass Formulation \df 3.1-5\\
+\hspace*{0.35in}3.1.5\hspace{0.15in}Element Loads \df 3.1-6\\
+\hspace*{0.35in}3.1.6\hspace{0.15in}Strains-Stresses for Large Displacement Formulation \df 3.1-9\\
+\hspace*{0.35in}3.1.7\hspace{0.15in}The $\bmf B$ Formulation \df 3.1-10\\
+\hspace*{0.35in}3.1.8\hspace{0.15in}Collapsed Elements for Fracture Analyses \df 3.1-13\\
+\hspace*{0.35in}3.1.9\hspace{0.15in}Temperature Gradients on Linear Displacement Elements \df 3.1-13\\
+\hspace*{0.35in}3.1.10\hspace{0.15in}Material Property Gradients on Linear Displacement Elements \df 3.1-13\\
+\hspace*{0.35in}3.1.11\hspace{0.15in}Examples \df 3.1-13\\
+\hspace*{0.35in}3.1.12\hspace{0.15in}References \df 3.1-13\\
+%
+3.2\hspace{0.15in}Element Type: \ti{tet4, tet10}  \df 3.2-1\\
+\hspace*{0.35in}3.2.1\hspace{0.15in}Node and Gauss Point Ordering \df 3.2-1\\
+\hspace*{0.35in}3.2.2\hspace{0.15in}Element Properties \df 3.2-3\\
+\hspace*{0.35in}3.2.3\hspace{0.15in}Output Options \df 3.2-3\\
+\hspace*{0.35in}3.2.4\hspace{0.15in}Mass Formulation \df 3.2-4\\
+\hspace*{0.35in}3.2.5\hspace{0.15in}Element Loads \df 3.2-5\\
+\hspace*{0.35in}3.2.6\hspace{0.15in}Strains-Stresses for Large Displacement Formulation \df 3.2-8\\
+\hspace*{0.35in}3.2.7\hspace{0.15in}Temperature Gradients in \ti{tet4} \df 3.2-8\\
+\hspace*{0.35in}3.2.8\hspace{0.15in}Material Property Gradients in \ti{tet4} \df 3.2-8\\
+\hspace*{0.35in}3.2.9\hspace{0.15in}Limitations on Current Use \df 3.2-9\\
+\hspace*{0.35in}3.2.10\hspace{0.15in}Examples \df 3.2-9\\
+\hspace*{0.35in}3.2.11\hspace{0.15in}References\df 3.2-9\\
+%
+3.3\hspace{0.15in}Interface Elements: \ti{inter\_8, trint6, trint12}  \df 3.2-1\\
+\hspace*{0.35in}3.3.1\hspace{0.15in}Element Formulation \df 3.3-1\\
+\hspace*{0.35in}3.3.2\hspace{0.15in}Geometrically Linear Elements \df 3.3-5\\
+\hspace*{0.35in}3.3.3\hspace{0.15in}Geometrically Nonlinear Elements \df 3.3-6\\
+\hspace*{0.35in}3.3.4\hspace{0.15in}Treatment of Interface Compression for Nonlinear Elements \df 3.3-7\\
+\hspace*{0.35in}3.3.5\hspace{0.15in}Node and Integration Point Ordering \df 3.3-8\\
+\hspace*{0.35in}3.3.6\hspace{0.15in}Ensuring Proper Element Orientation \df 3.3-8\\
+\hspace*{0.35in}3.3.7\hspace{0.15in}Special Procedures for Mode I Crack Growth (Geometric Nonlinear) \df 3.3-9\\
+\hspace*{0.35in}3.3.8\hspace{0.15in}Element Properties \df 3.3-12\\
+\hspace*{0.35in}3.3.9\hspace{0.15in}Output \df 3.3-12\\
+\hspace*{0.35in}3.3.10\hspace{0.15in}Examples \df 3.3-13\\
+\hspace*{0.35in}3.3.10\hspace{0.15in}References \df 3.3-14\\
+%
+3.4\hspace{0.15in}Material Model Type: \ti{deformation}  \df 3.4-1\\
+\hspace*{0.35in}3.4.1\hspace{0.15in}Formulation and Computational procedures \df 3.4-1\\
+\hspace*{0.35in}3.4.2\hspace{0.15in}Model Properties \df 3.4-3\\
+\hspace*{0.35in}3.4.3\hspace{0.15in}Model Output \df 3.4-4\\
+\hspace*{0.35in}3.4.4\hspace{0.15in}Computational Efficiency \df 3.4-4\\
+\hspace*{0.35in}3.4.5\hspace{0.15in}Examples \df 3.4-4\\
+%
+3.5\hspace{0.15in}Material Model Type: \ti{bilinear} (mises, rate independent)  \df 3.5-1\\
+\hspace*{0.35in}3.5.1\hspace{0.15in}Stress-Strain Curve and Hardening Options \df 3.5-1\\
+\hspace*{0.35in}3.5.2\hspace{0.15in}Model Properties \df 3.5-3\\
+\hspace*{0.35in}3.5.3\hspace{0.15in}Model Output \df 3.5-3\\
+\hspace*{0.35in}3.5.4\hspace{0.15in}Computational Efficiency \df 3.5-4\\
+\hspace*{0.35in}3.5.5\hspace{0.15in}Examples \df 3.5-5\\
+\hspace*{0.35in}3.5.6\hspace{0.15in}Plasticity Algorithms \df 3.5-6\\
+%
+3.6\hspace{0.15in}Material Model Type: \ti{mises} (general hardening, rate dependent)  \df 3.6-1\\
+\hspace*{0.35in}3.6.1\hspace{0.15in}Stress-Strain Curves and Hardening \df 3.6-1\\
+\hspace*{0.35in}3.6.2\hspace{0.15in}Model Properties \df 3.6-2\\
+\hspace*{0.35in}3.6.3\hspace{0.15in}Model Output \df 3.6-3\\
+\hspace*{0.35in}3.6.4\hspace{0.15in}Computational Efficiency \df 3.6-4\\
+\hspace*{0.35in}3.6.5\hspace{0.15in}Examples \df 3.6-5\\
+\hspace*{0.35in}3.6.6\hspace{0.15in}Plasticity Algorithms \df 3.6-8\\
+%
+3.7\hspace{0.15in}Material Model Type: \ti{gurson}  \df 3.7-1\\
+\hspace*{0.35in}3.7.1\hspace{0.15in}Stress-Strain Curves \df 3.7-1\\
+\hspace*{0.35in}3.7.2\hspace{0.15in}Power-Law Viscoplasticity \df 3.7-2\\
+\hspace*{0.35in}3.7.3\hspace{0.15in}Recommended Parameter Values \df 3.7-3\\
+\hspace*{0.35in}3.7.4\hspace{0.15in}Nucleation Model \df 3.7-3\\
+\hspace*{0.35in}3.7.5\hspace{0.15in}Element Extinction \df 3.7-5\\
+\hspace*{0.35in}3.7.6\hspace{0.15in}Adaptive Step Sizes \df 3.7-5\\
+\hspace*{0.35in}3.7.7\hspace{0.15in}Model Properties \df 3.7-5\\
+\hspace*{0.35in}3.7.8\hspace{0.15in}Model Output \df 3.7-5\\
+\hspace*{0.35in}3.7.9\hspace{0.15in}Computational Efficiency \df 3.7-6\\
+\hspace*{0.35in}3.7.10\hspace{0.15in}Examples \df 3.7-6\\
+\hspace*{0.35in}3.7.11\hspace{0.15in}Plasticity Algorithms \df 3.7-8\\
+%
+3.8\hspace{0.15in}Material Model Type: \ti{cohesive}  \df 3.8-1\\
+\hspace*{0.35in}3.8.1\hspace{0.15in}Potential Functions \df 3.8-2\\
+\hspace*{0.35in}3.8.2\hspace{0.15in}Linear-Elastic Option \df 3.8-3\\
+\hspace*{0.35in}3.8.3\hspace{0.15in}PPR Option (Paulino-Park-Roesler) \df 3.8-4\\
+\hspace*{0.35in}3.8.4\hspace{0.15in}Exponential Option \df 3.8-9\\
+\hspace*{0.35in}3.8.5\hspace{0.15in}Model Output \df 3.8-12\\
+\hspace*{0.35in}3.8.6\hspace{0.15in}Special Procedures: Models with Symmetry Planes \df 3.8-13\\
+\hspace*{0.35in}3.8.7\hspace{0.15in}Adaptive Load Step Sizes \df 3.8-14\\
+\hspace*{0.35in}3.8.8\hspace{0.15in}Element Extinction \df 3.8-15\\
+\hspace*{0.35in}3.8.9\hspace{0.15in}Computational Efficiency \df 3.8-15\\
+\hspace*{0.35in}3.8.10\hspace{0.15in}References \df 3.8-15\\
+%
+3.9\hspace{0.15in}Material Model Type: \ti{mises\_hydrogen}  \df 3.9-1\\
+\hspace*{0.35in}3.9.1\hspace{0.15in}Hydrogen Concentration in Metals \df 3.9-1\\
+\hspace*{0.35in}3.9.2\hspace{0.15in}Hydrogen Effect on the Stress-Strain Curve \df 3.9-3\\
+\hspace*{0.35in}3.9.3\hspace{0.15in}Model Properties \df 3.9-3\\
+\hspace*{0.35in}3.9.4\hspace{0.15in}Model Output \df 3.9-4\\
+\hspace*{0.35in}3.9.5\hspace{0.15in}Example \df 3.9-5\\
+\hspace*{0.35in}3.9.6\hspace{0.15in}Plasticity Algorithms \df 3.9-5\\
+%
+3.10\hspace{0.10in}Material Model Type: \ti{cyclic (plasticity)}  \df 3.10-1\\
+\hspace*{0.35in}3.10.1\hspace{0.15in}Stress-Strain Curves \df 3.10-2\\
+\hspace*{0.35in}3.10.2\hspace{0.15in}Model Properties \df 3.10-3\\
+\hspace*{0.35in}3.10.3\hspace{0.15in}Model Output \df 3.10-6\\
+\hspace*{0.35in}3.10.4\hspace{0.15in}Element Blocking \df 3.10-8\\
+\hspace*{0.35in}3.10.5\hspace{0.15in}Examples \df 3.10-8\\
+\hspace*{0.35in}3.10.6\hspace{0.15in}Plasticity Algorithms - Overview \df 3.10-10\\
+\hspace*{0.35in}3.10.7\hspace{0.15in}nonlinear\_hardening option \df 3.10-11\\
+\hspace*{0.35in}3.10.8\hspace{0.15in}generalized\_plasticity option \df 3.10-14\\
+\hspace*{0.35in}3.10.9\hspace{0.15in}Subincrementation for both cyclic options \df 3.10-17\\
+\hspace*{0.35in}3.10.10\hspace{0.15in}Details on 1-D specialization of 3-D plasticity formulation \df 3.10-20\\
+\hspace*{0.35in}3.10.11\hspace{0.15in}References \df 3.10-29\\
+%
+3.11\hspace{0.10in}Material Model Type: \ti{umat}  \df 3.11-1\\
+\hspace*{0.35in}3.11.1\hspace{0.15in}Mass \df 3.11-1\\
+\hspace*{0.35in}3.11.2\hspace{0.15in}Temperature Effects \df 3.11-2\\
+\hspace*{0.35in}3.11.3\hspace{0.15in}Model Output \df 3.11-2\\
+\hspace*{0.35in}3.11.4\hspace{0.15in}Element Blocking \df 3.11-3\\
+\hspace*{0.35in}3.11.5\hspace{0.15in}References \df 3.11-3\\
+%
+3.12\hspace{0.10in}Material Model Type: \ti{cp (crystal plasticity)}  \df 3.12-1\\
+\hspace*{0.35in}3.12.1\hspace{0.15in}Kinematics \df 3.12-2\\
+\hspace*{0.35in}3.12.2\hspace{0.15in}Stress Update \df 3.12-6\\
+\hspace*{0.35in}3.12.3\hspace{0.15in}Consistent Tangent (Symmetry/Asymmetry) \df 3.12-7\\
+\hspace*{0.35in}3.12.4\hspace{0.15in}Work Hardening \df 3.12-8\\
+\hspace*{0.35in}3.12.5\hspace{0.15in}Crystal Definition \df 3.12-13\\
+\hspace*{0.35in}3.12.6\hspace{0.15in}Material Definition \df 3.12-16\\
+\hspace*{0.35in}3.12.7\hspace{0.15in}Model Output: Printed, Flat Files \df 3.12-19\\
+\hspace*{0.35in}3.12.8\hspace{0.15in}Model Output: State Variables - Flat Files \df 3.12-20\\
+\hspace*{0.35in}3.12.9\hspace{0.15in}Model Output: State Variables - Patran Files \df 3.12-22\\
+\hspace*{0.35in}3.12.10\hspace{0.15in}Examples \df 3.12-23\\
+\hspace*{0.35in}3.12.11\hspace{0.15in}References \df 3.12-27\\
+%
+3.13\hspace{0.10in}Material Model Type: \ti{creep}  \df 3.13-1\\
+\hspace*{0.35in}3.13.1\hspace{0.15in}Stress Update and Material Tangent \df 3.13-2\\
+\hspace*{0.35in}3.13.2\hspace{0.15in}Model Properties \df 3.13-2\\
+\hspace*{0.35in}3.13.3\hspace{0.15in}Model Output: Printed, Flat, Patran Files of Strains-StressesConsistent \df 3.13-2\\
+\hspace*{0.35in}3.13.4\hspace{0.15in}Model Output: State Variables Ð Flat Files \df 3.13-4\\
+\hspace*{0.35in}3.13.5\hspace{0.15in}Examples \df 3.13-4\\
+\hspace*{0.35in}3.13.6\hspace{0.15in}Potential Numerical Issues\df 3.13-5\\
+\\
+\\
+%
+%            --------------------  Chapter 4 ---------------------------
+%
+\needspace{2\baselineskip}
+\nin \tb{Chapter 4 \hspace{0.15in} Domain Integrals} \df \tb{4.1-1}\\
+\\
+4.1\hspace{0.15in}Introduction  \df 4.1-1 \\
+4.2\hspace{0.15in}Background  \df 4.2-1 \\
+\hspace*{0.35in}4.2.1\hspace{0.15in}Local Energy Release Rates \df 4.2-1 \\
+\hspace*{0.35in}4.2.2\hspace{0.15in}Domain Integral Formulation \df 4.2-2 \\
+\hspace*{0.35in}4.2.3\hspace{0.15in}Domain Form of the $J$-Integral: Discussion \df 4.2-4 \\
+4.3\hspace{0.15in}Numerical Procedures  \df 4.3-1 \\
+\hspace*{0.35in}4.3.1\hspace{0.15in}Definition of the $q$-Function \df 4.3-1 \\
+\hspace*{0.35in}4.3.2\hspace{0.15in}Volume Integrals \df 4.3-2 \\
+\hspace*{0.35in}4.3.3\hspace{0.15in}Crack Face Traction Integral \df 4.3-2 \\
+\hspace*{0.35in}4.3.4\hspace{0.15in}Crack Front Nodes \df 4.3-3 \\
+\hspace*{0.35in}4.3.5\hspace{0.15in}Computation of Aq \df 4.3-4 \\
+\hspace*{0.35in}4.3.6\hspace{0.15in}Output From Computations \df 4.3-4 \\
+4.4\hspace{0.15in}Commands for Domain Integrals  \df 4.4-1 \\
+\hspace*{0.35in}4.4.1\hspace{0.15in}Outline of Process \df 4.4-1 \\
+\hspace*{0.35in}4.4.2\hspace{0.15in}Input Error Correction \df 4.4-1 \\
+\hspace*{0.35in}4.4.3\hspace{0.15in}Components of a Domain Definition \df 4.4-1 \\
+\hspace*{0.35in}4.4.4\hspace{0.15in}Initiating a Domain Definition \df 4.4-2 \\
+\hspace*{0.35in}4.4.5\hspace{0.15in}Crack Plane Orientation \df 4.4-2 \\
+\hspace*{0.35in}4.4.6\hspace{0.15in}Crack Front Tangent Vector (Optional) \df 4.4-3 \\
+\hspace*{0.35in}4.4.7\hspace{0.15in}Symmetric Option \df 4.4-3 \\
+\hspace*{0.35in}4.4.8\hspace{0.15in}Crack Front Nodes \df 4.4-4 \\
+\hspace*{0.35in}4.4.9\hspace{0.15in}Specification of $q$-Values \df 4.4-5 \\
+\hspace*{0.35in}4.4.10\hspace{0.15in}Printing Options \df 4.4-10 \\
+\hspace*{0.35in}4.4.11\hspace{0.15in}Integration Order \df 4.4-11 \\
+\hspace*{0.35in}4.4.12\hspace{0.15in}Face Loading \df 4.4-11 \\
+\hspace*{0.35in}4.4.13\hspace{0.15in}Domain Verification \df 4.4-11 \\
+\hspace*{0.35in}4.4.14\hspace{0.15in}Debugging Domain Computations \df 4.4-11 \\
+\hspace*{0.35in}4.4.15\hspace{0.15in}Binary Packet Output \df 4.4-11 \\
+\hspace*{0.35in}4.4.16\hspace{0.15in}Conversion of $ J$-Values to $K$-Values \df 4.4-12 \\
+\hspace*{0.35in}4.4.17\hspace{0.15in}Complete Examples \df 4.4-12 \\
+4.5\hspace{0.15in}$J$-Values for Functionally Graded Materials  \df 4.5-1 \\
+\hspace*{0.35in}4.5.1\hspace{0.15in}Derivative of Stress Work Density \df 4.5-1 \\
+\hspace*{0.35in}4.5.2\hspace{0.15in}Analytical Forms fo the Explicit Derivative \df 4.5-1 \\
+\hspace*{0.35in}4.5.3\hspace{0.15in}A General Expression for the Explicit Derivative \df 4.5-2 \\
+\hspace*{0.35in}4.5.4\hspace{0.15in}Numerical Evaluation of General Expression Explicit Derivative \df 4.5-3 \\
+\hspace*{0.35in}4.5.5\hspace{0.15in}Output from Computations \df 4.5-4 \\
+\hspace*{0.35in}4.5.6\hspace{0.15in}Domain Definition Options \df 4.5-4 \\
+\hspace*{0.35in}4.5.7\hspace{0.15in}Automatic and User-Defined Domains \df 4.5-4 \\
+4.6\hspace{0.15in}The Interaction Integrals  \df 4.6-1 \\
+\hspace*{0.35in}4.6.1\hspace{0.15in}Formulation \df 4.6-1 \\
+\hspace*{0.35in}4.6.2\hspace{0.15in}Auxiliary Fields for Stress Intensity Factors \df 4.6-3 \\
+\hspace*{0.35in}4.6.3\hspace{0.15in}Calculation of Stress Intensity Factors \df 4.6-5 \\
+\hspace*{0.35in}4.6.4\hspace{0.15in}Auxiliary Fields for $T$-Stresses \df 4.6-6 \\
+\hspace*{0.35in}4.6.5\hspace{0.15in}Calculation of $T$-Stresses \df 4.6-6 \\
+\hspace*{0.35in}4.6.6\hspace{0.15in}Numerical Procedures \df 4.6-7 \\
+\hspace*{0.35in}4.6.7\hspace{0.15in}Domain Definition Options for Interaction Integrals \df 4.6-11 \\
+\hspace*{0.35in}4.6.8\hspace{0.15in}Output from Computations \df 4.6-12 \\
+\hspace*{0.35in}4.6.9\hspace{0.15in}Complete Examples \df 4.6-132 \\
+\\
+\\
+%
+%            --------------------  Chapter 5 ---------------------------
+%
+\needspace{2\baselineskip}
+\nin \tb{Chapter 5 \hspace{0.15in} Crack Growth Procedures} \df \tb{5.1-1}\\
+\\
+5.1\hspace{0.15in}Introduction  \df 5.1-1 \\
+5.2\hspace{0.15in}Crack Growth by Element Extinction  \df 5.2-1 \\
+\hspace*{0.35in}5.2.1\hspace{0.15in}Damage Criteria \df 5.2-1 \\
+\hspace*{0.35in}5.2.2\hspace{0.15in}General Input Commands \df 5.2-2 \\
+\hspace*{0.35in}5.2.3\hspace{0.15in}Damage Criteria Commands \df 5.2-3 \\
+\hspace*{0.35in}5.2.4\hspace{0.15in}Adaptive Load Control (gurson control) \df 5.2-4 \\
+\hspace*{0.35in}5.2.5\hspace{0.15in}Automatic Load Reduction (smcs control) \df 5.2-4 \\
+\hspace*{0.35in}5.2.6\hspace{0.15in}Extinction Algorithm \df 5.2-5 \\
+\hspace*{0.35in}5.2.7\hspace{0.15in}Release Models for Element Forces \df 5.2-6 \\
+\hspace*{0.35in}5.2.8\hspace{0.15in}Meshing Restrictions \df 5.2-8 \\
+5.3\hspace{0.15in}Crack Growth by Node Release  \df 5.3-1 \\
+\hspace*{0.35in}5.3.1\hspace{0.15in}Geometry Requirements \df 5.3-2 \\
+\hspace*{0.35in}5.3.2\hspace{0.15in}Input Commands \df 5.3-4 \\
+\hspace*{0.35in}5.3.3\hspace{0.15in}Release Models for Reaction Forces \df 5.3-9 \\
+\hspace*{0.35in}5.3.4\hspace{0.15in}Node Release Algorithm \df 5.3-12 \\
+\hspace*{0.35in}5.3.5\hspace{0.15in}Analysis Guidelines \df 5.3-13 \\
+5.4\hspace{0.15in}Crack Growth Using Interface-Cohesive Elements  \df 5.4-1 \\
+\hspace*{0.35in}5.4.1\hspace{0.15in}General Input Commands \df 5.4-1 \\
+\hspace*{0.35in}5.4.2\hspace{0.15in}Adaptive Load Control \df 5.4-2 \\
+\hspace*{0.35in}5.4.3\hspace{0.15in}Element Extinction \df 5.4-4 \\
+\hspace*{0.35in}5.4.4\hspace{0.15in}Extinction Algorithm \df 5.4-5 \\
+\hspace*{0.35in}5.4.5\hspace{0.15in}Release Model for Interface Element Forces \df 5.4-5 \\
+\hspace*{0.35in}5.4.6\hspace{0.15in}Examples \df 5.4-5 \\
+\\
+\\
+%
+%            --------------------  Chapter 6 ---------------------------
+%
+\needspace{2\baselineskip}
+\nin \tb{Chapter 6 \hspace{0.15in} Contact Procedures} \df \tb{6.1-1}\\
+\\
+6.1\hspace{0.15in}Introduction  \df 6.1-1 \\
+6.2\hspace{0.15in}Numerical Procedures  \df 6.2-1 \\
+\hspace*{0.35in}6.2.1\hspace{0.15in}Overview of Penalty Method \df 6.2-1 \\
+\hspace*{0.35in}6.2.2\hspace{0.15in}Contact Detection/Calculation \df 6.2-2 \\
+\hspace*{0.35in}6.2.3\hspace{0.15in}Penetration of Multiple Contact Surfaces \df 6.2-5 \\
+\hspace*{0.35in}6.2.4\hspace{0.15in}Parallel Implementation \df 6.2-5 \\
+6.3\hspace{0.15in}Commands for Contact  \df 6.3-1 \\
+\hspace*{0.35in}6.3.1\hspace{0.15in}Outline of Process \df 6.3-1 \\
+\hspace*{0.35in}6.3.2\hspace{0.15in}Initiating Contact Definition \df 6.3-1 \\
+\hspace*{0.35in}6.3.3\hspace{0.15in}Description of Contact Surfaces \df 6.3-1 \\
+\hspace*{0.35in}6.3.4\hspace{0.15in}Utility Commands \df 6.3-5 \\
+\hspace*{0.35in}6.3.5\hspace{0.15in}Notes on Multiple Contacting Surfaces \df 6.3-5 \\
+\hspace*{0.35in}6.3.6\hspace{0.15in}Complete Examples \df 6.3-5 \\
+6.4\hspace{0.15in}Tips for Analyses Using Rigid Contact  \df 6.4-1 \\
+6.5\hspace{0.15in}Example Analyses Using Contact  \df 6.5-1 \\
+\hspace*{0.35in}6.5.1\hspace{0.15in}Rolling of a Metal Bar \df 6.5-1 \\
+\hspace*{0.35in}6.5.2\hspace{0.15in}Crushing of a Pipe \df 6.5-1 \\
+\hspace*{0.35in}6.5.3\hspace{0.15in}Crack Closure in a Pin-Loaded C(T) Specimen \df 6.5-3 \\
+\\
+\\
+%
+%            --------------------  Chapter 7 ---------------------------
+%
+\needspace{2\baselineskip}
+\nin \tb{Chapter 7 \hspace{0.15in}  Parallel Execution } \df \tb{7.1-1}\\
+\\
+7.1\hspace{0.15in}Introduction  \df 7.1-1 \\
+\hspace*{0.35in}7.1.1\hspace{0.15in}Threads and Shared Memory \df 7.1-1 \\
+\hspace*{0.35in}7.1.2\hspace{0.15in}Hybrid System (MPI+Threads) \df 7.1-2 \\
+\hspace*{0.35in}7.1.3\hspace{0.15in}Summary \& Recommendations \df 7.1-3 \\
+7.2\hspace{0.15in}Threads-Only Execution (Windows, Linux, OS X)  \df 7.2-1 \\
+\hspace*{0.35in}7.2.1\hspace{0.15in}Windows \df 7.2-1 \\
+\hspace*{0.35in}7.2.2\hspace{0.15in}Linux and OS X \df 7.2-2 \\
+7.3\hspace{0.15in}Solutions with Domain Decomposition: Linux Only  \df 7.3-1 \\
+\hspace*{0.35in}7.3.1\hspace{0.15in}Commands to Start Execution \df 7.3-3 \\
+\hspace*{0.35in}7.3.2\hspace{0.15in}Extensions to Blocking Command \df 7.3-3 \\
+\hspace*{0.35in}7.3.3\hspace{0.15in}Extensions of \textit{patwarp} to Support Domain Decomposition \df 7.3-3 \\
+\hspace*{0.35in}7.3.4\hspace{0.15in}Manager-Worker Parallel Architecture \df 7.3-4 \\
+\hspace*{0.35in}7.3.5\hspace{0.15in}Generation of Patran Result Files \df 7.3-5 \\
+\hspace*{0.35in}7.3.6\hspace{0.15in}Generation of Restart Files \df 7.3-6 \\
+\hspace*{0.35in}7.3.6\hspace{0.15in}Summary of Parallel Tasks with Domain Decomposition \df 7.3-6 \\
+\\
+%
+%            --------------------  Appendicies ---------------------------
+%
+\needspace{2\baselineskip}
+\nin \tb{Appendix A: \hspace{0.15in}  Patran Results File Format } \df \tb{A.1}\\
+\\
+\nin \tb{Appendix B: \hspace{0.15in}  References } \df \tb{B.1}\\
+\\
+\nin \tb{Appendix C: \hspace{0.15in}  Patran-to-WARP3D Translator (\textit{patwarp}) } \df \tb{C.1}\\
+\\
+\nin \tb{Appendix D: \hspace{0.15in}  Tips on Modeling Fracture Specimens} \df \tb{D.1}\\
+\\
+\nin \tb{Appendix E: \hspace{0.15in}  Combine Patran Files After Parallel Execution } \df \tb{E.1}\\
+\\
+\nin \tb{Appendix F: \hspace{0.15in}  Binary Packets File} \df \tb{F.1}\\
+\\
+\nin \tb{Appendix G: \hspace{0.15in}  Treatment of Cohesive/Interface Elements in
+ Patran Result Files  } \df \tb{G.1}\\
+\\
+\nin \tb{Appendix H: \hspace{0.15in}  Supported Computer Platforms } \df \tb{H.1}\\
+\\
+\nin \tb{Appendix I: \hspace{0.15in}  Abaqus Compatible UMAT \& Other USER Routines} \df \tb{I.1}\\
+\\
+\nin \tb{Appendix J: \hspace{0.15in} Crystal Plasticity Model: Derivation \& Formulation} \df \tb{J.1}\\
+\\
+\nin \tb{Appendix K: \hspace{0.15in} Flat Model \&  Result Files for Python, Excel, Matlab \& Others} \df \tb{K.1}\\
+
+
+\end{document}
+
+

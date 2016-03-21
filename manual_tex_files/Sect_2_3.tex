@@ -1,0 +1,178 @@
+%!TEX TS-program=pdflatexmk
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Element Properties}}}
+\fancyfoot[L] {\small{\ti{Chapter {\thechapter}}\ \   (Updated: 12-15-2011)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\ti{Model Definition}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newenvironment{offsetpar}[1]
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{figure}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{2}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%
+%--------------------------------------
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+
+\begin{document}
+
+%
+%------------------------------------------------------------------------------
+\section{Element Types and Properties}
+%------------------------------------------------------------------------------
+
+\noindent The \ti{types} of finite elements and their properties are specified 
+prior to any compute requests. An elements command on a separate line initiates 
+the element definition sequence. Any number lines may follow to 
+define the types and properties of all elements in the model. 
+The definition of an element requires the following information:
+\squishlist
+\item the ``type" of element (\eg \ti{l3disop}, \ti{ts15isop}, etc.)\item	the kinematic formulation (small or large displacements)\item	reference to a previously defined ``material" that defines linear-elastic 
+properties, mass density and the nonlinear properties (if required)\item	a list of element property identifiers and associated values, \eg
+the order of numerical integration
+\squishend
+\noindent The command syntax is
+\begin{align*}
+&\hv{\ul{elements}}\\
+&\quad  \hv{<element\ nos.:list>}\ \hv{\ul{type}}\ \hv{<element\ type:label>}
+\begin{Bmatrix}
+\hv{\ul{linear}} \\ \hv{\ul{nonlinear}}
+\end{Bmatrix}
+\hv{(,)}\\
+& \qquad \qquad \hv{\ul{material}\ <matl\ id:label>  
+\left[ <elem\ prop\ id:label><value> (,)\right]}
+\end{align*}
+\noindent The logical input line may be continued over multiple 
+physical input lines with commas at any point. Subsequent sections in 
+Chapter 3 define the ``type" of elements currently available and the 
+properties available for each element type. Element properties 
+typically have a property keyword followed by a value. 
+Some element properties are ``logical" values which take 
+on ``true" values by the presence of the keyword.
+
+The keyword \ti{linear} requests a conventional small-displacement, small-strain kinematic 
+formulation. This is the default formulation and is adopted if no specification is given. 
+The keyword \ti{nonlinear} requests a geometric nonlinear formulation that 
+models large rotations and finite strains.
+Every element must have an associated material. Materials must 
+be specified prior to their use in element specification.
+An example of elements specification is
+\small \begin{verbatim}
+   elements 
+     1Ð40 type l3disop linear material a36 center_output bbar,             order 2x2x2 
+     500Ð1000, 1200Ð200 by Ð2 q3disop nonlinear material al_2024t,             order 14pt_rule long\end{verbatim}\normalsize
+
+\noindent Once defined, the specification for an element 
+cannot be modified at any further point in the analysis.
+
+
+
+
+\end{document}
+
+

@@ -1,0 +1,793 @@
+%
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{hyphenat}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{User's Guide - \textit{WARP3D}}
+\rhead{\textit{Nodal Constraints and Nodal Releases}}
+\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 4-22-2015)}}
+\fancyfoot[C] {\thesection-\thepage}
+\fancyfoot[R] {\textit{Model Definition}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\frenchspacing
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%
+%----------------------------------------------
+
+%---------  local commands ---------------------
+
+\newcommand{\tb} {\textbf}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\noi}{\noindent}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{2}
+\setcounter{section}{6}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%--------------------------------------
+%--------------------------------------
+%---------------------------------------
+
+\begin{document}
+
+\section{Nodal Constraints and Nodal Releases}
+
+\noindent \bf{\ti{Constraints}}\rm
+
+\noi WARP3D currently supports three types of displacement constraints 
+applied to the model nodes:
+
+\squishlist
+\item \ti{\ul{Absolute}}:  zero or non-zero value imposed in a specified direction at a node. 
+The direction may be in the global, Cartesian system or in a user-specified (local) 
+coordinate system at a node
+
+\item \ti{\ul{Multi-point}}:	a specified linear relationship between two or more displacement 
+components at the same or multiple nodes expressed in the global Cartesian system. 
+These are often termed relative constraints or multi-point constraints (MPCs).
+
+\item \ti{\ul{Tie-mesh}}: used to ``tie" together multiple pairs of surfaces throughout the 
+analysis. The two surfaces must be geometrically identical (to within a 
+tolerance) but may be (and most often are) topologically dissimilar. 
+This capability enables very convenient mesh transitions and the 
+connection of a mesh region made of hex elements, for example, to a 
+mesh region made of tet elements. The tie-mesh capability is implemented through multi-point
+constraints.
+\squishend
+
+ The input sequence to initiate the definition \ti{absolute}
+and \ti{multi-point} nodal constraint 
+data is the \ti{constraints} command. The input translator destroys \ti{all} previously 
+defined absolute and multi-point constraint data upon encountering this 
+command. Thus to modify constraints between load (time) steps, 
+all the constraints must be specified -- not just the constraints that have changed. 
+
+Two different types of commands are used to define the \ti{tie-mesh} constraints 
+as described in a subsection below. Commands for tie-mesh constraints are 
+processed independently of the \ti{constraints} command -- we include 
+the description here as the end result of the tie-mesh processing is 
+a set of automatically generated MPCs. Tie-mesh input is unaffected by
+model input entered under the \ti{constraints} command.
+
+
+
+To simplify input, we recommend that all absolute constraints be 
+specified first, followed by the multi-point constraint equations. 
+The keyword \ti{multipoint} separates the two types of constraints. 
+The input translators delete previously defined MPCs upon 
+encountering the keyword \ti{multipoint}.
+\begin{align*}
+& \hv{\ul{constraint}s}\\
+& \quad \hv{<absolute\ constraint>}\\
+& \quad \hv{<absolute\ constraint>}\\
+& \quad \hv{<absolute\ constraint>}\\
+& \qquad  \cdot \\
+& \qquad \cdot \\
+& \hv{\ul{multi}point}\\
+& \quad \hv{<multipoint\ constraint\ equation>}\\
+& \quad \hv{<multipoint\ constraint\ equation>}\\
+& \qquad  \cdot \\
+& \qquad \cdot
+\end{align*}
+
+\noindent \bf{\ti{Release Nodes}}\rm
+
+\noi Once \ti{absolute} constraints have been imposed, they maybe subsequently 
+removed from
+the model through the \ti{release nodes} command. The release process 
+is implemented to allow 
+the reaction forces present at the time of the release to be decreased slowly to zero over
+some specified number of future load (time) steps. Reactions may be released
+fully in the next load (time) step if desired. This capability allows much additional flexibility
+in describing the boundary condition history imposed on a model. No such feature is 
+implemented at present for multi-point and tie-mesh constraints.
+
+To provide data requesting the removal of constraint components at nodes, the
+input sequence begins with the \ti{release nodes} command Section \ref{sec:releasends}.
+
+
+%--------------------------------------
+\subsection{Absolute Constraints in Global Coordinates}
+%--------------------------------------
+\noi The simplest command to define absolute constraints in 
+the global Cartesian system has the syntax
+\begin{align*}
+& \hv{\ul{constraint}s} \\
+&\hv{<node\ list:list>}\ \left [
+\begin{Bmatrix}
+\hv{\ul{u}} \\ \hv{\ul{v}}\\ \hv{\ul{w}}
+\end{Bmatrix}
+\hv{(=)<constraint\ value:numr>}(,) \right ]
+\end{align*}
+\noi where the node list may also be one of the user-defined, named
+lists of nodes (see Section 2.16). Examples of global constraints using this command include:
+
+\small
+\begin{verbatim}
+      constraints
+         1-100 by 3 w 4.3 v 0 u 0
+         24 u = -1.3 w 0.0
+         'end_nodes' u 0 v 0
+\end{verbatim}
+\normalsize
+
+\noi To simplify the specification of constraints for all nodes that 
+lie on a certain coordinate plane of the model, the list of nodes followed 
+by a list of directions and constraint values in the 
+above command may be replaced by the following:
+\begin{align*}
+  &\hv{\ul{plane}}\ 
+    \begin{Bmatrix}
+          \hv{\ul{x}} \\ \hv{\ul{y}}\\ \hv{\ul{z}}
+    \end{Bmatrix}
+  \hv{=\ <coord\ value:numr>}\ \hv{<constraint\ value(s)>}\ (\hv{<proximity>})\ \hv{(\ul{verify})}
+\end{align*}
+\noi where the $\hv{<constraint\ value(s)>}$ can have one of several forms
+\begin{align*}
+    \begin{Bmatrix}
+          \hv{\ul{fixed}} \\ \hv{\ul{symmetry}}
+    \end{Bmatrix}
+  \qquad \hv{\ti{or}}\qquad   \left [
+    \begin{Bmatrix}
+          \hv{\ul{u}} \\ \hv{\ul{v}}\\ \hv{\ul{w}}
+    \end{Bmatrix}
+   \hv{ (=)\ <displacement\ value:numr>} \right ]
+\end{align*}
+\noi The \ti{fixed} option sets $u=v=w=0$ for all nodes located on the specified plane.
+The \ti{symmetry} option imposes $u=0$ for all nodes located on the specified $x=constant$ plane,
+$v=0$ for all nodes located on the specified $y=constant$ plane, or $w=0$ for all nodes located 
+on the specified $z=constant$ plane. Displacement components may be assigned 
+prescribed values for all nodes located on a plane normal to one of the
+global coordinate axes. The \ti{verify} option 
+provides a table of constraints imposed as a result of the \ti{plane} command. 
+
+The tolerance employed in the test to determine if a node resides on the specified
+plane is set in one of two approaches: 
+\squishlist
+\item \ti{user-specified proximity distance}:  The ($<$proximity$>$) option shown above is
+\begin{align*}
+  &\hv{\ul{prox}imity}\  \hv{<absolute\ distance>}
+\end{align*}
+\noi which sets the comparison distance directly.
+
+\item \ti{default relative}: the code computes the maximum extent of the model in each
+of the coordinate directions $X, Y, Z$ multiplied by $10^{-5}$ to set the 
+proximity test distance separately for each of the three planes.
+\squishend
+
+\noi The number of nodes affected by the \ti{plane} command is always 
+printed for reference as are the proximity test distances. 
+Examples of the \ti{plane} command include
+
+\small
+\begin{verbatim}
+     plane x = -1.3 fixed verify
+     plane y = 0 symmetry  proximity 0.001
+     plane z = 200 u = -0.0001 w 0.0 verify
+\end{verbatim}
+\normalsize
+
+%--------------------------------------
+\subsection{Nonglobal, Absolute Constraints}
+\label{sec:nonglobal}
+%--------------------------------------
+The capability to specify constraints in non-global coordinates 
+enables the analysis of skew supports, for example, that arise 
+naturally in structural systems or in 3-D models of axisymmetric structures. 
+To define constraints in a non-global Cartesian system, consider the simple 
+problem shown in the Fig. \ref{fig:transform}. Here the global and local $z$ axes are 
+aligned but the local and global $x, y$ axes are not aligned. The user 
+defines a $3 \times 3$ rotation matrix of direction cosines which transforms 
+global vector quantities into the local coordinate system. 
+The boundary condition shown becomes simply $u=0$ in the local 
+coordinate system. Transformation matrices are specified with 
+the command sequence: 
+\begin{align*}
+& \hv{\ul{constraint}s} \\
+& \hv{\ul{trans}formation\ \ul{matrix}\ <node\ list:list>} \\
+&\quad \left [
+\begin{Bmatrix}
+\hv{{row\_1}} \\ \hv{{row\_2}}\\ \hv{{row\_3}}
+\end{Bmatrix}
+\  \left [ \hv{<direction\ cosines:numr>}\right ] \right ]
+\end{align*}
+\noi where any number of nodes may be associated with the specified 
+transformation matrix; the \ti{transformation matrix} command may be repeated 
+as necessary within the \ti{constraints} definition. In this example, the constraint 
+is specified immediately following definition of the transformation matrix 
+although this is not required.
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[trim = 1in 6.5in 1in 1.3in, clip, scale=0.9,angle=0]{fig_transform_matrix.pdf} 
+\caption{{\small Fig. \thefigure\ Example of local coordinate system for constraint specification.}
+\label{fig:transform}}
+%
+\end{center}
+\end{figure}
+%
+
+The input system verifies that the rotation matrix specified is 
+orthogonal and that the matrix pre-multiplied by its transpose 
+becomes an identity matrix to within a tight tolerance. 
+
+As in the above example, users specify constraints in the \ti{local} 
+coordinate system defined for the nodes. The \ti{plane} option for specification 
+of constraints may be combined with the transformation matrix option. 
+The specified $x, y,$ or $z$ plane remains a global plane 
+but the specified constraints for nodes on the plane take on 
+the meaning of any local coordinate system defined at the node
+through the transformation matrix.
+
+These local coordinate systems apply only during the specification of 
+constraints. Nodal loads and 
+element loads must always be specified in global coordinates. 
+All nodal output quantities produced by WARP3D are in global coordinates.
+
+%--------------------------------------
+\subsection{Multi-Point Constraints (MPCs)}
+%--------------------------------------
+These constraints provide a convenient approach to enforce a linear 
+relationship between displacement components at a single node or 
+across multiple nodes. At present, the MPC capability supports: 
+\squishlist
+\item homogeneous equations -- the right-hand side
+must be zero, 
+\item none of the terms may also appear
+in an absolute constraint (which effectively makes the 
+equation non-homogeneous)\footnote{The current 
+homogeneous requirement limits considerably the ability to impose all but the simplest
+Periodic Boundary conditions (PBCs), for example, in analyses of representative
+volume elements (RVEs) having periodicity properties. Alternative 
+strategies to impose general PBCs in 3D as described in  [\ref{R:KGB2006}], for example,
+are under development. }, and 
+\item  the constraints refer to displacement
+components in the global coordinate system.
+\squishend
+
+Each multi-point constraint ``equation" 
+is specified with input having the form
+\begin{align*}
+& \hv{\ul{constraint}s} \\
+& \hv{<absolute\ constraint>} \\
+&\qquad \hv{\cdot} \\
+&\qquad  \hv{\cdot} \\
+& \hv{\ul{multi}point} \\
+&\quad \left [ 
+    \begin{Bmatrix}
+         \hv{{+}} \\ \hv{{-}}
+    \end{Bmatrix}
+\hv{<node\ id:integer>\ <coefficient:real>}
+    \begin{Bmatrix}
+         \hv{{u}} \\ \hv{{v}}\\ \hv{{w}}
+    \end{Bmatrix}
+\  (,) 
+\right ] = 0.0
+\end{align*}
+\noi Examples of multi-point constraints include
+
+\small
+\begin{verbatim}
+   - 9954 1.0 u - 9954 1.0 v = 0.0
+    175 -1.0 w + 533 4.3 w + 542 -5.7 u = 0.0
+ - 300 1.4 u + 927 1.0 v,
+           - 9340 1.0 w + 10821 1.4 u = 0
+\end{verbatim}
+\normalsize
+
+\noi Note that only one node number may precede each $\hv{<coefficient>}$ 
+and that the coefficient must be type $\hv{<real>}$. There is no 
+default value of 1.0 for the 
+$\hv{<coefficient>}$; the $\hv{<coefficient>}$ must be specified as in the first 
+example equation above. A space is required on each side of the $+,-$ 
+sign for the pre-multiplier terms as indicated in these examples -- prevents the
+immediately following node number from 
+being interpreted as a negative integer. To continue long equations 
+over multiple input lines, insert the comma and line break after 
+a direction specifier as in the above example.
+
+In the enforcement of multipoint constraints, WARP3D adopts a modified version of the 
+approach described in [\ref{R:AS1979}] . Displacements appearing in multi-point (and tie-mesh) constraints
+are separated into dependent and independent terms. The incremental equilibrium equations
+are modified to eliminate the dependent displacements, the equations solved and the dependent
+terms recovered immediately from the constraint equations. WARP3D does not use the 
+formal method of Lagrange multipliers which increases the number of equations by the
+number of multi-point/tie-mesh constraints. The processors examine constraint equations and
+sort out which displacements should be treated as dependent and independent. In simple two-term equations,
+the last displacement listed in
+each equation is taken as the independent  term.
+When the multi-point constraint equations contain many terms, the selection of dependent/independent
+terms becomes non-unique. The equation solving process may fail, requiring the user to try
+a different ordering of terms in the multi-point constraints. This does not happen with tie-mesh constraints,
+only the user-specified constraints.
+
+User-specified multi-point constraints are frequently employed to enforce all nodes on a surface of the mesh
+to have the same displacement component. For example, consider a mesh
+with an external surface on $Y=1.0$. The user desires that all nodes on this surface have
+the same $v$ displacement.  Pick one node on the surface, say node 75, to have the independent 
+displacement. Other nodes on the surface, for example, 2, 30, 120, 152 etc, then have 
+dependent $v$ displacements.
+Input to define these constraints is then
+\small
+\begin{verbatim}
+       2 1.0 v - 75 1.0 v = 0
+       30 1.0 v - 75 1.0 v = 0
+      120 1.0 v - 75 1.0 v = 0
+      152 1.0 v - 75 1.0 v = 0
+\end{verbatim}
+\normalsize
+
+
+
+
+In dynamic analyses, the computed displacements satisfy 
+the MPCs exactly as in static analyses. The Newmark time-history 
+integration procedure generates the nodal velocities and accelerations. 
+The computed velocities also satisfy the linear relationships specified 
+in the MPCs for geometrically linear solutions 
+but the accelerations approximately satisfy the relationships.
+
+In the coming releases, new commands will be added 
+here to generate automatically the most common types of 
+MPC equations, \eg to make the displacements identical at 
+two nodes, to make the displacements at a node 
+the average of displacements at two adjacent nodes.
+
+%--------------------------------------
+\subsection{Constraints in Nonlinear Analyses}
+%--------------------------------------
+In a nonlinear analysis, the current constraints define 
+the \ti{incremental} changes to be imposed over the next load step
+(and time step). Non-zero absolute constraints are enforced during the first 
+iterative cycle for the load step. In subsequent iterations, no 
+further displacement change occurs on the constrained 
+displacements to maintain the value of the specified 
+increment or the linear, MPC relationship.
+
+By default, the current set of absolute constraints with a multiplier of 
+1.0 are imposed during each nonlinear load step. Alternatively, 
+the multiplier for constraint increments over load step may be
+included in the definition of the loading step (see Section 2.8.5).
+  
+%--------------------------------------
+\subsection{	Display of Current Constraint Data}
+%--------------------------------------
+Within the \ti{constraints} command sequence, the \ti{dump}
+command may be specified to request a display (listing) 
+of the current constraints information taken from internal tables.
+
+
+%--------------------------------------
+\subsection{Tie-Mesh Constraints}
+%--------------------------------------
+Quite often in large models, there exists the need to:
+\squishlist
+\item make very coarse transitions in mesh density without 
+using special transition elements
+\item transition from a mesh region of hex elements, for 
+example, to an adjacent region meshed with tet elements
+\squishend
+
+\noi In these cases, the faces of elements on each side 
+of the transition define a geometrically identical surface 
+(within a tolerance) even though no topological congruency 
+exists between element faces on each side of the transition 
+surface. Moreover, the element types 
+may be different on each side of the transition surface.
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[trim = 1in 6.5in 1in 1.5in, clip, scale=0.80,angle=0]{fig_tie_mesh_one.pdf} 
+\caption{{\small Fig. \thefigure\ Simple 2-D illustration of tie-mesh constraints.}
+\label{fig:tie_mesh_1}}
+%
+\end{center}
+\end{figure}
+%
+
+
+Consider the simple 2-D version in Fig. \ref{fig:tie_mesh_1} for purposes of discussion. 
+Here the topmost row of elements (labeled \ti{I, II}) are 8-node (quadratic)
+isoparametrics with linear triangle elements below. The dotted line defines 
+the interface ``edge" for the 2-D case which becomes a ``surface" in the 3-D case. 
+Nodes \ti{A, B, C, D, E} are defined with the top region mesh while nodes 
+\ti{a-e} are defined in the bottom region. The two mesh regions could 
+have been defined by separate working groups, using different meshing programs, etc. 
+Edges \ti{A-B-C} and \ti{C-D-E} are shown here as straight but they can be curved in 
+general for the quadratic elements. The key requirement is that the mesh developers create 
+nodes \ti{a-e} to lie (geometrically) on the interface edge 
+represented by the top elements. 
+The \ti{tie-mesh} processors determine, for example, that 
+node \ti{b} lies at a specific location between nodes \ti{A-B-C} on a 
+certain edge of element \ti{I}. A set of multi-point constraints is 
+constructed to ``tie" node \ti{b} to have the same displacements as 
+that location on edge \ti{A-B-C} of element \ti{I}. The processors
+solve for the parametric coordinate on edge \ti{A-B-C} 
+corresponding to the geometric location of node \ti{b}. 
+The generated multi-point constraints then have the form:
+\begin{align*}
+&u_b = \psi_A u_A + \psi_B u_B + \psi_C u_C \\
+&v_b = \psi_A v_A + \psi_B v_B + \psi_C v_C 
+\end{align*}
+\noi were $\psi_A,\, \psi_B,\, \psi_C$ are numerical constants derived 
+from the edge shape functions for element \ti{I} using the initial 
+geometry of the edge. In 3-D, the $w$ displacement at \ti{b} has a similar constraint.
+
+From the above two MPCs, it is clear that node \ti{b} is the dependent 
+node and that nodes \ti{A-B-C} are the independent nodes.  The $(u,v)$ 
+displacements for node \ti{b} are eliminated prior to solution of the equilibrium equations. 
+It is common terminology to define the edge containing nodes  \ti{A-B-C-D-E}, etc. 
+as a ``master" edge (a master surface in 3-D) and edge \ti{a-b-c-d-e}, etc. 
+as a ``slave" edge (a slave surface in 3-D). Degrees of freedom associated 
+with all nodes on the slave edges (2-D) and slave surfaces (3-D) 
+are taken as dependent and eliminated. Consequently, absolute 
+constraints cannot be imposed on slave nodes.
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[trim = 1in 5.70in 1in 1.3in, clip, scale=0.9,angle=0]{fig_tie_mesh_two.pdf} 
+\caption{{\small Fig. \thefigure\ Simple 3-D illustration of the tie-mesh constraints to 
+couple a quadratic hex mesh to a quadratic tet mesh.
+\label{fig:tie_mesh_2}}}
+%
+\end{center}
+\end{figure}
+%
+
+The above example also illustrates additional features and consequences of 
+the tie-mesh process. The processing routines for tie-mesh readily find 
+that nodes \ti{C} and \ti{c} have identical coordinates and thus the 
+simpler multi-point constraints are generated as $u_c=u_C$ and $v_c=v_C$ 
+(in 3-D, the $w$ displacements are included as well). Now suppose the 
+coordinates specified for node \ti{b} are defined by the user such that it does not 
+lie exactly along the edge \ti{A-B-C}. The tie-mesh processors support a user-defined 
+\ti{tolerance} with an \ti{adjust} option for such situations which allow 
+the processors to re-position node \ti{b} to lie exactly on edge \ti{A-B-C} 
+prior to construction of the multi-point constraints. Finally, this example shows a 
+tie-mesh transition from quadratic elements to linear elements. 
+Such a mesh allows the formation of gaps and overlaps between elements 
+in the deformed configuration since only slave nodes are constrained. 
+Moreover, in this example, there exists a clear gap in the undeformed 
+mesh at node \ti{A} since the triangle edge \ti{a-b} must be straight. This represents 
+poor practice and should be avoided. When the element types on both 
+adjacent surfaces have the same displacement interpolation order, the 
+deformed configuration maintains inter-element displacement compatibility. 
+If a transition from quadratic to linear elements must be used 
+in the mesh, it is recommended that the interface surface 
+be a flat plane to avoid initial (geometric) gaps between the master and slave surfaces.
+
+Figure \ref{fig:tie_mesh_2} shows a typical application of the 
+tie-mesh capability to connect 
+a mesh of 20-node hex elements to a mesh of 10-node tet elements. 
+The more refined mesh of tet elements serves as the slave surface. 
+In this example, the tie-mesh processors generate MPCs of various 
+complexity. The $(u,v,w)$ displacements of node \ti{d} are tied to displacements 
+of nodes $A\rightarrow H$, with the coefficients derived from the 
+quadratic shape functions of the 20-node hex element. 
+Node \ti{a} is simply pinned to node \ti{A}; node \ti{b} is simply 
+pinned to node \ti{B}, etc.
+
+The more refined mesh surface should be chosen as the dependent 
+(slave) surface. If the more coarse mesh surface is chosen as the 
+dependent surface, there could be small elements on the more 
+refined surface not connected to the coarse dependent 
+surface, thereby allowing a gap in the tied mesh connection.
+
+In geometrically nonlinear analyses, the MPCs generated by tie-mesh 
+processors use the undeformed geometry and thus remain
+unchanged during the solution. 
+In the example above, node \ti{d} remains fixed to the same 
+parametric point (\ie material point) on face  $A\rightarrow H$ throughout the solution and 
+thus the MPC coefficients do not change.
+
+The tie-mesh specification involves two sets of commands 
+not connected to the \ti{constraints} command described in the previous sections. 
+First, commands are given to construct \ti{surfaces} composed of faces of 
+elements, where the face numbers correspond to those used to define 
+element loads. Multiple surfaces are usually defined and
+are given names as part of the definition. Second, the \ti(tie) command 
+is specified followed by a listing of pairs of \ti{master-slave} surfaces. 
+The \ti{tie} command has options to set a tolerance for adjusting nodes 
+on the slave surface to match exactly the geometry represented by 
+element faces on the corresponding master surface. Multiple \ti{tie}
+commands may be used, for example, if it becomes necessary 
+to use different values of the tolerance for different surfaces.
+
+\noindent \bf{\ti{Surface Command}}\rm
+
+\noi The \ti{surface} command has the form
+
+\begin{align*}
+& \hv{\ul{surface}\ <surface\ id:label>}\\
+& \quad \hv{<list\ of\ elements:list>\ \ul{face}\ (\ul{abaqus})\ <element\ face\ no:integer>}\\
+& \quad \hv{<list\ of\ elements:list>\ \ul{face}\ (\ul{abaqus})\ <element\ face\ no:integer>}\\
+& \qquad  \cdot \\
+& \qquad \cdot \\
+\end{align*}
+
+\noi Surface definitions are required for each pair of \ti{master} and \ti{slave} sides 
+of the interfaces. The face numbers for hex and tet elements are shown in 
+Fig. \ref{fig:tie_mesh_3}. These numbers correspond to the face numbers used 
+to apply loadings on the elements. The \ti{abaqus} option proves convenient to import
+models available as Abaqus input files. The faces of tet elements are numbered
+identically in Abaqus and WARP3D. Faces 1-3 and 6 are identical for the hex elements.
+Faces (4,5) in WARP3D are numbered (5,4) in Abaqus. Simply append the \ti{abaqus}
+option as indicated; the input translator converts specified Abaqus face numbers to
+WARP3D face numbers.
+An example of this command is 
+
+\small
+\begin{verbatim}
+     surface piece_a
+       47 face 4 abaqus
+       165-320 by 5 1000-1300 by 3 822 844 face 1
+     surface piece_b
+       8000-10000 by 2 12000-15000 by 3 face 3
+       200 face 2
+       300-800 face 4
+\end{verbatim}
+\normalsize
+
+\noi When the specified $\hv{<surface\ id>}$ matches a previously defined surface,
+the existing surface is destroyed and re-defined 
+by the new input commands. As many surfaces as are required may be defined.
+
+\noindent \bf{\ti{Tie Mesh Command}}\rm
+
+\noi The \ti{tie mesh} command has the form
+\begin{align*}
+& \hv{\ul{tie}\ {mesh}\ <tied\ set\ id:label>}\\
+&\quad \hv{\ul{tol}erance\ <tol\ value:numer>\ \ul{adjust}}\  
+   \begin{Bmatrix}
+         \hv{{on}} \\ \hv{{off}}
+    \end{Bmatrix} \\
+&\quad \begin{Bmatrix}
+         \hv{\ul{master}} \\ \hv{\ul{slave}}
+    \end{Bmatrix} 
+ \hv{<surface\ label:id>}
+   \begin{Bmatrix}
+         \hv{\ul{master}} \\ \hv{\ul{slave}}
+    \end{Bmatrix} 
+\hv{<surface\ label:id>}\\
+& \qquad \qquad  \cdot \\
+& \qquad \qquad  \cdot \\
+\end{align*}
+\noi The \ti{tolerance} command is optional. The defaults are \ti{tolerance 0.05 adjust on}. 
+The adjust option corrects small geometric mismatches in node locations on 
+the specified slave surfaces to match the geometry of the master 
+surfaces (more details below). The keywords \ti{master} or 
+\ti{slave} are required. Use as many lines as needed to define 
+all the master-slave pairs.
+
+Multiple \ti{tie mesh} commands may be used for clarity in 
+model definition or to change the tolerance value for 
+different pairs of surfaces. Reference to an existing 
+\ti{tie mesh set} causes the existing set to be destroyed and re-defined 
+by the new input.
+
+Examples of this command include
+
+\small
+\begin{verbatim}
+     tie mesh crack_insert_a
+         tolerance 0.01 adjust on
+         master seg_left slave seg_right
+         master seg_bottom slave seg_top
+
+     tie mesh crack_insert_b
+         slave left_a master left_b
+         master left_c slave left_d
+         slave left_e master left_f 
+\end{verbatim}
+\normalsize
+
+The tolerance value supports checking of nodes on the slave
+mesh surface to determine if they are sufficiently near the master 
+mesh surface to be considered ``in contact" with the master surface 
+in the initial, undeformed configuration. Slave nodes that satisfy 
+the specified tolerance are included in the automatically generated MPC 
+equations produced by the tie-mesh processors. If the absolute (``gap") distance 
+from a slave node to the master surface exceeds the specified tolerance, 
+the slave node is not included in the MPCs -- a warning message is issued 
+that lists the current node and surface data for the omitted slave 
+node. When the user knows the gap distance between the slave 
+node(s) and master surface(s), the tolerance should be set to 
+a slightly larger value to insure that all slave nodes are 
+included in the tied mesh MPC equations. 
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[trim = 0in 3in 0in 19mm, clip, scale=0.9,angle=0]{fig_face_nos.pdf} 
+\caption{{\small Fig. \thefigure\ Face numbers for hex and tet elements 
+to define surfaces for tie-mesh constraints. 
+\label{fig:tie_mesh_3}}}
+%
+\end{center}
+\end{figure}
+%
+
+If the initial gap distance between the slave nodes and master 
+surface(s) is not well known, we suggest setting a tolerance 
+value to the typical element face size on the dependent surface 
+(the more refined mesh surface) as a starting point. The typical 
+element size should be a reasonable starting point to set a suitable 
+tolerance value. The user should check the output file for any tied 
+mesh warning messages about unconstrained slave nodes to obtain 
+information about the computed gap distances. This information 
+supports changes to increase or decrease the tolerance value  
+to either include all slave nodes or to exclude some slave nodes 
+from the tied mesh.
+
+The \ti{adjust} feature updates the initial coordinates of slave nodes 
+to lie exactly on the master mesh surface. The tie-mesh  
+processors perform this location adjustment of the slave nodes 
+before the analysis and thus causes no initial strain.
+
+\noindent \bf{\ti{Use of Meshing Software to Generate Surface Lists}}\rm
+
+\noi The generation of element lists and face numbers to define the 
+\ti{surfaces} for mesh tie modeling can require considerable effort. 
+While most meshing packages do not support this feature directly, the element 
+lists-face numbers may be generated readily with the following 
+procedure. 
+
+Create a load case in the meshing software for the model and apply 
+pressure loads to the faces of elements that define a \ti{surface} for 
+mesh tie modeling. Repeat for each additional mesh tie \ti{surface}. 
+Have the meshing software output a Patran neutral file (for example).
+When translated into WARP3D input file by the \ti{patwarp} program, 
+each separate load case will have the list of elements and corresponding 
+faces included in the WARP3D input file produced by \ti{patwarp}. 
+Simply remove the keyword “pressure” and the loading intensity 
+using a text editor and add the surface command to replace the 
+load case command.
+
+
+%--------------------------------------
+\subsection{Release Nodes Command}
+\label{sec:releasends}
+%--------------------------------------
+\noi The command has the form
+\begin{align*}
+& \hv{ \ul{release}\ \ul{const}raints\ ( \ul{step}s\  (=)\ <number\ of\ release\ steps:integer>) }  \\
+&\hv{<node\ list:list>}\ \left [
+\begin{Bmatrix}
+\hv{\ul{u}} \\ \hv{\ul{v}}\\ \hv{\ul{w}}
+\end{Bmatrix}(,) \right ]
+\end{align*}
+\noi Corresponding reaction forces in the specified direction are
+reduced to zero uniformly over the indicated number of load (time)
+steps. The default number of release steps is one.
+
+ An example of this command
+\small
+\begin{verbatim}
+      release constraints steps = 5
+         1-100 by 3 w  v
+         3000-3020 u
+         10232-12000 by 2, 22500-22560 by 3 w v u
+\end{verbatim}
+\normalsize
+
+\noi Situations that may arise with the release reaction forces on nodes
+include:
+
+\squishlist
+\item If the analysis is terminated before the release process finishes,
+an analysis restart will complete the reduction of reactions to zero. 
+
+\item In the event a normal,  adaptive subdivision of the steps is required for 
+global Newton convergence, the amount of reaction to be reduced over the
+step is subdivided accordingly.
+
+\item If the constraints are defined using a non-global coordinate
+system (\ref{sec:nonglobal}), the release components \ti{u, v, w} refer to the
+non-global system.
+\squishend
+
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small
+
+\noindent[\refstepcounter{sectrefs}\label {R:KGB2006}\thesectrefs]~V.G. Kouznetsova,~M.G.D. Geers,
+~W.A.M. Brekelmans. Computational Homogenisation For Non-Linear Heterogeneous Solids.
+Multiscale Modeling In Solid Mechanics - Computational Approaches © Imperial College Press
+http://www.worldscibooks.com/engineering/p604.html. ISBN: 978-1-84816-307-2. 2009.
+
+\noindent[\refstepcounter{sectrefs}\label {R:AS1979}\thesectrefs]~J.F. Abel and M.S~Shephard. 
+An Algorithm for Multipoint Constraints in Finite Element Analysis. \ti{International Journal for Numerical
+Methods in Engineering}, Vol.  14, pp. 464-467, 1979.
+% ----------------- end of real text ----------------------------------
+\end{document}

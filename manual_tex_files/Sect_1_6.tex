@@ -1,0 +1,631 @@
+
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+\usepackage[us,12hr]{datetime}
+
+%----------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{Newton's Method}}
+%\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 12-15-2015)}}
+\fancyfoot[L] {\small{\  Updated:  \today\ at \currenttime}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Introduction}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+\usepackage{bm}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\vepsilon}{\varepsilon}
+\newcommand{\etal}{\ti{et al.}\xspace}
+\newcommand{\nid}{\noindent}
+
+\newenvironment{offsetpar}[1]%
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+\newcounter{Lcount}
+\newcommand{\squishnum}{
+\begin{list}{\arabic{Lcount}. }
+{ \usecounter{Lcount}
+\setlength{\itemsep}{0pt}
+\setlength{\parsep}{3pt}
+\setlength{\topsep}{3pt}
+\setlength{\partopsep}{0pt}
+\setlength{\leftmargin}{1in}
+\setlength{\labelwidth}{1em}
+\setlength{\labelsep}{0.5em} } }
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{1}
+\setcounter{section}{5}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+%
+%--------------------------------------
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+
+\section{Solution of Nonlinear Equations: Newton's Method}
+\noindent 
+Recalling the discrete nodal equation of motion, the residual force vector at model nodes
+at any time is expressed as
+%
+\begin{equation}\label{E:R1}
+\bm{R} = \left ( \bm{P}  - \mathbf{M} \ddot{\bm{u}} \right ) - \bm{I}
+\end{equation}
+%
+\noindent where $\bm{P}$  is the known force vector,  $\bm{I}$ is the internal vector of 
+nodal forces computed from the divergence of element stresses, $\mathbf{M}$ is the structure level,
+lumped mass (diagonal) matrix, and
+$\bm{u}$ is the nodal displacement vector.  The parenthesis emphasizes the 
+(external) nodal forces from the (internal) forces due to the divergence of the element stresses.
+The residual $\bm{R}$ defines the out-of-balance force vector 
+that arises from nonlinear effects in $\bm{I}$ and (possibly) $\bm{P}$ computed for the 
+current estimate of the nodal displacements, $\bm{u}$. An iterative solution designed to 
+drive the residual to zero is desired. Newton's method for nonlinear equations, 
+illustrated in Fig. 1.1 for a static analysis, can be derived by assuming that there 
+exists an approximate displacement state, $\tilde{\bm{u}}$, in the neighborhood 
+of the exact solution for which a linear mapping represented by
+%
+\begin{equation}\label{E:R2}
+\bm{R} =\bm{R}(\tilde{\bm{u}})  + d\bm{R}(\bm{u}) =\bm{R}(\tilde{\bm{u}}) +
+\frac{\partial \bm{R}}{\partial \bm{u}}  d\bm{u}
+\end{equation}
+%
+\noindent 
+is a good approximation to the residual force vector. The partial derivative in 
+Eq. (\ref{E:R2}) represents the Jacobian matrix which maps the displacement 
+vector to the residual force vector. Presumably, a better approximation, 
+$\tilde{\bm{u}}+d\bm{u}$, is obtained by setting Eq. (\ref{E:R2}) to zero. 
+The differential increment of the residual force vector is given by
+(the mass matrix is invariant of loading and time)
+%
+\begin{equation}\label{E:R3}
+d\bm{R} = \left ( d\bm{P}  - \mathbf{M} d\ddot{\bm{u}}\right ) - d \bm{I}\ .
+\end{equation}
+%
+\noindent By using the differential Eq. (1.5.11)
+(where $\dot{\bm{u}}_n$ and $\ddot{\bm{u}}_n$ are constants)
+to define the differential acceleration in terms of 
+Newmark's method and by introducing the structure $tangent$ stiffness, we have
+%
+\begin{equation}\label{E:R4}
+\mathbf{M}\,d\ddot{\bm{u}} =\frac{1}{\beta \Delta t^2} \mathbf{M}\, d \bm{u}
+\end{equation}
+%
+%
+\begin{equation}\label{E:R5}
+d\bm{I} = \mathbf{K}_T \,d \bm{u}\ .
+\end{equation}
+%
+\noindent where $\mathbf{K}_T$ denotes the tangent stiffness matrix for the structure. WARP3D 
+omits the (usually) non-symmetric loading stiffness
+%
+\begin{equation}\label{E:R5}
+d\bm{P} = \mathbf{K}_L \,d \bm{u}\ 
+\end{equation}
+in forming $d\bm{R}$. When the forces in  $\bm{P}$ remain invariant of the displacements,
+$ d\bm{P}=\bm{0}$ (see discussion below for the approximate 
+processing of  deformation dependent loads). 
+
+
+Equation (\ref{E:R3}) can then be written in the condensed form
+%
+\begin{equation}\label{E:R6}
+d\bm{R} = - \mathbf{K}_T^d \,d \bm{u}
+\end{equation}
+%
+\noindent where 
+\begin{equation}\label{E:R7}
+\mathbf{K}_T^d  =\mathbf{K}_T + \frac{1}{\beta \Delta t^2} \mathbf{M} 
+\end{equation}
+%
+defines the dynamic tangent stiffness for the structure. The use of $d\bm{R}$
+from Eq. (\ref{E:R6}) in Eq. (\ref{E:R2}) yields
+%
+\begin{equation}\label{E:R8}
+\bm{R} (\bm{u}) = \bm{R}(\tilde{\bm{u}}) - \mathbf{K}_T^d\, d\bm{u} 
+\end{equation}
+%
+\noindent which shows that the dynamic tangent stiffness is the negative of the 
+Jacobian matrix relating increments of the the residual force vector to increments of
+the nodal displacements:
+%
+\begin{equation}\label{E:R9}
+\mathbf{K}_T^d = -  \frac{\partial \bm{R}}{\partial \bm{u}} \ .
+\end{equation}
+%
+\noindent Now setting Eq. (\ref{E:R8}) to zero and rearranging defines
+%
+\begin{equation}\label{E:R10}
+\mathbf{K}_T^d  \,d\bm{u}= \bm{R}(\tilde{\bm{u}}) \ .
+\end{equation}
+%
+For finite-sized increments, the approximate form of the above becomes
+%
+\begin{equation}\label{E:R11}
+\mathbf{K}_T^d \, \delta\bm{u}_{n+1}^i= \bm{R}_{n+1}^{i-1}
+\end{equation}
+%
+\nid where $\delta \bm{u}_{n+1}^i$ denotes the corrective displacement increment 
+for the current Newton iteration $i$ of the load(time) step which 
+advances the solution from $n\rightarrow n+1$.
+The residual from the prior iteration that drives this correction is 
+%
+\begin{equation}\label{E:R12}
+ \bm{R}_{n+1}^{i-1} =\left ( \bm{P}_{n+1}  - 
+ \mathbf{M} \ddot {\bm{u}}_{n+1}^{i-1}\right )- \bm{I}_{n+1}^{i-1}
+\end{equation}
+%
+or, after using Eqs. (1.5.9-1.5.11), alternatively as
+%
+\begin{equation}\label{E:R13}
+ \bm{R}_{n+1}^{i-1} = \left ( \bm{P}_{n+1}^d  - \frac{1}{\beta \Delta t^2} 
+ \mathbf{M} {\bm{u}}_{n+1}^{i-1}\right ) - \bm{I}_{n+1}^{i-1}
+\end{equation}
+%
+\nid where $\bm{P}_{n+1}^d$ is the applied force vector at $t_{n+1}$ modified by the
+terms from Newmark integration Eqs. (1.5.9-1.5.11):
+%
+\begin{equation}\label{E:R14}
+ \bm{P}_{n+1}^d = \bm{P}_{n+1} + \frac{1}{\beta \Delta t} 
+ \mathbf{M} {\dot{\bm{u}}}_n + \frac{\left ( 1 - 2 \beta \right)}{2 \beta}  \mathbf{M} {\ddot{\bm{u}}_n} \ .
+\end{equation}
+%
+
+The total displacement change over the load (time) step through the $i^{th}$ global
+Newton iteration is the then sum of all corrective displacements
+%
+\begin{equation}\label{E:du1}
+\Delta \bm{u}_{n+1}^i = \sum_{k=1}^i \delta \bm{u}_{n+1}^k
+\end{equation}
+%
+with the updated estimate for the total displacement at $n+1$ through iteration $i$
+given by
+%
+\begin{equation}\label{E:du2}
+ \bm{u}_{n+1}^i = \bm{u}_n + \Delta \bm{u}_{n+1}^i\ .
+\end{equation}
+
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[trim=0.0in 2.0in 2in 0.1in, clip=true,scale=0.7,angle=0]{Figure.pdf} 
+\caption{{\small Fig. \thefigure\ Illustration of the global Newton solution 
+method for a softening structural response.}
+\label{fig:Newton}}
+%
+\end{center}
+\end{figure}
+%
+
+The combination of Eqs. (\ref{E:R11},\ref{E:R13}) define the key expression driving the
+iterative global solution based on Newton's method:
+%
+\begin{equation}\label{E:R15}
+\mathbf{K}_T^d \, \delta\bm{u}_{n+1}^i= \left ( \bm{P}_{n+1}^d  - \frac{1}{\beta \Delta t^2} 
+ \mathbf{M} {\Delta\bm{u}}_{n+1}^{i-1}\right ) - \bm{I}_{n+1}^{i-1}= \bm{R}^i\ .
+\end{equation}
+%
+
+WARP3D employs a \ti{full} Newton scheme which updates the tangent stiffness
+before each solution of the above equation.  A line search scheme is available that
+attempts to improve the convergence characteristics by possibly reducing
+the corrective displacement (step length) of the full Newton increment
+(see later subsection here).
+Various linear equation
+solvers are available to process this set of equations depending on the type of
+computer hardware and the number of unknown nodal displacements. Iterations
+continue until one or more convergence criteria are satisfied or until a limit on the
+allowable number of iterations is reached. For non-convergent solutions, the user
+may request that WARP3D employ an adaptive sub-stepping scheme to advance the
+solution from $n\rightarrow n+1$. Such an approach very often reaches a
+converged solution for $n+1$.
+
+The residual force vector, the dynamic tangent stiffness and the mass matrix
+are computed using element-based computations and assembly processes
+described subsequently.
+
+\subsection{Convergence criteria}
+
+\noindent Multiple convergence tests are available to terminate the Newton iterative 
+procedure based on corrective displacements and forces. See Chapter 2 for details on all
+such tests currently available. 
+
+At present, no additional procedures are available to control loading in the vicinity 
+of limit points or to otherwise accelerate the iterative procedure in such situations,
+\eg Riks method and line searches.
+
+
+\subsection{Treatment of imposed displacements, temperatures, initial strains}
+
+\noindent Non-zero imposed displacement increments, imposed 
+temperature increments and material generated initial strain-stress
+increments (\eg creep)
+enter the equation solving process using the the following procedures.
+Equation (\ref{E:R14}) is re-written
+%
+\begin{equation}\label{E:S1}
+ \bm{P}_{n+1}^d = \bm{P}_n  + \Delta \bm{P}_{n+1} + \frac{1}{\beta \Delta t} 
+ \mathbf{M} {\dot{\bm{u}}}_n + \frac{\left ( 1 - 2 \beta \right)}{2 \beta}  \mathbf{M} {\ddot{\bm{u}}_n} 
+\end{equation}
+%
+\nid where $\Delta \bm{P}_{n+1}$ denotes the user-specified increments of fixed nodal forces applied
+over $t_n \rightarrow t_{n+1}$ and the increment of work equivalent nodal forces 
+arising from user specified element loads (tractions, pressures, body forces, etc.)
+The incremental force vector to start the Newton solution for
+step $n+1$, denoted $\bm{R}_0$, is then defined by (WARP3D internally calls this iteration 0
+for a load(time) step)
+%
+\begin{equation}\label{E:S2}
+ \bm{R}_0 =\left (  \bm{P}_{n+1}^d + \frac{1}{\beta \Delta t^2} 
+ \mathbf{M} {\Delta{\bm{u}}}  \right )  - \bm{I}_0 
+\end{equation}
+%
+\nid where $\Delta \bm{u}$ contains zeroes except for the 
+specified, non-zero displacement increments and
+(optionally) extrapolated displacements from the previous load step.
+
+The internal force vector, $\bm{I}_0$, for this computation derives from the 
+nodal displacements $\Delta \bm{u}$, the imposed temperature increments and
+material generated initial strain (and stress) increments for the step
+as follows:
+%
+\begin{equation}\label{E:S3}
+ \bm{I}_0 = \sum_{j=1}^{\#elem} \int_{V_e^j} \mathbf{B}^T \bm{\sigma}^{0}_{n+1}\, dV_e 
+\end{equation}
+%
+\nid where again the summation implies the usual assembly process. The stress field $\bm{\sigma}^0_{n+1}$
+%\footnote{The definition for $\Delta \bm{\varepsilon}_0$ needs to be expanded to include creep strains. Consider
+%a simulation including creep effects where the external loading is held constant over some time steps. The omission of 
+%$\Delta \bm{\varepsilon}_{crp}$ in Eq. (\ref{E:S4}) leads WARP3D to conclude that no solution is needed since $\bm{R}_0\rightarrow\bm{0}$. As a workaround, increase the external loading by an extremely small amount in each load(time) step
+%to force solution for these steps.}
+is obtained through the operations
+%
+\begin{equation}\label{E:S4}
+ \Delta \bm{\vepsilon}_0 = \mathbf {B}_n \Delta \bm{u} - \Delta \bm{\vepsilon}_{th} - \Delta \bm{\vepsilon}_{i}
+\end{equation}
+%
+\noindent and, at least symbollically, 
+%
+\begin{equation}\label{E:S4a}
+ \bm{\sigma}^0_{n+1} = \bm{\sigma}_n + 
+ \mathbf{D}\left ( \bm{\sigma}_n, \bm{\vepsilon}_n, \bm{h}_n, \dots\right )\Delta  \bm{\vepsilon}_0 \ .
+\end{equation}
+%
+\nid In the above, $\mathbf{B}$ denotes the incremental strain-displacement operator with 
+$\Delta \bm{\varepsilon}_{th}$ the specified thermal strain increment for the step. 
+The initial strain increment is computed by the material model where, for example,
+a simple creep model might estimate $\Delta \bm{\vepsilon}_i= \bm{\dot \vepsilon}_{cr}\, \Delta t$
+with $\bm{\dot \vepsilon}_{cr}$ dependent on the current stress at $t_n$, temperature at $t_n$ and
+$t_{n+1}$, and material properties. 
+Here, $\mathbf{D}$ defines 
+the constitutive operator which updates the stresses for a specified strain increment. The operators $\mathbf{B}$
+and $\mathbf{D}$  reflect the specific element formulation, finite strains-rotations if 
+required and the appropriate material constitutive model.
+
+The $\Delta \bm{u}$ employed in the above computations depends on the user-specified \ti{extrapolation} 
+option for the Newton solution. Displacement extrapolation is \ti{on} by default and (generally) decreases the number of
+global Newton iterations for the step -- provided the incremental loading for the step is proportional
+or nearly proportional to the previous step. When load reversals are applied (as in cyclic loading protocols),
+extrapolation should be set \ti{off}  for the first step of the reversed loading (Abaqus does this automatically -- 
+displacement extrapolation is suppressed for increment 1 of every *STEP). WARP3D solution processors
+are also capable of detecting non-proportional loading across steps (in most cases) and internally suppress the
+extrapolation for just one step.
+\squishlist
+\item For \ti{extrapolation on}, $\Delta \bm{u}$ contains the extrapolated displacement increments to
+start the solution $n\rightarrow n+1$ including the user-imposed increments. The material models
+compute $\bm{\sigma}^0_{n+1} = \bm{\sigma}^{0-umat}_{n+1}$ using their normal stress updating algorithms and return the 
+corresponding consistent $\mathbf{D}$ used to form the model tangent stiffness,
+$\mathbf{K}_T^d$, for the first Newton iteration.
+\item For \ti{extrapolation off}, the material models are requested to return 
+$\mathbf{D}=\mathbf{D}_{el}$ and $\bm{\sigma}^{0-umat}_{n+1}$ where 
+$\Delta \bm{\vepsilon}_0=0$ unless there are thermal strain increments. The material models 
+include any initial strain (and/or stress) effects in the returned $\bm{\sigma}^{0-umat}_{n+1}$.
+WARP3D then computes
+%
+\begin{equation}\label{E:S4aa}
+ \bm{\sigma}^0_{n+1} = \bm{\sigma}^{0-umat}_{n+1} + 
+ \mathbf{D}_{el}\Delta  \bm{\varepsilon}_{id}
+\end{equation}
+where $\Delta  \bm{\varepsilon}_{id}$ denotes strain increments at the point caused by any non-zero, user-imposed displacement
+increments on the model nodes over $t_n\rightarrow t_{n+1}$. 
+For \ti{extrapolation off}, this scheme of handling separately the different physical contributions
+to $\Delta  \bm{\varepsilon}_0$ has proven very effective to maintain convergence of the global Newton iterations.
+\squishend
+
+\noindent In both conditions above, the $\mathbf{D}$ (or  $\mathbf{D_{el}}$) returned from the material model reflects
+temperature, strain-rate and any other effects on the constitutive behavior. The updated state variables (history)
+modified by the material models in computing $\bm{\sigma}^{0-umat}_{n+1}$ are discarded since the
+purpose these iteration $=0$ computations is to (1) obtain material dependent
+contributions to the incremental step loading, and 
+(2) obtain a   $\mathbf{D}$ to start Newton iterations for the step consistent with the \ti{extrapolation} option.
+
+The incremental force vector defined in this manner ($\bm{R}_0$) is then used in Eq. (\ref{E:R11}) to compute 
+the first estimate for the displacement increment which advances the solution from  $t_n \rightarrow t_{n+1}$,
+%
+\begin{equation}\label{E:S5}
+\mathbf{K}_T^d \, \delta\bm{u}_{n+1}^1= \bm{R}_0 \ .
+\end{equation}
+%
+
+\subsection{Deformation dependent forces: pressures, contact, multi-point constraints}
+\noindent \ti{Applied element tractions/pressures}
+
+\noindent In large-displacement analyses, the equivalent nodal forces computed from the tractions and pressures applied 
+to element faces vary with element deformation and face rotation during the global
+Newton iterations to advance the solution from $t_n$ to $t_{n+1}$. A precise treatment of these 
+effects in the Newton solution procedure described above leads to a non-symmetric 
+tangent stiffness matrix $(\bm{K}_L)$ for the model, \ie the so-called loading stiffness 
+has a non-symmetric form.
+
+WARP3D includes an approximate treatment of deformation and rotation effects on applied 
+element tractions and pressure loadings. The equivalent nodal forces are computed
+using the (known) deformed element geometries at step $t_n$ but with traction magnitudes 
+specified by the user at $t_{n+1}$
+and pressure magnitudes at $t_{n+1}$ (but in deformed face normal directions at $t_n$). 
+This approximation introduces a dependency on the load(time) step size since the 
+deformed geometry is used at the beginning of the step and not at the (unknown) 
+end of step geometry. 
+Numerical testing of this approach shows a convergence of the computed solutions with decreasing load step size specified in the analysis. Changes in the areas of loaded element faces due to deformation appear more strongly influenced by load step size than rotation effects caused by the loading. The user is advised to investigate the effects of this approximation in the analysis of their specific models.
+
+\noindent \ti{Contact forces, Lagrange forces}
+
+\noindent WARP3D supports contact of the deformable mesh with a variety of rigid surfaces (see Chapter 6). 
+During each Newton iteration, the global vector of contact forces, $\bmf{C}$, is updated to reflect the new estimate
+of the nodal displacements. Similarly, the (Lagrange) nodal forces, $\bmf{L}$, required to impose the user-specified
+multi-point constraints and the internally generated constraints for tied-contact are updated to reflect the new estimate
+of the nodal displacements.
+
+Equation \ref{E:R15} which drives the Newton iterations may be extended to include contact 
+and multi-point constraint forces
+as 
+%
+\begin{equation}\label{E:CL1}
+\mathbf{K}_T^d \, \delta\bm{u}_{n+1}^i= \left ( \bm{P}_{n+1}^d  + \bm{C}_{n+1}^{i-1} + 
+\bm{L}_{n+1}^{i-1}  - \frac{1}{\beta \Delta t^2} 
+ \mathbf{M} {\Delta\bm{u}}_{n+1}^{i-1}\right ) - \bm{I}_{n+1}^{i-1}=\bm{R}^i\ .
+\end{equation}
+%
+
+\noindent The contributions to $\mathbf{K}_T^d$ from contact  $\mathbf{K}_C$  and multi-point constraints 
+$\mathbf{K}_L$ are omitted as done for the deformation dependent applied tractions/pressures. This 
+approximation may 
+necessitate additional Newton iterations but does maintain symmetry of $\mathbf{K}_T^d$  (for most all material
+models) and the reduced equation solving time.
+
+\subsection{Line search to augment Newton iterations}
+
+\noindent Newton's method described in Eqs. (\ref{E:R15} and \ref{E:CL1}) exhibits quadratic 
+convergence towards the solution at $n+1$ provided: (1) the evolution of nodal displacements is
+comparatively smooth and (2) the solution is not too distant from that at $n$. Then, over a small number of
+equilibrium iterations, $i=1, 2, 3, \dots, N_{max}$ the corrective nodal displacements $\delta \bm{u}_{n+1}^i$ in Eq. (\ref{E:du1})
+become vanishingly small as the iterations progress.
+
+Newton's method may not reach a converged solution when the evolution of displacements 
+becomes non-smooth, for example,
+due to sharp changes in material properties from yielding, cracking, strain rate and thermal effects. Changing
+contact conditions with a rigid body, node releases for crack growth
+modeling and geometric stiffening of the structural response also challenge the robustness of
+a standard Newton method. Often, the corrective displacement 
+for an iteration, $\delta \bm{u}_{n+1}^i$, from Newton's method
+is too large and/or in the wrong (search) direction.
+
+Classical methods of unconstrained optimization commonly employ Newton's method to find the local
+minimum of  one or more functions.
+Newton's method for nonlinear finite element solutions may be viewed as minimizing the potential energy  in a local
+sense at $n+1$ -- at least 
+from a conceptual viewpoint since dissipative nonlinearities (\eg incremental plasticity)
+preclude the formal existence of a potential energy function.
+Nevertheless, the \ti{line search} methods widely employed in optimization computations provide a
+powerful technique to improve Newton's method for nonlinear finite element analysis.
+
+Crisfield [\ref{R:Cris1991}] provides a thorough development of the line search method
+framed in the context of nonlinear finite element analysis.
+Subsequent texts
+and papers describe various extensions and modification -- see Chapter 3 in the monograph on Numerical
+Optimization by Nocedal and Wright [\ref{R:NW2006}] for a comprehensive discussion
+of line search methods.
+
+A first order change of the potential energy is given by the (scalar) work of the residual nodal forces 
+acting through the corrective displacements, $- \bm{R}^i\cdot \delta \bm{u}_{n+1}^i$. If this quantity decreases with
+each Newton iteration and $\rightarrow 0$, the potential energy reaches a local minimum -- the equilibrium
+configuration.
+
+In line search  terminology, $\delta \bm{u}_{n+1}^i $ defines the \ti{search direction}. A
+conventional line search
+fixes the search direction during a Newton iteration and scales the magnitude of 
+$\delta \bm{u}_{n+1}^i $ by a \ti{step length}, $\alpha\, \delta \bm{u}_{n+1}^i $, to obtain a larger reduction
+in the potential energy, where $\bm{R}^i$ depends on the
+current estimate of the nodal displacements at $n+1$ and thus changes with each value of $\alpha$.
+
+With a line search in place, Eq. (\ref{E:du2}) may be re-written as
+
+\begin{equation}\label{E:LSa}
+ \bm{u}_{n+1}^i = \bm{u}_{n+1}^{i-1} + \alpha 
+  \delta \bm{u}_{n+1}^i
+\end{equation}
+
+\noindent where $\bm{u}_{n+1}^{i-1}$ is the estimate of nodal displacements at $n+1$ from the
+just completed Newton iteration. In standard Newton iterations, $\alpha$ is set to 1.0 to complete iteration
+$i$.  Here, we adopt a simple \ti{backtracking} scheme that iteratively reduces $\alpha < 1$ to achieve a 
+possibly larger reduction in the potential energy than obtained with $\alpha \equiv1$. Each line search
+iteration requires computation of updated element stresses  for $\bm{u}_{n+1}^i $ and updated $\bm{R}^i$,
+but not new element stiffnesses, assembly or linear equation solve. The cost of a single line search
+iteration is far less that a standard Newton iteration, especially since element level computations are
+fully parallelized.
+
+The following  summarizes the line search algorithm that WARP3D executes by default for every
+Newton iteration (adopting Crisfield's description). To simplify notation, the $n+1$ is understood with
+$k$ denoting the line search iteration number ($k =0, 1, 2, 3, \dots$) such that 
+
+\begin{equation}\label{E:LSb}
+ \bm{u}_k^i = \bm{u}^{i-1} + \alpha_k 
+  \delta \bm{u}^i\ .
+\end{equation}
+
+\noindent To begin Newton iteration $i$, Eq. (\ref{E:R15})  or (\ref{E:CL1})  is solved to obtain   $\delta \bm{u}^i$ which
+remains fixed over the line search iterations. 
+\squishlist
+%
+\item  Compute\footnote{In the computation of $s_k$-values, entries
+in $\bm{R}^i_k$ are omitted that correspond to nodal displacements appearing in an absolute or
+multi-point constraint.}
+ $s_0 = -\bm{R}^{i-1}\cdot \delta \bm{u}^i $, where $\bm{R}^{i-1}$ has the form of the right side of 
+ Eq. (\ref{E:R15})  or (\ref{E:CL1}) and is the residual vector just computed for the displacements
+ $\bm{u}_{n+1}^{i-1} $
+ %
+ \item If $s_0 >0$ (rare) Newton 
+iterations likely are diverging, \ie an \ti{uphill} condition exists in optimization terms.
+Update element strains, stresses and a residual force vector
+$\bm{R}^i$ using displacements $\bm{u}^i = \bm{u}^{i-1} + \delta \bm{u}^i$.
+Quit line search, issue a warning message to user and begin next Newton iteration. The
+WARP3D divergence check will likely detect the presence of increasing residual forces
+and trigger the adaptive solution algorithm to  subdivide the load(time) step.
+%
+\item If line search is off, update element strains, stresses and a residual force vector
+$\bm{R}^i$ using displacements $\bm{u}^i = \bm{u}^{i-1} + \delta \bm{u}^i$. 
+Newton iteration $i$ is complete. Otherwise 
+%
+\item  set $k=0$ and $\alpha_0=1.0$ 
+%
+\item \ti{\ul{begin line search loop}}. 
+%
+\item Update element strains, stresses and a new residual force vector
+$\bm{R}^i_k$ using displacements $\bm{u}_0^i$ from Eq. (\ref{E:LSb}). If $k=0$,
+save $\bm{R}^i_0$ for possible subsequent use if line search iterations fail.
+%
+\item Compute  $s_k=  -\bm{R}^i_k \cdot \delta \bm{u}^i $ and $r_k= |s_k/s_0|$
+%
+\item If $r_k \le r_{tol}$, the line search iterations have converged. $\bm{u}_{n+1}^i$ has been determined
+with the residual for the next Newton iteration just computed as $\bm{R}^i_k$. Here $r_{tol}$ is termed the \ti{slack tolerance}.
+It is set through user input and has a default value of 0.5 (Crisfield uses 0.8 as the default; Abaqus uses 0.25).
+Numerical experiments reveal that further line search iterations to drive $r_k$ smaller offers minimal
+benefits -- since the current search direction $\delta \bm{u}^i $ itself is only approximate.
+%
+\item If $r_k > r_{tol}$, confirm that the line search iterations are actually reducing $r_k$ in each iteration and
+by a reasonable amount. The present check is $r_k \le 0.9\, r_{k-1}, k\ge 1$. If not satisfied,  
+line search iterations have failed. Write user message. 
+Set $\bm{u}^i = \bm{u}^{i-1} + \delta \bm{u}^i$, $\bm{R}^i=\bm{R}^i_0$ and start next Newton iteration. 
+%
+\item Set $k\leftarrow k+1$, $\alpha_k = \rho\, \alpha_{k-1}$. The constant 
+$\rho$ denotes  the step length reduction factor set through user input, with a default value of 0.7.
+If  $\alpha_k < \alpha_{min}$, 
+line search iterations have failed. Write user message. 
+Set $\bm{u}^i = \bm{u}^{i-1} + \delta \bm{u}^i$, $\bm{R}^i=\bm{R}_0$ and start next Newton iteration. 
+The limit $\alpha_{min}$ is
+set  through user input. By default, $\alpha_{min}=0.01$.\\ \\
+Definition of the new $\alpha_k$ above adopts a simple, widely used \ti{backtracking} strategy. 
+More
+elaborate schemes employ $r$-values from the prior line search iterations to 
+estimate the new $\alpha$ -- but at the likely expense of additional line search iterations.
+The methods of Brent and Golden Search are often employed following a search to first
+confirm that a local minimum of $r$ exists over the range $\alpha_{min} \le \alpha \le 1$.
+Further, Crisfield [\ref{R:Cris1991}] allows $\alpha_k > 1$ in his line search scheme.
+
+%
+\item \ti{\ul{end line search loop}}
+%
+\squishend
+%*****************************************************
+\subsection {References}
+%*****************************************************
+\small
+\noindent[\refstepcounter{sectrefs}\label {R:Cris1991}\thesectrefs]~M.A. Crisfield.
+Nonlinear Finite Element Analysis of Solids and Structures. Vol. 1: Essentials. 1991.
+John Wiley \& Sons Ltd, West Sussex England.
+
+\noindent[\refstepcounter{sectrefs}\label {R:NW2006}\thesectrefs]~J. Nocedal and
+S. Wright. Numerical Optimization. 
+Series: Springer Series in Operations Research and Financial Engineering.2006.
+Springer; 2nd Ed.
+\end{document}
