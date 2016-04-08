@@ -13,7 +13,7 @@ c     *     Calculate various other user output quantities           *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_output(props, np1, n,vec1,vec2)
+      subroutine mm10_output(props, np1, n,vec1,vec2,p_strain_ten_c)
       use mm10_defs
       implicit none
 c
@@ -21,12 +21,14 @@ c
       type(crystal_state) :: np1, n
 c
       integer :: i, info, sysID, numAct
-      double precision, dimension(6) :: ee, dbarp, ewwe, ep, eeunrot
+      double precision, dimension(6) :: ee, dbarp, ewwe, ep, eeunrot,
+     &                                  se
       double precision, dimension(3) :: wp
       double precision, dimension(6,6) :: S, erot
+      double precision, dimension(6) :: p_strain_ten_c
       double precision, dimension(max_uhard) :: vec1,vec2
       double precision :: maxslip, ec_dot, n_eff, rs, ec_slip, 
-     &                    mm10_rs,pt1,curslip
+     &                    mm10_rs,pt1,curslip, B_eff, s_trace
       double precision, dimension(max_slip_sys) :: dgammadtau
 c
 c     Store the slip increments
@@ -118,6 +120,8 @@ c      ee = matmul(erot, matmul(S, np1%stress))
       call mm10_symSW(ee, wp, ewwe)
 c
       ep = dbarp + ewwe
+      ! store the plastic strain increment for nonlocal averages
+      p_strain_ten_c(1:6) = ep(1:6)
       np1%p_strain_inc = dsqrt(2.0d0/3.0d0*
      &      (dot_product(ep(1:3),ep(1:3))+
      &      0.5d0*dot_product(ep(4:6),ep(4:6))))
@@ -170,6 +174,20 @@ c ******* END: Add new Constitutive Models into this block *********
       n_eff = 1.d0
       endif
       np1%u(12) = n_eff
+      ! effective stress
+      s_trace = (np1%stress(1)+np1%stress(2)+
+     &           np1%stress(3))/3.d0
+      se(1:6) = np1%stress(1:6)
+      se(1) = se(1)-s_trace
+      se(2) = se(2)-s_trace
+      se(3) = se(3)-s_trace
+      s_trace = dsqrt(3.0d0/2.0d0*
+     &      (dot_product(se(1:3),se(1:3))+
+     &      2.0d0*dot_product(se(4:6),se(4:6))))
+      np1%u(13) = s_trace
+      ! power law B factor
+      B_eff = ec_dot/s_trace**n_eff
+      np1%u(14) = B_eff
 
       return
       end subroutine

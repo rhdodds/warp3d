@@ -2201,8 +2201,8 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
-      double precision, dimension(props%num_hard,props%num_hard)
-     &   :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -2232,16 +2232,16 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
 c        
 c      ms = np1.ms(1:6,alpha);
 c      rs = stress*ms; % tau^a
       rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+          rhoF = dot_product(props%Gmat(alpha,1:props%num_hard),
      &   tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+          rhoP = dot_product(props%Hmat(alpha,1:props%num_hard),
      &   tt(1:props%num_hard))
 c
 c Compute some stresses and rates
@@ -2292,9 +2292,11 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt, h,
+     &       rhoFs,rhoPs
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha, gp
+      logical :: mat_debug
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
@@ -2302,8 +2304,11 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4
-      double precision, dimension(props%num_hard,props%num_hard)
-     &    :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
+
+       mat_debug = .false.
+
 c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
@@ -2342,7 +2347,11 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c
 c
 c      write(*,*) "Gmat", Gmat(1,1)
@@ -2359,10 +2368,16 @@ c          rs = stress*ms; % tau^a
 c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &    tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &    tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
+        if(mat_debug) then
+        write(*,*) "rhoF", rhoF
+        write(*,*) "rhoP", rhoP
+        endif
 c        write(*,*) "rhoF", rhoF
 c        write(*,*) "rhoP", rhoP
 c          
@@ -2432,8 +2447,8 @@ c
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44
       double complex :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
-      double precision, dimension(props%num_hard,props%num_hard)
-     &      :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -2463,17 +2478,17 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
 c        
 c      ms = np1.ms(1:6,alpha);
 c      rs = stress*ms; % tau^a
       rs = mm10_rsi(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Gmat(alpha,1:props%num_hard)*
+          temp = (props%Gmat(alpha,1:props%num_hard)*
      &     tt(1:props%num_hard))
           rhoF = sum(temp)
-          temp = (Hmat(alpha,1:props%num_hard)*
+          temp = (props%Hmat(alpha,1:props%num_hard)*
      &     tt(1:props%num_hard))
           rhoP = sum(temp)
 c
@@ -2528,8 +2543,8 @@ c
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
      &  tem1, tem2, tem3
-      double precision, dimension(props%num_hard,props%num_hard)
-     &     :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
@@ -2568,7 +2583,7 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
 c
 c
 c      write(*,*) "Gmat", Gmat(1,1)
@@ -2586,10 +2601,10 @@ c          rs = stress*ms; % tau^a
 c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Gmat(alpha,1:props%num_hard)
+          temp = (props%Gmat(alpha,1:props%num_hard)
      &      *tt(1:props%num_hard))
           rhoF = sum(temp)
-          temp = (Hmat(alpha,1:props%num_hard)
+          temp = (props%Hmat(alpha,1:props%num_hard)
      &      *tt(1:props%num_hard))
           rhoP = sum(temp)
 c        write(*,*) "rhoF", rhoF
@@ -2676,7 +2691,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress, dtdstress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoPs,rhoFs
       double precision, dimension(props%num_hard,6) :: et
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
@@ -2687,8 +2702,8 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm
-      double precision, dimension(props%num_hard,props%num_hard)
-     &     :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
       double precision, dimension(props%nslip) :: dslip
       integer :: alpha
 c Load some material parameters
@@ -2729,7 +2744,11 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c
       do alpha = 1,props%num_hard
 
@@ -2741,10 +2760,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard)
-     &     ,tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard)
-     &      ,tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
           ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
@@ -2789,7 +2810,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoPs,rhoFs
       double precision, dimension(props%num_hard,props%num_hard) :: etau
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
@@ -2801,8 +2822,8 @@ c
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM
-      double precision, dimension(props%num_hard,props%num_hard)
-     &    :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
       double precision, dimension(props%num_hard,props%num_hard)
      &    :: dslip
       integer :: alpha, beta
@@ -2844,7 +2865,11 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c
 c Compute drho_alpha/drho_beta
 c loop over numerator hardening variable
@@ -2858,10 +2883,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
           
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &     tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &     tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c
 c          call mm10_slipinc_mrr(props, np1, n, stress, tt, alpha, 
 c     &     slipinc)
@@ -2881,8 +2908,8 @@ c loop over denominator hardening variable
         do beta = 1,props%num_hard
 c          
 c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
-          drhoF = Gmat(alpha,beta)
-          drhoP = Hmat(alpha,beta)
+          drhoF = props%Gmat(alpha,beta)
+          drhoP = props%Hmat(alpha,beta)
           
           dddipole = 0.d0
           drhoM = 0.5d0*(2.d0*k/(c1*c2*c3*G*b**3.d0))*
@@ -2948,7 +2975,7 @@ c
       double precision, dimension(6) :: stress
       double precision :: rs
       double precision, dimension(props%nslip) :: dgammadtau
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoFs,rhoPs
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
@@ -2956,8 +2983,8 @@ c
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp
-      double precision, dimension(props%num_hard,props%num_hard)
-     &      :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -2987,7 +3014,11 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c        
       do alpha = 1,props%num_hard
 c        
@@ -2996,10 +3027,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &   tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &   tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c
 c Compute one dependency
         gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*sqrt(rhoP) ! (15)
@@ -3041,7 +3074,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoFs,rhoPs
       double precision, dimension(props%nslip,props%num_hard)
      &    :: dgammadtt
       double precision :: mm10_rs, rs
@@ -3052,8 +3085,8 @@ c
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
      &  dtcut, dtpass
-      double precision, dimension(props%num_hard,props%num_hard)
-     &      :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -3083,7 +3116,11 @@ c Compute the shear modulus using Roter's function
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
         
 c Compute derivative of slip rate alpha w.r.t. density beta
 c loop over slip rate
@@ -3094,10 +3131,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &      tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &      tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c          
 c Compute one dependency
         gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*sqrt(rhoP) ! (15)
@@ -3109,8 +3148,8 @@ c loop over density
         do beta = 1,props%num_hard
         
 c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
-          drhoF = Gmat(alpha,beta)
-          drhoP = Hmat(alpha,beta)
+          drhoF = props%Gmat(alpha,beta)
+          drhoP = props%Hmat(alpha,beta)
         
           dgamma_0 = 0.5d0*v_attack*k*theta/(c1*c3*G*b*b)
      &              /dsqrt(rhoP)*drhoP ! (15)
@@ -3163,3393 +3202,6 @@ c
       return
       end subroutine
 c
-c     Interaction matrices for parallel and forest dislocations, general
-      subroutine mm10_mrr_GH(props,G,H)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      double precision, dimension(props%num_hard,props%num_hard)
-     &    :: G, H
-c
-      if(props%s_type.eq.1) then ! FCC
-         call mm10_mrr_GHfcc(G,H)
-      elseif(props%s_type.eq.2) then ! BCC
-         call mm10_mrr_GHbcc(G,H)
-      elseif(props%s_type.eq.6) then ! FCC12
-         call mm10_mrr_GHfcc12(G,H)
-      elseif(props%s_type.eq.7) then ! BCC12
-         call mm10_mrr_GHbcc12(G,H)
-      elseif(props%s_type.eq.8) then ! BCC48
-         call mm10_mrr_GHbcc48(G,H)
-      else ! calculate manually
-         call mm10_mrr_GHman(props,G,H)
-      endif
-c
-      return
-      end subroutine
-c
-c     Manual calculation of interactions
-      subroutine mm10_mrr_GHman(props,G,H)
-c
-      use mm10_defs
-      use crystal_data, only : c_array
-      integer :: cnum
-c
-      type(crystal_props) :: props
-      double precision, dimension(props%num_hard,props%num_hard)
-     &    :: G, H
-      double precision :: temp
-      double precision, dimension(3) :: bs,ns
-      double precision, dimension(3,props%num_hard) :: tvecs
-      integer :: i,s,zeta,xi
-c
-c     Initialize crystal
-c      call initialize_new_crystal(1, 0)
-c      c_array(1)%slip_type = props%s_type
-c      call finalize_new_crystal(1, 0)
-c  ccc The crystal does not have to be re-initialized, it is stored in memory
-c     BUT: we need to know which one to access
-      cnum = props%cnum ! get crystal ID so that we can find the slip system
-c     Now calculate with the slip vectors
-c Get tangent vectors
-      do i = 1,props%num_hard
-         bs = c_array(cnum)%bi(i,:)
-         ns = c_array(cnum)%ni(i,:)
-         tvecs(1,i) = ns(2)*bs(3) - ns(3)*bs(2)
-         tvecs(2,i) = ns(3)*bs(1) - ns(1)*bs(3)
-         tvecs(3,i) = ns(1)*bs(2) - ns(2)*bs(1)
-      enddo
-c Fill in template with vector norms w/o the scaling coefficients
-      do zeta = 1,props%num_hard
-        do xi = 1,props%num_hard
-          temp = c_array(cnum)%ni(xi,1)*tvecs(1,zeta) +
-     &           c_array(cnum)%ni(xi,2)*tvecs(2,zeta) +
-     &           c_array(cnum)%ni(xi,3)*tvecs(3,zeta)
-          G(xi,zeta) = abs(temp)
-          temp = 1.d0 - temp*temp
-          if(temp.lt.0.d0) temp = 0.d0
-          H(xi,zeta) = sqrt(temp)
-        enddo
-      enddo
-c
-      return
-      end subroutine
-c
-c     Interaction matrices for FCC system, unitary interactions
-      subroutine mm10_mrr_GHfcc(G,H)
-c
-      double precision, dimension(12,12)
-     &    :: G, H
-c
-      G(1:12,1) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01
-     &    /)
-      G(1:12,2) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01
-     &    /)
-      G(1:12,3) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,4) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01
-     &    /)
-      G(1:12,5) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01
-     &    /)
-      G(1:12,6) = (/
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,7) = (/
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,8) = (/
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,9) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01
-     &    /)
-      G(1:12,10) = (/
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      G(1:12,11) = (/
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      G(1:12,12) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      H(1:12,1) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01
-     &    /)
-      H(1:12,2) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01
-     &    /)
-      H(1:12,3) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,4) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01
-     &    /)
-      H(1:12,5) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01
-     &    /)
-      H(1:12,6) = (/
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,7) = (/
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,8) = (/
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,9) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01
-     &    /)
-      H(1:12,10) = (/
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-      H(1:12,11) = (/
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-      H(1:12,12) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-c
-      return
-      end subroutine
-c
-c     Interaction matrices for BCC system, unitary interactions
-      subroutine mm10_mrr_GHbcc(G,H)
-c
-      double precision, dimension(12,12)
-     &    :: G, H
-c
-      G(1:12,1) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,2) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +2.8867513459481287D-01
-     &    /)
-      G(1:12,3) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +5.7735026918962573D-01
-     &    /)
-      G(1:12,4) = (/
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,5) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,6) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +5.7735026918962573D-01
-     &    /)
-      G(1:12,7) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,8) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,9) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +0.0000000000000000D+00
-     &    /)
-      G(1:12,10) = (/
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,11) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +8.6602540378443860D-01
-     &    /)
-      G(1:12,12) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +0.0000000000000000D+00
-     &    /)
-      H(1:12,1) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,2) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +9.5742710775633810D-01
-     &    /)
-      H(1:12,3) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +8.1649658092772603D-01
-     &    /)
-      H(1:12,4) = (/
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,5) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,6) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +8.1649658092772603D-01
-     &    /)
-      H(1:12,7) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,8) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,9) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +1.0000000000000000D+00
-     &    /)
-      H(1:12,10) = (/
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,11) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +5.0000000000000011D-01
-     &    /)
-      H(1:12,12) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +1.0000000000000000D+00
-     &    /)
-c
-      return
-      end subroutine
-c
-c     Interaction matrices for FCC system, unitary interactions
-      subroutine mm10_mrr_GHfcc12(G,H)
-c
-      double precision, dimension(12,12)
-     &    :: G, H
-c
-      G(1:12,1) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01
-     &    /)
-      G(1:12,2) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,3) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,4) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,5) = (/
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01
-     &    /)
-      G(1:12,6) = (/
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01
-     &    /)
-      G(1:12,7) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01
-     &    /)
-      G(1:12,8) = (/
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01
-     &    /)
-      G(1:12,9) = (/
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01
-     &    /)
-      G(1:12,10) = (/
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      G(1:12,11) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      G(1:12,12) = (/
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103173D-01, +4.7140452079103173D-01,
-     & +4.7140452079103168D-01, +4.7140452079103168D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +9.4280904158206347D-01, +9.4280904158206347D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      H(1:12,1) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01
-     &    /)
-      H(1:12,2) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,3) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,4) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,5) = (/
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01
-     &    /)
-      H(1:12,6) = (/
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01
-     &    /)
-      H(1:12,7) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01
-     &    /)
-      H(1:12,8) = (/
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01
-     &    /)
-      H(1:12,9) = (/
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01
-     &    /)
-      H(1:12,10) = (/
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-      H(1:12,11) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-      H(1:12,12) = (/
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819676D-01, +8.8191710368819676D-01,
-     & +8.8191710368819687D-01, +8.8191710368819687D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +3.3333333333333309D-01, +3.3333333333333309D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-c
-      return
-      end subroutine
-c
-c     Interaction matrices for BCC system, unitary interactions
-      subroutine mm10_mrr_GHbcc12(G,H)
-c
-      double precision, dimension(12,12)
-     &    :: G, H
-c
-      G(1:12,1) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,2) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,3) = (/
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,4) = (/
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,5) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,6) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,7) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01
-     &    /)
-      G(1:12,8) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01
-     &    /)
-      G(1:12,9) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01
-     &    /)
-      G(1:12,10) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01
-     &    /)
-      G(1:12,11) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      G(1:12,12) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00
-     &    /)
-      H(1:12,1) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,2) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,3) = (/
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,4) = (/
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,5) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,6) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,7) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01
-     &    /)
-      H(1:12,8) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01
-     &    /)
-      H(1:12,9) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01
-     &    /)
-      H(1:12,10) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01
-     &    /)
-      H(1:12,11) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-      H(1:12,12) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00
-     &    /)
-c
-      return
-      end subroutine
-c
-c     Interaction matrices for BCC system, unitary interactions
-      subroutine mm10_mrr_GHbcc48(G,H)
-c
-      double precision, dimension(48,48)
-     &    :: G, H
-c
-      G(1:48,1) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +1.0910894511799618D-01
-     &    /)
-      G(1:48,2) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +3.3333333333333337D-01, +3.3333333333333337D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398865D-01, +3.2732683535398860D-01
-     &    /)
-      G(1:48,3) = (/
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +3.3333333333333337D-01, +3.3333333333333337D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +1.0910894511799618D-01, +7.6376261582597338D-01
-     &    /)
-      G(1:48,4) = (/
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398860D-01, +3.2732683535398865D-01
-     &    /)
-      G(1:48,5) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +2.1821789023599242D-01, +2.1821789023599242D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +6.5465367070797720D-01, +1.3877787807814457D-17
-     &    /)
-      G(1:48,6) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +2.1821789023599242D-01, +2.1821789023599242D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +2.1821789023599236D-01, +8.7287156094396956D-01
-     &    /)
-      G(1:48,7) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +3.3333333333333331D-01, +3.3333333333333331D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +8.3333333333333348D-01, +8.3333333333333348D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.7287156094396967D-01, +8.7287156094396967D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +8.7287156094396956D-01, +2.1821789023599236D-01
-     &    /)
-      G(1:48,8) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +3.3333333333333331D-01, +3.3333333333333331D-01,
-     & +8.3333333333333348D-01, +8.3333333333333348D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +8.7287156094396967D-01, +8.7287156094396967D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +1.3877787807814457D-17, +6.5465367070797720D-01
-     &    /)
-      G(1:48,9) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +8.3333333333333348D-01, +8.3333333333333348D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +8.7287156094396967D-01, +8.7287156094396967D-01,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +9.8198050606196574D-01, +3.2732683535398865D-01
-     &    /)
-      G(1:48,10) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +3.3333333333333331D-01, +3.3333333333333331D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +2.1821789023599242D-01, +2.1821789023599242D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398865D-01, +9.8198050606196574D-01
-     &    /)
-      G(1:48,11) = (/
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +1.6666666666666663D-01, +1.6666666666666663D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +3.3333333333333331D-01, +3.3333333333333331D-01,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.1821789023599242D-01, +2.1821789023599242D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +7.6376261582597338D-01, +5.4554472558998102D-01
-     &    /)
-      G(1:48,12) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +2.8867513459481287D-01, +2.8867513459481287D-01,
-     & +5.7735026918962573D-01, +5.7735026918962573D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.3333333333333337D-01, +8.3333333333333337D-01,
-     & +5.0000000000000000D-01, +5.0000000000000000D-01,
-     & +8.3333333333333348D-01, +8.3333333333333348D-01,
-     & +1.6666666666666669D-01, +1.6666666666666669D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +6.6666666666666674D-01, +6.6666666666666674D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +3.2732683535398860D-01, +3.2732683535398860D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +8.7287156094396967D-01, +8.7287156094396967D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +8.7287156094396956D-01, +8.7287156094396956D-01,
-     & +2.1821789023599236D-01, +2.1821789023599236D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +7.6376261582597338D-01, +7.6376261582597338D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +5.4554472558998102D-01, +7.6376261582597338D-01
-     &    /)
-      G(1:48,13) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +1.8898223650461365D-01
-     &    /)
-      G(1:48,14) = (/
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +9.4491118252306827D-01
-     &    /)
-      G(1:48,15) = (/
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +9.4491118252306827D-01
-     &    /)
-      G(1:48,16) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +1.8898223650461365D-01
-     &    /)
-      G(1:48,17) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +3.7796447300922731D-01, +7.5592894601845462D-01
-     &    /)
-      G(1:48,18) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +7.5592894601845462D-01, +3.7796447300922731D-01
-     &    /)
-      G(1:48,19) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +3.7796447300922731D-01, +7.5592894601845462D-01
-     &    /)
-      G(1:48,20) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +7.5592894601845462D-01, +3.7796447300922731D-01
-     &    /)
-      G(1:48,21) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01
-     &    /)
-      G(1:48,22) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01
-     &    /)
-      G(1:48,23) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01
-     &    /)
-      G(1:48,24) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000002D+00, +1.0000000000000002D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.8867513459481298D-01, +2.8867513459481298D-01,
-     & +5.7735026918962595D-01, +5.7735026918962595D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +3.7796447300922731D-01, +3.7796447300922731D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01,
-     & +5.6694670951384096D-01, +5.6694670951384096D-01,
-     & +1.8898223650461365D-01, +1.8898223650461365D-01
-     &    /)
-      G(1:48,25) = (/
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +4.1239304942116146D-02, +4.1239304942116146D-02,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +9.8974331861078724D-01, +2.4743582965269689D-01
-     &    /)
-      G(1:48,26) = (/
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +4.4095855184409849D-01, +4.4095855184409849D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +7.5592894601845473D-01, +7.5592894601845473D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +8.1892302485332602D-01, +8.1892302485332602D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +1.2371791482634840D-01, +1.2371791482634840D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +9.0726470872655496D-01, +9.0726470872655496D-01,
-     & +2.4743582965269689D-01, +9.8974331861078724D-01
-     &    /)
-      G(1:48,27) = (/
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +4.1239304942116146D-02, +4.1239304942116146D-02,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +9.8974331861078724D-01, +9.8974331861078724D-01,
-     & +3.2991443953692917D-01, +9.0726470872655496D-01
-     &    /)
-      G(1:48,28) = (/
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +4.4095855184409849D-01, +4.4095855184409849D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +7.5592894601845473D-01, +7.5592894601845473D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +8.1892302485332602D-01, +8.1892302485332602D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +1.2371791482634840D-01, +1.2371791482634840D-01,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +9.0726470872655496D-01, +3.2991443953692917D-01
-     &    /)
-      G(1:48,29) = (/
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +1.8898223650461371D-01, +1.8898223650461371D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +4.4095855184409855D-01, +4.4095855184409855D-01,
-     & +3.1497039417435618D-01, +3.1497039417435618D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +3.7115374447904514D-01, +3.7115374447904514D-01,
-     & +1.2371791482634839D-01, +1.2371791482634839D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +3.7115374447904526D-01, +8.6602540378443893D-01
-     &    /)
-      G(1:48,30) = (/
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +8.8191710368819720D-01, +8.8191710368819720D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +6.9293486718358355D-01, +6.9293486718358355D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +4.1239304942116134D-01, +4.1239304942116134D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +8.6602540378443893D-01, +3.7115374447904526D-01
-     &    /)
-      G(1:48,31) = (/
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +1.8898223650461371D-01, +1.8898223650461371D-01,
-     & +3.1497039417435618D-01, +3.1497039417435618D-01,
-     & +4.4095855184409855D-01, +4.4095855184409855D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +1.2371791482634839D-01, +1.2371791482634839D-01,
-     & +3.7115374447904514D-01, +3.7115374447904514D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +5.3611096424750981D-01, +7.0106818401597437D-01
-     &    /)
-      G(1:48,32) = (/
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +8.8191710368819720D-01, +8.8191710368819720D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +6.9293486718358355D-01, +6.9293486718358355D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +4.1239304942116134D-01, +4.1239304942116134D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +7.0106818401597437D-01, +5.3611096424750981D-01
-     &    /)
-      G(1:48,33) = (/
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +4.4095855184409849D-01, +4.4095855184409849D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +8.1892302485332602D-01, +8.1892302485332602D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +7.5592894601845473D-01, +7.5592894601845473D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +9.0726470872655496D-01, +9.0726470872655496D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +4.1239304942116146D-02, +4.1239304942116146D-02,
-     & +8.6602540378443882D-01, +1.2371791482634842D-01
-     &    /)
-      G(1:48,34) = (/
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +1.2371791482634840D-01, +1.2371791482634840D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +9.8974331861078724D-01, +9.8974331861078724D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +1.2371791482634842D-01, +8.6602540378443882D-01
-     &    /)
-      G(1:48,35) = (/
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.4095855184409849D-01, +4.4095855184409849D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +8.1892302485332602D-01, +8.1892302485332602D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +7.5592894601845473D-01, +7.5592894601845473D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +1.3877787807814457D-17, +1.3877787807814457D-17,
-     & +9.0726470872655496D-01, +9.0726470872655496D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +4.1239304942116146D-02, +9.4850401366867110D-01
-     &    /)
-      G(1:48,36) = (/
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +1.2371791482634840D-01, +1.2371791482634840D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +9.8974331861078724D-01, +9.8974331861078724D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +9.4850401366867110D-01, +4.1239304942116146D-02
-     &    /)
-      G(1:48,37) = (/
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +6.2994078834871181D-02, +6.2994078834871181D-02,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +2.5197631533948484D-01, +2.5197631533948484D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +3.7115374447904531D-01, +3.7115374447904531D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +2.7755575615628914D-17, +2.7755575615628914D-17,
-     & +2.4743582965269681D-01, +2.4743582965269681D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +1.2371791482634836D-01, +1.2371791482634836D-01,
-     & +2.0619652471058067D-01, +2.0619652471058067D-01,
-     & +3.7115374447904514D-01, +6.1858957413174198D-01
-     &    /)
-      G(1:48,38) = (/
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +4.5363235436327748D-01, +4.5363235436327748D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +6.1858957413174198D-01, +3.7115374447904514D-01
-     &    /)
-      G(1:48,39) = (/
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +6.2994078834871181D-02, +6.2994078834871181D-02,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +2.5197631533948484D-01, +2.5197631533948484D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +3.7115374447904531D-01, +3.7115374447904531D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +2.4743582965269681D-01, +2.4743582965269681D-01,
-     & +2.7755575615628914D-17, +2.7755575615628914D-17,
-     & +1.2371791482634836D-01, +1.2371791482634836D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +3.7115374447904514D-01, +3.7115374447904514D-01,
-     & +2.0619652471058067D-01, +7.8354679390020654D-01
-     &    /)
-      G(1:48,40) = (/
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +4.5363235436327748D-01, +4.5363235436327748D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +7.8354679390020654D-01, +2.0619652471058067D-01
-     &    /)
-      G(1:48,41) = (/
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +4.4095855184409855D-01, +4.4095855184409855D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +1.8898223650461371D-01, +1.8898223650461371D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.1239304942116134D-01, +4.1239304942116134D-01,
-     & +3.7115374447904514D-01, +3.7115374447904514D-01,
-     & +4.5363235436327742D-01, +7.0106818401597426D-01
-     &    /)
-      G(1:48,42) = (/
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +8.8191710368819720D-01, +8.8191710368819720D-01,
-     & +3.1497039417435618D-01, +3.1497039417435618D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +6.9293486718358355D-01, +6.9293486718358355D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +1.2371791482634839D-01, +1.2371791482634839D-01,
-     & +7.0106818401597426D-01, +4.5363235436327742D-01
-     &    /)
-      G(1:48,43) = (/
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +4.4095855184409855D-01, +4.4095855184409855D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +1.8898223650461371D-01, +1.8898223650461371D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +2.0619652471058070D-01, +2.0619652471058070D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +4.1239304942116134D-01, +4.1239304942116134D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +4.5363235436327742D-01, +4.5363235436327742D-01,
-     & +3.7115374447904514D-01, +1.2371791482634839D-01
-     &    /)
-      G(1:48,44) = (/
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +8.8191710368819720D-01, +8.8191710368819720D-01,
-     & +2.5197631533948489D-01, +2.5197631533948489D-01,
-     & +9.4491118252306827D-01, +9.4491118252306827D-01,
-     & +3.1497039417435618D-01, +3.1497039417435618D-01,
-     & +6.9293486718358355D-01, +6.9293486718358355D-01,
-     & +6.2994078834871209D-02, +6.2994078834871209D-02,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +8.6602540378443893D-01, +8.6602540378443893D-01,
-     & +3.7115374447904526D-01, +3.7115374447904526D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +2.4743582965269678D-01, +2.4743582965269678D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +1.2371791482634839D-01, +3.7115374447904514D-01
-     &    /)
-      G(1:48,45) = (/
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +2.0619652471058067D-01, +2.0619652471058067D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +2.7755575615628914D-17, +2.7755575615628914D-17,
-     & +6.5982887907385812D-01, +4.1239304942116128D-01
-     &    /)
-      G(1:48,46) = (/
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +2.5197631533948484D-01, +2.5197631533948484D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +6.2994078834871181D-02, +6.2994078834871181D-02,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +1.2371791482634836D-01, +1.2371791482634836D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +3.7115374447904531D-01, +3.7115374447904531D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +3.7115374447904514D-01, +3.7115374447904514D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +4.5363235436327748D-01, +4.5363235436327748D-01,
-     & +2.4743582965269681D-01, +2.4743582965269681D-01,
-     & +4.1239304942116128D-01, +6.5982887907385812D-01
-     &    /)
-      G(1:48,47) = (/
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +9.4491118252306838D-01, +9.4491118252306838D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +8.8191710368819709D-01, +8.8191710368819709D-01,
-     & +1.2598815766974242D-01, +1.2598815766974242D-01,
-     & +6.9293486718358344D-01, +6.9293486718358344D-01,
-     & +1.8898223650461368D-01, +1.8898223650461368D-01,
-     & +9.8974331861078735D-01, +9.8974331861078735D-01,
-     & +3.2991443953692917D-01, +3.2991443953692917D-01,
-     & +9.4850401366867110D-01, +9.4850401366867110D-01,
-     & +4.1239304942116140D-02, +4.1239304942116140D-02,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +5.3611096424750981D-01, +5.3611096424750981D-01,
-     & +7.8354679390020654D-01, +7.8354679390020654D-01,
-     & +2.0619652471058067D-01, +2.0619652471058067D-01,
-     & +7.0106818401597426D-01, +7.0106818401597426D-01,
-     & +3.7115374447904520D-01, +3.7115374447904520D-01,
-     & +6.5982887907385812D-01, +6.5982887907385812D-01,
-     & +2.7755575615628914D-17, +2.4743582965269681D-01
-     &    /)
-      G(1:48,48) = (/
-     & +3.2732683535398865D-01, +3.2732683535398865D-01,
-     & +5.4554472558998102D-01, +5.4554472558998102D-01,
-     & +4.3643578047198484D-01, +4.3643578047198484D-01,
-     & +6.5465367070797720D-01, +6.5465367070797720D-01,
-     & +9.8198050606196585D-01, +9.8198050606196585D-01,
-     & +1.0910894511799618D-01, +1.0910894511799618D-01,
-     & +8.1892302485332591D-01, +8.1892302485332591D-01,
-     & +3.1497039417435613D-01, +3.1497039417435613D-01,
-     & +7.5592894601845462D-01, +7.5592894601845462D-01,
-     & +2.5197631533948484D-01, +2.5197631533948484D-01,
-     & +4.4095855184409860D-01, +4.4095855184409860D-01,
-     & +6.2994078834871181D-02, +6.2994078834871181D-02,
-     & +9.0726470872655507D-01, +9.0726470872655507D-01,
-     & +2.4743582965269689D-01, +2.4743582965269689D-01,
-     & +8.6602540378443882D-01, +8.6602540378443882D-01,
-     & +1.2371791482634836D-01, +1.2371791482634836D-01,
-     & +7.0106818401597437D-01, +7.0106818401597437D-01,
-     & +3.7115374447904531D-01, +3.7115374447904531D-01,
-     & +6.1858957413174198D-01, +6.1858957413174198D-01,
-     & +3.7115374447904514D-01, +3.7115374447904514D-01,
-     & +4.5363235436327748D-01, +4.5363235436327748D-01,
-     & +1.2371791482634842D-01, +1.2371791482634842D-01,
-     & +4.1239304942116128D-01, +4.1239304942116128D-01,
-     & +2.4743582965269681D-01, +2.7755575615628914D-17
-     &    /)
-      H(1:48,1) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +9.9402979738800490D-01
-     &    /)
-      H(1:48,2) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +9.4280904158206336D-01, +9.4280904158206336D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01
-     &    /)
-      H(1:48,3) = (/
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.4280904158206336D-01, +9.4280904158206336D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9402979738800490D-01, +6.4549722436790280D-01
-     &    /)
-      H(1:48,4) = (/
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01
-     &    /)
-      H(1:48,5) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +7.5592894601845440D-01, +1.0000000000000000D+00
-     &    /)
-      H(1:48,6) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.7590007294853320D-01, +4.8795003647426655D-01
-     &    /)
-      H(1:48,7) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +9.4280904158206336D-01, +9.4280904158206336D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +5.5277079839256649D-01, +5.5277079839256649D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.8795003647426627D-01, +4.8795003647426627D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.8795003647426655D-01, +9.7590007294853320D-01
-     &    /)
-      H(1:48,8) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4280904158206336D-01, +9.4280904158206336D-01,
-     & +5.5277079839256649D-01, +5.5277079839256649D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +4.8795003647426627D-01, +4.8795003647426627D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +1.0000000000000000D+00, +7.5592894601845440D-01
-     &    /)
-      H(1:48,9) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +5.5277079839256649D-01, +5.5277079839256649D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +4.8795003647426627D-01, +4.8795003647426627D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +1.8898223650461357D-01, +9.4491118252306805D-01
-     &    /)
-      H(1:48,10) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +9.4280904158206336D-01, +9.4280904158206336D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +1.8898223650461357D-01
-     &    /)
-      H(1:48,11) = (/
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.4280904158206336D-01, +9.4280904158206336D-01,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +8.3808170984752572D-01
-     &    /)
-      H(1:48,12) = (/
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +5.0000000000000011D-01, +5.0000000000000011D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772603D-01, +8.1649658092772603D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +5.5277079839256660D-01, +5.5277079839256660D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +5.5277079839256649D-01, +5.5277079839256649D-01,
-     & +9.8601329718326935D-01, +9.8601329718326935D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +7.4535599249992979D-01, +7.4535599249992979D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +4.8795003647426627D-01, +4.8795003647426627D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +4.8795003647426655D-01, +4.8795003647426655D-01,
-     & +9.7590007294853320D-01, +9.7590007294853320D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +6.4549722436790280D-01, +6.4549722436790280D-01,
-     & +1.8898223650461357D-01, +1.8898223650461357D-01,
-     & +8.3808170984752572D-01, +6.4549722436790280D-01
-     &    /)
-      H(1:48,13) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +9.8198050606196574D-01
-     &    /)
-      H(1:48,14) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +3.2732683535398799D-01
-     &    /)
-      H(1:48,15) = (/
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +3.2732683535398799D-01
-     &    /)
-      H(1:48,16) = (/
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +9.8198050606196574D-01
-     &    /)
-      H(1:48,17) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +9.2582009977255142D-01, +6.5465367070797686D-01
-     &    /)
-      H(1:48,18) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +6.5465367070797686D-01, +9.2582009977255142D-01
-     &    /)
-      H(1:48,19) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +9.2582009977255142D-01, +6.5465367070797686D-01
-     &    /)
-      H(1:48,20) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +6.5465367070797686D-01, +9.2582009977255142D-01
-     &    /)
-      H(1:48,21) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01
-     &    /)
-      H(1:48,22) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01
-     &    /)
-      H(1:48,23) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01
-     &    /)
-      H(1:48,24) = (/
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +8.6602540378443860D-01, +8.6602540378443860D-01,
-     & +0.0000000000000000D+00, +0.0000000000000000D+00,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.5742710775633810D-01, +9.5742710775633810D-01,
-     & +8.1649658092772592D-01, +8.1649658092772592D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2582009977255142D-01, +9.2582009977255142D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.2375447104791388D-01, +8.2375447104791388D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01
-     &    /)
-      H(1:48,25) = (/
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +1.4285714285714138D-01, +9.6890428330360967D-01
-     &    /)
-      H(1:48,26) = (/
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +5.7390337110447320D-01, +5.7390337110447320D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +4.2056004125370655D-01, +4.2056004125370655D-01,
-     & +9.6890428330360967D-01, +1.4285714285714138D-01
-     &    /)
-      H(1:48,27) = (/
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +1.4285714285714138D-01, +1.4285714285714138D-01,
-     & +9.4401083817138132D-01, +4.2056004125370655D-01
-     &    /)
-      H(1:48,28) = (/
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +5.7390337110447320D-01, +5.7390337110447320D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +4.2056004125370655D-01, +9.4401083817138132D-01
-     &    /)
-      H(1:48,29) = (/
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +9.8198050606196563D-01, +9.8198050606196563D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +9.2857142857142849D-01, +4.9999999999999956D-01
-     &    /)
-      H(1:48,30) = (/
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +4.7140452079103107D-01, +4.7140452079103107D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.1100602236709471D-01, +9.1100602236709471D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +4.9999999999999956D-01, +9.2857142857142849D-01
-     &    /)
-      H(1:48,31) = (/
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +9.8198050606196563D-01, +9.8198050606196563D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +8.4414751910646835D-01, +7.1309424437485391D-01
-     &    /)
-      H(1:48,32) = (/
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +4.7140452079103107D-01, +4.7140452079103107D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.1100602236709471D-01, +9.1100602236709471D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +7.1309424437485391D-01, +8.4414751910646835D-01
-     &    /)
-      H(1:48,33) = (/
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +5.7390337110447320D-01, +5.7390337110447320D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +4.2056004125370655D-01, +4.2056004125370655D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +4.9999999999999967D-01, +9.9231742781784316D-01
-     &    /)
-      H(1:48,34) = (/
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +1.4285714285714138D-01, +1.4285714285714138D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +9.9231742781784316D-01, +4.9999999999999967D-01
-     &    /)
-      H(1:48,35) = (/
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +5.7390337110447320D-01, +5.7390337110447320D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +4.2056004125370655D-01, +4.2056004125370655D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.9914929801701369D-01, +3.1676511180119155D-01
-     &    /)
-      H(1:48,36) = (/
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +1.4285714285714138D-01, +1.4285714285714138D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +3.1676511180119155D-01, +9.9914929801701369D-01
-     &    /)
-      H(1:48,37) = (/
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +9.2857142857142860D-01, +7.8571428571428570D-01
-     &    /)
-      H(1:48,38) = (/
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +7.8571428571428570D-01, +9.2857142857142860D-01
-     &    /)
-      H(1:48,39) = (/
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +9.7851059943021512D-01, +6.2133277860475644D-01
-     &    /)
-      H(1:48,40) = (/
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +6.2133277860475644D-01, +9.7851059943021512D-01
-     &    /)
-      H(1:48,41) = (/
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +9.8198050606196563D-01, +9.8198050606196563D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +9.1100602236709471D-01, +9.1100602236709471D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +8.9118891772442388D-01, +7.1309424437485402D-01
-     &    /)
-      H(1:48,42) = (/
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +4.7140452079103107D-01, +4.7140452079103107D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +7.1309424437485402D-01, +8.9118891772442388D-01
-     &    /)
-      H(1:48,43) = (/
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +8.9752746785575066D-01, +8.9752746785575066D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +9.8198050606196563D-01, +9.8198050606196563D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +9.1100602236709471D-01, +9.1100602236709471D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +9.2857142857142860D-01, +9.9231742781784316D-01
-     &    /)
-      H(1:48,44) = (/
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +4.7140452079103107D-01, +4.7140452079103107D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +3.2732683535398799D-01, +3.2732683535398799D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +4.9999999999999956D-01, +4.9999999999999956D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +9.9231742781784316D-01, +9.2857142857142860D-01
-     &    /)
-      H(1:48,45) = (/
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +1.0000000000000000D+00, +1.0000000000000000D+00,
-     & +7.5141589705045231D-01, +9.1100602236709483D-01
-     &    /)
-      H(1:48,46) = (/
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +9.1100602236709483D-01, +7.5141589705045231D-01
-     &    /)
-      H(1:48,47) = (/
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +3.2732683535398766D-01, +3.2732683535398766D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +4.7140452079103129D-01, +4.7140452079103129D-01,
-     & +9.9203174552379325D-01, +9.9203174552379325D-01,
-     & +7.2100018712984359D-01, +7.2100018712984359D-01,
-     & +9.8198050606196574D-01, +9.8198050606196574D-01,
-     & +1.4285714285714060D-01, +1.4285714285714060D-01,
-     & +9.4401083817138132D-01, +9.4401083817138132D-01,
-     & +3.1676511180119155D-01, +3.1676511180119155D-01,
-     & +9.9914929801701369D-01, +9.9914929801701369D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +8.4414751910646835D-01, +8.4414751910646835D-01,
-     & +6.2133277860475644D-01, +6.2133277860475644D-01,
-     & +9.7851059943021512D-01, +9.7851059943021512D-01,
-     & +7.1309424437485402D-01, +7.1309424437485402D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +7.5141589705045231D-01, +7.5141589705045231D-01,
-     & +1.0000000000000000D+00, +9.6890428330360967D-01
-     &    /)
-      H(1:48,48) = (/
-     & +9.4491118252306805D-01, +9.4491118252306805D-01,
-     & +8.3808170984752572D-01, +8.3808170984752572D-01,
-     & +8.9973541084243724D-01, +8.9973541084243724D-01,
-     & +7.5592894601845440D-01, +7.5592894601845440D-01,
-     & +1.8898223650461299D-01, +1.8898223650461299D-01,
-     & +9.9402979738800490D-01, +9.9402979738800490D-01,
-     & +5.7390337110447343D-01, +5.7390337110447343D-01,
-     & +9.4910149657117848D-01, +9.4910149657117848D-01,
-     & +6.5465367070797686D-01, +6.5465367070797686D-01,
-     & +9.6773340156674170D-01, +9.6773340156674170D-01,
-     & +8.9752746785575055D-01, +8.9752746785575055D-01,
-     & +9.9801390072069940D-01, +9.9801390072069940D-01,
-     & +4.2056004125370633D-01, +4.2056004125370633D-01,
-     & +9.6890428330360967D-01, +9.6890428330360967D-01,
-     & +4.9999999999999967D-01, +4.9999999999999967D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +7.1309424437485391D-01, +7.1309424437485391D-01,
-     & +9.2857142857142849D-01, +9.2857142857142849D-01,
-     & +7.8571428571428570D-01, +7.8571428571428570D-01,
-     & +9.2857142857142860D-01, +9.2857142857142860D-01,
-     & +8.9118891772442388D-01, +8.9118891772442388D-01,
-     & +9.9231742781784316D-01, +9.9231742781784316D-01,
-     & +9.1100602236709483D-01, +9.1100602236709483D-01,
-     & +9.6890428330360967D-01, +1.0000000000000000D+00
-     &    /)
-c
-      return
-      end subroutine
-c
 c *****************************************************************************
 c *                                                                           *
 c *         ORNL ferric-martensitic steel hardening routines                  *
@@ -6588,7 +3240,6 @@ c      u6            c6
 c
 c           Form intermediate vectors for faster calculations
       subroutine mm10_v_ornl(props, np1, n, stress, tt, 
-
      &   vec1, vec2)
       use mm10_defs
       implicit none
@@ -6671,8 +3322,8 @@ c
      &  p_e, q_e, Qslip, v_s, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  fM, lamda, G0, rhoM
-      double precision, dimension(props%num_hard,props%num_hard)
-     &   :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -6694,16 +3345,16 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
 c        
 c      ms = np1.ms(1:6,alpha);
 c      rs = stress*ms; % tau^a
       rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c          rhoF = dot_product(props%Gmat(alpha,1:props%num_hard),
 c     &   tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+       rhoP = dot_product(props%Hmat(alpha,1:props%num_hard),
      &   tt(1:props%num_hard))
 c
 c Compute some stresses and rates
@@ -6752,7 +3403,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt, h,
+     &   rhoFs,rhoPs
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha, gp
 c
@@ -6762,8 +3414,8 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4, G0
-      double precision, dimension(props%num_hard,props%num_hard)
-     &    :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
@@ -6792,7 +3444,11 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c
 c
 c      write(*,*) "Gmat", Gmat(1,1)
@@ -6809,10 +3465,12 @@ c          rs = stress*ms; % tau^a
 c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &    tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &    tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c        write(*,*) "rhoF", rhoF
 c        write(*,*) "rhoP", rhoP
 c          
@@ -6883,8 +3541,8 @@ c
       double complex :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  fM, lamda, G0, rhoM
-      double precision, dimension(props%num_hard,props%num_hard)
-     &   :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -6906,14 +3564,14 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
 c        
 c      ms = np1.ms(1:6,alpha);
 c      rs = stress*ms; % tau^a
       rs = mm10_rsi(props, np1, n, stress, tt, alpha)
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Hmat(alpha,1:props%num_hard)*
+          temp = (props%Hmat(alpha,1:props%num_hard)*
      &     tt(1:props%num_hard))
           rhoP = sum(temp)
 c
@@ -6970,8 +3628,8 @@ c
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
      &  tem1, tem2, tem3, G0
-      double precision, dimension(props%num_hard,props%num_hard)
-     &     :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
@@ -7000,7 +3658,7 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
 c
 c
 c      write(*,*) "Gmat", Gmat(1,1)
@@ -7018,10 +3676,10 @@ c          rs = stress*ms; % tau^a
 c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          temp = (Gmat(alpha,1:props%num_hard)
+          temp = (props%Gmat(alpha,1:props%num_hard)
      &      *tt(1:props%num_hard))
           rhoF = sum(temp)
-          temp = (Hmat(alpha,1:props%num_hard)
+          temp = (props%Hmat(alpha,1:props%num_hard)
      &      *tt(1:props%num_hard))
           rhoP = sum(temp)
 c        write(*,*) "rhoF", rhoF
@@ -7108,7 +3766,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress, dtdstress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoFs,rhoPs
       double precision, dimension(props%num_hard,6) :: et
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
@@ -7120,8 +3778,8 @@ c
      &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, G0
-      double precision, dimension(props%num_hard,props%num_hard)
-     &     :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
       double precision, dimension(props%nslip) :: dslip
       integer :: alpha
 c Load some material parameters
@@ -7152,7 +3810,11 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c
       do alpha = 1,props%num_hard
 
@@ -7164,10 +3826,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard)
-     &     ,tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard)
-     &      ,tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
           ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
@@ -7212,7 +3876,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoPs,rhoFs
       double precision, dimension(props%num_hard,props%num_hard) :: etau
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
@@ -7224,8 +3888,8 @@ c
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM,G0
-      double precision, dimension(props%num_hard,props%num_hard)
-     &    :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
       double precision, dimension(props%num_hard,props%num_hard)
      &    :: dslip
       integer :: alpha, beta
@@ -7257,7 +3921,11 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 
 c
 c Compute drho_alpha/drho_beta
@@ -7272,10 +3940,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
           
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &     tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &     tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c
 c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
 c     &     slipinc)
@@ -7295,8 +3965,8 @@ c loop over denominator hardening variable
         do beta = 1,props%num_hard
 c          
 c           [drhoF,drhoP] = mm10_drhoFP_ornl(props, np1, n, tt, alpha, beta);
-          drhoF = Gmat(alpha,beta)
-          drhoP = Hmat(alpha,beta)
+          drhoF = props%Gmat(alpha,beta)
+          drhoP = props%Hmat(alpha,beta)
           
           dddipole = 0.d0
           drhoM = 0.5d0*(2.d0*k/(c1*c2*c3*G*b**3.d0))*
@@ -7362,7 +4032,7 @@ c
       double precision, dimension(6) :: stress
       double precision :: rs
       double precision, dimension(props%nslip) :: dgammadtau
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoFs,rhoPs
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
@@ -7370,8 +4040,8 @@ c
      &  p_e, q_e, Qslip, v_s, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, G0, fM, lamda, rhoM
-      double precision, dimension(props%num_hard,props%num_hard)
-     &      :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -7393,7 +4063,11 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
 c        
       do alpha = 1,props%num_hard
 c        
@@ -7402,10 +4076,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &   tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &   tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c
 c Compute one dependency
         rhoM = fM*tt(alpha)
@@ -7448,7 +4124,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard) :: tt,rhoPs,rhoFs
       double precision, dimension(props%nslip,props%num_hard)
      &    :: dgammadtt
       double precision :: mm10_rs, rs
@@ -7459,8 +4135,8 @@ c
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
      &  dtcut, dtpass, G0, fM, rhoM, lamda, drhoM
-      double precision, dimension(props%num_hard,props%num_hard)
-     &      :: Gmat, Hmat
+       !double precision, dimension(props%num_hard,props%num_hard)
+       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -7482,7 +4158,11 @@ c New shear modulus
         G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
-      call mm10_mrr_GH(props,Gmat,Hmat)
+      ! call mm10_mrr_GH(props,Gmat,Hmat)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,1.d0,
+     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
         
 c Compute derivative of slip rate alpha w.r.t. density beta
 c loop over slip rate
@@ -7493,10 +4173,12 @@ c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
 c        
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
-          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
-     &      tt(1:props%num_hard))
-          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
-     &      tt(1:props%num_hard))
+c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
+c     &    tt(1:props%num_hard))
+          rhoF = rhoFs(alpha)
+          rhoP = rhoPs(alpha)
 c          
 c Compute one dependency
         rhoM = fM*tt(alpha)
@@ -7510,8 +4192,8 @@ c loop over density
         do beta = 1,props%num_hard
         
 c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
-          drhoF = Gmat(alpha,beta)
-          drhoP = Hmat(alpha,beta)
+          drhoF = props%Gmat(alpha,beta)
+          drhoP = props%Hmat(alpha,beta)
           if(alpha.eq.beta) then
              drhoM = fM
           else
@@ -7522,7 +4204,7 @@ c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
           dtpass = 0.5d0*c1*G*b/dsqrt(rhoP)*drhoP ! (16)
           dtcut = 0.d0 ! (17)
           dfract = ((-dtpass)*tcut - 
-     &             (dabs(rs)-tpass)*dtcut)/tcut**2.d0
+     &             (dabs(rs)-tpass)*dtcut)/tcut**2
 
 c Evaluate the equation
           if(fract.gt.1.d0) then
@@ -7530,7 +4212,7 @@ c Evaluate the equation
               dslipinc = dt * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
      &           **(q_e-1.d0)) * (- p_e*(1.d0)**(p_e-1.d0))
      &            * dsign(1.d0,rs) * (dgamma_0/tcut 
-     &             - gamma_0*dtcut/tcut**2.d0)
+     &             - gamma_0*dtcut/tcut**2)
           elseif(dabs(rs).gt.0.d0) then
           slipexp = dexp (-(Qslip/k/theta)*
      &             (1.d0 - fract**p_e)**q_e) !(14)

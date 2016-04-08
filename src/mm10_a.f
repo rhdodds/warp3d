@@ -1,15 +1,15 @@
 c
-c ****************************************************************************
-c *                                                                          *
-c *    mm10.f                                                                *
-c *                                                                          *
-c *         written by : mcm                                                 *
-c *         last modified : 3/7/2016 tjt                                 *
-c *                                                                          *
-c *         Stress/strain update routines AND HELPERS for crystal plasticity *
-c *         material modeled via Beaudoin et al.                             *
-c *                                                                          *
-c ****************************************************************************
+c **********************************************************************
+c *                                                                    *
+c *    mm10.f                                                          *
+c *                                                                    *
+c *         written by : mcm                                           *
+c *         last modified : 4/5/2016 tjt                               *
+c *                                                                    *
+c *         Stress/strain update routines AND HELPERS for              *
+c *         crystal plasticity material modeled via Beaudoin et al.    *
+c *                                                                    *
+c **********************************************************************
 c
 
 c
@@ -48,6 +48,8 @@ c
      &        h_type, miter, gpp, s_type, cnum, method,
      &        st_it(3), num_hard, out
         logical :: real_tang, solver, strategy, debug, gpall
+        ! constants for use in material models
+        double precision, dimension(:,:), allocatable :: Gmat,Hmat
       end type
 c      
       type :: crystal_state
@@ -69,7 +71,6 @@ c
       end type
 c      
       end module
-
 c
 c     ****************************************************************
 c     *                                                              *
@@ -77,7 +78,7 @@ c     *                      subroutine mm10                         *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 3/7/2016 tjt                *
+c     *                   last modified: 4/6/2016 tjt                *
 c     *                                                              *
 c     *              crystal plasticity stress-strain update         *
 c     *                                                              *
@@ -87,7 +88,8 @@ c
       subroutine mm10( gp, span, ncrystals, hist_sz, history_n,
      &                 history_np1, local_work, uddt, gp_temps, 
      &                 gp_temp_inc, iout, display_matl_messages,
-     &                 do_nonlocal, nonlocal_state, maxnonlocal )
+     &                 do_nonlocal, nonlocal_state, maxnonlocal,
+     &                 iter_0_extrapolate_off )
 c     
       use segmental_curves, only: max_seg_points
       use mm10_defs
@@ -99,7 +101,8 @@ c                 parameter definitions
 c
       integer, intent(in) :: gp, span, hist_sz, iout, maxnonlocal,
      &                       ncrystals(mxvl) 
-      logical, intent(in) :: display_matl_messages, do_nonlocal
+      logical, intent(in) :: display_matl_messages, do_nonlocal,
+     &                       iter_0_extrapolate_off
 c      
       double precision, intent(in) :: 
      &      uddt(mxvl,nstr), gp_temps(mxvl), gp_temp_inc(mxvl)
@@ -110,19 +113,29 @@ c
 c                 locals
 c
       integer :: i, c, co, cn, now_element
-      double precision, dimension(6) :: sig_avg
+      double precision, dimension(6) :: sig_avg, se
+      double precision, dimension(6) :: p_strain_ten_c, p_strain_ten
       double precision, dimension(6,6) :: tang_avg
       double precision, dimension(max_slip_sys) :: slip_avg
-      double precision :: t_work_inc, p_work_inc,p_strain_inc, zero            
+      double precision :: t_work_inc, p_work_inc,p_strain_inc, zero,
+     &                    one, two, three, ten, t1, t2 
+      double precision :: n_avg,p_strain_avg, B_eff, s_trace
       type(crystal_props) :: cc_props
       type(crystal_state) :: cc_n, cc_np1
       logical :: debug, gpall, locdebug
 c      
-      data zero / 0.0d0 /
+      data zero, one, two, three, ten / 0.0d0, 1.0d00, 2.0d00, 3.0d00,
+     &    10.0d00 /
 c
       debug = .false.
 c
       if( debug ) write (iout,*) "In mm10"
+c
+c                 initialize G,H arrays for certain CP constitutive
+c                 models. Note: all crystals in the element block 
+c                 will have the same hardening model and slip systems
+c 
+      call mm10_set_cons(local_work,cc_props,1)
 c
 c                 we have data passed for integration point # gp for
 c                 all (span) elements in this block. the CP updating
@@ -138,7 +151,7 @@ c
 c
         now_element = local_work%felem + i - 1            
 c
-c             step = 1, init element history
+c                 for step = 1, init element history
 c
         if( local_work%step .eq. 1 ) then
               if( debug ) write(iout,*) "Init GP history"
@@ -148,16 +161,17 @@ c
      &              76+max_slip_sys-1) )
         end if
 c
-        if( debug ) write(iout,*)
-     &             'Updating element: ', now_element
+        if( debug ) write(iout,*) 'Updating element: ', now_element
         sig_avg      = zero
         slip_avg     = zero
         t_work_inc   = zero
         p_work_inc   = zero
         p_strain_inc = zero
         tang_avg     = zero
+        p_strain_ten = zero
+        n_avg        = zero
 c        
-c             loop on all crystals at integration point
+c                 loop on all crystals at integration point
 c
         do c = 1, ncrystals(i)
           debug = local_work%debug_flag(i)
@@ -174,6 +188,7 @@ c
      &               .eq.-2).or.
      &               (local_work%c_props(i,c)%st_it(2)
      &               .eq.local_work%iter)))
+          mat_debug = locdebug
           locdebug = .false.
           co = 76+max_slip_sys+(c-1)*(30+max_slip_sys
      &           +3*max_uhard)
@@ -204,48 +219,88 @@ c
      &        local_work%gpn,cc_np1 )
           if( locdebug) write(iout,*) "Updating crystal ", c
           call mm10_solve_crystal( cc_props, cc_np1, cc_n,
-     &        local_work%material_cut_step, iout, .false., 0 )
-          if( local_work%material_cut_step ) return
+     &        local_work%material_cut_step, iout, .false., 0,
+     &        p_strain_ten_c, iter_0_extrapolate_off )
+          if( local_work%material_cut_step ) then
+            call mm10_set_cons( local_work, cc_props, 2)
+            return
+          endif
 c             
-c             accumulate sums for subsequent averaging
+c                 accumulate sums for subsequent averaging
+c                    cp_strain_inc -> effective plastic increment
+c                    p_strain_ten -> plastic strain increment tensor
+c                    n_avg -> effective creep exponent  
 c
-            sig_avg      = sig_avg + cc_np1%stress
-            tang_avg     = tang_avg + cc_np1%tangent
-            slip_avg     = slip_avg + cc_np1%slip_incs
-            t_work_inc   = t_work_inc + cc_np1%work_inc
-            p_work_inc   = p_work_inc + cc_np1%p_work_inc
-            p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
+          sig_avg      = sig_avg + cc_np1%stress
+          tang_avg     = tang_avg + cc_np1%tangent
+          slip_avg     = slip_avg + cc_np1%slip_incs
+          t_work_inc   = t_work_inc + cc_np1%work_inc
+          p_work_inc   = p_work_inc + cc_np1%p_work_inc
+          p_strain_inc = p_strain_inc + cc_np1%p_strain_inc 
+          p_strain_ten = p_strain_ten + p_strain_ten_c 
+          n_avg        = n_avg + cc_np1%p_strain_inc*cc_np1%u(12) 
 c
-c             nonlocal state values returned are creep rate wrt real time
-c             and total creep strain
+c                 store the CP history for this crystal
 c
-      if( do_nonlocal ) then
-            nonlocal_state(i,1) = cc_np1%u(11) !effective creep rate wrt real time
-c            nonlocal_state(i,2) = cc_np1%u(14) !effective creep strain
-            nonlocal_state(i,3) = cc_np1%u(12) !effective creep exponent
-            nonlocal_state(i,4) = cc_np1%u(14) !effective B
-      end if 
-c
-c             store the CP history for this crystal
-c
-            call mm10_store_cryhist( cc_props, cc_np1, cc_n, 
-     &                  history_np1(i,co:cn) )
+          call mm10_store_cryhist( cc_props, cc_np1, cc_n, 
+     &                             history_np1(i,co:cn) )
+c     
         end do ! over all crystals at int point
 c        
-c             finalize averages over all crystals at point
+c                 finalize averages over all crystals at point.
+c                    p_strain_avg -> average effective strain increment
+c                                    from the average tensor
 c
-        rncry = dble( ncrystals(i) )
+        rncry        = dble( ncrystals(i) )
         sig_avg      = sig_avg / rncry
         tang_avg     = tang_avg /  rncry
         slip_avg     = slip_avg / rncry
         t_work_inc   = t_work_inc / rncry
         p_work_inc   = p_work_inc / rncry
         p_strain_inc = p_strain_inc / rncry
+        p_strain_ten = p_strain_ten / rncry
+        t1           = p_strain_ten(1)**2 + p_strain_ten(2)**2 + 
+     &                 p_strain_ten(3)**2
+        t2           = p_strain_ten(4)**2 + p_strain_ten(5)**2 + 
+     &                 p_strain_ten(6)**2
+        p_strain_avg = sqrt( two/three * ( t1 + t2/two ) )
+        n_avg        = n_avg / p_strain_avg / rncry
         if( locdebug ) write(iout,*) "stress", sig_avg
         if( locdebug ) write(iout,*) "tang", tang_avg
+c
+c                 nonlocal state values returned are creep rate 
+c                 wrt real time and total creep strain;
+c                 ONLY for first crystal
+c                     nonlocal(1) -> effective creep rate wrt real time
+c                     nonlocal(2) -> (total) effective creep strain
+c                     nonlocal(3) -> effective creep eponent (n)
+c                     nonlocal(4) -> effective Norton constant B
+c
+        if( do_nonlocal ) then
+          nonlocal_state(i,1) = p_strain_avg / local_work%dt 
+          nonlocal_state(i,2) = local_work%urcs_blk_n(i,9,gp) +
+     &                          p_strain_avg
+          if( n_avg .lt. one ) then ! limti range of values
+            nonlocal_state(i,3) = one 
+          elseif( n_avg .gt. ten ) then
+            nonlocal_state(i,3) = ten 
+          else
+            nonlocal_state(i,3) = n_avg 
+          endif
+          s_trace = (sig_avg(1) + sig_avg(2) + sig_avg(3)) / three
+          se(1:6) = sig_avg(1:6)
+          se(1)   = se(1) - s_trace
+          se(2)   = se(2) - s_trace
+          se(3)   = se(3) - s_trace
+          t1      = se(1)**2 + se(2)**2 + se(3)**2
+          t2      = se(4)**2 + se(5)**2 + se(6)**2
+          s_trace = sqrt( three/two * ( t1 + two*t2 ) )
+          B_eff   = p_strain_avg / local_work%dt/(s_trace**n_avg)
+          nonlocal_state(i,4) = B_eff 
+        end if 
 c        
-c             store results for integration point into 
-c             variables passed by warp3d
+c                 store results for integration point into 
+c                 variables passed by warp3d
 c
         call mm10_store_gp (sig_avg, 
      &     local_work%urcs_blk_n1(i,1:6,gp),
@@ -260,8 +315,74 @@ c
 c     
       end do ! over span
 c
+c                  release allocated G & H arrays for 
+c                  certain CP constitutive models
+c
+      call mm10_set_cons( local_work, cc_props, 2 )
+c
       return
 c      
+      end subroutine
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_set_cons                     *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 4/6/2016 rhd                *
+c     *                                                              *
+c     *       set interaction matrices G & H for slip system type    *
+c     *       used for this element block                            *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mm10_set_cons( local_work, cc_props, isw )
+c
+      use segmental_curves, only: max_seg_points
+      use mm10_defs ! to get definition of cc_props
+c            
+      implicit integer (a-z)
+$add include_sig_up
+c
+      type(crystal_props) :: cc_props
+      integer :: isw, s_type1, n_hard
+      logical :: process_G_H
+c      
+      process_G_H = ( local_work%c_props(1,1)%h_type .eq. 4 ) .or.
+     &              ( local_work%c_props(1,1)%h_type .eq. 7 )
+      if( .not. process_G_H ) return
+c      
+      select case( isw )
+      
+      case( 1 ) ! allocate G,H interaction matrices
+c
+         s_type1 = local_work%c_props(1,1)%s_type
+         n_hard  = local_work%c_props(1,1)%num_hard
+         allocate( cc_props%Gmat(n_hard,n_hard),
+     &             cc_props%Hmat(n_hard,n_hard), stat=allocate_status)
+         if( allocate_status .ne. 0 ) then
+            write(*,*) ' error allocating G matrix'
+            call die_gracefully
+         endif
+         call mm10_mrr_GH( s_type1, n_hard, cc_props%Gmat,
+     &                     cc_props%Hmat)
+c
+      case( 2 ) ! deallocate G,H matrices
+c
+         deallocate( cc_props%Gmat, cc_props%Hmat )
+c
+      case default
+c      
+          write(*,*) '>>>> FATAL ERROR. invalid isw, mm10_set_cons'
+          write(*,*) '                  job terminated'
+          call die_abort
+c     
+      end select
+c       
+      return
+c       
       end subroutine
 c
 c --------------------------------------------------------------------
@@ -825,7 +946,8 @@ c     *     store other output                                       *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_solve_crystal(props, np1, n, cut, iout, fat,gp)
+      subroutine mm10_solve_crystal(props, np1, n, cut, iout, fat,gp,
+     &                  p_strain_ten_c,iter_0_extrapolate_off)
       use mm10_defs
       use main_data, only: asymmetric_assembly
       implicit none
@@ -833,17 +955,26 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(max_uhard) :: vec1,vec2
+      double precision, dimension(6) :: p_strain_ten_c
       double precision, dimension(max_uhard,max_uhard) :: arr1,arr2
       double complex, dimension(max_uhard) :: ivec1,ivec2
-      logical :: cut, fat
+      logical :: cut, fat, iter_0_extrapolate_off, no_load
       integer :: iout,gp
 c
       call mm10_solve_strup(props, np1, n, vec1, vec2, arr1, arr2,
-     &   ivec1, ivec2, cut,gp)
+     &   ivec1, ivec2, cut, gp, iter_0_extrapolate_off, no_load)
 c      
       if (cut) then
         write(iout,*) "mm10 stress update failed"
         return
+      end if
+c
+c      write(*,*) 'iter_0_extrapolate_off in solv_cry', 
+c     &    iter_0_extrapolate_off
+c     Special update with extrapolate off: return stress due to creep
+c     and linear elastic stiffness matrix (from mm10_solve_strup)
+      if (iter_0_extrapolate_off.or.no_load) then
+          return
       end if
 c
       call mm10_tangent(props, np1, n, vec1, vec2, arr1, arr2,
@@ -862,7 +993,7 @@ c
 c
       call mm10_update_rotation(props, np1, n, vec1, vec2)
 c
-      call mm10_output(props, np1, n, vec1, vec2)
+      call mm10_output(props, np1, n, vec1, vec2,p_strain_ten_c)
 c
       return
       end subroutine
@@ -2328,7 +2459,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_solve_strup(props, np1, n, vec1, vec2, arr1, 
-     &   arr2, ivec1, ivec2, fail,gp)
+     &   arr2, ivec1, ivec2, fail, gp, iter_0_extrapolate_off, 
+     &    no_load)
       use mm10_defs
       implicit none
 c
@@ -2337,7 +2469,7 @@ c
       logical :: fail
 c
       type(crystal_state) :: curr
-      double precision, dimension(6) :: stress, ostress
+      double precision, dimension(6) :: stress, ostress, R1
       double precision :: tt(props%num_hard), ott(props%num_hard)
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
@@ -2346,7 +2478,10 @@ c
       double precision :: frac, step, mult
       integer, dimension(10) :: faili
       double precision, dimension(10) :: failr
-      logical :: debug, gpall, locdebug
+      double precision :: temp1,temp2
+      logical :: debug, gpall, locdebug, iter_0_extrapolate_off,
+     &    no_load
+c
       parameter(mcuts = 4)
       parameter(mult = 0.5d0)
       debug = props%debug
@@ -2375,7 +2510,35 @@ c
 c
       call mm10_setup(props, np1, n)
       fail = .false.
+c     check if zero increments or zero stress
+      temp1 = np1%D(1)*np1%D(1)+np1%D(2)*np1%D(2)+
+     &        np1%D(3)*np1%D(3)+np1%D(4)*np1%D(4)+
+     &        np1%D(5)*np1%D(5)+np1%D(6)*np1%D(6)
+      temp2 = stress(1)*stress(1)+stress(2)*stress(2)+
+     &        stress(3)*stress(3)+stress(4)*stress(4)+
+     &        stress(5)*stress(5)+stress(6)*stress(6)
+      no_load = (temp2.eq.0.d0).and.(temp1.eq.0.d0)
+c       write(*,*) 'noload', no_load
 
+c     Branch on update for stress: either elasticity, or plasticity
+      if(iter_0_extrapolate_off.or.no_load) then
+c
+        np1%tangent = props%stiffness ! assign elastic stiffness as the tangent matrix
+c       check whether to update the stress accounting for evolving creep
+c       according to np1%stress = n%stress - R1(n%stress,uddt)
+c       where R1 = stress - n%stress - matmul(props%stiffness, np1%D - dbarp) 
+c     &      + 2.0d0 * symTW
+        if(.not.no_load) then
+          call mm10_formvecs(props, np1, n, stress, tt, vec1, vec2)
+          call mm10_formR1(props, np1, n, vec1, vec2, stress, tt, 
+     &                     R1, gp)
+          stress = stress - R1
+        end if
+c ensure that zero rates are set, though this value should not be kept in warp3d history during extrapolaion anyway
+        curr%tt_rate = 0.d0 
+c
+      else ! update stress, state variables using usual material N-R solvers
+c 
       do while (frac .lt. 1.0d0)
         call mm10_setup_np1(reshape(np1%R, (/9/)), np1%D*(step+frac),
      &      np1%tinc*(step+frac), (np1%temp-n%temp)*(step+frac)+n%temp,
@@ -2436,7 +2599,10 @@ c
       np1%stress = n%stress
       np1%tau_tilde = n%tau_tilde
       return
+      end if ! failure from solver
+c
       end if
+c
 c      
       np1%stress = stress
       np1%tau_tilde = tt
