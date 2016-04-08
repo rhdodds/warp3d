@@ -4143,7 +4143,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6), cep_vec(36), tol
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_ref, check_D
+     &           temperatures_ref, check_D, iter_0_extrapolate_off
       data zero, one / 0.0d0, 1.0d0 /
 c
       dtime             = local_work%dt
@@ -4224,34 +4224,33 @@ c            for iter > 1, do a usual nonlinear stress update.
 c                          consistent tangent is in terms 1-36 
 c                          of history @ n+1 for the integration point
 c            for iter = 0 and extrapolated, usual nonlinear update
+c            for iter = 0 and extrapolate off, mm10 computes 
+c            sigma_n+1 = sigma_n + D_E * ( uddt - delta eps creep)
+c            and puts D_E into history 1-36. D_E is linear-elastic
+c            constitutive matrix.
 c
       uddt = uddt_displ + uddt_temps
-      if( iter >= 1 .or. extrapolated_du ) then  ! nonlinear update
+      iter_0_extrapolate_off = .false.
+      if( iter .eq. 0 ) then
+        iter_0_extrapolate_off = .not. extrapolated_du 
+        if( step .eq. 1 ) iter_0_extrapolate_off = .true.
+      end if  
       if( local_debug )  write(iout,9110) felem, gpn, span
-       call mm10( gpn, local_work%span, local_work%ncrystals,
-     &            hist_size_for_blk,
-     &            local_work%elem_hist(1,1,gpn),
-     &            local_work%elem_hist1(1,1,gpn),
-     &            local_work, uddt, gp_temps,
-     &            gp_dtemps, iout, signal_flag,
-     &            local_work%block_has_nonlocal_solids,
-     &            local_work%nonlocal_state_blk(1,1),
-     &            nonlocal_shared_state_size ) ! value in param_def
-       if( local_debug )  write(iout,9120) felem, gpn, span
-       return    
-      end if 
-c
-c            process the returned values of nonlocal, shared scalars.
-c            list if values at this integration point for all elements
-c            in block
+      call mm10( gpn, local_work%span, local_work%ncrystals,
+     &           hist_size_for_blk,
+     &           local_work%elem_hist(1,1,gpn),
+     &           local_work%elem_hist1(1,1,gpn),
+     &           local_work, uddt, gp_temps,
+     &           gp_dtemps, iout, signal_flag,
+     &           local_work%block_has_nonlocal_solids,
+     &           local_work%nonlocal_state_blk(1,1),
+     &           nonlocal_shared_state_size,  ! value in param_def
+     &           iter_0_extrapolate_off )
 c
       if( local_work%block_has_nonlocal_solids ) 
-     &      call drive_10_non_local
-c
-C            iter = 0 and not extrapolated.
-c            get [D] elastic for CP. Must be symmetric
-c      
-      call drive_10_update_b
+     &    call drive_10_non_local ! finish nonlocal shared
+   
+      if( local_debug )  write(iout,9120) felem, gpn, span
 c      
       if( check_D ) then
         tol = 0.01d00
@@ -4282,23 +4281,6 @@ c
             write(iout,9100) cep(i,1:6,1:6)
        end do   
       end if
-c
-c            store symmetric part of [D] elastic in global blocks.
-c            required since hist @ n+1 is not saved for iter = 0.
-c            [D] for CP model should never have been stored in history.
-c            this wastes some space can't be changed w/o lots of
-c            work in the CP routines
-c
-@!DIR$ LOOP COUNT MAX=### 
-      do i = 1, span
-        call drive_10_update_c( cep(1,1,1), mxvl, i, cep_vec, 6 )
-        local_work%elem_hist1(i,1:36,gpn) = cep_vec(1:36)
-      end do
-c
-      call drive_10_update_a( span, mxvl, uddt, cep,
-     &                   local_work%urcs_blk_n(1,1,gpn),
-     &                   local_work%urcs_blk_n1(1,1,gpn),
-     &                   local_work%killed_status_vec )
 c
       return
      
@@ -4364,9 +4346,15 @@ c
      &      nonlocal_data_n1(elem_num)%state_values(1:n) = 
      &      nonlocal_data_n1(elem_num)%state_values(1:n) / real_npts
          end do  
+c         write(iout,*) '.. drive_mm10. avg nonlocal. blk: ',now_blk
+c         do i = 1, span
+c         write(iout,9100) felem+i-1, 
+c     &      nonlocal_data_n1(elem_num)%state_values(1:n)
+c         end do
       end if 
 c      
- 9010 format(/,'      processing nonlocal values. # values: ',i2 )      
+ 9010 format(/,'      processing nonlocal values. # values: ',i2 ) 
+ 9100 format(10x,i10,5e14.6)     
       return  
       end subroutine  drive_10_non_local  
       

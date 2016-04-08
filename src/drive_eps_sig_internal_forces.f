@@ -611,7 +611,10 @@ c
       if( .not. nonlocal_analysis ) return ! regular local analysis
       if( local_work%is_cohes_elem ) return
 c 
-c              the allocated check is for sanity.
+c              globally we have a nonlocal analysis.
+c              does this block have any solid elements 
+c              that need nonlocal, shared variables -- means
+c              they have an allocated nonlocal state vector.
 c
       do i = 1, span ! check each element in block
         elem_num = felem + i - 1
@@ -623,6 +626,7 @@ c
            call die_abort
         end if
       end do 
+c
       return
 c
  9000 format('>> FATAL ERROR: do_nleps_block_a'
