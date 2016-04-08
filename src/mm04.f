@@ -339,10 +339,10 @@ c
             bott_surf_mean_eps   = (bott_surf_eps_n(i,1) +
      &                  bott_surf_eps_n(i,2) +
      &                  bott_surf_eps_n(i,3)) / three
-         write(iout,9522) i, felem+i-1, top_surf_elems(i),
-     &      bott_surf_elems(i),  top_surf_mean_stress,
-     &      top_surf_mean_eps,
-     &       bott_surf_mean_stress, bott_surf_mean_eps
+            write(iout,9522) i, felem+i-1, top_surf_elems(i),
+     &            bott_surf_elems(i),  top_surf_mean_stress,
+     &            top_surf_mean_eps,
+     &            bott_surf_mean_stress, bott_surf_mean_eps
           end do
           write(iout,9625)
           do i = 1, span
@@ -907,9 +907,9 @@ c
 c
 c             set options in formulation to include, debug options
 c
-      degrade_shear         = .true.
-      VVNT                  = .true.
-      modify_q              = .true.
+      degrade_shear         =  .true.
+      VVNT                  =  .true.
+      modify_q              =  .true.
       include_nucleation    = .false.
       debug_newton          = .false.
       include_cavity_growth = .true.
@@ -940,7 +940,7 @@ c             step 2: obtain nonlocal variables passed from creep
 c                     material model (creep model and CP model)
 c                     get creep exponent "n" from solid material
 c                     after step 1. CP model passes an effective
-c                     n value.
+c                     n value. creep model passes user-specified n
 c                     
       top_sigma_m  = ( top_surf_stresses_n(i,1) +
      &                 top_surf_stresses_n(i,2) +
