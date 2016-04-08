@@ -56,6 +56,7 @@
 #              1/7/2016  mm10_a.f at -O3 for ifort V16.x causes seg fault.
 #                        isolated the culprit routine into a new mm10_d.f
 #                        and compiled at -O2 which runs fine.
+#              4/6/2016  added mm10_e.f 
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
@@ -248,6 +249,7 @@ OBJ =	 \
 	$(OD)/mm10_b$O	 \
 	$(OD)/mm10_c$O	 \
 	$(OD)/mm10_d$O	 \
+	$(OD)/mm10_e$O	 \
 	$(OD)/mm11$O       \
 	$(OD)/mmnoopt$O	\
 	$(OD)/mpi_code$O	 \
@@ -1461,7 +1463,7 @@ $(OD)/mm10_c$O : mm10_c.f $(OD)/mod_crystals$O param_def include_mm10
 	$(F90) -O3 -ip -inline-level=1  -c filt_mm10_c.f
 	$(MVC) filt_mm10_c$O  mm10_c$O
 	$(MVC) mm10_c$O $@
-
+	
 $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_d.f
@@ -1469,6 +1471,14 @@ $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(F90) -O2 -ip -inline-level=1  -c filt_mm10_d.f
 	$(MVC) filt_mm10_d$O  mm10_d$O
 	$(MVC) mm10_d$O $@
+
+$(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_e.f
+	$(FILTER) < mm10_e.f > filt_mm10_e.f
+	$(F90) -O2 -ip -inline-level=1  -c filt_mm10_e.f
+	$(MVC) filt_mm10_e$O  mm10_e$O
+	$(MVC) mm10_e$O $@
 
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@

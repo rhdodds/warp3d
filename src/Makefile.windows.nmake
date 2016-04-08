@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: January 27, 2016
+#   Last modifications: April 6, 2016 rhd
 #
 #    Makefile for WARP3D on systems running Windows 7, 8, 10
 #    on x86 Processors (64-bit mode).
@@ -51,6 +51,7 @@
 #                       and compiled at -O2 which runs fine.
 #             1/28/2016 mm01.f must be compiled at /O3 and limited inlining
 #                       for release 16.0.1 of the compiler.
+#             4/6/2016  add mm10_e.f
 #
 #    NOTE:   we specify the /QxHOST Fortran option. the compiler will
 #            generate code for the highest perfromance instruction set of the 
@@ -59,6 +60,7 @@
 #            Remove this option is you wish the compiler to generate
 #            instructions for the broadest range (old !) Intel
 #            processors
+#
 #    Use macro on the command line to setup for 64-bit build
 #
 !IF DEFINED(ARCH64)
@@ -227,6 +229,7 @@ OBJ =	 \
 	$(OD)/mm10_b$O	 \
 	$(OD)/mm10_c$O	 \
 	$(OD)/mm10_d$O	 \
+	$(OD)/mm10_e$O	 \
 	$(OD)/mm11$O	 \
 	$(OD)/mmnoopt$O	 \
 	$(OD)/mpi_code$O	 \
@@ -1208,6 +1211,12 @@ $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(F90) /O2 /Qip /Ob1 /c filt_mm10_d.f
 	$(MVC) filt_mm10_d$O  mm10_d$O
 	$(MVC) mm10_d$O $@
+
+$(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
+	$(FILTER) < mm10_e.f > filt_mm10_e.f
+	$(F90) /O2 /Qip /Ob1 /c filt_mm10_e.f
+	$(MVC) filt_mm10_e$O  mm10_e$O
+	$(MVC) mm10_e$O $@
 
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(FILTER) < mm11.f > filt_mm11.f

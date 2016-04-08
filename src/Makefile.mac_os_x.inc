@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: January 7, 2016
+#   Last modifications: April 6, 2016 rhd
 #
 #   Description:
 #
@@ -66,6 +66,7 @@
 #   rhd   1/7/2016  mm10_a.f at -O3 for ifort V16.x causes seg fault.
 #                   isolated the culprit routine into a new mm10_d.f
 #                   and compiled at -O2 which runs fine.
+#   rhd   4/6/2016  add mm10_e.f
 #
 #
 #
@@ -252,6 +253,7 @@ OBJ =	 \
 	$(OD)/mm10_b$O	 \
 	$(OD)/mm10_c$O	 \
 	$(OD)/mm10_d$O	 \
+	$(OD)/mm10_e$O	 \
 	$(OD)/mm11$O	 \
 	$(OD)/mmnoopt$O	 \
 	$(OD)/mpi_code$O	 \
@@ -1481,6 +1483,14 @@ $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(F90) -O2 -ip -inline-level=1  -c filt_mm10_d.f
 	$(MVC) filt_mm10_d$O  mm10_d$O
 	$(MVC) mm10_d$O $@
+	
+$(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_e.f
+	$(FILTER) < mm10_e.f > filt_mm10_e.f
+	$(F90) -O2 -ip -inline-level=1  -c filt_mm10_e.f
+	$(MVC) filt_mm10_e$O  mm10_e$O
+	$(MVC) mm10_e$O $@
 
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
