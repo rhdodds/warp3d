@@ -18,7 +18,7 @@ find_line( 1, " c2                  c3" );
 #
 $line = <infile>;$line = <infile>;
 @parts = split( / +/, $line);
-$answer = "-205.047359";
+$answer = "-205.047360";
 $partno = 3;
 #
 $message = " ";
@@ -32,7 +32,7 @@ print "   ... value from output file: ", "$parts[$partno]$message\n";
 
 $line = <infile>;$line = <infile>;$line = <infile>;
 @parts = split( / +/, $line);
-$answer = "151.957660";
+$answer = "151.957661";
 $partno = 1;
 #
 $message = " ";
