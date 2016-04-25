@@ -1,0 +1,479 @@
+
+\documentclass[11pt]{report}
+\usepackage{geometry}
+\geometry{letterpaper}
+
+%-----------------------------------
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{longtable}
+%
+\usepackage[comma,numbers,sort,compress]{natbib} % numbered, sequential refs 
+\renewcommand{\bibsection}{\subsection{\bibname}} %  makes bib a numbered subsection 
+\renewcommand{\bibname}{References} % use References not Bibliography for section name
+%----------------------------------------------
+
+\usepackage[us,12hr]{datetime}
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{\textit{Contact Commands}}}
+\fancyfoot[L] {\small{\  Updated:  \today\ at \currenttime}}
+
+%\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 8-10-2015. 9:00 AM)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Contact Procedures}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+% \usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+\usepackage[stable]{footmisc}
+
+%---------  local commands ---------------------
+
+\newcommand{\ttt} {\texttt}  %typewriter text
+\newcommand{\tb} {\textbf}
+\newcommand{\nf} {\normalfont}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\bardelta}{\bar \delta}
+\newcommand{\barDelta}{\bar \Delta}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\noi}{\noindent}
+
+\newenvironment{offsetpar}[1]%
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{6}
+\setcounter{section}{2}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+%
+%--------------------------------------
+%
+%
+%		Editing
+\newcommand{\medit}{\color{blue}}
+\newcommand{\eedit}{\color{black}}
+\definecolor{gold}{rgb}{0.83, 0.69, 0.22}
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+
+\section{Commands for Contact}
+\subsection {Outline of Process}
+Contact in WARP3D takes place between a deformable mesh and a set of rigid contact 
+surfaces. 
+Input involves a block of commands, beginning with the \ttt{contact surfaces} command, 
+followed by specifications for each contact surface. The description of a contact 
+surface includes information about the type of surface, the geometry, the location 
+in space, and the parameters stiffness, surface velocity, etc. 
+Errors encountered in the input for a contact surface cause the contact 
+processors to ignore the surface. Re-definition or removal of one or more 
+contact surfaces may occur between load(time) steps. 
+Adequate convergence of the global Newton iterations may require a change of the 
+penalty parameters at different times in the analysis (see the tips section 
+for additional information). Currently, WARP3D allows 
+up to 20 defined contact surfaces in an analysis.
+
+\subsection {Initiating Contact Definition}
+The command to initiate the definition of contact surfaces has the form
+\begin{align*}
+&\hv{\ul{cont}act\ (\ul{surf}aces)} 
+\end{align*}
+
+\noi The contact input processors assume the commands following this 
+statement pertain to contact. Contact input stops once the 
+processors encounter a command they do not recognize.
+
+Contact information in an input file must be placed after the \ttt{blocking} and
+\ttt{constraints} have been specified.
+
+\subsection{Description of Contact Surfaces}
+WARP3D currently supports three geometries of contact surfaces: 
+rectangular surfaces, cylinders, and spheres. Description of a contact surface
+ requires the specification of the type of surface, the geometry, the 
+ orientation in space, and the parameters stiffness, velocity, etc.
+ 
+The command to initiate the definition of a contact surface is:
+  \begin{align*}
+& \hv{\ul{surf}ace\ <surface\ number: integer> }
+\begin{Bmatrix}
+\hv{\ul{plane}} \\ \hv{\ul{cyl}inder}\\ \hv{\ul{sph}ere}
+\end{Bmatrix}
+\end{align*}
+\noi  where \ttt{surface number} is a number between 1 and 20. Only one surface 
+ may be assigned to a specific surface number; defining a surface with a 
+ specific surface number delete any previous surface definitions 
+ assigned to that number. Sequential numbering of contact surfaces is not required.
+ 
+\noindent \bf{Information Required for all Contact Surfaces}\rm
+ 
+\noi All contact surfaces require a stiffness (penalty parameter). The command 
+ \begin{align*}
+&\hv{(\ul{cont}act)\ \ul{stiff}ness < stiffness: number >}
+\end{align*}
+
+\noi specifies the stiffness for the contact surface currently under definition. The stiffness 
+value must be a number greater than zero. Efficient analyses may mandate 
+altering the stiffness of a surface during solution (see the tips section for 
+additional information). There is no default for this value.
+Contact surfaces may also move through space over time. The 
+following command gives the velocity of the surface:
+ \begin{align*}
+&\hv{\ul{vel}ocity\ <u\mbox{-}dot: number>\ <v\mbox{-}dot: number >\ <w\mbox{-}dot: number >}
+\end{align*}
+
+\noi where the velocities have units of distance per unit time. The default value for  
+velocity is zero in all directions. Note that this command requires appropriate 
+setting of the time step size (see Section 2.10 on solution parameters). 
+
+Currently, the contact processors translate, but do not rotate, contact surfaces. 
+Rotation of a contact surface occurs only through user re-definition of the 
+contact surface after each load step.
+
+
+\noindent \bf{Rectangular Surface}\rm
+
+\noi The rectangular contact surface is a plane located in space with a given normal. 
+The normal defines the positive (outward) side of the surface. The 
+rectangular surface defines a right rectangular prism extending in the 
+negative normal direction a depth as specified in the contact input. All 
+nodes falling within the volume of the rectangular prism are considered penetrating 
+nodes, with penetration defined as the distance to the rectangular surface. 
+See Figure 6.3.1 for a typical rectangular contact surface. Section 6.2.3 describes 
+the algorithms which handle intersections between multiple 
+rectangular surfaces and/or other contact surfaces.
+
+%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[trim=1.0in 6.2in 0.5in 1.2in, clip=true,scale=1.0,angle=0]{fig_6_3_1.pdf} 
+\caption{{\small Definition of rectangular contact surface.}
+\label{fig:z}}
+%
+\end{center}
+\end{figure}
+%
+
+Designation of the geometry of the rectangular surface 
+requires the specification of three points in space (use the following command three times): 
+\begin{align*}
+&\hv{\ul{point} <x:number>\ <y:number>\ <z:number>}
+\end{align*}
+
+\noi These three points define the location in global coordinates of three 
+corners for the rectangle. The first point serves as the base corner
+while the second and third points are the corners adjacent 
+to the base point; see Figure 6.3.1. The normal of the contact plane follows 
+from the three points as follows. Denote the three points as 
+$\bmf{p}_1, \bmf{p}_2,$ and $\bmf{p}_3$. 
+Define two vectors, $\bmf{v}_1=\bmf{p}_2 - \bmf{p}_1$ and 
+$\bmf{v}_2=\bmf{p}_3 - \bmf{p}_1$. The normal is 
+$\bmf{v}_3=\bmf{v}_1 \times Ê\bmf{v}_2$. The 
+normal vector defines the positive (outward) side of the contact plane; 
+all nodes found on the negative side of the plane are penetrating nodes. 
+This places several restrictions on the specification of the three points. 
+The vectors $\bmf{v}_1$ and $\bmf{v}_2$ must define a 90-degree 
+included angle. Furthermore, 
+the order in which the points are input determines the normal vector; 
+flipping the definition of points 2 and 3 flips the direction of the normal. 
+Users should verify that the normal vector has the correct direction.
+
+The command to specify the depth of the rectangular contact plane is: 
+\begin{align*}
+&\hv{\ul{depth} <depth\ value: number >}
+\end{align*}
+
+\noi where \ti{depth value} is a number greater than zero. The default 
+depth is very large,  $10^{10}$.
+
+A typical set of commands to define a rectangular contact surface is:
+\small
+\begin{verbatim}
+    contact surface
+       surface 1 plane
+          point 3 5 2
+          point 5 4 3
+          point 4 6 1
+          depth 4
+          stiffness 1.0e8
+          velocity 0.1 0.1 0.1
+\end{verbatim} 
+\normalsize
+
+
+\noindent \bf{Cylindrical Surface}\rm
+
+\noi This is a right circular cylinder with a 
+finite length. Contact occurs on the curved surface -- nodes penetrating 
+the flat circular ends are moved to the nearest point on the 
+cylindrical surface. Required geometrical input includes a base 
+point, the direction of the center line measured from the base point, 
+the length of the cylinder, and the radius. See 
+Figure 6.3.2 for an sample contact cylinder.
+To input the base point and direction vector, use the commands:
+\begin{align*}
+&\hv{\ul{point} <x:number>\ <y:number>\ <z:number>}\\
+&\hv{\ul{dir}ection <delta\mbox{-}x:number>\ <delta\mbox{-}y:number>\ <delta\mbox{-}z:number>}
+\end{align*}
+\noi where the specified point and direction correspond to $\bmf{P}$
+and $\bmf{V}$ in 
+Figure 6.3.2. The direction does not need to be a unit vector; the 
+contact processors automatically normalize the direction.
+To input the length and radius, use the commands:
+\begin{align*}
+&\hv{\ul{rad}ius\ <R:number>}\\
+&\hv{\ul{len}gth\ <L:number>}
+\end{align*}
+
+\noi $R$ and $L$ values must be greater than zero and have no defaults.
+
+%
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[trim=1.0in 6.9in 0.5in 1.3in, clip=true,scale=1.0,angle=0]{fig_6_3_2.pdf} 
+\caption{{\small Definition of cylindrical contact surface.}
+\label{fig:z}}
+%
+\end{center}
+\end{figure}
+%
+
+A typical set of commands to define a cylindrical contact surface is:
+\small
+\begin{verbatim}
+   contact surface 
+      surface 1 cylinder
+         point 5 2 3
+         direction -3 1 -1
+         radius 1.5
+         length 4
+         stiffness 1.0e8
+         velocity 0.1 0.1 0.1
+\end{verbatim} 
+\normalsize
+
+\noindent \bf{Spherical Surface}\rm
+
+\noi The spherical contact surface is a full sphere in space, and requires only the center 
+point and the radius as input. The commands for the sphere are:
+\begin{align*}
+&\hv{\ul{point} <x:number>\ <y:number>\ <z:number>}\\
+&\hv{\ul{rad}ius <R:number>}
+\end{align*}
+
+\noi where $R$ is a number greater than zero. There are no defaults for these values.
+A typical set of commands to define a spherical contact surfaces is:
+\small
+\begin{verbatim}
+    contact surface
+       surface 1 sphere
+          point 5 2 3
+          radius 1.5
+          stiffness 1.0e8
+          velocity 0.0 -0.1 0.0
+\end{verbatim} 
+\normalsize
+
+\subsection{Utility Commands}
+The clear command provides an easy means to delete all 
+contact surfaces. The syntax is:
+
+\begin{align*}
+&\hv{\ul{cont}act\ (\ul{surf}aces)} \\
+&\hv{\ul{clear}}
+\end{align*}
+
+\noi Additionally, the \ttt{dump} command prints the information 
+about all of the contact surfaces, including the current geometry 
+and parameter values. The printed location of the base point for each 
+contact surface is the current location after considering the surface 
+velocity and elapsed analysis time. The syntax is:
+\begin{align*}
+&\hv{\ul{cont}act\ (\ul{surf}aces)} \\
+&\hv{\ul{dump}}
+\end{align*}
+
+\subsection{Notes on Multiple Contacting Surfaces}
+ 
+The implementation of frictionless, rigid-body contact in WARP3D includes 
+procedures to address cases involving multiple intersecting contact surfaces; 
+Section 6.2.3 details the interaction algorithms. This allows the creation and 
+appropriate handling of corners and other composite rigid surfaces. However, 
+the algorithms impose some restrictions and requirements on 
+contact surface definitions.
+
+%
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[trim=0.1in 5.5in 1.5in 1.4in, clip=true,scale=1.2,angle=0]{fig_6_3_3.pdf} 
+\caption{{\small Overlapping of corners: (a) with no overlap, 
+node only returns to surface 1; (b) overlap allows return of node to corner.}
+\label{fig:z}}
+%
+\end{center}
+\end{figure}
+%
+
+\noindent \bf{Overlapping of Contact Surfaces for Corners}\rm
+
+\noi The proper treatment of corners requires that the contact surfaces 
+be defined to form a corner which overlaps slightly. Consider Figure 6.3.3a, 
+where two 
+rectangular contact surfaces form a corner, but without the required
+overlap. For the 
+contact processors to return the penetrating node to the corner, they  
+consider both planes. However, the node is actually only penetrating 
+contact surface 1 in Fig. 6.3.3a. After the the evaluation of contact, 
+the node moves 
+close to the surface of contact surface 1, but not far enough to move 
+into contact surface 2. The node does not return to the corner in this 
+case. With the specified overlap as in Figure 6.3.3b,
+the contact node violates 
+both contact surfaces, thus the contact processors return the node 
+to the corner. The amount of specified 
+overlap should be greater than the remaining 
+penetration after enforcement of contact.
+
+\noindent \bf{Avoid Acute Angles in Corners}\rm
+
+\noi The algorithms which manage intersecting contact surfaces 
+operate best with corners formed at obtuse angles. Avoid 
+internal or external corners with acute angles. See 
+Figure 6.3.4 for examples of acceptable and unacceptable corners.
+
+%
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[trim=0.02in 5.2in 1.1in 1.5in, clip=true,scale=1.3,angle=0]{fig_6_3_4.pdf} 
+\caption{{\small Acceptable and unacceptable corner definitions: (a) corners
+have obtuse angles (permissible); (b) corners have acute angles (will likely cause problems) }
+\label{fig:z}}
+%
+\end{center}
+\end{figure}
+%
+
+\noindent \bf{Potential Errors in Intersecting Rectangles with Cylinders and Spheres}\rm
+
+\noi The algorithms which resolve penetration of intersecting contact surfaces 
+assume the contact surfaces are planes. Large penetrations into intersecting 
+contact surfaces which include curved surfaces, particularly curved surfaces 
+with small radii, may cause errors in the return location of the node. The use 
+of small load steps, and avoidance of excess intersections between rectangles 
+and curved surfaces, can help alleviate this problem.
+
+\subsection{Complete Examples}
+The following example is a valid contact definition which includes an 
+example of each of the types of contact surfaces.
+\small
+\begin{verbatim}
+    contact surface
+       clear
+       surface 1 plane
+          point 3 5 2
+          point 5 4 3
+          point 4 6 1
+          depth 4
+          stiffness 1.0e8
+          velocity 0.1 0.1 0.1a
+       surface 2 cylinder
+           point 5 2 3
+           direction -3 1 -1
+           radius 1.5
+           length 4
+          stiffness 1.0e8
+          velocity 0.05 0.0 0.05
+       surface 3 sphere
+           point 5 2 3
+           radius 1.5
+           stiffness 1.0e8
+           velocity 0.0 -0.1 0.0
+       dump
+\end{verbatim} 
+\normalsize
+
+\end{document}

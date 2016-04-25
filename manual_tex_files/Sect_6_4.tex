@@ -1,0 +1,257 @@
+
+\documentclass[11pt]{report}
+\usepackage{geometry}
+\geometry{letterpaper}
+
+%-----------------------------------
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{longtable}
+%
+\usepackage[comma,numbers,sort,compress]{natbib} % numbered, sequential refs 
+\renewcommand{\bibsection}{\subsection{\bibname}} %  makes bib a numbered subsection 
+\renewcommand{\bibname}{References} % use References not Bibliography for section name
+%----------------------------------------------
+
+\usepackage[us,12hr]{datetime}
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \textit{WARP3D}}}
+\rhead{\small{\textit{Contact Tips}}}
+\fancyfoot[L] {\small{\  Updated:  \today\ at \currenttime}}
+
+%\fancyfoot[L] {\small{\textit{Chapter {\thechapter}}\ \   (Updated: 8-10-2015. 9:00 AM)}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\textit{Contact Procedures}}}
+
+%---------------------------------------------------
+\usepackage{graphicx}
+% \usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+\usepackage[stable]{footmisc}
+
+%---------  local commands ---------------------
+
+\newcommand{\ttt} {\texttt}  %typewriter text
+\newcommand{\tb} {\textbf}
+\newcommand{\nf} {\normalfont}
+\newcommand{\df} {\dotfill}
+\newcommand{\nin} {\noindent}
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\textit{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\bardelta}{\bar \delta}
+\newcommand{\barDelta}{\bar \Delta}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\noi}{\noindent}
+
+\newenvironment{offsetpar}[1]%
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{chapter}{6}
+\setcounter{section}{3}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+%
+%--------------------------------------
+%
+%
+%		Editing
+\newcommand{\medit}{\color{blue}}
+\newcommand{\eedit}{\color{black}}
+\definecolor{gold}{rgb}{0.83, 0.69, 0.22}
+%
+%
+%              start document 
+%              ==========
+%
+%
+\begin{document}
+
+\section{Tips for Analyses Using Contact}
+
+Contact analyses within an implicit solution framework
+can be very challenging; convergence of the global Newton iterations
+is by no means 
+guaranteed, and may be difficult to achieve. Also, improperly defined 
+contact surfaces cause severe problems and may prove formidable to find. 
+However, a variety of solution strategies and modeling techniques can 
+significantly improve the likelihood of a successful analysis. This 
+section presents some tips and suggestions for improving the 
+performance of contact analyses in WARP3D. 
+
+\noindent \bf{Choosing a penalty parameter}\rm
+
+\noi Choosing an appropriate penalty parameter (contact stiffness) 
+is one of the most important factors in the success of a contact analysis. 
+Too small of a contact stiffness allows excessive penetration, 
+while too large a value causes convergence 
+problems when iterative solvers are used for the linearized
+equilibrium equations. Also, the choice 
+of a good penalty parameter depends on the material model, the element 
+type, mesh size, the type of loading, and even the contact surface geometry. 
+A few guidelines:
+\small
+\squishlist
+\item The contact stiffness should be several orders of magnitude 
+greater than the local stiffness of the model at the point of 
+contact. To evaluate the model stiffness at a node, run an 
+analysis with a unit force at the node in the direction
+normal to the anticipated 
+contact surface. The local stiffness of the structure at the node 
+is simply the force divided by the resulting displacement. A contact 
+stiffness many magnitudes more than this value may cause 
+ill-conditioning and large errors in the results. 
+\item To assess the adequacy of an appropriate penalty parameter 
+in a new analysis, try a small value first, then re-run the analysis 
+several times, each time increasing the penalty parameter. A good 
+choice is a penalty parameter which maintains strong convergence 
+properties, but which would cause convergence problems if increased 
+somewhat. Once a successful parameter is found, analyses with 
+similar properties (loading, material, etc.) can use a similar value.
+\item Experience indicates that curved contact surfaces, such as 
+clinders and spheres, need a lower contact stiffness than rectangular contact surfaces.
+\squishend
+\normalsize
+\noindent \bf{Convergence of the first step at contact}\rm
+
+\noi Achieving global convergence of contact analyses on the 
+first step in which contact takes place can be especially challenging. 
+Oscillations may occur where the contact springs force penetrating 
+nodes completely out of contact. Without any contact to restrain them, 
+the nodes penetrate on the next Newton iteration, repeating the cycle 
+and impeding convergence. To avoid this problem:
+\small
+\squishlist
+\item Reduce the size of the first step in which contact 
+occurs; this is particularly necessary for moving contact surfaces. 
+An effective size for the first step with contact may need to 
+be $10^{-3}$ of the step size used for the remainder of 
+the analysis. After the first step converges and contact 
+initiates successfully, the step size can increase significantly. 
+A reduced loading for a step or two may be necessary 
+each time the contact surface experiences a significant 
+shift in direction. Re-definition of the time increment per 
+load step provides an effective means of reducing the 
+movement rate for a contact surface; see Section 2.10 
+for information on the time step increment. Make sure 
+that any explicitly defined, non-zero constraints also reflect 
+the change in movement rate.
+\item Decrease the contact stiffness by several 
+orders of magnitude for the first load step with contact. Then 
+redefine the contact surface with a much higher stiffness after a step or two. 
+\item If the analysis contains a contact surface with a non-zero 
+velocity, insure that the time increment per load step is reasonable. 
+Many convergence problems arise from errors specified 
+time increments. See Section 2.10 for information on the time step parameter.
+\squishend
+\normalsize
+
+\noindent \bf{Improving general convergence}\rm
+
+\noi A number of techniques can improve general convergence 
+of contact analyses. A few are listed below:
+\small
+\squishlist
+\item Always use the nonlinear solution option \ti{line search} (see Section 2.10)
+\item Take smaller computational load(time) steps.
+\item Use a smaller contact stiffness.
+\item Models which have symmetry planes are significantly more robust than similar models
+ which represent an entire structure (and thus often have more rigid body motion).
+\item Make sure that all rigid body motions are prevented using explicit constraints. 
+Contact enforcement using the penalty method is equivalent to supplying force 
+boundary conditions, which are typically less robust than explicit constraint 
+(displacement) boundary conditions.
+\item If elimination of rigid body motions is not possible, try including mass 
+in the analysis with small time steps. The addition of inertia can help 
+stabilize the analysis.
+\item If the analysis involves moving contact surfaces, then application of 
+explicit (displacement) constraints on nodes which move along with the contact surface 
+can improve convergence significantly. See the pin-loaded C(T) specimen 
+in the examples section. 
+\item Incorrect specification of contact surfaces can cause hidden 
+difficulties; see Section 6.3 for more details on contact input and possible solutions.
+\item Turn adaptive load reduction off (adaptive off in the nonlinear 
+solution parameters command).
+\item Extrapolation of the nodal displacements at the start of new load (time) step 
+(Section 2.10) can cause convergence
+difficulties if new contact detection occurs -- try turning this option 
+off if other measures fail to improve convergence
+\squishend
+\normalsize
+
+\end{document}

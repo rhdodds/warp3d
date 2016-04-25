@@ -1,0 +1,213 @@
+%!TEX TS-program=pdflatexmk
+\documentclass[11pt]{report}
+\usepackage{geometry} 
+\geometry{letterpaper}
+
+%---------------------------------------------
+\setlength{\textheight}{630pt}
+\setlength{\textwidth}{450pt}
+\setlength{\oddsidemargin}{14pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+%----------------------------------------
+\usepackage{amsmath}
+\usepackage{layout}
+\usepackage{color}
+\usepackage{array}
+
+%----------------------------------------------
+\usepackage[us,12hr]{datetime}
+\usepackage{fancyhdr} \pagestyle{fancy}
+\setlength\headheight{15pt}
+\lhead{\small{User's Guide - \ti{WARP3D}}}
+\rhead{\small{\ti{Contact Procedures}}}
+\fancyfoot[L] {\small{\  Updated:  \today\ at \currenttime}}
+\fancyfoot[C] {\small{\thesection-\thepage}}
+\fancyfoot[R] {\small{\ti{Overview}}}
+
+%---------------------------------------------------
+\usepackage{graphicx} 
+\usepackage[labelformat=empty]{caption}
+\numberwithin{equation}{section}
+
+%---------------------------------------------
+%     --- make section headers in helvetica ---
+%
+\usepackage{sectsty} 
+\usepackage{xspace}
+\allsectionsfont{\sffamily} 
+\sectionfont{\large}
+\usepackage[small,compact]{titlesec} % reduce white space around sections
+%---------------------------------------------->
+%
+%
+%   which fonts system for text and equations. with all commented,
+%   the default LaTex CM fonts are used
+%
+%
+\frenchspacing
+%\usepackage{pxfonts}  % Palatino text 
+%\usepackage{mathpazo} % Palatino text
+%\usepackage{txfonts}
+
+
+%---------  local commands ---------------------
+
+
+\newcommand{\bmf } {\boldsymbol }  %bold math symbol
+\newcommand{\bsf } [1]{\textrm{\ti{#1}}\xspace}
+\newcommand{\ul} {\underline}
+\newcommand{\hv} {\mathsf}   %helvetica text inside an equation
+\newcommand{\eg}{\emph{e.g.},\xspace}
+\newcommand{\ie}{\emph{i.e.},\xspace}
+\newcommand{\vs}{\emph{vs.}\xspace}
+\newcommand{\ti}{\emph}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\ol}{\overline}
+\newcommand{\nid}{\noindent}
+
+\newenvironment{offsetpar}[1]
+{\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+}
+{\end{list}}
+
+%
+%
+%        optional definition for bullet lists which
+%        reduces white space.
+%
+\newcommand{\squishlist}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{3pt}
+     \setlength{\topsep}{3pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.5em}
+     \setlength{\labelwidth}{1em}
+     \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishlisttwo}{
+ \begin{list}{$\bullet$}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+    \setlength{\topsep}{0pt}
+    \setlength{\partopsep}{0pt}
+    \setlength{\leftmargin}{2em}
+    \setlength{\labelwidth}{1.5em}
+    \setlength{\labelsep}{0.5em} } }
+
+\newcommand{\squishend}{
+  \end{list}  }
+%
+
+
+%-------------------------------------
+\newcounter{sectrefs}
+\setcounter{sectrefs}{0}
+\setcounter{figure}{0}
+\setcounter{chapter}{6}
+\setcounter{section}{0}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+
+%
+%--------------------------------------
+%
+%
+%
+%              start document 
+%              ==========
+%
+%
+
+\begin{document}
+
+
+\LARGE
+\hfill
+\textbf{Chapter \thechapter}
+\rule[0.15in]{450pt}{0.5mm}
+\LARGE
+\begin{flushright}
+ \textbf{
+{\fontfamily{phv}\selectfont Contact Procedures}}
+\end{flushright}
+\normalsize
+
+%
+%------------------------------------------------------------------------------
+\section{Introduction}
+%------------------------------------------------------------------------------
+
+
+Many of the most difficult problems in solid mechanics involve the contact interaction 
+between deformable bodies. Key examples include metal forming processes (rolling and 
+die-casting) and crash-impact problems. In fracture mechanics, problems of crack closure 
+and the proper modeling of experimental conditions often necessitates treatment of 
+contact. Regions of a finite element model which undergo contact have boundary 
+conditions that vary with the amount of deformation. In contact, implicit analyses 
+are especially challenging as the boundary conditions may change abruptly during 
+a load increment. This introduces severe nonlinearity into analyses, with 
+corresponding changes in model behavior and solution convergence rates.
+
+The large volume of research on contact algorithms offers a range of complexity 
+in available approaches to treat contact. The literature typically focuses 
+on two aspects of contact algorithms -- contact detection and contact enforcement. 
+Detection of contact in the most general form, where any part of a modeled body 
+can interact with any other body and/or itself, often consumes most of the computation 
+time  and introduces significant complexity in the code. Finite element 
+codes often employ a number of techniques to simplify contact detection by explicitly 
+identifying regions which may contact each other, or by limiting contact to simple rigid 
+surfaces. 
+
+Enforcement of contact proceeds along one of two approaches. 
+Lagrange multiplier techniques eliminate penetration of contact surfaces by including 
+additional constraint equations directly in the solution of the problem. 
+The Lagrange multipliers, included as additional unknown scalar variables, become the 
+forces required to eliminate penetration. This technique is very popular in implicit codes; 
+however, the additional equations may cause the global structural stiffness matrix to 
+become positive semi-definite, thus limiting the techniques available for solution 
+of the corresponding linear system. The penalty method provides an alternative 
+approach by introducing very stiff springs which prevent further penetration once
+detection occurs. This method allows some limited 
+penetration between bodies. Increasing the penalty parameter (spring stiffness) 
+reduces the amount of penetration. Although the penalty method retains a positive 
+definite stiffness matrix, very high penalty parameters can make the stiffness matrix 
+ill-conditioned, causing convergence problems and significant round-off error 
+in the final results. Efficient analysis requires care in choosing an appropriate 
+penalty parameter. Other approaches to enforce contact conditions involve hybrids 
+between these methods.
+
+The contact algorithms in WARP3D implement frictionless, rigid-body contact 
+using a standard penalty method. \ti{Contact between deformable bodies and self-contact 
+is not supported in this implementation}. Contact occurs between nodes of a finite 
+element mesh and a user-defined set of rigid contact surfaces. Currently, WARP3D 
+supplies three geometries of surfaces which can be arbitrarily oriented in space: 
+finite-sized rectangular planes, cylinders, and spheres. Additional surfaces may be 
+added as needs warrant. The contact processors allow the assignment of velocities 
+to the contact surfaces to simplify simulation of moving boundaries. Each contact 
+surface requires a stiffness (penalty parameter) which limits the penetration 
+between the model and the surface. Specification of an appropriate stiffness can 
+be difficult; Section 6.4 provides some guidance on this topic. The algorithms also 
+address issues of multiple contact, where a node penetrates more than one contact 
+surface. This enables the appropriate treatment of intrinsic and extrinsic corners 
+in contact analyses. The implementation of contact is fully compatible with 
+all other parts of WARP3D, including crack growth, finite deformation, all material 
+models, restart facilities, and parallel execution (threads only and MPI+threads).
+
+This chapter continues with a description of the contact algorithms used in WARP3D, 
+including an overview of the penalty method, a summary of the contact detection techniques, 
+a description of the algorithms which handle intersecting contact surfaces, and key 
+details of the parallel implementation of contact. A section on contact input describes 
+the necessary commands for contact specification, as well as some restrictions on 
+contact models. Section 6.4 provides advice on performing analyses with contact. 
+The chapter concludes with a section of examples which illustrate three WARP3D 
+contact analyses: rolling of a steel bar, crushing of a pipe, and crack closure on a 
+pin-loaded C(T) specimen.
+
+
+\end{document}
+
+
