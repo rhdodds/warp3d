@@ -45,8 +45,10 @@ c
 c
       logical local_debug, quad_interface, tri_interface
       data local_debug /.false. /
-c
-      third = 1.0d0/3.0d0; zero = 0.0d0
+      data third, zero / 0.33333333333333333333d0, 0.0d0 /
+@!DIR$ ASSUME_ALIGNED ce:64, bigR:64, ce_rotated:64, nzeta:64
+@!DIR$ ASSUME_ALIGNED neta:64, nxi:64, jac:64, dj:64
+@!DIR$ ASSUME_ALIGNED g_to_e123:64
 c
 c
 c               for geonl these are deformed coordinates of the
@@ -63,6 +65,8 @@ c               potential debugging easier.
 c
       x1 = ce(1,1); y1 = ce(1,nnode+1); z1 = ce(1,2*nnode+1)
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
            ce(i,j) = ce(i,j) - x1
            ce(i,nnode+j) = ce(i,nnode+j) - y1
@@ -75,6 +79,8 @@ c               1, 2,3. local z is normal to plane containing
 c               element nodes 1, 2, 3. Then rotate the shifted
 c               global coordinates into this 1-2-3 system.
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span
         x21 = ce(i,2) - ce(i,1)
         y21 = ce(i,nnode+2) - ce(i,nnode+1)
@@ -152,6 +158,8 @@ c
        call jacob_cohes( etype, imxvl, ispan, innode, ce_rotated,
      &                   nxi, neta, nzeta, dj, jac, 2 )
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
        do i = 1, span
 c
         d1 = sqrt(jac(i,1,1)*jac(i,1,1) + jac(i,1,2)*jac(i,1,2)
@@ -250,6 +258,7 @@ c
 c                  local declarations
 c
       integer i, j, jj, k
+@!DIR$ ASSUME_ALIGNED rot:64, var:64, rvar:64
 c
 c
 c              var has nnode * 3 terms. 1-nnode are x components.
@@ -259,6 +268,8 @@ c
       do i = 1, nnode
          j = i + nnode
         jj = i + 2*nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP        
           do k = 1, span
              rvar(k,i) = var(k,i)*rot(k,1,1) + var(k,j)*rot(k,1,2)
      &                   + var(k,jj)*rot(k,1,3)
@@ -311,13 +322,19 @@ c
      & zero, j1, j2, j3
 c
       data zero / 0.0d0 /
+@!DIR$ ASSUME_ALIGNED coords:64, nzeta:64, neta:64, nxi:64, jac:64
+@!DIR$ ASSUME_ALIGNED dj:64
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span
          jac(i,1:3,1:3) = zero
          dj(i)          = zero
       end do
 c
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
              jac(i,1,1)= jac(i,1,1)+nxi(j)*coords(i,j)
              jac(i,1,2)= jac(i,1,2)+nxi(j)*coords(i,nnode+j)
@@ -334,6 +351,8 @@ c
 c
 c           determinate of the jacobian matrix
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span
           j1= jac(i,2,2)*jac(i,3,3)-jac(i,2,3)*jac(i,3,2)
           j2= jac(i,2,1)*jac(i,3,3)-jac(i,2,3)*jac(i,3,1)
@@ -425,6 +444,7 @@ c
       data zero, half / 0.0d0, 0.5d0 /
       logical local_debug
       data local_debug /.false./
+@!DIR$ ASSUME_ALIGNED ce_upd:64, ce:64, dj:64, ce_refsurf:64
 c
       shift = nnode/2
       xb = 0
@@ -467,6 +487,8 @@ c            | coor   | /
 c            |        |
 c
       do j = 1,shift
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do k = 1, span
             ce_refsurf(k,xb+j) = ce_upd(k,xt+j)
             ce_refsurf(k,xt+j) = ce_upd(k,xb+j)
@@ -478,6 +500,8 @@ c
       end do
 c
       do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         ce_upd(1:span,j) = ce_refsurf(1:span,j)
       end do
 c
@@ -542,6 +566,8 @@ c
       end do
 c
       do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         ce_upd(1:span,j) = ce_refsurf(1:span,j)
       end do
 c
@@ -979,7 +1005,8 @@ c
      &  / 1.0d-08, 1.0d-03, 0.2d0, 0.05d0, 0.5d0 /
       data trint12_list / 1,4,2,  2,5,3,  3,6,1,  7,10,8,  8,11,9,
      &                    9,12,7 /
-
+@!DIR$ ASSUME_ALIGNED ce:64, xb:64, yb:64, zb:64, xt:64, yt:64
+@!DIR$ ASSUME_ALIGNED zt:64, x:64, y:64, z:64, long_edge:64
 c
 c             1. all 3 sides must have lengths > 0.0 (tolmin)
 c             2. no side can have less length tol_edge * longest side
@@ -990,6 +1017,7 @@ c
       nsurf = nnode / 2
       collapsed = .false.
       do i = 1, span
+@!DIR$ IVDEP
          do j = 1, nsurf
            xb(j) = ce(i,j)
            yb(j) = ce(i,nnode+j)
@@ -1041,11 +1069,13 @@ c             line connecting two corners.
 
       if( nnode .ne. 12 ) go to 300
       do i = 1, span
+@!DIR$ IVDEP
          do j = 1, 12
            x(j) = ce(i,j)
            y(j) = ce(i,12+j)
            z(j) = ce(i,24+j)
          end do
+@!DIR$ IVDEP
          do j = 1, 6
            n1 = trint12_list(1,j)
            n2 = trint12_list(2,j)  ! middle node on edge
@@ -1073,6 +1103,7 @@ c             nodes
  300  continue
       nsurf = nnode / 2
       do i = 1, span
+@!DIR$ IVDEP
          do j = 1, nsurf
            xb(j) = ce(i,j)
            yb(j) = ce(i,nnode+j)
@@ -1150,7 +1181,8 @@ c
       integer nsurf, i, j
       data tolmin, tol_edge, top_bott_tol
      &  / 1.0d-08, 1.0d-03, 0.05d0 /
-
+@!DIR$ ASSUME_ALIGNED ce:64, xb:64, yb:64, zb:64, xt:64, yt:64
+@!DIR$ ASSUME_ALIGNED zt:64, x:64, y:64, z:64, long_edge:64
 c
 c             1. all 4 sides must have lengths > 0.0 (tolmin)
 c             2. no side can have less length tol_edge * longest side
@@ -1158,6 +1190,7 @@ c
       nsurf = nnode / 2
       collapsed = .false.
       do i = 1, span
+@!DIR$ IVDEP
          do j = 1, nsurf
            xb(j) = ce(i,j)
            yb(j) = ce(i,nnode+j)
@@ -1229,6 +1262,7 @@ c             nodes
 c
       nsurf = nnode / 2
       do i = 1, span
+@!DIR$ IVDEP
          do j = 1, nsurf
            xb(j) = ce(i,j)
            yb(j) = ce(i,nnode+j)

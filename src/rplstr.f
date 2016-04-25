@@ -104,12 +104,14 @@ c
 #dbl      double precision
 #sgl      real
      & ml(mxvl,nprm,*), mg(nprm,ngp,*)
+@!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c    
       if ( ngp .ne. 8 ) then                            
 @!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
          do  j = 1, nprm
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do  i = 1, span
                ml(i,j,k) = mg(j,k,i)
             end do
@@ -122,6 +124,7 @@ c                number of gauss points = 8, unroll.
 c
       do  j = 1, nprm
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do  i = 1, span
             ml(i,j,1) = mg(j,1,i)
             ml(i,j,2) = mg(j,2,i)
@@ -158,6 +161,7 @@ $add param_def
 #dbl      double precision
 #sgl      real
      &     ml(mxvl,nprm,*),mg(nprm,ngp,*)
+@!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c
 c
       if( ngp .ne. 8 ) then
@@ -165,6 +169,7 @@ c
         do k = 1, ngp
            do j = 1, nprm
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
               do i = 1, span
                  mg(j,k,i) = ml(i,j,k)
               end do
@@ -176,7 +181,8 @@ c
 c                       number of gauss points = 8
 c
       do j = 1, nprm
-@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ LOOP COUNT MAX=### 
+@!DIR$ IVDEP
         do i = 1, span
           mg(j,1,i) = ml(i,j,1)
           mg(j,2,i) = ml(i,j,2)
@@ -213,13 +219,16 @@ c
 #sgl      real
      &      local_history(span,hist_size,ngp),
      &      global_history(hist_size,ngp,span)
+@!DIR$ ASSUME_ALIGNED global_history:64, local_history:64  
+     
 c
 c
       if( ngp .ne. 8 ) then
 @!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
            do j = 1, hist_size
-@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ LOOP COUNT MAX=### 
+@!DIR$ IVDEP 
               do i = 1, span
                  global_history(j,k,i) = local_history(i,j,k)
               end do
@@ -232,6 +241,7 @@ c                       number of gauss points = 8
 c
       do j = 1, hist_size
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span
           global_history(j,1,i) = local_history(i,j,1)
           global_history(j,2,i) = local_history(i,j,2)

@@ -883,6 +883,7 @@ c
 $add include_sig_up
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
          local_work%e_vec(i)         = props(7,i)
          local_work%e_vec_n(i)       = props(7,i)
@@ -949,6 +950,7 @@ c
 $add include_sig_up
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
          local_work%e_vec(i)       = props(7,i)
          local_work%nu_vec(i)      = props(8,i)
@@ -1004,6 +1006,7 @@ c
       logical adaptive
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
            local_work%e_vec(i)       = props(7,i)
            local_work%e_vec_n(i)     = props(7,i)
@@ -1052,6 +1055,7 @@ c
       bit_flags = iprops(24,1)
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
         if ( iand(iprops(30,i),1) .eq. 0 )
      &         local_work%nuc_vec(i) = .false.
@@ -1119,6 +1123,7 @@ c                     60 sig_tol
 c                     61-64 <available>
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1205,6 +1210,7 @@ c
       matnum = local_work%matnum
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1288,6 +1294,7 @@ c
       matnum = local_work%matnum
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1352,6 +1359,7 @@ c
       matnum = local_work%matnum
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
         local_work%e_vec(i)       = props(7,i)
         local_work%nu_vec(i)      = props(8,i)
@@ -1952,6 +1960,7 @@ c
         nodea = node_pairs(j,1)
         nodeb = node_pairs(j,2)
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
         do i = 1, span
           xa = node_coords(i,nodea)
           ya = node_coords(i,nodea+nnodel)
@@ -1968,6 +1977,7 @@ c
       if( linear ) scale_factor = one
 c
 @!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP
       do i = 1, span
        lengths(i) = local_sums(i) * rnlengths * scale_factor
       end do

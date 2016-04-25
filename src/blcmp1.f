@@ -4,7 +4,7 @@ c     *                      subroutine blcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/2/12 rhd                *
+c     *                   last modified : 04/18/2016 rhd             *
 c     *                                                              *
 c     *     this subroutine computes the linear strain-              *
 c     *     displacement matrices at a given gauss point for a       *
@@ -27,11 +27,13 @@ c
 c
 c                       locally allocated arrays
 c       
-#dbl      double precision
-#sgl      real
-     &  btemp(mxvl,mxndel,ndim), zero
-      logical local_debug, axisym
+#dbl      double precision ::
+#sgl      real ::
+     &  btemp(mxvl,mxndel,ndim), zero ! on stack
+      logical ::  local_debug, axisym
       data zero, local_debug / 0.0, .false. /
+@!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
+@!DIR$ ASSUME_ALIGNED btemp:64  
 c
 c
       if( local_debug ) then
@@ -73,7 +75,9 @@ c                  axisymmetric elements only the upper left 2x2 of
 c                  the Jacobian matrix is used.
 c
         do j = 1, nnode
-           do i = 1, span
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+          do i = 1, span
               btemp(i,j,1) = gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)
               btemp(i,j,2) = gama(i,2,1)*nxi(j)+gama(i,2,2)*neta(j)
               btemp(i,j,3) = shape(j) / radius(i)
@@ -93,28 +97,17 @@ c                       element; the bottom two rows are zeros for no
 c                       yz or zx shear strain.
 c       
         do  j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
            do i = 1, span
 c
               b(i,j,1)=       btemp(i,j,1)
-              b(i,j,2)=       zero
               b(i,j,3)=       btemp(i,j,3)
               b(i,j,4)=       btemp(i,j,2)
-              b(i,j,5)=       zero
-              b(i,j,6)=       zero
 c
-              b(i,bpos1+j,1)= zero
               b(i,bpos1+j,2)= btemp(i,j,2)
-              b(i,bpos1+j,3)= zero
               b(i,bpos1+j,4)= btemp(i,j,1)
-              b(i,bpos1+j,5)= zero
-              b(i,bpos1+j,6)= zero
 c
-              b(i,bpos2+j,1)= zero
-              b(i,bpos2+j,2)= zero
-              b(i,bpos2+j,3)= zero
-              b(i,bpos2+j,4)= zero
-              b(i,bpos2+j,5)= zero
-              b(i,bpos2+j,6)= zero 
            end do
         end do
 c
@@ -127,7 +120,9 @@ c                       btemp - j,1 = NX for node j at gpn
 c                       btemp - j,2 = NY for node j at gpn        
 c                       btemp - j,3 = NZ for node j at gpn        
 c                     
-        do j = 1, nnode
+        do  j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
            do i = 1, span
               btemp(i,j,1)= gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)+
      &                      gama(i,1,3)*nzeta(j)   
@@ -147,28 +142,24 @@ c
 c
 c                       compute the linear strain-
 c                       displacement matrices, using btemp.
+c                       [b] was zeroed at creation in tanstf or
+c                       drive_eps_sig_internal_forces. The zero
+c                       locations in [b] never change
 c       
         do  j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
            do i = 1, span
 c
               b(i,j,1)=       btemp(i,j,1)
-              b(i,j,2)=       zero
-              b(i,j,3)=       zero
               b(i,j,4)=       btemp(i,j,2)
-              b(i,j,5)=       zero
               b(i,j,6)=       btemp(i,j,3)
 c
-              b(i,bpos1+j,1)= zero
               b(i,bpos1+j,2)= btemp(i,j,2)
-              b(i,bpos1+j,3)= zero
               b(i,bpos1+j,4)= btemp(i,j,1)
               b(i,bpos1+j,5)= btemp(i,j,3)
-              b(i,bpos1+j,6)= zero
 c
-              b(i,bpos2+j,1)= zero
-              b(i,bpos2+j,2)= zero
               b(i,bpos2+j,3)= btemp(i,j,3)
-              b(i,bpos2+j,4)= zero
               b(i,bpos2+j,5)= btemp(i,j,2)
               b(i,bpos2+j,6)= btemp(i,j,1) 
            end do
@@ -209,7 +200,7 @@ c     *                      subroutine blcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/02/12                   *
+c     *                   last modified : 04/21/2016                 *
 c     *                                                              *
 c     *     this subroutine computes the linear strain-              *
 c     *     displacement matrices at a given gauss point for a       *
@@ -219,25 +210,25 @@ c     ****************************************************************
 c
 c
       subroutine blcmp1( span, b, gama, nxi, neta, nzeta, nnode )
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                       parameter declarations
-c       
-#dbl      double precision
-#sgl      real
-     &  b(mxvl,mxedof,*),gama(mxvl,ndim,*),nxi(*),neta(*),
-     &  nzeta(*)
+c 
+      integer :: span, nnode      
+#dbl      double precision ::
+#sgl      real ::
+     &  b(mxvl,mxedof,*), gama(mxvl,ndim,*), nxi(*), neta(*), nzeta(*)
 c
-c                       locally allocated arrays
-c       
-#dbl      double precision
-#sgl      real
-     &  btemp(mxvl,mxndel,ndim), zero
-      data zero 
-#sgl     &  / 0.0 /
-#dbl     &  / 0.0d00 /
-      data zero / 0.0 /
+c                       locals
+c      
+      integer :: j, i, bpos1, bpos2 
+#dbl      double precision ::
+#sgl      real ::
+     &  btemp(mxvl,mxndel,ndim), zero  ! on stack
+      data zero / 0.0d0 /
+@!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
+@!DIR$ ASSUME_ALIGNED btemp:64  
 c
 c                       compute building blocks of b. 
 c                       btemp - j,1 = NX for node j at gpn        
@@ -245,6 +236,8 @@ c                       btemp - j,2 = NY for node j at gpn
 c                       btemp - j,3 = NZ for node j at gpn        
 c                     
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
             btemp(i,j,1)= gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)+
      &                    gama(i,1,3)*nzeta(j)   
@@ -266,6 +259,8 @@ c                       compute the linear strain-
 c                       displacement matrices, using btemp.
 c       
       do  j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
 c
             b(i,j,1)=       btemp(i,j,1)
@@ -300,8 +295,7 @@ c     *                      subroutine blcmp_cohes                  *
 c     *                                                              *
 c     *                       written by : aroy                      *
 c     *                                                              *
-c     *                   last modified : 05/27/99                   *
-c     *                                 : 12/28/00 sushovan          *
+c     *                   last modified : 04/21/2016 rhd             *
 c     *                                                              *
 c     *     this subroutine computes the B (=RLN) matrices           *
 c     *     at a given gauss point for a block of similar,           *
@@ -310,39 +304,147 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine blcmp_cohes( span, b, rot, shape,
-     &                       etype, nnode )
-      implicit integer (a-z)
+      subroutine blcmp_cohes( span, b, rot, shape, etype, nnode )
+      implicit none
 $add param_def
 c
 c                       parameter declarations
-c       
-#dbl      double precision
-#sgl      real
-     &  b(mxvl,mxedof,*), rot(mxvl,ndim,*), 
-     &  shape(*), sh(nnode)
-#dbl      double precision
-#sgl      real
-     &  zero
-      data zero 
-#sgl     &  / 0.0 /
-#dbl     &  / 0.0d00 /
+c  
+      integer :: span, etype, nnode     
+#dbl      double precision ::
+#sgl      real ::
+     &  b(mxvl,mxedof,*), rot(mxvl,ndim,*), shape(*), sh(mxndel)
+c
+      integer :: i, j, bpos1, bpos2     
+      double precision :: zero
+      data zero  / 0.0d00 /
+@!DIR$ ASSUME_ALIGNED b:64, sh:64, rot:64, shape:64
 c
 c            compute sh = L*N (N -> shape fn. array)
 c       
-        do i=1,nnode/2
-	  sh(i) = -shape(i)
-        end do
-        do i=nnode/2+1,nnode
-	  sh(i) = shape(i)
-        end do
+c      do i = 1, nnode/2
+c       sh(i) = -shape(i)
+c      end do
+c      do i = nnode/2+1, nnode
+c       sh(i) = shape(i)
+c      end do
 c
 c           compute B = R*sh
 c
-        bpos1 = nnode
-        bpos2 = 2 * nnode
+c      
+      if( nnode .eq. 12 ) then
+       sh(1:6) = -shape(1:6)
+       sh(7:12) = shape(7:12)
+        do j = 1, 12
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+           do i = 1, span
+              b(i,j,1) = sh(j)*rot(i,1,1)
+              b(i,j,2) = sh(j)*rot(i,2,1)
+              b(i,j,3) = sh(j)*rot(i,3,1)
+              b(i,j,4) = zero
+              b(i,j,5) = zero
+              b(i,j,6) = zero
+c
+              b(i,12+j,1) = sh(j)*rot(i,1,2)
+              b(i,12+j,2) = sh(j)*rot(i,2,2)
+              b(i,12+j,3) = sh(j)*rot(i,3,2)
+              b(i,12+j,4) = zero
+              b(i,12+j,5) = zero
+              b(i,12+j,6) = zero
+c
+              b(i,24+j,1) = sh(j)*rot(i,1,3)
+              b(i,24+j,2) = sh(j)*rot(i,2,3)
+              b(i,24+j,3) = sh(j)*rot(i,3,3)
+              b(i,24+j,4) = zero
+              b(i,24+j,5) = zero
+              b(i,24+j,6) = zero
+c
+           end do
+         end do
+        return
+      end if  
+c      
+      if( nnode .eq. 6 ) then
+        sh(1:3) = -shape(1:3)
+        sh(4:6) = shape(4:6)
+        do j = 1, 6
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+           do i = 1, span
+              b(i,j,1) = sh(j)*rot(i,1,1)
+              b(i,j,2) = sh(j)*rot(i,2,1)
+              b(i,j,3) = sh(j)*rot(i,3,1)
+              b(i,j,4) = zero
+              b(i,j,5) = zero
+              b(i,j,6) = zero
+c
+              b(i,6+j,1) = sh(j)*rot(i,1,2)
+              b(i,6+j,2) = sh(j)*rot(i,2,2)
+              b(i,6+j,3) = sh(j)*rot(i,3,2)
+              b(i,6+j,4) = zero
+              b(i,6+j,5) = zero
+              b(i,6+j,6) = zero
+c
+              b(i,12+j,1) = sh(j)*rot(i,1,3)
+              b(i,12+j,2) = sh(j)*rot(i,2,3)
+              b(i,12+j,3) = sh(j)*rot(i,3,3)
+              b(i,12+j,4) = zero
+              b(i,12+j,5) = zero
+              b(i,12+j,6) = zero
+c
+           end do
+         end do
+        return
+      end if 
+c      
+      if( nnode .eq. 8 ) then
+        sh(1:4) = -shape(1:4)
+        sh(5:8) = shape(5:8)
+        do j = 1, 8
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+           do i = 1, span
+              b(i,j,1) = sh(j)*rot(i,1,1)
+              b(i,j,2) = sh(j)*rot(i,2,1)
+              b(i,j,3) = sh(j)*rot(i,3,1)
+              b(i,j,4) = zero
+              b(i,j,5) = zero
+              b(i,j,6) = zero
+c
+              b(i,8+j,1) = sh(j)*rot(i,1,2)
+              b(i,8+j,2) = sh(j)*rot(i,2,2)
+              b(i,8+j,3) = sh(j)*rot(i,3,2)
+              b(i,8+j,4) = zero
+              b(i,8+j,5) = zero
+              b(i,8+j,6) = zero
+c
+              b(i,16+j,1) = sh(j)*rot(i,1,3)
+              b(i,16+j,2) = sh(j)*rot(i,2,3)
+              b(i,16+j,3) = sh(j)*rot(i,3,3)
+              b(i,16+j,4) = zero
+              b(i,16+j,5) = zero
+              b(i,16+j,6) = zero
+c
+           end do
+         end do
+        return
+      end if  
+c
+c              general number of nodes
 c 
-        do j=1,nnode
+      bpos1 = nnode
+      bpos2 = 2 * nnode
+c
+      do i = 1, nnode/2
+       sh(i) = -shape(i)
+      end do
+      do i = nnode/2+1, nnode
+       sh(i) = shape(i)
+      end do
+      do j=1,nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -366,8 +468,8 @@ c
               b(i,bpos2+j,6) = zero
 c
            end do
-        end do
+       end do
 c
-        return
-        end          
+       return
+       end          
 c

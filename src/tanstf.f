@@ -592,6 +592,7 @@ c
 #dbl      double precision
 #sgl      real
      &  trnmte(mxvl,mxedof,3)
+@!DIR$ ASSUME_ALIGNED trnmte:64
 c
 c           for this block of elements, gather the transformation
 c           matrices (3x3) used to rotate between global and constraint
@@ -610,6 +611,7 @@ c           this code below depends on ndof per node = 3
 c
       do j = 1, nnode
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
        do k = 1, span
          node = incid(incmap(felem+k-1) + j-1)
          if ( .not. trn(node) ) cycle
@@ -650,11 +652,13 @@ c
 #sgl      real
      & local_hist(span,hist_size,ngp),
      & global_hist(hist_size,ngp,span)
+@!DIR$ ASSUME_ALIGNED local_hist:64, global_hist:64
 c
       if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, hist_size
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do  i = 1, span
                local_hist(i,j,k) = global_hist(j,k,i)
             end do
@@ -667,6 +671,7 @@ c                number of gauss points = 8, unroll.
 c
       do  j = 1, hist_size
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do  i = 1, span
             local_hist(i,j,1) = global_hist(j,1,i)
             local_hist(i,j,2) = global_hist(j,2,i)
@@ -733,6 +738,8 @@ c
            write(out,9000) 2
            call die_abort
       end if
+c      
+      local_work%b_block = zero
 c
       allocate( local_work%ue(mxvl,mxedof),
      1  local_work%due(mxvl,mxedof),

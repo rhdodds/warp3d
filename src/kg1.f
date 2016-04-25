@@ -4,7 +4,7 @@ c     *                      subroutine kg1                          *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/02/91                   *
+c     *                   last modified : 04/22/2016 rhd             *
 c     *                                                              *
 c     *     this subroutine computes the geometric tangent stiff-    *
 c     *     nesses at a gauss point in uniform global coordinates    *
@@ -17,30 +17,37 @@ c
       subroutine kg1( span, cp, icp, gama, nxi, neta, nzeta, nnode,
      &                sig, dj, w, ek, vol, bbar, nsz, totdof )
       use main_data, only: asymmetric_assembly
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      integer :: span, cp(*), icp(mxutsz,*), nnode, nsz, totdof
+#dbl      double precision ::
+#sgl      real ::
      &    gama(mxvl,ndim,*), nxi(*), neta(*), nzeta(*), sig(mxvl,*),
-     &    dj(*), ek(nsz,*), w, vol(mxvl,8,*)
-      integer cp(*), icp(mxutsz,*)
-      logical bbar
+     &    dj(*), ek(nsz,span), w, vol(mxvl,8,*)
+      logical :: bbar
 c
 c                       locally allocated arrays - on stack
 c
+      integer :: j, i, cp1, cp2, cp3, r, c, l, k 
 #dbl      double precision
 #sgl      real
      &    gtg(mxvl,mxnusz), gxi(mxvl,mxndel),
      &    geta(mxvl,mxndel), gzeta(mxvl,mxndel)
+@!DIR$ ASSUME_ALIGNED gama:64, nxi:64, neta:64, nzeta:64
+@!DIR$ ASSUME_ALIGNED sig:64, dj:64, ek:64, vol:64
+@!DIR$ ASSUME_ALIGNED gtg:64, gxi:64, geta:64, gzeta:64
+c
 c
 c                       calculate the arrays that are the building 
 c                       blocks of the geometric stiffness.
 c    
       if ( bbar ) then                   
         do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
           do i = 1, span
            gxi(i,j)   = vol(i,j,1)
            geta(i,j)  = vol(i,j,2)
@@ -49,6 +56,8 @@ c
         end do
       else
         do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
           do i = 1, span
             gxi(i,j)  =  gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)+
      &                   gama(i,1,3)*nzeta(j)
@@ -64,6 +73,8 @@ c                       compute the geometric tangent stiffnesses for
 c                       one (x,y,z) direction.
 c
       do j = 1, cp(nnode)+nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
             gtg(i,j)= (gxi(i,icp(j,1))*gxi(i,icp(j,2))*sig(i,1)+
      &                 geta(i,icp(j,1))*geta(i,icp(j,2))*sig(i,2)+
@@ -89,6 +100,8 @@ c
          cp3 = cp(2*nnode+l)+2*nnode
 c
          do j = 1, l
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do  i = 1, span
                ek(cp1+j,i) = ek(cp1+j,i) + gtg(i,cp1+j)
                ek(cp2+j,i) = ek(cp2+j,i) + gtg(i,cp1+j)
@@ -105,6 +118,8 @@ c
          cp3 = cp(2*nnode+l)+2*nnode
 c
          do j = 1, l
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do  i = 1, span
                ! col l, row j
                r = j
@@ -118,7 +133,7 @@ c
 
                ! col nnode+l, row nnode+j
                r = nnode + j
-               c = nnode + l
+               c = nnode  + l
                k = (c-1)*totdof + r
                ek(k,i) = ek(k,i) + gtg(i,cp1+j)
                if (r .ne. c) then

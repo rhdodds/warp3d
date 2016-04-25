@@ -16,10 +16,12 @@ c
 #dbl      double precision
 #sgl      real
      & vol(mxvl,8,*), volume(*), voli, one
-      data one / 1.0 /
-c
+      data one / 1.0d0 /
+@!DIR$ ASSUME_ALIGNED vol:64, volume:64
 c               refer to extensive comments in vol_terms.f
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span 
 c
        voli = one / volume(i)

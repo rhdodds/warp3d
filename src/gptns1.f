@@ -4,7 +4,7 @@ c     *                      subroutine gptns1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *               last modified : 1/10/2016 rhd                  *
+c     *               last modified : 4/18/2016 rhd                  *
 c     *                                                              *
 c     *     computes the contributon to the tangent                  *
 c     *     stiffnes matrices for a block of similar elements in     *
@@ -210,17 +210,33 @@ c
      &                  local_work%cep, ek, mxvl, mxedof,
      &                  nstr, totdof )
       else   ! symmetric assembly
-        if( totdof .ne. 24 )
-     &     call bdbtgen( span, icp, local_work%b_block,
-     &                   local_work%bt_block, local_work%bd_block,
-     &                   local_work%cep, ek, mxvl, mxedof, utsz, nstr,
-     &                   totdof, mxutsz )
-c
-        if( totdof .eq. 24 )
-     &     call bdbt( span, icp, local_work%b_block, 
+
+        if( totdof .eq. 24 ) then
+           call bdbt24( span, icp, local_work%b_block, 
      &                local_work%bt_block, local_work%bd_block, 
      &                local_work%cep, ek, mxvl, mxedof, utsz,
-     &                nstr, mxutsz )
+     &                nstr, totdof, mxutsz )
+        elseif( totdof .eq. 30 ) then
+           call bdbt30( span, icp, local_work%b_block, 
+     &                local_work%bt_block, local_work%bd_block, 
+     &                local_work%cep, ek, mxvl, mxedof, utsz,
+     &                nstr, totdof, mxutsz )
+         elseif( totdof .eq. 36 ) then
+           call bdbt36( span, icp, local_work%b_block, 
+     &                local_work%bt_block, local_work%bd_block, 
+     &                local_work%cep, ek, mxvl, mxedof, utsz,
+     &                nstr, totdof, mxutsz )
+        elseif( totdof .eq. 60 ) then
+           call bdbt60( span, icp, local_work%b_block, 
+     &                local_work%bt_block, local_work%bd_block, 
+     &                local_work%cep, ek, mxvl, mxedof, utsz,
+     &                nstr, totdof, mxutsz )
+        else
+         call bdbtgen( span, icp, local_work%b_block,
+     &                 local_work%bt_block, local_work%bd_block,
+     &                 local_work%cep, ek, mxvl, mxedof, utsz, nstr,
+     &                 totdof, mxutsz )
+        end if
       end if
 
       if( geonl ) then
@@ -449,6 +465,7 @@ c
 #sgl      real :: weight, symm_part_cep(6), f
       logical :: ldebug
       integer :: span, felem, now_blk, ielem, k, i
+@!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c    
       ldebug  = .false.
       span    = local_work%span
@@ -463,7 +480,8 @@ c
 c              expand to 3x3 symmetric [D] scaled by gpn
 c              weight factor
 c
-@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ LOOP COUNT MAX=### 
+@!DIR$ IVDEP
       do ielem = 1, span
        f = weight * local_work%det_jac_block(ielem,gpn)
        k = ( 6 * span * (gpn-1) ) + 6 * (ielem-1)
@@ -656,6 +674,7 @@ c
 #dbl      double precision :: weight, symm_part_cep(21), f
 #sgl      real :: weight, symm_part_cep(21), f
       integer :: span, now_blk, ielem, sloc, k, felem
+@!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c      
       span    = local_work%span
       weight  = local_work%weights(gpn)
@@ -669,7 +688,8 @@ c
 c              expand to 6 x 6 symmetric [D] and scale by
 c              integration weight factor
 c
-@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ LOOP COUNT MAX=### 
+@!DIR$ IVDEP
       do ielem = 1, span
         sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
         f = weight * local_work%det_jac_block(ielem,gpn)
@@ -742,6 +762,7 @@ c
 #sgl      real
      & weight, symm_part_cep(21), factor
       logical local_debug, debug_now
+@!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c
 c           1. pull a few values from work space for block
 c
@@ -769,6 +790,7 @@ c                      global cep block is 21 x span x num integration
 c                      points
 c
         start_loc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+@!DIR$ IVDEP
         do k = 1, 21
           symm_part_cep(k) = gbl_cep_blocks(now_blk)%vector(start_loc+k)
         end do
@@ -779,6 +801,7 @@ c
         factor = weight * local_work%det_jac_block(ielem,gpn)
         k = 1
         do i = 1, 6
+@!DIR$ IVDEP        
          do j = 1, i
            local_work%cep(ielem,i,j) = symm_part_cep(k) * factor
            local_work%cep(ielem,j,i) = symm_part_cep(k) * factor
@@ -951,11 +974,11 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine bdbt                         *
+c     *                      subroutine bdbt24                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 09/25/2015 rhd             *
+c     *                   last modified : 4/18/2016 rhd              *
 c     *                                                              *
 c     *     performs the multiplication of the                       *
 c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
@@ -963,26 +986,36 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbt( span, icp, b, bt, bd, d, ek,
-     &                 mxvl, mxedof, utsz, nstr, mxutsz )
-      implicit integer (a-z)
+      subroutine bdbt24( span, icp, b, bt, bd, d, ek,
+     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      implicit none
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
+     &           icp(mxutsz,*)
+#dbl      double precision ::
+#sgl      real ::
      &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-      integer icp(mxutsz,*)
+c
+c                       locals
+c
+      integer :: i, j, row, col
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
 c
 c              set trans( [B] )
 c
       do j = 1, 24
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span
-         do k = 1, 6
-          bt(i,k,j)= b(i,j,k)
-         end do
+          bt(i,1,j)= b(i,j,1)
+          bt(i,2,j)= b(i,j,2)
+          bt(i,3,j)= b(i,j,3)
+          bt(i,4,j)= b(i,j,4)    
+          bt(i,5,j)= b(i,j,5) 
+          bt(i,6,j)= b(i,j,6)
        end do
       end do
 c
@@ -994,15 +1027,53 @@ c              cnst.. routine.
 c
       do j = 1, 24
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
        do i = 1, span
-         do k = 1, 6
-           bd(i,j,k) = d(i,1,k) * b(i,j,1)
-     &               + d(i,2,k) * b(i,j,2)
-     &               + d(i,3,k) * b(i,j,3)
-     &               + d(i,4,k) * b(i,j,4)
-     &               + d(i,5,k) * b(i,j,5)
-     &               + d(i,6,k) * b(i,j,6)
-         end do
+           bd(i,j,1) = d(i,1,1) * b(i,j,1)
+     &               + d(i,2,1) * b(i,j,2)
+     &               + d(i,3,1) * b(i,j,3)
+     &               + d(i,4,1) * b(i,j,4)
+     &               + d(i,5,1) * b(i,j,5)
+     &               + d(i,6,1) * b(i,j,6)
+
+
+           bd(i,j,2) = d(i,1,2) * b(i,j,1)
+     &               + d(i,2,2) * b(i,j,2)
+     &               + d(i,3,2) * b(i,j,3)
+     &               + d(i,4,2) * b(i,j,4)
+     &               + d(i,5,2) * b(i,j,5)
+     &               + d(i,6,2) * b(i,j,6)
+     
+           bd(i,j,3) = d(i,1,3) * b(i,j,1)
+     &               + d(i,2,3) * b(i,j,2)
+     &               + d(i,3,3) * b(i,j,3)
+     &               + d(i,4,3) * b(i,j,4)
+     &               + d(i,5,3) * b(i,j,5)
+     &               + d(i,6,3) * b(i,j,6)
+
+           bd(i,j,4) = d(i,1,4) * b(i,j,1)
+     &               + d(i,2,4) * b(i,j,2)
+     &               + d(i,3,4) * b(i,j,3)
+     &               + d(i,4,4) * b(i,j,4)
+     &               + d(i,5,4) * b(i,j,5)
+     &               + d(i,6,4) * b(i,j,6)
+
+
+
+           bd(i,j,5) = d(i,1,5) * b(i,j,1)
+     &               + d(i,2,5) * b(i,j,2)
+     &               + d(i,3,5) * b(i,j,3)
+     &               + d(i,4,5) * b(i,j,4)
+     &               + d(i,5,5) * b(i,j,5)
+     &               + d(i,6,5) * b(i,j,6)
+
+           bd(i,j,6) = d(i,1,6) * b(i,j,1)
+     &               + d(i,2,6) * b(i,j,2)
+     &               + d(i,3,6) * b(i,j,3)
+     &               + d(i,4,6) * b(i,j,4)
+     &               + d(i,5,6) * b(i,j,5)
+     &               + d(i,6,6) * b(i,j,6)
+
        end do
       end do
 c
@@ -1013,6 +1084,7 @@ c
         row = icp(j,1)
         col = icp(j,2)
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span
          ek(j,i) = ek(j,i)
      &         +   bt(i,1,col) * bd(i,row,1)
@@ -1026,6 +1098,388 @@ c
 c
       return
       end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine bdbt30                       *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 4/18/2016 rhd              *
+c     *                                                              *
+c     *     performs the multiplication of the                       *
+c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine bdbt30( span, icp, b, bt, bd, d, ek,
+     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      implicit none
+c
+c                       parameter declarations
+c
+      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
+     &           icp(mxutsz,*)
+#dbl      double precision ::
+#sgl      real ::
+     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
+c
+c                       locals
+c
+      integer :: i, j, row, col
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+c
+c              set trans( [B] )
+c
+      do j = 1, 30
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+          bt(i,1,j)= b(i,j,1)
+          bt(i,2,j)= b(i,j,2)
+          bt(i,3,j)= b(i,j,3)
+          bt(i,4,j)= b(i,j,4)    
+          bt(i,5,j)= b(i,j,5) 
+          bt(i,6,j)= b(i,j,6)
+       end do
+      end do
+c
+c              perform multiplication of [D]*[B-mat]. 
+c              assumes full [D] and [B]full matrix. 
+c              [D] for solids is 6x6. Also for cohesive,
+c              i: 4->6 and j: 4->6 should be zeroed by
+c              cnst.. routine.
+c
+      do j = 1, 30
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+       do i = 1, span
+           bd(i,j,1) = d(i,1,1) * b(i,j,1)
+     &               + d(i,2,1) * b(i,j,2)
+     &               + d(i,3,1) * b(i,j,3)
+     &               + d(i,4,1) * b(i,j,4)
+     &               + d(i,5,1) * b(i,j,5)
+     &               + d(i,6,1) * b(i,j,6)
+
+
+           bd(i,j,2) = d(i,1,2) * b(i,j,1)
+     &               + d(i,2,2) * b(i,j,2)
+     &               + d(i,3,2) * b(i,j,3)
+     &               + d(i,4,2) * b(i,j,4)
+     &               + d(i,5,2) * b(i,j,5)
+     &               + d(i,6,2) * b(i,j,6)
+     
+           bd(i,j,3) = d(i,1,3) * b(i,j,1)
+     &               + d(i,2,3) * b(i,j,2)
+     &               + d(i,3,3) * b(i,j,3)
+     &               + d(i,4,3) * b(i,j,4)
+     &               + d(i,5,3) * b(i,j,5)
+     &               + d(i,6,3) * b(i,j,6)
+
+           bd(i,j,4) = d(i,1,4) * b(i,j,1)
+     &               + d(i,2,4) * b(i,j,2)
+     &               + d(i,3,4) * b(i,j,3)
+     &               + d(i,4,4) * b(i,j,4)
+     &               + d(i,5,4) * b(i,j,5)
+     &               + d(i,6,4) * b(i,j,6)
+
+
+
+           bd(i,j,5) = d(i,1,5) * b(i,j,1)
+     &               + d(i,2,5) * b(i,j,2)
+     &               + d(i,3,5) * b(i,j,3)
+     &               + d(i,4,5) * b(i,j,4)
+     &               + d(i,5,5) * b(i,j,5)
+     &               + d(i,6,5) * b(i,j,6)
+
+           bd(i,j,6) = d(i,1,6) * b(i,j,1)
+     &               + d(i,2,6) * b(i,j,2)
+     &               + d(i,3,6) * b(i,j,3)
+     &               + d(i,4,6) * b(i,j,4)
+     &               + d(i,5,6) * b(i,j,5)
+     &               + d(i,6,6) * b(i,j,6)
+
+       end do
+      end do
+c
+c              perform multiplication of tran(B)*([D][B]).
+c              do only for upper triangular entries.
+c
+      do j = 1, 465
+        row = icp(j,1)
+        col = icp(j,2)
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+         ek(j,i) = ek(j,i)
+     &         +   bt(i,1,col) * bd(i,row,1)
+     &         +   bt(i,2,col) * bd(i,row,2)
+     &         +   bt(i,3,col) * bd(i,row,3)
+     &         +   bt(i,4,col) * bd(i,row,4)
+     &         +   bt(i,5,col) * bd(i,row,5)
+     &         +   bt(i,6,col) * bd(i,row,6)
+        end do
+      end do
+c
+      return
+      end      
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine bdbt36                       *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 4/18/2016 rhd              *
+c     *                                                              *
+c     *     performs the multiplication of the                       *
+c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine bdbt36( span, icp, b, bt, bd, d, ek,
+     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      implicit none
+c
+c                       parameter declarations
+c
+      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
+     &           icp(mxutsz,*)
+#dbl      double precision ::
+#sgl      real ::
+     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
+c
+c                       locals
+c
+      integer :: i, j, row, col
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+c
+c              set trans( [B] )
+c
+      do j = 1, 36
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+          bt(i,1,j)= b(i,j,1)
+          bt(i,2,j)= b(i,j,2)
+          bt(i,3,j)= b(i,j,3)
+          bt(i,4,j)= b(i,j,4)    
+          bt(i,5,j)= b(i,j,5) 
+          bt(i,6,j)= b(i,j,6)
+       end do
+      end do
+c
+c              perform multiplication of [D]*[B-mat]. 
+c              assumes full [D] and [B]full matrix. 
+c              [D] for solids is 6x6. Also for cohesive,
+c              i: 4->6 and j: 4->6 should be zeroed by
+c              cnst.. routine.
+c
+      do j = 1, 36
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+       do i = 1, span
+           bd(i,j,1) = d(i,1,1) * b(i,j,1)
+     &               + d(i,2,1) * b(i,j,2)
+     &               + d(i,3,1) * b(i,j,3)
+     &               + d(i,4,1) * b(i,j,4)
+     &               + d(i,5,1) * b(i,j,5)
+     &               + d(i,6,1) * b(i,j,6)
+
+
+           bd(i,j,2) = d(i,1,2) * b(i,j,1)
+     &               + d(i,2,2) * b(i,j,2)
+     &               + d(i,3,2) * b(i,j,3)
+     &               + d(i,4,2) * b(i,j,4)
+     &               + d(i,5,2) * b(i,j,5)
+     &               + d(i,6,2) * b(i,j,6)
+     
+           bd(i,j,3) = d(i,1,3) * b(i,j,1)
+     &               + d(i,2,3) * b(i,j,2)
+     &               + d(i,3,3) * b(i,j,3)
+     &               + d(i,4,3) * b(i,j,4)
+     &               + d(i,5,3) * b(i,j,5)
+     &               + d(i,6,3) * b(i,j,6)
+
+           bd(i,j,4) = d(i,1,4) * b(i,j,1)
+     &               + d(i,2,4) * b(i,j,2)
+     &               + d(i,3,4) * b(i,j,3)
+     &               + d(i,4,4) * b(i,j,4)
+     &               + d(i,5,4) * b(i,j,5)
+     &               + d(i,6,4) * b(i,j,6)
+
+
+
+           bd(i,j,5) = d(i,1,5) * b(i,j,1)
+     &               + d(i,2,5) * b(i,j,2)
+     &               + d(i,3,5) * b(i,j,3)
+     &               + d(i,4,5) * b(i,j,4)
+     &               + d(i,5,5) * b(i,j,5)
+     &               + d(i,6,5) * b(i,j,6)
+
+           bd(i,j,6) = d(i,1,6) * b(i,j,1)
+     &               + d(i,2,6) * b(i,j,2)
+     &               + d(i,3,6) * b(i,j,3)
+     &               + d(i,4,6) * b(i,j,4)
+     &               + d(i,5,6) * b(i,j,5)
+     &               + d(i,6,6) * b(i,j,6)
+
+       end do
+      end do
+c
+c              perform multiplication of tran(B)*([D][B]).
+c              do only for upper triangular entries.
+c
+      do j = 1, 666
+        row = icp(j,1)
+        col = icp(j,2)
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+         ek(j,i) = ek(j,i)
+     &         +   bt(i,1,col) * bd(i,row,1)
+     &         +   bt(i,2,col) * bd(i,row,2)
+     &         +   bt(i,3,col) * bd(i,row,3)
+     &         +   bt(i,4,col) * bd(i,row,4)
+     &         +   bt(i,5,col) * bd(i,row,5)
+     &         +   bt(i,6,col) * bd(i,row,6)
+        end do
+      end do
+c
+      return
+      end      
+     
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine bdbt60                       *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 4/18/2016 rhd              *
+c     *                                                              *
+c     *     performs the multiplication of the                       *
+c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine bdbt60( span, icp, b, bt, bd, d, ek,
+     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      implicit none
+c
+c                       parameter declarations
+c
+      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
+     &           icp(mxutsz,*)
+#dbl      double precision ::
+#sgl      real ::
+     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
+c
+c                       locals
+c
+      integer :: i, j, row, col
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+c
+c              set trans( [B] )
+c
+      do j = 1, 60
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+          bt(i,1,j)= b(i,j,1)
+          bt(i,2,j)= b(i,j,2)
+          bt(i,3,j)= b(i,j,3)
+          bt(i,4,j)= b(i,j,4)    
+          bt(i,5,j)= b(i,j,5) 
+          bt(i,6,j)= b(i,j,6)
+       end do
+      end do
+c
+c              perform multiplication of [D]*[B-mat]. 
+c              assumes full [D] and [B]full matrix. 
+c              [D] for solids is 6x6. Also for cohesive,
+c              i: 4->6 and j: 4->6 should be zeroed by
+c              cnst.. routine.
+c
+      do j = 1, 60
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+       do i = 1, span
+           bd(i,j,1) = d(i,1,1) * b(i,j,1)
+     &               + d(i,2,1) * b(i,j,2)
+     &               + d(i,3,1) * b(i,j,3)
+     &               + d(i,4,1) * b(i,j,4)
+     &               + d(i,5,1) * b(i,j,5)
+     &               + d(i,6,1) * b(i,j,6)
+
+
+           bd(i,j,2) = d(i,1,2) * b(i,j,1)
+     &               + d(i,2,2) * b(i,j,2)
+     &               + d(i,3,2) * b(i,j,3)
+     &               + d(i,4,2) * b(i,j,4)
+     &               + d(i,5,2) * b(i,j,5)
+     &               + d(i,6,2) * b(i,j,6)
+     
+           bd(i,j,3) = d(i,1,3) * b(i,j,1)
+     &               + d(i,2,3) * b(i,j,2)
+     &               + d(i,3,3) * b(i,j,3)
+     &               + d(i,4,3) * b(i,j,4)
+     &               + d(i,5,3) * b(i,j,5)
+     &               + d(i,6,3) * b(i,j,6)
+
+           bd(i,j,4) = d(i,1,4) * b(i,j,1)
+     &               + d(i,2,4) * b(i,j,2)
+     &               + d(i,3,4) * b(i,j,3)
+     &               + d(i,4,4) * b(i,j,4)
+     &               + d(i,5,4) * b(i,j,5)
+     &               + d(i,6,4) * b(i,j,6)
+
+
+
+           bd(i,j,5) = d(i,1,5) * b(i,j,1)
+     &               + d(i,2,5) * b(i,j,2)
+     &               + d(i,3,5) * b(i,j,3)
+     &               + d(i,4,5) * b(i,j,4)
+     &               + d(i,5,5) * b(i,j,5)
+     &               + d(i,6,5) * b(i,j,6)
+
+           bd(i,j,6) = d(i,1,6) * b(i,j,1)
+     &               + d(i,2,6) * b(i,j,2)
+     &               + d(i,3,6) * b(i,j,3)
+     &               + d(i,4,6) * b(i,j,4)
+     &               + d(i,5,6) * b(i,j,5)
+     &               + d(i,6,6) * b(i,j,6)
+
+       end do
+      end do
+c
+c              perform multiplication of tran(B)*([D][B]).
+c              do only for upper triangular entries.
+c
+      do j = 1, 1830
+        row = icp(j,1)
+        col = icp(j,2)
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+         ek(j,i) = ek(j,i)
+     &         +   bt(i,1,col) * bd(i,row,1)
+     &         +   bt(i,2,col) * bd(i,row,2)
+     &         +   bt(i,3,col) * bd(i,row,3)
+     &         +   bt(i,4,col) * bd(i,row,4)
+     &         +   bt(i,5,col) * bd(i,row,5)
+     &         +   bt(i,6,col) * bd(i,row,6)
+        end do
+      end do
+c
+      return
+      end      
 c
 c     ****************************************************************
 c     *                                                              *
@@ -1098,6 +1552,10 @@ c
 #dbl      double precision :: local_d(6,6)
 #sgl      real :: local_d(6,6)
 c
+@!DIR$ ASSUME_ALIGNED b:64, d:64, ek:64
+@!DIR$ ASSUME_ALIGNED local_b:64, local_bt:64, local_btdb:64
+@!DIR$ ASSUME_ALIGNED local_d:64 
+
       allocate( local_b(6,totdof), local_bt(totdof,6), 
      &          local_db(6,totdof), local_btdb(totdof,totdof) )
 c      
@@ -1105,6 +1563,7 @@ c
       do i = 1, span
 c
         do k = 1, 6
+@!DIR$ IVDEP
           do j = 1, totdof
              local_bt(j,k) = b(i,j,k)
              local_b(k,j)  = b(i,j,k)
@@ -1112,6 +1571,7 @@ c
         end do
 c        
         do j = 1, 6
+@!DIR$ IVDEP
           do k = 1, 6
             local_d(k,j) = d(i,k,j)
           end do
@@ -1124,6 +1584,7 @@ c                       reshape same speed as codes do loops
 c                   
         local_db = matmul( local_d, local_b )  
         local_btdb = matmul( local_bt, local_db )
+@!DIR$ IVDEP
         ek(:,i) = ek(:,i) + reshape(local_btdb,(/totdof*totdof/))
 c      
       end do ! on span
@@ -1133,14 +1594,13 @@ c
       return
       end  
 
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine bdbtgen                      *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 07/10/97                   *
+c     *                   last modified : 4/18/2016 rhd              *
 c     *                                                              *
 c     *     this subroutine performs the multiplication of the       *
 c     *     transpose of the strain-displacement matrix by the       *
@@ -1153,24 +1613,34 @@ c
 c
       subroutine bdbtgen( span, icp, b, bt, bd, d, ek,
      &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
+     &           icp(mxutsz,*)
+#dbl      double precision ::
+#sgl      real ::
      &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-      integer icp(mxutsz,*)
+c
+c                       locals
+c
+      integer :: i, j, row, col
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
 c
 c              set trans( [B] )
 c
       do j = 1, totdof
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span
-         do k = 1, 6
-          bt(i,k,j)= b(i,j,k)
-         end do
+          bt(i,1,j)= b(i,j,1)
+          bt(i,2,j)= b(i,j,2)
+          bt(i,3,j)= b(i,j,3)
+          bt(i,4,j)= b(i,j,4)    
+          bt(i,5,j)= b(i,j,5) 
+          bt(i,6,j)= b(i,j,6)
        end do
       end do
 c
@@ -1182,18 +1652,56 @@ c              cnst.. routine.
 c
       do j = 1, totdof
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
        do i = 1, span
-         do k = 1, 6
-           bd(i,j,k) = d(i,1,k) * b(i,j,1)
-     &               + d(i,2,k) * b(i,j,2)
-     &               + d(i,3,k) * b(i,j,3)
-     &               + d(i,4,k) * b(i,j,4)
-     &               + d(i,5,k) * b(i,j,5)
-     &               + d(i,6,k) * b(i,j,6)
-         end do
+           bd(i,j,1) = d(i,1,1) * b(i,j,1)
+     &               + d(i,2,1) * b(i,j,2)
+     &               + d(i,3,1) * b(i,j,3)
+     &               + d(i,4,1) * b(i,j,4)
+     &               + d(i,5,1) * b(i,j,5)
+     &               + d(i,6,1) * b(i,j,6)
+
+
+           bd(i,j,2) = d(i,1,2) * b(i,j,1)
+     &               + d(i,2,2) * b(i,j,2)
+     &               + d(i,3,2) * b(i,j,3)
+     &               + d(i,4,2) * b(i,j,4)
+     &               + d(i,5,2) * b(i,j,5)
+     &               + d(i,6,2) * b(i,j,6)
+     
+           bd(i,j,3) = d(i,1,3) * b(i,j,1)
+     &               + d(i,2,3) * b(i,j,2)
+     &               + d(i,3,3) * b(i,j,3)
+     &               + d(i,4,3) * b(i,j,4)
+     &               + d(i,5,3) * b(i,j,5)
+     &               + d(i,6,3) * b(i,j,6)
+
+           bd(i,j,4) = d(i,1,4) * b(i,j,1)
+     &               + d(i,2,4) * b(i,j,2)
+     &               + d(i,3,4) * b(i,j,3)
+     &               + d(i,4,4) * b(i,j,4)
+     &               + d(i,5,4) * b(i,j,5)
+     &               + d(i,6,4) * b(i,j,6)
+
+
+
+           bd(i,j,5) = d(i,1,5) * b(i,j,1)
+     &               + d(i,2,5) * b(i,j,2)
+     &               + d(i,3,5) * b(i,j,3)
+     &               + d(i,4,5) * b(i,j,4)
+     &               + d(i,5,5) * b(i,j,5)
+     &               + d(i,6,5) * b(i,j,6)
+
+           bd(i,j,6) = d(i,1,6) * b(i,j,1)
+     &               + d(i,2,6) * b(i,j,2)
+     &               + d(i,3,6) * b(i,j,3)
+     &               + d(i,4,6) * b(i,j,4)
+     &               + d(i,5,6) * b(i,j,5)
+     &               + d(i,6,6) * b(i,j,6)
+
        end do
       end do
-c
+c      
 c              perform multiplication of tran(B)*([D][B]).
 c              do only for upper triangular entries.
 c
@@ -1201,6 +1709,7 @@ c
         row = icp(j,1)
         col = icp(j,2)
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span
          ek(j,i) = ek(j,i)
      &         +   bt(i,1,col) * bd(i,row,1)
@@ -1221,7 +1730,7 @@ c     *                      subroutine ctran1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/25/2015 rhd              *
+c     *                   last modified : 4/18/2016 rhd              *
 c     *                                                              *
 c     *     transform [Dt] from a form relating the unrotated stress *
 c     *     rate and the unrotated rate of deformation tensor to     *
@@ -1240,7 +1749,7 @@ $add param_def
      &     cs(mxvl,*), half, two, dj(*), w, wf, halfw
       logical :: qbar, is_umat, is_crys_pls
       data half, two / 0.5d00, 2.0d00 /
-c
+@!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64
 c
 c             [cep] (mxvl x 6 x 6) relates increments
 c             of unrotated cauchy stress to increments
@@ -1273,6 +1782,7 @@ c             value to compiler
 c
       do j = 1, 6
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
 c
             tc(i,j,1)= (qn1(i,j,1)*cep(i,1,1)+
@@ -1325,6 +1835,7 @@ c                       [cep*] =  [tc] * transpose([qn1])
 c
       do j = 1, 6
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
 c
             cep(i,j,1)= tc(i,j,1)*qn1(i,1,1)+
@@ -1389,6 +1900,7 @@ c            deformation problems.
 c
       if( qbar ) then
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span
          wf    = dj(i) * w
          halfw = half * wf
