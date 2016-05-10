@@ -395,6 +395,17 @@ function linux_advanced
 # ****************************************************************************
 
 function compile_linux {
+	
+#
+# put date & time for this build into the printed block header located
+# in file main_program.f
+#
+date_string=`date`  
+sed -i -e '/Built on:/c\!win     &     "    **     Built on: ??? ",\' \
+        main_program.f
+sed -i -e "s/???/$date_string/" main_program.f
+
+	
 #
 # Start by going through the packages and installing them if required
 #
@@ -481,7 +492,7 @@ exit 1
 fi
 #
 # Intel Fortran Composer XE system must be installed and be at a
-# relatively recent version (13.0 for now).
+# relatively recent version (15.0 for now).
 #
 hash ifort 2>&- || {
 printf "[ERROR]\n"
@@ -493,7 +504,7 @@ printf "Quitting...\n\n"
 exit 1
 }
 #
-minv=14.0
+minv=15.0
 fv=`ifort -v 2>&1`
 fv=${fv:7:5}
 result=`expr $fv \>= $minv`
@@ -563,6 +574,33 @@ printf " \n"
 uninstall_mpi
 uninstall_hypre
 printf " \n"
+#
+# put date & time for this build into the printed block header located
+# in file main_program.f
+#
+date_string=`date`  
+#
+#      sed with some options does not work like Linux.use ex
+#      silent mode with here document.
+#
+ex -s main_program.f <<%%
+/Built on/
+c
+!win     &     "    **     Built on: ??? ",
+.
+wq
+%%
+
+#sed -i -e '/Built on:/c\!win     &     "    **     Built on: ??? ",\' \
+#        main_program.f
+#sed -i -e "s/???/$date_string/" main_program.f
+ex -s main_program.f <<%%
+/???/
+s//$date_string/
+.
+wq
+%%
+
 #
 # setup the directory structure object and executable if required
 #
