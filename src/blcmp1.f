@@ -264,23 +264,14 @@ c
          do i = 1, span
 c
             b(i,j,1)=       btemp(i,j,1)
-            b(i,j,2)=       zero
-            b(i,j,3)=       zero
             b(i,j,4)=       btemp(i,j,2)
-            b(i,j,5)=       zero
             b(i,j,6)=       btemp(i,j,3)
 c
-            b(i,bpos1+j,1)= zero
             b(i,bpos1+j,2)= btemp(i,j,2)
-            b(i,bpos1+j,3)= zero
             b(i,bpos1+j,4)= btemp(i,j,1)
             b(i,bpos1+j,5)= btemp(i,j,3)
-            b(i,bpos1+j,6)= zero
 c
-            b(i,bpos2+j,1)= zero
-            b(i,bpos2+j,2)= zero
             b(i,bpos2+j,3)= btemp(i,j,3)
-            b(i,bpos2+j,4)= zero
             b(i,bpos2+j,5)= btemp(i,j,2)
             b(i,bpos2+j,6)= btemp(i,j,1) 
          end do
@@ -342,23 +333,14 @@ c
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
               b(i,j,3) = sh(j)*rot(i,3,1)
-              b(i,j,4) = zero
-              b(i,j,5) = zero
-              b(i,j,6) = zero
 c
               b(i,12+j,1) = sh(j)*rot(i,1,2)
               b(i,12+j,2) = sh(j)*rot(i,2,2)
               b(i,12+j,3) = sh(j)*rot(i,3,2)
-              b(i,12+j,4) = zero
-              b(i,12+j,5) = zero
-              b(i,12+j,6) = zero
 c
               b(i,24+j,1) = sh(j)*rot(i,1,3)
               b(i,24+j,2) = sh(j)*rot(i,2,3)
               b(i,24+j,3) = sh(j)*rot(i,3,3)
-              b(i,24+j,4) = zero
-              b(i,24+j,5) = zero
-              b(i,24+j,6) = zero
 c
            end do
          end do
@@ -375,23 +357,14 @@ c
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
               b(i,j,3) = sh(j)*rot(i,3,1)
-              b(i,j,4) = zero
-              b(i,j,5) = zero
-              b(i,j,6) = zero
 c
               b(i,6+j,1) = sh(j)*rot(i,1,2)
               b(i,6+j,2) = sh(j)*rot(i,2,2)
               b(i,6+j,3) = sh(j)*rot(i,3,2)
-              b(i,6+j,4) = zero
-              b(i,6+j,5) = zero
-              b(i,6+j,6) = zero
 c
               b(i,12+j,1) = sh(j)*rot(i,1,3)
               b(i,12+j,2) = sh(j)*rot(i,2,3)
               b(i,12+j,3) = sh(j)*rot(i,3,3)
-              b(i,12+j,4) = zero
-              b(i,12+j,5) = zero
-              b(i,12+j,6) = zero
 c
            end do
          end do
@@ -408,23 +381,14 @@ c
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
               b(i,j,3) = sh(j)*rot(i,3,1)
-              b(i,j,4) = zero
-              b(i,j,5) = zero
-              b(i,j,6) = zero
 c
               b(i,8+j,1) = sh(j)*rot(i,1,2)
               b(i,8+j,2) = sh(j)*rot(i,2,2)
               b(i,8+j,3) = sh(j)*rot(i,3,2)
-              b(i,8+j,4) = zero
-              b(i,8+j,5) = zero
-              b(i,8+j,6) = zero
 c
               b(i,16+j,1) = sh(j)*rot(i,1,3)
               b(i,16+j,2) = sh(j)*rot(i,2,3)
               b(i,16+j,3) = sh(j)*rot(i,3,3)
-              b(i,16+j,4) = zero
-              b(i,16+j,5) = zero
-              b(i,16+j,6) = zero
 c
            end do
          end do
@@ -449,23 +413,14 @@ c
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
               b(i,j,3) = sh(j)*rot(i,3,1)
-              b(i,j,4) = zero
-              b(i,j,5) = zero
-              b(i,j,6) = zero
 c
               b(i,bpos1+j,1) = sh(j)*rot(i,1,2)
               b(i,bpos1+j,2) = sh(j)*rot(i,2,2)
               b(i,bpos1+j,3) = sh(j)*rot(i,3,2)
-              b(i,bpos1+j,4) = zero
-              b(i,bpos1+j,5) = zero
-              b(i,bpos1+j,6) = zero
 c
               b(i,bpos2+j,1) = sh(j)*rot(i,1,3)
               b(i,bpos2+j,2) = sh(j)*rot(i,2,3)
               b(i,bpos2+j,3) = sh(j)*rot(i,3,3)
-              b(i,bpos2+j,4) = zero
-              b(i,bpos2+j,5) = zero
-              b(i,bpos2+j,6) = zero
 c
            end do
        end do

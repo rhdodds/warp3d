@@ -386,7 +386,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *  Messages during equation solving with the Intel MKL pkg.    *
 c     *                                                              *
-c     *  written by: rh   modified by: rhd  last modified: 2/15/2016 *
+c     *  written by: rh   modified by: rhd  last modified: 5/4/2016  *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -429,6 +429,8 @@ c
          if( ier .ne. 0 ) then
             write(iout,9470)
             write(iout,*) '       >> @ phase 22, ier: ',ier
+            if( ier .eq. -2 ) write(iout,9700)
+            if( ier .eq. -4 ) write(iout,9710)
             call die_gracefully
          end if
          if( cpu_stats ) then
@@ -522,8 +524,13 @@ c
      &  15x,'conjugate gradient-Krylov iters  ', i9)
  9602  format(      
      &  15x,'Krylov iterations done        @ ',f10.2 )
-9610  format(7x,
+ 9610  format(7x,
      & '>> conjugate gradient-Krylov iterations:           ',i5)
+ 9700  format(7x,'The factorization step has attempted to allocate',
+     & /,     7x,'more virtual memory than available on your',
+     & /,     7x,'machine.' )   
+ 9710  format(7x,'The factorization step has encountered a',
+     & /,     7x,'zero pivot.')     
 c
       end
 
@@ -533,7 +540,7 @@ c     *                                                              *
 c     *  map the default vss sparse solver format that warp3d        *
 c     *  assembles into to the MKL sparse solver format              *
 c     *                                                              *
-c     *  written by: rh   modified by: rhd  last modified: 2/5/09    *
+c     *  written by: rh   modified by: rhd  last modified: 5/4/16    *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -569,41 +576,49 @@ c	       amat(ncoeff)                  k_coeff( ncoeff +neq )
 c	       kind(ncoeff)                  k_indices ( ncoeff + neq )
 c              kpt(neq)                      k_pointers ( neq + 1)
 c
-     	double precision ::  zero
-	     data zero / 0.0 /
-	     integer, allocatable :: kpt_l(:)
-	     integer :: i_old, i_new, i, j, nonzt_sum
+      double precision ::  zero
+      integer, allocatable :: kpt_l(:)
+      integer :: i_old, i_new, i, j, nonzt_sum
+      data zero / 0.0d0 /
+@!DIR$ ASSUME_ALIGNED diag:64, rhs:64, amat:64  
 c
-	     allocate( kpt_l( neq + 1) ); kpt_l(1:neq) = kpt(1:neq)
+      allocate( kpt_l(neq+1) )
+      kpt_l(1:neq) = kpt(1:neq)
 c
 c                 Map amat and kind arrays
 c      
-	     i_old = ncoeff + 1; i_new = ncoeff + neq + 1
+      i_old = ncoeff + 1; i_new = ncoeff + neq + 1
 c
-     	do i = neq, 1, -1
-	      do j = 1, kpt(i)
-	        i_new = i_new - 1; i_old = i_old - 1
-	        amat(i_new) = amat(i_old); kind(i_new) = kind(i_old)
-	      end do
-	      if( diag(i) .ne. zero ) then
-	        i_new = i_new - 1; amat(i_new) = diag(i); kind(i_new) = i
-	      end if
-    	end do
+      do i = neq, 1, -1
+@!DIR$ IVDEP
+        do j = 1, kpt(i)
+          i_new = i_new - 1
+          i_old = i_old - 1
+          amat(i_new) = amat(i_old)
+          kind(i_new) = kind(i_old)
+        end do
+        if( diag(i) .ne. zero ) then
+          i_new = i_new - 1
+          amat(i_new) = diag(i)
+          kind(i_new) = i
+        end if
+      end do
 c
 c                Map kpt ---> k_pointers
 c
-	     nonzt_sum = 1
-     	kpt(1) = nonzt_sum
-	     do i =1 ,neq
-	      if( diag(i). ne . zero ) then
-	        nonzt_sum = nonzt_sum + kpt_l(i) + 1; kpt(i+1) = nonzt_sum
-	      end if
-	     end do
+      nonzt_sum = 1
+      kpt(1) = nonzt_sum
+      do i = 1, neq
+       if( diag(i). ne . zero ) then
+         nonzt_sum = nonzt_sum + kpt_l(i) + 1
+         kpt(i+1) = nonzt_sum
+       end if
+      end do
 c
 c               Note: always pointers(neq+1) = # of non-zero terms  + 1
 c
-     	deallocate( kpt_l  )
-     	return
+      deallocate( kpt_l  )
+      return
       end
 
 c     ****************************************************************

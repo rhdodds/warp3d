@@ -564,7 +564,7 @@ c     *  a threaded loop over all equations.                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/29/09 rdh add threads   *
+c     *           last modified : 05/03/2016 rhd                     *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -576,28 +576,33 @@ c
       use elem_block_data, only : estiff_blocks
       use main_data,       only : elems_to_blocks, repeat_incid,
      &                            inverse_incidences
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c                    parameter declarations
 c
-      dimension   eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),
-     &             k_indexes(*), iprops(mxelpr,*),
-     &             dcp(*), row_start_index(*), edest(mxedof,*)
-#dbl      double precision
-#sgl      real
+      integer :: srow, neqns, noelem, previous_node
+      integer :: eqn_node_map(*), dof_eqn_map(*), 
+     &           k_ptrs(*), k_indexes(*), 
+     &           iprops(mxelpr,*), dcp(*), 
+     &           row_start_index(*), edest(mxedof,*)
+#dbl      double precision  ::
+#sgl      real ::
      & k_diag(*), k_coeffs(*), coeff_row(*)
 c
 c                    local declarations
 c
-#dbl      double precision
-#sgl      real
-     & zero, ekterm
+      integer :: local_scol(mxedof)
+      integer :: node, numele, j, felem, totdof, blk, rel_col, 
+     &           start_loc 
+#dbl      double precision :: zero
+#sgl      real :: zero, ekterm
 #dbl      double precision, dimension(:,:), pointer :: emat
 #sgl      real, dimension(:,:), pointer :: emat
 c
-      logical repeated
-      data zero / 0.0 /
+      logical :: repeated
+      data zero / 0.0d0 /
+@!DIR$ ASSUME_ALIGNED k_diag:64, k_coeffs:64, coeff_row:64       
 c
 c                 the structure node number corresponding to this equation
 c                 pull the number of elements connected to the node.
@@ -610,8 +615,8 @@ c                 private by our code in calling routine).
 c
       node   = eqn_node_map(srow)
       numele = inverse_incidences(node)%element_count
-      if ( node .ne. previous_node ) then
-        call get_edest_terms(
+      if( node .ne. previous_node ) then
+        call get_edest_terms_assemble(   ! should be inlined
      &      edest, inverse_incidences(node)%element_list(1), numele )
         previous_node = node
       end if
@@ -619,26 +624,32 @@ c
 c                 process all elements which contribute stiffness terms
 c                 to this structural equation.
 c
-       do 300 j = 1, numele
+      do j = 1, numele
           felem = inverse_incidences(node)%element_list(j)
+          if ( felem .le. 0 ) cycle
           repeated = repeat_incid(felem)
-          if ( felem .le. 0 ) go to 300
           totdof  = iprops(2,felem) * iprops(4,felem)
           blk     = elems_to_blocks(felem,1)
           rel_col = elems_to_blocks(felem,2)
           emat    => estiff_blocks(blk)%ptr
-          do 200 erow = 1, totdof
-             if ( dof_eqn_map(edest(erow,j)) .ne. srow ) go to 200
-             do 100 ecol = 1, totdof
-                scol = dof_eqn_map(edest(ecol,j))
-                if ( scol .lt. srow ) go to 100
-                kk = dcp(max(ecol,erow))-abs(ecol - erow)
-                ekterm = emat(kk,rel_col)
-                coeff_row(scol) = coeff_row(scol) + ekterm
- 100         continue
-             if ( .not. repeated) go to 300
- 200      continue
- 300  continue
+          if( totdof .eq. 24 ) then
+             call assem_a_row_24
+             cycle
+          end if
+          if( totdof .eq. 30 ) then
+             call assem_a_row_30
+             cycle
+          end if   
+          if( totdof .eq. 36 ) then
+             call assem_a_row_36
+             cycle
+          end if
+          if( totdof .eq. 60 ) then
+             call assem_a_row_60
+             cycle
+          end if  
+          call assem_a_row_gen 
+      end do
 c
 c                 copy the diagonal term from coeff_row into k_diag.
 c
@@ -654,15 +665,141 @@ c                 have been filled. k_ptrs tells us number of non-zero
 c                 terms right of diagonal. these key sparse data
 c                 structures have been built earlier in assembly process.
 c
-      if ( srow .eq. neqns ) return
+      if( srow .eq. neqns ) return
       start_loc = row_start_index(srow)-1
+@!DIR$ IVDEP
       do j = 1, k_ptrs(srow)
          k_coeffs(start_loc+j) = coeff_row(k_indexes(start_loc+j))
          coeff_row(k_indexes(start_loc+j)) = zero
       end do
 c
       return
-      end
+      
+      contains
+c     ****************************************************************
+c     *                                                              *
+c     *  support routines for symmetric assembly of a single         *
+c     *  row. specific for most common elements to get a bit more    *
+c     *  efficiency in vectorization.                                *
+c     *                                                              *
+c     ****************************************************************
+     
+      subroutine assem_a_row_24
+      implicit none
+c      
+      integer :: erow, ecol, scol, kk
+      double precision :: ekterm
+c      
+      local_scol(1:24) =  dof_eqn_map(edest(1:24,j))
+c      
+      do erow = 1, 24
+       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+@!DIR$ IVDEP
+       do ecol = 1, 24
+         scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
+         if ( scol .lt. srow ) cycle
+         kk = dcp(max(ecol,erow))-abs(ecol - erow)
+         ekterm = emat(kk,rel_col)
+         coeff_row(scol) = coeff_row(scol) + ekterm
+       end do
+       if( .not. repeated ) return
+      end do
+      return
+      end subroutine assem_a_row_24
+       
+      subroutine assem_a_row_30
+      implicit none
+c      
+      integer :: erow, ecol, scol, kk
+      double precision :: ekterm
+c           
+      local_scol(1:30) =  dof_eqn_map(edest(1:30,j))
+c      
+      do erow = 1, 30
+       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+@!DIR$ IVDEP
+       do ecol = 1, 30
+         scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
+         if( scol .lt. srow ) cycle
+         kk = dcp(max(ecol,erow))-abs(ecol - erow)
+         ekterm = emat(kk,rel_col)
+         coeff_row(scol) = coeff_row(scol) + ekterm
+       end do
+       if( .not. repeated ) return
+      end do
+      return
+      end subroutine assem_a_row_30
+
+      subroutine assem_a_row_36
+      implicit none
+c      
+      integer :: erow, ecol, scol, kk 
+      double precision :: ekterm
+c      
+      local_scol(1:36) =  dof_eqn_map(edest(1:36,j))
+c      
+      do erow = 1, 36
+       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+@!DIR$ IVDEP
+       do ecol = 1, 36
+         scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
+         if( scol .lt. srow ) cycle
+         kk = dcp(max(ecol,erow))-abs(ecol - erow)
+         ekterm = emat(kk,rel_col)
+         coeff_row(scol) = coeff_row(scol) + ekterm
+       end do
+       if( .not. repeated ) return
+      end do
+      return
+      end subroutine assem_a_row_36
+       
+      subroutine assem_a_row_60
+      implicit none
+c      
+      integer :: erow, ecol, scol, kk
+      double precision :: ekterm
+c            
+      local_scol(1:60) =  dof_eqn_map(edest(1:60,j))
+c      
+      do erow = 1, 60
+       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+@!DIR$ IVDEP
+       do ecol = 1, 60
+         scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
+         if( scol .lt. srow ) cycle
+         kk = dcp(max(ecol,erow))-abs(ecol - erow)
+         ekterm = emat(kk,rel_col)
+         coeff_row(scol) = coeff_row(scol) + ekterm
+       end do
+       if( .not. repeated ) return
+      end do
+      return
+      end subroutine assem_a_row_60
+       
+      subroutine assem_a_row_gen
+      implicit none
+c      
+      integer :: erow, ecol, scol, kk 
+      double precision :: ekterm
+c               
+      local_scol(1:totdof) =  dof_eqn_map(edest(1:totdof,j))
+c      
+      do erow = 1, totdof
+        if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+@!DIR$ IVDEP
+        do ecol = 1, totdof
+          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
+          if( scol .lt. srow ) cycle
+          kk = dcp(max(ecol,erow))-abs(ecol - erow)
+          ekterm = emat(kk,rel_col)
+          coeff_row(scol) = coeff_row(scol) + ekterm
+        end do
+        if( .not. repeated ) return
+      end do
+      return
+      end subroutine assem_a_row_gen
+       
+      end subroutine assem_a_row
 
 c
 c     ****************************************************************
@@ -819,3 +956,44 @@ c
       return
 
       end subroutine
+      
+c     ****************************************************************
+c     *                                                              *
+c     *           extract indexes into the global                    *
+c     *           displacmenent, velocity, acceleration vectors      *
+c     *           for equations for a list of elements. this         *
+c     *           essentially de-blocks the indexes for a set of     *
+c     *           elements                                           *
+c     *                                                              *
+c     *                       written by  : rhd                      *
+c     *                   last modified : 02/18/98                   *
+c     *                                                              *
+c     ****************************************************************
+
+
+      subroutine get_edest_terms_assemble( table, elem_list, 
+     &                                     list_length )
+      use elem_block_data, only :  edest_blocks
+      use main_data,       only :  elems_to_blocks
+c 
+      implicit integer (a-z)   
+$add common.main
+c
+      dimension table(mxedof,*), elem_list(*)
+      integer, dimension (:,:), pointer :: edest
+c
+      do i = 1, list_length
+       elem = elem_list(i)
+       if ( elem .le. 0 ) cycle
+       totdof   = iprops(2,elem) * iprops(4,elem)
+       blk      = elems_to_blocks(elem,1)
+       rel_elem = elems_to_blocks(elem,2)  
+       edest    => edest_blocks(blk)%ptr
+       do dof = 1, totdof
+         table(dof,i) = edest(dof,rel_elem)
+       end do
+      end do
+c
+      return
+      end
+      
