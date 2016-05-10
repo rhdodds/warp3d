@@ -3,8 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: January 21, 2016
-#
+#   Last modifications: May 6, 2016
 #
 #   Description:
 #
@@ -57,6 +56,7 @@
 #                        isolated the culprit routine into a new mm10_d.f
 #                        and compiled at -O2 which runs fine.
 #              4/6/2016  added mm10_e.f 
+#              5/6/2016  add align 64 for some .f 
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
@@ -81,11 +81,11 @@
 #                the "pre" makefiles: Makefile.linux_em64t.omp
 #                or Makefile.linux_em64t.mpi
 #
-F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz -xHost
-F90INC = -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
+F90OPTS1 = -g -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz
+F90INC = -xHost -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #
 PROFILEOPT =
-# PROFILEOPT = -pg
+#PROFILEOPT = -pg
 #
 F90      = $(COMPILER) $(F90OPTS1) $(F90INC) \
            $(MPIOPT) $(OPENMPOPT) $(PROFILEOPT)
@@ -425,7 +425,7 @@ $(OD)/assemble_code$O : assemble_code.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_assemble_code.f
 	$(FILTER) < assemble_code.f > filt_assemble_code.f
-	$(F90) -O2 -ip  -c filt_assemble_code.f
+	$(F90) -O3 -ip  -c filt_assemble_code.f
 	$(MVC) filt_assemble_code$O  assemble_code$O
 	$(MVC) assemble_code$O $@
 #
@@ -1005,7 +1005,7 @@ $(OD)/gptns1$O : gptns1.f include_tan_ek \
 	$(RMC)  $@
 	$(RMC)  filt_gptns1.f
 	$(FILTER) < gptns1.f > filt_gptns1.f
-	$(F90) -O3 -ip  -c filt_gptns1.f
+	$(F90) -O3 -ip  -c filt_gptns1.f 
 	$(MVC) filt_gptns1$O  gptns1$O
 	$(MVC) gptns1$O $@
 
@@ -1363,7 +1363,7 @@ $(OD)/mm01$O : mm01.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_mm01.f
 	$(FILTER) < mm01.f > filt_mm01.f
-	$(F90) -O3 -ip  -c filt_mm01.f
+	$(F90) -O3 -ip -align array64byte  -c filt_mm01.f
 	$(MVC) filt_mm01$O  mm01$O
 	$(MVC) mm01$O $@
 
@@ -1391,12 +1391,12 @@ $(OD)/mm03p$O : mm03p.f param_def \
 	$(F90) -O3 -ip  -c filt_mm03p.f
 	$(MVC) filt_mm03p$O  mm03p$O
 	$(MVC) mm03p$O $@
-
-$(OD)/mm04$O : mm04.f param_def
+	
+$(OD)/mm04$O : mm04.f
 	$(RMC)  $@
 	$(RMC)  filt_mm04.f
 	$(FILTER) < mm04.f > filt_mm04.f
-	$(F90) -O3 -ip  -c filt_mm04.f
+	$(F90) -O3 -ip  -align array64byte -c filt_mm04.f
 	$(MVC) filt_mm04$O  mm04$O
 	$(MVC) mm04$O $@
 
@@ -1412,7 +1412,7 @@ $(OD)/mm06$O : mm06.f
 	$(RMC)  $@
 	$(RMC)  filt_mm06.f
 	$(FILTER) < mm06.f > filt_mm06.f
-	$(F90) -O3 -ip  -c filt_mm06.f
+	$(F90) -O3 -ip  -align array64byte -c filt_mm06.f
 	$(MVC) filt_mm06$O  mm06$O
 	$(MVC) mm06$O $@
 

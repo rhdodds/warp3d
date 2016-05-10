@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: April 6, 2016 rhd
+#   Last modifications: May 6, 2016
 #
 #   Description:
 #
@@ -67,6 +67,7 @@
 #                   isolated the culprit routine into a new mm10_d.f
 #                   and compiled at -O2 which runs fine.
 #   rhd   4/6/2016  add mm10_e.f
+#   rhd   5/6/2016  add align64 to some .f
 #
 #
 #
@@ -429,7 +430,7 @@ $(OD)/assemble_code$O : assemble_code.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_assemble_code.f
 	$(FILTER) < assemble_code.f > filt_assemble_code.f
-	$(F90) -O2 -ip  -c filt_assemble_code.f
+	$(F90) -O3 -ip  -c filt_assemble_code.f
 	$(MVC) filt_assemble_code$O  assemble_code$O
 	$(MVC) assemble_code$O $@
 #
@@ -1375,7 +1376,7 @@ $(OD)/mm01$O : mm01.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_mm01.f
 	$(FILTER) < mm01.f > filt_mm01.f
-	$(F90) -O3 -ip  -c filt_mm01.f
+	$(F90) -O3 -ip  -align array64byte  -c filt_mm01.f
 	$(MVC) filt_mm01$O  mm01$O
 	$(MVC) mm01$O $@
 
@@ -1404,11 +1405,11 @@ $(OD)/mm03p$O : mm03p.f param_def \
 	$(MVC) filt_mm03p$O  mm03p$O
 	$(MVC) mm03p$O $@
 
-$(OD)/mm04$O : mm04.f param_def
+$(OD)/mm04$O : mm04.f param_def 
 	$(RMC)  $@
 	$(RMC)  filt_mm04.f
 	$(FILTER) < mm04.f > filt_mm04.f
-	$(F90) -O3 -ip -c filt_mm04.f
+	$(F90) -O3 -align array64byte -ip -c filt_mm04.f
 	$(MVC) filt_mm04$O  mm04$O
 	$(MVC) mm04$O $@
 
@@ -1424,7 +1425,7 @@ $(OD)/mm06$O : mm06.f
 	$(RMC)  $@
 	$(RMC)  filt_mm06.f
 	$(FILTER) < mm06.f > filt_mm06.f
-	$(F90) -O3 -ip  -c filt_mm06.f -qopt-report -qopt-report-file=filt_mm06_opt_report
+	$(F90) -O3 -ip   -align array64byte -c filt_mm06.f 
 	$(MVC) filt_mm06$O  mm06$O
 	$(MVC) mm06$O $@
 

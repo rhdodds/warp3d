@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: April 6, 2016 rhd
+#   Last modifications: May 6, 2016 rhd
 #
 #    Makefile for WARP3D on systems running Windows 7, 8, 10
 #    on x86 Processors (64-bit mode).
@@ -52,6 +52,7 @@
 #             1/28/2016 mm01.f must be compiled at /O3 and limited inlining
 #                       for release 16.0.1 of the compiler.
 #             4/6/2016  add mm10_e.f
+#             5/6/2016  add align64 to some .f
 #
 #    NOTE:   we specify the /QxHOST Fortran option. the compiler will
 #            generate code for the highest perfromance instruction set of the 
@@ -390,7 +391,7 @@ $(OD)/assemble_code$O : assemble_code.f common.main \
                    param_def $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O
 	$(FILTER) < assemble_code.f > filt_assemble_code.f
-	$(F90) /O2 /Qip  /c filt_assemble_code.f
+	$(F90) /O3 /Qip  /c filt_assemble_code.f
 	$(MVC) filt_assemble_code$O  assemble_code$O
 	$(MVC) assemble_code$O $@
 #
@@ -1129,7 +1130,7 @@ $(OD)/mem_allocate$O : mem_allocate.f $(OD)/mod_main$O \
 
 $(OD)/mm01$O : mm01.f param_def
 	$(FILTER) < mm01.f > filt_mm01.f
-	$(F90) /O3 /Qip /Ob1 /c filt_mm01.f
+	$(F90) /O3 /Qip /Ob1 /align:array64byte /c filt_mm01.f
 	$(MVC) filt_mm01$O  mm01$O
 	$(MVC) mm01$O $@
 
@@ -1152,9 +1153,9 @@ $(OD)/mm03p$O : mm03p.f param_def \
 	$(MVC) filt_mm03p$O  mm03p$O
 	$(MVC) mm03p$O $@
 
-$(OD)/mm04$O : mm04.f param_def
+$(OD)/mm04$O : mm04.f param_def 
 	$(FILTER) < mm04.f > filt_mm04.f
-	$(F90) /O3 /Qip  /c filt_mm04.f
+	$(F90) /O3 /Qip   /align:array64byte /c filt_mm04.f
 	$(MVC) filt_mm04$O  mm04$O
 	$(MVC) mm04$O $@
 
@@ -1166,7 +1167,7 @@ $(OD)/mm05$O : mm05.f
 
 $(OD)/mm06$O : mm06.f
 	$(FILTER) < mm06.f > filt_mm06.f
-	$(F90) /O3 /Qip  /c filt_mm06.f
+	$(F90) /O3 /Qip  /align:array64byte /c filt_mm06.f
 	$(MVC) filt_mm06$O  mm06$O
 	$(MVC) mm06$O $@
 
