@@ -6,7 +6,7 @@ c     *             -- incremental strain for solid elements --      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/20/2011  rhd            *
+c     *                   last modified : 4/30/2016 rhd              *
 c     *                                                              *
 c     *      processes a material (gauss) point for a block of       *
 c     *      identical type solid elements. compute the [B] matrix   *
@@ -30,19 +30,17 @@ $add param_def
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
-     & due(mxvl,*), deps(mxvl,*), gama(mxvl,3,3),
+#dbl      double precision ::
+#sgl      real ::
+     & due(mxvl,*), deps(mxvl,nstr), gama(mxvl,3,3),
      & nxi(*), neta(*), nzeta(*), vol_block(mxvl,8,*), eps_bbar,
      & b(mxvl,mxedof,*)
-      logical bbar
+      logical :: bbar
 c
 c                      locals
 c
-#dbl      double precision
-#sgl      real
-     &  zero
-      data zero / 0.0 /
+@!DIR$ ASSUME_ALIGNED due:64, deps:64, gama:64, nxi:64, neta:64
+@!DIR$ ASSUME_ALIGNED nzeta:64, vol_block:64, b:64  
 c      
 c                       compute linear strain-displacement
 c                       [B] matrix for this material (gauss) point at
@@ -58,12 +56,14 @@ c                       done for all elements in the block for this
 c                       material (gauss) point nuber. take advantage of
 c                       sparsity in [B] during multiply.
 c   
-      deps(1:mxvl,1:6) = zero 
+      deps = 0.0d00
 c      
       bpos1 = nnode
       bpos2 = 2*nnode 
 c     
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1,span
            deps(i,1) = deps(i,1) +  b(i,j,1) * due(i,j) +
      &                              b(i,bpos1+j,1) * due(i,bpos1+j) +
@@ -114,18 +114,19 @@ $add param_def
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
-     & due(mxvl,*), dgstrn(mxvl,*), dgstrs(mxvl,*), rot(mxvl,3,3),
+#dbl      double precision ::
+#sgl      real ::
+     & due(mxvl,*), dgstrn(mxvl,nstr), dgstrs(mxvl,*), rot(mxvl,3,3),
      & shape(*), b(mxvl,mxedof,nstr)
 c
 c                      locals
 c
-#dbl      double precision
-#sgl      real
-     &  zero 
-      logical local_debug
-      data zero, local_debug / 0.0, .false. /
+#dbl      double precision, parameter :: zero = 0.0d00
+#sgl      real, parameter :: zero = 0.0
+      logical :: local_debug
+      data local_debug / .false. /
+@!DIR$ ASSUME_ALIGNED due:64, dgstrn:64, dgstrs:64, rot:64
+@!DIR$ ASSUME_ALIGNED shape:64, b:64  
 c      
 c         compute linear relative displacement jump
 c         [b] matrix for this gauss point at all elements in 
@@ -133,19 +134,14 @@ c         the block.
 c
       call blcmp_cohes( span, b, rot, shape, etype,  nnode )  
 c   
-      do i = 1, span
-         dgstrn(i,1) = zero
-         dgstrn(i,2) = zero
-         dgstrn(i,3) = zero
-         dgstrn(i,4) = zero
-         dgstrn(i,5) = zero
-         dgstrn(i,6) = zero
-      end do
+      dgstrn = zero
 c      
       bpos1 = nnode
       bpos2 = 2*nnode
 c     
       do j = 1, nnode
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
          do i = 1, span
            dgstrn(i,1)= dgstrn(i,1)+b(i,j,1) * due(i,j) +
      &                              b(i,bpos1+j,1) * due(i,bpos1+j) +
@@ -163,6 +159,8 @@ c                       update the accumulated displacement jumps.
 c                       dgstrs is total "strain" at end of step.
 c                       dgstrn is total "strain" increment over step.
 c       
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span
          dgstrs(i,1) = dgstrs(i,1) + dgstrn(i,1)
          dgstrs(i,2) = dgstrs(i,2) + dgstrn(i,2)

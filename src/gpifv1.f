@@ -36,6 +36,8 @@ c
 #sgl      real
      &   qtn1(mxvl,nstr,nstr), cs_blk_n1(mxvl,nstr),
      &   eps_bbar, w, scalar 
+@!DIR$ ASSUME_ALIGNED eleifv:64, dj:64, element_volumes:64
+@!DIR$ ASSUME_ALIGNED b:64, urcs_blk_n1:64, qtn1:64, cs_blk_n1:64
 c
 c
       span            = local_work%span
@@ -72,6 +74,8 @@ c
      &                    local_work%shape(1,gpn), type, nnode )
 c
           do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do i = 1, span
                eleifv(i,j) = eleifv(i,j) +
      &                       b(i,j,1) * urcs_blk_n1(i,1) * w * dj(i) +
@@ -109,6 +113,8 @@ c
      &                 local_work%urcs_blk_n1(1,1,gpn),
      &                 cs_blk_n1 )
           do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do i = 1, span 
                eleifv(i,j) = eleifv(i,j) +
      &                       b(i,j,1)*cs_blk_n1(i,1)*w*dj(i) +
@@ -126,6 +132,8 @@ c                       small displacement formulation. the urcs
 c                       are stresses. no transformation needed.
 c                        
       do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
         do i = 1, span 
            eleifv(i,j) = eleifv(i,j) +
      &                   b(i,j,1)*urcs_blk_n1(i,1)*w*dj(i) +
@@ -142,6 +150,8 @@ c                       update gauss point contribution to volume
 c                       of element.
 c
  9000 continue
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span 
         element_volumes(i) = element_volumes(i)   +   w * dj(i) 
       end do

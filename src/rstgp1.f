@@ -44,6 +44,7 @@ c
      &           local_debug, adaptive_flag
 c
       data local_debug, zero / .false., 0.0d00 / 
+@!DIR$ ASSUME_ALIGNED ddt:64, uddt:64, qnhalf:64, qn1:64      
 c
       internal_energy   = local_work%block_energy
       plastic_work      = local_work%block_plastic_work
@@ -853,6 +854,8 @@ c
       data zero / 0.0d00 /
 c
       integer i, k, m
+@!DIR$ ASSUME_ALIGNED local_cep:64, stress_n:64, stress_np1:64
+@!DIR$ ASSUME_ALIGNED uddt:64
 c
 c              for each element in block, update stresses by
 c              [D-elastic] * uddt. uddt contains thermal increment +
@@ -1434,6 +1437,8 @@ c
 c
       data zero, trans_factor / 0.0d00, 0.95d00 /
 c
+@!DIR$ ASSUME_ALIGNED uddt_displ:64
+c
       dtime             = local_work%dt
       internal_energy   = local_work%block_energy
       plastic_work      = local_work%block_plastic_work
@@ -1923,6 +1928,8 @@ c
       data zero / 0.0d00 /
 c
       integer i, k, m
+@!DIR$ ASSUME_ALIGNED local_cep:64, stress_n:64, stress_np1:64
+@!DIR$ ASSUME_ALIGNED uddt:64
 c
 c              for each element in block, update stresses by
 c              [D-elastic] * uddt. uddt contains thermal increment +
@@ -1969,6 +1976,7 @@ c
      &  stress_n1(nstrs,*), urcs_blk_n1(mxvl,*)
 c
       integer :: k, i
+@!DIR$ ASSUME_ALIGNED stress_n1:64, urcs_blk_n1:64
 c
       do k = 1, nstrs  !  not necessarily = 6
 @!DIR$ LOOP COUNT MAX=###  
@@ -1998,8 +2006,8 @@ c
 #dbl      double precision :: 
 #sgl      real ::
      &  stress_n(nstrs,*), urcs_blk_n(mxvl,*)
-c
       integer :: k, i     
+@!DIR$ ASSUME_ALIGNED stress_n:64, urcs_blk_n:64
 c
       do k = 1, nstrs    !  not necessarily = 6
 @!DIR$ LOOP COUNT MAX=###  
@@ -2807,6 +2815,9 @@ c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, process, compute_creep_strains
       data zero /  0.0d00 /
+@!DIR$ ASSUME_ALIGNED uddt_displ:64, gp_temps:64, gp_rtemps:64
+@!DIR$ ASSUME_ALIGNED gp_dtemps:64, uddt_temps:64, uddt:64
+@!DIR$ ASSUME_ALIGNED cep:64
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -2975,6 +2986,7 @@ c
      &  uddt(mxvl,6)
 c
       integer i, k, m
+@!DIR$ ASSUME_ALIGNED local_cep:64, stress_np1:64, uddt:64
 c
 c              for each element in block, update stresses by
 c              [D-elastic] * uddt. uddt contains creep increment +

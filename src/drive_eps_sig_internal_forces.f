@@ -1322,6 +1322,7 @@ c
       if( .not. update_coords ) then
           do  j = 1, totdof
 @!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
             do i = 1, span
               ce_n(i,j)   = ce_0(i,j)
               ce_mid(i,j) = ce_0(i,j)

@@ -15,13 +15,11 @@ c
       implicit integer ( a-z )
 #dbl      double precision
 #sgl      real
-     &  vol(mxvl,8,3), volume(*), zero
+     &  vol(mxvl,8,3), volume(span), zero
       data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED vol:64, volume:64,      
-c
+@!DIR$ ASSUME_ALIGNED vol:64, volume:64      
       vol = zero
-@!DIR$ LOOP COUNT MAX=###
-      volume(1:span) = zero  
+      volume = zero
       return
       end
      
