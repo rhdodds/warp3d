@@ -241,7 +241,7 @@ c
         call readsc
         if( here_debug ) write(out,*) " @ 1 just readsc"
         if( matchs("output",4) ) then
-           call oudriv( sflag_1, sflag_2, stname ) 
+           call oudriv( sflag_1, sflag_2, stname, ltmstp ) 
         else  ! only output commands & comments allowed
            write(out,9100)
            call die_gracefully

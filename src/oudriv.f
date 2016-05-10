@@ -4,7 +4,7 @@ c     *                      subroutine oudriv                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/2/2014 rhd              *
+c     *                   last modified : 5/4/2016 rhd               *
 c     *                                                              *
 c     *     drive output of any and all quantities requested by the  *
 c     *     user. all phases of output except output of residual     *
@@ -17,7 +17,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine oudriv( sbflg1, sbflg2, stname )  
+      subroutine oudriv( sbflg1, sbflg2, stname, ltmstp )  
       use main_data, only: output_packets
       implicit integer (a-z)
 c
@@ -28,7 +28,6 @@ c
 c
 c                       local declarations
 c
-      
       real :: dumr
 #dbl      double precision ::
 #sgl      real ::
@@ -214,6 +213,9 @@ c                       get next output type on line, process and come
 c                       back here, get another output quantity and
 c                       continue until eol or error. on error,
 c                       flush remainder of line and leave.
+c
+c                       ltmstp -> last completed load/time step
+c                                 0 -> no computational results yet
 c          
 c      
       do ! over list of output quantities on the line
@@ -242,6 +244,12 @@ c
         osn = 8
       else if( matchs('states',6) ) then
         osn   = 9
+      end if
+      
+      if( ltmstp .eq. 0 ) then ! no results yet
+        call scan_flushline 
+        call errmsg3( outdev, 14 )
+        return
       end if
 c
       select case ( osn ) 

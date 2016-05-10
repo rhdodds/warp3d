@@ -4090,7 +4090,7 @@ c
       implicit integer (a-z)
 c
       go to ( 191, 192, 193, 194, 195, 196, 197, 198, 199,
-     &        200, 210, 220, 230 ), param
+     &        200, 210, 220, 230, 240 ), param
  191  continue
       write(out,fmt='(10x,a)') '>> material model mismatch'
       go to 9999
@@ -4154,6 +4154,16 @@ c
      &/10x,'                defined for global Newton iterations',
      &/10x,'   job terminated.')
       call die_gracefully
+c      
+ 240  continue
+      write(out,*) " "
+      write(out,9024)
+ 9024 format(/1x,
+     &    '>>>>> Error: no computational results are available',
+     &/1x,'             yet for output.',
+     &/1x,'             output command ignored.')
+      write(out,*) " "
+           return
       go to 9999
 c
  9999 continue
