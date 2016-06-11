@@ -282,7 +282,7 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 2 (formatted) Neutral File    *',
      &  /,   ' *       (',i7,' nodes - ',i7,' elements)         *',
-     &  /,   ' *            Build Date:  8-1-2014                 *',
+     &  /,   ' *            Build Date:  6-11-2016                *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
      &  /,   ' *  o support for 8, 9, 12, 15, 20-node hexs        *',

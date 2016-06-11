@@ -6,7 +6,7 @@ c
       parameter  ( maxmtl = 2000 )
       parameter  ( maxele = 4000000 )
       parameter  ( maxset = 200 )
-      parameter  ( maxcon = 40 )
+      parameter  ( maxcon = 100 )
       parameter  ( maxtrn = 2000 )
       parameter  ( maxetp = 5000 )
       parameter  ( mxnmgp = 30000 )
