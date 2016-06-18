@@ -786,7 +786,7 @@ c
       real zero
       data zero / 0.0 /
 c
-      integer nelblk, nonodea,do_it
+      integer nonodea,do_it
 c
       orig_node = front_nodes(domain_origin)
 c
