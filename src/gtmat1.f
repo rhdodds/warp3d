@@ -15,7 +15,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine gtmat1( qnhalf, qn1, error, local_work )
-      implicit integer (a-z)
+      implicit integer (a-z)  
 $add param_def
 c
 c          parameter declarations
@@ -39,6 +39,8 @@ c
 c
       data zero, one / 0.0d00, 1.0d00 /
 c
+@!DIR$ ASSUME_ALIGNED qnhalf:64, qn1:64        
+c
       span  = local_work%span
       felem = local_work%felem
       type  = local_work%elem_type
@@ -48,11 +50,12 @@ c
 c
       allocate( rnh(mxvl,ndim,ndim), fnh(mxvl,ndim,ndim), dfh(mxvl),
      &          theta(mxvl,mxtnsz), dfn(mxvl) )
-	  rnh = zero
-	  fnh = zero
-	  dfh = zero
-	  theta = zero
-	  dfn = zero
+     
+      rnh = zero
+      fnh = zero
+      dfh = zero
+      theta = zero
+      dfn = zero
 c
 c           compute the deformation gradient at states
 c           (n + 1/2) and (n + 1) relative to the config
@@ -193,9 +196,8 @@ c
 c                       set [F @ 0] to identity. set determinant
 c                       to 1.0 (no deformation). routine will
 c                       be inlined.
-      fn = zero
 @!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP      do i = 1, span
+@!DIR$ IVDEP
       do i = 1, span
         fn(i,1,1) = one
         fn(i,2,2) = one
@@ -247,7 +249,7 @@ c                      J = det [F], bar J is volume of deformed
 c                      element / volume of element at n = 0
 c
 @!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP      do i = 1, span
+@!DIR$ IVDEP
       do i = 1, span
         j_bar = deformed_elem_vols(i) / undeformed_elem_vols(i)
         factor = (j_bar/ det_f(i) ) ** third
@@ -964,6 +966,8 @@ c
 c
 c                       compute multipliers.
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span
          a2(i)= one/(iiiu(i)*(iu(i)*iiu(i)-iiiu(i)))
          b2(i)= iu(i)*iiu(i)*iiu(i)-iiiu(i)*(iu(i)*iu(i)+iiu(i))
@@ -974,6 +978,8 @@ c
 c                       compute the inverse of the right
 c                       stretch tensor.
 c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
       do i = 1, span
          ui(i,1)= a2(i) * ( b2(i) + c2(i)*c(i,1) + d2(i)*cc(i,1) )
          ui(i,2)= a2(i) * (         c2(i)*c(i,2) + d2(i)*cc(i,2) )

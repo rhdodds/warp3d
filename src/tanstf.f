@@ -216,7 +216,11 @@ c
       if( local_work%is_umat ) call material_model_info( felem, 0, 3,
      &                                 local_work%umat_stress_type )
       if( local_work%is_cohes_elem ) local_work%cep_sym_size = 6
+c      
       symmetric_assembly = .not. asymmetric_assembly
+      nrow_ek = utsz
+      if( asymmetric_assembly ) nrow_ek = totdof**2
+      
 c
 c             See if we're actually an interface damaged CP material.
 c             code commented until Mark resumes work on this model
@@ -248,9 +252,6 @@ c
 c             check if blk has all killed elements -- if so skip
 c             all calculations. just zero element [k]s
 c
-      nrow_ek = utsz
-      if( asymmetric_assembly ) nrow_ek = totdof**2
-c      
       if( growth_by_kill ) then  ! note return inside here
         if( local_work%block_killed ) then
           if( local_debug ) write (*,*)'blk ',blk,' killed, skip.'
@@ -312,11 +313,12 @@ c
 c             compute element stiffness for the block. note we
 c             pass first element in block of props table.
 c
+      
       ispan  = span   ! just protects span value
       call rktstf( props(1,felem), iprops(1,felem),
      &             lprops(1,felem), estiff_blocks(blk)%ptr(1,1),
      &             nrow_ek, ispan, local_work )
-c
+c     
 c             check if this block has any killed elements -- if so,
 c             zero computed nonlinear stifffness matrices for killed
 c             elements (the [D] may not have been zeroed)
@@ -946,6 +948,8 @@ c
      &  vec(n), zero
       data zero / 0.0d00 /
 c
+
+@!DIR$ IVDEP
       vec = zero
 c
       return

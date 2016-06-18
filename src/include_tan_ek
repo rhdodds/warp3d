@@ -36,6 +36,9 @@ c
        real (h_prec), allocatable :: qn1(:,:,:)               ! mxvl,nstr,nstr
        real (h_prec), allocatable :: cs_blk_n1(:,:)           ! mxvl,nstr
 c
+       real (h_prec), allocatable :: ek_symm(:,:)             !span,nrow_ek       
+       real (h_prec), allocatable :: ek_full(:,:)             !span,totdof**2       
+c
        real (h_prec), allocatable :: weights(:)  ! mxgp on weights
 c
        real (h_prec) :: beta_fact, eps_bbar, dt, time_n

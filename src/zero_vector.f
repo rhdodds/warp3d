@@ -15,8 +15,9 @@ c
 #dbl      double precision
 #sgl      real
      &  vec(*), zero
-      data zero / 0.0 /
+      data zero / 0.0d00 /
 c
+@!DIR$ IVDEP
       vec(1:n) = zero
 c
       return

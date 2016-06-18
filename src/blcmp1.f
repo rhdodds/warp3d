@@ -324,7 +324,9 @@ c           compute B = R*sh
 c
 c      
       if( nnode .eq. 12 ) then
+@!DIR$ IVDEP
        sh(1:6) = -shape(1:6)
+@!DIR$ IVDEP
        sh(7:12) = shape(7:12)
         do j = 1, 12
 @!DIR$ LOOP COUNT MAX=###  

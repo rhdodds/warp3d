@@ -4,7 +4,7 @@ c     *                      subroutine gptns1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *               last modified : 4/18/2016 rhd                  *
+c     *               last modified : 6/12/2016  rhd                  *
 c     *                                                              *
 c     *     computes the contributon to the tangent                  *
 c     *     stiffnes matrices for a block of similar elements in     *
@@ -13,30 +13,35 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine gptns1( cp, icp, gpn, props, iprops, ek, local_work, 
-     &                   sz)
+      subroutine gptns1( cp, icp, gpn, props, iprops, glb_ek_blk, 
+     &                   local_work )
       use main_data, only: asymmetric_assembly
       use elem_block_data, only : global_cep_blocks => cep_blocks
-      implicit integer (a-z)
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                     parameter declarations
 c
+      integer :: gpn
       real props(mxelpr,*)
       integer cp(*), icp(mxutsz,*), iprops(mxelpr,*)
-#dbl      double precision
-#sgl      real
-     & ek(sz,*)
+c      
+#dbl      double precision :: glb_ek_blk(*)
+#sgl      real :: glb_ek_blk(*)
 c
 c                     locals
 c
+      integer :: etype, span, felem, utsz, nnode, totdof, mat_type,
+     &           iter, int_order, local_iout, nrow_ek 
 #dbl      double precision ::
 #sgl      real ::
      & eps_bbar, weight, rad(mxvl), dummy, factors(mxvl), one
       logical include_qbar, geonl, bbar, first, qbar_flag,
      &        temps_to_process, iscp, symmetric_assembly
       data one  / 1.0d00 /
+c      
+@!DIR$ ASSUME_ALIGNED glb_ek_blk:64, rad:64,factors:64      
 c
 c                       set local versions of the data structure
 c                       scalars. set logical to include/not include the
@@ -65,7 +70,8 @@ c
       symmetric_assembly = .not. asymmetric_assembly
 c
 c                      for axisymmetric elements, compute the radius to
-c                      the current gauss point for each element in the block.
+c                      the current gauss point for each element in the
+c                      block.
 c
       if( local_work%is_axisymm_elem ) then
         call get_radius( rad, nnode, span, local_work%shape(1,gpn),
@@ -101,28 +107,35 @@ c
 c
 c		     branch on material type:
 c                      1 = simple mises model- linear hardening
-c                          (isotropic or mixed kinematic), has geonl option
+c                          (isotropic or mixed kinematic), has geonl 
+c                          option
 c                          rate effects on flow properties. temperature
 c                          dependent flow properties, modulus, nu,
 c                          alpha.
-c                      2 = nonlinear elastic model (deformation plasticity
+c                      2 = nonlinear elastic model (deformation
+c                          plasticity
 c                          with linear + power-law stress-strain
 c                          relation. no geonl option.
 c                      3 = general mises and gurson model -
 c                          rate dependent/independent, linear (iso)
 c                          hardening or power-law hardening. gurson
-c                          model with w/o nucleation (strain controlled).
+c                          model with w/o nucleation (strain
+c                          controlled).
 c                          temperature dependent flow props, modulus,
 c                          nu, alpha
 c                      4 = interface constitutive models
 c                          supports several cohesive zone models.
 c                          no geometric stiffness matrix. set geonl
-c                          false to bypass those additional computations
+c                          false to bypass those additional 
+c                          computations
 c                      5 = adv. cyclic plasticity model
 c                      6 = creep
 c                      7 = mises + hydrogen
 c                      8 = Abaqus UMAT
 c                     10 = CP model
+c
+c                    Always see funtion: warp3d_matl_num
+c                    for the latets updates.
 c
 c                    [Dt] computed in unrotated configuration.
 c
@@ -152,11 +165,12 @@ c
           call die_abort
       end select
 c
-c                       Check to see if we're actually a damaged interface
-c                       model.  If we are, apply damage to the tangent.
+c                       Check to see if we're actually a damaged 
+c                       interface model.  If we are, apply damage to
+c                       the tangent.
 c
 c                       commented out until Mark M wants to purse this 
-c                       effor
+c                       effort
 c
 c      if( local_work%is_inter_dmg ) then
 c        call drive_11_cnst(gpn, local_iout, local_work)
@@ -206,48 +220,49 @@ c                     the 8-node brick for speed.
 c
 c
       if( asymmetric_assembly ) then
-       call bdbt_asym( span, local_work%b_block, 
-     &                  local_work%cep, ek, mxvl, mxedof,
-     &                  nstr, totdof )
+        call bdbt_asym( span, local_work%b_block, 
+     &                local_work%bt_block, local_work%bd_block, 
+     &                local_work%cep, local_work%ek_full, mxvl,
+     &                mxedof, totdof*totdof, totdof )
+     
       else   ! symmetric assembly
 
-        if( totdof .eq. 24 ) then
+        if( totdof .eq. 24 ) then 
            call bdbt24( span, icp, local_work%b_block, 
      &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, ek, mxvl, mxedof, utsz,
-     &                nstr, totdof, mxutsz )
+     &                local_work%cep, local_work%ek_symm, mxvl,
+     &                mxedof, utsz, nstr, totdof, mxutsz )
         elseif( totdof .eq. 30 ) then
            call bdbt30( span, icp, local_work%b_block, 
      &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, ek, mxvl, mxedof, utsz,
-     &                nstr, totdof, mxutsz )
+     &                local_work%cep, local_work%ek_symm, mxvl,
+     &                mxedof, utsz, nstr, totdof, mxutsz )
          elseif( totdof .eq. 36 ) then
            call bdbt36( span, icp, local_work%b_block, 
      &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, ek, mxvl, mxedof, utsz,
-     &                nstr, totdof, mxutsz )
-        elseif( totdof .eq. 60 ) then
+     &                local_work%cep, local_work%ek_symm, mxvl,
+     &                mxedof, utsz, nstr, totdof, mxutsz )
+        elseif( totdof .eq. 60 ) then 
            call bdbt60( span, icp, local_work%b_block, 
      &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, ek, mxvl, mxedof, utsz,
-     &                nstr, totdof, mxutsz )
+     &                local_work%cep, local_work%ek_symm,
+     &                mxvl, mxedof, utsz, nstr, totdof, mxutsz )
         else
          call bdbtgen( span, icp, local_work%b_block,
      &                 local_work%bt_block, local_work%bd_block,
-     &                 local_work%cep, ek, mxvl, mxedof, utsz, nstr,
-     &                 totdof, mxutsz )
+     &                 local_work%cep, local_work%ek_symm, mxvl, 
+     &                 mxedof, utsz, nstr, totdof, mxutsz )
         end if
       end if
 
-      if( geonl ) then
-        nrow_ek = utsz
-        if( asymmetric_assembly ) nrow_ek = totdof**2
-        call kg1( span, cp, icp, local_work%gama_block(1,1,1,gpn),
+      if( geonl ) then  ! add tans([G]) M [G] to [Ke]
+        call kgstiff( span, cp, icp, local_work%gama_block(1,1,1,gpn),
      &            local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &            local_work%nzeta(1,gpn), nnode,
      &            local_work%cs_blk_n1,
-     &            local_work%det_jac_block(1,gpn), weight, ek,
-     &            local_work%vol_block, bbar, nrow_ek, totdof )
+     &            local_work%det_jac_block(1,gpn), 
+     &            weight, local_work%ek_full, local_work%ek_symm,
+     &            local_work%vol_block, bbar, totdof )
       end if
 c
       return
@@ -258,8 +273,8 @@ c
      &   /,  '             job terminated.' )
  9500 format(1x,'>> Fatal Error: gptns1. invalid material type..',
      &    /, 1x,'                job terminated' )
-c     
-c     
+c    
+c        
       contains
 c     ========      
 c
@@ -286,14 +301,16 @@ c
      &         ( span, local_work%b_block,
      &                 local_work%gama_block(1,1,1,gpn),
      &                 local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &                 local_work%nzeta(1,gpn), local_work%shape(1,gpn),
+     &                 local_work%nzeta(1,gpn),
+     &                 local_work%shape(1,gpn),
      &                 local_work%ce, rad, etype, nnode )
       else
           call blcmp1_srt
      &         ( span, local_work%b_block,
      &                 local_work%gama_block(1,1,1,gpn),
      &                 local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &                 local_work%nzeta(1,gpn), local_work%shape(1,gpn),
+     &                 local_work%nzeta(1,gpn), 
+     &                 local_work%shape(1,gpn),
      &                 local_work%ce, rad, etype, nnode )
       end if
 c
@@ -415,9 +432,8 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified :  1/10/2016 rhd             *
 c     *                                                              *
-c     *                      mises and gurson                        *                                                              *
+c     *                      mises and gurson                        *                                                                        *
 c     ****************************************************************
-c
 c
       subroutine drive_03_cnst( gpn, iout, local_work )
 c
@@ -801,7 +817,7 @@ c
         factor = weight * local_work%det_jac_block(ielem,gpn)
         k = 1
         do i = 1, 6
-@!DIR$ IVDEP        
+@!DIR$ IVDEP      
          do j = 1, i
            local_work%cep(ielem,i,j) = symm_part_cep(k) * factor
            local_work%cep(ielem,j,i) = symm_part_cep(k) * factor
@@ -860,6 +876,7 @@ c
      & weight, f, cep(6,6), cep_vec(36), tol
       logical :: local_debug
       equivalence ( cep, cep_vec )
+@!DIR$ ASSUME_ALIGNED cep_vec:64   
 c
       span             = local_work%span
       felem            = local_work%felem
@@ -879,6 +896,7 @@ c
 @!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
          f = weight * local_work%det_jac_block(i,gpn)
+@!DIR$ IVDEP
          cep_vec(1:36) = local_work%elem_hist1(i,1:36,gpn)
          local_work%cep(i,1:6,1:6) = cep(1:6,1:6) * f
       end do
@@ -978,7 +996,7 @@ c     *                      subroutine bdbt24                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/18/2016 rhd              *
+c     *                   last modified : 6/8/2016 rhd               *
 c     *                                                              *
 c     *     performs the multiplication of the                       *
 c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
@@ -986,8 +1004,8 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbt24( span, icp, b, bt, bd, d, ek,
-     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      subroutine bdbt24( span, icp, b, bt, bd, d, ek_symm,
+     &                   mxvl, mxedof, utsz, nstr, totdof, mxutsz )
       implicit none
 c
 c                       parameter declarations
@@ -996,13 +1014,13 @@ c
      &           icp(mxutsz,*)
 #dbl      double precision ::
 #sgl      real ::
-     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
 c
 c                       locals
 c
       integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64
 c
 c              set trans( [B] )
 c
@@ -1080,13 +1098,21 @@ c
 c              perform multiplication of tran(B)*([D][B]).
 c              do only for upper triangular entries.
 c
+c              note for all variations of these loop in other
+c              btdb... routines.
+c              
+c              the upper triangle of each element stiffness is
+c              stored. but the row/column ordering corresponds to
+c              element dof: u1 u2 u3, .. v1 v2 v3, .. w1 w2 w3, .. 
+c              not the typical u1 v1 w1, u2 v2 w2, ...
+c              
       do j = 1, 300
         row = icp(j,1)
         col = icp(j,2)
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
         do i = 1, span
-         ek(j,i) = ek(j,i)
+         ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
      &         +   bt(i,2,col) * bd(i,row,2)
      &         +   bt(i,3,col) * bd(i,row,3)
@@ -1105,7 +1131,7 @@ c     *                      subroutine bdbt30                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/18/2016 rhd              *
+c     *                   last modified : 6/8/2016 rhd               *
 c     *                                                              *
 c     *     performs the multiplication of the                       *
 c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
@@ -1113,7 +1139,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbt30( span, icp, b, bt, bd, d, ek,
+      subroutine bdbt30( span, icp, b, bt, bd, d, ek_symm,
      &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
       implicit none
 c
@@ -1123,13 +1149,13 @@ c
      &           icp(mxutsz,*)
 #dbl      double precision ::
 #sgl      real ::
-     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
 c
 c                       locals
 c
       integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
@@ -1213,7 +1239,7 @@ c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
         do i = 1, span
-         ek(j,i) = ek(j,i)
+         ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
      &         +   bt(i,2,col) * bd(i,row,2)
      &         +   bt(i,3,col) * bd(i,row,3)
@@ -1232,7 +1258,7 @@ c     *                      subroutine bdbt36                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/18/2016 rhd              *
+c     *                   last modified : 6/8/2016  rhd              *
 c     *                                                              *
 c     *     performs the multiplication of the                       *
 c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
@@ -1240,7 +1266,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbt36( span, icp, b, bt, bd, d, ek,
+      subroutine bdbt36( span, icp, b, bt, bd, d, ek_symm,
      &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
       implicit none
 c
@@ -1250,13 +1276,13 @@ c
      &           icp(mxutsz,*)
 #dbl      double precision ::
 #sgl      real ::
-     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
 c
 c                       locals
 c
       integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
@@ -1340,7 +1366,7 @@ c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
         do i = 1, span
-         ek(j,i) = ek(j,i)
+         ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
      &         +   bt(i,2,col) * bd(i,row,2)
      &         +   bt(i,3,col) * bd(i,row,3)
@@ -1360,7 +1386,7 @@ c     *                      subroutine bdbt60                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/18/2016 rhd              *
+c     *                   last modified : 6/8/2016 rhd               *
 c     *                                                              *
 c     *     performs the multiplication of the                       *
 c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
@@ -1368,8 +1394,8 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbt60( span, icp, b, bt, bd, d, ek,
-     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      subroutine bdbt60( span, icp, b, bt, bd, d, ek_symm,
+     &                   mxvl, mxedof, utsz, nstr, totdof, mxutsz )
       implicit none
 c
 c                       parameter declarations
@@ -1378,13 +1404,13 @@ c
      &           icp(mxutsz,*)
 #dbl      double precision ::
 #sgl      real ::
-     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
 c
 c                       locals
 c
       integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
@@ -1468,139 +1494,156 @@ c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
         do i = 1, span
-         ek(j,i) = ek(j,i)
+         ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
      &         +   bt(i,2,col) * bd(i,row,2)
      &         +   bt(i,3,col) * bd(i,row,3)
      &         +   bt(i,4,col) * bd(i,row,4)
      &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)
+     &         +   bt(i,6,col) * bd(i,row,6)     
         end do
       end do
 c
       return
       end      
 c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine bdbt_asym                    *
-c     *                                                              *
-c     *                       written by : mcm                       *
-c     *                                                              *
-c     *                   last modified : 12/9/13                    *
-c     *        deprecated. retained for possible future reference    * 
-c     *                                                              *
-c     *     B * D * B.T for the asymmetric case.  Handles all        *
-c     *     elements, at least for now.                              *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine bdbt_asym_mcm( span, icp, b, bt, bd, d, ek,
-     &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-      implicit integer (a-z)
-c
-c                       parameter declarations
-c
-#dbl      double precision
-#sgl      real
-     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-      integer icp(mxutsz,*)
 
-      do i=1,span
-        ek(:,i) = ek(:,i) + reshape(matmul(b(i,1:totdof,1:6),
-     &      matmul(d(i,1:6,1:6), transpose(b(i,1:totdof,1:6)))),
-     &      (/totdof*totdof/))
-      end do
-      
-      return
-      end subroutine
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine bdbt_asym                    *
+c     *                  subroutine bdbt_asym                        * 
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/25/2015 rhd              *
+c     *                last modified : 6/12/2016 rhd                 *
 c     *                                                              *
 c     *     trans(B) * D * B for the asymmetric case.  Handles all   *
-c     *     elements, at least for now.                              *
-c     *     B and D are treated as full. D is non-symmetric.         *
-c     *     fastest of many variants of the operations.              *
+c     *     element types                                            *
 c     *                                                              *
 c     ****************************************************************
-c
-c
-      subroutine bdbt_asym( span, b, d, ek,
-     &                      mxvl, mxedof, nstr, totdof )
+c    
+      subroutine bdbt_asym( span, b, bt, bd, d, ek_full, mxvl, mxedof, 
+     &                      ncol_ek, totdof )
       implicit none
 c
 c                       parameter declarations
 c
-      integer :: span, mxvl, mxedof, nstr, totdof
-#dbl      double precision :: 
+      integer :: span, mxvl, mxedof, ncol_ek, nstr, totdof
+#dbl      double precision ::
 #sgl      real ::
-     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,6,*)
-c      
-      integer :: i, j, k
-c      
-#dbl      double precision,
-#sgl      real,
-     &  allocatable, dimension (:,:) ::
-     &   local_b, local_bt, local_db, local_btdb
-#dbl      double precision :: local_d(6,6)
-#sgl      real :: local_d(6,6)
+     &   b(mxvl,mxedof,6), ek_full(span,ncol_ek), d(mxvl,6,6),
+     &   bd(mxvl,mxedof,6), bt(mxvl,6,totdof)
 c
-@!DIR$ ASSUME_ALIGNED b:64, d:64, ek:64
-@!DIR$ ASSUME_ALIGNED local_b:64, local_bt:64, local_btdb:64
-@!DIR$ ASSUME_ALIGNED local_d:64 
-
-      allocate( local_b(6,totdof), local_bt(totdof,6), 
-     &          local_db(6,totdof), local_btdb(totdof,totdof) )
-c      
+c                       locals
+c
+      integer :: i, j, row, col
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_full:64
+c
+c              set trans( [B] )
+c
+      do j = 1, totdof
 @!DIR$ LOOP COUNT MAX=###  
-      do i = 1, span
-c
-        do k = 1, 6
 @!DIR$ IVDEP
-          do j = 1, totdof
-             local_bt(j,k) = b(i,j,k)
-             local_b(k,j)  = b(i,j,k)
-          end do
+        do i = 1, span
+          bt(i,1,j)= b(i,j,1)
+          bt(i,2,j)= b(i,j,2)
+          bt(i,3,j)= b(i,j,3)
+          bt(i,4,j)= b(i,j,4)    
+          bt(i,5,j)= b(i,j,5) 
+          bt(i,6,j)= b(i,j,6)
+       end do
+      end do
+c
+c              perform multiplication of [D]*[B-mat]. 
+c              assumes full [D] and [B]full matrix. 
+c              [D] for solids is 6x6. Also for cohesive,
+c              i: 4->6 and j: 4->6 should be zeroed by
+c              cnst.. routine.
+c
+      do j = 1, totdof
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP 
+       do i = 1, span
+           bd(i,j,1) = d(i,1,1) * b(i,j,1)
+     &               + d(i,2,1) * b(i,j,2)
+     &               + d(i,3,1) * b(i,j,3)
+     &               + d(i,4,1) * b(i,j,4)
+     &               + d(i,5,1) * b(i,j,5)
+     &               + d(i,6,1) * b(i,j,6)
+c
+           bd(i,j,2) = d(i,1,2) * b(i,j,1)
+     &               + d(i,2,2) * b(i,j,2)
+     &               + d(i,3,2) * b(i,j,3)
+     &               + d(i,4,2) * b(i,j,4)
+     &               + d(i,5,2) * b(i,j,5)
+     &               + d(i,6,2) * b(i,j,6)
+c     
+           bd(i,j,3) = d(i,1,3) * b(i,j,1)
+     &               + d(i,2,3) * b(i,j,2)
+     &               + d(i,3,3) * b(i,j,3)
+     &               + d(i,4,3) * b(i,j,4)
+     &               + d(i,5,3) * b(i,j,5)
+     &               + d(i,6,3) * b(i,j,6)
+c
+           bd(i,j,4) = d(i,1,4) * b(i,j,1)
+     &               + d(i,2,4) * b(i,j,2)
+     &               + d(i,3,4) * b(i,j,3)
+     &               + d(i,4,4) * b(i,j,4)
+     &               + d(i,5,4) * b(i,j,5)
+     &               + d(i,6,4) * b(i,j,6)
+c
+           bd(i,j,5) = d(i,1,5) * b(i,j,1)
+     &               + d(i,2,5) * b(i,j,2)
+     &               + d(i,3,5) * b(i,j,3)
+     &               + d(i,4,5) * b(i,j,4)
+     &               + d(i,5,5) * b(i,j,5)
+     &               + d(i,6,5) * b(i,j,6)
+c
+           bd(i,j,6) = d(i,1,6) * b(i,j,1)
+     &               + d(i,2,6) * b(i,j,2)
+     &               + d(i,3,6) * b(i,j,3)
+     &               + d(i,4,6) * b(i,j,4)
+     &               + d(i,5,6) * b(i,j,5)
+     &               + d(i,6,6) * b(i,j,6)
+c
+       end do
+      end do
+c
+c              perform multiplication of tran(B)*([D][B]).
+c              do for all entries since [D] is not symmetric.
+c
+c              the full element stiffness is
+c              stored. but the row/column ordering corresponds to
+c              element dof: u1 u2 u3, .. v1 v2 v3, .. w1 w2 w3, .. 
+c              not the typical u1 v1 w1, u2 v2 w2, ...
+c
+      j = 0 
+      do col = 1, totdof
+       do row = 1, totdof
+       	j = j + 1  
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+        do i = 1, span
+         ek_full(i,j) = ek_full(i,j)
+     &         +   bt(i,1,col) * bd(i,row,1) 
+     &         +   bt(i,2,col) * bd(i,row,2)
+     &         +   bt(i,3,col) * bd(i,row,3)
+     &         +   bt(i,4,col) * bd(i,row,4)
+     &         +   bt(i,5,col) * bd(i,row,5)
+     &         +   bt(i,6,col) * bd(i,row,6)
         end do
-c        
-        do j = 1, 6
-@!DIR$ IVDEP
-          do k = 1, 6
-            local_d(k,j) = d(i,k,j)
-          end do
-        end do  
-c    
-c                       matmul is faster than dgemm. reshape
-c                       is faster than hand-coded loops
-c                       allocates of local_.. really speeds up.
-c                       reshape same speed as codes do loops
-c                   
-        local_db = matmul( local_d, local_b )  
-        local_btdb = matmul( local_bt, local_db )
-@!DIR$ IVDEP
-        ek(:,i) = ek(:,i) + reshape(local_btdb,(/totdof*totdof/))
-c      
-      end do ! on span
+       end do 
+      end do
 c
-      deallocate( local_b, local_bt, local_db, local_btdb )
-c      
       return
-      end  
+      end      
 
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine bdbtgen                      *
+c     *               subroutine bdbtgen   (symmetric only)          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/18/2016 rhd              *
+c     *                   last modified : 6/12/2016 rhd              *
 c     *                                                              *
 c     *     this subroutine performs the multiplication of the       *
 c     *     transpose of the strain-displacement matrix by the       *
@@ -1611,7 +1654,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbtgen( span, icp, b, bt, bd, d, ek,
+      subroutine bdbtgen( span, icp, b, bt, bd, d, ek_symm,
      &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
       implicit none
 c
@@ -1621,13 +1664,13 @@ c
      &           icp(mxutsz,*)
 #dbl      double precision ::
 #sgl      real ::
-     &   b(mxvl,mxedof,*), ek(utsz,*), d(mxvl,nstr,*),
+     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
 c
 c                       locals
 c
       integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek:64  
+@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
@@ -1660,8 +1703,7 @@ c
      &               + d(i,4,1) * b(i,j,4)
      &               + d(i,5,1) * b(i,j,5)
      &               + d(i,6,1) * b(i,j,6)
-
-
+c
            bd(i,j,2) = d(i,1,2) * b(i,j,1)
      &               + d(i,2,2) * b(i,j,2)
      &               + d(i,3,2) * b(i,j,3)
@@ -1669,36 +1711,35 @@ c
      &               + d(i,5,2) * b(i,j,5)
      &               + d(i,6,2) * b(i,j,6)
      
+c
            bd(i,j,3) = d(i,1,3) * b(i,j,1)
      &               + d(i,2,3) * b(i,j,2)
      &               + d(i,3,3) * b(i,j,3)
      &               + d(i,4,3) * b(i,j,4)
      &               + d(i,5,3) * b(i,j,5)
      &               + d(i,6,3) * b(i,j,6)
-
+c
            bd(i,j,4) = d(i,1,4) * b(i,j,1)
      &               + d(i,2,4) * b(i,j,2)
      &               + d(i,3,4) * b(i,j,3)
      &               + d(i,4,4) * b(i,j,4)
      &               + d(i,5,4) * b(i,j,5)
      &               + d(i,6,4) * b(i,j,6)
-
-
-
+c
            bd(i,j,5) = d(i,1,5) * b(i,j,1)
      &               + d(i,2,5) * b(i,j,2)
      &               + d(i,3,5) * b(i,j,3)
      &               + d(i,4,5) * b(i,j,4)
      &               + d(i,5,5) * b(i,j,5)
      &               + d(i,6,5) * b(i,j,6)
-
+c
            bd(i,j,6) = d(i,1,6) * b(i,j,1)
      &               + d(i,2,6) * b(i,j,2)
      &               + d(i,3,6) * b(i,j,3)
      &               + d(i,4,6) * b(i,j,4)
      &               + d(i,5,6) * b(i,j,5)
      &               + d(i,6,6) * b(i,j,6)
-
+c
        end do
       end do
 c      
@@ -1711,7 +1752,7 @@ c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
         do i = 1, span
-         ek(j,i) = ek(j,i)
+         ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
      &         +   bt(i,2,col) * bd(i,row,2)
      &         +   bt(i,3,col) * bd(i,row,3)
@@ -1749,7 +1790,8 @@ $add param_def
      &     cs(mxvl,*), half, two, dj(*), w, wf, halfw
       logical :: qbar, is_umat, is_crys_pls
       data half, two / 0.5d00, 2.0d00 /
-@!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64
+c      
+@!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64, cs:64, dj:64
 c
 c             [cep] (mxvl x 6 x 6) relates increments
 c             of unrotated cauchy stress to increments
@@ -1894,8 +1936,8 @@ c            routines. the [Q-bar] 6x6 comes from the tensor
 c            expression -2 (de.De):s, where, s is the stress tensor,
 c            de is the rate of deformation tensor and De is the virtual
 c            rate of deformation tensor. this expression in matrix form
-c            is: - trans([B]) * [Q-bar] * [B]. this modification of [cep]
-c            is essential for convergence of nearly homogeneous
+c            is: - trans([B]) * [Q-bar] * [B]. this modification of 
+c            [cep] is essential for convergence of nearly homogeneous
 c            deformation problems.
 c
       if( qbar ) then
@@ -1929,8 +1971,8 @@ c
          cep(i,4,6) = cep(i,6,4)
          cep(i,5,6) = cep(i,6,5)
 c
-c                      experiment with symmetrized version of the nonsymmetric term
-c                      see Crisfield vol. 2, pg55.
+c                      experiment with symmetrized version of the 
+c                      nonsymmetric term. see Crisfield vol. 2, pg55.
 c
 c      z(1:6,1:6) = 0.0d0      
 C      z(1,1:3) = cs(i,1)      
@@ -1957,3 +1999,117 @@ c
 
 
 
+c     ****************************************************************
+c     *                                                              *
+c     *           subroutine bdbt_asym_mcm : not used. saved for     *
+c     *                                      future reference        *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified : 12/9/13                    *
+c     *        deprecated. retained for possible future reference    * 
+c     *                                                              *
+c     *     B * D * B.T for the asymmetric case.  Handles all        *
+c     *     elements, at least for now.                              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+c      subroutine bdbt_asym_mcm( span, icp, b, bt, bd, d, ek,
+c     &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+c      implicit integer (a-z)
+c
+c                       parameter declarations
+c
+c#dbl      double precision
+c#sgl      real
+c     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),
+c     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
+c      integer icp(mxutsz,*)
+c
+c      do i=1,span
+c        ek(:,i) = ek(:,i) + reshape(matmul(b(i,1:totdof,1:6),
+c     &      matmul(d(i,1:6,1:6), transpose(b(i,1:totdof,1:6)))),
+c     &      (/totdof*totdof/))
+c      end do
+c      
+c      return
+c      end subroutine
+c     ****************************************************************
+c     *                                                              *
+c     *           subroutine bdbt_asym2 : not used. saved for        *
+c     *                                   future reference
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/25/2015 rhd              *
+c     *                                                              *
+c     *     trans(B) * D * B for the asymmetric case.  Handles all   *
+c     *     elements, at least for now.                              *
+c     *     B and D are treated as full. D is non-symmetric.         *
+c     *     fastest of many variants of the operations.              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+c      subroutine bdbt_asym2( span, b, d, ek,
+c     &                      mxvl, mxedof, nstr, totdof )
+c      implicit none
+c
+c                       parameter declarations
+c
+c      integer :: span, mxvl, mxedof, nstr, totdof
+c#dbl      double precision :: 
+c#sgl      real ::
+c     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,6,*)
+c      
+c      integer :: i, j, k
+c      
+c#dbl      double precision,
+c#sgl      real,
+c     &  allocatable, dimension (:,:) ::
+c     &   local_b, local_bt, local_db, local_btdb
+c#dbl      double precision :: local_d(6,6)
+c#sgl      real :: local_d(6,6)
+c
+c@!DIR$ ASSUME_ALIGNED b:64, d:64, ek:64
+c@!DIR$ ASSUME_ALIGNED local_b:64, local_bt:64, local_btdb:64
+c@!DIR$ ASSUME_ALIGNED local_d:64 
+c
+c      allocate( local_b(6,totdof), local_bt(totdof,6), 
+c     &          local_db(6,totdof), local_btdb(totdof,totdof) )
+c      
+c@!DIR$ LOOP COUNT MAX=###  
+c      do i = 1, span
+c
+c        do k = 1, 6
+c@!DIR$ IVDEP
+c          do j = 1, totdof
+c             local_bt(j,k) = b(i,j,k)
+c             local_b(k,j)  = b(i,j,k)
+c          end do
+c        end do
+c        
+c        do j = 1, 6
+c@!DIR$ IVDEP
+c          do k = 1, 6
+c            local_d(k,j) = d(i,k,j)
+c          end do
+c        end do  
+c    
+c                       matmul is faster than dgemm. reshape
+c                       is faster than hand-coded loops
+c                       allocates of local_.. really speeds up.
+c                       reshape same speed as codes do loops
+c                   
+c        local_db = matmul( local_d, local_b )  
+c        local_btdb = matmul( local_bt, local_db )
+c@!DIR$ IVDEP
+c        ek(:,i) = ek(:,i) + reshape(local_btdb,(/totdof*totdof/))
+c      
+c      end do ! on span
+c
+c      deallocate( local_b, local_bt, local_db, local_btdb )
+c      
+c      return
+c      end  
+      

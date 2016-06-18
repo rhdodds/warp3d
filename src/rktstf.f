@@ -4,7 +4,7 @@ c     *                      subroutine rktstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/10/2016 rhd              *
+c     *                   last modified : 6/8/2016 rhd               *
 c     *                                                              *
 c     *     drive computation of tangent stiffness matrices for a    *
 c     *     block of similar elements.                               *
@@ -12,27 +12,33 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine rktstf( props, iprops, lprops, ek, nrow_ek, ispan,
-     &                   local_work )
-      use main_data, only : matprp, lmtprp
-      implicit integer (a-z)
+      subroutine rktstf( props, iprops, lprops, glb_ek_blk, nrow_ek,
+     &                   ispan, local_work )
+      use main_data, only : matprp, lmtprp, asymmetric_assembly
+      implicit none
 $add param_def
 $add include_tan_ek
 c
 c                 parameter declarations
 c
+      integer :: nrow_ek  ! set for symmetric or asymmetric
+      integer :: ispan
 #dbl      double precision ::
 #sgl      real ::
-     &   ek(nrow_ek,ispan)
+     &   glb_ek_blk(nrow_ek,ispan)
       real    :: props(mxelpr,*)   !  all 3 are same. read-only here
       integer :: iprops(mxelpr,*)
       logical :: lprops(mxelpr,*)
 c
 c                 local
 c
+      integer :: span, felem, utsz, iter, type, order, ngp, nnode,
+     &           ndof, totdof, mat_type, surf, local_iout, gpn,
+     &           nlength, i, i_local
+     
       logical :: geonl, local_debug, bbar, first, qbar_flag,
      &           compute_shape, cohes_mirror, dummy_logic,
-     &           average
+     &           average, symmetric_assembly
 c
 #dbl      double precision ::
 #sgl      real ::
@@ -42,8 +48,10 @@ c
       data local_debug, dummy_logic / .false., .true. /
       data zero, one, dummy / 0.d0, 1.d0, 1.d0 /
 c
+@!DIR$ ASSUME_ALIGNED glb_ek_blk:64
+c
       local_iout = local_work%iout
-      if( local_debug ) write(out,9100)
+      if( local_debug ) write(local_iout,9100)
 c
 c              set common properties for all elements in block
 c
@@ -69,8 +77,17 @@ c
       compute_shape =  local_work%is_cohes_elem .or.
      &                 local_work%is_axisymm_elem .or.
      &                 local_work%fgm_enode_props
+      symmetric_assembly = .not. asymmetric_assembly
 c
-      call rktstf_zero_vec( ek, nrow_ek*span )
+      if( symmetric_assembly ) then
+      	allocate( local_work%ek_symm(span,nrow_ek) )
+      	local_work%ek_symm = zero
+      else
+      	allocate( local_work%ek_full(span,nrow_ek) )
+      	local_work%ek_full = zero
+      end if
+c
+c      if( asymmetric_assembly ) ek = zero
 c
 c               compute all the shape function derivatives,
 c               inverse coordinate jacobians and determinants.
@@ -106,7 +123,7 @@ c
          call derivs( type, xi, eta, zeta, local_work%nxi(1,gpn),
      &                local_work%neta(1,gpn), local_work%nzeta(1,gpn) )
          if( compute_shape )
-     &       call shapef( type, xi, eta, zeta, local_work%shape(1,gpn) )
+     &      call shapef( type, xi, eta, zeta, local_work%shape(1,gpn) )
          call jacob1( type, span, felem, gpn, local_work%jac_block,
      &                local_work%det_jac_block(1,gpn),
      &                local_work%gama_block(1,1,1,gpn),
@@ -140,13 +157,23 @@ c
 c
       do gpn = 1, ngp
         call gptns1( local_work%cp, local_work%icp, gpn, props,
-     &               iprops, ek, local_work, nrow_ek )
+     &               iprops, glb_ek_blk, local_work, nrow_ek )
       end do
+      
+      if( symmetric_assembly ) then
+        call rktstf_do_transpose( local_work%ek_symm, glb_ek_blk, 
+     &                            span, nrow_ek ) 
+        deallocate( local_work%ek_symm )
+      else
+        call rktstf_do_transpose(  local_work%ek_full, glb_ek_blk,
+     &                            span, nrow_ek ) 
+        deallocate( local_work%ek_full )
+      end if
 c
-c		             modify element stiffness matrix by thickness factor for
-c             	plane strain analysis
+c               modify element stiffness matrix by thickness
+c               factor for plane strain analysis
 c
-      if( beta_fact .ne. one ) ek = beta_fact * ek
+      if( beta_fact .ne. one ) glb_ek_blk = beta_fact * glb_ek_blk
 c
 c               transform element stiffnesses to constraint
 c               compatible coordinates if required. skip
@@ -156,7 +183,7 @@ c
         do i = 1, span
            i_local = i
            if( local_work%trn_e_flags(i) )
-     &         call trnmtx( ek, local_work%cp,
+     &         call trnmtx( glb_ek_blk, local_work%cp,
      &                      local_work%trnmte, local_work%trne, ndof,
      &                      nnode, totdof, i_local, nrow_ek )
          end do
@@ -177,7 +204,7 @@ c
      & '      nnode = ',i6,/,
      & '     totdof = ',i6,/,
      & '  elem_type = ',i6,/,
-     & '      felem = ',i6,/,
+     & '      felem = ',i6,/, 
      & '       utsz = ',i6,/)
  9500 format(1x,'>> Fatal Error: rktstf. invalid material type..',
      &    /, 1x,'                job terminated' )
@@ -186,11 +213,36 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
+c     *                   subroutine rktstf_do_transpose             *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 06/8/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+
+      subroutine rktstf_do_transpose( local_ek, ek, span, nrow_ek )
+      implicit none
+c
+      integer :: span, nrow_ek
+#dbl      double precision ::
+#sgl      real ::
+     & local_ek(span,nrow_ek), ek(nrow_ek,span)
+@!DIR$ ASSUME_ALIGNED ek:64, local_ek:64     
+c
+      ek = transpose( local_ek )
+c
+      return
+      end                
+c
+c     ****************************************************************
+c     *                                                              *
 c     *                   subroutine rktstf_zero_vec                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/18/02                   *
+c     *                   last modified : 6/8/2016 rhd               *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -199,13 +251,12 @@ c
 c
 #dbl      double precision
 #sgl      real
-     &   vec(*)
-      integer i, nterms
+     &   vec(nterms), zero
+      integer  nterms
+      data zero / 0.0d00 /
+@!DIR$ ASSUME_ALIGNED vec:64
 c
-      do i = 1, nterms
-#sgl         vec(i) = 0.0
-#dbl         vec(i) = 0.0d00
-      end do
+      vec = zero
 c
       return
       end
