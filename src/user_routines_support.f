@@ -25,7 +25,7 @@ c        1.  find an available device number, open the neutral
 c            file
 c
       warp3d_get_device_number = -1
-      do iunit = 11, 79
+      do iunit = 11, 5000
         inquire( unit=iunit, opened=connected )
         if ( connected ) cycle
         warp3d_get_device_number = iunit
