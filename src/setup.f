@@ -381,5 +381,24 @@ c
       return
       end
 
+c     ****************************************************************
+c     *                                                              *
+c     *                 function clmloc                              *
+c     *                                                              *
+c     ****************************************************************
+c
 
+      integer function clmloc( col )
+      implicit none
+c
+      integer :: col, stpos, i
+      stpos = 0
+      do i = 1, col-1
+         stpos = stpos + col - i
+      end do  
+c
+      clmloc= stpos
+c
+      return
+      end
 
