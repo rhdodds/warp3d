@@ -4,17 +4,86 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 4 --  cohesive material model           *
 c *                                                                 *
-c *            written by  : aroy                                   *
-c *       last modified by : cj,  cavitation-based cohesive element *
-c *                               (referred to as Cavit) 8/1/2013   *
-c *                                                                 *
-c *       10/16/2014 rhd (convert cavit to use physical units)      *
-c *        3/1/2015 rhd updated for new formulation that computes   *
-c *                      NI and props set relative to NI not NR     *
-c *                      remove R_I as input                        *
-c *        3/5/2015 rhd add 2 more history. Tshear and max ever Ts  *
+c *            written by  : many                                   *
+c *       last modified by : kc, rhd may 2016                       *
 c *                                                                 *
 c *******************************************************************
+c
+
+
+c
+c *******************************************************************
+c *                                                                 *
+c *               module mod_mm04_cavity                            *
+c *                                                                 *
+c *            written by  : rhd 4/14/2016                          *
+c *       last modified by : kbc 4/20/2016                          *
+c *                                                                 *
+c *       define data structures used repeatedly in cavity coehsive *
+c *       routines. to prevent errors in forgetting to update       *
+c *       them all                                                  *
+c *                                                                 *
+c *******************************************************************
+c
+c
+      module mod_mm04_cavity
+      implicit none
+c      
+      type :: props_for_cavit  ! multiple instances here, cnst4.f
+        double precision ::
+     &    eta_b, Sigma_0, D, a_0, b_0, V_0, N_I, F_N,     
+     &    n_pow, N_max, psi_angle_radians, psi_angle_degrees, hpsi,
+     &    compression_mult, Sthr, beta_nuc, v2dot_term2, user_n_pow,
+     &    beta_vol
+        logical :: degrade_shear, VVNT, modify_q, include_nucleation,
+     &             include_cavity_growth, compute_solid_local  
+      end type
+c
+      logical :: gb_ext_data_present
+      integer :: num_elements, num_gb_elements, num_gbs
+c
+      integer, allocatable, dimension(:) :: element_to_GB_map
+      
+      type :: gb_data
+        integer :: gb_number
+        double precision :: a_0,
+     &                      b_0, 
+     &                      eta_b,
+     &                      diffusion,
+     &                      n_power,
+     &                      psi_angle,
+     &                      sigma_0,
+     &                      F_N,
+     &                      N_max,
+     &                      nuc_stress_exponent,
+     &                      compression_multiplier
+        logical ::  degrade_shear_viscosity, 
+     &              use_VNNT,
+     &              modify_q,
+     &              include_nucleation,
+     &              include_cavity_growth,
+     &              compute_traction_solids
+
+      end type
+      type( gb_data ), save, allocatable,
+     &           dimension(:) :: gb_properties
+      
+c
+      end module  mod_mm04_cavity
+
+c
+c *******************************************************************
+c *                                                                 *
+c *               subroutine mm04                                   *
+c *                                                                 *
+c *            written by  : many                                   *
+c *       last modified by : rhd  4/14/2016                         *
+c *                                                                 *
+c *       entry point to perform stress update for the family       *
+c *       of cohesive traction-separation models                    *
+c *                                                                 *
+c *******************************************************************
+c
 c
       subroutine mm04(
      1 step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
@@ -297,10 +366,9 @@ c
      & top_surf_mean_stress, top_surf_mean_eps,
      & bott_surf_mean_stress, bott_surf_mean_eps, comp_multiplier
        logical elem_killed(mxvl), local_debug
-       data zero, e, tol, one, three, forty, initial
+       data zero, e, tol, one, three, forty, initial, half
      &  / 0.0d0, 2.71828182845904523536d0, 0.1d0, 1.0d0, 3.0d0,
-     &    40.0d0, 1.d-14 /
-      data half / 0.5d00 /
+     &    40.0d0, 1.d-14, 0.5d00 /
 c
 c ------------------------------------------------------------------
 c
@@ -366,6 +434,8 @@ c             set flags for already killed elements (exhausted
 c             the cohesive traction). zero the unused stress
 c             locations (for cohesive materials)
 c
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
         trac_n1(i,4:6) = zero
         elem_killed(i) = intfprps(i,13) .gt. zero
@@ -387,6 +457,8 @@ c             on symmetry planes. user must set stiffness values at twice
 c             values used in a full (w/o symmetry). see WARP3D
 c             manual for the cohesive material model.
 c
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
         ds1 = reladis(i,1)
         ds2 = reladis(i,2)
@@ -442,6 +514,8 @@ c             trac_n1( ,1:3): cohesive tractions at step n+1
 c             trac_n1( ,7):   total cohesive energy at step n+1
 c             trac_n1( ,8):   unrecoverable cohesive energy at step n+1
 c
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
           trac_n1(i,1) = intfmat(i,1)*reladis(i,1)
           trac_n1(i,2) = intfmat(i,2)*reladis(i,2)
@@ -484,6 +558,7 @@ c     =========
       call mm04_traction_ppr( span, ppr_support, reladis, trac_n1,
      &             history, history1, elem_killed,
      &             local_debug, iout, mxvl )
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
         trac_n1(i,7) = trac_n(i,7) +
      &       half * ( (trac_n1(i,1) + trac_n(i,1))*delrlds(i,1) +
@@ -571,43 +646,48 @@ c    *                                                              *
 c    *          subroutine mm04_cavit_driver                        *
 c    *                                                              *
 c    *            written by : rhd   6/9/2014                       *
-c    *            updated: 2/14/2016 rhd                            *	
+c    *            updated: 4/15/2016 rhd                            *	
 c    *                                                              *
 c    *     drive stress update of cavity cohesive model             *  
 c    *                                                              *
 c    ****************************************************************
 c
       subroutine mm04_cavit_driver
+c      
+      use mod_mm04_cavity, only : props_for_cavit
+c      
       implicit none
 c
 c             variables declared here are local to this routine.
 c      
-      logical :: here_debug
+      logical :: here_debug, debug_set_props
 c
-#dbl      double precision ::
-#sgl      real ::
-     & l_nr, a_now, third, one, dword
+#dbl      double precision ::  l_nr, a_now, third, one, dword
+#sgl      real ::              l_nr, a_now, third, one, dword
       integer :: iword(2)
       equivalence (dword, iword)
 c 
-      type :: props_for_cavit  ! multiple instances here, cnst4.f
-        double precision
-     &    eta_b, Sigma_0, D, a_0, b_0, V_0, N_I, F_N, 
-     &    n_pow, N_max, psi_angle_radians, psi_angle_degrees, hpsi,
-     &    compression_mult, Sthr, beta, v2dot_term2
-      end type
-      type( props_for_cavit) :: props
+c             blk_cavity_props -> bcp (shorter naming)
+c             automatic allocate/deallocate
+c
+      type( props_for_cavit), dimension(:) :: bcp(mxvl)
 c
       data one, third / 1.0d00, 0.33333333d00 /      
 c  
-c             see mm04_init for intfprps definition
+c             see mm04_init for intfprps definition. fill the
+c             bcp data structure with material property values for
+c             each element of the block -- from user input
+c             or external data file.
 c
-      here_debug = felem .eq. 55 .and. gpn .eq. 1
+      here_debug = felem .eq. 59 .and. gpn .eq. 4
       here_debug = .false.
+      debug_set_props = .false.
 c      
       if( here_debug ) write(iout,9000)
-      call mm04_cavit_set_props( intfprps, mxvl, props, iout, 
-     &                           .false. )
+c      
+      call mm04_cavit_set_props( intfprps, mxvl, span, felem, gpn,
+     &                           bcp, iout, debug_set_props )
+c
       if( here_debug ) write(iout,9005)
 c      
 c             see top of mm04 for history definition.
@@ -615,13 +695,15 @@ c             normalized state variables stored for convenience
 c             of including those values in output
 c
       if(  step .eq. 1 ) then
+@!DIR$ LOOP COUNT MAX=###      
+@!DIR$ IVDEP      
          do i = 1, span
            history(i,1)     = one  !  N / props%N_I
            history(i,2)     = one  !  a / props%a_0
            history(i,3)     = one  !  b / props%b_0
            history(i,4)     = one  !  V / props%V_0
            history(i,5:10)  = zero
-           history(i,11)    = props%a_0 / props%b_0
+           history(i,11)    = bcp(i)%a_0 / bcp(i)%b_0
            history(i,12)    = zero
            iword(1) = 0; iword(2) = 0
            history(i,13)    = dword
@@ -632,16 +714,13 @@ c
          if( here_debug ) write(iout,9010)
       end if    
 c
-c             material properties are identical for all
-c             elements in block.
+c             update tractiosn, history, state variables for all
+c             elements in block at this integration point
 c
-c             use the simple typedef above rather than making
-c             a set of values for each element in block.
-c          
       if( here_debug ) write(iout,9015)
       call mm04_cavit_sig_update( 
      &     step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
-     &     nonlocal, props, intfprps,
+     &     nonlocal, bcp, intfprps,
      &     trac_n, trac_n1, reladis, delrlds, history, history1,
      &     top_surf_stresses_n, bott_surf_stresses_n,
      &     top_nonlocal_vars, bott_nonlocal_vars, 
@@ -663,6 +742,8 @@ c             retain max norm & shear tractions ever reached
 c             and the opening displacement at max normal
 c             traction for output and possible element death operations.
 c                          
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
         trac_n1(i,7) = trac_n(i,7) +
      &       half * ( (trac_n1(i,1) + trac_n(i,1))*delrlds(i,1) +
@@ -696,7 +777,7 @@ c
       if( here_debug ) write(iout,9050)
       return
       
- 9000 format("... entered mm04_cavit_driver")
+ 9000 format("... entered mm04_cavit_driver. call set_props")
  9005 format("... props created by mm04_cavit_set_props")
  9010 format("... history initialized")
  9015 format("... calling mm04_cavit_sig_update")
@@ -710,93 +791,123 @@ c    ****************************************************************
 c    *                                                              *
 c    *          subroutine mm04_cavit_set_props                     *
 c    *                                                              *
-c    *            written by : rhd   6/12/2014                      *
-c    *            updated: 3/4/2015 rhd                             *	
+c    *            written by : rhd   4/14/2016 rhd                  *
+c    *            updated: 4/20/2016 kbc                            *	
 c    *                                                              *
-c    *     set up properties for cavity cohesive option             *
+c    *     set up properties for cavity cohesive option based on    *
+c    *     values defined in the user's input file (not an          *
+c    *     external data file)                                      *
 c    *                                                              *
 c    ****************************************************************
 c
-      subroutine mm04_cavit_set_props( intfprps, mxvl, props, iout,
-     &                                 here_debug  )
+      subroutine mm04_cavit_set_props( intfprps, mxvl, span, felem, 
+     &                                 gpn, bcp, iout, here_debug )
+c     
+      use mod_mm04_cavity, only : props_for_cavit
+c      
       implicit none
 c
 c             parameters
 c
-      integer :: mxvl, iout
-      logical :: here_debug
-#dbl      double precision ::
-#sgl      real ::
-     & intfprps(mxvl,*)
+      integer :: mxvl, iout, span, felem, gpn
+      logical :: here_debug, ok
+#dbl      double precision ::  intfprps(mxvl,*)
+#sgl      real ::  intfprps(mxvl,*)
+c 
+      type( props_for_cavit), dimension(:) :: bcp(mxvl)
 c
-c             locals - includes the defined type for cavity properties
-c             that simplifies managing a large number of scalar values.
-c             if changed, find all other instances in warp3d of this
-c             typedef and change them too.
+c             locals
 c
+      integer :: i
 #dbl      double precision ::
 #sgl      real ::
      & pi, one_eighty, zero, one, three, four, psi, x, half,
-     & onept5
-c 
-      type :: props_for_cavit  ! multiple instances here, cnst4.f
-        double precision
-     &    eta_b, Sigma_0, D, a_0, b_0, V_0, N_I, F_N,     
-     &    n_pow, N_max, psi_angle_radians, psi_angle_degrees, hpsi,
-     &    compression_mult, Sthr, beta, v2dot_term2
-      end type
-      type( props_for_cavit) :: props
+     & onept5, user_input_n_power, two
 c      
-      data  one,  pi, one_eighty, half, three, four, onept5
-     &     / 1.0d00, 3.141592653589793d00, 180.0d00, 0.5d00, 
-     &       3.0d00, 4.0d00, 1.5d00 /
+      data  zero, one,  pi, one_eighty, half, three, four, onept5, two
+     &     / 0.d00, 1.0d00, 3.141592653589793d00, 180.0d00, 0.5d00, 
+     &       3.0d00, 4.0d00, 1.5d00, 2.0d00 /
 c
-c             all interface elements in the block have the same
-c             cohesive properties.
-c  
+c             We have 2 cases for material properties for interface 
+c             elements in the block.
+c
+c             1) the user's input file sets values for the properties.
+c                all elements in the block will have the same props.
+c                fill the bcp(1:span) table with all the same values
+c                to simplify loops in stress update routine
+c
+c             2) the properties are coming from an external data
+c                file processed by uexternaldb with values store in the
+c                user rotuines module. use bcp(mxvl).
+c               
+c             a service routine will provide properties for 1 element
+c             in the block as needed
+c
+c             the marker for now for case (2) is a negative n_power
+c             set in the under input file for the material
+c
 c             see mm04_init for intfprps definition
+c          
+      user_input_n_power = intfprps(1,49)
+      if(  user_input_n_power < zero ) then
+         call mm04_cavit_external_props( mxvl, span, felem, gpn,
+     &                                   bcp, iout, ok )
+         if( ok ) return
+         write(iout,9100) 
+         call die_abort
+      end if 
 c
-c             note changes 3/1/2015:
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
+      do i = 1, span
+          bcp(i)%degrade_shear         = .true.
+          bcp(i)%VVNT                  = .true.
+          bcp(i)%modify_q              = .true.
+          bcp(i)%include_nucleation    = .false.
+          bcp(i)%include_cavity_growth = .true.
+          bcp(i)%compute_solid_local   = .false. 
+          bcp(i)%eta_b                  = intfprps(1,39)
+          bcp(i)%Sigma_0                = intfprps(1,41)
+          bcp(i)%D                      = intfprps(1,43)
+          bcp(i)%a_0                    = intfprps(1,44) 
+          bcp(i)%b_0                    = intfprps(1,45) 
+          x                             = intfprps(1,46)
+          bcp(i)%psi_angle_degrees      = x
+          bcp(i)%psi_angle_radians      = x * pi / one_eighty
+          x = bcp(i)%psi_angle_radians 
+                                    ! makes next stm simpler to read
+          bcp(i)%hpsi = ( one/(one+cos(x)) - half*cos(x) ) / sin(x)
+          bcp(i)%V_0 = (four/three) * pi *bcp(i)%a_0**3 * bcp(i)%hpsi 
+          bcp(i)%N_I = one/ pi / bcp(i)%b_0**2
+          bcp(i)%F_N = intfprps(1,48) * bcp(i)%N_I
+          bcp(i)%Sthr = bcp(i)%N_I / bcp(i)%F_N
+          bcp(i)%n_pow = intfprps(1,49)
+          bcp(i)%user_n_pow = intfprps(1,49)
+          bcp(i)%N_max = intfprps(1,50) * bcp(i)%N_I
+          bcp(i)%compression_mult = intfprps(1,22)
+          bcp(i)%beta_nuc = two
+          bcp(i)%beta_vol = ( bcp(i)%n_pow - one) * ( bcp(i)%n_pow + 
+     &                    0.4319d00 ) / bcp(i)%n_pow**2
+          bcp(i)%v2dot_term2 = onept5 / bcp(i)%n_pow
 c
-c               - R_I no longer allowed input
-c               - a_0, b_0 must be the actual, physical values
-c               - N_I now computed from b_0. 
-c               - N_I no longer allowed as input property
-c               - F_N and N_max multipliers are on N_I, not N_R
-c               - N_R no longer used
-c              
-c
-      props%eta_b   = intfprps(1,39)
-      props%Sigma_0 = intfprps(1,41)
-      props%D       = intfprps(1,43)
-      props%a_0     = intfprps(1,44) 
-      props%b_0     = intfprps(1,45) 
-      props%psi_angle_degrees = intfprps(1,46)
-      props%psi_angle_radians = intfprps(1,46) * pi / one_eighty
-      x = props%psi_angle_radians ! makes next stm simpler to read
-      props%hpsi    = ( one/(one+cos(x)) - half*cos(x) ) / 
-     &                       sin(x)
-      props%V_0     = (four/three) * pi * props%a_0**3 * props%hpsi 
-      props%N_I     = one/ pi / props%b_0**2
-      props%F_N     = intfprps(1,48) * props%N_I
-      props%Sthr    = props%N_I / props%F_N
-      props%n_pow   = intfprps(1,49)
-      props%N_max   = intfprps(1,50) * props%N_I
-      props%compression_mult = intfprps(1,22)
-      props%beta    = (props%n_pow - one) * (props%n_pow + 0.4319d00) / 
-     &                 props%n_pow**2
-      props%v2dot_term2 = onept5 / props%n_pow
-c
+      end do ! over span
+c 
       if( here_debug ) then 
-         write(iout,9000) props%eta_b, 
-     &                    props%Sigma_0, props%D, props%a_0, 
-     &                    props%b_0, props%psi_angle_degrees, 
-     &                    props%psi_angle_radians, props%hpsi, 
-     &                    props%V_0, props%N_I, props%F_N,   
-     &                    props%n_pow, props%N_max, 
-     &                    props%compression_mult
+         write(iout,9000)
+     &     bcp(1)%eta_b, 
+     &     bcp(1)%Sigma_0,
+     &     bcp(1)%D, bcp(1)%a_0, 
+     &     bcp(1)%b_0,
+     &     bcp(1)%psi_angle_degrees, 
+     &     bcp(1)%psi_angle_radians, 
+     &     bcp(1)%hpsi, 
+     &     bcp(1)%V_0, bcp(1)%N_I,
+     &     bcp(1)%F_N,   
+     &     bcp(1)%n_pow, bcp(1)%N_max, 
+     &     bcp(1)%beta_nuc, 
+     &     bcp(1)%compression_mult
       end if
-c    
+   
       return
 c
  9000 format("...  mm04_cavit_set_props ...",
@@ -813,15 +924,239 @@ c
      &  /,5x,"F_N:            ",e14.5,
      &  /,5x,"n_pow:          ",f5.1,
      &  /,5x,"N_max:          ",e14.5,
+     &  /,5x,"beta_nuc:       ",e14.5, 
      &  /,5x,"comp. factor:   ",f5.1 )
-c    
-      end       
+c  
+c 
+ 9100 format(/,'>>>> FATAL ERROR: in mm04 (cohesive cavity)',
+     & /,18x,
+     & 'Solution requested using external properties.',
+     & /,18x,'No valid eternal properties have been read/stored.',
+     & /,18x,'job aborted.'//)
+  
+      end 
+
 c
+c    ****************************************************************
+c    *                                                              *
+c    *          subroutine mm04_cavit_external_props                *
+c    *                                                              *
+c    *            written by : rhd   4/12/2016 rhd                  *
+c    *            updated: 4/20/2016 kbc                            *	
+c    *                                                              *
+c    *     set up properties for cavity cohesive option when        *
+c    *     values for each element are provided in an external file *
+c    *                                                              *
+c    ****************************************************************
+c
+      subroutine mm04_cavit_external_props( mxvl, span, felem, gpn,
+     &                                      bcp, iout, ok )
+c     
+      use mod_mm04_cavity, only : element_to_GB_map, gb_properties,
+     &                            gb_ext_data_present,
+     &                            props_for_cavit
+c      
+      implicit none
+c
+c             parameters
+c
+      integer :: mxvl, iout, span, felem, gpn
+      logical :: ok
+c
+      type( props_for_cavit), dimension(:) :: bcp(mxvl)
+c
+c             locals
+c
+
+#dbl      double precision ::
+#sgl      real ::
+     & pi, one_eighty, zero, one, three, four, psi, x, half,
+     & onept5
+      integer :: i, gb_no, abs_elem
+      logical :: here_debug, debug_this_elem
+c      
+      data  one,  pi, one_eighty, half, three, four, onept5
+     &     / 1.0d00, 3.141592653589793d00, 180.0d00, 0.5d00, 
+     &       3.0d00, 4.0d00, 1.5d00 /
+c
+      here_debug = .false.
+      ok = .false.
+      if( .not. gb_ext_data_present ) return
+c
+c             set all properties for all elements of the block.
+c             use the GB number for the element to pull 
+c             property values from externally supplied values
+c
+      ok = .false.
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
+      do i = 1, span
+        abs_elem = felem + i - 1
+        gb_no = element_to_GB_map(abs_elem)
+        if( gb_no <= 0 ) return
+      end do
+c
+      ok = .true.      
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
+      do i = 1, span
+        abs_elem = felem + i - 1
+        gb_no = element_to_GB_map(abs_elem)
+c        
+        bcp(i)%degrade_shear =
+     &      gb_properties(gb_no)%degrade_shear_viscosity
+        bcp(i)%VVNT = gb_properties(gb_no)%use_VNNT
+        bcp(i)%modify_q = gb_properties(gb_no)%modify_q
+        bcp(i)%include_nucleation = 
+     &      gb_properties(gb_no)%include_nucleation
+        bcp(i)%include_cavity_growth = 
+     &      gb_properties(gb_no)%include_cavity_growth
+        bcp(i)%compute_solid_local   = 
+     &      gb_properties(gb_no)%compute_traction_solids 
+c     
+        bcp(i)%eta_b   = gb_properties(gb_no)%eta_b
+        bcp(i)%Sigma_0 = gb_properties(gb_no)%sigma_0
+        bcp(i)%D       = gb_properties(gb_no)%diffusion
+        bcp(i)%a_0     = gb_properties(gb_no)%a_0 
+        bcp(i)%b_0     = gb_properties(gb_no)%b_0 
+        x = gb_properties(gb_no)%psi_angle ! in degrees
+        bcp(i)%psi_angle_degrees = x
+        bcp(i)%psi_angle_radians = x * pi / one_eighty
+        x = bcp(i)%psi_angle_radians ! makes next stm simpler to read
+c        
+        bcp(i)%hpsi = ( one/(one+cos(x)) - half*cos(x) ) / sin(x)
+        bcp(i)%V_0 = (four/three) * pi * bcp(i)%a_0**3 *
+     &                    bcp(i)%hpsi 
+        bcp(i)%N_I = one / pi / bcp(i)%b_0**2
+        bcp(i)%F_N = gb_properties(gb_no)%f_n* bcp(i)%N_I
+        bcp(i)%Sthr = bcp(i)%N_I / bcp(i)%F_N
+        bcp(i)%n_pow = gb_properties(gb_no)%n_power
+        bcp(i)%N_max = gb_properties(gb_no)%n_max* bcp(i)%N_I
+        bcp(i)%compression_mult = 
+     &            gb_properties(gb_no)%compression_multiplier
+        bcp(i)%beta_nuc = gb_properties(gb_no)%nuc_stress_exponent
+        bcp(i)%beta_vol    = (bcp(i)%n_pow - one) * ( bcp(i)%n_pow +
+     &                    0.4319d00 ) / bcp(i)%n_pow**2
+        bcp(i)%v2dot_term2 = onept5 / bcp(i)%n_pow
+c
+      end do ! over span 
+      
+      if( .not. here_debug ) return
+c
+      do i = 1, span
+        abs_elem = felem + i - 1
+        debug_this_elem = here_debug .and. abs_elem == 55 .and. 
+     &                    gpn .eq. 1
+        if( .not. debug_this_elem ) cycle
+        write(iout,*) " "
+        write(iout,9000) abs_elem, gpn, gb_no, bcp(i)%degrade_shear,
+     &                    bcp(i)%VVNT, bcp(i)%modify_q, 
+     &                    bcp(i)%include_nucleation,
+     &                    bcp(i)%include_cavity_growth,
+     &                    bcp(i)%compute_solid_local,    
+     &                    bcp(i)%eta_b, 
+     &                    bcp(i)%Sigma_0, bcp(i)%D, bcp(i)%a_0, 
+     &                    bcp(i)%b_0, bcp(i)%psi_angle_degrees, 
+     &                    bcp(i)%psi_angle_radians, bcp(i)%hpsi, 
+     &                    bcp(i)%V_0, bcp(i)%N_I, bcp(i)%F_N,   
+     &                    bcp(i)%n_pow, bcp(i)%N_max, bcp(i)%beta_nuc,
+     &                    bcp(i)%compression_mult
+         write(iout,*) " "
+      end do   
+c   
+      return
+c
+ 9000 format("...  mm04_cavit_external_props ...",
+     &  /,5x,"element, gpn, GB #:  ",3i10,
+     &  /,5x,"degrade_shear:  ",L1,
+     &  /,5x,"VNNT:           ",L1,
+     &  /,5x,"modify_q:       ",L1,
+     &  /,5x,"incl nuc:       ",L1,
+     &  /,5x,"incl cav grwth: ",L1,
+     &  /,5x,"com slds local: ",L1,
+     &  /,5x,"eta_b:          ",e14.5,
+     &  /,5x,"Sigma_0:        ",f10.1
+     &  /,5x,"D:              ",e14.5,
+     &  /,5x,"a_0:            ",e14.5,
+     &  /,5x,"b_0:            ",e14.5,
+     &  /,5x,"psi (degrees):  ",f8.1,
+     &  /,5x,"psi (radians):  ",f8.2,
+     &  /,5x,"h(psi):         ",f8.3,
+     &  /,5x,"V_0:            ",e14.5,
+     &  /,5x,"N_I:            ",e14.5,
+     &  /,5x,"F_N:            ",e14.5,
+     &  /,5x,"n_pow:          ",f5.1,
+     &  /,5x,"N_max:          ",e14.5,
+     &  /,5x,"beta_nuc:           ",e14.5,
+     &  /,5x,"comp. factor:   ",f5.1 )
+   
+      end 
+c
+c    ****************************************************************
+c    *                                                              *
+c    *          subroutine mm04_cavity_props_one_elem               *
+c    *                                                              *
+c    *            written by : rhd   4/14/2016 rhd                  *
+c    *            updated: 4/20/2016  kbc                           *	
+c    *                                                              *
+c    *     return the properties for a single cavity cohesive       *
+c    *     element                                                  *
+c    *                                                              *
+c    ****************************************************************
+c
+      subroutine mm04_cavity_props_one_elem( elem_in_blk, props,
+     &                                       bcp, mxvl )
+c     
+      use mod_mm04_cavity, only : props_for_cavit
+c      
+      implicit none
+c
+c             parameters
+c
+      integer :: elem_in_blk, mxvl
+c      
+      type( props_for_cavit), dimension(:) :: bcp(mxvl)
+      type( props_for_cavit) :: props
+c                                  
+      props%degrade_shear         = bcp(elem_in_blk)%degrade_shear
+      props%VVNT                  = bcp(elem_in_blk)%VVNT 
+      props%modify_q              = bcp(elem_in_blk)%modify_q 
+      props%include_nucleation    = 
+     &          bcp(elem_in_blk)%include_nucleation  
+      props%include_cavity_growth = 
+     &          bcp(elem_in_blk)%include_cavity_growth 
+      props%compute_solid_local   = 
+     &          bcp(elem_in_blk)%compute_solid_local 
+c                                 
+      props%eta_b                 = bcp(elem_in_blk)%eta_b   
+      props%Sigma_0               = bcp(elem_in_blk)%Sigma_0 
+      props%D                     = bcp(elem_in_blk)%D       
+      props%a_0                   = bcp(elem_in_blk)%a_0     
+      props%b_0                   = bcp(elem_in_blk)%b_0      
+      props%psi_angle_degrees     = bcp(elem_in_blk)%psi_angle_degrees 
+      props%psi_angle_radians     = bcp(elem_in_blk)%psi_angle_radians 
+c                                 
+      props%hpsi                  = bcp(elem_in_blk)%hpsi 
+      props%V_0                   = bcp(elem_in_blk)%V_0  
+      props%N_I                   = bcp(elem_in_blk)%N_I 
+      props%F_N                   = bcp(elem_in_blk)%F_N 
+      props%Sthr                  = bcp(elem_in_blk)%Sthr
+      props%n_pow                 = bcp(elem_in_blk)%n_pow
+      props%N_max                 = bcp(elem_in_blk)%N_max
+      props%compression_mult      = bcp(elem_in_blk)%compression_mult 
+      props%beta_nuc              = bcp(elem_in_blk)%beta_nuc
+      props%beta_vol              = bcp(elem_in_blk)%beta_vol      
+      props%v2dot_term2           = bcp(elem_in_blk)%v2dot_term2  
+      props%beta_vol              = bcp(elem_in_blk)%beta_vol     
+c        
+      return
+      end
+c      
 c    ****************************************************************
 c    *                                                              *
 c    *          subroutine mm04_cavit_sig_update                    *
 c    *                                                              *
-c    *    updated: 8/28/2015 rhd added switch_to_linear feature     8
+c    *           updated: 4/20/2016 kbc                             *
 c    *                                                              *
 c    *     computes the cohesive traction vector for the            *
 c    *     cavitation-based cohesive zone model (cavit)             *
@@ -833,12 +1168,14 @@ c    ****************************************************************
 c
       subroutine mm04_cavit_sig_update(
      & step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
-     & nonlocal, props, intfprps,
+     & nonlocal, blk_cavity_props, intfprps,
      & trac_n, trac_n1, reladis, delrlds, history, history1,
      & top_surf_stresses_n, bott_surf_stresses_n,
      & top_nonlocal_vars, bott_nonlocal_vars, local_debug,
      & history_len )
 c
+      use mod_mm04_cavity, only : props_for_cavit
+c      
       implicit none
 c
 c             parameter declarations
@@ -853,27 +1190,21 @@ c
      5 top_nonlocal_vars(mxvl,*), bott_nonlocal_vars(mxvl,*)
       logical nonlocal
 c      
-c             find/modify all instances of this typedef
-c
-      type :: props_for_cavit  ! multiple instances here, cnst4.f
-        double precision
-     &    eta_b, Sigma_0, D, a_0, b_0, V_0, N_I, F_N,      
-     &    n_pow, N_max, psi_angle_radians, psi_angle_degrees, hpsi,
-     &    compression_mult, Sthr, beta, v2dot_term2
-      end type
+      type( props_for_cavit), dimension(:) :: blk_cavity_props(mxvl)
       type( props_for_cavit) :: props
+c
 c
 c             local variables
 c
       integer :: i, abs_elem, iter_count, iword(2), old_state,
-     &           new_state, current_state
+     &           new_state, current_state, ielem
 #dbl      double precision ::
 #sgl      real :
      & dword, zero, three, one, toler, six, 
      & half, four, two, third, onept5,
      & top_surf_mean_stress, top_surf_mean_eps,
      & bott_surf_mean_stress, bott_surf_mean_eps,
-     & sigma_e, sigma_m, term1,term3, fraction,
+     & sigma_e, sigma_m, term1,term3, triax,
      & v2_dot, pi, c_0, c_1, c_2, f_0, q,
      & d_strain, c_strain,
      & delta_c_dot, oldreldis, Tn_solid,
@@ -887,16 +1218,16 @@ c
 c
       equivalence ( iword, dword )     
 c
-#dbl      double precision, 
-#sgl      real,
-     & external :: mm04_cavit_mises
+#dbl      double precision, external :: mm04_cavit_mises
+#sgl      real, external :: mm04_cavit_mises
 c
       logical :: elem_killed(mxvl), local_debug, converged, 
      & nucleation_active, debug_span_loop, compute_solid_local,
      & iterative_solve, opening, closing, switch_to_linear,
      & debug_newton, open, neutral, penetrated
       logical :: degrade_shear, VVNT, modify_q, include_nucleation,
-     &           include_cavity_growth  
+     &           include_cavity_growth, small_new_cavities,
+     &           cavities_nucleated_t0    
 c
       data zero, one, three, third, two, half, four,
      &  six, onept5, toler, pi, max_ab_ratio, mark, LNR_toler, 
@@ -905,16 +1236,8 @@ c
      &   4.0d0, 6.0d0, 1.5d00, 1.0d-10, 3.14159265d0, 0.9999d00,
      &   1.0d40, 1.0d-06, 0.5d0 /
 c
-c             set options in formulation to include, debug options
-c
-      degrade_shear         =  .true.
-      VVNT                  =  .true.
-      modify_q              =  .true.
-      include_nucleation    = .false.
-      debug_newton          = .false.
-      include_cavity_growth = .true.
-      compute_solid_local   = .false. 
 c      
+      debug_newton = .false.
       local_debug = felem .eq. 55 .and. gpn .eq. 1 .and. 
      &                  ( step .eq. 599 )
       local_debug = .false.
@@ -923,9 +1246,32 @@ c
       do i = 1, span  ! main loop over all elems in block
 c
       abs_elem        = felem + i - 1
-      debug_span_loop = .false. ! abs_elem .eq. 3182
+      debug_span_loop = .false. ! abs_elem .eq. 3182      
+      if( debug_span_loop ) write(iout,9000) felem+i-1, gpn 
+c
+c             step 0: get all material properties for this element
 c      
-      if( debug_span_loop ) write(iout,9000) felem+i-1, gpn      
+      ielem = i  ! for safety
+      call mm04_cavity_props_one_elem( ielem, props, blk_cavity_props,
+     &                                 mxvl )
+c
+      degrade_shear         = props%degrade_shear
+      VVNT                  = props%VVNT
+      modify_q              = props%modify_q
+      include_nucleation    = props%include_nucleation  
+      include_cavity_growth = props%include_cavity_growth
+c
+c              set options for nucleation model
+c
+      small_new_cavities    = .false. ! true = new cavities have size a0
+      cavities_nucleated_t0 = .false. ! false = no growth until nuc 
+c                                       threshold met
+c
+c            this check ensures cavity growth can occur if 
+c            nucleation is not included
+c
+      if( (.not. include_nucleation) .and. include_cavity_growth) 
+     &    cavities_nucleated_t0  = .true.
 c
 c             step 1: pull the cavity state variables from history
 c                     at time t_n. back to un-normalized values
@@ -949,7 +1295,6 @@ c
      &                 bott_surf_stresses_n(i,2) +
      &                 bott_surf_stresses_n(i,3) ) / three
       sigma_m = half * ( top_sigma_m + bott_sigma_m )
-      props%n_pow  = intfprps(1,49)
       if( step > 1 ) props%n_pow = half * ( top_nonlocal_vars(i,3) + 
      &                                      bott_nonlocal_vars(i,3) )
 c
@@ -1095,22 +1440,6 @@ c
       history1(i,4) = V_new / props%V_0
       history1(i,5) = T_new  ! for states output
       if( compute_solid_local ) history1(i,5) = Tn_solid 
-C      if( abs(T_new) .gt. 1000. .and. step .gt. 1) then
-C         write(*,9500) abs_elem, T_new, top_sigma_m , bott_sigma_m,
-C     &        top_sigma_e, bott_sigma_e 
-C         write(*,9510) top_surf_stresses_n(i,1:6),
-C     &       bott_surf_stresses_n(i,1:6)
-C         if( step .eq. 3 ) stop    
-C9500  format(".. big Tn, abs_elem, Tn: ", i6,f10.2,
-C     &  /,10x," top_sigma_m , bott_sigma_m: ",2f10.2,
-C     &  /,10x," top_sigma_e, bott_sigma_e : ",2f10.2 )
-C 9510 format(10x," top stresses: ",6f10.2,
-C     & /, 10x," bottom stresses: ",6f10.2 )     
-C      end if
-       
-c      write(iout,*) "   ... Tnew, Tn_solid: ", T_new, Tn_solid           
-c      if(  abs(Tn_solid)  .gt. 500.d00 ) stop  
-           
       history1(i,6) = stiff_shear
       history1(i,7) = stiff_normal
       iword(1) = new_state; iword(2) = 0
@@ -1151,7 +1480,6 @@ c
 c
 c
       contains   !   ....  note this  ....
-c     ========
 c
 c    ****************************************************************
 c    *                                                              *
@@ -1187,7 +1515,9 @@ c    ****************************************************************
 c    *                                                              *
 c    *          subroutines: mm04_cavit_update_linear               *
 c    *                                                              *
-c    *             last modified:  7/21/2015 rhd                    *
+c    *             last modified:  4/19/2016 kbc                    *
+c    *                             N does not return to NI if       *
+c    *                             nucleation has occurred          *
 c    *                                                              *
 c    *                                                              *
 c    ****************************************************************
@@ -1198,15 +1528,20 @@ c
       call mm04_cavit_linear_stiff  ! stiff at t = 0, rate = 0 
       stiff_normal = stiff_linear 
       if( reladis(i,3) .lt. zero ) 
-     &     stiff_normal = stiff_linear * props%compression_mult
+     &     stiff_normal = stiff_linear * 
+     &                    props%compression_mult
       T_new = stiff_normal * reladis(i,3)
-      N_new = props%N_I
+      N_new = N_n 
       a_new = props%a_0
-      b_new = props%b_0
+      if( N_new .gt. props%N_I) then
+        b_new = one/sqrt(pi*N_new)
+      else
+        b_new = props%b_0
+      endif  
       V_new = props%V_0  
 c
       return
-      end   subroutine mm04_cavit_update_linear         
+      end subroutine mm04_cavit_update_linear         
 c
 c    ****************************************************************
 c    *                                                              *
@@ -1216,6 +1551,7 @@ c    *             last modified:  11/20/2014 rhd                   *
 c    *                              3/10/2015 kbc (VVNT, qmod)      *
 c    *                              7/21/2-15 rhd (error check for  *
 c    *                                a < a_0 )                     *
+c    *                              4/20/2016 kbc (nucleation)      *
 c    *                                                              *
 c    ****************************************************************
 c
@@ -1225,8 +1561,8 @@ c
 #sgl      real, parameter ::
      & local_tol_a_0 = 0.90d0
 c
-c             step 1: compute f, then q(f), then c1.
-c                     c_0, c_1, c_2. these routines will be inlined
+c             step 1: compute f, then q(f), then c1, c0
+c                     these routines will be inlined
 c                     use contains subs for simplicity in running 
 c                     algorithm
 c
@@ -1234,43 +1570,15 @@ c
 c
       call mm04_cavit_c1
       call mm04_cavit_c0
-      call mm04_cavit_c2
+      
+c             step 2: update normal traction T. simple linear solve            
+c                     store updated normal traction and normal
+c                     direction stiffness.      
 c      
       delta_c_dot = delrlds(i,3) / dtime 
-c      
-      if( debug_span_loop ) then
-           write(iout,9210) delta_c_dot, ratio_1
-           if( sigma_e .gt. toler ) 
-     &        write(iout,9215) Lnr, ratio_2, term1, props%v2dot_term2,
-     &                         term3, pm,
-     &                         fraction, v2_dot
-           write(iout,9220) S, nucleation_active, c_0, c_1, c_2
-      end if            
-c
-c             step 2: update normal traction T. simple linear solve
-c                     (c_2 = 0) or with Newton iteration (c_2 > 0)            
-c                     store updated normal traction and normal
-c                     direction stiffness.
-c
-      iterative_solve = c_2 .gt. zero
-      if( iterative_solve ) then
-         call mm04_cavit_newton( iout, c_2, c_1, c_0, trac_n(i,3),
-     &                           delta_c_dot, delta_T, dtime, 
-     &                           props%Sigma_0, converged,
-     &                           debug_newton, iter_count )
-         if( .not. converged ) then
-            write(iout,9800) abs_elem, gpn, c_0, c_1, c_2,
-     &                       delta_c_dot, dtime, props%Sigma_0   
-            call die_abort
-         end if
-         T_new = trac_n(i,3) + delta_T
-         if( debug_span_loop ) write(iout,9230) delta_T, T_new, 
-     &                                          iter_count
-      end if
-      if( .not. iterative_solve ) then
-         T_new = ( delta_c_dot - c_0 ) / c_1      
-         if( debug_span_loop ) write(iout,9232) T_new
-      end if   
+      T_new = ( delta_c_dot - c_0 ) / c_1  
+      stiff_normal = one / (dtime*c_1 )   
+c             
 c
 c             step 3: update remaining internal state variables and
 c                     update the history vector (see top of mm04)
@@ -1282,9 +1590,55 @@ c                     an inconsistent state.
 c 
       V1_dot = four * pi * props%D * T_new / q_factor
       V_new  = V_n + dtime * (v1_dot + v2_dot)
-      a_new  = a_n + dtime*(v1_dot + v2_dot) / 
-     &      ( four * pi * a_n**2 * props%hpsi )
-c     
+c
+c     determine if cavities are actively nucleating
+c
+      nucleation_active = .false.
+      if( include_nucleation) then
+        S   = zero
+        if( T_new .gt. zero ) then
+            S = c_strain * ( T_new / props%Sigma_0 )**props%beta_nuc
+        end if  
+        nucleation_active = ((S .gt. props%Sthr .and. 
+     &                    N_n .lt. props%N_max ) .and. 
+     &                    a_n / b_n .lt. max_ab_ratio ) 
+      endif   
+      if( nucleation_active) then     
+        N_dot = props%F_N * d_strain*
+     &                     (T_new/props%Sigma_0)**props%beta_nuc
+        N_new = N_n  +  N_dot * dtime
+        if( N_new > props%N_max) N_new = props%N_max
+        b_new = one/sqrt(pi*N_new)
+        if (small_new_cavities) then 
+            a_new = a_n + dtime*(v1_dot + v2_dot) / 
+     &            ( four * pi * a_n**2 * props%hpsi ) -
+     &            ( a_n**3 - (props%a_0)**3)/(3*a_n*a_n)*N_dot/N_n
+        else
+            a_new = a_n + dtime*(v1_dot + v2_dot) / 
+     &            ( four * pi * a_n**2 * props%hpsi )  
+        endif      
+c     grow cavities if nucleation has occurred (or not included)            
+      elseif( cavities_nucleated_t0 .or. N_new .gt. props%N_I) then
+        N_new = N_n
+        b_new = b_n
+        a_new = a_n + dtime*(v1_dot + v2_dot) / 
+     &          ( four * pi * a_n**2 * props%hpsi )
+      else  ! cavities not yet nucleated
+        N_new = N_n
+        b_new = b_n 
+        a_new = a_n        
+      endif   
+c   
+      if( debug_span_loop ) then
+           write(iout,9210) delta_c_dot, ratio_1
+           if( sigma_e .gt. toler ) 
+     &        write(iout,9215) Lnr, ratio_2, term1, props%v2dot_term2,
+     &                         term3, pm,
+     &                         triax, v2_dot
+           write(iout,9220) S, nucleation_active, c_0, c_1 
+           write(iout,9232) T_new 
+      end if     
+c        
       switch_to_linear = .false.
       if( a_new .lt. props%a_0 ) then
         switch_to_linear = .true.
@@ -1293,7 +1647,7 @@ c
         write(iout,9300) felem+i-1, gpn
         write(iout,9310) reladis(i,3), delrlds(i,3),
      &                   opening, closing, neutral, penetrated    
-        write(iout,9315) c_0, c_1, c_2, delta_c_dot, T_new, a_n  
+        write(iout,9315) c_0, c_1, delta_c_dot, T_new, a_n  
         write(iout,9320) v1_dot, v2_dot, V_new, a_new
         write(iout,9330)
         return
@@ -1304,22 +1658,10 @@ c                     on a_new. the stress/state variable updating
 c                     with finite load/time increments would otherwise
 c                     allow a_new to exceed b_new.
 c
-      N_new = N_n
-      b_new = b_n
-c
-      N_dot = zero
-      nucleation_active = nucleation_active .and. T_new .gt. zero
-      if( nucleation_active .and. include_nucleation ) then
-        N_dot = props%F_N * d_strain * (T_new/props%Sigma_0)**2
-        N_new = N_n  +  N_dot * dtime
-        b_new = b_n - half * b_n * N_dot / N_new 
-      end if 
-c
       if( a_new / b_new .gt. max_ab_ratio ) then
         a_new = max_ab_ratio * b_new 
       end if  
-c      
-      stiff_normal = one / (dtime*(c_1 + two * c_2 * T_new ))
+c
       new_state    = 1
 c      
       if( debug_span_loop ) write(iout,9240) v1_dot, V_new, a_new,     
@@ -1330,10 +1672,10 @@ c
       
 9210  format(15x, "delta_c_dot, ratio_1:             ",2e14.5 )
 9215  format(15x, "Lnr, ratio_2, term1:              ",3e14.5,
-     &    /,15x,  "term2, term3, pm, fraction, v2_dot: ",
+     &    /,15x,  "term2, term3, pm, triax, v2_dot: ",
      &    2e14.5,f4.1,2e14.5 )
 9220  format(15x, "S, nuc active:                    ",e14.5, 5x, l1,
-     &    /,15x,  "c_0, c_1, c_2:                    " 3e14.5 )
+     &    /,15x,  "c_0, c_1:                         " 2e14.5 )
 9230  format(15x, "delta_T, T_(n+1), Newton iters:   ",2e14.5,i5 )
 9232  format(15x, "linear solve, T_(n+1):            ",e14.5)
 9240  format(15x, "v1_dot, V_new:                    ",2e14.5,
@@ -1344,7 +1686,7 @@ c
 9300  format(15x,'element, gpn: ', i7, i2)
 9310  format(15x,'reladis(,3) @ n+1, delrdis(,3) n->n+1: ',2e14.5, 
      &    /,15x,'opening, closing, neutral, penetrated: ',4l2)
-9315  format(15x,'c_0, c_1, c_2: ',3e14.5, 
+9315  format(15x,'c_0, c_1: ',2e14.5, 
      &    /,15x,'delta_c_dot, T_new, a_n: ',3e14.5)
 9320  format(15x, "v1_dot, v2_dot, V_new, a_new:     ",4e14.5)
 9330  format(15x, "switch to linear stiffness path")
@@ -1353,7 +1695,7 @@ c
      & /,    '                  iterations in mm04_nr_itr did not',
      & /,    '                  converge. ',
      & /,15x,"element, gpn:                     " i6,i5,
-     & /,15x,"c_0, c_1, c_2:                    " 3e14.5,
+     & /,15x,"c_0, c_1:                    " 2e14.5,
      & /,15x,"delta_c_dot, dtime:               ",2e14.5,
      & /,15x,"Sigma_0:                          ",e14.5,
      & /,    "                  job terminated.", // )
@@ -1391,27 +1733,28 @@ c
       if( sigma_e .gt. toler ) then ! ok to compute v2_dot
 c      
         term3   = two * pi * d_strain * a_n**3 * props%hpsi
-        pm      = one
-        beta_signed = props%beta
         if( sigma_m .lt. zero ) then 
           pm = -one
           beta_signed = (props%n_pow - one) * 
      &                  (props%n_pow + 0.4031d00)/ props%n_pow**2
+        else
+          pm      = one
+          beta_signed = props%beta_vol     
         endif
 c        
-        fraction = sigma_m / sigma_e 
+        triax = sigma_m / sigma_e 
         v_h_term = one/(one-(0.87d0*a_n/b_n)**(three/props%n_pow))
 c        
-        if( abs(fraction) .gt. one ) then
-          v2_dot_L = pm * term3 * ( props%v2dot_term2*abs(fraction)
+        if( abs(triax) .gt. one ) then
+          v2_dot_L = pm * term3 * ( props%v2dot_term2*abs(triax)
      &             + beta_signed )**props%n_pow
           v2_dot_H = pm * term3 * 
-     &               (v_h_term*(props%v2dot_term2*abs(fraction)
+     &               (v_h_term*(props%v2dot_term2*abs(triax)
      &                 + pm/props%n_pow))**props%n_pow
         else
-          v2_dot_L = fraction * term3 * 
+          v2_dot_L = triax * term3 * 
      &             (props%v2dot_term2+ beta_signed )**props%n_pow
-          v2_dot_H = fraction * term3 * 
+          v2_dot_H = triax* term3 * 
      &               (v_h_term*(props%v2dot_term2 + 
      &                pm/props%n_pow))**props%n_pow
         end if
@@ -1453,7 +1796,7 @@ c    ****************************************************************
 c    *                                                              *
 c    *          subroutines: mm04_cavit_qfactor                     *
 c    *                                                              *
-c    *             last modified:  2/25/2015 kbc                    *
+c    *             last modified:  4/20/2016 kbc (changed f_bar_i,j *
 c    *                                                              *
 c    ****************************************************************
 c
@@ -1477,10 +1820,23 @@ c     local parameters
      & f_bar_i, f_bar_j, q_i,dq_i, q_j, dq_j,
      & del, N1, M1, N2, M2,
      & q_min
+c
+c              these are values Kristine developed in April 2016
+c              to accelerate failure from cavity growth at
+c              larger (a/b)**2 values.
+c
+c              values used in all earlier computations were:
+c              f_bar_i = 0.25, f_bar_j = 0.49
+c
+c              these new values accelerate deformations by reducing
+c              the normal traction at larger (a/b)**2
 c     
       q_min   = 0.001d0
-      f_bar_i = 0.25d0
-      f_bar_j = 0.49d0
+      f_bar_i = 0.25d0 ! stanrdard values before Kristine's nuc model 0.15d0
+      f_bar_j = 0.49d0 !   "                 "
+c      f_bar_i = 0.15d0 ! Kristine's recommendaed values. may 5, 2016
+c      f_bar_j = 0.49d0 !    "            "
+
 c
       q_i = log(one/f_bar_i) - half*(three-f_bar_i)*(one-f_bar_i)
       dq_i = (two - f_bar_i) - one/f_bar_i
@@ -1532,7 +1888,7 @@ c
 c
 c    ****************************************************************
 c    *                                                              *
-c    *          subroutines: mm04_cavit_c0, c1, c2                  *
+c    *          subroutines: mm04_cavit_c0, c1                      *
 c    *                                                              *
 c    *             last modified:  3/20/2015 kbc                    *
 c    *                                                              *
@@ -1564,13 +1920,13 @@ c
         term3   = two * pi * d_strain * a_n**3 * props%hpsi
         pm      = one
         if( sigma_m .lt. zero ) pm = -one
-        fraction = sigma_m / sigma_e 
-        if( abs(fraction) .gt. one ) then
-          v2_dot = pm * term3 * ( props%v2dot_term2*abs(fraction)
-     &           + props%beta )**props%n_pow
+        triax = sigma_m / sigma_e 
+        if( abs(triax) .gt. one ) then
+          v2_dot = pm * term3 * ( props%v2dot_term2*abs(triax)
+     &           + props%beta_vol )**props%n_pow
         else
-          v2_dot = term3 * fraction * 
-     &          ( props%v2dot_term2 + props%beta )**props%n_pow
+          v2_dot = term3 * triax * 
+     &          ( props%v2dot_term2 + props%beta_vol )**props%n_pow
         end if
       end if
 c      
@@ -1588,22 +1944,6 @@ c
       return
       end subroutine mm04_cavit_c1  
 c
-      subroutine mm04_cavit_c2
-      implicit none
-c
-c                     non-zero only if active nucleation
-c
-      c_2 = zero
-      S   = zero
-      if( T_n .gt. zero ) S = c_strain * ( T_n / props%Sigma_0 )**2
-      nucleation_active = S .gt. props%Sthr .and. 
-     &                    N_n .lt. props%N_max    
-      if( nucleation_active .and. include_nucleation ) 
-     &   c_2 = V_n * props%F_N * d_strain /
-     &       ( pi * b_n**2 * N_n * props%Sigma_0**2 )
-c     
-      return 
-      end subroutine mm04_cavit_c2  
 c      
 c    ****************************************************************
 c    *                                                              *
@@ -1629,7 +1969,7 @@ c
       return
       end  subroutine mm04_cavit_linear_stiff      
       
-      end subroutine mm04_cavit_sig_update
+      end subroutine mm04_cavit_sig_update  ! note .......
 c
 c    ****************************************************************
 c    *                                                              *
@@ -1640,16 +1980,14 @@ c    *                                                              *
 c    ****************************************************************
 c
 c
-#dbl      double precision
-#sgl      real
-     & function mm04_cavit_mises( sig )
+#dbl      double precision function mm04_cavit_mises( sig )
+#sgl      real function mm04_cavit_mises( sig )
        implicit none
 c
 c             parameters
 c
-#dbl      double precision ::
-#sgl      real ::
-     &  sig(6)
+#dbl      double precision :: sig(6)
+#sgl      real :: sig(6)
 c
 c             locals
 c
@@ -1872,6 +2210,8 @@ c             load for all options.
 c
 c             row 1 of intfprps no longer used. just caused confusion
 c
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
            intfprps(i,2)  =  props(7,i)
            intfprps(i,3)  =  props(8,i)
@@ -1904,6 +2244,8 @@ c             type of coehsive material option.
 c             should not get her unless same but check.
 c
       bad = .false.
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
        if( iprops(27,i) .ne. cohes_type ) then
           write(iout,9200) first_elem_in_blk + i - 1
@@ -1921,6 +2263,8 @@ c
 c             set up for ppr formulation.
 c
       if( is_ppr ) then
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
          do i = 1, span
            intfprps(i,23) =  props(35,i)
            intfprps(i,24) =  props(36,i)
@@ -1947,6 +2291,8 @@ c              get global to interface element local rotation
 c              matrix and put in intfprops for mm04 to use
 c              if needed
 c
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
            intfprps(i,51) = global_to_element_rot(i,1,1)
            intfprps(i,52) = global_to_element_rot(i,2,1)
@@ -2069,6 +2415,7 @@ c         see also file cnst4.f
 c
       local_debug = .false.
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
         if( elem_killed(i) ) cycle
         d_eff_at_peak   = intfprps(i,11)
@@ -2140,6 +2487,7 @@ c
 c
 c                update history
 c
+@!DIR$ LOOP COUNT MAX=###
        do k = 1, span
          if( elem_killed(k) ) cycle
          history1(k,1) = effdis(k)
@@ -2182,8 +2530,7 @@ c
      &        deln, delt, deln_max, delt_max, Tn, Tt, dTn, zero, tol,
      &        dtol, one, two, Dtt, Dnn, comp_multiplier
       logical :: compression
-      data zero, one, two, tol
-     & / 0.0d00, 1.0d00, 2.0d00, 0.00001d00 /
+      data zero, one, two, tol / 0.0d00, 1.0d00, 2.0d00, 0.00001d00 /
 c
 c              regular (nonlinear) stress updating
 c              -----------------------------------
@@ -2511,7 +2858,7 @@ c
 c        set infor_data
 c
 c         1        number of history values per integration
-c                  point. Abaqus calles these "statev". Values
+c                  point. Abaqus calls these "statev". Values
 c                  double or single precsion based on hardware.
 c
 c         2        number of values in the symmetric part of the
@@ -3712,7 +4059,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *        material model # 4 --  cohesive material model        *
 c     *                                                              *
-c     *                   last modified : 10/25/2015 rhd             *
+c     *                   last modified : 4/15/2016 rhd              *
 c     *                                                              *
 c     *      linear constituitive  matrices [D_L] block of           *
 c     *      interface-cohesive elements                             *
@@ -3862,6 +4209,7 @@ c                                    mixed mode loading
 c
 c               (1,1) = (2,2) sets isotropic shear-sliding stiff. * cep
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
         cep(i,1,1) = e * intfprps(i,5)/intfprps(i,11)  *
      &                   intfprps(i,12)**2
@@ -3895,7 +4243,7 @@ c             Option 7: cavitation-based cohesive model.
 c             Ref. JMPS. 1998;47:99–139
 c
       call lcnst4_cavit( span, cep, dtime, intfprps,
-     &                   iout, mxvl, nstr, gpn )
+     &                   iout, mxvl, nstr, gpn, felem )
 c
 c
       case default
@@ -3975,6 +4323,7 @@ c            the shear-sliding response is set to be isotropic
 c            (1,1) = (2,2). cep zeroed by caller. note that the linear
 c            [D] is diagonal.
 c
+@!DIR$ LOOP COUNT MAX=###
       do i = 1, span
         alph  = ppr_support(i,6)
         beta  = ppr_support(i,7)
@@ -4003,7 +4352,7 @@ c    *                                                              *
 c    *               subroutine lcnst4_cavit                        *
 c    *                                                              *
 c    *                    written by rhd                            *
-c    *                    last modified: 10/25/2015 rhd             *
+c    *                    last modified: 4/15/2016 rhd              *
 c    *                                                              *
 c    *     computes the linear [D] (diagonal)                       *
 c    *     for a  block of interface-cohesive                       *
@@ -4015,72 +4364,511 @@ c    ****************************************************************
 c
 
       subroutine lcnst4_cavit( span, cep, dtime, intfprps, 
-     &                             iout, mxvl, nstr, gpn )
+     &                         iout, mxvl, nstr, gpn, felem )
+c     
+      use mod_mm04_cavity, only : props_for_cavit
+c      
       implicit none
 c
 c             parameters
 c
-      integer :: span, mxvl, nstr, iout, gpn
+      integer :: span, mxvl, nstr, iout, gpn, felem
 #dbl      double precision ::
 #sgl      real ::
      & cep(mxvl,6,6), dtime, intfprps(mxvl,*)
 c     
-c             locals - includes the defined type for cavity properties
-c             that simplifies managing a large number of scalar values.
+c             locals
 c
-c             * change all other occurrences in 
-c             * warp3d of the type def (mm04.f)
-c
-      integer :: i
-      logical :: here_debug
+      integer :: i, abs_elem
+      logical :: here_debug, debug_set_props
 #dbl      double precision ::
 #sgl      real ::
-     & three, one, half, four, stiff_shear, stiff_normal,
-     & f_0, q  
+     & three, one, half, four, stiff_shear, stiff_normal, f_0, q  
 c
-      type :: props_for_cavit  ! multiple instances here, cnst4.f
-        double precision
-     &    eta_b, Sigma_0, D, a_0, b_0, V_0, N_I, F_N,     
-     &    n_pow, N_max, psi_angle_radians, psi_angle_degrees, hpsi,
-     &    compression_mult, Sthr, beta, v2dot_term2
-      end type
-      type( props_for_cavit) :: props
+      type( props_for_cavit), dimension(:) :: bcp(mxvl)
 c
-      data one, three, half, four
-     & / 1.0d0, 3.0d0, 0.5d0, 4.0d0 /   
+      data one, three, half, four / 1.0d0, 3.0d0, 0.5d0, 4.0d0 /   
 c
 c            get properties for the cavity cohesive material.
-c            all interface elements in block have same properties.
 c            use derivatives evaluated for zero stress and zero
 c            rates but with \Delta_t at t=0 known.
 c
+      here_debug = gpn .eq. 4
       here_debug = .false.
-      call mm04_cavit_set_props( intfprps, mxvl, props, iout,
-     &                           here_debug  )
-      if( here_debug ) then
-          write(iout,*) "... props%a_0: ", props%a_0 
-          write(iout,*) "... props%b_0: ", props%b_0 
-          write(iout,*) "... props%D: ", props%D
-          write(iout,*) "... dtime: ", dtime 
-      end if    
-c      
-      f_0 = (props%a_0 / props%b_0)**2
-      q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
-      stiff_normal = props%b_0**2 * q / ( four * props%D * dtime )
-      stiff_shear  = props%eta_b / dtime
-c
-      if( here_debug ) then
-          write(iout,*) "... f_0: ", f_0
-          write(iout,*) "... q: ", q
-          write(iout,*) "... stiff_normal: ", stiff_normal
-          write(iout,*) "... stiff_shear: ",stiff_shear 
-      end if    
-c
+      debug_set_props = .false.
+      call mm04_cavit_set_props( intfprps, mxvl, span, felem, gpn,
+     &                           bcp, iout, debug_set_props )
+c  
+@!DIR$ LOOP COUNT MAX=###
+@!DIR$ IVDEP      
       do i = 1, span
+         f_0 = (bcp(i)%a_0 / bcp(i)%b_0)**2
+         q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
+         stiff_normal = bcp(i)%b_0**2 * q / ( four * bcp(i)%D * dtime )
+         stiff_shear  = bcp(i)%eta_b / dtime
+c     
          cep(i,1,1) = stiff_shear 
          cep(i,2,2) = stiff_shear 
          cep(i,3,3) = stiff_normal
       end do  
+c      
+      if( .not. here_debug ) return
+c
+@!DIR$ LOOP COUNT MAX=###
+      do i = 1, span
+         abs_elem = felem + i - 1
+         f_0 = (bcp(i)%a_0 / bcp(i)%b_0)**2
+         q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
+         stiff_normal = bcp(i)%b_0**2 * q / ( four * bcp(i)%D * dtime )
+         stiff_shear  = bcp(i)%eta_b / dtime
+         write(iout,*) "    element: ", abs_elem
+         write(iout,*) "... a_0: ", bcp(i)%a_0 
+         write(iout,*) "... b_0: ", bcp(i)%b_0 
+         write(iout,*) "... D: ", bcp(i)%D
+         write(iout,*) "... dtime: ", dtime 
+         write(iout,*) "... f_0: ", f_0
+         write(iout,*) "... q: ", q
+         write(iout,*) "... stiff_normal: ", stiff_normal
+         write(iout,*) "... stiff_shear: ",stiff_shear 
+      end do  
+     
 C      
       return
       end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                subroutine uexternaldb_mm04_cavity            *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 4/16/2016 rhd              *
+c     *                                                              *
+c     *    called by wmpi_do_uexternaldb on both threads only        *
+c     *    and threads+mpi.  wmpi_do_uexternaldb located in          *
+c     *    directory linux_packages/source/mpi_code_dir              *
+c     *    files: mpi_code_dummy.f and mpi_code_real.f               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine uexternaldb_mm04_cavity( lop, lrestart, gtime, gdtime,
+     &                                    kstep, kinc )
+c
+      use mod_mm04_cavity
+c      
+      implicit none
+c
+c      Recall that Abaqus 'step" is == 1 in WARP3D. Abaqus
+c      "increment" is the WARP3D load (time) step number.
+c
+c     lop  indicates that the subroutine is being called
+c       = 0 at the start of the analysis.
+c       = 1 at the start of the current analysis increment.
+c         the subroutine can be called multiple times at the beginning
+c         of an analysis increment if the increment fails to converge
+c         and a smaller time increment is required.
+c       = 2 at the end of the current analysis increment.
+c         when lop=2, all information that you need to restart the
+c         analysis should be written to external files.
+c       = 3 at the end of the analysis.
+c       = 4 at the beginning of a restart analysis.
+c         when lop=4, all necessary external files should be opened
+c         and properly positioned and all information required for
+c         the restart should be read from the external files.
+c
+c     lrestart
+c       = 0 indicates that an analysis restart file is not being
+c         written for this increment.
+c       = 1 indicates that an analysis restart file is being written
+c         for this increment.
+c       = 2 indicates that an analysis restart file is being written
+c         for this increment and that only one increment is being
+c         retained per step so that the current increment overwrites
+c         the previous increment in the restart file
+c
+c     time(1) = value of current (simulation) step time
+c     time(2) = value of current (simulation) total time
+c               time(1) = time(2) in WARP3D since there is only 1
+c               Abaqus 'step"
+c
+c     dtime = (simulation) time increment (step ime increment in
+c             WARP3D)
+c
+c     kstep = 1 for WARP3D
+c
+c     kinc = current increment number. when lop=4,
+c            kinc gives the restart increment number.
+c            kinc is the WARP3D step number. kinc = 1 is
+c            1st simulation step
+c
+c
+      integer :: lop, lrestart, kstep, kinc
+      double precision :: gtime(2), gdtime
+c
+c              local variables
+c
+      integer :: diskin, kout, read_flg, ie, igb, elem, 
+     &           i, j, nowline, nlines_read, gb_num
+      double precision :: zero, 
+     &                    a_0, b_0, eta_b, diffusion,
+     &                    n_power, psi_angle, sigma_0, f_n, n_max, 
+     &                    nuc_stress_power, comp_mult
+c        
+      logical :: process_now, debug_local, ok, ok1, ok2, ok3,
+     &           messages, logs(10)
+      character :: gb_data_file_name*100, work_str*200,
+     &             uexternal_file_name*100, marker*2, asterik*1
+      integer, external :: warp3d_get_device_number
+c
+      data zero / 0.0d00 /
+c
+      call iodevn( i, kout, j, 1 )  ! just to get kout
+      debug_local = .false.
+      messages    = .true.
+      if( debug_local ) then
+        write(kout,9000) lop, lrestart, gtime(1), gtime(2),
+     &                      gdtime, kstep, kinc
+      end if
+c
+      process_now = ( lop == 0 ) .or. ( lop == 4 )
+      if( .not. process_now ) return
+c
+c              1.   assign/open built-in name of data file created by
+c                   user to set up the ANL-cavity solution. initialize
+c                   key variables.
+c
+c                   This known file name file contains 1 line with
+c                   the name of the GB data file for use with this
+c                   simulation.
+c
+      gb_ext_data_present = .true.
+      uexternal_file_name(1:) = "uexternal_cavity_data.inp"
+      inquire( file = uexternal_file_name, exist = ok )
+      if( .not. ok ) then
+        gb_ext_data_present =.false.
+        return
+      end if
+c
+      if( messages )  write(kout,8900)
+      diskin = warp3d_get_device_number()
+      if( diskin .lt. 0 ) then
+        write(kout,9200)
+        call die_abort
+      end if
+      open( unit=diskin, file=uexternal_file_name,
+     &      status='old', access='sequential',form='formatted' )
+c
+      nowline = 0
+c
+c              2.   skip comment lines. 
+c                   read name of GB data file. verify it exists.
+c                   process ~ if included in file name
+c
+      call uexternaldb_mm04_cavity_a( diskin, nowline, kout ) 
+      read(diskin,*,iostat=read_flg) gb_data_file_name
+      nowline = nowline + 1
+      if( read_flg .ne. 0 ) then
+           write(kout,9310) read_flg, nowline
+           call die_abort
+      end if
+      close( unit = diskin )
+c
+      call tilde( gb_data_file_name, work_str, ok )
+      if( (.not. ok) .or. len_trim(work_str) .gt. 100 ) then
+          write(kout,9300) gb_data_file_name(1:80)
+          call die_abort
+      end if
+      gb_data_file_name(1:80) = trim( adjustl( work_str ) )
+
+      inquire( file = gb_data_file_name, exist = ok )
+      if( .not. ok ) then
+        write(kout,9210) trim(gb_data_file_name(1:))
+        gb_ext_data_present = .false.
+        return
+      end if
+c
+c              3.   file with GB data and cavity-cohesive properties 
+c                   exists. open file and start reading data
+c
+      open( unit=diskin, file=gb_data_file_name,
+     &      status='old', access='sequential',form='formatted' )
+      if( messages ) write(kout,9405) gb_data_file_name
+      nowline = 0
+c
+c              4.   skip comment lines. first real data line
+c                   has: number model elements, number of interface-
+c                   coheives elements, number of GBs
+c
+      call uexternaldb_mm04_cavity_a( diskin, nowline, kout ) 
+      read(diskin,*,iostat=read_flg) num_elements, num_gb_elements,
+     &                               num_gbs
+      nowline = nowline + 1
+      if( read_flg .ne. 0 ) then
+           write(kout,9310) read_flg, nowline
+           call die_abort
+      end if
+      if( messages ) write(kout,9410) num_elements, num_gb_elements,
+     &                                   num_gbs
+c
+c              5.   allocate data structures in the user module. read
+c                   integer pairs that map interface element numbers
+c                   to GB numbers.
+c 
+c                   put large negative value for non-interface elements
+c                   as a marker that can trap errors if map vector is
+c                   misused 
+c
+      allocate( element_to_GB_map(num_elements) )
+      allocate( gb_properties(num_gbs) )
+      element_to_GB_map = -9999999
+      if( messages ) write(kout,9415)
+c
+      do elem = 1, num_gb_elements 
+        call uexternaldb_mm04_cavity_a( diskin, nowline, kout ) 
+        read(diskin,*,iostat=read_flg) ie, igb ! intface ele, gb no
+        nowline = nowline + 1
+        if( read_flg .ne. 0 ) then
+           write(kout,9310) read_flg, nowline
+           call die_abort
+        end if
+        ok1 = ie <= num_elements .and. ie > 0
+        ok2 = igb <= num_gbs .and. igb > 0 
+        if( ok1 .and. ok2 ) then
+          element_to_GB_map(ie) = igb
+        else
+          write(kout,9425) ie, igb, nowline
+          call die_abort
+        end if
+      end do ! over num_gb_elements  
+      if( messages )  write(kout,9420)
+c      
+c              6.   for sanity check, we require the next non-comment
+c                   data line to be a special "mark" -- a line that has
+c                   an ** in cols 1-2. otherwise data file is out of
+c                   sequence 
+c
+      call uexternaldb_mm04_cavity_a( diskin, nowline, kout ) 
+      read(diskin,8910,iostat=read_flg) marker ! should ** cols 1-2
+      nowline = nowline + 1
+      if( read_flg .ne. 0 ) then
+         write(kout,9310) read_flg, nowline
+         call die_abort
+      end if
+      if( marker(1:2) .ne. '**' ) then
+         write(kout,9430) nowline
+         call die_abort
+      end if
+c      
+c              7.   read/store in module material properties/flags
+c                   for each GB. Values are
+c                    (1) GB number
+c                    (2) degrade shear viscosity (T or F)
+c                    (3) use VNNT equations (T or F)
+c                    (4) modify the q-value (T or F)
+c                    (5) include nucleation (T or F)
+c                    (6) include cavity growth (T or F)
+c                    (7) compute traction normal to  (T or F)
+c                        interface from average of stresses
+c                        in solid elements attached to interface
+c                        element
+c                    (8) a_0
+c                    (9) b_0
+c                   (10) eta_b
+c                   (11) D
+c                   (12) n
+c                   (13) psi_angle (degrees)
+c                   (14) sigma_0
+c                   (15) F_N
+c                   (16) N_max
+c                   (17) nucleation stress exponent
+c                   (18) compression multiplier
+c                   (19) a single * to mark end of GB data for sanity
+c                        checks
+c           
+c
+      do igb = 1, num_gbs
+        call uexternaldb_mm04_cavity_a( diskin, nowline, kout ) 
+        read(diskin,*,iostat=read_flg) gb_num, logs(1:6),
+     &       a_0, b_0, eta_b, diffusion, n_power, psi_angle,
+     &       sigma_0, f_n, n_max, nuc_stress_power,
+     &       comp_mult, asterik
+        nowline = nowline + 1
+        if( read_flg .ne. 0 ) then
+           write(kout,9310) read_flg, nowline
+           call die_abort
+        end if
+        if( gb_num .ne. igb ) then
+           write(kout,9440) igb, nowline
+           call die_abort
+        end if
+        if( asterik .ne. "*" ) then
+           write(kout,9450) nowline
+           call die_abort
+        end if   
+        gb_properties(igb)%degrade_shear_viscosity = logs(1)
+        gb_properties(igb)%use_VNNT                = logs(2)
+        gb_properties(igb)%modify_q                = logs(3)
+        gb_properties(igb)%include_nucleation      = logs(4)
+        gb_properties(igb)%include_cavity_growth   = logs(5)
+        gb_properties(igb)%compute_traction_solids = logs(6)
+        gb_properties(igb)%a_0                    = a_0
+        gb_properties(igb)%b_0                    = b_0
+        gb_properties(igb)%eta_b                  = eta_b
+        gb_properties(igb)%diffusion              = diffusion
+        gb_properties(igb)%n_power                = n_power
+        gb_properties(igb)%psi_angle              = psi_angle
+        gb_properties(igb)%sigma_0                = sigma_0
+        gb_properties(igb)%f_n                    = f_n
+        gb_properties(igb)%n_max                  = n_max
+        gb_properties(igb)%nuc_stress_exponent    = nuc_stress_power
+        gb_properties(igb)%compression_multiplier = comp_mult
+      end do ! over GBs
+c      
+c              8.   for sanity check, we require the next non-comment
+c                   data line to be a special "mark" -- a line that has
+c                   an ** in cols 1-2. otherwise data file is out of
+c                   sequence 
+c
+      call uexternaldb_mm04_cavity_a( diskin, nowline, kout ) 
+      read(diskin,8910,iostat=read_flg) marker ! should ** cols 1-2
+      nowline = nowline + 1
+      if( read_flg .ne. 0 ) then
+         write(kout,9310) read_flg, nowline
+         call die_abort
+      end if
+      if( marker(1:2) .ne. '**' ) then
+         write(kout,9430) nowline
+         call die_abort
+      end if
+c      
+c              9.   close GB data file. we're done     
+c
+      if( messages ) write(kout,9460)
+      close( unit = diskin )
+      return
+c
+ 8900 format(/,">>> Running ANL-Cavity uexternaldb routine ...")
+ 8910 format(a2)
+ 9000 format(/,
+     & /,10x,"lop, lrestart: ",2i3,
+     & /,10x,"time(1),(2): ",2e16.6,2x,"dtime: ",e16.6,
+     & /,10x,"kstep, kinc: ",2i3,//)
+ 9060 format( 5x,"... completed reading file: ",a )
+ 9100 format( a )
+ 9200 format(/,'>>>>> FATAL ERROR: in uexternaldb for ANL-Cavity. No',
+     & ' available device numbers',/,
+     &         '                   job aborted.'//)
+ 9208 format(/,'>>>> Error: file: ',a,
+     & /,11x,' does not exist. No ANL-Cavity solution possible...'//)
+ 9210 format(/,'>>>> Error: file for GB data: ',a,
+     & /,11x,' does not exist. No ANL-Cavity solution possible...'//)
+ 9300 format(/,'>>>> FATAL ERROR: replacement of ~/ in file name',
+     & /,18x,'failed',/,
+     & /,18x,'name: ',a100,/
+     & /,18x,'expanded file name may be too long',
+     &         '                  job aborted.')
+     
+ 9310 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL-Cavity',
+     & /,18x,
+     & 'error in reading GB data file. Fortran I/O error:       ',i10,
+     & /,18x,'at or very near data file line:                   ',i10,
+     & /,18x,'job aborted.'//)
+ 9400 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL cavity',
+     & /,18x,
+     & 'incremental time is <= 1.0d-03 : 'e14.6,
+     & /,18x,'job aborted.'//)
+ 9405 format(3x,"... GB data file opened: ",a )
+ 9410 format(3x,"... number of model elements:      ",i10,
+     &/,   3x,    "... number of inter-face elements: ",i10,
+     &/,   3x,    "... number of model GBs:           ",i10 )
+ 9415 format(/,3x,"... GB and element data allocated" )
+ 9420 format(3x,"... interface element -> GB number map read" )
+ 9425 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL-Cavity',
+     & /,18x,
+     & 'invalid interface element - GB number pair in input: ',2i10,
+     & /,18x,'at or very near data file line:                ',i10,
+     & /,18x,'job aborted.'//)
+ 9430 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL-Cavity',
+     & /,18x,
+     & 'expecting a marker line with ** in cols 1-2',
+     & /,18x,'at or very near data file line:                ',i10,
+     & /,18x,'job aborted.'//)
+ 9440 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL-Cavity',
+     & /,18x,
+     & 'expecting data for GB:                               ',i10,
+     & /,18x,'at or very near data file line:                ',i10,
+     & /,18x,'job aborted.'//)
+ 9450 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL-Cavity',
+     & /,18x,
+     & 'expecting * marker at eol for GB data',
+     & /,18x,'at or very near data file line:                ',i10,
+     & /,18x,'job aborted.'//)
+ 9460 format(3x,"... GB properties read. file closed" )
+
+c
+      contains
+c     ========
+
+c     ****************************************************************
+c     *                                                              *
+c     *           subroutine uexternaldb_m04_cavity_a                *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 4/16/2016 rhd              *
+c     *                                                              *
+c     *          skip comment lines in cavity data file              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine uexternaldb_mm04_cavity_a( fileno, nowline, kout )
+      implicit none
+c
+      integer  :: fileno, nowline, kout
+c
+c               local variables
+c               ---------------
+c
+      logical :: blank_line
+      integer :: read_flg, i
+      character :: line*40, first_char*1
+c
+c                skip any comment and blank lines
+c                (c, C, #, ! in col 1 or line wit cols 1-4 blank)
+c
+      do
+        nowline = nowline + 1
+        read(fileno,9100,iostat=read_flg) line
+        if( read_flg .ne. 0 ) then
+           write(kout,9220) nowline
+           call die_abort
+        end if
+        first_char = line(1:1)
+        blank_line = .true.
+        do i = 1, 40
+          if( line(i:i) .ne. ' ' ) then
+              blank_line = .false.
+              exit
+          end if
+        end do
+        if( blank_line ) cycle
+        if( first_char .eq. 'c' .or. first_char .eq. 'C' .or.
+     &      first_char .eq. '#' .or. first_char .eq. '!' ) cycle
+         backspace fileno
+         nowline = nowline - 1
+         return
+      end do
+c
+      return
+c
+ 9100 format(a40)
+ 9220 format(/,'>>>> FATAL ERROR: uexternaldb_mm04_cavity_a routine',
+     & /,18x,'trying to read line: ', i12,2x,'encountered end of file',
+     & ' or read error',
+     & /,18x,'before normal eof expected',
+     & /,18x,'job aborted.'//)
+c
+      end subroutine  uexternaldb_mm04_cavity_a
+c      
+      end subroutine  uexternaldb_mm04_cavity
+      
