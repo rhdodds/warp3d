@@ -149,7 +149,7 @@ c     ****************************************************************
      &                    tied_con_mpc_table
 $add common.main
       integer  err, dimnode, dimcoord, dimelem, meshformat, nnodes,
-     &         icol, dumi, out
+     &         icol, dumi
       integer, allocatable, dimension (:,:) :: elemcon
       real  epsilon, dumr, wcputime
       double precision, allocatable, dimension (:,:) :: nodecoord

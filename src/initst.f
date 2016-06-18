@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/25/2015 rhd             *
+c     *                   last modified : 5/22/2016 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -22,7 +22,7 @@ c
      &                      packet_file_no, ascii_packet_file_name,
      &                      ascii_packet_file_no, temperatures_ref,
      &                      fgm_node_values_defined,
-     &                      fgm_node_values_cols,
+     &                      fgm_node_values_cols, cp_matls_present,
      &                      cohesive_ele_types, linear_displ_ele_types,
      &                      adjust_constants_ele_types,
      &                      axisymm_ele_types, umat_used,
@@ -154,7 +154,11 @@ c                       occupied and open linked lists.
 c
 c                       initialize strings with names of WARP3D 
 c                       material models to use, for example in output
-c                       messages
+c                       messages.
+c
+c                       cp_matls_present flag. -1 to init. = 0 if
+c                       checked and no cp matls in model. = 1 if
+c                       checked and cp matls present in model
 c
       lword= 32460
       rword= 1
@@ -179,7 +183,9 @@ c
       material_model_names(8)(1:) = "umat"     
       material_model_names(9)(1:) = "not_used"     
       material_model_names(10)(1:) = "crystal_plasticity"     
-      material_model_names(11)(1:) = "interface_damage"     
+      material_model_names(11)(1:) = "interface_damage"   
+c
+      cp_matls_present = -1 
 c      
 c
 c                       initialize table library object and its
@@ -839,3 +845,54 @@ c
       end if
 c
       end
+      
+c     ****************************************************************
+c     *                                                              *
+c     *              function  warp3d_matl_num                       *
+c     *                                                              *
+c     *       return the internal coed number for a material model   *
+c     *               written by: rhd                                *
+c     *                   last modified : 5/28/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      integer function warp3d_matl_num( material_model_id, nc )
+c      
+      use main_data, only : material_model_names
+      implicit none
+$add param_def
+c   
+      integer :: nc, m
+      character(len=nc) :: material_model_id      
+c
+      select case( material_model_id )
+      
+      case( "bilinear" )
+       m = 1
+      case( "deformation", "deform" )
+       m = 2
+      case( "mises", "gurson", "mises-gurson", "mises_gurson" )
+       m = 3
+      case( "cohesive" )
+       m = 4
+      case( "cyclic", "adv cyclic", "adv. cyclic" )
+       m = 5
+      case( "creep", "Norton", "norton" )
+       m = 6
+      case( "mises_hydrogen", "hydrogen" )
+       m = 7
+      case( "umat", "UMAT", "um" )
+       m = 8
+      case( "crystal", "CP", "cp", "crystal_plasticity" )
+       m = 10
+      case default
+         write(*,9000) material_model_id
+        call die_abort
+      end select 
+c
+      warp3d_matl_num = m
+      return
+ 9000 format('>> FATAL ERROR: routine warp3d_matl_num ',
+     & /,    '                invalide material model name: ',a,
+     & /,    '                job aborted',//)
+      end      

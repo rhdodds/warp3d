@@ -28,7 +28,6 @@ $add common.main
 c
 c              declare all locals here - visible in contains
 c
-      integer lowstp, histep
       real dumr
       character dums
       logical mf_ratio_change
@@ -145,7 +144,7 @@ c     *                 subroutine stpdrv_output                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 07/2/2014                  *
+c     *                   last modified : 05/22/2016 rhd             *
 c     *                                                              *
 c     *     drive the optional, user-define output commands stored   *
 c     *     in a file completion of a load (time) step               *
@@ -169,7 +168,7 @@ c
 c          command.  if so, drive the output system to execute 
 c          commands in the user defined file.
 c
-c          we call oudriv directly from here to process each (logical)
+c          we call oudrive directly from here to process each (logical)
 c          line from the file once we pre-read the line to determine
 c          it is an output command.
 c
@@ -211,7 +210,7 @@ c            1. read a line from output commands file.
 c            2. if eof, close and return to stpdrv
 c            3. skip comment lines
 c            4. backspace and have scan read the line
-c            5. if output command, call oudriv to complete
+c            5. if output command, call oudrive to complete
 c               scanning of line and perform output
 c            6. if not an "output" command, kill job. we're
 c               deep in the solution logic, not overall command
@@ -241,7 +240,7 @@ c
         call readsc
         if( here_debug ) write(out,*) " @ 1 just readsc"
         if( matchs("output",4) ) then
-           call oudriv( sflag_1, sflag_2, stname, ltmstp ) 
+           call oudrive( sflag_1, sflag_2, stname, ltmstp ) 
         else  ! only output commands & comments allowed
            write(out,9100)
            call die_gracefully

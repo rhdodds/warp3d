@@ -1,4 +1,12 @@
 c
+c              *** note here added May 26, 2016 ***
+c
+c              all variables in param_ef and common.main have
+c              explicit type declarations.
+c
+c              code that includes param_def and or common.main
+c              may then use =>  implicit none if desired
+c
 $add param_def
 c
 c
@@ -38,7 +46,7 @@ c=======================================================================
 c
       common/lsgenr/ prnres,updstf,nostif,halt,lkcomp,
      & linmas,newstf,tkcomp,newcns,accsol,
-     & zrocon, newtrn,newmas,lnkit1,incflg,ifvcmp,cnldcp,prlres,
+     & zrocon, newtrn,newmas,incflg,ifvcmp,cnldcp,prlres,
      & input_ok, adaptive_flag, new_constraints, batch_messages,
      & signal_flag, scalar_blocking, growth_k_flag,
      & qbar_flag, solver_out_of_core, show_details, new_analysis_param,
@@ -65,6 +73,7 @@ c
 c
       common/dconverge/ tol(mxcvtests), sum_ifv, sum_loads
       common/iconverge/ num_term_ifv, num_term_loads
+      integer :: num_term_ifv, num_term_loads
 c
 c
 c#######################################################################
@@ -78,31 +87,40 @@ c
 c
       common/ivmaps/ dstmap(mxnod), gpmap(mxtgp),
      & cstmap(mxdof), cp(mxedof), dcp(mxedof), icp(mxutsz,2)
+      integer :: dstmap, gpmap,cstmap, cp, dcp, icp
 c
 c=======================================================================
 c
       common/ivlsts/ matlst(mxmat), lodlst(mxlc),
      & prslst(mxlsz), plrlst(mxlsz)
+      integer :: matlst, lodlst, prslst, plrlst
 c
 c=======================================================================
 c
       common/ivgenr/ stprng(mxlc), state(mxtgp), bits(31)
+      integer :: stprng, state, bits
 c
 c=======================================================================
 c
       common/immaps/ outmap(mxlbel,mxelmp), elblks(0:3,mxnmbl)
+      integer :: outmap, elblks
 c
 c=======================================================================
 c
-      common/isheds/ mathed,csthed,lodhed
+      common/isheds/ mathed, csthed, lodhed
+      integer :: mathed, csthed, lodhed
 c
 c=======================================================================
 c
-      common/istops/ inctop,crdtop
+      common/istops/ inctop, crdtop
+      integer :: inctop, crdtop
 c
 c=======================================================================
 c
       common/issizs/ noelem,nonode,nummat,nogp,numcol,
+     & nodof,nlibel,numlod,nprs,nplrs,numstc,nelblk,numgrp,
+     & lgnmcn,mxiter,mniter,lgoump,mxlitr
+      integer :: noelem,nonode,nummat,nogp,numcol,
      & nodof,nlibel,numlod,nprs,nplrs,numstc,nelblk,numgrp,
      & lgnmcn,mxiter,mniter,lgoump,mxlitr
 c
@@ -111,6 +129,10 @@ c
       common/isgenr/ in,out,histep,lowstp,ltmstp,restrt,
      & num_warn, num_error, num_fatal,
      & solver_flag, old_solver_flag, solver_memory
+      integer :: in, out, histep, lowstp, ltmstp, restrt,
+     & num_warn, num_error, num_fatal,
+     & solver_flag, old_solver_flag, solver_memory
+     
 c
 c======================================================================
 c
@@ -121,10 +143,13 @@ c
       common/intmpi/ myid, numprocs, MPI_VAL, blk_ptr_head,
      &		     MPI_DOF_LOCAL, num_dof_local, proc_pids,
      &               douextdb
+      integer :: myid, numprocs, MPI_VAL, blk_ptr_head,
+     &		     MPI_DOF_LOCAL, num_dof_local, proc_pids, douextdb
 c
       common /logmpi/ root_processor, slave_processor, use_mpi
 c
       common /intomp/ num_threads
+      integer :: num_threads
 c
 c
 c
@@ -132,7 +157,7 @@ c#######################################################################
 c#######################################################################
 c
 c
-      dimension iprops(mxelpr,mxel)
+      integer :: iprops(mxelpr,mxel)
       dimension blk_ptr_head(0:max_procs - 1),
      &     MPI_DOF_LOCAL(0:max_procs-1), num_dof_local(0:max_procs-1),
      &     proc_pids(1:max_procs-1)
@@ -144,8 +169,7 @@ c
 c
 #dbl      double precision
 #sgl      real
-     &    u,v,a,du,idu,load,res,ifv,
-     &    c
+     &    u,v,a,du,idu,load,res,ifv, c
 c
       logical temperatures
 c
@@ -179,7 +203,7 @@ c
      &    signal_flag, scalar_blocking, growth_k_flag, qbar_flag,
      &    solver_out_of_core, show_details, new_analysis_param,
      &    sparse_stiff_output, sparse_stiff_binary, sparse_research,
-     &    solver_mkl_iterative
+     &    solver_mkl_iterative, solver_threads
 c
       logical root_processor, slave_processor, use_mpi
 c

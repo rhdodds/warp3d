@@ -4,7 +4,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 11/25/2015 rhd                  *
+c     *              last modified : 5/22/2016 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -337,6 +337,17 @@ c
 #dbl        double precision ::
      & ls_min_step_length, ls_max_step_length, ls_rho,
      & ls_slack_tol
+c
+c                 does model have crystal plasticity materials.
+c                 no need to savein restart file
+c                 see init.f
+c
+      integer :: cp_matls_present
+c
+c                 options for states results on usual output cmd
+c
+      integer :: output_states_type_opt1, output_states_type_opt2
+c
 
       end module     
       

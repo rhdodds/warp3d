@@ -1421,10 +1421,9 @@ c
 c
 c
  1380 continue
-      num_error = num_error + 1
       call entits( string, strlng )
       write(out,9135)string(1:strlng)      
- 9135 format(/1x,'>>>>> error: a type of output is expected. ',/,
+ 9135 format(/1x,'>>>>> warning: a type of output is expected. ',/,
      & 14x,'scanning: 'a,
      & /,14x,'remainder of line flushed...'/)
       go to 9999
@@ -4080,7 +4079,7 @@ c     *                      subroutine errmsg3                      *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 07/31/2011 rhd             *
+c     *                   last modified : 05/29/2016 rhd             *
 c     *                                                              *
 c     *            supporting, low-level error messgae routine       *
 c     *                                                              *
@@ -4090,7 +4089,7 @@ c
       implicit integer (a-z)
 c
       go to ( 191, 192, 193, 194, 195, 196, 197, 198, 199,
-     &        200, 210, 220, 230, 240 ), param
+     &        200, 210, 220, 230, 240, 250 ), param
  191  continue
       write(out,fmt='(10x,a)') '>> material model mismatch'
       go to 9999
@@ -4099,7 +4098,7 @@ c
       go to 9999
  193  continue
       write(out,fmt='(10x,a)') '>> integration order mismatch'
-      go to 9999
+      go to 9999 
  194  continue
       write(out,fmt='(10x,a)') '>> integration points mismatch'
       go to 9999
@@ -4165,6 +4164,14 @@ c
       write(out,*) " "
            return
       go to 9999
+c      
+ 250  continue
+      write(out,9025)
+ 9025 format(
+     & 10x,'>> ***** available  ******',
+     &/10x,'            default value = 0 assumed')
+      go to 9999
+      
 c
  9999 continue
       return

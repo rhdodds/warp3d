@@ -1,10 +1,10 @@
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine oudriv                       *
+c     *                      subroutine oudrive                      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/4/2016 rhd               *
+c     *                   last modified : 6/3/2016 rhd               *
 c     *                                                              *
 c     *     drive output of any and all quantities requested by the  *
 c     *     user. all phases of output except output of residual     *
@@ -17,8 +17,9 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine oudriv( sbflg1, sbflg2, stname, ltmstp )  
-      use main_data, only: output_packets
+      subroutine oudrive( sbflg1, sbflg2, stname, ltmstp )
+      use main_data, only: output_packets, output_states_type_opt1,
+     &                                     output_states_type_opt2
       implicit integer (a-z)
 c
 c                       parameter declarations
@@ -35,23 +36,23 @@ c
       character :: dums
       logical :: outyp, ouflg, ounod, wide, eform,
      &           oubin, ouasc, oupat, noheader, react_totals_only,
-     &           compressed, ok, found 
+     &           compressed, ok, found
 
-      logical, external :: matchs, endcrd, true, label, string
+      logical, external :: matchs, endcrd, true, label, string, numi
       logical :: stress, prec, out_packet_now, neutral
-      integer :: indev, outdev, idummy, jdummy 
+      integer :: indev, outdev, idummy, jdummy
 c
-      call iodevn( indev, outdev, idummy, jdummy )      
+      call iodevn( indev, outdev, idummy, jdummy )
 c
 c                       output commands ..... return
 c
       if( matchs("commands",4) ) then
          call oudriv_cmds
          return
-      end if  
+      end if
 c
 c                       output model in a flat file. return
-c        
+c
       if( matchs( 'model', 4 ) ) then
         call oudriv_model_flat
         return
@@ -68,11 +69,18 @@ c
           call oudriv_patran_neutral
           return
         end if
-      end if   
+      end if
+c
+c                       run possibly needed setups for special cases,
+c                       i.e., output command just after restart
+c                       w/o running thru lots of code that
+c                       initizalizes variables.
+
+      call compute_output_check_before
 c
 c                       set defaults for regular output options
-c                       
-      wide              = .false.                                
+c
+      wide              = .false.
       eform             = .false.
       oubin             = .false.
       ouasc             = .false.
@@ -87,14 +95,16 @@ c
       text_file         = .false.
       compressed        = .false.
 c
+      output_states_level = 1
+c
 c                       loop get all output qualifiers/options. can
-c                       request only one of patran, flat or packets 
+c                       request only one of patran, flat or packets
 c                       in an output command. fall out this loop
 c                       when word is not an option/qualifier.
-c  
-      found = .true.   
-c          
-      do while ( found )     !   over options before quantities          
+c
+      found = .true.
+c
+      do while ( found )     !   over options before quantities
 c
       if( matchs('wide',4) ) then
          wide = .true.
@@ -131,17 +141,17 @@ c
          ounod = .true.
          cycle
       end if
-c      
+c
       if( matchs('element',7) ) then
          ounod = .false.
          cycle
-      end if    
+      end if
 c
       if( matchs('flat',4) ) then
          flat_file = .true.
          if( matchs('stream',4) ) stream_file = .true.
          if( matchs('text',4) ) text_file = .true.
-         if( matchs('compressed',4) ) compressed = .true.  
+         if( matchs('compressed',4) ) compressed = .true.
          if( out_packet_now .or. oupat ) then
             call errmsg2( 32, dum, dums, dumr, dumd )
             go to 9999
@@ -162,9 +172,9 @@ c
 #win        if( compressed ) then
 #win               call errmsg2( 86, dum, dums, dumr, dumd )
 #win               compressed = .false.
-#win        end if              
+#win        end if
           cycle
-      end if       
+      end if
 c
       if( matchs('packet',4) ) then
          if( output_packets ) then
@@ -177,12 +187,12 @@ c
             go to 9999
          end if
          cycle
-      end if    
+      end if
 c
       if( matchs('patran',6) ) then
          if( matchs('binary',6) ) then
             oubin = .true.
-            oupat = .true.               
+            oupat = .true.
             if( matchs('format',6) ) ouasc = .true.
          else if( matchs('format',6) ) then
             ouasc = .true.
@@ -197,15 +207,15 @@ c
             go to 9999
          end if
          cycle
-      end if         
+      end if
 c
       found = .false.
       end do   ! do while over options at start of command
-c      
+c
 c
 c    ===============  end of option/qualifier loop ==================
-c                   
-c                       all recognized 1st level options/qualifiers 
+c
+c                       all recognized 1st level options/qualifiers
 c                       resolved. patran neutral file treated at
 c                       very top
 c
@@ -216,19 +226,19 @@ c                       flush remainder of line and leave.
 c
 c                       ltmstp -> last completed load/time step
 c                                 0 -> no computational results yet
-c          
-c      
+c
+c
       do ! over list of output quantities on the line
-      
+
       osn = 0
       if( endcrd(dum) ) exit
 c
       if( matchs('displacements',5) ) then
          osn   = 1
       else if( matchs('velocities',3) ) then
-         osn   = 2        
+         osn   = 2
       else if( matchs('accelerations',3) ) then
-         osn   = 3        
+         osn   = 3
       else if( matchs('stresses',6) ) then
          osn   = 4
       else if( matchs('strains',6) ) then
@@ -239,20 +249,28 @@ c
            if( matchs('only',4) ) call splunj
            react_totals_only = .true.
            noheader = .true.
-         end if         
+         end if
       else if( matchs('temperatures',5) ) then
         osn = 8
       else if( matchs('states',6) ) then
-        osn   = 9
+        output_states_type_opt1 = 1
+        output_states_type_opt2 = 0
+        osn = 9
+        if( matchs( 'level',5 ) ) call splunj
+        if( matchs( 'type', 4 ) ) call splunj
+        if( numi( output_states_type_opt1 ) ) call splunj
+        if( matchs( 'crystal',4 ) ) call splunj
+        if( matchs( 'option', 4 ) ) call splunj
+        if( numi( output_states_type_opt2 ) ) call splunj
       end if
-      
+c
       if( ltmstp .eq. 0 ) then ! no results yet
-        call scan_flushline 
+        call scan_flushline
         call errmsg3( outdev, 14 )
         return
       end if
 c
-      select case ( osn ) 
+      select case ( osn )
 c
 c                       no recognizable output quantity found.
 c                       error message, flush line, leave.
@@ -261,17 +279,17 @@ c
         call errmsg( 138, dum, dums, dumr, dumd )
         call scan_flushline
         exit !  loop over quantities
-c                         
+c
 c                       output nodal displacements, velocities,
 c                       accelerations, reactions, temperatures
-c    
+c
       case( 1, 2, 3, 6, 8 )
          itype = osn
          if( osn .eq. 6 ) itype = 4
          if( osn .eq. 8 ) itype = 5
          call oudva( itype, ouflg, oupat, oubin, ouasc, wide, eform,
-     &               prec, noheader, react_totals_only, 
-     &               out_packet_now, flat_file, stream_file, 
+     &               prec, noheader, react_totals_only,
+     &               out_packet_now, flat_file, stream_file,
      &               text_file, compressed )
          if( ouflg ) then  ! parsing or list inside oustr failed
              call errmsg2( 87, dum, dums, dumr, dumd )
@@ -281,12 +299,12 @@ c
 c
 c                       stresses (=5), strains (=6)
 c
-      case( 4, 5 ) 
+      case( 4, 5 )
          if( osn .eq. 4 ) stress = .true.
          if( osn .eq. 5 ) stress = .false.
-         if ( oupat .or. flat_file)  then 
+         if ( oupat .or. flat_file)  then
            call oustr_pat_flat_file( stress, ouflg, oubin, ouasc,
-     &        ounod, flat_file, stream_file, 
+     &        ounod, flat_file, stream_file,
      &        text_file, compressed  )
          else
            call oustr( stress, ouflg, oupat, oubin, ouasc, ounod,
@@ -303,7 +321,7 @@ c
 c                      material states to a patran or flat file
 c
       case( 9 )
-         if ( oupat .or. flat_file )  then 
+         if ( oupat .or. flat_file )  then
            call  oustates_files( ouflg, oubin, ouasc, ounod,
      &        flat_file, stream_file, text_file, compressed )
          else
@@ -311,7 +329,7 @@ c
          end if
 
       end select
-c      
+c
       end do   ! next type of quantity to output
 c
 c
@@ -321,7 +339,7 @@ c
       return
 c
       contains
-c     ========      
+c     ========
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine oudriv_patran_neutral             *
@@ -331,24 +349,24 @@ c     *                                                              *
 c     *                   last modified : 6/29/2014 rhd              *
 c     *                                                              *
 c     *     scan remainder of command and drive writing a Patran     *
-c     *     neutral file for the model                               *     
+c     *     neutral file for the model                               *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine oudriv_patran_neutral
       implicit none
-      
+
       integer :: nc, dummy
       character :: neut_name*80
       logical ::
-     &        local_debug 
+     &        local_debug
 c
 c                       output patran neutral ... treat here for
 c                       simplicity.
 c
       local_debug = .false.
-      if( local_debug ) write(outdev,*) 
+      if( local_debug ) write(outdev,*)
      &       '.., entered oudriv_patran_neutral'
 
       if ( matchs('file',4) ) call splunj
@@ -360,11 +378,11 @@ c
       else
           nc = len(stname)
           call name_strip( stname, nc )
-          neut_name(1:) = stname(1:nc) // '.neutral' 
+          neut_name(1:) = stname(1:nc) // '.neutral'
       end if
       call ouneut( neut_name )
-      return   
-c      
+      return
+c
       end subroutine   oudriv_patran_neutral
 c     ****************************************************************
 c     *                                                              *
@@ -380,21 +398,21 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine oudriv_model_flat 
+      subroutine oudriv_model_flat
       implicit none
-c      
+c
       integer :: nc, dummy
       character :: flat_name*80
       logical ::
-     &        local_debug, flat_file, stream_file, text_file, 
-     &        warp3d_convention, patran_convention 
+     &        local_debug, flat_file, stream_file, text_file,
+     &        warp3d_convention, patran_convention
 c
 c                       output model flat ...
 c
       local_debug = .false.
-      if( local_debug ) write(outdev,*) 
+      if( local_debug ) write(outdev,*)
      &       '.., entered oudriv_model_flat'
-c     
+c
       text_file         = .false.
       stream_file       = .false.
       compressed        = .false.
@@ -407,10 +425,10 @@ c
       if( matchs('flat',4) ) call splunj ! dummy routine
       if( matchs('patran',4) ) then
         patran_convention = .true.
-        if( matchs('convention',4) ) call splunj  
+        if( matchs('convention',4) ) call splunj
       else if( matchs('warp3d',4) ) then
         warp3d_convention = .true.
-        if( matchs('convention',4) ) call splunj  
+        if( matchs('convention',4) ) call splunj
       else
         call errmsg2( 88, dum, dums, dumr, dumd )
         call scan_flushline
@@ -442,23 +460,23 @@ c
           nc = len(stname)
           call name_strip( stname, nc )
           flat_name(1:) = stname(1:nc) // '_model_flat'
-        end if   
-      else 
+        end if
+      else
         call errmsg2( 90, dum, dums, dumr, dumd )
         call scan_flushline
         return
-      end if    
-      
+      end if
+
       call oumodel_flat( flat_name, text_file, stream_file,
      &                   compressed, warp3d_convention,
      &                   patran_convention )
 c
       return
-c      
+c
       end subroutine   oudriv_model_flat
-      
-      end subroutine   oudriv   
-      
+
+      end subroutine   oudrive
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine oudriv_cmds                       *
@@ -475,20 +493,20 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine oudriv_cmds 
-      use main_data, only: output_command_file, 
+      subroutine oudriv_cmds
+      use main_data, only: output_command_file,
      &                     output_step_bitmap_list
       implicit integer (a-z)
 $add common.main
 c
 c                      locals
-c      
+c
       integer :: intlst(mxlsz)
       logical :: matchs, label, string, ok
       character * 80 bad_input
 c
       output_command_file(1:) = " "
-      if( allocated( output_step_bitmap_list ) ) 
+      if( allocated( output_step_bitmap_list ) )
      &      deallocate( output_step_bitmap_list )
 c
 c                      get the name of file that contains only
@@ -498,9 +516,9 @@ c                      optimizers don't delete the call to matchs
 c
 c                      file must exit now or error
 c
-      if( matchs( "use", 3 ) ) call splunj 
+      if( matchs( "use", 3 ) ) call splunj
       if( matchs( "file", 4 ) ) call splunj
-c      
+c
       if( label(dummy) ) then
         call entits( output_command_file(1:), nchar )
       elseif( string(dummy) ) then
@@ -512,7 +530,7 @@ c
         call scan_flushline
         return
       end if
-c      
+c
       inquire( file = output_command_file, exist = ok )
       if( .not. ok ) then
          write(out,9300) output_command_file
@@ -524,21 +542,21 @@ c
 c
 c                      must have keyword "steps" so we can detect
 c                      the integer list
-c 
+c
       if( matchs( "after", 3 ) ) call splunj
       if( matchs( "for",3 ) ) call splunj
       if( .not. matchs( "steps", 4 ) ) then
-         write(out,9320) 
+         write(out,9320)
          output_command_file(1:) = " "
          num_error = num_error + 1
          call scan_flushline
          return
       end if
-c      
+c
 c                      get the list of step numbers after which
 c                      the file of output commands will be executed.
 c                      a list of just keyword "all" is ok
-c      
+c
       call scan
       call trlist( intlst, mxlsz, mxstep, lenlst, errnum )
 c
@@ -550,7 +568,7 @@ c                       list overflowed its maximum length of mxlsz.
 c                       a value of 4 indicates that no list was found.
 c                       in these last three cases, the illegal list
 c                       will be ignored and a new compute command will
-c                       be sought. 
+c                       be sought.
 c
       bad_input(1:) = " "
       if( errnum .ne. 1 ) then
@@ -558,7 +576,7 @@ c
           call entits( bad_input, nchar )
           write(out,9200) bad_input(1:)
         else if( errnum == 3 ) then
-          write(out,9210) 
+          write(out,9210)
         else if( errnum == 4) then
           call entits( bad_input, nchar )
           write(out,9220) bad_input(1:)
@@ -581,7 +599,7 @@ c
 c
       do
          if( iplist .eq. 0 ) exit
-         call trxlst( intlst, lenlst, iplist, icn, istep ) 
+         call trxlst( intlst, lenlst, iplist, icn, istep )
          if( istep .gt. mxstep .or.istep .le. 0) then
             write(out,9100) istep
             ok = .false.
@@ -589,12 +607,12 @@ c
          end if
          word = (istep - 1 ) / 30 + 1
          bit = istep - (word -1)*30 - 1 ! start at bit 0 in word
-         output_step_bitmap_list(word) = ibset( 
+         output_step_bitmap_list(word) = ibset(
      &      output_step_bitmap_list(word), bit )
       end do
 c
       if( .not. ok ) then
-         write(out,9330) 
+         write(out,9330)
          deallocate( output_step_bitmap_list )
          output_command_file(1:) = " "
          num_error = num_error + 1
@@ -623,4 +641,4 @@ c
 c
       return
       end
-            
+

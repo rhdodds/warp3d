@@ -4,7 +4,7 @@ c *                                                                    *
 c *    mm10.f                                                          *
 c *                                                                    *
 c *         written by : mcm                                           *
-c *         last modified : 4/5/2016 tjt                               *
+c *         last modified : 5/30/2016 rhd                              *
 c *                                                                    *
 c *         Stress/strain update routines AND HELPERS for              *
 c *         crystal plasticity material modeled via Beaudoin et al.    *
@@ -19,16 +19,18 @@ c     *                       module mm10_defs                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 3/5/2016 rhd                *
+c     *                   last modified: 5/22/2016 rhd               *
 c     *                                                              *
 c     *       small module to hold crystal update data structs       *
+c     *       also hold integer indexes into history vector for      *
+c     *       an integration point                                   *
 c     *                                                              *
 c     ****************************************************************
 c
       module mm10_defs
-c      
+c
       implicit integer (a-z)
-$add param_def  
+$add param_def
 c              includes all key size limits for WARP3D (e.g. mxvl)
 c
 c              Massive list of properties
@@ -41,17 +43,17 @@ c
      &        u1, u2, u3, u4, u5, u6
         double precision :: atol, atol1, rtol, rtol1, xtol, xtol1
         double precision, dimension(3,3) :: g
-        double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys), 
+        double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
      &                      ns(3,max_slip_sys)
         double precision, dimension(6,6) :: stiffness
-        integer :: angle_type, angle_convention, nslip, 
+        integer :: angle_type, angle_convention, nslip,
      &        h_type, miter, gpp, s_type, cnum, method,
      &        st_it(3), num_hard, out
         logical :: real_tang, solver, strategy, debug, gpall
         ! constants for use in material models
         double precision, dimension(:,:), allocatable :: Gmat,Hmat
       end type
-c      
+c
       type :: crystal_state
         double precision, dimension(3,3) :: R, Rp
         double precision, dimension(6) :: stress, D, eps
@@ -69,7 +71,17 @@ c
         double precision, dimension(max_uhard) :: u
         integer :: step, elem, gp, iter
       end type
-c      
+c
+c              store integer indexes into history vector for a an
+c              integration point.
+c              WARP3D makes sure an mm10 routine is called to
+c              create the arraays & set values. No need to save
+c              across restarts. These arrays are red-only during
+c              threaded processing of element blocks.
+c
+      integer, allocatable :: indexes_common(:,:),
+     &                        index_crys_hist(:,:,:)
+c
       end module
 c
 c     ****************************************************************
@@ -86,29 +98,29 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10( gp, span, ncrystals, hist_sz, history_n,
-     &                 history_np1, local_work, uddt, gp_temps, 
+     &                 history_np1, local_work, uddt, gp_temps,
      &                 gp_temp_inc, iout, display_matl_messages,
      &                 do_nonlocal, nonlocal_state, maxnonlocal,
      &                 iter_0_extrapolate_off )
-c     
+c
       use segmental_curves, only: max_seg_points
       use mm10_defs
-c            
+c
       implicit integer (a-z)
 $add include_sig_up
 c
 c                 parameter definitions
 c
       integer, intent(in) :: gp, span, hist_sz, iout, maxnonlocal,
-     &                       ncrystals(mxvl) 
+     &                       ncrystals(mxvl)
       logical, intent(in) :: display_matl_messages, do_nonlocal,
      &                       iter_0_extrapolate_off
-c      
-      double precision, intent(in) :: 
+c
+      double precision, intent(in) ::
      &      uddt(mxvl,nstr), gp_temps(mxvl), gp_temp_inc(mxvl)
-      double precision, intent(inout) :: 
+      double precision, intent(inout) ::
      &      history_n(span,hist_sz), history_np1(span,hist_sz),
-     &      nonlocal_state(mxvl,maxnonlocal)  
+     &      nonlocal_state(mxvl,maxnonlocal)
 c
 c                 locals
 c
@@ -118,12 +130,12 @@ c
       double precision, dimension(6,6) :: tang_avg
       double precision, dimension(max_slip_sys) :: slip_avg
       double precision :: t_work_inc, p_work_inc,p_strain_inc, zero,
-     &                    one, two, three, ten, t1, t2 
+     &                    one, two, three, ten, t1, t2
       double precision :: n_avg,p_strain_avg, B_eff, s_trace
       type(crystal_props) :: cc_props
       type(crystal_state) :: cc_n, cc_np1
       logical :: debug, gpall, locdebug
-c      
+c
       data zero, one, two, three, ten / 0.0d0, 1.0d00, 2.0d00, 3.0d00,
      &    10.0d00 /
 c
@@ -132,9 +144,9 @@ c
       if( debug ) write (iout,*) "In mm10"
 c
 c                 initialize G,H arrays for certain CP constitutive
-c                 models. Note: all crystals in the element block 
+c                 models. Note: all crystals in the element block
 c                 will have the same hardening model and slip systems
-c 
+c
       call mm10_set_cons(local_work,cc_props,1)
 c
 c                 we have data passed for integration point # gp for
@@ -146,10 +158,10 @@ c                 for small strain analysis, rot_blk_n1 set to identity
 c                 now by warp3d.
 c
       local_work%material_cut_step = .false.
-c            
+c
       do i = 1, span
 c
-        now_element = local_work%felem + i - 1            
+        now_element = local_work%felem + i - 1
 c
 c                 for step = 1, init element history
 c
@@ -170,12 +182,12 @@ c
         tang_avg     = zero
         p_strain_ten = zero
         n_avg        = zero
-c        
+c
 c                 loop on all crystals at integration point
 c
         do c = 1, ncrystals(i)
           debug = local_work%debug_flag(i)
-          locdebug = (debug 
+          locdebug = (debug
      &               .and.((local_work%c_props(i,c)%st_it(3)
      &               .eq.-2).or.
      &               (local_work%c_props(i,c)%st_it(3).eq.
@@ -196,14 +208,14 @@ c
      &           +3*max_uhard)-1
           if( locdebug ) write(iout,*) "Setting up properties"
           call mm10_init_cc_props( local_work%c_props(i,c),
-     &              local_work%angle_type(i), 
+     &              local_work%angle_type(i),
      &              local_work%angle_convention(i),
      &              local_work%debug_flag(i), cc_props )
           cc_props%out = iout
 c
           if( local_work%step .eq. 1 ) then
             if( locdebug ) write(iout,*) "Init history 0"
-            call mm10_init_cc_hist0( cc_props, 
+            call mm10_init_cc_hist0( cc_props,
      &           local_work%c_props(i,c)%init_angles(1:3),
      &           history_n(i,co:cn) )
           end if
@@ -213,9 +225,9 @@ c
      &         history_n(i,64:72),
      &         cc_props, cc_n )
           call mm10_setup_np1(
-     &        local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6), 
+     &        local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6),
      &        local_work%dt, gp_temps(i), local_work%step,
-     &        i-1+local_work%felem, local_work%iter, 
+     &        i-1+local_work%felem, local_work%iter,
      &        local_work%gpn,cc_np1 )
           if( locdebug) write(iout,*) "Updating crystal ", c
           call mm10_solve_crystal( cc_props, cc_np1, cc_n,
@@ -225,28 +237,28 @@ c
             call mm10_set_cons( local_work, cc_props, 2)
             return
           endif
-c             
+c
 c                 accumulate sums for subsequent averaging
 c                    cp_strain_inc -> effective plastic increment
 c                    p_strain_ten -> plastic strain increment tensor
-c                    n_avg -> effective creep exponent  
+c                    n_avg -> effective creep exponent
 c
           sig_avg      = sig_avg + cc_np1%stress
           tang_avg     = tang_avg + cc_np1%tangent
           slip_avg     = slip_avg + cc_np1%slip_incs
           t_work_inc   = t_work_inc + cc_np1%work_inc
           p_work_inc   = p_work_inc + cc_np1%p_work_inc
-          p_strain_inc = p_strain_inc + cc_np1%p_strain_inc 
-          p_strain_ten = p_strain_ten + p_strain_ten_c 
-          n_avg        = n_avg + cc_np1%p_strain_inc*cc_np1%u(12) 
+          p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
+          p_strain_ten = p_strain_ten + p_strain_ten_c
+          n_avg        = n_avg + cc_np1%p_strain_inc*cc_np1%u(12)
 c
 c                 store the CP history for this crystal
 c
-          call mm10_store_cryhist( cc_props, cc_np1, cc_n, 
+          call mm10_store_cryhist( cc_props, cc_np1, cc_n,
      &                             history_np1(i,co:cn) )
-c     
+c
         end do ! over all crystals at int point
-c        
+c
 c                 finalize averages over all crystals at point.
 c                    p_strain_avg -> average effective strain increment
 c                                    from the average tensor
@@ -259,16 +271,16 @@ c
         p_work_inc   = p_work_inc / rncry
         p_strain_inc = p_strain_inc / rncry
         p_strain_ten = p_strain_ten / rncry
-        t1           = p_strain_ten(1)**2 + p_strain_ten(2)**2 + 
+        t1           = p_strain_ten(1)**2 + p_strain_ten(2)**2 +
      &                 p_strain_ten(3)**2
-        t2           = p_strain_ten(4)**2 + p_strain_ten(5)**2 + 
+        t2           = p_strain_ten(4)**2 + p_strain_ten(5)**2 +
      &                 p_strain_ten(6)**2
         p_strain_avg = sqrt( two/three * ( t1 + t2/two ) )
         n_avg        = n_avg / p_strain_avg / rncry
         if( locdebug ) write(iout,*) "stress", sig_avg
         if( locdebug ) write(iout,*) "tang", tang_avg
 c
-c                 nonlocal state values returned are creep rate 
+c                 nonlocal state values returned are creep rate
 c                 wrt real time and total creep strain;
 c                 ONLY for first crystal
 c                     nonlocal(1) -> effective creep rate wrt real time
@@ -277,15 +289,15 @@ c                     nonlocal(3) -> effective creep eponent (n)
 c                     nonlocal(4) -> effective Norton constant B
 c
         if( do_nonlocal ) then
-          nonlocal_state(i,1) = p_strain_avg / local_work%dt 
+          nonlocal_state(i,1) = p_strain_avg / local_work%dt
           nonlocal_state(i,2) = local_work%urcs_blk_n(i,9,gp) +
      &                          p_strain_avg
           if( n_avg .lt. one ) then ! limti range of values
-            nonlocal_state(i,3) = one 
+            nonlocal_state(i,3) = one
           elseif( n_avg .gt. ten ) then
-            nonlocal_state(i,3) = ten 
+            nonlocal_state(i,3) = ten
           else
-            nonlocal_state(i,3) = n_avg 
+            nonlocal_state(i,3) = n_avg
           endif
           s_trace = (sig_avg(1) + sig_avg(2) + sig_avg(3)) / three
           se(1:6) = sig_avg(1:6)
@@ -296,32 +308,32 @@ c
           t2      = se(4)**2 + se(5)**2 + se(6)**2
           s_trace = sqrt( three/two * ( t1 + two*t2 ) )
           B_eff   = p_strain_avg / local_work%dt/(s_trace**n_avg)
-          nonlocal_state(i,4) = B_eff 
-        end if 
-c        
-c                 store results for integration point into 
+          nonlocal_state(i,4) = B_eff
+        end if
+c
+c                 store results for integration point into
 c                 variables passed by warp3d
 c
-        call mm10_store_gp (sig_avg, 
+        call mm10_store_gp (sig_avg,
      &     local_work%urcs_blk_n1(i,1:6,gp),
      &     tang_avg, history_np1(i,1:36),
      &     slip_avg, history_n(i,76:76+max_slip_sys-1),
      &     history_np1(i,76:76+max_slip_sys-1),
-     &     t_work_inc, p_work_inc, p_strain_inc, 
+     &     t_work_inc, p_work_inc, p_strain_inc,
      &     local_work%urcs_blk_n(i,7:9,gp),
      &     local_work%urcs_blk_n1(i,7:9,gp),
      &     local_work%rot_blk_n1(i,1:9,gp),
      &     history_np1(i,64:72) )
-c     
+c
       end do ! over span
 c
-c                  release allocated G & H arrays for 
+c                  release allocated G & H arrays for
 c                  certain CP constitutive models
 c
       call mm10_set_cons( local_work, cc_props, 2 )
 c
       return
-c      
+c
       end subroutine
 c
 c     ****************************************************************
@@ -342,20 +354,20 @@ c
 c
       use segmental_curves, only: max_seg_points
       use mm10_defs ! to get definition of cc_props
-c            
+c
       implicit integer (a-z)
 $add include_sig_up
 c
       type(crystal_props) :: cc_props
       integer :: isw, s_type1, n_hard
       logical :: process_G_H
-c      
+c
       process_G_H = ( local_work%c_props(1,1)%h_type .eq. 4 ) .or.
      &              ( local_work%c_props(1,1)%h_type .eq. 7 )
       if( .not. process_G_H ) return
-c      
+c
       select case( isw )
-      
+
       case( 1 ) ! allocate G,H interaction matrices
 c
          s_type1 = local_work%c_props(1,1)%s_type
@@ -374,15 +386,15 @@ c
          deallocate( cc_props%Gmat, cc_props%Hmat )
 c
       case default
-c      
+c
           write(*,*) '>>>> FATAL ERROR. invalid isw, mm10_set_cons'
           write(*,*) '                  job terminated'
           call die_abort
-c     
+c
       end select
-c       
+c
       return
-c       
+c
       end subroutine
 c
 c --------------------------------------------------------------------
@@ -414,7 +426,7 @@ c
       integer :: a
       double precision, dimension(3) :: angles
       double precision, dimension(3,3) :: I
-      double precision, 
+      double precision,
      &  dimension(24+max_uhard+max_uhard) :: history
 c
       I = 0.0d0
@@ -436,23 +448,23 @@ c           slip_incs
 c           Hardening
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! Simple voche
-            call mm10_init_voche(props,  
+            call mm10_init_voche(props,
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
      & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
       elseif (props%h_type .eq. 2) then ! MTS
-            call mm10_init_mts(props, 
+            call mm10_init_mts(props,
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
      & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
       elseif (props%h_type .eq. 3) then ! User
-            call mm10_init_user(props, 
+            call mm10_init_user(props,
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
      & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
       elseif (props%h_type .eq. 4) then ! ORNL
-            call mm10_init_ornl(props, 
+            call mm10_init_ornl(props,
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
      & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
       elseif (props%h_type .eq. 7) then ! MRR
-            call mm10_init_mrr(props, 
+            call mm10_init_mrr(props,
      &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
      & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
       else
@@ -515,7 +527,7 @@ $add common.main
       dimension size_data(*)
       integer :: local_el, matnum, ncrystals
 c
-c        size_data(1)  :  no. of words of history data for each 
+c        size_data(1)  :  no. of words of history data for each
 c                         integration point
 c
 c
@@ -526,7 +538,7 @@ c
       ncrystals = imatprp(101,matnum)
 c
 c       So total history size is going to be:
-c               
+c
 c
       size_data(1) = 76+max_slip_sys+
      &               ncrystals*(30+max_slip_sys+max_uhard
@@ -534,50 +546,6 @@ c
       return
       end
 c
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine mm10_set_sizes                    *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified: 12/14/14 rhd                *
-c     *                                                              *
-c     *    called by warp3d for each material model to obtain        *
-c     *    various sizes of data for the model                       *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_set_sizes( info_vector )
-      implicit integer (a-z)
-$add common.main
-      integer, dimension(*) :: info_vector
-c
-c        set infor_data
-c
-c         1        number of history values per integration 
-c                  point. Abaqus calles these "statev". Values
-c                  double or single precsion based on hardware.
-c    
-c         2        number of values in the symmetric part of the 
-c                  [D] for each integration point. for solid
-c                  elements this is 21, for cohesive elements this 6.
-c
-c         3        = 0, the material model returns "unrotated"
-c                       Cauchy stresses at n+1
-c                  = 1, the material model returns the standard
-c                       Cauchy stresses at n+1
-c
-c         4        number of state variables per point to be output
-c                  when user requests this type of results
-c
-      info_vector(1) = -100     ! set by special version above
-      info_vector(2) = -100    ! set by special version above
-      info_vector(3) = -100    ! set by special version above 
-      info_vector(4) = 43+max_slip_sys+max_uhard
-c
-      return
-      end
-
 c
 c     ****************************************************************
 c     *                                                              *
@@ -609,7 +577,7 @@ c
       double precision, dimension(3) :: w_p
       double precision, dimension(props%nslip,6) :: symtqmat
       double precision, dimension(6,props%nslip) :: dgammadd
-      double precision, 
+      double precision,
      &    dimension(props%num_hard,props%num_hard) :: J22, alpha
       double precision :: alpha1
       double precision, dimension(max_uhard) :: vec1, vec2
@@ -647,13 +615,13 @@ c
       call mm10_formJ22(props, np1, n, vec1, vec2, arr1, arr2,
      & np1%stress, np1%tau_tilde, J22)
       else ! compute tangent my complex method
-      call mm10_formJ11i(props, np1, n, ivec1, ivec2, 
+      call mm10_formJ11i(props, np1, n, ivec1, ivec2,
      & np1%stress, np1%tau_tilde, J11)
-      call mm10_formJ12i(props, np1, n, ivec1, ivec2, 
+      call mm10_formJ12i(props, np1, n, ivec1, ivec2,
      & np1%stress, np1%tau_tilde, J12)
-      call mm10_formJ21i(props, np1, n, ivec1, ivec2, 
+      call mm10_formJ21i(props, np1, n, ivec1, ivec2,
      & np1%stress, np1%tau_tilde, J21)
-      call mm10_formJ22i(props, np1, n, ivec1, ivec2, 
+      call mm10_formJ22i(props, np1, n, ivec1, ivec2,
      & np1%stress, np1%tau_tilde, J22)
       endif
 
@@ -684,19 +652,19 @@ c
 c
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
-        call mm10_dgdd_voche(props, np1, n, np1%stress, 
+        call mm10_dgdd_voche(props, np1, n, np1%stress,
      &       np1%tau_tilde, np1%D, dgammadd)
       elseif (props%h_type .eq. 2) then ! MTS
-        call mm10_dgdd_mts(props, np1, n, np1%stress, 
+        call mm10_dgdd_mts(props, np1, n, np1%stress,
      &       np1%tau_tilde, np1%D, dgammadd)
       elseif (props%h_type .eq. 3) then ! User
-        call mm10_dgdd_user(props,np1, n, np1%stress, 
+        call mm10_dgdd_user(props,np1, n, np1%stress,
      &       np1%tau_tilde, np1%D, dgammadd)
       elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_dgdd_ornl(props,np1, n, np1%stress, 
+        call mm10_dgdd_ornl(props,np1, n, np1%stress,
      &       np1%tau_tilde, np1%D, dgammadd)
       elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_dgdd_mrr(props,np1, n, np1%stress, 
+        call mm10_dgdd_mrr(props,np1, n, np1%stress,
      &       np1%tau_tilde, np1%D, dgammadd)
 c        if (debug) write (*,*) "dgammadd", dgammadd(1:6,1:12)
       else
@@ -733,7 +701,7 @@ c     Avoid explicitly computing the inverse
       call dcopy(props%num_hard*6,ed,1,beta(1,7),1)
         if (locdebug) write (*,*) "beta", beta(1:6,1:12)
 c Compute J22^-1*J21 and J22^-1*ed
-      call DGESV(props%num_hard, 2*6, alpha, props%num_hard, ipiv, 
+      call DGESV(props%num_hard, 2*6, alpha, props%num_hard, ipiv,
      & beta, props%num_hard, info)
 c     JJ = JJ - J12*beta(*,1:6)
         if (locdebug) write (*,*) "beta", beta(1:6,1:12)
@@ -831,7 +799,7 @@ c
      &   .or.(props%h_type .eq. 3)) then ! voche, MTS, user
 c           Calculate the tau lambdas for geometric hardening
 c           Lattice curvature
-c     
+c
       curv = 0.0
       do i=1,3
         do k=1,3
@@ -850,7 +818,7 @@ c       Calculate the large-strain lambda
           do j=1,3
             do k=1,3
               do s=1,3
-                tm(i) = tm(i) + curv(i,j,k)*0.5d0 * 
+                tm(i) = tm(i) + curv(i,j,k)*0.5d0 *
      &             dble(mm10_l_c(j,s,k))*cn(s)
               end do
             end do
@@ -912,13 +880,13 @@ c
       history(30+1:30+max_slip_sys) = np1%slip_incs
      &       (1:max_slip_sys)
       history(30+max_slip_sys+1:30+max_slip_sys
-     &        +props%num_hard) = 
+     &        +props%num_hard) =
      &   np1%tau_tilde(1:props%num_hard)
       history(30+max_slip_sys+max_uhard+1:
-     &   30+max_slip_sys+2*max_uhard) = 
+     &   30+max_slip_sys+2*max_uhard) =
      &   np1%u(1:max_uhard)
       history(30+max_slip_sys+2*max_uhard+1:
-     &   30+max_slip_sys+2*max_uhard+props%num_hard) = 
+     &   30+max_slip_sys+2*max_uhard+props%num_hard) =
      &   np1%tt_rate(1:props%num_hard)
 c
       return
@@ -963,13 +931,13 @@ c
 c
       call mm10_solve_strup(props, np1, n, vec1, vec2, arr1, arr2,
      &   ivec1, ivec2, cut, gp, iter_0_extrapolate_off, no_load)
-c      
+c
       if (cut) then
         write(iout,*) "mm10 stress update failed"
         return
       end if
 c
-c      write(*,*) 'iter_0_extrapolate_off in solv_cry', 
+c      write(*,*) 'iter_0_extrapolate_off in solv_cry',
 c     &    iter_0_extrapolate_off
 c     Special update with extrapolate off: return stress due to creep
 c     and linear elastic stiffness matrix (from mm10_solve_strup)
@@ -1033,7 +1001,7 @@ c
             psiK = mm10_atan2(full_rot(3,2),full_rot(3,1))
             phiK = mm10_atan2(full_rot(2,3),full_rot(1,3))
             thetaK = dacos(full_rot(3,3))
-            
+
             if (props%angle_convention .eq. 1) then
                   psi = psiK
                   phi = phiK
@@ -1064,10 +1032,10 @@ c
       function mm10_atan2(a, b)
             implicit none
             double precision :: mm10_atan2, a, b, pi
-c            
+c
             pi = 4.d0*datan(1.d0)
             mm10_atan2 = datan2(a, b)
-            if( mm10_atan2 .lt. 0.0d0 ) 
+            if( mm10_atan2 .lt. 0.0d0 )
      &          mm10_atan2 = mm10_atan2 + 2.0d0*pi
 c
             return
@@ -1076,7 +1044,7 @@ c
 c
 c ****************************************************************************
 c *                                                                          *
-c *    mm10_invasym                                                               *
+c *    mm10_invasym                                                          *
 c *                                                                          *
 c *         written by : mcm                                                 *
 c *         last modified : 3/22/12 mcm                                      *
@@ -1147,7 +1115,7 @@ c
             else
                   write (out,9000)
             end if
-            
+
             if (aconv .eq. 'kocks') then
                   psi = a
                   theta = b
@@ -1240,7 +1208,7 @@ c
             implicit none
             double precision, dimension(3,3), intent(in) :: RT
             double precision, dimension(6,6), intent(out) :: RV
-       
+
             RV(1,1)=RT(1,1)**2.d0
             RV(1,2)=RT(1,2)**2.d0
             RV(1,3)=RT(1,3)**2.d0
@@ -1308,7 +1276,7 @@ c
             RV(3,1)=RT(1,2)*RT(2,3)-RT(1,3)*RT(2,2)
             RV(3,2)=RT(1,1)*RT(2,3)-RT(1,3)*RT(2,1)
             RV(3,3)=RT(1,1)*RT(2,2)-RT(1,2)*RT(2,1)
-            
+
             return
       end subroutine
 c
@@ -1374,7 +1342,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_store_gp(stress_in, stress_out, tang_in,
-     &      tang_out, slip_inc, slip_n, slip_np1, t_work, p_work, 
+     &      tang_out, slip_inc, slip_n, slip_np1, t_work, p_work,
      &      p_strain, u_old, u_new, R_in, R_out)
       use mm10_defs
       implicit integer(a-z)
@@ -1383,7 +1351,7 @@ c
       double precision, dimension(9) :: R_in, R_out
       double precision, dimension(6,6) :: tang_in
       double precision, dimension(36) :: tang_out
-      double precision, dimension(max_slip_sys) :: slip_inc, slip_n, 
+      double precision, dimension(max_slip_sys) :: slip_inc, slip_n,
      &      slip_np1
       double precision :: t_work, p_work, p_strain
       double precision, dimension(3) :: u_old, u_new
@@ -1436,7 +1404,7 @@ c           Get R components and stick in the right place
         jacinv = jac
         call mm10_invasym(jacinv, 3)
         do i=1, ngp
-          Rt(i,1:3,1:3) = matmul(reshape(Rps(1:9,i),(/3,3/)), 
+          Rt(i,1:3,1:3) = matmul(reshape(Rps(1:9,i),(/3,3/)),
      &        transpose(reshape(rot_blk(1:9,i), (/3,3/))))
         end do
       else
@@ -1485,397 +1453,6 @@ c
       return
       end subroutine
 
-      
-c     ****************************************************************
-c     *                                                              *
-c     *             subroutine mm10_states_labels                    *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *               last modified : 12/15/2014 (rhd)               *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_states_labels( size_state,
-     &      num_states, state_labels, state_descriptors, outi,
-     &      comment_lines, max_comment_lines, num_comment_lines )
-      implicit integer (a-z)
-$add common.main
-c
-c                       parameters
-c
-      integer :: size_state, num_states, outi, max_comment_lines,
-     &           num_comment_lines
-      character(len=8)  :: state_labels(size_state)
-      character(len=60) :: state_descriptors(size_state)
-      character(len=80) :: comment_lines(max_comment_lines)
-c
-c                       locals
-c
-      integer :: i
-      logical, save :: do_print = .false.
-c
-      num_states = 43 + max_slip_sys + max_uhard
-      num_comment_lines = 0
-c     
-      state_labels(1) = "euler-1"
-      state_labels(2) = "euler-2"
-      state_labels(3) = "euler-3"
-
-      state_descriptors(1) = "convention as input"
-      state_descriptors(2) = "convention as input"
-      state_descriptors(3) = "convention as input"
-
-      state_labels(4) = "Rp-11"
-      state_labels(5) = "Rp-21"
-      state_labels(6) = "Rp-31"
-      state_labels(7) = "Rp-12"
-      state_labels(8) = "Rp-22"
-      state_labels(9) = "Rp-32"
-      state_labels(10) = "Rp-13"
-      state_labels(11) = "Rp-23"
-      state_labels(12) = "Rp-33"
-
-      state_descriptors(4:12) = "plastic rotation component"
-
-      state_labels(13) = "mcFei-11"
-      state_labels(14) = "mcFei-21"
-      state_labels(15) = "mcFei-31"
-      state_labels(16) = "mcFei-12"
-      state_labels(17) = "mcFei-22"
-      state_labels(18) = "mcFei-32"
-      state_labels(19) = "mcFei-13"
-      state_labels(20) = "mcFei-23"
-      state_labels(21) = "mcFei-33"
-
-      state_descriptors(13:21) = "-curl(Fe^-1) pseudo Nye tensor"
-      
-      state_labels(22) = "eps-11"
-      state_labels(23) = "eps-22"
-      state_labels(24) = "eps-33"
-      state_labels(25) = "eps-13"
-      state_labels(26) = "eps-23"
-      state_labels(27) = "eps-12"
-
-      state_descriptors(22:27) = "lattice strain"
-
-      state_labels(28) = "R-11"
-      state_labels(29) = "R-21"
-      state_labels(30) = "R-31"
-      state_labels(31) = "R-12"
-      state_labels(32) = "R-22"
-      state_labels(33) = "R-32"
-      state_labels(34) = "R-13"
-      state_labels(35) = "R-23"
-      state_labels(36) = "R-33"
-
-      state_descriptors(28:36) = "RU rotation"
-
-      state_labels(37) = "max-slip-rate"
-      state_descriptors(37) = "max-slip-rate"
-
-      state_labels(38) = "max-sys-ID"
-      state_descriptors(38) = "max-sys-ID"
-
-      state_labels(39) = "number-active"
-      state_descriptors(39) = "number-active"
-
-      state_labels(40) = ""
-      state_descriptors(40) = "eff. creep rate"
-
-      state_labels(41) = ""
-      state_descriptors(41) = "n_eff"
-
-      state_labels(42) = ""
-      state_descriptors(42) = "eff. stress"
-
-      state_labels(43) = ""
-      state_descriptors(43) = "B_eff"
-
-      do i = 1, max_slip_sys
-            write(state_labels(i+43), 9000) i
-            state_descriptors(i+43) = "integrated slip"
-      end do
-
-      do i = 1, max_uhard
-            write(state_labels(i+max_slip_sys+43), 9020)
-     & i
-            state_descriptors(i+max_slip_sys+43) =
-     &  "inter. hardening var."
-      end do
-c
-      if( do_print ) then
-        do i = 1, num_states 
-          write(outi,9010) i, state_labels(i), state_descriptors(i)
-        end do
-        do_print = .false.   
-      end if
-c          
-      return
- 9000 format("slip-",i2.2)    
- 9010 format(2x,i3,2x,a8,2x,a) 
- 9020 format("hard.-",i2.2)      
-      end
-      
-
-c
-c     ****************************************************************
-c     *                                                              *
-c     *             subroutine mm10_states_values                    *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *               last modified : 12/5/2014 (rhd)                *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_states_values( itype, elem_states_output,
-     &                                 nrow_states, num_states  )
-c
-c                       access some global data structures
-c
-      use elem_block_data, only: history_blocks, history_blk_list
-      use main_data, only: elems_to_blocks
-      implicit integer (a-z)
-$add common.main
-c
-c                       parameters
-c
-      integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
-c
-c                       locals
-c
-#dbl      double precision, 
-#sgl      real,
-     & allocatable :: history_dump(:,:,:), one_elem_states(:)
-      integer :: relem, elnum, hist_size, blockno
-      logical :: do_a_block
-      double precision :: zero
-      data zero / 0.0d00 /
-c      
-c           build CP states values output.
-c
-c              itype > 0 => this is the block number. do all elements
-c                           in the block
-c
-c              itype < 0 => this is an element number. put state
-c                           values into column 1 of results.
-c 
-      do_block = .true.
-      if( itype. gt. 0 ) then
-         do_a_block = .true.
-         blockno = itype
-      else
-         do_a_block = .false.
-         elnum = -itype
-         blockno = elems_to_blocks(elnum,1)
-      end if          
-c
-      local_debug = .false.      
-      felem       = elblks(1,blockno)
-      elem_type   = iprops(1,felem)
-      mat_type    = iprops(25,felem)
-      int_points  = iprops(6,felem)
-      span        = elblks(0,blockno)
-      hist_size   = history_blk_list(blockno)
-      if( local_debug ) write(out,9050) blockno, felem, elem_type,         
-     &         mat_type, int_points, span, hist_size
-c
-c           temporary block of history so it can be re-organized
-c
-      allocate( one_elem_states(nrow_states) )
-      allocate( history_dump(hist_size,int_points,span) )
-      history_dump = reshape( history_blocks(blockno)%ptr,
-     &           (/hist_size,int_points,span/) )
-c      
-      if( do_a_block ) then    
-        do relem = 1, span
-           elnum = felem + relem - 1  ! absolute element number
-           one_elem_states(1:nrow_states) = zero 
-           call mm10_states_values_a
-           elem_states_output(1:nrow_states,relem) = 
-     &                one_elem_states(1:nrow_states)
-        end do
-      else
-           relem = elnum + 1 - felem
-           one_elem_states(1:nrow_states) = zero
-           call mm10_states_values_a
-           elem_states_output(1:nrow_states,1) =
-     &                one_elem_states(1:nrow_states)
-      end if  
-c        
-      deallocate( history_dump, one_elem_states )
-c        
-      return
-c      
- 9050 format(10x,"block, felem, etype, mtype:  ",4i7,
-     &  /,10x,   "int_pts, span, hist_size:    ",3i7 )
-c
-      contains
-c     ========      
-     
-c     ****************************************************************
-c     *                                                              *
-c     *             subroutine mm10_states_values_a                  *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 5/30/2015 (tjt)            *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine mm10_states_values_a
-c      
-      use main_data, only: matprp, imatprp
-      use crystal_data, only : c_array, angle_input, crystal_input,
-     &                         data_offset
-c
-      implicit integer (a-z)
-$add common.main
-c
-c                       locals
-c
-      integer :: matnum, nslip, s, e, d, z, b, w,
-     &           cnum, osn, kk, sc
-#dbl      double precision, 
-#sgl      real,
-     & dimension(3,3,3) :: gradFe
-#dbl      double precision, 
-#sgl      real,
-     & dimension(3,3) :: nye
-c
-c
-c           Goal for state output:
-c           1:3                     euler angles      Cry 7:9
-c           4:12                    Rp                Cry 10:18
-c           13:21                   curl Fe^-1        ****
-c                                   grad Fe^-1 is     37:63
-c           22:27                   lattice strain    
-c           28:36                   R    
-c           37:39                   active slip systems   
-c           40                      effective creep rate
-c           41                      n_eff for creep
-c           42                      effective stress
-c           43                      B_eff for creep
-c           43+1:43+max_slip_sys    slip history      76:76+max_slip_sys-1
-c           43+max_slip_sys+1:end    hardening      76:76+max_slip_sys-1
-c          
-c           Unfortunately we don't store ncrystals in the history, so
-c           we need to access it in the material properties
-c           If there are multiple crystals per GP then just look 
-c           at the first first one
-c
-      matnum = iprops(38,felem)
-      if( imatprp(104,matnum) .eq. 1 ) then
-          cnum = imatprp(105,matnum)
-      elseif( imatprp(104,matnum) .eq. 2 ) then
-          osn  = data_offset(elnum)
-          cnum = crystal_input(osn,1)
-      else
-          write(out,9000) elnum
-          call die_gracefully
-      end if
-c
-      nslip = c_array(cnum)%nslip
-c
-c           Start of the first crystal
-      sc = 76+max_slip_sys - 1
-c
-c
-c           Results 1-3: euler angles of the first crystal, 
-c           first GP
-c
-      s = 7 + sc
-      e = 9 + sc
-      one_elem_states(1:3) = 
-     &          ( history_dump(s:e,1,relem) )
-c
-c           Results 4-12: plastic rotation of the first crystal, 
-c           first GP
-c
-      s = 10 + sc
-      e = 18 + sc
-      one_elem_states(4:12) = 
-     &          ( history_dump(s:e,1,relem) )
-c
-c           Results 13-21: Nye tensor, averaged over gauss points
-c
-      s = 37
-      e = 63
-      gradFe = reshape( sum(history_dump(s:e,1:int_points,relem),2 ) /
-     &            dble(int_points), (/3,3,3/) )
-      nye(1:3,1:3) = zero
-      do d = 1,3
-          do z = 1,3
-            do b = 1,3
-                do w = 1,3
-                  kk = (z-b)*(b-w)*(w-z)/2
-                  nye(d,z) = nye(d,z) - dble(kk)*gradFe(d,b,w)
-                end do
-             end do
-          end do
-      end do
-      one_elem_states(13:21) = reshape(nye, (/9/))
-c
-c           Results 22:27: the lattice strain, averaged over Gauss points
-c    
-      s = sc+24+1
-      e = sc+30
-      one_elem_states(22:27) = sum( 
-     &      history_dump(s:e,1:int_points,relem), 2 ) / dble(int_points)
-c
-c           Results 28:36: R, first Gauss point
-c    
-      s = 64
-      e = 72
-      one_elem_states(28:36) = ( 
-     &      history_dump(s:e,1,relem) )
-c
-c           Results 37:39: active slip systems, first Gauss point
-c    
-      s = sc + 30 + max_slip_sys + max_uhard + 6
-      e = sc + 30 + max_slip_sys + max_uhard + 8
-      one_elem_states(37:39) = ( 
-     &      history_dump(s:e,1,relem) )
-c
-c           Results 40:41: effective creep, first Gauss point
-c    
-      s = sc + 30 + max_slip_sys + max_uhard + 11
-      e = sc + 30 + max_slip_sys + max_uhard + 14
-      one_elem_states(40:43) = ( 
-     &      history_dump(s:e,1,relem) )
-c
-c           Results 39+1:39+max_slip_sys : the slip totals, 
-c           padded with zeros as 
-c           required  and averaged over Gauss points
-c
-      s = 76
-      e = 76 + nslip - 1
-      one_elem_states(43+1:43+max_slip_sys) = 
-     &         sum( history_dump(s:e,1:int_points,relem),2 ) / 
-     &         dble(int_points)
-
-c
-c           Results 13: tau_tilde of first crystal, avged
-c
-      s = sc + 30 + max_slip_sys + 1
-      e = sc + 30 + max_slip_sys + max_uhard
-      one_elem_states(43+1+max_slip_sys:43+max_slip_sys+max_uhard) = 
-     &         sum( history_dump(s:e,1:int_points,relem),2 ) /
-     &         dble(int_points)
-c
-      return     
-c
- 9000 format(/1x,
-     &'>>>>> Error: invalid crystal detected. element: ',i7,
-     & /,14x,'routine oustates_values_mm10_a',
-     & /,14x,'job terminated....'/)
-c
-      end subroutine mm10_states_values_a
-      end subroutine mm10_states_values
-c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_setup_np1                   *
@@ -1889,7 +1466,7 @@ c     *     time increment                                           *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_setup_np1(Rur, dstrain, dt, T, step, elem, 
+      subroutine mm10_setup_np1(Rur, dstrain, dt, T, step, elem,
      &      iter,gp,np1)
       use mm10_defs
       implicit none
@@ -2024,14 +1601,14 @@ c     Just a whole lot of copying
 c
       cc_props%g(1:3,1:3) = inc_props%rotation_g(1:3,1:3)
 c
-      cc_props%ms(1:6,1:max_slip_sys) = 
+      cc_props%ms(1:6,1:max_slip_sys) =
      &      inc_props%ms(1:6,1:max_slip_sys)
-      cc_props%qs(1:3,1:max_slip_sys) = 
+      cc_props%qs(1:3,1:max_slip_sys) =
      &      inc_props%qs(1:3,1:max_slip_sys)
-      cc_props%ns(1:3,1:max_slip_sys) = 
+      cc_props%ns(1:3,1:max_slip_sys) =
      &      inc_props%ns(1:3,1:max_slip_sys)
 c
-      cc_props%stiffness(1:6,1:6) = 
+      cc_props%stiffness(1:6,1:6) =
      &      inc_props%init_elast_stiff(1:6,1:6)
 c
       cc_props%angle_type = atype
@@ -2066,21 +1643,21 @@ c
 c
       write (*,*) "Not implemented"
       call die_gracefully
-      
+
       return
       end subroutine
 c
-c           Setup user hardening    
+c           Setup user hardening
       subroutine mm10_setup_user(props, np1, n)
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-c     
+c
       write(*,*) "Not implemented"
       call die_gracefully
-c     
+c
       return
       end subroutine
 c -----------------------
@@ -2103,18 +1680,18 @@ c
       return
       end subroutine
 c
-c           Setup voche law hardening      
+c           Setup voche law hardening
       subroutine mm10_setup_voche(props, np1, n)
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-c     
+c
       ! No setup actually required, but define a mu_harden at state np1
       ! for the sake of the CP model
       np1%mu_harden = props%stiffness(6,6)
-c     
+c
       return
       end subroutine
 c -------------
@@ -2132,19 +1709,19 @@ c
 c
       tau_tilde(1) = -1.0d0 ! This only works because these are actually flags
       uhist(1) = -1.0d0
-      uhist(2) = -1.0d0 
-c      
+      uhist(2) = -1.0d0
+c
       return
       end subroutine
 c
-c           Setup MTS hardening      
+c           Setup MTS hardening
       subroutine mm10_setup_mts(props, np1, n)
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-c     
+c
       double precision :: dgc, init_hard
       parameter(init_hard=0.1d0)
 c
@@ -2182,10 +1759,10 @@ c     Used existing labels as a convenience, actually get/set the history
 c
 c     Same here -- check for previous step flag
       if (n%tau_tilde(1) .lt. 0.0d0) then
-        n%tau_tilde(1) = props%tau_a + 
+        n%tau_tilde(1) = props%tau_a +
      &     (np1%mu_harden/props%mu_0)*np1%tau_y + init_hard
       end if
-c     
+c
       return
       end subroutine
 c
@@ -2197,27 +1774,27 @@ c *****************************************************************************
 c
 c Variable conversion table:
 c      WARP3D        Matlab
-c      rate_n        
+c      rate_n
 c      tau_hat_y     c7
 c      G_0_y         v_attack
-c      burgers,      
-c      p_v           
-c      q_v           
-c      boltzman      
+c      burgers,
+c      p_v
+c      q_v
+c      boltzman
 c      theta_0       rho_initial
-c      eps_dot_0_v   
-c      eps_dot_0_y   
-c      p_y           
-c      q_y            
-c      tau_a         Qbulk 
-c      tau_hat_v     c8 
-c      G_0_v         Qslip  
-c      k_0            
-c      mu_0           
-c      D_0               
-c      T_0           
-c      voche_m          
-c      u1            c1   
+c      eps_dot_0_v
+c      eps_dot_0_y
+c      p_y
+c      q_y
+c      tau_a         Qbulk
+c      tau_hat_v     c8
+c      G_0_v         Qslip
+c      k_0
+c      mu_0
+c      D_0
+c      T_0
+c      voche_m
+c      u1            c1
 c      u2            c2
 c      u3            c3
 c      u4            c4
@@ -2238,11 +1815,11 @@ c
       else
       tau_tilde(1:props%num_hard) = props%theta_0 ! Initial densities for edges
       endif
-c      
+c
       return
       end subroutine
 c
-c           Setup mrr hardening    
+c           Setup mrr hardening
       subroutine mm10_setup_mrr(props, np1, n)
       use mm10_defs
       implicit none
@@ -2253,7 +1830,7 @@ c
 c increment the total time
       time = n%u(1) + np1%tinc
       np1%u(1) = time
-c     
+c
       return
       end subroutine
 c
@@ -2265,27 +1842,27 @@ c *****************************************************************************
 c
 c Variable conversion table:
 c      WARP3D        Matlab
-c      rate_n        
+c      rate_n
 c      tau_hat_y     c7
 c      G_0_y         v_attack
-c      burgers,      
-c      p_v           
-c      q_v           
-c      boltzman      
+c      burgers,
+c      p_v
+c      q_v
+c      boltzman
 c      theta_0       rho_initial
-c      eps_dot_0_v   
-c      eps_dot_0_y   
-c      p_y           
-c      q_y            
-c      tau_a         Qbulk 
-c      tau_hat_v     c8 
-c      G_0_v         Qslip  
-c      k_0            
-c      mu_0           
-c      D_0               
-c      T_0           
-c      voche_m          
-c      u1            c1   
+c      eps_dot_0_v
+c      eps_dot_0_y
+c      p_y
+c      q_y
+c      tau_a         Qbulk
+c      tau_hat_v     c8
+c      G_0_v         Qslip
+c      k_0
+c      mu_0
+c      D_0
+c      T_0
+c      voche_m
+c      u1            c1
 c      u2            c2
 c      u3            c3
 c      u4            c4
@@ -2306,11 +1883,11 @@ c
       else
       tau_tilde(1:props%num_hard) = props%theta_0 ! Initial densities for edges
       endif
-c      
+c
       return
       end subroutine
 c
-c           Setup ornl hardening    
+c           Setup ornl hardening
       subroutine mm10_setup_ornl(props, np1, n)
       use mm10_defs
       implicit none
@@ -2321,7 +1898,7 @@ c
 c increment the total time
       time = n%u(1) + np1%tinc
       np1%u(1) = time
-c     
+c
       return
       end subroutine
 c
@@ -2378,7 +1955,7 @@ c
       use mm10_defs
       implicit integer(a-z)
 c
-      double precision, 
+      double precision,
      &  dimension(24+max_uhard+max_uhard) :: history
       double precision, dimension(27) :: gradfe
       double precision, dimension(9) :: R
@@ -2398,23 +1975,23 @@ c           Only used at n+1
 c
       n%stress = history(1:6)
       n%euler_angles(1:3) = history(7:9)
-c     
+c
       n%Rp = reshape(history(10:18), (/3,3/))
       n%D(1:6) = history(18+1:24)
       n%eps(1:6) = history(24+1:30)
-      n%slip_incs(1:max_slip_sys) = 
+      n%slip_incs(1:max_slip_sys) =
      &  history(30+1:30+max_slip_sys)
-      n%tau_tilde(1:props%num_hard) = 
+      n%tau_tilde(1:props%num_hard) =
      &  history(30+max_slip_sys+1:30+max_slip_sys
      &          +props%num_hard)
 c
-      n%u(1:max_uhard) =  
+      n%u(1:max_uhard) =
      &  history(30+max_slip_sys+max_uhard+1:30+max_slip_sys
      &          +2*max_uhard)
-      n%tt_rate(1:props%num_hard) =  
+      n%tt_rate(1:props%num_hard) =
      &  history(30+max_slip_sys+2*max_uhard+1:30+max_slip_sys
      &          +2*max_uhard+props%num_hard)
-c      
+c
       return
       end subroutine
 c
@@ -2458,8 +2035,8 @@ c     *     Solve the stress update adaptively (if required)         *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_solve_strup(props, np1, n, vec1, vec2, arr1, 
-     &   arr2, ivec1, ivec2, fail, gp, iter_0_extrapolate_off, 
+      subroutine mm10_solve_strup(props, np1, n, vec1, vec2, arr1,
+     &   arr2, ivec1, ivec2, fail, gp, iter_0_extrapolate_off,
      &    no_load)
       use mm10_defs
       implicit none
@@ -2526,19 +2103,19 @@ c
         np1%tangent = props%stiffness ! assign elastic stiffness as the tangent matrix
 c       check whether to update the stress accounting for evolving creep
 c       according to np1%stress = n%stress - R1(n%stress,uddt)
-c       where R1 = stress - n%stress - matmul(props%stiffness, np1%D - dbarp) 
+c       where R1 = stress - n%stress - matmul(props%stiffness, np1%D - dbarp)
 c     &      + 2.0d0 * symTW
         if(.not.no_load) then
           call mm10_formvecs(props, np1, n, stress, tt, vec1, vec2)
-          call mm10_formR1(props, np1, n, vec1, vec2, stress, tt, 
+          call mm10_formR1(props, np1, n, vec1, vec2, stress, tt,
      &                     R1, gp)
           stress = stress - R1
         end if
 c ensure that zero rates are set, though this value should not be kept in warp3d history during extrapolaion anyway
-        curr%tt_rate = 0.d0 
+        curr%tt_rate = 0.d0
 c
       else ! update stress, state variables using usual material N-R solvers
-c 
+c
       do while (frac .lt. 1.0d0)
         call mm10_setup_np1(reshape(np1%R, (/9/)), np1%D*(step+frac),
      &      np1%tinc*(step+frac), (np1%temp-n%temp)*(step+frac)+n%temp,
@@ -2603,7 +2180,7 @@ c
 c
       end if
 c
-c      
+c
       np1%stress = stress
       np1%tau_tilde = tt
       np1%tt_rate = curr%tt_rate ! store rates of hardening too
@@ -2644,7 +2221,7 @@ c
       logical :: fail
 c
       double precision, dimension(6+props%num_hard) :: R,x,dx, xnew,g
-      double precision, 
+      double precision,
      & dimension(6+props%num_hard,6+props%num_hard) :: J
       double precision :: nR, inR, atol, rtol, uB, alpha, ls1, ls2,
      &      nlsx, nRs, c, red, dt, cos_ang, xetol, xtol1, zerotol,
@@ -2722,7 +2299,7 @@ c      if (debug) write(*,*) "Entering stress prediction"
       iter = 0
       x1 = x(1:6)
 c
-      ! Module to extrapolate the hardening variables      
+      ! Module to extrapolate the hardening variables
       dt = dtinc !np1%tinc
       ! Predict the new hardening variable by extrapolation
       ! Use cosine of the "angle" between the new and old
@@ -2760,7 +2337,7 @@ c       Newton-Raphson loop
 c      dxerr = 1.1*xtol1
 c      if(locdebug) then ! print statement for debugging
 c      write(props%out,*)" xtol1=",
-c     &  xtol1, " dxerr=", dxerr, 'T/f', ((nR1 .gt. atol1) 
+c     &  xtol1, " dxerr=", dxerr, 'T/f', ((nR1 .gt. atol1)
 c     & .and. (nR1/inR1 .gt. rtol1)
 c     &   .and. (dxerr .gt. xtol1))
 c      endif
@@ -2801,7 +2378,7 @@ c           Line search
           xnew1 = x1 + alpha*dx1
 c             Residual
           call mm10_formvecs(props, np1, n, xnew1, x2, vec1, vec2)
-          call mm10_formR1(props, np1, n, vec1, vec2, 
+          call mm10_formR1(props, np1, n, vec1, vec2,
      &         xnew1,x2, R1,gp)
         if (locdebug) write (*,*) "R1 ls", R1(2)
           nR1 = dsqrt(dot_product(R1,R1))
@@ -2904,9 +2481,9 @@ c       Newton-Raphson loop
       if (locdebug) write(*,'("Iter ",i3," norm ",E10.3)') iter, nR
 c      dxerr = 1.1*xtol
 c      do while (((nR .gt. atol) .and. (nR/inR .gt. rtol)
-c     &   .and. (dxerr .gt. xetol)) .or. 
+c     &   .and. (dxerr .gt. xetol)) .or.
       do while (((nR .gt. atol) .and. (nR/inR .gt. rtol)
-     &   ) .or. 
+     &   ) .or.
      &          (iter.lt.mmin))
 c           Jacobian
         if(props%real_tang) then ! tangent matrix implemented
@@ -2919,7 +2496,7 @@ c           Jacobian
 c        if (debug) write (*,*) "J11", J(1:6,1:6)
 c        if (debug) write (*,*) "J12", J(1:6,7:6+props%num_hard)
 c        if (debug) write (*,*) "J21", J(7:6+props%num_hard,1:6)
-c        if (debug) write (*,*) "J22", 
+c        if (debug) write (*,*) "J22",
 c     &    J(7:6+props%num_hard,7:6+props%num_hard)
 c           Increment
         dx = R
@@ -3079,7 +2656,7 @@ c
             WT(3,1) = -WV(2)
             WT(3,2) = -WV(1)
             WT(3,3) = 0.d0
-            
+
             return
       end subroutine
 c
@@ -3123,6 +2700,4 @@ c           Add the identity
 
             return
       end subroutine
-
-
-
+c234567

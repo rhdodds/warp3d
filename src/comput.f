@@ -1,10 +1,10 @@
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine comput                       *
+c     *                      subroutine compute                      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/24/2015 rhd              *
+c     *                   last modified : 5/22/2016                  *
 c     *                                                              *
 c     *     this subroutine supervises the computation of the quan-  *
 c     *     tities requested by the user.                            * 
@@ -13,7 +13,7 @@ c     ****************************************************************
 c
 c
 c
-      subroutine comput
+      subroutine compute
       use j_data, only: comput_j, comput_i
       implicit integer (a-z)
 $add common.main
@@ -136,9 +136,59 @@ c                       the list of time steps is a valid one. compute
 c                       the displacements for the steps specified.
 c  
       notes_msg = .false.
+      call compute_output_check_before
       call stpdrv( intlst, lenlst, ldnum)
       return
 c
  9999 continue
       call scan_flushline; return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *        subroutine compute_check__output_before               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 5/22/2016                  *
+c     *                                                              *
+c     *   perform additional, generally one-time set ups that must   *
+c     *   done after input processed but not before every step or    * 
+c     *   output (e.g. just restarted)                               * 
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine compute_output_check_before
+      use  main_data, only : cp_matls_present, matprp, imatprp
+      implicit integer (a-z)
+$add common.main
+c
+      integer :: matnum
+      logical :: found_cp
+c
+c
+c              check for presence of material(s) using crystal 
+c              plasticity. 
+c
+c              cp_matls_present = -1 we've not yet checked
+c                               =  0 we checked and no CP materials
+c                               =  1 we check. there are CP materials
+c                                  and we need to call CP setup
+c                                  routine if not already done.
+      if( cp_matls_present == -1 ) then
+       found_cp = .false.
+       do matnum = 1, nummat  ! nummat in common.main
+        if(  matprp(9,matnum) /= 10 ) cycle
+        found_cp = .true.
+        exit
+       end do
+       cp_matls_present = 0
+       if( found_cp ) then
+         cp_matls_present = 1 
+         call mm10_set_history_locs
+       end if
+      end if       
+c
+c              add more setups here ...
+c
+      return
       end

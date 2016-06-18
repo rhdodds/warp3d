@@ -7,7 +7,7 @@ c *****************************************************************************
 c
       subroutine mm11(gp, span, hist_sz,
      &            history_n, history_np1,
-     &            local_work, uddt, gp_temps, 
+     &            local_work, uddt, gp_temps,
      &            gp_temp_inc, iout)
             use main_data, only: asymmetric_assembly
             use mm10_defs
@@ -58,10 +58,10 @@ c                 macro_sz + ncrystals + 1
 c
 c                 Fix the problem with the rotation matrix at small strains
               if (.not. local_work%geo_non_flg) then
-                  local_work%rot_blk_n1(i, 1:9, gp) = 
+                  local_work%rot_blk_n1(i, 1:9, gp) =
      &              (/1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0/)
               end if
-c              
+c
 c                 Loop on crystals
               dsum = 0.0
               do s=1,local_work%nstacks(i)
@@ -79,7 +79,7 @@ c                 Where this crystal's RT parameter goes
                 r_1=local_work%macro_sz+local_work%ncrystals(i)+c1+1
                 r_2=local_work%macro_sz+local_work%ncrystals(i)+c2+1
 
-                if ((history_n(i,dci_1) .gt. cutoff) .or. 
+                if ((history_n(i,dci_1) .gt. cutoff) .or.
      &            (history_n(i,dci_2) .gt. cutoff)) then
                   history_np1(i,dci_1) = 1.0
                   history_np1(i,dci_2) = 1.0
@@ -87,7 +87,7 @@ c                 Where this crystal's RT parameter goes
                   exit
                 end if
               end do
-              
+
               if (dmax .gt. cutoff) go to 1300
 
               do p=1,local_work%nper(i)
@@ -105,20 +105,20 @@ c                 Where this crystal's RT parameter goes
                 r_2=local_work%macro_sz+local_work%ncrystals(i)+c2+1
 c
                 call mm10_init_cc_props(local_work%c_props(i,c1),
-     &                        local_work%angle_type(i), 
+     &                        local_work%angle_type(i),
      &                        local_work%angle_convention(i),cc_props_1)
                 cc_props_1%out = iout
                 call mm10_init_cc_props(local_work%c_props(i,c2),
-     &                        local_work%angle_type(i), 
+     &                        local_work%angle_type(i),
      &                        local_work%angle_convention(i),cc_props_2)
                 cc_props_2%out = iout
                 if (local_work%step .eq. 1) then
-                  call mm10_init_cc_hist0(cc_props_1, 
+                  call mm10_init_cc_hist0(cc_props_1,
      &                 local_work%c_props(i,c1)%init_angles(1:3),
      &                 history_n(i,co_1:cn_1))
                   history_n(i,dci_1) = 0.0
                   history_n(i,r_1) =  0.0
-                  call mm10_init_cc_hist0(cc_props_2, 
+                  call mm10_init_cc_hist0(cc_props_2,
      &                 local_work%c_props(i,c1)%init_angles(1:3),
      &                 history_n(i,co_2:cn_2))
                   history_n(i,dci_2) = 0.0
@@ -137,18 +137,18 @@ c
 c                 Solve the bicrystal stresses for this pair
 c
                 call mm10_setup_np1(
-     &                  local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6), 
+     &                  local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6),
      &                  local_work%dt, gp_temps(i), local_work%step,
      &                  i+local_work%felem, gp, cc_np1_1)
 c
                 call mm10_setup_np1(
-     &                  local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6), 
+     &                  local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6),
      &                  local_work%dt, gp_temps(i), local_work%step,
      &                  i+local_work%felem, gp, cc_np1_2)
 c
                 cp_cut = .false.
 c                 Solve the bicrystal pair
-                call mm11_solve_bicrystal(cc_props_1, 
+                call mm11_solve_bicrystal(cc_props_1,
      &            cc_np1_1, cc_n_1,
      &            cc_props_2, cc_np1_2, cc_n_2,
      &            local_work%sv, local_work%lv, local_work%tv,
@@ -172,14 +172,14 @@ c
                 end if
 
 c               Store the CP history for this crystal
-                call mm10_store_cryhist(cc_props_1, cc_np1_1, cc_n_1, 
+                call mm10_store_cryhist(cc_props_1, cc_np1_1, cc_n_1,
      &                  history_np1(i,co_1:cn_1))
-                call mm10_store_cryhist(cc_props_2, cc_np1_2, cc_n_2, 
-     &                  history_np1(i,co_2:cn_2)) 
+                call mm10_store_cryhist(cc_props_2, cc_np1_2, cc_n_2,
+     &                  history_np1(i,co_2:cn_2))
 c
 c               Calculate and store damage for these crystals
                 call mm11_calc_cry_damage(cc_props_1, cc_np1_1, cc_n_1,
-     &            local_work%alpha_dmg, 
+     &            local_work%alpha_dmg,
      &            history_n(i,dci_1), history_np1(i,dci_1),
      &            history_n(i,r_1), history_np1(i,r_1))
                 call mm11_calc_cry_damage(cc_props_2, cc_np1_2, cc_n_2,
@@ -207,11 +207,11 @@ c
               end do
 c
 c                       Store R for the next CP run
-              history_np1(i,(64+cp_off):(72+cp_off)) = 
+              history_np1(i,(64+cp_off):(72+cp_off)) =
      &            local_work%rot_blk_n1(i,1:9,gp)
 c
 c                 Store the total damage at state np1
-              history_np1(i,1+local_work%macro_sz) = 
+              history_np1(i,1+local_work%macro_sz) =
      &            dsum / dble(local_work%nstacks(i))
 c
  1337         continue
@@ -222,7 +222,7 @@ c                 Apply the damage to the stress
      &            local_work%sv, local_work%lv, local_work%tv)
 c
 c                 Store the damage in the user output variables (9 is c1...)
-              local_work%urcs_blk_n1(i,9,gp) = 
+              local_work%urcs_blk_n1(i,9,gp) =
      &            history_np1(i,1+local_work%macro_sz)
             end do
 
@@ -300,7 +300,7 @@ c
         lel = dot_product(size_vec, abs(lv))
         let = dot_product(size_vec, abs(tv))
       end if
-      
+
       ns = nint(les/ls)
       nl = nint(lel/ll)
       nt = nint(let/lt)
@@ -415,14 +415,14 @@ c
       subroutine cnst11( gp, span, cep_blk, dmg_blk, s_v, l_v, t_v,
      &                  iout)
       implicit none
-      
+
       integer :: gp, span, iout
       double precision, dimension(span,6,6) :: cep_blk
       double precision, dimension(3) :: s_v, l_v, t_v
       double precision, dimension(span) :: dmg_blk
 
       integer :: i
-     
+
 
       do i=1,span
         call mm11_damage_tangent(cep_blk(i,1:6,1:6), dmg_blk(i),
@@ -687,12 +687,18 @@ c           Fake out the material model
       omn = iprops(38,local_el)
       iprops(38,local_el) = matnum
 c           Get the CP size
-      call mm10_set_sizes(fake_sz, local_el)
+c      call mm10_set_sizes(fake_sz, local_el)
+       write(*,9000)
+       call die_abort
       imatprp(133,matnum) = fake_sz(1)
 c           Sum up
       size_data(1) = old_sz + 1 + fake_sz(1) + 2*ncrystals
 c           Reset material data
       iprops(38,local_el) = omn
+      return
+ 9000 format('>> FATAL ERROR: routine mm11_set_sizes_special',
+     & /,    '                not implemented',
+     & /,    '                job terminated',//)
 c
       end subroutine
 c
@@ -714,11 +720,11 @@ c
 c
 c        set infor_data
 c
-c         1        number of history values per integration 
+c         1        number of history values per integration
 c                  point. Abaqus calles these "statev". Values
 c                  double or single precsion based on hardware.
-c    
-c         2        number of values in the symmetric part of the 
+c
+c         2        number of values in the symmetric part of the
 c                  [D] for each integration point. for solid
 c                  elements this is 21, for cohesive elements this 6.
 c
@@ -732,12 +738,12 @@ c                  when user requests this type of results
 c
       info_vector(1) = -100    ! set by special version above
       info_vector(2) = -100    ! set by special version above
-      info_vector(3) = -100    ! set by special version above 
+      info_vector(3) = -100    ! set by special version above
       info_vector(4) = 0
 c
       return
       end
-c            dummy routines for model not yet supporting 
+c            dummy routines for model not yet supporting
 c            states output
 c
 c     ****************************************************************
@@ -757,7 +763,7 @@ c                       access some global data structures
 c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks, cohesive_ele_types
-c      
+c
       implicit integer (a-z)
 $add common.main
 c
@@ -796,10 +802,10 @@ c                       locals
 c
       integer :: i
 c
-      num_states = 0   
-      num_comment_lines = 0  
+      num_states = 0
+      num_comment_lines = 0
       state_labels(1) = "..."
       state_descriptors(1) = "...."
-c      
+c
       return
       end
