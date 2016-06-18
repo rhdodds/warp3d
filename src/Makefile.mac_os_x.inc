@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: June 7, 2016
+#   Last modifications: June 18, 2016
 #
 #   Description:
 #
@@ -69,6 +69,7 @@
 #   rhd   4/6/2016  add mm10_e.f
 #   rhd   5/6/2016  add align64 to some .f
 #   rhd   6/7/2016  add mm10_f.f and make oustates use -O3
+#   rhd   6/18/2016 renove f_clmloc
 #
 #
 #
@@ -195,7 +196,6 @@ OBJ =	 \
 	$(OD)/equiv_strain$O	 \
 	$(OD)/errchk$O	 \
 	$(OD)/errmsg$O	 \
-	$(OD)/f_clmloc$O	 \
 	$(OD)/find_neighbors$O	 \
 	$(OD)/gastr$O	 \
 	$(OD)/gatemps$O	 \
@@ -938,14 +938,6 @@ $(OD)/evcmp1$O : evcmp1.f param_def
 #
 #       --- f --
 #
-$(OD)/f_clmloc$O : f_clmloc.f
-	$(RMC)  $@
-	$(RMC)  filt_f_clmloc.f
-	$(FILTER) < f_clmloc.f > filt_f_clmloc.f
-	$(F90) -O2 -ip  -c filt_f_clmloc.f
-	$(MVC) filt_f_clmloc$O  f_clmloc$O
-	$(MVC) f_clmloc$O $@
-
 $(OD)/find_neighbors$O : find_neighbors.f param_def \
                    common.main $(OD)/mod_main$O
 	$(RMC)  $@

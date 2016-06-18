@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: June 7, 2016
+#   Last modifications: June 18, 2016
 #
 #   Description:
 #
@@ -58,6 +58,7 @@
 #              4/6/2016  added mm10_e.f
 #              5/6/2016  add align 64 for some .f
 #              6/7/2016  add mm10_f.f, use -O3 for oustates.f
+#              6/18/2016 remove f_clmloc 
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
@@ -191,7 +192,6 @@ OBJ =	 \
 	$(OD)/equiv_strain$O	 \
 	$(OD)/errchk$O	 \
 	$(OD)/errmsg$O	 \
-	$(OD)/f_clmloc$O	 \
 	$(OD)/find_neighbors$O	 \
 	$(OD)/gastr$O	 \
 	$(OD)/gatemps$O	 \
@@ -925,14 +925,6 @@ $(OD)/evcmp1$O : evcmp1.f param_def
 #
 #       --- f --
 #
-$(OD)/f_clmloc$O : f_clmloc.f
-	$(RMC)  $@
-	$(RMC)  filt_f_clmloc.f
-	$(FILTER) < f_clmloc.f > filt_f_clmloc.f
-	$(F90) -O2 -ip  -c filt_f_clmloc.f
-	$(MVC) filt_f_clmloc$O  f_clmloc$O
-	$(MVC) f_clmloc$O $@
-
 $(OD)/find_neighbors$O : find_neighbors.f param_def \
                    common.main $(OD)/mod_main$O
 	$(RMC)  $@

@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: June 7, 2016 rhd
+#   Last modifications: June 18, 2016 rhd
 #
 #    Makefile for WARP3D on systems running Windows 7, 8, 10
 #    on x86 Processors (64-bit mode).
@@ -54,12 +54,14 @@
 #             4/6/2016  add mm10_e.f
 #             5/6/2016  add align64 to some .f
 #             6/7/2016  add mm10_f.f, use -O3 for oustates.f
+#             6/18/2016 remove f_clmloc.f
+#
 #    NOTE:   we specify the /QxHOST Fortran option. the compiler will
-#            generate code for the highest perfromance instruction set of the 
-#            CPU on your computer.
+#            generate code for the highest perfromance instruction 
+#            set of the CPU on your computer.
 #
 #            Remove this option is you wish the compiler to generate
-#            instructions for the broadest range (old !) Intel
+#            instructions for the broadest range (older) Intel
 #            processors
 #
 #    Use macro on the command line to setup for 64-bit build
@@ -170,7 +172,6 @@ OBJ =	 \
 	$(OD)/equiv_strain$O	 \
 	$(OD)/errchk$O	 \
 	$(OD)/errmsg$O	 \
-	$(OD)/f_clmloc$O	 \
 	$(OD)/find_neighbors$O	 \
 	$(OD)/gastr$O	 \
 	$(OD)/gatemps$O	 \
@@ -787,12 +788,6 @@ $(OD)/evcmp1$O : evcmp1.f param_def
 #
 #       --- f --
 #
-$(OD)/f_clmloc$O : f_clmloc.f
-	$(FILTER) < f_clmloc.f > filt_f_clmloc.f
-	$(F90) /O2 /Qip  /c filt_f_clmloc.f
-	$(MVC) filt_f_clmloc$O  f_clmloc$O
-	$(MVC) f_clmloc$O $@
-
 $(OD)/find_neighbors$O : find_neighbors.f param_def \
                    common.main $(OD)/mod_main$O
 	$(FILTER) < find_neighbors.f > filt_find_neighbors.f
