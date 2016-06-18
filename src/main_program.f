@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/28/2015  rhd            *
+c     *                   last modified : 5/22/2016 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -66,7 +66,8 @@ c
 #mac      call fdate (sdate_)
 #win      call fdate (sdate_)
 c
-      write (*,9000) sdate_, mxnod, mxel
+
+      write (*,9000) sdate_ , mxnod, mxel
 c
 c                       read a high level command
 c
@@ -615,7 +616,7 @@ c                       print out # of error messages encountered so far
 c                       and invoke compute to driver solution
 c
          call error_count(out,.false.)
-         call comput
+         call compute
       end if
       go to 10
 c
@@ -633,7 +634,7 @@ c
          param= 5
          call errmsg(11,param,dums,dumr,dumd)
       else
-         call oudriv(sbflg1,sbflg2,stname)
+         call oudrive(sbflg1,sbflg2,stname,ltmstp)
       end if
       go to 10
 c
@@ -980,37 +981,30 @@ c
      &     '   33333  DDDD    **',/,
      &     '    **                                             ',
      &     '                  **',/,
-#win     &     '    **     Intel 64-bit on Windows    -dev-    Release: ',
-#lnx     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
+#win     &     '    **     Windows (Intel)            -dev-    Release: ',
+#lnx     &     '    **     Linux (Intel)              -dev-    Release: ',
 #l64     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
-#mac     &     '    **     Mac OS X (64-bit)          -dev-    Release: ',
-     &     ' 17.7.1      **',/,
-     &     '    **     Code Build Number: 3201             ',
-     &     '                      **',/,
-     &     '    **     University of Illinois              Dept. of ',
-     &     'Civil Eng.   **',/,
-     &     '    **     ','Today: ',a24,'                      ',
-     &     '     **',/,
+#mac     &     '    **     Mac OS X (Intel)           -dev-    Release: ',
+     &     ' 17.7.3      **',/,
+#win     &     '    **     Code Build Number: 3204             ',
+#win     &     '                     **',/,
+!win     &     "    **     Built on: Fri Jun 17 14:56:17 EDT 2016 ",
+!win     &     '                   **',/,
+     &     '    **     University of Illinois @ U-C.',
+     &     '    Civil & Env Engineering  **',/,
+     &     '    **     Today: ',a24,27x,'**',/,
      &     '    **                                             ',
      &     '                  **',/,
+     &     '    **     NOTICE:  Use of Program Implies Agreement with',
+     &     ' Terms &    **',/,
+     &     '    **              Conditions Set Forth in File',
+     &     " 'license_agreement' **",/,
+     &     "    **              Enter the Command 'license' to",
+     &     ' Display Text      **',/,
      &     '    **                                             ',
      &     '                  **',/,
-     &     '    **          NOTICE:                            ',
-     &     '                  **',/,
-     &     '    **             Use of Program Implies Agreement',
-     &     ' With             **',/,
-     &     '    **             Terms and Conditions Set Forth i',
-     &     'n File            **',/,
-     &     '    **             "license_agreement".  Enter the ',
-     &     'WARP3D            **',/,
-     &     '    **             Command "license" to Display Lic',
-     &     'ense.             **',/,
-     &     '    **                                             ',
-     &     '                  **',/,
-     &     '    **             Limits this version:            ',
-     &     '                  **',/,
-     &     '    **              nodes: ',i8,' elements: ',i8,1x,
-     &     '              **',/,
+     &     '    **     Limits (nodes, elements): ',2i10,
+     &     '            **',/,
      &     '    **                                             ',
      &     '                  **',/,
      &     '    ***********************************************',
@@ -1030,7 +1024,7 @@ c     *                      subroutine error_count                  *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 09/21/95                   *
+c     *                   last modified : 05/29/2016 rhd             *
 c     *                                                              *
 c     *     write the summary of # of errors, warnings, and fatal    *
 c     *     errors encountered during the run.                       *
@@ -1049,31 +1043,37 @@ c            clear specifies if the message counts are to be cleared.
 c            already_called is how we tell if we are outputing on the
 c            first step or not.
 c
-
-      if ( .not. already_called ) then
-       if ( num_warn.gt.0 .or. num_error.gt.0 .or.
+c            if we jill execution, make sure to also write the
+c            terminate message to stdout [ variable out in common.main]
+c
+     &  already_called
+      if( .not. already_called ) then
+       if( num_warn.gt.0 .or. num_error.gt.0 .or.
      &      num_fatal.gt.0 ) then
-            write (outdev,9000) num_warn, num_error, num_fatal
+            write(outdev,9000) num_warn, num_error, num_fatal
        end if
-       if ( clear ) already_called = .true.
-       if ( .not. clear .and. num_fatal .gt. 0 .or.
-     &       num_error .gt. 0) then
-         write(outdev,9200)
-         call die_abort
-       end if
-      else
-       if ( num_warn.gt.0 .or. num_error.gt.0 .or.
-     &      num_fatal.gt.0 ) then
-           write (outdev,9100) num_warn, num_error, num_fatal
-       end if
-       if ( .not. clear .and. num_fatal .gt. 0 .or.
+       if( clear ) already_called = .true.
+       if( .not. clear .and. num_fatal .gt. 0 .or.
      &       num_error .gt. 0 ) then
          write(outdev,9200)
          call die_abort
        end if
+      else  !  already called
+       if( num_warn.gt.0 .or. num_error.gt.0 .or.
+     &      num_fatal.gt.0 ) then
+           write(outdev,9100) num_warn, num_error, num_fatal
+           if( outdev .ne. out ) write (out,9100) num_warn, 
+     &                            num_error, num_fatal
+       end if
+       if( .not. clear .and. num_fatal .gt. 0 .or.
+     &       num_error .gt. 0 ) then
+         write(outdev,9200)
+         if( outdev .ne. out ) write(out,9200)
+         call die_abort
+       end if
       end if
 c
-      if ( clear ) then
+      if( clear ) then
          num_warn  = 0
          num_error = 0
          num_fatal = 0
