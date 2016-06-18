@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: May 6, 2016
+#   Last modifications: June 7, 2016
 #
 #   Description:
 #
@@ -68,6 +68,7 @@
 #                   and compiled at -O2 which runs fine.
 #   rhd   4/6/2016  add mm10_e.f
 #   rhd   5/6/2016  add align64 to some .f
+#   rhd   6/7/2016  add mm10_f.f and make oustates use -O3
 #
 #
 #
@@ -255,6 +256,7 @@ OBJ =	 \
 	$(OD)/mm10_c$O	 \
 	$(OD)/mm10_d$O	 \
 	$(OD)/mm10_e$O	 \
+	$(OD)/mm10_f$O	 \
 	$(OD)/mm11$O	 \
 	$(OD)/mmnoopt$O	 \
 	$(OD)/mpi_code$O	 \
@@ -1463,7 +1465,7 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 
 $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_b.f
+	$(RMC)  filt_mm10_b.f 
 	$(FILTER) < mm10_b.f > filt_mm10_b.f
 	$(F90) -O3 -ip -inline-level=1  -c filt_mm10_b.f
 	$(MVC) filt_mm10_b$O  mm10_b$O
@@ -1493,6 +1495,14 @@ $(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
 	$(MVC) filt_mm10_e$O  mm10_e$O
 	$(MVC) mm10_e$O $@
 
+$(OD)/mm10_f$O : mm10_f.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_f.f
+	$(FILTER) < mm10_f.f > filt_mm10_f.f
+	$(F90) -O3 -ip -c filt_mm10_f.f
+	$(MVC) filt_mm10_f$O  mm10_f$O
+	$(MVC) mm10_f$O $@
+	
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
 	$(RMC)  filt_mm11.f
@@ -1965,7 +1975,7 @@ $(OD)/oustates$O : oustates.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_oustates.f
 	$(FILTER) < oustates.f > filt_oustates.f
-	$(F90) -O2 -ip  -c filt_oustates.f
+	$(F90) -O3 -ip  -c filt_oustates.f
 	$(MVC) filt_oustates$O  oustates$O
 	$(MVC) oustates$O $@
 

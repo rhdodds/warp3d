@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: May 6, 2016
+#   Last modifications: June 7, 2016
 #
 #   Description:
 #
@@ -42,25 +42,26 @@
 #              8/19/2015 use -heap-arrays on some *.f
 #             10/27/2015  delete stifup.f
 #             11/8/2015  add user_routines_module.f, update dependencies for
-#                        user_routines_...f, reorder some rules 
+#                        user_routines_...f, reorder some rules
 #                        for convenience
 #                        add rstgp1 dependency on mod_crystals
 #             11/29/2015 add -xHost to compiler options
 #             12/22/2015 replace mm10 with mm10a, b, c
 #                        use -inline-level=1 on some very long .f files
-#                        to reduce unnecessarily long compile times w/o 
+#                        to reduce unnecessarily long compile times w/o
 #                        improving runtime performance
 #              1/3/2016  remove gplns1.f, lnstff.f, rklstf.f, lcnst1.f,
 #                        cnst1.f, cnst2.f, cnst3.f, cnst4.f
 #              1/7/2016  mm10_a.f at -O3 for ifort V16.x causes seg fault.
 #                        isolated the culprit routine into a new mm10_d.f
 #                        and compiled at -O2 which runs fine.
-#              4/6/2016  added mm10_e.f 
-#              5/6/2016  add align 64 for some .f 
+#              4/6/2016  added mm10_e.f
+#              5/6/2016  add align 64 for some .f
+#              6/7/2016  add mm10_f.f, use -O3 for oustates.f
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
-#            generate code for the highest perfromance instruction set of the 
+#            generate code for the highest perfromance instruction set of the
 #            CPU on your computer.
 #
 #            Remove this option is you wish the compiler to generate
@@ -81,8 +82,9 @@
 #                the "pre" makefiles: Makefile.linux_em64t.omp
 #                or Makefile.linux_em64t.mpi
 #
-F90OPTS1 = -g -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz
+F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz
 F90INC = -xHost -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
+#F90INC =  -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #
 PROFILEOPT =
 #PROFILEOPT = -pg
@@ -250,6 +252,7 @@ OBJ =	 \
 	$(OD)/mm10_c$O	 \
 	$(OD)/mm10_d$O	 \
 	$(OD)/mm10_e$O	 \
+	$(OD)/mm10_f$O   \
 	$(OD)/mm11$O       \
 	$(OD)/mmnoopt$O	\
 	$(OD)/mpi_code$O	 \
@@ -1005,7 +1008,7 @@ $(OD)/gptns1$O : gptns1.f include_tan_ek \
 	$(RMC)  $@
 	$(RMC)  filt_gptns1.f
 	$(FILTER) < gptns1.f > filt_gptns1.f
-	$(F90) -O3 -ip  -c filt_gptns1.f 
+	$(F90) -O3 -ip -qopt-report=5 -c filt_gptns1.f
 	$(MVC) filt_gptns1$O  gptns1$O
 	$(MVC) gptns1$O $@
 
@@ -1298,7 +1301,7 @@ $(OD)/kg1$O : kg1.f param_def
 	$(RMC)  $@
 	$(RMC)  filt_kg1.f
 	$(FILTER) < kg1.f > filt_kg1.f
-	$(F90) -O3 -ip  -c filt_kg1.f
+	$(F90) -O3 -ip -qopt-report=5 -c filt_kg1.f
 	$(MVC) filt_kg1$O  kg1$O
 	$(MVC) kg1$O $@
 
@@ -1391,7 +1394,7 @@ $(OD)/mm03p$O : mm03p.f param_def \
 	$(F90) -O3 -ip  -c filt_mm03p.f
 	$(MVC) filt_mm03p$O  mm03p$O
 	$(MVC) mm03p$O $@
-	
+
 $(OD)/mm04$O : mm04.f
 	$(RMC)  $@
 	$(RMC)  filt_mm04.f
@@ -1444,7 +1447,7 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_a.f
 	$(FILTER) < mm10_a.f > filt_mm10_a.f
-	$(F90) -O3 -ip  -inline-level=1 -c filt_mm10_a.f
+	$(F90) -O3 -ip  -inline-level=1 -c filt_mm10_a.f -opt-report=5
 	$(MVC) filt_mm10_a$O  mm10_a$O
 	$(MVC) mm10_a$O $@
 
@@ -1463,7 +1466,7 @@ $(OD)/mm10_c$O : mm10_c.f $(OD)/mod_crystals$O param_def include_mm10
 	$(F90) -O3 -ip -inline-level=1  -c filt_mm10_c.f
 	$(MVC) filt_mm10_c$O  mm10_c$O
 	$(MVC) mm10_c$O $@
-	
+
 $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_d.f
@@ -1479,6 +1482,14 @@ $(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
 	$(F90) -O2 -ip -inline-level=1  -c filt_mm10_e.f
 	$(MVC) filt_mm10_e$O  mm10_e$O
 	$(MVC) mm10_e$O $@
+
+$(OD)/mm10_f$O : mm10_f.f $(OD)/mod_crystals$O param_def include_mm10
+	$(RMC)  $@
+	$(RMC)  filt_mm10_f.f
+	$(FILTER) < mm10_f.f > filt_mm10_f.f
+	$(F90) -O3 -ip -c filt_mm10_f.f
+	$(MVC) filt_mm10_f$O  mm10_f$O
+	$(MVC) mm10_f$O $@
 
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
@@ -1952,7 +1963,7 @@ $(OD)/oustates$O : oustates.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_oustates.f
 	$(FILTER) < oustates.f > filt_oustates.f
-	$(F90) -O2 -ip  -c filt_oustates.f
+	$(F90) -O3 -ip  -c filt_oustates.f
 	$(MVC) filt_oustates$O  oustates$O
 	$(MVC) oustates$O $@
 
@@ -2131,7 +2142,7 @@ $(OD)/rktstf$O : rktstf.f param_def include_tan_ek \
 	$(RMC)  $@
 	$(RMC)  filt_rktstf.f
 	$(FILTER) < rktstf.f > filt_rktstf.f
-	$(F90) -O3 -ip  -c filt_rktstf.f
+	$(F90) -O3 -ip  -qopt-report=5 -c filt_rktstf.f
 	$(MVC) filt_rktstf$O  rktstf$O
 	$(MVC) rktstf$O $@
 
@@ -2379,7 +2390,7 @@ $(OD)/user_list$O : user_list.f common.main \
 	$(F90) -O3 -ip  -c filt_user_list.f
 	$(MVC) filt_user_list$O  user_list$O
 	$(MVC) user_list$O $@
-	
+
 $(OD)/uppbar$O : uppbar.f common.main \
                    param_def
 	$(RMC)  $@
@@ -2404,7 +2415,7 @@ $(OD)/upres$O : upres.f common.main \
 #
 
 
-$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O 
+$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_umat.f
 	$(FILTER) < user_routines_umat.f > filt_user_routines_umat.f
@@ -2413,7 +2424,7 @@ $(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
 	$(MVC) user_routines_umat$O $@
 
 $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
-                                     $(OD)/user_routines_module$O 
+                                     $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_other_Abaqus.f
 	$(FILTER) < user_routines_other_Abaqus.f > filt_user_routines_other_Abaqus.f
@@ -2422,7 +2433,7 @@ $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
 	$(MVC) user_routines_other_Abaqus$O $@
 
 $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
-                               $(OD)/user_routines_module$O 
+                               $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_warp3d.f
 	$(FILTER) < user_routines_warp3d.f > filt_user_routines_warp3d.f
@@ -2431,7 +2442,7 @@ $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
 	$(MVC) user_routines_warp3d$O $@
 
 $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
-                                $(OD)/user_routines_module$O 
+                                $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_support.f
 	$(FILTER) < user_routines_support.f > filt_user_routines_support.f
@@ -2645,7 +2656,7 @@ $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(MVC) filt_mod_stiffness$O  mod_stiffness$O
 	$(MVC) mod_stiffness$O $@
 
-$(ODIR)/user_routines_module$O : user_routines_module.f 
+$(ODIR)/user_routines_module$O : user_routines_module.f
 	$(RMC)  $@
 	$(RMC)  filt_user_routines_module.f
 	$(FILTER) < user_routines_module.f > filt_user_routines_module.f
