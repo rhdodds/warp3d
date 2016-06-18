@@ -600,11 +600,13 @@ c     ****************************************************************
 c
       logical function warp3d_batch_message_file_info( bmout )
       use main_data, only :  batch_mess_fname
-      implicit integer (a-z)
+      implicit none
 $add common.main
-
+c
+      integer :: bmout
 c
       integer, external :: warp3d_get_device_number
+      integer :: lastchar, now_unit
       character(len=80) :: batch_file
       logical :: bm_file_exists, now_open
 c
