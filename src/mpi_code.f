@@ -222,9 +222,10 @@ c     *                      subroutine wmpi_do_external_db          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 615/2013                   *
+c     *                   last modified : 4/16/2016 rhd              *
 c     *                                                              *
-c     *   dummy call for UEXTERNALDB Abaqus support routine          *
+c     *          invoke  UEXTERNALDB Abaqus support routine and      *
+c     *          other specific UEXTERNADB routines                  *
 c     *                                                              *
 c     ****************************************************************
 c     
@@ -293,6 +294,9 @@ c
        end select
 c      
       call uexternaldb( aba_lop, aba_lrestart, aba_time,
+     &                  aba_dtime, aba_kstep, aba_kinc )
+c     
+      call uexternaldb_mm04_cavity( aba_lop, aba_lrestart, aba_time,
      &                  aba_dtime, aba_kstep, aba_kinc )
       return
  9000 format(/,2x,"FATAL ERROR: invalid douextdb in ",
