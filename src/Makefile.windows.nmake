@@ -234,7 +234,8 @@ OBJ =	 \
 	$(OD)/mm10_e$O	 \
 	$(OD)/mm10_e$O	 \
   $(OD)/mm10_f$O	 \
-	$(Od)/mnoopt$O	 \
+  $(OD)/mm11$O  \
+	$(OD)/mmnoopt$O	 \
 	$(OD)/mpi_code$O	 \
 	$(OD)/mpi_handle_slaves$O \
 	$(OD)/mpc_modify$O	 \
