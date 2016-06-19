@@ -15,6 +15,7 @@ c
       subroutine rknstr( props, lprops, iprops, local_work )
       use segmental_curves
       use main_data, only : matprp, lmtprp, imatprp, dmatprp
+      use mm10_defs, only : indexes_common, index_crys_hist 
 c
       implicit integer (a-z)
 $add param_def
@@ -32,6 +33,7 @@ c
       logical :: geonl, bbar, local_debug, adaptive_flag, adaptive,
      &           segmental, cohesive_elem, linear_displ, 
      &           fgm_enode_props, compute_shape, average
+      integer :: sh, eh
       data local_debug, zero / .false., 0.0d00 /
 c
 c           pull values from the local block definition
@@ -172,7 +174,7 @@ c     *                   subroutine rknstr_finish_cp                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/20/2015 rhd              *
+c     *                   last modified : 6/12/2016 tjt              *
 c     *                                                              *
 c     *     make calls to the specific material model for block      *
 c     *                                                              *
@@ -184,17 +186,20 @@ c
 c              calculate the gradient of the elastic
 c              rotations at the element level by linear curve fit.
 c
+      sh  = indexes_common(2,1) ! first index of grad_fe
+      eh  = indexes_common(2,2) ! last index of grad_fe
+c
       do i = 1, local_work%span
         if( local_work%ncrystals(i) .gt. 1 )  then
-             local_work%elem_hist1(i,37:63,1:ngp) = zero
+             local_work%elem_hist1(i,sh:eh,1:ngp) = zero
         else
-             rs = 76+max_slip_sys+9
-             re = 76+max_slip_sys+17
+             rs = index_crys_hist(1,3,1) ! first index of Rp, 1st crystal
+             re = index_crys_hist(1,3,2) ! last index of Rp, 1st crystal
              call mm10_calc_grads(ngp, elem_type, order, geonl,
      &           local_work%rot_blk_n1(i,1:9,1:ngp),
      &           local_work%jac(i,1:3,1:3),
      &           local_work%elem_hist(i,rs:re,1:ngp),
-     &           local_work%elem_hist1(i,37:63,1:ngp)) 
+     &           local_work%elem_hist1(i,sh:eh,1:ngp)) 
         end if
       end do
 c
@@ -1554,8 +1559,8 @@ c
                   local_work%c_props(i,c)%cnum = cnum
                   local_work%c_props(i,c)%num_hard =
      &                  c_array(cnum)%num_hard
-                  local_work%c_props(i,c)%real_tang =
-     &                  c_array(cnum)%real_tang
+                  local_work%c_props(i,c)%tang_calc =
+     &                  c_array(cnum)%tang_calc
                   local_work%c_props(i,c)%u1 = c_array(cnum)%u1
                   local_work%c_props(i,c)%u2 = c_array(cnum)%u2
                   local_work%c_props(i,c)%u3 = c_array(cnum)%u3
