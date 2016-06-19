@@ -840,6 +840,7 @@ c
  9900 format('>> Leave UMAT cnst driver...')
 c
       end
+      
 c
 c     ****************************************************************
 c     *                                                              *
@@ -858,6 +859,7 @@ c
 c
       use main_data, only : matprp, lmtprp
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use mm10_defs, only : indexes_common, index_crys_hist 
 c      
       implicit none
 $add param_def
@@ -870,19 +872,20 @@ c
 c                     local variables
 c
       integer :: span, felem, iter, now_blk,
-     &           start_loc, k, i, j
+     &           start_loc, k, i, j, eh, sh
 #dbl      double precision ::
 #sgl      real ::
      & weight, f, cep(6,6), cep_vec(36), tol
       logical :: local_debug
       equivalence ( cep, cep_vec )
-@!DIR$ ASSUME_ALIGNED cep_vec:64   
 c
       span             = local_work%span
       felem            = local_work%felem
       weight           = local_work%weights(gpn)
       iter             = local_work%iter
       now_blk          = local_work%blk
+      sh  = indexes_common(1,1) ! first index of cep tangent
+      eh  = indexes_common(1,2) ! last index of cep tangent
 c
       local_debug =  .false.
       if( local_debug ) then
@@ -896,8 +899,7 @@ c
 @!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
          f = weight * local_work%det_jac_block(i,gpn)
-@!DIR$ IVDEP
-         cep_vec(1:36) = local_work%elem_hist1(i,1:36,gpn)
+         cep_vec(1:36) = local_work%elem_hist1(i,sh:eh,gpn)
          local_work%cep(i,1:6,1:6) = cep(1:6,1:6) * f
       end do
 c
@@ -908,7 +910,7 @@ c
       tol = 0.01d00
 @!DIR$ LOOP COUNT MAX=###  
       do i = 1, span
-         cep_vec(1:36) = local_work%elem_hist1(i,1:36,gpn)
+         cep_vec(1:36) = local_work%elem_hist1(i,sh:eh,gpn)
          do j = 1, 6
             if( cep(j,j) .lt. tol ) then
                write(iout,*) ' .. fatal @ 1'
