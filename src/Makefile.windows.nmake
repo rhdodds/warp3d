@@ -54,7 +54,7 @@
 #             4/6/2016  add mm10_e.f
 #             5/6/2016  add align64 to some .f
 #             6/7/2016  add mm10_f.f, use -O3 for oustates.f
-#             6/18/2016 remove f_clmloc.f
+#             6/18/2016 remove f_clmloc.f, mod_crystals.f dependencies
 #
 #    NOTE:   we specify the /QxHOST Fortran option. the compiler will
 #            generate code for the highest perfromance instruction 
@@ -842,7 +842,7 @@ $(OD)/gpmas1$O : gpmas1.f param_def
 	$(MVC) filt_gpmas1$O  gpmas1$O
 	$(MVC) gpmas1$O $@
 
-$(OD)/gptns1$O : gptns1.f include_tan_ek \
+$(OD)/gptns1$O : gptns1.f include_tan_ek $(OD)/mod_crystals$O \
                    param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O
 	$(FILTER) < gptns1.f > filt_gptns1.f
 	$(F90) /O3 /Qip  /c filt_gptns1.f

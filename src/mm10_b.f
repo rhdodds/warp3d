@@ -82,12 +82,14 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_h_ornl(props, np1, n, vec1, vec2,stress,tt,h,gp)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_h_mrr(props, np1, n, vec1, vec2,stress,tt,h,gp)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_h_DJGM(props, np1, n, vec1, vec2,stress,tt,h)
       else
         call mm10b_unknown_hard_error(props)
       end if
 c ******* END: Add new Constitutive Models into this block *********
 c
-      R2 = tt - h
+      R2(1:props%num_hard) = tt(1:props%num_hard) - h(1:props%num_hard)
 c Compute time rate of change of hardening parameters, store for
 c possible prediction during next time/load step
       np1%tt_rate(1:props%num_hard) = (h(1:props%num_hard)
@@ -134,6 +136,7 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_hi_ornl(props, np1, n, ivec1, ivec2, stress, tt, h)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_hi_mrr(props, np1, n, ivec1, ivec2, stress, tt, h)
+      elseif (props%h_type .eq. 9) then ! DJGM
       else
         call mm10b_unknown_hard_error(props)
       end if
@@ -204,6 +207,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_dgdt_mrr(props,np1, n, stress, tt, dgammadtau)
            if (debug) write (*,*) "dgammadtau", dgammadtau(1:3)
            if (debug) write (*,*) "stress", stress(1:3)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_dgdt_DJGM(props,np1, n, stress, tt, dgammadtau)
       else
         call mm10b_unknown_hard_error(props)
       endif
@@ -285,6 +290,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_dgdh_ornl(props,np1, n, stress, tt, dgammadtt)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_dgdh_mrr(props,np1, n, stress, tt, dgammadtt)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_dgdh_DJGM(props,np1, n, stress, tt, dgammadtt)
       else
         call mm10b_unknown_hard_error(props)
       endif
@@ -349,6 +356,9 @@ c ******* START: Add new Constitutive Models into this block *********
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_estress_mrr(props, np1, n, vec1, vec2, arr1, arr2,
      &            stress, tt, estr)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_estress_DJGM(props, np1, n, vec1, vec2, arr1, arr2,
+     &            stress, tt, estr)
       else
         call mm10b_unknown_hard_error(props)
       end if
@@ -402,6 +412,9 @@ c ******* START: Add new Constitutive Models into this block *********
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_ehard_mrr(props, np1, n, vec1, vec2, arr1, arr2,
      &          stress, tt, etau)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_ehard_DJGM(props, np1, n, vec1, vec2, arr1, arr2,
+     &          stress, tt, etau)
       else
         call mm10b_unknown_hard_error(props)
       end if
@@ -444,6 +457,9 @@ c ******* START: Add new Constitutive Models into this block *********
      &   vec1, vec2)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_v_mrr(props, np1, n, stress, tt, 
+     &   vec1, vec2)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_v_DJGM(props, np1, n, stress, tt, 
      &   vec1, vec2)
       else
         call mm10b_unknown_hard_error(props)
@@ -488,6 +504,9 @@ c ******* START: Add new Constitutive Models into this block *********
      &          arr1, arr2, both)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_a_mrr(props, np1, n, stress, tt, vec1, vec2,
+     &          arr1, arr2, both)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_a_DJGM(props, np1, n, stress, tt, vec1, vec2,
      &          arr1, arr2, both)
       else
         call mm10b_unknown_hard_error(props)
@@ -840,6 +859,15 @@ c        dbar = dbar + slipinc*np1%ms(1:6,i)
 c      end do
         dbar(1:6) = matmul(np1%ms(1:6,1:props%nslip),
      &                     vec1(1:props%nslip))
+      elseif (props%h_type .eq. 9) then ! DJGM
+c      dbar = 0.0
+c      do i=1,props%nslip
+c c        call mm10_slipinc_DJGM(props, np1, n, stress, tt, i, slipinc)
+c        slipinc = vec1(i)
+c        dbar = dbar + slipinc*np1%ms(1:6,i)
+c      end do
+        dbar(1:6) = matmul(np1%ms(1:6,1:props%nslip),
+     &                     vec1(1:props%nslip))
       else
         call mm10b_unknown_hard_error(props)
       end if
@@ -903,6 +931,15 @@ c        wbar = wbar + slipinc*np1%qs(1:3,i)
 c      end do
         wbar(1:3) = matmul(np1%qs(1:3,1:props%nslip),
      &                     vec1(1:props%nslip))
+      elseif (props%h_type .eq. 9) then ! DJGM
+c      wbar = 0.0
+c      do i=1,props%nslip
+c c        call mm10_slipinc_DJGM(props, np1, n, stress, tt, i, slipinc)
+c        slipinc = vec1(i)
+c        wbar = wbar + slipinc*np1%qs(1:3,i)
+c      end do
+        wbar(1:3) = matmul(np1%qs(1:3,1:props%nslip),
+     &                     vec1(1:props%nslip))
       else
         call mm10b_unknown_hard_error(props)
       end if
@@ -956,6 +993,12 @@ c ******* START: Add new Constitutive Models into this block *********
       w = 0.0d0
       do i=1,props%nslip
         call mm10_slipinc_mrr(props, np1, n, stress, tt, i, slipinc)
+        w = w + slipinc*np1%qc(1:3,i)
+      end do
+      elseif (props%h_type .eq. 9) then ! DJGM
+      w = 0.0d0
+      do i=1,props%nslip
+        call mm10_slipinc_DJGM(props, np1, n, stress, tt, i, slipinc)
         w = w + slipinc*np1%qc(1:3,i)
       end do
       else
@@ -3338,6 +3381,9 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
+        if( v_s.lt.0.d0 ) then
+            v_s = exp(-v_s)
+        endif
         fM = 0.1d0
         lamda = c2*b
 c        
@@ -3376,16 +3422,18 @@ c        endif
             ! linear extrapolation past the too-high stress (rs) value
             b = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
-     &  **(q_e-1.d0))
+            m = b * (-q_e*(Qslip/k/theta)*(1.d0))
      &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
             y = m*x + b
             slipinc = dt * y
-        elseif(dabs(rs).gt.0.d0) then
-        slipinc = dt * gamma_0 * dsign(1.d0,rs)
-     & * dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
-        else
+        elseif(dabs(rs).eq.0.d0) then
             slipinc = 0.d0
+        else
+          if(fract.lt.0.d0) then
+            p_e = 1.d0 ! deal with low stresses by allowing the fraction to be small
+          endif
+          slipinc = dt * gamma_0 * dsign(1.d0,rs)
+     & * dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)x
         endif
 c       if(np1.step.gt.21) then
 c       write(*,*) alpha, "rs", rs, "fract", fract, "slipinc", slipinc
@@ -3557,6 +3605,9 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
+        if( v_s.lt.0.d0 ) then
+            v_s = exp(-v_s)
+        endif
         fM = 0.1d0
         lamda = c2*b
 c        
@@ -3591,17 +3642,18 @@ c Evaluate the slip rate equation
             ! linear extrapolation past the too-high stress (rs) value
             b = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
-     &  **(q_e-1.d0))
+            m = b * (-q_e*(Qslip/k/theta)*(1.d0))
      &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,dreal(rs))/tcut
-
             y = m*x + b
             slipinc = dt * y
-        elseif(dabs(dreal(rs)).gt.0.d0) then
-        slipinc = dt * gamma_0 * dsign(1.d0,dreal(rs))
-     & * cdexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
-        else
+        elseif(dabs(dreal(rs)).eq.0.d0) then
             slipinc = 0.d0
+        else
+          if(dreal(fract).lt.0.d0) then
+            p_e = 1.d0 ! deal with low stresses by allowing the fraction to be small
+          endif
+          slipinc = dt * gamma_0 * dsign(1.d0,dreal(rs))
+     & * cdexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
         endif
 c
       return
@@ -4039,7 +4091,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, tau0, 
      &  p_e, q_e, Qslip, v_s, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
-     &  dslipinc, slipexp, G0, fM, lamda, rhoM
+     &  dslipinc, slipexp, G0, fM, lamda, rhoM, p2
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
 c
@@ -4056,6 +4108,9 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
+        if( v_s.lt.0.d0 ) then
+            v_s = exp(-v_s)
+        endif
         fM = 0.1d0
         lamda = c2*b
 c        
@@ -4095,18 +4150,22 @@ c Evaluate the equation
         if(fract.gt.1.d0) then
 c linear extrapolation past the too-high stress (rs) value
             b = gamma_0
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)**(q_e-1.d0))
+            m = b * (-q_e*(Qslip/k/theta)*(1.d0))
      &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
             dslipinc = dt * m
-        elseif(dabs(rs).gt.0.d0) then
-        slipexp = dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e)
-
+        elseif(dabs(rs).eq.0.d0) then
+            dslipinc = 0.d0
+        else
+          if(fract.lt.0.d0) then
+            p2 = 1.d0 ! deal with low stresses by allowing the fraction to be small
+          else
+            p2 = p_e
+          endif
+        slipexp = dexp (-(Qslip/k/theta)*(1.d0 - fract**p2)**q_e)
      &          * dsign(1.d0,rs)
         dslipinc = dt * (gamma_0 * slipexp * -(Qslip/k/theta)*q_e*
-     &      (1.d0 - fract**p_e)**(q_e-1.d0)
-     &      * -p_e*fract**(p_e-1.d0) * dfract) !(14)
-        else
-            dslipinc = 0.d0
+     &      (1.d0 - fract**p2)**(q_e-1.d0)
+     &      * -p2*fract**(p2-1.d0) * dfract) !(14)
         endif
         
         dgammadtau(alpha) = dslipinc
@@ -4134,7 +4193,7 @@ c
      &  p_e, q_e, Qslip, v_s, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
-     &  dtcut, dtpass, G0, fM, rhoM, lamda, drhoM
+     &  dtcut, dtpass, G0, fM, rhoM, lamda, drhoM, p2
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
 c
@@ -4151,6 +4210,9 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
+        if( v_s.lt.0.d0 ) then
+            v_s = exp(-v_s)
+        endif
         fM = 0.1d0
         lamda = c2*b
 c        
@@ -4209,19 +4271,24 @@ c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
 c Evaluate the equation
           if(fract.gt.1.d0) then
               ! linear extrapolation past the too-high stress (rs) value
-              dslipinc = dt * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
-     &           **(q_e-1.d0)) * (- p_e*(1.d0)**(p_e-1.d0))
+              dslipinc = dt * (-q_e*(Qslip/k/theta)*(1.d0)
+     &            * (- p_e*(1.d0)**(p_e-1.d0)))
      &            * dsign(1.d0,rs) * (dgamma_0/tcut 
      &             - gamma_0*dtcut/tcut**2)
-          elseif(dabs(rs).gt.0.d0) then
+          elseif(dabs(rs).eq.0.d0) then
+              dslipinc = 0.d0
+          else
+            if(fract.lt.0.d0) then
+              p2 = 1.d0
+            else
+              p2 = p_e
+            endif
           slipexp = dexp (-(Qslip/k/theta)*
-     &             (1.d0 - fract**p_e)**q_e) !(14)
+     &             (1.d0 - fract**p2)**q_e) !(14)
           dslipinc = dt * (dgamma_0 * slipexp * dsign(1.d0,rs)
      &          + gamma_0 * dsign(1.d0,rs) * slipexp *
-     &          -(Qslip/k/theta)*q_e*(1.d0 - fract**p_e)**(q_e-1.d0)
-     &        * -p_e*fract**(p_e-1.d0) * dfract)
-          else
-              dslipinc = 0.d0
+     &          -(Qslip/k/theta)*q_e*(1.d0 - fract**p2)**(q_e-1.d0)
+     &        * -p2*fract**(p2-1.d0) * dfract)
           endif
         
           dgammadtt(alpha,beta) = dslipinc
@@ -4249,4 +4316,481 @@ c
 c
       return
       end subroutine
+c
+c
+c *****************************************************************************
+c *                                                                           *
+c *         AFRL Ti-6242 high temperature hardening routines                  *
+c *                                                                           *
+c *****************************************************************************
+c
+c
+c
+c
+c     DJGM:
+c
+c           Form intermediate vectors for faster calculations
+      subroutine mm10_v_DJGM(props, np1,n, stress, tt,
+     &   vec1, vec2)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(max_uhard) :: vec1, vec2
+      integer :: alpha
+      double precision :: slipinc
 
+
+      do alpha = 1,props%nslip
+         call mm10_slipinc_DJGM(props, np1, n, stress, tt, 
+     &                            alpha, slipinc)
+         vec1(alpha) = slipinc
+      enddo
+
+      return
+      end
+c
+c
+c     DJGM:
+c
+c           Form intermediate arrays for faster calculations
+       subroutine mm10_a_DJGM(props, np1, n, stress, tt, 
+     &   vec1, vec2, arr1, arr2, both)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+      integer both
+c
+         call mm10_dgdt_DJGM(props, np1, n, stress, tt, 
+     &                            arr1(1:props%num_hard,1))
+      if(both.eq.2) then
+         call mm10_dgdh_DJGM(props, np1, n, stress, tt, 
+     &               arr2(1:props%nslip,1:props%num_hard))
+      endif
+      
+      return
+      end
+c
+c           Calculate the slip increment along system i  
+c           mrr model
+      subroutine mm10_slipinc_DJGM(props, np1, n, stress, tt, 
+     &                             alpha, slipinc)
+c
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision :: slipinc, mm10_rs
+      integer :: alpha
+c
+      double precision :: dt, tau, g_alpha
+      double precision :: h_0_alpha, gamma_dot_tilde,
+     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha
+        
+        ! Load hard coded material parameters
+        ! q=Gmat matrix is loaded at top of mm10
+        !h_0_alpha = props%Hmat(1,alpha)
+        gamma_dot_tilde = props%Hmat(2,alpha)
+        !g_tilde = props%Hmat(3,alpha)
+        !r_alpha = props%Hmat(4,alpha)
+        !n_alpha = props%Hmat(5,alpha)
+        m_alpha = props%Hmat(6,alpha)
+        !g_0_alpha = props%Hmat(7,alpha)
+        
+        tau = mm10_rs(props, np1, n, stress, tt, alpha)
+        g_alpha = tt(alpha)
+        dt = np1%tinc
+        
+        ! Equation [4]
+        slipinc = dt * gamma_dot_tilde * 
+     &  abs(tau/g_alpha)**(1.d0/m_alpha) * dsign(1.d0,tau)
+      
+      return
+      end
+c
+c
+c     Hardening function for DJGM model
+c
+      subroutine mm10_h_DJGM(props, np1,
+     &             n,vec1,vec2, stress, tt, g)
+c
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, g, h
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision :: slipinc, mm10_rs
+      integer :: slip_a, slip_b
+c
+      double precision :: dt, tau, g_alpha
+      double precision :: h_0_alpha, gamma_dot_tilde,
+     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
+     &     g_s, gamma_dot, temp, g_n, g_dot
+c Deka, Dhyanjyoti, et al. "Crystal plasticity modeling of deformation and 
+c creep in polycrystalline Ti-6242." Metallurgical and materials 
+c transactions A 37.5 (2006): 1371-1388.
+
+c evolution of hardening parameter 'g'
+
+        ! Load material parameters
+        ! q=Gmat matrix is loaded at top of mm10
+        
+        dt = np1%tinc
+        
+        ! Equation [6], g_s equation has to be modified
+        do slip_b = 1,props%nslip
+            h_0_alpha = props%Hmat(1,slip_b)
+            gamma_dot_tilde = props%Hmat(2,slip_b)
+            g_tilde = props%Hmat(3,slip_b)
+            r_alpha = props%Hmat(4,slip_b)
+            n_alpha = props%Hmat(5,slip_b)
+            m_alpha = props%Hmat(6,slip_b)
+            g_0_alpha = props%Hmat(7,slip_b)
+            slipinc = vec1(slip_b)
+            gamma_dot = abs(slipinc)/dt
+            temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
+            g_s = max(temp, 2.d0/3.d0*g_0_alpha) ! threshold to ensure no slip during elastic response
+            h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
+     &      **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+        enddo
+        
+        ! Equation [5]
+        do slip_a = 1,props%nslip
+            g_dot = 0.d0
+            do slip_b = 1,props%nslip
+                slipinc = vec1(slip_b)
+                gamma_dot = abs(slipinc)/dt
+                g_dot = g_dot + props%Gmat(slip_a, slip_b) * 
+     &                         h(slip_b) * abs(gamma_dot)
+            enddo
+            g_n = n%tau_tilde(slip_a)
+            g(slip_a) = g_n + g_dot*dt
+        enddo
+        
+      return
+      end
+c
+c
+c     DJGM:
+c
+c           Derivative of hardening fn wrt stress
+      subroutine mm10_estress_DJGM(props,
+     & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
+ 
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress, dtdstress, ms
+      double precision, dimension(props%num_hard) :: tt,h,dh
+      double precision, dimension(props%num_hard,6) :: et
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+c
+      double precision :: dt, slipinc
+      double precision :: h_0_alpha, gamma_dot_tilde,
+     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
+     &     g_s, gamma_dot, temp, g_n, g_dot, dg_s, dslip
+      double precision, dimension(props%nslip) :: dslipinc
+      integer :: slip_a, slip_b
+      
+      ! compute derivatives of slip increments with respect to resolved
+      ! shear stress
+        dslipinc(1:props%num_hard) = arr1(1:props%num_hard,1)
+
+        ! Load material parameters
+        dt = np1%tinc       
+        
+        ! Equation [6], g_s equation has to be modified
+        do slip_b = 1,props%nslip
+            h_0_alpha = props%Hmat(1,slip_b)
+            gamma_dot_tilde = props%Hmat(2,slip_b)
+            g_tilde = props%Hmat(3,slip_b)
+            r_alpha = props%Hmat(4,slip_b)
+            n_alpha = props%Hmat(5,slip_b)
+            m_alpha = props%Hmat(6,slip_b)
+            g_0_alpha = props%Hmat(7,slip_b)
+            slipinc = vec1(slip_b)
+            gamma_dot = abs(slipinc)/dt
+            dslip = dslipinc(slip_b)/dt
+            temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
+            if( temp .gt. 2.d0/3.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
+                g_s = temp
+                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
+     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+                dg_s = g_tilde * n_alpha / gamma_dot * 
+     &              (gamma_dot/gamma_dot_tilde)**n_alpha * dslip
+                dh(slip_b) = h_0_alpha * r_alpha * 
+     &              abs(1.d0-tt(slip_b)/g_s)**(r_alpha-1.d0)
+     &              *(dg_s*tt(slip_b)/g_s**2)
+            else
+                g_s = 2.d0/3.d0*g_0_alpha
+                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
+     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+                dh(slip_b) = 0.d0
+            endif
+        enddo
+        
+        ! Equation [5]
+        do slip_a = 1,props%nslip
+            do slip_b = 1,props%nslip
+                dtdstress(1:6) = np1%ms(1:6,slip_b)
+                slipinc = vec1(slip_b)
+                gamma_dot = abs(slipinc)/dt
+                dslip = dslipinc(slip_b)/dt
+                et(slip_a,1:6) = et(slip_a,1:6) + dt*
+     &          props%Gmat(slip_a, slip_b)*
+     &              (dh(slip_b)*abs(gamma_dot) +
+     &          h(slip_b)*sign(1.d0,gamma_dot)*dslip)*dtdstress(1:6)
+            enddo
+        enddo
+c
+       return
+        end
+c
+c
+c     DJGM:
+c
+c           Derivative of hardening fn wrt hardening
+        subroutine mm10_ehard_DJGM(props,
+     &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
+ 
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress, dtdstress, ms
+      double precision, dimension(props%num_hard) :: tt,h,dh
+      double precision, dimension(props%num_hard,props%num_hard) :: etau
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+c
+      double precision :: dt, slipinc, deltaij
+      double precision :: h_0_alpha, gamma_dot_tilde,
+     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
+     &     g_s, gamma_dot, temp, g_n, g_dot, dg_s, dslip
+      double precision, dimension(props%nslip,props%num_hard)
+     &        :: dslipinc
+      integer :: slip_a, slip_b
+      
+       dslipinc = arr2(1:props%nslip,1:props%num_hard)
+
+        ! Load material parameters
+        dt = np1%tinc
+        
+        ! Equation [6], g_s equation has to be modified
+        do slip_b = 1,props%nslip
+        
+            h_0_alpha = props%Hmat(1,slip_b)
+            gamma_dot_tilde = props%Hmat(2,slip_b)
+            g_tilde = props%Hmat(3,slip_b)
+            r_alpha = props%Hmat(4,slip_b)
+            n_alpha = props%Hmat(5,slip_b)
+            m_alpha = props%Hmat(6,slip_b)
+            g_0_alpha = props%Hmat(7,slip_b)
+            slipinc = vec1(slip_b)
+            gamma_dot = abs(slipinc)/dt
+            dslip = dslipinc(slip_b,slip_b)/dt
+            temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
+            if( temp .gt. 2.d0/3.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
+                g_s = temp
+                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
+     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+                dg_s = g_tilde * n_alpha / gamma_dot * 
+     &              (gamma_dot/gamma_dot_tilde)**n_alpha * dslip
+                dh(slip_b) = h_0_alpha * r_alpha * 
+     &              abs(1.d0-tt(slip_b)/g_s)**(r_alpha-1.d0)
+     &              *(-1.d0/g_s + dg_s*tt(slip_b)/g_s**2)
+            else
+                g_s = 2.d0/3.d0*g_0_alpha
+                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
+     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+                dh(slip_b) = 0.d0
+            endif
+            
+        enddo
+        
+        ! Equation [5]
+        do slip_a = 1,props%nslip
+            do slip_b = 1,props%nslip
+                  if( slip_a.eq.slip_b ) then
+                      deltaij = 1.d0
+                  else
+                      deltaij = 0.d0
+                  endif
+                slipinc = vec1(slip_b)
+                gamma_dot = abs(slipinc)/dt
+                dslip = dslipinc(slip_b,slip_b)/dt
+                etau(slip_a,slip_b) = deltaij - dt*
+     &          props%Gmat(slip_a, slip_b)*
+     &              (dh(slip_b)*abs(gamma_dot) + 
+     &               h(slip_b)*sign(1.d0,gamma_dot)*dslip)
+            enddo
+        enddo
+
+       return
+       end
+c
+c
+c           Derivative of hardening fn wrt strain
+      subroutine mm10_ed_DJGM(props, np1, n, stress, tt, ed)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(6,props%num_hard) :: ed
+c
+      ed = 0.d0
+c
+      return
+      end subroutine
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_dgdt_DJGM                    *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 06/10/16                    *
+c     *                                                              *
+c     *     Calculate partial gamma(s) w.r.t. tau(s) for each slip   *
+c     *     system, for use in J11 in material integration. DJGM     *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_dgdt_DJGM(props, np1,
+     &      n, stress, tt, dgdt)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt, dgdt
+      double precision :: slipinc, mm10_rs
+      integer :: slip_a
+c
+      double precision :: dt, tau, g_alpha
+      double precision :: h_0_alpha, gamma_dot_tilde,
+     &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
+        
+c Deka, Dhyanjyoti, et al. "Crystal plasticity modeling of deformation and 
+c creep in polycrystalline Ti-6242." Metallurgical and materials 
+c transactions A 37.5 (2006): 1371-1388.
+
+        ! Load hard coded material parameters
+        ! q=Gmat matrix is loaded at top of mm10
+        
+        dt = np1%tinc
+        
+        ! Equation [4]
+        slipinc = dt * gamma_dot_tilde * 
+     &  abs(tau/g_alpha)**(1.d0/m_alpha) * dsign(1.d0,tau)
+
+        
+        ! Equation [4], slip rate vector
+        do slip_a = 1,props%nslip
+            gamma_dot_tilde = props%Hmat(2,slip_a)
+            m_alpha = props%Hmat(6,slip_a)
+            tau = mm10_rs(props, np1, n, stress, tt, slip_a)
+            g_alpha = tt(slip_a)
+            dgdt(slip_a) = dt * (1.d0/m_alpha) * gamma_dot_tilde
+     &      * abs(tau/g_alpha)**((1.d0/m_alpha) - 1.d0) * 
+     &        (1.d0/g_alpha)
+        enddo
+        
+      return
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_dgdh_DJGM                    *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 06/10/16                    *
+c     *                                                              *
+c     *     Calculate partial gamma(s) w.r.t. tt for each slip       *
+c     *     system, for use in J12 in material integration. DJGM     *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_dgdh_DJGM(props, np1,
+     &      n, stress, tt, dgammadtt)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(props%num_hard,props%num_hard)
+     &                 :: dgammadtt
+      double precision :: slipinc, mm10_rs, dslipinc
+      integer :: slip_a, slip_b
+c
+      double precision :: dt, tau, g_alpha
+      double precision :: h_0_alpha, gamma_dot_tilde,
+     &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
+        
+        
+        dt = np1%tinc
+        
+        ! Equation [4]
+        slipinc = dt * gamma_dot_tilde * 
+     &  abs(tau/g_alpha)**(1.d0/m_alpha) * dsign(1.d0,tau)
+
+        
+        ! Equation [4], slip rate vector
+      do slip_a = 1,props%num_hard
+        slip_b = slip_a
+            gamma_dot_tilde = props%Hmat(2,slip_a)
+            m_alpha = props%Hmat(6,slip_a)
+            tau = mm10_rs(props, np1, n, stress, tt, slip_a)
+            g_alpha = tt(slip_a)
+        dslipinc = dt * (1.d0/m_alpha) * gamma_dot_tilde
+     &  * abs(tau/g_alpha)**(1.d0/m_alpha)
+     &  * (-1.d0/g_alpha)*sign(1.d0,tau)
+          dgammadtt(slip_a,slip_b) = dslipinc
+      enddo
+        
+      return
+      end
+c
+c
+c           Derivative of sliprate wrt strain increment
+      subroutine mm10_dgdd_DJGM(props, np1, n, stress, tt, D, 
+     &              dgammadd)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress, D
+      double precision, dimension(6,props%nslip) :: dgammadd
+      double precision, dimension(props%num_hard) :: tt
+c
+      dgammadd = 0.d0
+c
+      return
+      end subroutine

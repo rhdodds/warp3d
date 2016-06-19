@@ -7,7 +7,7 @@ c     *                 subroutine mm10_set_history_locs             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 5/22/2016                   *
+c     *                   last modified: 6/14/2016 tjt               *
 c     *                                                              *
 c     *  set locations (indexes) of various data within the          *
 c     *  history vectory for a single integration point.             *
@@ -19,16 +19,23 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_set_history_locs
-      use mm10_defs, only : indexes_common, index_crys_hist 
+      use mm10_defs, only : indexes_common, index_crys_hist,
+     & num_common_indexes, num_crystal_terms, length_crys_hist,
+     & one_crystal_hist_size, common_hist_size, length_comm_hist
+      use crystal_data, only : c_array, crystal_input,
+     &            data_offset
+      use main_data
       implicit none
-$add param_def
+c   $add param_def
+$add common.main
 c
-      integer :: i, num_common_indexes, num_crystal_terms,
-     &  one_crystal_hist_size, total_hist_size, crystal,
+      integer :: i, j, k, ncrystals, cnum, osn, num, ecount, 
+     &  total_hist_size, crystal, elnum,
      &  loc_start, loc_cauchy, loc_euler, loc_pls_R, loc_uddt,
      &  loc_els_eps, loc_cur_slip_incr, loc_tau_tilde, loc_user_hist,
-     &  loc_tt_rate, indev, outdev, idummy, jdummy
-      logical :: local_debug
+     &  loc_tt_rate, indev, outdev, idummy, jdummy,
+     &  nslip, num_hard, cur_slip, cur_hard
+      logical :: local_debug, use_max
 c
 c
 c              the top part of the history vectory contains data
@@ -60,17 +67,114 @@ c
       num_common_indexes = 5
       num_crystal_terms  = 9
 c
+c     Allocate variable sized arrays to be less than max
+c      Note: this code is from avg_cry_elast_props in mod_crystals.f
+c
+c     Run through our materials, find the CP materials, determine number of variables
+      cur_slip = 0
+      cur_hard = 0
+      do i=1,nummat
+      if (matprp(9,i) .eq. 10) then
+        matprp(1,i) = 0.0
+        matprp(2,i) = 0.0
+        ecount = 0
+        do j = 1, noelem
+          if (iprops(38,j)  .eq. i) then
+            ecount = ecount + 1
+            ncrystals = imatprp(101, i)
+            do k = 1, ncrystals
+c             Get the local crystal number
+              if (imatprp(104,i) .eq. 1) then
+                cnum = imatprp(105,i)
+              elseif (imatprp(104,i) .eq. 2) then
+                osn = data_offset(elnum)
+                cnum = crystal_input(osn,k)
+c               Couldn't do this earlier, so check here
+                if ((cnum .gt. max_crystals) .or. 
+     &                (cnum .lt. 0)) then
+                  write (out,'("Crystal ", i3, " not valid")')
+     &                 cnum
+                  call die_gracefully
+                 end if
+              else
+                write(out,9502) 
+                call die_gracefully
+              end if
+c              
+c             change maximums
+c   
+              if( cur_slip .lt. c_array(cnum)%nslip ) then
+                cur_slip = c_array(cnum)%nslip
+              endif
+              if( cur_hard .lt. c_array(cnum)%num_hard ) then
+                cur_hard = c_array(cnum)%num_hard
+              endif
+
+            end do
+
+          end if
+        end do
+
+      end if
+      end do
+c
+c     checks
+      if( cur_hard .gt. max_uhard ) then
+        write(outdev,9200) 3
+        call die_gracefully
+      end if
+      if( cur_slip .gt. max_slip_sys ) then
+        write(outdev,9200) 4
+        call die_gracefully
+      end if
+c     use max value if either one is close
+      if( (cur_hard .eq. max_uhard) .or.
+     &    (cur_slip .eq. max_slip_sys) ) then
+        use_max = .true.
+      else
+        use_max = .false. 
+      end if
+      num_hard = cur_hard
+      nslip = cur_slip
+c
       if( .not. allocated( indexes_common ) )
      &   allocate( indexes_common(num_common_indexes,2) )
       if( .not. allocated( index_crys_hist ) )
      &   allocate( index_crys_hist(max_crystals,num_crystal_terms,2) )
+      if( .not. allocated( length_comm_hist ) )
+     &   allocate( length_comm_hist(num_common_indexes) )
+      if( .not. allocated( length_crys_hist ) )
+     &   allocate( length_crys_hist(num_crystal_terms) )
 c
-c       * start index *             * last index *
-      indexes_common(1,1) = 1;  indexes_common(1,2) = 36
-      indexes_common(2,1) = 37; indexes_common(2,2) = 63
-      indexes_common(3,1) = 64; indexes_common(3,2) = 72
-      indexes_common(4,1) = 73; indexes_common(4,2) = 75
-      indexes_common(5,1) = 76; indexes_common(5,2) = 75 + max_slip_sys
+c      Length of common history
+      length_comm_hist(1) = 36
+      length_comm_hist(2) = 27
+      length_comm_hist(3) = 9
+      length_comm_hist(4) = 3
+      if( use_max ) then
+        length_comm_hist(5) = max_slip_sys
+      else
+        length_comm_hist(5) = nslip
+      endif
+c      Sum up length of common history
+      common_hist_size = 0
+      do i = 1,num_common_indexes
+        common_hist_size = common_hist_size
+     &                           + length_comm_hist(i)
+      end do
+c
+c       * start index *
+      indexes_common(1,1) = 1
+      indexes_common(2,1) = indexes_common(1,1) + length_comm_hist(1)
+      indexes_common(3,1) = indexes_common(2,1) + length_comm_hist(2)
+      indexes_common(4,1) = indexes_common(3,1) + length_comm_hist(3)
+      indexes_common(5,1) = indexes_common(4,1) + length_comm_hist(4)
+c       * last index *
+      indexes_common(1,2) = length_comm_hist(1)
+      indexes_common(2,2) = indexes_common(1,2) + length_comm_hist(2)
+      indexes_common(3,2) = indexes_common(2,2) + length_comm_hist(3)
+      indexes_common(4,2) = indexes_common(3,2) + length_comm_hist(4)
+      indexes_common(5,2) = indexes_common(4,2) + length_comm_hist(5)
 c
 c              2. Data for each crystal specified at the integraion
 c                 point
@@ -99,7 +203,7 @@ c                     hardening variables. used for prediction/init of
 c                     local NR
 c
 c               Current size per crystal:
-c                   30 (=% terms) + max_slip_sys + 3 * max_uhard
+c                   30 (=% terms) + max_slip_sys + 2 * max_uhard + max_uhard
 c
 c               more user history currently ( 14 x 1 )
 c                  1 -- time OR tau_y  ( 1 x 1 ) [tau_y is for MTS model]
@@ -119,7 +223,28 @@ c                 13 -- s_trace (1 x 1)
 c                 14 -- B_eff ( 1 x 1 )
 c
 c
-      one_crystal_hist_size = 30 + max_slip_sys + (3*max_uhard)
+      length_crys_hist(1) = 6
+      length_crys_hist(2) = 3
+      length_crys_hist(3) = 9
+      length_crys_hist(4) = 6
+      length_crys_hist(5) = 6
+      if( use_max ) then
+        length_crys_hist(6) = max_slip_sys
+        length_crys_hist(7) = max_uhard
+        length_crys_hist(8) = max_uhard
+        length_crys_hist(9) = max_uhard
+      else
+        length_crys_hist(6) = nslip
+        length_crys_hist(7) = num_hard
+        length_crys_hist(8) = 14
+        length_crys_hist(9) = num_hard
+      endif
+c      Sum up length of one crystal history
+      one_crystal_hist_size = 0
+      do i = 1,num_crystal_terms
+        one_crystal_hist_size = one_crystal_hist_size
+     &                           + length_crys_hist(i)
+      end do
       total_hist_size   = indexes_common(num_common_indexes,2) +
      &                    ( max_crystals *  one_crystal_hist_size )
 c
@@ -132,49 +257,53 @@ c
        write(outdev,9110) (i, indexes_common(i,1),indexes_common(i,2),
      &                     i = 1, num_common_indexes )
       end if
-
 c
       do crystal = 1, max_crystals
 c
         loc_start         = ( indexes_common(num_common_indexes,2) + 1 )
      &                      + (crystal-1)*one_crystal_hist_size
         loc_cauchy        = loc_start
-        loc_euler         = loc_cauchy + 6
-        loc_pls_R         = loc_euler + 3
-        loc_uddt          = loc_pls_R + 9
-        loc_els_eps       = loc_uddt + 6
-        loc_cur_slip_incr = loc_els_eps + 6
-        loc_tau_tilde     = loc_cur_slip_incr  + max_slip_sys
-        loc_user_hist     = loc_tau_tilde      + max_uhard
-        loc_tt_rate       = loc_user_hist      + max_uhard
+        loc_euler         = loc_cauchy + length_crys_hist(1)
+        loc_pls_R         = loc_euler + length_crys_hist(2)
+        loc_uddt          = loc_pls_R + length_crys_hist(3)
+        loc_els_eps       = loc_uddt + length_crys_hist(4)
+        loc_cur_slip_incr = loc_els_eps + length_crys_hist(5)
+        loc_tau_tilde     = loc_cur_slip_incr  + length_crys_hist(6)
+        loc_user_hist     = loc_tau_tilde      + length_crys_hist(7)
+        loc_tt_rate       = loc_user_hist      + length_crys_hist(8)
 c
         index_crys_hist(crystal,1,1) = loc_cauchy
-        index_crys_hist(crystal,1,2) = loc_cauchy + 5
+        index_crys_hist(crystal,1,2) = loc_cauchy + 
+     &                                 length_crys_hist(1)-1
 c
         index_crys_hist(crystal,2,1) = loc_euler
-        index_crys_hist(crystal,2,2) = loc_euler + 2
+        index_crys_hist(crystal,2,2) = loc_euler + length_crys_hist(2)-1
 c
         index_crys_hist(crystal,3,1) = loc_pls_R
-        index_crys_hist(crystal,3,2) = loc_pls_R + 8
+        index_crys_hist(crystal,3,2) = loc_pls_R + length_crys_hist(3)-1
 c
         index_crys_hist(crystal,4,1) = loc_uddt
-        index_crys_hist(crystal,4,2) = loc_uddt + 5
+        index_crys_hist(crystal,4,2) = loc_uddt + length_crys_hist(4)-1
 c
         index_crys_hist(crystal,5,1) = loc_els_eps
-        index_crys_hist(crystal,5,2) = loc_els_eps + 5
+        index_crys_hist(crystal,5,2) = loc_els_eps + 
+     &                                 length_crys_hist(5)-1
 c
         index_crys_hist(crystal,6,1) = loc_cur_slip_incr
         index_crys_hist(crystal,6,2) = loc_cur_slip_incr +
-     &                                 ( max_slip_sys - 1 )
+     &                                 length_crys_hist(6)-1
 c
         index_crys_hist(crystal,7,1) = loc_tau_tilde
-        index_crys_hist(crystal,7,2) = loc_tau_tilde + ( max_uhard - 1)
+        index_crys_hist(crystal,7,2) = loc_tau_tilde + 
+     &                                 length_crys_hist(7)-1
 c
         index_crys_hist(crystal,8,1) = loc_user_hist
-        index_crys_hist(crystal,8,2) = loc_user_hist + ( max_uhard - 1)
+        index_crys_hist(crystal,8,2) = loc_user_hist + 
+     &                                 length_crys_hist(8)-1
 c
         index_crys_hist(crystal,9,1) = loc_tt_rate
-        index_crys_hist(crystal,9,2) = loc_tt_rate   + ( max_uhard - 1)
+        index_crys_hist(crystal,9,2) = loc_tt_rate   + 
+     &                                 length_crys_hist(9)-1
 c
 c                consistency check
 c
@@ -186,7 +315,7 @@ c
      &                          i = 1, num_crystal_terms )
         end if
 c
-        if( index_crys_hist(crystal,9,2) ==
+        if( index_crys_hist(crystal,num_crystal_terms,2) ==
      &    indexes_common(num_common_indexes,2) +
      &    crystal * one_crystal_hist_size  ) cycle
         write(outdev,9200) 1
@@ -196,7 +325,8 @@ c
 c
 c                final consistency check
 c
-      if( index_crys_hist(max_crystals,9,2) /= total_hist_size ) then
+      if( index_crys_hist(max_crystals,num_crystal_terms,2)
+     &      /= total_hist_size ) then
         write(outdev,9200) 2
         call die_gracefully
       end if
@@ -211,6 +341,10 @@ c
  9200 format(/,1x">>>>> FATAL ERROR:",
      &       /,1x"      routine mm10_set_history_locs @",i2,
      &       /,1x"      aborting job..." )
+
+ 9502 format(/,1x,
+     & '>>>> System error: unexpected input type in avg_elast_props!',
+     &       ' Aborting.'/)
 c
       end
 
@@ -220,7 +354,7 @@ c     *                 subroutine mm10_set_state_sizes              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 6/5/2016 rhd                *
+c     *                   last modified: 6/15/2016 tjt               *
 c     *                                                              *
 c     *    called by oustates to get # states output values per      *
 c     *    element to reflect various options                        *
@@ -230,6 +364,7 @@ c
       subroutine mm10_set_state_sizes( info_vector,
      &                           ncrystals, user_output_opt1,
      &                           user_output_opt2, iout  )
+      use mm10_defs, only : length_crys_hist, length_comm_hist
       implicit none
 $add param_def
       integer :: ncrystals, iout, user_output_opt1, user_output_opt2,
@@ -285,16 +420,17 @@ c
         if( user_output_opt2 /= 0 ) n = 1
         info_vector(1) = 9 + n * 12
        case( 5 )
-        info_vector(1) = 69
+        info_vector(1) = 18 + 3 + length_comm_hist(5)
        case( 6 )
         n = ncrystals
         if( user_output_opt2 /= 0 ) n = 1
-        info_vector(1) = n * ( 3 + 4 + max_uhard  )      	
+        info_vector(1) = n * ( 3 + 4 + length_crys_hist(7)  )      	
        case( 7 )
         n = ncrystals
         if( user_output_opt2 /= 0 ) n = 1
-        info_vector(1) = 69 + n *
-     &    ( 6 + 3 + 9 + 6 + max_slip_sys + max_uhard + 5 + 4 )
+        info_vector(1) = 18 + 3 + length_comm_hist(5) 
+     &  + n * ( 6 + 3 + 9 + 6 + length_crys_hist(6)
+     &        + length_crys_hist(7) + 5 + 4 )
        case default
         write(iout,9100) 1
         call die_abort
@@ -400,11 +536,12 @@ c     *             subroutine mm10_states_labels_type_6             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *               last modified : 6/11/2016  (rhd)               *
+c     *               last modified : 6/14/2016  (tjt)               *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_states_labels_type_6
+      use mm10_defs, only : length_crys_hist
       implicit none
 c
       integer :: num_states_here, i, s, nc, cry_id, hard_no, slip_sys
@@ -414,7 +551,7 @@ c
 c              sanity check
 c
       num_states_here =  nterms_crystal_list *
-     &  ( 3 + 4 + max_uhard  )
+     &  ( 3 + 4 + length_crys_hist(7)  )
       if( num_states_here .ne. max_cp_states_values ) then
          write(iout,9030) 1
          call die_gracefully
@@ -460,14 +597,14 @@ c
          state_descriptors(s+4) = "Norton_B_eff"
          s = s + 4         
 c
-         do hard_no = 1, max_uhard
+         do hard_no = 1, length_crys_hist(7)
            write(hard_id,fmt="(i2.2)") hard_no
            state_labels(s+hard_no) = "h" // hard_id // "-" 
      &      // crystal_id
          end do
          state_descriptors(s+1) = "hard val cry # " 
      &    // crystal_id         
-         s = s + max_uhard
+         s = s + length_crys_hist(7)
 c
       end do
 c
@@ -498,11 +635,12 @@ c     *             subroutine mm10_states_labels_type_7             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *               last modified : 6/11/2016  (rhd)               *
+c     *               last modified : 6/16/2016  (tjt)               *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_states_labels_type_7
+      use mm10_defs, only : length_crys_hist, length_comm_hist
       implicit none
 c
       integer :: num_states_here, i, s, nc, cry_id, hard_no, slip_sys
@@ -511,14 +649,16 @@ c
 c
 c              sanity check
 c
-      num_states_here = 69 + nterms_crystal_list *
-     &  ( 6 + 3 + 9 + 6 + max_slip_sys + max_uhard + 5 + 4 )
+      num_states_here = 21 + length_comm_hist(5) 
+     &  + nterms_crystal_list *
+     &  ( 6 + 3 + 9 + 6 + length_crys_hist(6)
+     &      + length_crys_hist(7) + 5 + 4 )
       if( num_states_here .ne. max_cp_states_values ) then
          write(iout,9030) 1
          call die_gracefully
       end if
 c
-c              1. 69 common values not for a specific crystal
+c              1. 21+nslip common values not for a specific crystal
 c                  a. -curl(Fe^-1) psuedo Nye tensor (3x3)
 c                       gradFe (3x3x3) averaged over all element
 c                       integration points then 3x3 Nye computed
@@ -585,13 +725,13 @@ c
       state_descriptors(s+3) = "equiv plastic eps"
       s = s + 3
 c
-      do i = 1, max_slip_sys
+      do i = 1, length_comm_hist(5) 
          write(state_labels(s+i), 9000) i
       end do
       state_descriptors(s+1) = "integrated slp  ea sys"      
-      s = s + max_slip_sys
+      s = s + length_comm_hist(5) 
 c
-      if( s .ne. 69 ) then
+      if( s .ne. (21 + length_comm_hist(5)) ) then
         write(iout,9030) 2
         call die_gracefully
       end if
@@ -647,23 +787,23 @@ c
          state_descriptors(s+2:s+6) = "  "
          s = s + 6
 c
-         do slip_sys = 1, max_slip_sys
+         do slip_sys = 1, length_crys_hist(6)
            write(slip_sys_id,fmt="(i2.2)") slip_sys
            state_labels(s+slip_sys) = "s" // slip_sys_id // "-"
      &            // crystal_id
          end do
          state_descriptors(s+1) = "slip incr cry # " 
      &            // crystal_id
-         s = s + max_slip_sys
+         s = s + length_crys_hist(6)
 c
-         do hard_no = 1, max_uhard
+         do hard_no = 1, length_crys_hist(7)
            write(hard_id,fmt="(i2.2)") hard_no
            state_labels(s+hard_no) = "h" // hard_id // "-" 
      &      // crystal_id
          end do
          state_descriptors(s+1) = "hard val cry # " 
      &    // crystal_id         
-         s = s + max_uhard
+         s = s + length_crys_hist(7)
 c
          state_labels(s+1) = "tty-" // crystal_id 
          state_descriptors(s+1) = "time OR tau_y"
@@ -1056,17 +1196,18 @@ c     *             subroutine mm10_states_labels_type_5             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *               last modified : 6/10/2016 rhd                  *
+c     *               last modified : 6/16/2016 tjt                  *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_states_labels_type_5
+      use mm10_defs, only : length_comm_hist
       implicit none
 c
       integer :: num_states_here, i, s
 c
-      num_states_here = 69  ! only selected common values independent of
-c                             number of crystals
+      num_states_here = 21 + length_comm_hist(5)  ! only selected common values 
+c                             independent of number of crystals
 c
 c              sanity check
 c
@@ -1076,7 +1217,7 @@ c
       end if
 c
 c
-c              1. 69 common values not for a specific crystal
+c              1. 21 + nslip common values not for a specific crystal
 c                  a. -curl(Fe^-1) psuedo Nye tensor (3x3)
 c                       gradFe (3x3x3) averaged over all element
 c                       integration points then 3x3 Nye computed
@@ -1125,13 +1266,13 @@ c
       state_descriptors(s+3) = "equiv plastic eps"
       s = s + 3
 c
-      do i = 1, max_slip_sys
+      do i = 1, length_comm_hist(5) 
          write(state_labels(s+i), 9000) i
          state_descriptors(s+i) = "integrated slip"
       end do
-      s = s + max_slip_sys
+      s = s + length_comm_hist(5) 
 c
-      if( s .ne. 69 ) then  ! sanity check
+      if( s .ne. (21 + length_comm_hist(5) ) ) then  ! sanity check
         write(iout,9030) 2
         call die_gracefully
       end if
@@ -1161,7 +1302,7 @@ c     *             subroutine mm10_states_values                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *               last modified : 6/9/2016  rhd                  *
+c     *               last modified : 6/15/2016  tjt                 *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -1319,7 +1460,8 @@ c     ****************************************************************
 c
       subroutine mm10_states_values_6( one_elem_states, hisblk )
 c
-      use mm10_defs, only : indexes_common, index_crys_hist
+      use mm10_defs, only : indexes_common, index_crys_hist,
+     &   length_crys_hist
 c
 c              parameters. history_blk passed to declare alignment
 c
@@ -1346,7 +1488,7 @@ c
 c              sanity check
 c
       num_states_here = num_crystals_to_process *
-     &  ( 3 + 4 + max_uhard )
+     &  ( 3 + 4 + length_crys_hist(7) )
 c
       if( num_states_here > num_states ) then
          write(iout,9000) 1
@@ -1407,12 +1549,12 @@ c
 c           1c. slip system hardening variable (max_uhard x 1)
 c               [ tau tilde ]
 c
-        e = s + (max_uhard - 1)
+        e = s + (length_crys_hist(7) - 1)
         sh = index_crys_hist(cry_id,7,1)
         eh = index_crys_hist(cry_id,7,2)
         call mm10_avg_states( one_elem_states, s, e, sh, eh,
      &                  hisblk(1,1,relem), hist_size, int_points )
-        s = s + max_uhard
+        s = s + length_crys_hist(7)
 c
       end do ! over crystals
 c
@@ -1433,13 +1575,14 @@ c     *             subroutine mm10_states_values_7                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/11/2016 rhd              *
+c     *                   last modified : 6/16/2016 tjt              *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_states_values_7( one_elem_states, hisblk )
 c
-      use mm10_defs, only : indexes_common, index_crys_hist
+      use mm10_defs, only : indexes_common, index_crys_hist,
+     &    length_crys_hist, length_comm_hist
 c
 c              parameters. history_blk passed to declare alignment
 c
@@ -1467,8 +1610,10 @@ c              note: one_elem_states zeroed before entry.
 c
 c              sanity check
 c
-      num_states_here = 69 + num_crystals_to_process *
-     &  ( 6 + 3 + 9 + 6 + max_slip_sys + max_uhard + 5 + 4 )
+      num_states_here = 21 + length_comm_hist(5) 
+     &  + num_crystals_to_process *
+     &  ( 6 + 3 + 9 + 6 + length_crys_hist(6)
+     &      + length_crys_hist(7) + 5 + 4 )
 c
       if( num_states_here > num_states ) then
          write(iout,9000) 1
@@ -1480,7 +1625,7 @@ c             see mm10_states_labels_type_6 for detailed summary &
 c             labels for states values loaded here into the output
 c             vector
 c
-c              1. 69 common values not for a specific crystal
+c              1. 21 + nslip common values not for a specific crystal
 c                  a. -curl(Fe^-1) psuedo Nye tensor (3x3)
 c                       gradFe (3x3x3) averaged over all element
 c                       integration points then 3x3 Nye computed
@@ -1557,12 +1702,12 @@ c                 integration points
 c
       sh  = indexes_common(5,1)
       eh  = indexes_common(5,2)
-      e   = s + (max_slip_sys - 1)
+      e   = s + (length_comm_hist(5) - 1)
       call mm10_avg_states( one_elem_states, s, e, sh, eh,
      &                  hisblk(1,1,relem), hist_size, int_points )
-      s = s + max_slip_sys
+      s = s + length_comm_hist(5)
 c
-      if( s .ne. 70 ) then
+      if( s .ne. (21 + length_comm_hist(5) + 1) ) then
         write(iout,9000) 2
         call die_gracefully
       end if
@@ -1612,24 +1757,24 @@ c
      &                  hisblk(1,1,relem), hist_size, int_points )
         s = s + 6
 c
-c           2e. current increment of slip each system (max_slip_sys x 1)
+c           2e. current increment of slip each system (length_crys_hist(6) x 1)
 c
-        e = s + (max_slip_sys -1)
+        e = s + (length_crys_hist(6) -1)
         sh = index_crys_hist(cry_id,6,1)
         eh = index_crys_hist(cry_id,6,2)
         call mm10_avg_states( one_elem_states, s, e, sh, eh,
      &                  hisblk(1,1,relem), hist_size, int_points )
-        s = s + max_slip_sys
+        s = s + length_crys_hist(6)
 c
 c           2f. slip system hardening variable (max_uhard x 1)
 c               [ tau tilde ]
 c
-        e = s + (max_uhard - 1)
+        e = s + (length_crys_hist(7) - 1)
         sh = index_crys_hist(cry_id,7,1)
         eh = index_crys_hist(cry_id,7,2)
         call mm10_avg_states( one_elem_states, s, e, sh, eh,
      &                  hisblk(1,1,relem), hist_size, int_points )
-        s = s + max_uhard
+        s = s + length_crys_hist(7)
 c
 c           2g. user hardening variables (each 1 value))
 c                      (1) time OR tau_y [tau_y for MTS model]
@@ -2078,13 +2223,14 @@ c     *             subroutine mm10_states_values_5                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/5/2016 rhd               *
+c     *                   last modified : 6/16/2016 tjt              *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_states_values_5( one_elem_states, hisblk )
 c
-      use mm10_defs, only : indexes_common, index_crys_hist
+      use mm10_defs, only : indexes_common, index_crys_hist,
+     &                      length_comm_hist
 c
 c                       parameters. history_blk passed so alignment
 c                       can be declared
@@ -2108,7 +2254,7 @@ c             see mm10_states_labels_type_6 for detailed summary &
 c             labels for states values loaded here into the output
 c             vector
 c
-c             69 common values not for a specific crystal
+c             21+nslip common values not for a specific crystal
 c                  a. -curl(Fe^-1) psuedo Nye tensor (3x3)
 c                       gradFe (3x3x3) averaged over all element
 c                       integration points then 3x3 Nye computed
@@ -2124,7 +2270,7 @@ c                     crystal orientations (max_slip_sys x1)
 c        **   values are averages computed over all integration points
 c             note: one_elem_states zeroed before entry.
 c
-      num_states_here = 69
+      num_states_here = 21 + length_comm_hist(5)
 c
       if( num_states_here .ne. num_states ) then
          write(iout,9000) 1
@@ -2172,15 +2318,16 @@ c                 integration points
 c
       sh  = indexes_common(5,1)
       eh  = indexes_common(5,2)
-      e   = s + (max_slip_sys - 1)
+      e   = s + (length_comm_hist(5) - 1)
       call mm10_avg_states( one_elem_states, s, e, sh, eh,
      &                  hisblk(1,1,relem), hist_size, int_points )
-      s = s + max_slip_sys
+      s = s + length_comm_hist(5)
 c
-      if( s .ne. 70 ) then
+      if( s .ne. (21 + length_comm_hist(5) + 1) ) then
         write(iout,9000) 2
         call die_gracefully
       end if
+      write(iout,*) '... inside mm10_states_values_6 @ 1 '
 c
       return
 c

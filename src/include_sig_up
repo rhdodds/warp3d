@@ -24,8 +24,8 @@ c
      &            u5, u6
             integer :: nslip, h_type, num_hard, s_type, cnum
 c              new variables to control local solvers inside mm10
-            logical :: real_tang, solver, strategy, gpall
-            integer :: miter, gpp, method, st_it(3)
+            logical :: solver, strategy, gpall
+            integer :: tang_calc, miter, gpp, method, st_it(3)
             double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
       end type

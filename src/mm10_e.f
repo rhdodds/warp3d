@@ -6202,3 +6202,244 @@ c      Column 48
 c
       return
       end subroutine
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine mm10_DJGM_GH                    *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 6/10/2016 tjt               *
+c     *                                                              *
+c     *   drive slection/filling of parameter matrices G & H         *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_DJGM_GH(s_type,num_hard,G,H)
+      implicit none
+c
+      integer :: s_type, num_hard
+      double precision, dimension(num_hard,num_hard) ::  G
+      double precision, dimension(7,num_hard) ::  H
+c
+      if( s_type .eq. 9 ) then ! HCP6
+         call mm10_DJGM_GHhcp6( G,H )
+      elseif( s_type .eq. 10 ) then ! HCP18
+         call mm10_DJGM_GHhcp18( G,H )
+      else ! calculate manually
+         write(*,*) 'cannot use manual interaction G,H matrices'
+         write(*,*) 'routine mm10_DJGM_GH. terminate job'
+         call die_gracefully
+      endif
+c
+      return
+      end subroutine
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine mm10_DJGM_GHhcp6                *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 6/10/2016 tjt               *
+c     *                                                              *
+c     *            fill interaction matrices G & H  for HCP6         *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_DJGM_GHhcp6( G, H )
+      implicit none
+c
+      double precision, dimension(6,6) ::  G
+      double precision, dimension(7,6) ::  H
+      double precision :: zero, one, G2, G3, H1, H2, H3, H4,
+     &           H5, H6, H7, H8, G1
+c
+      zero = 0.d0
+      one = 1.d0
+      G1 = 2000.d6
+      G2 = 4153.d6
+      G3 = 0.0023d0
+      H1 = 504.d6
+      H2 = 0.3d0
+      H3 = 0.29d0
+      H4 = 0.14d0
+      H5 = 0.15d0
+      H6 = 0.02d0
+      H7 = 300.d6
+      H8 = 240.d6
+c        h_0_alpha = props%Hmat(1,alpha)
+c        gamma_dot_tilde = props%Hmat(2,alpha)
+c        g_tilde = props%Hmat(3,alpha)
+c        r_alpha = props%Hmat(4,alpha)
+c        n_alpha = props%Hmat(5,alpha)
+c        m_alpha = props%Hmat(6,alpha)
+c        g_0_alpha = props%Hmat(7,alpha)
+
+c     q matrix
+      G(1:6,1:6) = one
+c      Column 1
+      H(1,1) = G1
+      H(2,1) = G3
+      H(3,1) = H1
+      H(4,1) = H2
+      H(5,1) = H4
+      H(6,1) = H6
+      H(7,1) = H7
+c      Column 2
+      H(1,2) = G1
+      H(2,2) = G3
+      H(3,2) = H1
+      H(4,2) = H2
+      H(5,2) = H4
+      H(6,2) = H6
+      H(7,2) = H7
+c      Column 3
+      H(1,3) = G1
+      H(2,3) = G3
+      H(3,3) = H1
+      H(4,3) = H2
+      H(5,3) = H4
+      H(6,3) = H6
+      H(7,3) = H7
+c      Column 4
+      H(1,4) = G2
+      H(2,4) = G3
+      H(3,4) = H1
+      H(4,4) = H3
+      H(5,4) = H5
+      H(6,4) = H6
+      H(7,4) = H8
+c      Column 5
+      H(1,5) = G2
+      H(2,5) = G3
+      H(3,5) = H1
+      H(4,5) = H3
+      H(5,5) = H5
+      H(6,5) = H6
+      H(7,5) = H8
+c      Column 6
+      H(1,6) = G2
+      H(2,6) = G3
+      H(3,6) = H1
+      H(4,6) = H3
+      H(5,6) = H5
+      H(6,6) = H6
+      H(7,6) = H8
+
+      return
+      end
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine mm10_DJGM_GHhcp18               *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 6/10/2016 tjt               *
+c     *                                                              *
+c     *            fill interaction matrices G & H  for HCP18        *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_DJGM_GHhcp18( G, H )
+      implicit none
+c
+      double precision, dimension(18,18) ::  G
+      double precision, dimension(7,18) ::  H
+      double precision :: zero, one, G2, G3, G4, G5, G1, 
+     &           H1, H2, H3, H4, H5, H6, H7, H8, H9, H10
+c
+      zero = 0.d0
+      one = 1.d0
+      G1 = 2000.d6
+      G2 = 4153.d6
+      G3 = 0.0023d0
+      G4 = 4153.d6*3.d0
+      G5 = 0.0023d0*3.d0
+      H1 = 504.d6
+      H2 = 0.3d0
+      H3 = 0.29d0
+      H4 = 0.14d0
+      H5 = 0.15d0
+      H6 = 0.02d0
+      H7 = 300.d6
+      H8 = 240.d6
+      H9 = 504.d6*3.d0
+      H10 = 240.d6*3.d0
+c        h_0_alpha = props%Hmat(1,alpha)
+c        gamma_dot_tilde = props%Hmat(2,alpha)
+c        g_tilde = props%Hmat(3,alpha)
+c        r_alpha = props%Hmat(4,alpha)
+c        n_alpha = props%Hmat(5,alpha)
+c        m_alpha = props%Hmat(6,alpha)
+c        g_0_alpha = props%Hmat(7,alpha)
+
+c     q matrix
+      G(1:18,1:18) = one
+c      Column 1
+      H(1,1) = G1
+      H(2,1) = G3
+      H(3,1) = H1
+      H(4,1) = H2
+      H(5,1) = H4
+      H(6,1) = H6
+      H(7,1) = H7
+c      Column 2
+      H(1,2) = G1
+      H(2,2) = G3
+      H(3,2) = H1
+      H(4,2) = H2
+      H(5,2) = H4
+      H(6,2) = H6
+      H(7,2) = H7
+c      Column 3
+      H(1,3) = G1
+      H(2,3) = G3
+      H(3,3) = H1
+      H(4,3) = H2
+      H(5,3) = H4
+      H(6,3) = H6
+      H(7,3) = H7
+c      Column 4
+      H(1,4) = G2
+      H(2,4) = G3
+      H(3,4) = H1
+      H(4,4) = H3
+      H(5,4) = H5
+      H(6,4) = H6
+      H(7,4) = H8
+c      Column 5
+      H(1,5) = G2
+      H(2,5) = G3
+      H(3,5) = H1
+      H(4,5) = H3
+      H(5,5) = H5
+      H(6,5) = H6
+      H(7,5) = H8
+c      Column 6
+      H(1,6) = G2
+      H(2,6) = G3
+      H(3,6) = H1
+      H(4,6) = H3
+      H(5,6) = H5
+      H(6,6) = H6
+      H(7,6) = H8
+c      Column 7
+      H(1,7:18) = G4
+      H(2,7:18) = G5
+      H(3,7:18) = H9
+      H(4,7:18) = H3
+      H(5,7:18) = H5
+      H(6,7:18) = H6
+      H(7,7:18) = H10
+
+      return
+      end
+

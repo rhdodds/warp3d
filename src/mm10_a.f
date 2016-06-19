@@ -15,82 +15,11 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                       module mm10_defs                       *
-c     *                                                              *
-c     *                       written by : mcm                       *
-c     *                                                              *
-c     *                   last modified: 5/22/2016 rhd               *
-c     *                                                              *
-c     *       small module to hold crystal update data structs       *
-c     *       also hold integer indexes into history vector for      *
-c     *       an integration point                                   *
-c     *                                                              *
-c     ****************************************************************
-c
-      module mm10_defs
-c
-      implicit integer (a-z)
-$add param_def
-c              includes all key size limits for WARP3D (e.g. mxvl)
-c
-c              Massive list of properties
-c
-      type :: crystal_props
-        double precision :: rate_n, tau_hat_y, G_0_y, burgers,
-     &        p_v, q_v, boltzman, theta_0, eps_dot_0_v, eps_dot_0_y,
-     &        p_y, q_y, tau_a, tau_hat_v, G_0_v,
-     &        k_0, mu_0, D_0, T_0, tau_y, tau_v, voche_m,
-     &        u1, u2, u3, u4, u5, u6
-        double precision :: atol, atol1, rtol, rtol1, xtol, xtol1
-        double precision, dimension(3,3) :: g
-        double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
-     &                      ns(3,max_slip_sys)
-        double precision, dimension(6,6) :: stiffness
-        integer :: angle_type, angle_convention, nslip,
-     &        h_type, miter, gpp, s_type, cnum, method,
-     &        st_it(3), num_hard, out
-        logical :: real_tang, solver, strategy, debug, gpall
-        ! constants for use in material models
-        double precision, dimension(:,:), allocatable :: Gmat,Hmat
-      end type
-c
-      type :: crystal_state
-        double precision, dimension(3,3) :: R, Rp
-        double precision, dimension(6) :: stress, D, eps
-        double precision, dimension(3) :: euler_angles
-        double precision, dimension(max_slip_sys) :: tau_l, slip_incs
-        double precision, dimension(3,3,3) :: gradFeinv
-        double precision, dimension(6,6) :: tangent
-        double precision, dimension(max_uhard) :: tau_tilde
-        double precision, dimension(max_uhard) :: tt_rate
-        double precision :: temp, tinc, dg, tau_v, tau_y,
-     &                      mu_harden, work_inc, p_work_inc,
-     &                      p_strain_inc
-        double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
-     &                      qc(3,max_slip_sys)
-        double precision, dimension(max_uhard) :: u
-        integer :: step, elem, gp, iter
-      end type
-c
-c              store integer indexes into history vector for a an
-c              integration point.
-c              WARP3D makes sure an mm10 routine is called to
-c              create the arraays & set values. No need to save
-c              across restarts. These arrays are red-only during
-c              threaded processing of element blocks.
-c
-      integer, allocatable :: indexes_common(:,:),
-     &                        index_crys_hist(:,:,:)
-c
-      end module
-c
-c     ****************************************************************
-c     *                                                              *
 c     *                      subroutine mm10                         *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 4/6/2016 tjt                *
+c     *                   last modified: 6/15/2016 tjt                *
 c     *                                                              *
 c     *              crystal plasticity stress-strain update         *
 c     *                                                              *
@@ -124,11 +53,12 @@ c
 c
 c                 locals
 c
-      integer :: i, c, co, cn, now_element
+      integer :: i, c, co, cn, now_element, sh,eh,sh4,eh4,sh3,eh3,
+     &           sh5, eh5, sh2, eh2
       double precision, dimension(6) :: sig_avg, se
       double precision, dimension(6) :: p_strain_ten_c, p_strain_ten
       double precision, dimension(6,6) :: tang_avg
-      double precision, dimension(max_slip_sys) :: slip_avg
+      double precision, dimension(length_comm_hist(5)) :: slip_avg
       double precision :: t_work_inc, p_work_inc,p_strain_inc, zero,
      &                    one, two, three, ten, t1, t2
       double precision :: n_avg,p_strain_avg, B_eff, s_trace
@@ -147,7 +77,9 @@ c                 initialize G,H arrays for certain CP constitutive
 c                 models. Note: all crystals in the element block
 c                 will have the same hardening model and slip systems
 c
-      call mm10_set_cons(local_work,cc_props,1)
+      call mm10_set_cons( local_work%c_props(1,1)%h_type,
+     &    local_work%c_props(1,1)%s_type,
+     &    local_work%c_props(1,1)%num_hard, cc_props, 1 )
 c
 c                 we have data passed for integration point # gp for
 c                 all (span) elements in this block. the CP updating
@@ -167,10 +99,12 @@ c                 for step = 1, init element history
 c
         if( local_work%step .eq. 1 ) then
               if( debug ) write(iout,*) "Init GP history"
-              call mm10_init_general_hist( history_n(i,1:72) )
-              call mm10_init_uout_hist( history_n(i,73:75) )
-              call mm10_init_slip_hist( history_n(i,76:
-     &              76+max_slip_sys-1) )
+              sh  = indexes_common(1,1)
+              call mm10_init_general_hist( history_n(i,sh) )
+              sh  = indexes_common(4,1)
+              call mm10_init_uout_hist( history_n(i,sh) )
+              sh  = indexes_common(5,1)
+              call mm10_init_slip_hist( history_n(i,sh) )
         end if
 c
         if( debug ) write(iout,*) 'Updating element: ', now_element
@@ -202,10 +136,8 @@ c
      &               .eq.local_work%iter)))
           mat_debug = locdebug
           locdebug = .false.
-          co = 76+max_slip_sys+(c-1)*(30+max_slip_sys
-     &           +3*max_uhard)
-          cn = 76+max_slip_sys+(c)*(30+max_slip_sys
-     &           +3*max_uhard)-1
+          co = index_crys_hist(c,1,1)
+          cn = index_crys_hist(c,num_crystal_terms,2)
           if( locdebug ) write(iout,*) "Setting up properties"
           call mm10_init_cc_props( local_work%c_props(i,c),
      &              local_work%angle_type(i),
@@ -220,9 +152,13 @@ c
      &           history_n(i,co:cn) )
           end if
           if( locdebug ) write(iout,*) "Copying n to struct"
+          sh2  = indexes_common(2,1)
+          eh2  = indexes_common(2,2)
+          sh3  = indexes_common(3,1)
+          eh3  = indexes_common(3,2)
           call mm10_copy_cc_hist( history_n(i,co:cn),
-     &         history_n(i,37:63),
-     &         history_n(i,64:72),
+     &         history_n(i,sh2:eh2),
+     &         history_n(i,sh3:eh3),
      &         cc_props, cc_n )
           call mm10_setup_np1(
      &        local_work%rot_blk_n1(i,1:9,gp), uddt(i,1:6),
@@ -234,7 +170,9 @@ c
      &        local_work%material_cut_step, iout, .false., 0,
      &        p_strain_ten_c, iter_0_extrapolate_off )
           if( local_work%material_cut_step ) then
-            call mm10_set_cons( local_work, cc_props, 2)
+      call mm10_set_cons( local_work%c_props(1,1)%h_type,
+     &    local_work%c_props(1,1)%s_type,
+     &    local_work%c_props(1,1)%num_hard, cc_props, 2 )
             return
           endif
 c
@@ -245,7 +183,9 @@ c                    n_avg -> effective creep exponent
 c
           sig_avg      = sig_avg + cc_np1%stress
           tang_avg     = tang_avg + cc_np1%tangent
-          slip_avg     = slip_avg + cc_np1%slip_incs
+          slip_avg(1:length_comm_hist(5))     = 
+     &    slip_avg(1:length_comm_hist(5)) + 
+     &    cc_np1%slip_incs(1:length_comm_hist(5))
           t_work_inc   = t_work_inc + cc_np1%work_inc
           p_work_inc   = p_work_inc + cc_np1%p_work_inc
           p_strain_inc = p_strain_inc + cc_np1%p_strain_inc
@@ -314,23 +254,35 @@ c
 c                 store results for integration point into
 c                 variables passed by warp3d
 c
+          sh  = indexes_common(1,1)
+          eh  = indexes_common(1,2)
+          sh3  = indexes_common(3,1)
+          eh3  = indexes_common(3,2)
+          sh4 = indexes_common(4,1)
+          eh4 = indexes_common(4,2)
+          sh5 = indexes_common(5,1)
+          eh5 = indexes_common(5,2)
         call mm10_store_gp (sig_avg,
      &     local_work%urcs_blk_n1(i,1:6,gp),
-     &     tang_avg, history_np1(i,1:36),
-     &     slip_avg, history_n(i,76:76+max_slip_sys-1),
-     &     history_np1(i,76:76+max_slip_sys-1),
+     &     tang_avg, history_np1(i,sh:eh),
+     &     slip_avg, history_n(i,sh5:eh5),
+     &     history_np1(i,sh5:eh5),
      &     t_work_inc, p_work_inc, p_strain_inc,
      &     local_work%urcs_blk_n(i,7:9,gp),
      &     local_work%urcs_blk_n1(i,7:9,gp),
+     &     history_n(i,sh4:eh4),
+     &     history_np1(i,sh4:eh4),
      &     local_work%rot_blk_n1(i,1:9,gp),
-     &     history_np1(i,64:72) )
+     &     history_np1(i,sh3:eh3) )
 c
       end do ! over span
 c
 c                  release allocated G & H arrays for
 c                  certain CP constitutive models
 c
-      call mm10_set_cons( local_work, cc_props, 2 )
+      call mm10_set_cons( local_work%c_props(1,1)%h_type,
+     &    local_work%c_props(1,1)%s_type,
+     &    local_work%c_props(1,1)%num_hard, cc_props, 2 )
 c
       return
 c
@@ -342,7 +294,7 @@ c     *                 subroutine mm10_set_cons                     *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 4/6/2016 rhd                *
+c     *                   last modified: 6/10/2016 tjt               *
 c     *                                                              *
 c     *       set interaction matrices G & H for slip system type    *
 c     *       used for this element block                            *
@@ -350,28 +302,29 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine mm10_set_cons( local_work, cc_props, isw )
+      subroutine mm10_set_cons( h_type, s_type1, n_hard, 
+     &                          cc_props, isw )
 c
-      use segmental_curves, only: max_seg_points
       use mm10_defs ! to get definition of cc_props
 c
       implicit integer (a-z)
-$add include_sig_up
 c
       type(crystal_props) :: cc_props
       integer :: isw, s_type1, n_hard
       logical :: process_G_H
 c
-      process_G_H = ( local_work%c_props(1,1)%h_type .eq. 4 ) .or.
-     &              ( local_work%c_props(1,1)%h_type .eq. 7 )
+      process_G_H = ( h_type .eq. 4 ) .or.
+     &              ( h_type .eq. 7 ) .or.
+     &              ( h_type .eq. 9 )
       if( .not. process_G_H ) return
 c
-      select case( isw )
-
-      case( 1 ) ! allocate G,H interaction matrices
+      if( ( h_type .eq. 4 ) .or.
+     &    ( h_type .eq. 7 ) ) then
 c
-         s_type1 = local_work%c_props(1,1)%s_type
-         n_hard  = local_work%c_props(1,1)%num_hard
+       select case( isw )
+
+       case( 1 ) ! allocate G,H interaction matrices
+c
          allocate( cc_props%Gmat(n_hard,n_hard),
      &             cc_props%Hmat(n_hard,n_hard), stat=allocate_status)
          if( allocate_status .ne. 0 ) then
@@ -381,17 +334,47 @@ c
          call mm10_mrr_GH( s_type1, n_hard, cc_props%Gmat,
      &                     cc_props%Hmat)
 c
-      case( 2 ) ! deallocate G,H matrices
+       case( 2 ) ! deallocate G,H matrices
 c
          deallocate( cc_props%Gmat, cc_props%Hmat )
 c
-      case default
+       case default
 c
           write(*,*) '>>>> FATAL ERROR. invalid isw, mm10_set_cons'
           write(*,*) '                  job terminated'
           call die_abort
 c
-      end select
+       end select
+c
+c
+      elseif( h_type .eq. 9 ) then
+c
+       select case( isw )
+
+       case( 1 ) ! allocate G=q,H=many_params matrices
+c
+         allocate( cc_props%Gmat(n_hard,n_hard),
+     &             cc_props%Hmat(7,n_hard), stat=allocate_status)
+         if( allocate_status .ne. 0 ) then
+            write(*,*) ' error allocating G matrix'
+            call die_gracefully
+         endif
+         call mm10_DJGM_GH(s_type1,n_hard,
+     &             cc_props%Gmat, cc_props%Hmat)
+c
+       case( 2 ) ! deallocate G,H matrices
+c
+         deallocate( cc_props%Gmat, cc_props%Hmat )
+c
+       case default
+c
+          write(*,*) '>>>> FATAL ERROR. invalid isw, mm10_set_cons'
+          write(*,*) '                  job terminated'
+          call die_abort
+c
+       end select
+c
+      end if
 c
       return
 c
@@ -423,50 +406,69 @@ c
       implicit integer(a-z)
 c
       type(crystal_props) :: props
-      integer :: a
+      integer :: a, sh, eh, e_fix, sh2, eh2
+      double precision :: zero, one
       double precision, dimension(3) :: angles
       double precision, dimension(3,3) :: I
       double precision,
-     &  dimension(24+max_uhard+max_uhard) :: history
+     &  dimension(one_crystal_hist_size) :: history
 c
-      I = 0.0d0
+      zero = 0.d0
+      one = 1.d0
+      e_fix = indexes_common(num_common_indexes,2) ! last index of front of history vector
+c
+      I = zero
       do a=1,3
-        I(a,a) = 1.0d0
+        I(a,a) = one
       end do
 c           Stress
-      history(1:6) = 0.0d0
+      sh = index_crys_hist(1,1,1) - e_fix
+      eh = index_crys_hist(1,1,2) - e_fix
+      history(sh:eh) = zero
 c           Angles
-      history(7:9) = angles(1:3)
+      sh = index_crys_hist(1,2,1) - e_fix
+      eh = index_crys_hist(1,2,2) - e_fix
+      history(sh:eh) = angles(1:3)
 c           Rotation
-      history(10:18) = reshape(I, (/9/))
+      sh = index_crys_hist(1,3,1) - e_fix
+      eh = index_crys_hist(1,3,2) - e_fix
+      history(sh:eh) = reshape(I, (/9/))
 c           D
-      history(18+1:24) = 0.0d0
+      sh = index_crys_hist(1,4,1) - e_fix
+      eh = index_crys_hist(1,4,2) - e_fix
+      history(sh:eh) = zero
 c           eps
-      history(24+1:30) = 0.0d0
+      sh = index_crys_hist(1,5,1) - e_fix
+      eh = index_crys_hist(1,5,2) - e_fix
+      history(sh:eh) = zero
 c           slip_incs
-      history(30+1:30+max_slip_sys) = 0.0d0
+      sh = index_crys_hist(1,6,1) - e_fix
+      eh = index_crys_hist(1,6,2) - e_fix
+      history(sh:eh) = zero
 c           Hardening
+      sh = index_crys_hist(1,7,1) - e_fix
+      eh = index_crys_hist(1,7,2) - e_fix
+      sh2 = index_crys_hist(1,8,1) - e_fix
+      eh2 = index_crys_hist(1,8,2) - e_fix
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! Simple voche
-            call mm10_init_voche(props,
-     &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
-     & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
+        call mm10_init_voche( props,
+     &       history(sh:eh), history(sh2:eh2) )
       elseif (props%h_type .eq. 2) then ! MTS
-            call mm10_init_mts(props,
-     &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
-     & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
+        call mm10_init_mts( props,
+     &       history(sh:eh), history(sh2:eh2) )
       elseif (props%h_type .eq. 3) then ! User
-            call mm10_init_user(props,
-     &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
-     & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
+        call mm10_init_user( props,
+     &       history(sh:eh), history(sh2:eh2) )
       elseif (props%h_type .eq. 4) then ! ORNL
-            call mm10_init_ornl(props,
-     &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
-     & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
+        call mm10_init_ornl( props,
+     &       history(sh:eh), history(sh2:eh2) )
       elseif (props%h_type .eq. 7) then ! MRR
-            call mm10_init_mrr(props,
-     &            history(30+max_slip_sys+1:30+max_slip_sys+max_uhard),
-     & history(30+max_slip_sys+max_uhard+1:30+max_slip_sys+2*max_uhard))
+        call mm10_init_mrr( props,
+     &       history(sh:eh), history(sh2:eh2) )
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_init_DJGM( props,
+     &       history(sh:eh), history(sh2:eh2) )
       else
         call mm10_unknown_hard_error(props)
       end if
@@ -513,7 +515,7 @@ c     *                 subroutine mm10_set_sizes_special            *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 04/01/2015 tjt              *
+c     *                   last modified: 06/16/2016 tjt              *
 c     *                                                              *
 c     *    called by warp3d for each material model to obtain        *
 c     *    various sizes of data for the model                       *
@@ -522,6 +524,7 @@ c     ****************************************************************
 c
       subroutine mm10_set_sizes_special( size_data, local_el  )
       use main_data, only: imatprp
+      use mm10_defs, only : one_crystal_hist_size, common_hist_size
       implicit integer (a-z)
 $add common.main
       dimension size_data(*)
@@ -540,9 +543,8 @@ c
 c       So total history size is going to be:
 c
 c
-      size_data(1) = 76+max_slip_sys+
-     &               ncrystals*(30+max_slip_sys+max_uhard
-     &               +max_uhard+max_uhard)
+      size_data(1) = common_hist_size+
+     &               ncrystals*(one_crystal_hist_size)
       return
       end
 c
@@ -561,7 +563,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_tangent(props, np1, n, vec1, vec2,arr1, arr2,
-     &     ivec1, ivec2, gaspt)
+     &     ivec1, ivec2, gaspt, Jmat)
       use mm10_defs
       implicit none
 c
@@ -587,6 +589,9 @@ c
       logical :: debug, gpall, locdebug
       integer, dimension(props%num_hard) :: ipiv
       integer :: i, info, gpp, gaspt
+
+      double precision,
+     & dimension(6+props%num_hard,2*(6+props%num_hard)) :: Jmat
 c
       debug = .false.!props%debug
       gpall = props%gpall ! true to print iteration norms for all Gauss points
@@ -601,30 +606,50 @@ c
 c
       np1%tangent = 0.0d0
 c
-      if(props%real_tang) then ! tangent matrix implemented
-      call mm10_formvecs(props, np1, n,
-     &     np1%stress, np1%tau_tilde, vec1, vec2)
-      call mm10_formarrs(props, np1, n,
-     &     np1%stress, np1%tau_tilde, vec1, vec2, arr1, arr2,2)
-      call mm10_formJ11(props, np1, n, vec1, vec2, arr1, arr2,
-     & np1%stress, np1%tau_tilde, J11)
-      call mm10_formJ12(props, np1, n, vec1, vec2, arr1, arr2,
-     & np1%stress, np1%tau_tilde, J12)
-      call mm10_formJ21(props, np1, n, vec1, vec2, arr1, arr2,
-     & np1%stress, np1%tau_tilde, J21)
-      call mm10_formJ22(props, np1, n, vec1, vec2, arr1, arr2,
-     & np1%stress, np1%tau_tilde, J22)
-      else ! compute tangent my complex method
-      call mm10_formJ11i(props, np1, n, ivec1, ivec2,
-     & np1%stress, np1%tau_tilde, J11)
-      call mm10_formJ12i(props, np1, n, ivec1, ivec2,
-     & np1%stress, np1%tau_tilde, J12)
-      call mm10_formJ21i(props, np1, n, ivec1, ivec2,
-     & np1%stress, np1%tau_tilde, J21)
-      call mm10_formJ22i(props, np1, n, ivec1, ivec2,
-     & np1%stress, np1%tau_tilde, J22)
-      endif
+c    Instead, pull Jacobian out from solver evaluation
 
+      J11(1:6,1:6) = Jmat(1:6,1:6)
+      J12(1:6,1:props%num_hard) = 
+     &   Jmat(1:6,7:6+props%num_hard)
+      J21(1:props%num_hard,1:6) = 
+     &   Jmat(7:6+props%num_hard,1:6)
+      J22(1:props%num_hard,1:props%num_hard) = 
+     &   Jmat(7:6+props%num_hard,7:6+props%num_hard)
+c    Old lines of code to recompute the Jacobian
+c
+c      if( (props%tang_calc.eq. 0) .or.
+c     &      (props%tang_calc.eq. 3) .or.
+c     &      (props%tang_calc.eq. 4) ) then ! tangent matrix implemented
+c      call mm10_formvecs(props, np1, n,
+c     &     np1%stress, np1%tau_tilde, vec1, vec2)
+c      call mm10_formarrs(props, np1, n,
+c     &     np1%stress, np1%tau_tilde, vec1, vec2, arr1, arr2,2)
+c      call mm10_formJ11(props, np1, n, vec1, vec2, arr1, arr2,
+c     & np1%stress, np1%tau_tilde, J11)
+c      call mm10_formJ12(props, np1, n, vec1, vec2, arr1, arr2,
+c     & np1%stress, np1%tau_tilde, J12)
+c      call mm10_formJ21(props, np1, n, vec1, vec2, arr1, arr2,
+c     & np1%stress, np1%tau_tilde, J21)
+c      call mm10_formJ22(props, np1, n, vec1, vec2, arr1, arr2,
+c     & np1%stress, np1%tau_tilde, J22)
+c        elseif( props%tang_calc.eq. 2 ) then ! complex difference
+c      call mm10_formJ11i(props, np1, n, ivec1, ivec2,
+c     & np1%stress, np1%tau_tilde, J11)
+c      call mm10_formJ12i(props, np1, n, ivec1, ivec2,
+c     & np1%stress, np1%tau_tilde, J12)
+c      call mm10_formJ21i(props, np1, n, ivec1, ivec2,
+c     & np1%stress, np1%tau_tilde, J21)
+c      call mm10_formJ22i(props, np1, n, ivec1, ivec2,
+c     & np1%stress, np1%tau_tilde, J22)
+c        else
+c          write(*,*) 'real variable finite difference
+c     &                not available in mm10_tangent'
+c          call die_gracefully
+c      endif
+
+c       write (*,*) "J21", J21(6,2), "Jmat", Jmat(12,2)
+c       write (*,*) "J11", J11(4,2), "Jmat", Jmat(4,2)
+c       write (*,*) "J11", J11(2,2), "Jmat", Jmat(2,2)
         if (locdebug) write (*,*) "J11", J11(1:6,1:6)
         if (locdebug) write (*,*) "J12", J12(1:6,1:props%num_hard)
         if (locdebug) write (*,*) "J21", J21(1:props%num_hard,1:6)
@@ -642,6 +667,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_ed_ornl(props, np1, n, np1%stress, np1%tau_tilde, ed)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_ed_mrr(props, np1, n, np1%stress, np1%tau_tilde, ed)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_ed_DJGM(props, np1, n, np1%stress, np1%tau_tilde, ed)
 c        if (debug) write (*,*) "ed", ed(1:6,1:12)
       else
         call mm10_unknown_hard_error(props)
@@ -667,6 +694,9 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_dgdd_mrr(props,np1, n, np1%stress,
      &       np1%tau_tilde, np1%D, dgammadd)
 c        if (debug) write (*,*) "dgammadd", dgammadd(1:6,1:12)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_dgdd_DJGM(props,np1, n, np1%stress,
+     &       np1%tau_tilde, np1%D, dgammadd)
       else
         call mm10_unknown_hard_error(props)
       endif
@@ -787,6 +817,8 @@ c ******* START: Add new Constitutive Models into this block *********
         call mm10_setup_ornl(props, np1, n)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_setup_mrr(props, np1, n)
+      elseif (props%h_type .eq. 9) then ! MRR
+        call mm10_setup_DJGM(props, np1, n)
       else
         call mm10_unknown_hard_error(props)
       end if
@@ -833,6 +865,8 @@ c
 c add back stress calculations here
 c
       elseif (props%h_type .eq. 7) then ! MRR
+c
+      elseif (props%h_type .eq. 9) then ! DJGM
       else
         call mm10_unknown_hard_error(props)
       endif
@@ -868,29 +902,58 @@ c
       implicit integer(a-z)
 c
       double precision,
-     &  dimension(30+3*max_uhard+max_slip_sys) :: history
+     &  dimension(one_crystal_hist_size)
+     &    :: history
+      integer :: sh, eh, e_fix
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
 c
-      history(1:6) = np1%stress
-      history(7:9) = np1%euler_angles
-      history(10:18) = reshape(np1%Rp, (/9/))
-      history(18+1:24) = np1%D
-      history(24+1:30) = np1%eps
-      history(30+1:30+max_slip_sys) = np1%slip_incs
-     &       (1:max_slip_sys)
-      history(30+max_slip_sys+1:30+max_slip_sys
+      e_fix = indexes_common(num_common_indexes,2) ! last index of front of history vector
+c
+      sh = index_crys_hist(1,1,1) - e_fix
+      eh = index_crys_hist(1,1,2) - e_fix
+      history(sh:eh) = np1%stress
+c
+      sh = index_crys_hist(1,2,1) - e_fix
+      eh = index_crys_hist(1,2,2) - e_fix
+      history(sh:eh) = np1%euler_angles
+c
+      sh = index_crys_hist(1,3,1) - e_fix
+      eh = index_crys_hist(1,3,2) - e_fix
+      history(sh:eh) = reshape(np1%Rp, (/9/))
+c
+      sh = index_crys_hist(1,4,1) - e_fix
+      eh = index_crys_hist(1,4,2) - e_fix
+      history(sh:eh) = np1%D
+c
+      sh = index_crys_hist(1,5,1) - e_fix
+      eh = index_crys_hist(1,5,2) - e_fix
+      history(sh:eh) = np1%eps
+c
+      sh = index_crys_hist(1,6,1) - e_fix
+      eh = index_crys_hist(1,6,2) - e_fix
+      history(sh:eh) = np1%slip_incs
+     &       (1:length_crys_hist(6))
+c
+      sh = index_crys_hist(1,7,1) - e_fix
+      eh = index_crys_hist(1,7,2) - e_fix
+      history(sh:sh-1
      &        +props%num_hard) =
      &   np1%tau_tilde(1:props%num_hard)
-      history(30+max_slip_sys+max_uhard+1:
-     &   30+max_slip_sys+2*max_uhard) =
-     &   np1%u(1:max_uhard)
-      history(30+max_slip_sys+2*max_uhard+1:
-     &   30+max_slip_sys+2*max_uhard+props%num_hard) =
+c
+      sh = index_crys_hist(1,8,1) - e_fix
+      eh = index_crys_hist(1,8,2) - e_fix
+      history(sh:eh) =
+     &   np1%u(1:length_crys_hist(8))
+c
+      sh = index_crys_hist(1,9,1) - e_fix
+      eh = index_crys_hist(1,9,2) - e_fix
+      history(sh:sh-1+props%num_hard) =
      &   np1%tt_rate(1:props%num_hard)
 c
       return
       end subroutine
+
 
 c
 c --------------------------------------------------------------------
@@ -928,9 +991,12 @@ c
       double complex, dimension(max_uhard) :: ivec1,ivec2
       logical :: cut, fat, iter_0_extrapolate_off, no_load
       integer :: iout,gp
+      double precision,
+     & dimension(6+props%num_hard,2*(6+props%num_hard)) :: Jmat
 c
       call mm10_solve_strup(props, np1, n, vec1, vec2, arr1, arr2,
-     &   ivec1, ivec2, cut, gp, iter_0_extrapolate_off, no_load)
+     &   ivec1, ivec2, cut, gp, iter_0_extrapolate_off, no_load,
+     &   Jmat)
 c
       if (cut) then
         write(iout,*) "mm10 stress update failed"
@@ -946,7 +1012,7 @@ c     and linear elastic stiffness matrix (from mm10_solve_strup)
       end if
 c
       call mm10_tangent(props, np1, n, vec1, vec2, arr1, arr2,
-     &        ivec1, ivec2,gp)
+     &        ivec1, ivec2,gp, Jmat)
 c
 c      call mm10_ur_tangent(props, np1, n)
 c
@@ -1335,7 +1401,7 @@ c     *                 subroutine mm10_store_gp                     *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 06/15/16 tjt                *
 c     *                                                              *
 c     *    Store all required gauss point data                       *
 c     *                                                              *
@@ -1343,7 +1409,7 @@ c     ****************************************************************
 c
       subroutine mm10_store_gp(stress_in, stress_out, tang_in,
      &      tang_out, slip_inc, slip_n, slip_np1, t_work, p_work,
-     &      p_strain, u_old, u_new, R_in, R_out)
+     &      p_strain, u_old, u_new, u_old4, u_new4, R_in, R_out)
       use mm10_defs
       implicit integer(a-z)
 c
@@ -1351,10 +1417,10 @@ c
       double precision, dimension(9) :: R_in, R_out
       double precision, dimension(6,6) :: tang_in
       double precision, dimension(36) :: tang_out
-      double precision, dimension(max_slip_sys) :: slip_inc, slip_n,
-     &      slip_np1
+      double precision, dimension(length_comm_hist(5)) :: slip_inc, 
+     &     slip_n, slip_np1
       double precision :: t_work, p_work, p_strain
-      double precision, dimension(3) :: u_old, u_new
+      double precision, dimension(3) :: u_old, u_new, u_old4, u_new4 
 c
       stress_out(1:6) = stress_in(1:6)
       tang_out(1:36) = reshape(tang_in, (/ 36 /))
@@ -1363,6 +1429,10 @@ c
       u_new(1) = u_old(1) + t_work
       u_new(2) = u_old(2) + p_work
       u_new(3) = u_old(3) + p_strain
+c
+      u_new4(1) = u_old4(1) + t_work
+      u_new4(2) = u_old4(2) + p_work
+      u_new4(3) = u_old4(3) + p_strain
 c
       R_out(1:9) = R_in(1:9)
       return
@@ -1524,11 +1594,12 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_init_slip_hist(history)
+      use mm10_defs, only : length_comm_hist
       implicit integer (a-z)
 $add param_def
-      double precision :: history(max_slip_sys)
+      double precision :: history(length_comm_hist(5))
 c
-      history(1:max_slip_sys) = 0.0d0
+      history(1:length_comm_hist(5)) = 0.0d0
 c
       return
       end subroutine
@@ -1617,7 +1688,7 @@ c
 
       cc_props%h_type = inc_props%h_type
       cc_props%num_hard = inc_props%num_hard
-      cc_props%real_tang = inc_props%real_tang
+      cc_props%tang_calc = inc_props%tang_calc
       cc_props%debug = debug
       cc_props%s_type = inc_props%s_type
       cc_props%cnum = inc_props%cnum
@@ -1900,6 +1971,82 @@ c increment the total time
       np1%u(1) = time
 c
       return
+      end
+c
+c *****************************************************************************
+c *                                                                           *
+c *         AFRL Ti-6242 high temperature hardening routines                  *
+c *                                                                           *
+c *****************************************************************************
+c
+c
+c           Initialize history
+      subroutine mm10_init_DJGM(props, tau_tilde, uhist)
+      use mm10_defs
+      implicit integer(a-z)
+c
+      type(crystal_props) :: props
+      double precision :: tau_tilde(props%num_hard)
+      double precision, dimension(max_uhard) :: uhist
+c
+      if( props%s_type .eq. 9 ) then
+          if( props%theta_0 .gt. 100.d0*1.0d6 ) then
+              tau_tilde(1:props%num_hard) = props%theta_0 ! user initialized
+          else
+          tau_tilde(1) = 300.0e6 ! Initial g_0 (MPa)
+          tau_tilde(2) = 300.0e6
+          tau_tilde(3) = 300.0e6
+          tau_tilde(4) = 240.0e6
+          tau_tilde(5) = 240.0e6
+          tau_tilde(6) = 240.0e6
+          endif
+      elseif( props%s_type .eq. 10 ) then
+          if( props%theta_0 .gt. 100.d0*1.0d6 ) then
+              tau_tilde(1:props%num_hard) = props%theta_0 ! user initialized
+          else
+          tau_tilde(1) = 300.0e6 ! Initial g_0 (MPa)
+          tau_tilde(2) = 300.0e6
+          tau_tilde(3) = 300.0e6
+          tau_tilde(4) = 240.0e6
+          tau_tilde(5) = 240.0e6
+          tau_tilde(6) = 240.0e6
+          tau_tilde(7) = 900.0e6
+          tau_tilde(8) = 900.0e6
+          tau_tilde(9) = 900.0e6
+          tau_tilde(10) = 900.0e6
+          tau_tilde(11) = 900.0e6
+          tau_tilde(12) = 900.0e6
+          tau_tilde(13) = 900.0e6
+          tau_tilde(14) = 900.0e6
+          tau_tilde(15) = 900.0e6
+          tau_tilde(16) = 900.0e6
+          tau_tilde(17) = 900.0e6
+          tau_tilde(18) = 900.0e6
+          endif
+      else
+        write(props%out,101) props%s_type
+ 101    format(
+     &      10x,'>> Error: initial values not defined for Ti6242 for ', 'i6', '.',
+     &    /,10x, 'Aborting...')
+        call die_gracefully
+      endif
+c
+      return
+      end subroutine
+c
+c           Setup ornl hardening
+      subroutine mm10_setup_DJGM(props, np1, n)
+      use mm10_defs
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision :: time
+c increment the total time
+      time = n%u(1) + np1%tinc
+      np1%u(1) = time
+c
+      return
       end subroutine
 c
 c ****************************************************************************
@@ -1956,41 +2103,67 @@ c
       implicit integer(a-z)
 c
       double precision,
-     &  dimension(24+max_uhard+max_uhard) :: history
-      double precision, dimension(27) :: gradfe
-      double precision, dimension(9) :: R
+     &  dimension(one_crystal_hist_size)
+     &     :: history
+      double precision, dimension(3,3,3) :: gradfe
+      double precision, dimension(3,3) :: R
+      integer :: sh, eh, e_fix
+      double precision :: one, zero
       type(crystal_props) :: props
       type(crystal_state) :: n
 c
+      zero = 0.d0
+      one = 1.d0
+      e_fix = indexes_common(num_common_indexes,2) ! last index of front of history vector
 c           Not provided, could be useful...
-      n%R(1:3,1:3) = reshape(R, (/3,3/))
-      n%gradFeinv(1:3,1:3,1:3) = reshape(gradfe, (/3,3,3/))
-      n%temp = 0.0d0
+      n%R(1:3,1:3) = R(1:3,1:3)
+      n%gradFeinv(1:3,1:3,1:3) = gradfe(1:3,1:3,1:3)
+      n%temp = zero
 c           Only used at n+1
-      n%tinc = 0.0d0
-      n%dg = 0.0d0
-      n%tau_v = 0.0d0
-      n%tau_y = 0.0d0
-      n%mu_harden = 0.0d0
+      n%tinc = zero
+      n%dg = zero
+      n%tau_v = zero
+      n%tau_y = zero
+      n%mu_harden = zero
 c
-      n%stress = history(1:6)
-      n%euler_angles(1:3) = history(7:9)
+      sh = index_crys_hist(1,1,1) - e_fix
+      eh = index_crys_hist(1,1,2) - e_fix
+      n%stress(1:6) = history(sh:eh)
 c
-      n%Rp = reshape(history(10:18), (/3,3/))
-      n%D(1:6) = history(18+1:24)
-      n%eps(1:6) = history(24+1:30)
-      n%slip_incs(1:max_slip_sys) =
-     &  history(30+1:30+max_slip_sys)
+      sh = index_crys_hist(1,2,1) - e_fix
+      eh = index_crys_hist(1,2,2) - e_fix
+      n%euler_angles(1:3) = history(sh:eh)
+c
+      sh = index_crys_hist(1,3,1) - e_fix
+      eh = index_crys_hist(1,3,2) - e_fix
+      n%Rp(1:3,1:3) = reshape(history(sh:eh), (/3,3/))
+c
+      sh = index_crys_hist(1,4,1) - e_fix
+      eh = index_crys_hist(1,4,2) - e_fix
+      n%D(1:6) = history(sh:eh)
+c
+      sh = index_crys_hist(1,5,1) - e_fix
+      eh = index_crys_hist(1,5,2) - e_fix
+      n%eps(1:6) = history(sh:eh)
+c
+      sh = index_crys_hist(1,6,1) - e_fix
+      eh = index_crys_hist(1,6,2) - e_fix
+      n%slip_incs(1:length_crys_hist(6)) =
+     &  history(sh:eh)
+c
+      sh = index_crys_hist(1,7,1) - e_fix
+      eh = index_crys_hist(1,7,2) - e_fix
       n%tau_tilde(1:props%num_hard) =
-     &  history(30+max_slip_sys+1:30+max_slip_sys
-     &          +props%num_hard)
+     &  history(sh:sh-1+props%num_hard)
 c
-      n%u(1:max_uhard) =
-     &  history(30+max_slip_sys+max_uhard+1:30+max_slip_sys
-     &          +2*max_uhard)
+      sh = index_crys_hist(1,8,1) - e_fix
+      eh = index_crys_hist(1,8,2) - e_fix
+      n%u(1:length_crys_hist(8)) = history(sh:eh)
+c
+      sh = index_crys_hist(1,9,1) - e_fix
+      eh = index_crys_hist(1,9,2) - e_fix
       n%tt_rate(1:props%num_hard) =
-     &  history(30+max_slip_sys+2*max_uhard+1:30+max_slip_sys
-     &          +2*max_uhard+props%num_hard)
+     &  history(sh:sh-1+props%num_hard)
 c
       return
       end subroutine
@@ -2008,19 +2181,36 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_init_general_hist(history)
+      use mm10_defs, only : indexes_common
       implicit none
       double precision :: history(72)
-      double precision :: eye(3,3)
-c
-      history(1:63) = 0.0d0
-c
-      eye = 0.0d0
-      eye(1,1) = 1.0d0
-      eye(2,2) = 1.0d0
-      eye(3,3) = 1.0d0
-      history(64:72) = reshape(eye, (/9/))
+      double precision :: zero, one
+      integer :: sh, eh
+      zero = 0.d0
+      one = 1.d0
+c     cep
+      sh  = indexes_common(1,1)
+      eh  = indexes_common(1,2)
+      history(sh:eh) = zero
+c     grad_fe
+      sh  = indexes_common(2,1)
+      eh  = indexes_common(2,2)
+      history(sh:eh) = zero
+c     R from F=R*U
+      sh  = indexes_common(3,1)
+      eh  = indexes_common(3,2)
+      history(sh+0) = one
+      history(sh+1) = zero
+      history(sh+2) = zero
+      history(sh+3) = zero
+      history(sh+4) = one
+      history(sh+5) = zero
+      history(sh+6) = zero
+      history(sh+7) = zero
+      history(sh+8) = one
       return
       end subroutine
+
 
 c
 c     ****************************************************************
@@ -2037,7 +2227,7 @@ c     ****************************************************************
 c
       subroutine mm10_solve_strup(props, np1, n, vec1, vec2, arr1,
      &   arr2, ivec1, ivec2, fail, gp, iter_0_extrapolate_off,
-     &    no_load)
+     &    no_load, Jmat)
       use mm10_defs
       implicit none
 c
@@ -2058,6 +2248,8 @@ c
       double precision :: temp1,temp2
       logical :: debug, gpall, locdebug, iter_0_extrapolate_off,
      &    no_load
+      double precision,
+     & dimension(6+props%num_hard,2*(6+props%num_hard)) :: Jmat
 c
       parameter(mcuts = 4)
       parameter(mult = 0.5d0)
@@ -2125,11 +2317,11 @@ c
         if(props%solver) then
         call mm10_solve(props, curr, n, vec1, vec2, arr1, arr2,
      &       ivec1, ivec2, stress, tt, fail, faili, failr, gp,
-     &       np1%tinc*step)
+     &       np1%tinc*step, Jmat)
         else
         call mm10_solveB(props, curr, n, vec1, vec2, arr1, arr2,
      &       ivec1, ivec2, stress, tt, fail, faili, failr, gp,
-     &       np1%tinc*step)
+     &       np1%tinc*step, Jmat)
         endif
         if (fail) then
           if (locdebug) write(*,*) "Adapting"
@@ -2210,7 +2402,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_solve(props, np1, n, vec1, vec2, arr1, arr2,
-     &          ivec1, ivec2, stress, tt, fail,faili,failr, gp,dtinc)
+     &          ivec1, ivec2, stress, tt, fail,faili,failr, gp,
+     &          dtinc, J)
       use mm10_defs
       implicit none
 c
@@ -2283,8 +2476,8 @@ c      Set flag for specific step, element, iteration, ...
 c
       if (locdebug) write(*,*) "Entering solution routine"
 c
-      x(1:6) = stress
-      x(7:props%num_hard+6) = tt
+      x(1:6) = stress(1:6)
+      x(7:props%num_hard+6) = tt(1:props%num_hard)
 c
       if(locdebug) then ! print statement for debugging
       write(props%out,*)" Guess syy=",
@@ -2346,14 +2539,20 @@ c     &   .and. (dxerr .gt. xtol1))
       do while ((nR1 .gt. atol1) .and. (nR1/inR1 .gt. rtol1)
      &   )
 c           Jacobian
-        if(props%real_tang) then ! tangent matrix implemented
+        if( (props%tang_calc.eq. 0) .or.
+     &      (props%tang_calc.eq. 3) .or.
+     &      (props%tang_calc.eq. 4) ) then ! tangent matrix implemented
         call mm10_formarrs(props, np1, n, x1, x2, vec1, vec2,
      &       arr1, arr2,1)
         call mm10_formJ11(props, np1, n, vec1, vec2,
      &       arr1, arr2, x1, x2, J11)
-        else
+        elseif( props%tang_calc.eq. 2 ) then ! complex difference
         call mm10_formJ11i(props, np1, n, ivec1, ivec2,
      &       x1, x2, J11)
+        else
+          write(*,*) 'real variable finite difference
+     &                not available in mm10_solve'
+          call die_gracefully
         endif
 c        if(locdebug) then
 c          write(*,*) 'vec1', vec1(1:6)
@@ -2486,12 +2685,18 @@ c     &   .and. (dxerr .gt. xetol)) .or.
      &   ) .or.
      &          (iter.lt.mmin))
 c           Jacobian
-        if(props%real_tang) then ! tangent matrix implemented
+        if( (props%tang_calc.eq. 0) .or.
+     &      (props%tang_calc.eq. 3) .or.
+     &      (props%tang_calc.eq. 4) ) then ! tangent matrix implemented
         call mm10_formJ(props, np1, n, vec1, vec2, arr1, arr2, x(1:6),
      & x(7:6+props%num_hard), J)
-        else
+        elseif( props%tang_calc.eq. 2 ) then ! complex difference
         call mm10_formJi(props, np1, n, ivec1, ivec2, x(1:6),
      & x(7:6+props%num_hard), J)
+        else
+          write(*,*) 'real variable finite difference
+     &                not available in mm10_solve'
+          call die_gracefully
         endif
 c        if (debug) write (*,*) "J11", J(1:6,1:6)
 c        if (debug) write (*,*) "J12", J(1:6,7:6+props%num_hard)
@@ -2588,8 +2793,8 @@ c       Output statistics from N-R algorithm
      &  x2(6), " actual tt6=", x(6+ttind)
       endif
 c           Set for return
-      stress = x(1:6)
-      tt = x(7:6+props%num_hard)
+      stress(1:6) = x(1:6)
+      tt(1:props%num_hard) = x(7:6+props%num_hard)
 c      if (debug) write (*,*) "stress", x(1:6)
 c      write (*,*) "fail", fail
 c      write (*,*) "iter", iter

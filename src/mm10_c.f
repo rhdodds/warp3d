@@ -1,38 +1,60 @@
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine mm10_solveB                  *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 04/10/2016 tjt              *
+c     *                                                              *
+c     *              solve for stress/hardening using interface      *
+c     *              to "nwnleq" solver package                      *
+c     *                                                              *
+c     ****************************************************************
+c
       subroutine mm10_solveB(props, np1,np0, vec1, vec2, arr1, arr2,
-     &          ivec1, ivec2,stress,tt,fail,faili,failr,gaspt,dtinc)
-
+     &          ivec1, ivec2,stress,tt,fail,faili,failr,gaspt,dtinc,
+     &          rjac)
+c
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, np0
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+      double complex, dimension(max_uhard) :: ivec1, ivec2
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
       logical :: fail
+      integer, dimension(10) :: faili
+      double precision, dimension(10) :: failr
+      integer :: gaspt
+      double precision :: dtinc
 c
-      double precision, dimension(6+props%num_hard) :: R,x,dx, xnew,g
+$add include_mm10
+      type(mm10_working_data) :: solve_work
+c
+      double precision, dimension(6+props%num_hard) :: R, x, dx, 
+     &      xnew, g
       double precision, 
      & dimension(6+props%num_hard,6+props%num_hard) :: J
       double precision :: nR, inR, atol, rtol, uB, alpha, ls1, ls2,
      &      nlsx, nRs, c, red, dt, cos_ang, xetol, xtol1, zerotol,
      &      dxerr
-      integer :: miter, info, ls, mls, mmin, gaspt, gpp, ttind
-      integer, dimension(6+props%num_hard) :: ipiv
-      logical :: debug, gpall, solver, strategy, locdebug
       double precision, dimension(6) :: R1, x1, dx1, xnew1, d1,d2
       double precision, dimension(props%num_hard) :: x2
       double precision, dimension(6,6) :: J11
-      double precision, dimension(max_uhard) :: vec1,vec2
-      double precision, dimension(max_uhard,max_uhard) :: arr1,arr2
-      double complex, dimension(max_uhard) :: ivec1, ivec2
-      double precision :: nR1, inR1, atol1, rtol1, dtinc
-      integer, dimension(10) :: faili
-      double precision, dimension(10) :: failr
+      double precision :: nR1, inR1, atol1, rtol1
+      integer :: miter, info, ls, mls, mmin, gpp, ttind
+      integer, dimension(6+props%num_hard) :: ipiv
+      logical :: debug, gpall, locdebug, jaccheck, numerjac
 c      solver package
       integer n,jacflg(5),maxit,njcnt,nfcnt,iter,termcd,method
       integer global,xscalm,ldr,lrwork,qrwsiz
-      integer outopt(2)
+      integer outopt(5)
       double precision  xtol,ftol,btol,cndtol,stepmx,delta,sigma
+      double precision  t1,t2,s_trace,zero,one,two,three,ten
       double precision  xp(6+props%num_hard),fp(6+props%num_hard),
      &                  gp(6+props%num_hard),rjac1(6,2*6)
       double precision  rjac(6+props%num_hard,2*(6+props%num_hard)),
@@ -41,8 +63,9 @@ c      solver package
      &                  qrwork(props%num_hard*(6+props%num_hard))
       double precision  scalex(6+props%num_hard)
       integer           icdwrk(6+props%num_hard)
-$add include_mm10
-      type(mm10_working_data) :: solve_work
+c
+      data zero, one, two, three, ten / 0.0d0, 1.0d00, 2.0d00, 3.0d00,
+     &    10.0d00 /
 c
 c      Convergence parameters: Newton with geometric line search
       parameter(c = 1.0d-4)
@@ -56,15 +79,36 @@ c      Convergence parameters: Newton with geometric line search
       xetol = props%xtol
       xtol1 = props%xtol1
       miter = props%miter
-      zerotol = 1.d-12
+      zerotol = 1.0d-12
       ttind = 1 ! index of tt to print while debugging
+c
+c   Tang_calc: variable to denote Jacobian calculation
+c       Set this variable INSIDE mod_crystals.f
+c   0 for user supplied, no checking
+c   1 for real finite difference (mm10_solveB only)
+c   2 for complex finite difference
+c   3 for checking with real finite difference
+c   4 for checking with complex finite difference
+c
+c     Flag for checking user supplied Jacobian numerically
+      if( (props%tang_calc .eq. 3) .or.
+     &    (props%tang_calc .eq. 4) ) then
+        jaccheck = .true. 
+      else
+        jaccheck = .false. 
+      endif
+c     Flag for computing Jacobian numerically
+      if( (props%tang_calc .eq. 1) ) then
+        numerjac = .true.
+      else
+        numerjac = .false. ! complex version handled inside of J function
+      endif
+c
 c      Debug flags for printing iteration behavior
       debug = props%debug
       gpall = props%gpall ! true to print iteration norms for all Gauss points
       gpp = props%gpp ! set one particular G.P. to print
-c      Solver flags
-      solver = props%solver ! true for Mark's N.R. routine, false for trust-region
-      strategy = props%strategy ! true for geometric l.s., false for cubic l.s.
+c
 c      Set flag for specific step, element, iteration, ...
       locdebug = (debug .and.(gpall.or.(gaspt.eq.gpp))
      & .and.((props%st_it(3).eq.-2).or.
@@ -73,116 +117,154 @@ c      Set flag for specific step, element, iteration, ...
      &       (props%st_it(1).eq.np1%step))
      & .and.((props%st_it(2).eq.-2).or.
      &       (props%st_it(2).eq.np1%iter)))
-      solve_work%locdebug = locdebug !np1%step
+      solve_work%locdebug = locdebug
 c
-      if (locdebug) write(*,*) "Entering solution routine"
+      if ( locdebug ) write(*,*) "Entering solution routine"
 c
-      x(1:6) = stress
-      x(7:props%num_hard+6) = tt
+c     Set initial values for solution from last time step
+      x(1:6) = stress(1:6)
+      x(7:props%num_hard+6) = tt(1:props%num_hard)
 c
-      if(locdebug) then ! print statement for debugging
+      if( locdebug ) then ! print statement for debugging
       write(props%out,*)" Guess syy=",
      &  x(2)
       endif
 c
-c Prediction of yield stress to initialize the integration algorithm; helps
-c for Orowan flow rule type models
-      if (props%h_type .gt. 3) then
+c                 Prediction of yield stress to initialize
+c                 the integration algorithm; helps
+c                 for Orowan flow rule type models
 c
+      if ( props%h_type .gt. 3 ) then
+c
+c      write(*,*) 'props%h_type', props%h_type
 c      if (debug) write(*,*) "Entering stress prediction"
       iter = 0
-      x1 = x(1:6)
+      x1(1:6) = x(1:6)
 c
       ! Module to extrapolate the hardening variables      
       dt = dtinc !np1%tinc
-      ! Predict the new hardening variable by extrapolation
-      ! Use cosine of the "angle" between the new and old
-      ! displacement increment to indicate continuity of load
-      ! direction
+c
+c                 Predict the new hardening variable by extrapolation
+c                 Use cosine of the "angle" between the new and old
+c                 displacement increment to indicate continuity of load
+c                 direction
+c
       d1(1:6) = np1%D(1:6)
       alpha = d1(1) + d1(2) + d1(3)
-      d1(1) = d1(1) - 1.d0/3.d0*alpha
-      d1(2) = d1(2) - 1.d0/3.d0*alpha
-      d1(3) = d1(3) - 1.d0/3.d0*alpha
-      d1(1:6) = d1(1:6)/dsqrt(dot_product(d1,d1))
+      d1(1) = d1(1) - one/three*alpha
+      d1(2) = d1(2) - one/three*alpha
+      d1(3) = d1(3) - one/three*alpha
+      t1 = d1(1)**2 + d1(2)**2 + d1(3)**2
+      t2 = d1(4)**2 + d1(5)**2 + d1(6)**2
+      d1(1:6) = d1(1:6)/sqrt( t1+t2 )
       d2(1:6) = np0%D(1:6)
       alpha = d2(1) + d2(2) + d2(3)
-      d2(1) = d2(1) - 1.d0/3.d0*alpha
-      d2(2) = d2(2) - 1.d0/3.d0*alpha
-      d2(3) = d2(3) - 1.d0/3.d0*alpha
-      d2(1:6) = d2(1:6)/dsqrt(dot_product(d2,d2))
-      cos_ang = dmax1(dot_product(d1,d2),0.d0)
+      d2(1) = d2(1) - one/three*alpha
+      d2(2) = d2(2) - one/three*alpha
+      d2(3) = d2(3) - one/three*alpha
+      t1 = d2(1)**2 + d2(2)**2 + d2(3)**2
+      t2 = d2(4)**2 + d2(5)**2 + d2(6)**2
+      d2(1:6) = d2(1:6)/sqrt( t1+t2 )
+      t1 = d1(1)*d2(1) + d1(2)*d2(2) + d1(3)*d2(3)
+      t2 = d1(4)*d2(4) + d1(5)*d2(5) + d1(6)*d2(6)
+      cos_ang = dmax1( t1+t2, zero )
       !write(*,*) cos_ang, n%tt_rate(2)
-      x2 = x(7:6+props%num_hard) + cos_ang*
-     &        np0%tt_rate(1:props%num_hard)*dt
-
-      if(locdebug)
+      x2(1:props%num_hard) = x(7:6+props%num_hard) + 
+     &        cos_ang*np0%tt_rate(1:props%num_hard)*dt
+c
+      if( locdebug )
      & write(props%out,*)" Stress prediction module, G.P.=", gaspt
-      if(locdebug) then ! print statement for debugging
+      if( locdebug ) then ! print statement for debugging
       write(props%out,*)" Extrapol tt6=",
      &  x2(ttind), " Previous tt6=", x(6+ttind)
       endif
-c     Copy stuff into solve_work
+c
+c          Copy stuff into solve_work
+c
       solve_work%props = props
       solve_work%np1 = np1
       solve_work%np0 = np0
-      solve_work%vec1 = vec1
-      solve_work%vec2 = vec2
-      solve_work%arr1 = arr1
-      solve_work%arr2 = arr2
-      solve_work%ivec1 = ivec1
-      solve_work%ivec2 = ivec2
+      solve_work%vec1(1:max_uhard) = vec1(1:max_uhard)
+      solve_work%vec2(1:max_uhard) = vec2(1:max_uhard)
+      solve_work%arr1(1:max_uhard,1:max_uhard) = 
+     &           arr1(1:max_uhard,1:max_uhard)
+      solve_work%arr2(1:max_uhard,1:max_uhard) = 
+     &           arr2(1:max_uhard,1:max_uhard)
+      solve_work%ivec1(1:max_uhard) = ivec1(1:max_uhard)
+      solve_work%ivec2(1:max_uhard) = ivec2(1:max_uhard)
       solve_work%gaspt = gaspt
       solve_work%solvfnc = 1
-      solve_work%x2 = x2
-c     Set up solver arguments
+      solve_work%x2(1:props%num_hard) = x2(1:props%num_hard)
+c
+c          Set up solver arguments
+c
       n = 6
-      if(dot_product(stress,stress).eq.0.d0) then
-      stepmx = dsqrt(dot_product(props%mu_0*np1%D,
-     &         props%mu_0*np1%D))
-      scalex(1:6) = 1.d0/stepmx
+      t1      = stress(1)**2 + stress(2)**2 + stress(3)**2
+      t2      = stress(4)**2 + stress(5)**2 + stress(6)**2
+      s_trace = sqrt( three/two * ( t1 + two*t2 ) )
+      if( s_trace .eq. zero ) then
+      t1      = np1%D(1)**2 + np1%D(2)**2 + np1%D(3)**2
+      t2      = np1%D(4)**2 + np1%D(5)**2 + np1%D(6)**2
+      s_trace = sqrt( three/two * ( t1 + two*t2 ) )
+      stepmx = props%mu_0*s_trace
+      scalex(1:6) = one/stepmx
       else
-      scalex(1:6) = 1.d0/dsqrt(dot_product(stress,stress))
+      scalex(1:6) = one/s_trace
       endif
 c      if(locdebug) then
 c            write(*,*) 'scalex', scalex(1:n)
 c      endif
       maxit = miter
-      jacflg(1) = 1
+      if( numerjac ) then
+        jacflg(1) = 0 ! finite difference 1 ! analytical 
+      else
+        jacflg(1) = 1 ! analytical 0 ! finite difference 
+      endif
       jacflg(2) = -1
       jacflg(3) = -1
       jacflg(4) = 1
       xtol = xtol1 !x tolerance
       ftol = rtol1 !f tolerance
       btol = xtol1 !tolerance for backtracking
-      cndtol = 1.d-14 !tolerance of test for ill conditioning
-      if(props%method.le.6) then
-        method = 0 !Newton
-        global = props%method !geometric linesearch
+      cndtol = 1.0d-14 !tolerance of test for ill conditioning
+      if( props%method .le. 6 ) then
+        method = 0 ! Newton
+        global = props%method ! linesearch/trust-region
       else
-        method = 1 !Broyden
-        global = props%method-7 !geometric linesearch
+        method = 1 ! Broyden
+        global = props%method-7 !linesearch/trust-region
       endif
       xscalm = 0 !for manual scaling
-      stepmx = 0.0d0 !maximum stepsize
-      delta = -2.0d0 !  ==> use min(Newton length, stepmx)
+      stepmx = zero !maximum stepsize
+      delta = -two !  ==> use min(Newton length, stepmx)
       sigma = red !reduction factor geometric linesearch
       ldr = 6
       lrwork = 9*(6+props%num_hard)
-      call mm10_liqsiz(n,qrwsiz) 
-      if(locdebug) then
-      outopt(1) = 1
+c       Setup size for QR decomposition
+      call mm10_liqsiz(n,qrwsiz)
+c        Set flag for iteration statement prints 
+      if( locdebug ) then
+        outopt(1) = 1
       else
-      outopt(1) = 0
+        outopt(1) = 0
       endif
-      outopt(2) = 0
-c     Perform the actual solve
+      if( jaccheck ) then
+        outopt(2) = 1
+      else
+        outopt(2) = 0
+      endif
+      outopt(3) = 1 ! yes, output Jacobian
+c
+c           Perform the actual solve for stress prediction
+c
       call mm10_nwnleq(x1,n,scalex,maxit,
      *                  jacflg,xtol,ftol,btol,cndtol,method,global,
      *                  xscalm,stepmx,delta,sigma,rjac1,ldr,
      *                  rwork,lrwork,
      *                  rcdwrk,icdwrk,qrwork,qrwsiz,solve_work,outopt,
      *                  xp,fp,gp,njcnt,nfcnt,iter,termcd)
+c
+c           Figure out what happened; did we converge or not
 c
           nR1 = dsqrt(dot_product(fp(1:6),fp(1:6)))
         if ((iter .gt. miter) .or.
@@ -192,11 +274,11 @@ c         Record data and reason for failure
           fail = .true.
           faili(1) = iter
           faili(2) = miter
-          if((nR1 .gt. atol1)) then
+          if( nR1 .gt. atol1 ) then
           faili(3) = 1
 c          elseif((nR1/inR1 .gt. rtol1)) then
 c          faili(3) = 2
-          elseif(any(isnan(x1))) then
+          elseif( any( isnan(x1) ) ) then
           faili(3) = 3
           endif
           faili(4) = 1
@@ -204,18 +286,23 @@ c          faili(3) = 2
           failr(2) = atol1
 c          failr(3) = nR1/inR1
           failr(4) = rtol1
-      if(locdebug) then ! print statement for debugging
+      if( locdebug ) then ! print statement for debugging
         write(*,*) 'termcd', termcd, 'miter', miter, 'iter', iter
       endif
           return
-        end if
-c       Copy stuff out of solver output
+c
+        end if ! Return out for failure to converge
+c
+c          Copy stuff out of solver output
+c
         x1(1:6) = xp(1:6)
-      if(locdebug) then ! print statement for debugging
+      if( locdebug ) then ! print statement for debugging
         write(*,*) 'termcd', termcd, 'miter', miter, 'iter', iter
       endif
-c       Output statistics from N-R algorithm
-      if(locdebug) then ! print statement for debugging
+c
+c          Output statistics from N-R algorithm
+c
+      if( locdebug ) then ! print statement for debugging
       write(props%out,*)" Stress pred conv iter=",
      &  iter
       write(props%out,*)" AbsNorm=",
@@ -225,86 +312,119 @@ c     &  nR1/inR1, " RelTol=", rtol1
       write(props%out,*)" Guess syy=",
      &  x(2), " actual syy=", x1(2)
       endif
-c        Copy predicted stress and hardening back to primary variable x
+c
+c        Copy predicted stress and hardening back
+c        to primary variable x
+c
       x(1:6) = x1(1:6)
       x(7:6+props%num_hard) = x2(1:props%num_hard)
 c
-      else
 c
-        inR1 = 1.d0
+      else ! don't predict stress
+c
+c
+        inR1 = one
+c
 c
       endif ! stress prediction
-
 c
-c Material update algorithm
 c
-      if(locdebug) ! print statement for debugging
+c         Material update algorithm
+c
+      if( locdebug ) ! print statement for debugging
      & write(props%out,*)" Material update module, G.P.=", gaspt
-      if(locdebug) then ! print statement for debugging
+      if( locdebug ) then ! print statement for debugging
       write(props%out,*)" Guess syy=",
      &  x(2), " Guess tt=", x(6+ttind)
       endif
-c     Copy stuff into solve_work
+c
+c         Copy stuff into solve_work
+c
       solve_work%props = props
       solve_work%np1 = np1
       solve_work%np0 = np0
-      solve_work%vec1 = vec1
-      solve_work%vec2 = vec2
-      solve_work%arr1 = arr1
-      solve_work%arr2 = arr2
-      solve_work%ivec1 = ivec1
-      solve_work%ivec2 = ivec2
+      solve_work%vec1(1:max_uhard) = vec1(1:max_uhard)
+      solve_work%vec2(1:max_uhard) = vec2(1:max_uhard)
+      solve_work%arr1(1:max_uhard,1:max_uhard) = 
+     &           arr1(1:max_uhard,1:max_uhard)
+      solve_work%arr2(1:max_uhard,1:max_uhard) = 
+     &           arr2(1:max_uhard,1:max_uhard)
+      solve_work%ivec1(1:max_uhard) = ivec1(1:max_uhard)
+      solve_work%ivec2(1:max_uhard) = ivec2(1:max_uhard)
       solve_work%gaspt = gaspt
       solve_work%solvfnc = 2
-c     Set up solver arguments
+c
+c         Set up solver arguments
+c
       n = 6+props%num_hard
-      if(dot_product(x(1:6),x(1:6)).eq.0.d0) then
-      stepmx = dsqrt(dot_product(props%mu_0*np1%D,
-     &         props%mu_0*np1%D))
-      scalex(1:6) = 1.d0/stepmx
+      t1      = x(1)**2 + x(2)**2 + x(3)**2
+      t2      = x(4)**2 + x(5)**2 + x(6)**2
+      s_trace = sqrt( three/two * ( t1 + two*t2 ) )
+      if( s_trace .eq. zero ) then
+      t1      = np1%D(1)**2 + np1%D(2)**2 + np1%D(3)**2
+      t2      = np1%D(4)**2 + np1%D(5)**2 + np1%D(6)**2
+      s_trace = sqrt( three/two * ( t1 + two*t2 ) )
+      stepmx = props%mu_0*s_trace
+      scalex(1:6) = one/stepmx
       else
-      scalex(1:6) = 1.d0/dsqrt(dot_product(x(1:6),x(1:6)))
+      scalex(1:6) = one/s_trace
       endif
 c      if(locdebug) then
 c            write(*,*) 'scalex', scalex(1:n)
 c      endif
-      scalex(7:6+props%num_hard) = 1.d0/x(7:6+props%num_hard)
+      scalex(7:6+props%num_hard) = one/x(7:6+props%num_hard)
       maxit = miter
-      jacflg(1) = 1
+      if( numerjac ) then
+        jacflg(1) = 0 ! finite difference 1 ! analytical 
+      else
+        jacflg(1) = 1 ! analytical 0 ! finite difference 
+      endif
       jacflg(2) = -1
       jacflg(3) = -1
       jacflg(4) = 1
       xtol = xetol !x tolerance
       ftol = rtol !f tolerance
       btol = xetol !tolerance for backtracking
-      cndtol = 1.d-14 !tolerance of test for ill conditioning
-      if(props%method.le.6) then
-        method = 0 !Newton
-        global = props%method !geometric linesearch
+      cndtol = 1.0d-14 !tolerance of test for ill conditioning
+      if( props%method.le.6 ) then
+        method = 0 ! Newton
+        global = props%method ! linesearch/trust-region
       else
-        method = 1 !Broyden
-        global = props%method-7 !geometric linesearch
+        method = 1 ! Broyden
+        global = props%method-7 ! linesearch/trust-region
       endif
       xscalm = 0 !manual scaling
-      stepmx = 0.0d0 !maximum stepsize
-      delta = -2.0d0 !  ==> use min(Newton length, stepmx)
+      stepmx = zero !maximum stepsize
+      delta = -two !  ==> use min(Newton length, stepmx)
       sigma = red !reduction factor geometric linesearch
       ldr = 6+props%num_hard
       lrwork = 9*(6+props%num_hard)
-      call mm10_liqsiz(n,qrwsiz) 
-      if(locdebug) then
-      outopt(1) = 1
+c       Setup size for QR decomposition
+      call mm10_liqsiz(n,qrwsiz)
+c        Set flag for iteration statement prints 
+      if( locdebug ) then
+        outopt(1) = 1
       else
-      outopt(1) = 0
+        outopt(1) = 0
       endif
-      outopt(2) = 0
-c     Perform the actual solve
+      if( jaccheck ) then
+        outopt(2) = 1
+      else
+        outopt(2) = 0
+      endif
+      outopt(3) = 1 ! yes, output Jacobian
+c
+c          Perform the actual solve for stress/hardening update
+c
       call mm10_nwnleq(x,n,scalex,maxit,
      *                  jacflg,xtol,ftol,btol,cndtol,method,global,
      *                  xscalm,stepmx,delta,sigma,rjac,ldr,
      *                  rwork,lrwork,
      *                  rcdwrk,icdwrk,qrwork,qrwsiz,solve_work,outopt,
      *                  xp,fp,gp,njcnt,nfcnt,iter,termcd)
+c
+c           Figure out what happened; did we converge or not
+c
           nR = dsqrt(dot_product(fp,fp))
 c         Record data and reason for failure
         if ((iter .gt. miter) .or. any(isnan(xp)) .or.
@@ -312,11 +432,11 @@ c         Record data and reason for failure
           fail = .true.
           faili(1) = iter
           faili(2) = miter
-          if((nR .gt. atol)) then
+          if( nR .gt. atol ) then
           faili(3) = 1
 c          elseif((nR/inR .gt. rtol)) then
 c          faili(3) = 2
-          elseif(any(isnan(x))) then
+          elseif( any( isnan(x) ) ) then
           faili(3) = 3
           endif
           faili(4) = 2
@@ -324,20 +444,25 @@ c          faili(3) = 2
           failr(2) = atol
 c          failr(3) = nR/inR
           failr(4) = rtol
-      if(locdebug) then ! print statement for debugging
+      if( locdebug ) then ! print statement for debugging
         write(*,*) 'termcd', termcd, 'miter', miter, 'iter', iter
       endif
           return
-        end if
-      if(locdebug) then ! print statement for debugging
+c 
+        end if ! Return out for failure to converge
+c
+c          Copy stuff out of solver output
+c
+      if( locdebug ) then ! print statement for debugging
         write(*,*) 'termcd', termcd, 'miter', miter, 'iter', iter
       endif
-c       Copy stuff out of solver output
         x(1:6+props%num_hard) = xp(1:6+props%num_hard)
         np1%tt_rate(1:props%num_hard) = 
      &     solve_work%np1%tt_rate(1:props%num_hard)
-c       Output statistics from N-R algorithm
-      if(locdebug) then ! print statement for debugging
+c
+c          Output statistics from N-R algorithm
+c
+      if( locdebug ) then ! print statement for debugging
       write(props%out,*)" Material upd conv, iter=",
      &  iter
       write(props%out,*)" AbsNorm=",
@@ -349,13 +474,15 @@ c     &  nR/inR, " RelTol=", rtol
       write(props%out,*)" Guess tt6=",
      &  x2(ttind), " actual tt6=", x(6+ttind)
       endif
+c
 c           Set for return
-      stress = x(1:6)
-      tt = x(7:6+props%num_hard)
+c
+      stress(1:6) = x(1:6)
+      tt(1:props%num_hard) = x(7:6+props%num_hard)
 c      if (debug) write (*,*) "stress", x(1:6)
 c      write (*,*) "fail", fail
 c      write (*,*) "iter", iter
-
+c
       return
       end subroutine
 c
@@ -371,7 +498,7 @@ c
       use mm10_defs
       integer n,jacflg(5),maxit,njcnt,nfcnt,iter,termcd,method
       integer global,xscalm,ldr,lrwork,qrwsiz
-      integer outopt(2)
+      integer outopt(*)
       double precision  xtol,ftol,btol,cndtol,stepmx,delta,sigma
       double precision  xp(n),fp(n),gp(*),x0(*)
       double precision  rjac(ldr,*),rwork(*),rcdwrk(*),qrwork(*)
@@ -697,15 +824,19 @@ $add include_mm10
       double precision  rjac(ldr,n)
       
       if(solve_work%solvfnc.eq.1) then
-        if(solve_work%props%real_tang) then ! tangent matrix implemented
-        call mm10_formvecs(solve_work%props, solve_work%np1,
+        if( solve_work%props%tang_calc .eq. 2) then ! complex difference
+          call mm10_formJ11i(solve_work%props, solve_work%np1, 
+     &       solve_work%np0, solve_work%ivec1, solve_work%ivec2,
+     &       x(1:6), solve_work%x2, rjac)
+        else
+          call mm10_formvecs(solve_work%props, solve_work%np1,
      &          solve_work%np0, x(1:6), solve_work%x2, 
      &                     solve_work%vec1, solve_work%vec2)
 c         write(*,*) ''
 c        if(solve_work%locdebug) then
 c          write(*,*) 'vec1', solve_work%vec1(1:6)
 c        endif
-        call mm10_formarrs(solve_work%props, solve_work%np1, 
+          call mm10_formarrs(solve_work%props, solve_work%np1, 
      &       solve_work%np0, x(1:6), solve_work%x2, 
      &       solve_work%vec1, solve_work%vec2,
      &       solve_work%arr1, solve_work%arr2,1)
@@ -715,27 +846,23 @@ c        endif
 c        if(solve_work%locdebug) then
 c          write(*,*) 'vec1', solve_work%vec1(1:6)
 c        endif
-        call mm10_formJ11(solve_work%props, solve_work%np1,
+          call mm10_formJ11(solve_work%props, solve_work%np1,
      &        solve_work%np0, solve_work%vec1, solve_work%vec2,
      &  solve_work%arr1, solve_work%arr2, x(1:6), solve_work%x2, rjac)
-        else
-        call mm10_formJ11i(solve_work%props, solve_work%np1, 
-     &       solve_work%np0, solve_work%ivec1, solve_work%ivec2,
-     &       x(1:6), solve_work%x2, rjac)
         end if
       else
-        if(solve_work%props%real_tang) then ! tangent matrix implemented
-        call mm10_formvecs(solve_work%props, solve_work%np1,
+        if( solve_work%props%tang_calc .eq. 2) then ! complex difference
+          call mm10_formJi(solve_work%props, solve_work%np1, 
+     &     solve_work%np0, solve_work%ivec1, solve_work%ivec2,
+     &       x(1:6),x(7:n), rjac)
+        else
+          call mm10_formvecs(solve_work%props, solve_work%np1,
      &                     solve_work%np0, x(1:6), x(7:n), 
      &                     solve_work%vec1, solve_work%vec2)
-        call mm10_formJ(solve_work%props, solve_work%np1, 
+          call mm10_formJ(solve_work%props, solve_work%np1, 
      &       solve_work%np0, solve_work%vec1, solve_work%vec2,
      &       solve_work%arr1, solve_work%arr2, x(1:6),
      &       x(7:n), rjac)
-        else
-        call mm10_formJi(solve_work%props, solve_work%np1, 
-     &     solve_work%np0, solve_work%ivec1, solve_work%ivec2,
-     &       x(1:6),x(7:n), rjac)
         end if
       end if
 
@@ -754,6 +881,8 @@ $add include_mm10
       double precision, dimension(n) :: x,fz
       integer :: n,j
 
+c      write(*,*) 'solve_work%solvfnc fvec', solve_work%solvfnc
+      
       if(solve_work%solvfnc.eq.1) then
         call mm10_formvecs(solve_work%props, solve_work%np1,
      &                 solve_work%np0, x(1:6), solve_work%x2, 
@@ -768,6 +897,53 @@ $add include_mm10
      &                  solve_work%vec2, x(1:6),
      &                  x(7:n), fz,
      &                  solve_work%gaspt)
+        if(solve_work%locdebug) then
+          write(*,*) 'R', fz(9:12)
+          write(*,*) 'str', x(1:6)
+          write(*,*) 'tt', x(9:13)
+        endif
+      end if
+
+      return
+      end
+      
+c-------------------------------------------------------------------------
+
+      subroutine mm10_fveci(solve_work,x,fz,n,j)
+      
+c-------------------------------------------------------------------------
+
+      use mm10_defs
+$add include_mm10
+      type(mm10_working_data) :: solve_work
+      double complex, dimension(n) :: x,fz
+      double complex, dimension(n-6) :: x2i
+      double precision, dimension(n-6) :: zero2
+      integer :: n,j
+
+c      write(*,*) 'solve_work%solvfnc fvec', solve_work%solvfnc
+      
+      if(solve_work%solvfnc.eq.1) then
+        zero2 = 0.d0
+        x2i(1:n-6) = cmplx(solve_work%x2(1:n-6),zero2)
+        call mm10_formvecsi(solve_work%props, solve_work%np1,
+     &                 solve_work%np0, x(1:6), x2i, 
+     &                    solve_work%ivec1, solve_work%ivec2)
+        call mm10_formR1i(solve_work%props, solve_work%np1, 
+     &                   solve_work%np0, solve_work%ivec1, 
+     &            solve_work%ivec2, x(1:6),x2i, fz, 
+     &                   solve_work%gaspt)
+      else
+        call mm10_formvecsi(solve_work%props, solve_work%np1,
+     &                 solve_work%np0, x(1:6), x(7:n), 
+     &                    solve_work%ivec1, solve_work%ivec2)
+        call mm10_formR1i(solve_work%props, solve_work%np1, 
+     &                   solve_work%np0, solve_work%ivec1, 
+     &            solve_work%ivec2, x(1:6),x(7:n), fz(1:6), 
+     &                   solve_work%gaspt)
+        call mm10_formR2i(solve_work%props, solve_work%np1, 
+     &                   solve_work%np0, solve_work%ivec1, 
+     &            solve_work%ivec2, x(1:6),x(7:n), fz(7:n))
         if(solve_work%locdebug) then
           write(*,*) 'R', fz(9:12)
           write(*,*) 'str', x(1:6)
@@ -1692,6 +1868,7 @@ c     jacobian, if requested
            njcnt = njcnt + 1
            call mm10_nwfjac(xc,scalex,fc,fq,n,epsm,jacflg,solve_work,rjac,
      *                 ldr,wrk1,wrk2,wrk3,priter)
+c      write(*,*) 'solve_work%solvfnc brsolv', solve_work%solvfnc
            call mm10_chkjac(rjac,ldr,xc,fc,n,epsm,jacflg,scalex,
      *                 fq,wrk1,wrk2,solve_work,termcd)
            if(termcd .lt. 0) then
@@ -1745,7 +1922,10 @@ c     check stopping criteria for input xc
 
       jacevl  = .true.
       stepadj = jacflg(4) .eq. 1
-
+      if((maxit.gt.100).or.(maxit.lt.0)) then
+        maxit = 100
+      endif
+      !write(*,*) 'maxit',maxit
       do while( termcd .eq. 0 )
          iter = iter+1
 
@@ -2083,7 +2263,7 @@ c                                        -1 if no printing
 c
 c-------------------------------------------------------------------------
 
-      integer i
+      integer i, gcntmax
       double precision  alpha,slope,rsclen,oarg(4)
       double precision  lambda,lamhi,lamlo,t
       double precision  ddot,dnrm2, mm10_nudnrm, ftarg
@@ -2131,8 +2311,9 @@ c     initialization of retcd and lambda (linesearch length)
       lambda = lamhi
       gcnt   = 0
       firstback = .true.
+      gcntmax = 1000
 
-      do while( retcd .eq. 2 )
+      do while( (retcd .eq. 2) .and. (gcnt .le. gcntmax))
 
 c        compute next x
 
@@ -2208,6 +2389,10 @@ c                          downward opening parabola ==> leftmost is solution
          endif
       enddo
 
+      if(gcnt.ge.gcntmax) then
+        retcd = 1
+      endif
+
       return
       end
 
@@ -2274,7 +2459,7 @@ c     All vectors at least size n
 c
 c-------------------------------------------------------------------------
 
-      integer i
+      integer i, gcntmax
       double precision  dnlen,ssdlen,alpha,beta,lambda,fpred
       double precision  sqalpha,eta,gamma,fpnsav,oarg(7)
       double precision  dnrm2,ddot, xpr(n)
@@ -2325,8 +2510,9 @@ c     precautionary (just in case)
 
       retcd = 4
       gcnt  = 0
+      gcntmax = 1000
 
-      do while( retcd .gt. 1 )
+      do while( retcd .gt. 1 .and. (gcnt .le. gcntmax))
 c        find new step by double dogleg algorithm
 
          call mm10_ddlgstp(n,dn,dnlen,delta,v,
@@ -2368,6 +2554,10 @@ c            write(*,*) 'fp', fp(1:n)
          endif
 
       enddo
+
+      if(gcnt.ge.gcntmax) then
+        retcd = 1
+      endif
 
       return
       end
@@ -2506,7 +2696,7 @@ c                                        -1 if no printing
 c
 c-------------------------------------------------------------------------
 
-      integer i
+      integer i, gcntmax
       double precision  alpha,slope,rsclen,oarg(4)
       double precision  lambda,lamhi,lamlo
       double precision  ddot,dnrm2, mm10_nudnrm, ftarg
@@ -2543,6 +2733,7 @@ c     initialization of retcd and lambda (linesearch length)
       retcd  = 2
       lambda = lamhi
       gcnt   = 0
+      gcntmax = 1000
 
          if( priter .gt. 0) then
 c            xpr(1:n) = d(1:n)
@@ -2551,7 +2742,7 @@ c            write(*,*) 'lamlo', lamlo
 c            write(*,*) 'sigma', sigma
          endif
 
-      do while( retcd .eq. 2 )
+      do while( (retcd .eq. 2) .and. (gcnt .le. gcntmax))
 
 c        compute next x
 
@@ -2598,6 +2789,10 @@ c            write(*,*) 'lambda', lambda
          endif
 
       enddo
+
+      if(gcnt.ge.gcntmax) then
+        retcd = 1
+      endif
 
       return
       end
@@ -3169,6 +3364,7 @@ c     jacobian, if requested
            njcnt = njcnt + 1
            call mm10_nwfjac(xc,scalex,fc,fq,n,epsm,jacflg,solve_work,
      *                 rjac,ldr,wrk1,wrk2,wrk3,priter)
+c      write(*,*) 'solve_work%solvfnc fnwsolv', solve_work%solvfnc
            call mm10_chkjac(rjac,ldr,xc,fc,n,epsm,jacflg,scalex,
      *                 fq,wrk1,wrk2,solve_work,termcd)
            if(termcd .lt. 0) then
@@ -3219,6 +3415,10 @@ c     check stopping criteria for input xc
          endif
 
       endif
+      if((maxit.gt.100).or.(maxit.lt.0)) then
+        maxit = 100
+      endif
+      !write(*,*) 'maxit',maxit
 
       do while( termcd .eq. 0 )
          iter = iter + 1
@@ -3366,7 +3566,7 @@ c     All vectors at least size n
 c
 c-------------------------------------------------------------------------
 
-      integer i
+      integer i, gcntmax
       double precision  dnlen,ssdlen,alpha,beta,lambda,fpred
       double precision  sqalpha,fpnsav,oarg(5)
       double precision  dnrm2
@@ -3407,8 +3607,9 @@ c     set trust radius to ssdlen or dnlen if required
 
       retcd = 4
       gcnt  = 0
+      gcntmax = 1000
 
-      do while( retcd .gt. 1 )
+      do while( (retcd .gt. 1) .and. (gcnt .le. gcntmax))
 
 c        find new step by single dogleg algorithm
 
@@ -3446,6 +3647,9 @@ c        check whether the global step is acceptable
          endif
 
       enddo
+      if(gcnt.ge.gcntmax) then
+        retcd = 1
+      endif
 
       return
       end
@@ -4042,7 +4246,7 @@ c-----------------------------------------------------------------------
       double precision  epsm,scalex(*)
       double precision  fz(*),wa(*),xw(*)
 $add include_mm10
-      type(mm10_working_data) :: solve_work
+      type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
 c
@@ -4079,6 +4283,7 @@ c-------------------------------------------------------------------------
       double precision Rquart, Rten
       parameter(Rquart=0.25d0, Rten=10.0d0)
 
+c      write(*,*) 'got to start'
       termcd = 0
 
 c     compute the finite difference jacobian and check it against
@@ -4092,6 +4297,13 @@ c     the analytic one
       call dcopy(n,xc,1,xw,1)
       call mm10_vunsc(n,xw,scalex)
 
+c
+c Copy the work so that it is not over-written
+c      write(*,*) 'got to copy'
+      call mm10_copy_work(solve_work,solve_work1)
+c      write(*,*) 'got past copy'
+c      write(*,*) 'solve_work%solvfnc chk1', solve_work%solvfnc
+c      write(*,*) 'solve_work1%solvfnc', solve_work1%solvfnc
       do j=1,n
          h = p + p * abs(xw(j))
          xcj   = xw(j)
@@ -4102,7 +4314,9 @@ c        h = xc(j) - xcj but not here to avoid clever optimizers
 
          h = mm10_rnudif(xw(j), xcj)
 
-         call mm10_fvec(solve_work,xw,fz,n,j)
+c      write(*,*) 'before call', j
+         call mm10_fvec(solve_work1,xw,fz,n,j)
+c      write(*,*) 'after call', j
          xw(j) = xcj
 
          do i=1,n
@@ -4122,6 +4336,7 @@ c        h = xc(j) - xcj but not here to avoid clever optimizers
             endif
          enddo
       enddo
+      call mm10_delete_state(solve_work1%props)
 
 c      call vscal(n,xc,scalex)
 
@@ -4142,7 +4357,7 @@ c-----------------------------------------------------------------------
       double precision  epsm,scalex(*)
       double precision  fz(*),wa(*),xw(*)
 $add include_mm10
-      type(mm10_working_data) :: solve_work
+      type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
 c
@@ -4198,13 +4413,16 @@ c     the user supplied one
           w(j) = xw(j)
       enddo
 
+c
+c Copy the work so that it is not over-written
+      call mm10_copy_work(solve_work,solve_work1)
       do k=1,dsum
          do j=k,n,dsum
             xw(j) = xw(j) + xstep(j)
          enddo
 
 c        for non finite values error message will be wrong
-         call mm10_fvec(solve_work,xw,fz,n,n+k)
+         call mm10_fvec(solve_work1,xw,fz,n,n+k)
 
          do j=k,n,dsum
              h = xstep(j)
@@ -4227,6 +4445,127 @@ c        for non finite values error message will be wrong
              enddo
          enddo
       enddo
+      call mm10_delete_state(solve_work1%props)
+
+c      call vscal(n,xc,scalex)
+
+      if( errcnt .gt. 0 ) then
+         termcd = -10
+      endif
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      subroutine mm10_chkjaci(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
+     & solve_work,termcd)
+
+      use mm10_defs
+      integer lda,n,termcd
+      double precision  A(lda,*),xc(*),fc(*)
+      double precision  epsm,scalex(*)
+      double precision  fz(*),wa(*),xw(*)
+$add include_mm10
+      type(mm10_working_data) :: solve_work, solve_work1
+
+c-------------------------------------------------------------------------
+c
+c     Check the user supplied jacobian against its complex difference approximation
+c
+c     Arguments
+c
+c     In       A       Real(lda,*)     user supplied jacobian
+c     In       lda     Integer         leading dimension of ajanal
+c     In       xc      Real(*)         vector of x values
+c     In       fc      Real(*)         function values f(xc)
+c     In       n       Integer         size of x
+c     In       epsm    Real            machine precision
+c     In       scalex  Real(*)         scaling vector for x()
+c     Wk       fz      Real(*)         workspace
+c     Wk       wa      Real(*)         workspace
+c     Wk       xw      Real(*)         workspace
+c     In       fvec    Name            name of routine to evaluate f(x)
+c     Out      termcd  Integer         return code
+c                                        0  user supplied jacobian ok
+c                                      -10  user supplied jacobian NOT ok
+c
+c-------------------------------------------------------------------------
+
+      integer i,j,errcnt
+      double precision  ndigit,p,h,xcj,dinf
+      double precision, dimension(n) :: zeroN
+      double complex, dimension(n) :: xwc, fzc
+      double precision  tol
+      double complex  mm10_rnudifi
+      integer idamax
+
+      integer MAXERR
+      parameter(MAXERR=10)
+
+      double precision Rquart, Rten
+      parameter(Rquart=0.25d0, Rten=10.0d0)
+
+      double complex :: i1
+      i1 = (0.d0, 1.d0)
+
+      zeroN = 0.d0
+
+c      write(*,*) 'got to start'
+      termcd = 0
+
+c     compute the complex difference jacobian and check it against
+c     the analytic one
+
+      ndigit = -log10(epsm)
+      p = sqrt*(max(Rten**(-ndigit),epsm))
+c      p = (Rten**4)*(max(Rten**(-ndigit),epsm)) ! this one did not work, gave small errors
+      tol    = epsm**Rquart
+      
+      errcnt = 0
+c      call dcopy(n,xc,1,xw,1)
+      xwc(1:n) = dcmplx (xc(1:n), zeroN)
+      call mm10_vunsci(n,xwc,scalex)
+
+c
+c Copy the work so that it is not over-written
+c      write(*,*) 'got to copy'
+      call mm10_copy_work(solve_work,solve_work1)
+c      write(*,*) 'got past copy'
+c      write(*,*) 'solve_work%solvfnc chk1', solve_work%solvfnc
+c      write(*,*) 'solve_work1%solvfnc', solve_work1%solvfnc
+      do j=1,n
+         h = p + p * abs(real(xwc(j)))
+         xcj   = real(xwc(j))
+         xwc(j) = cmplx(xcj, h)
+
+c        avoid (small) rounding errors
+c        h = xc(j) - xcj but not here to avoid clever optimizers
+
+c         h = mm10_rnudifi(xwc(j), xcj)
+
+c      write(*,*) 'before call', j
+         call mm10_fveci(solve_work1,xwc,fzc,n,j)
+c      write(*,*) 'after call', j
+         xwc(j) = cmplx(xcj, 0.d0)
+
+         do i=1,n
+            wa(i) = aimag(fzc(i))/h
+         enddo
+
+         dinf = abs(wa(idamax(n,wa,1)))
+
+         do i=1,n
+            if(abs(A(i,j)-wa(i)).gt.tol*dinf) then
+               errcnt = errcnt + 1
+               if( errcnt .gt. MAXERR ) then
+                  termcd = -10
+                  return
+               endif
+               call mm10_nwckot(i,j,A(i,j),wa(i))
+            endif
+         enddo
+      enddo
+      call mm10_delete_state(solve_work1%props)
 
 c      call vscal(n,xc,scalex)
 
@@ -4279,13 +4618,18 @@ c                                      -10  user supplied jacobian NOT ok
 c
 c-------------------------------------------------------------------------
 
+c      write(*,*) 'solve_work%solvfnc chkjac', solve_work%solvfnc
       if(jacflg(1) .eq. 3) then
 c        user supplied and banded
-         call mm10_chkjac2(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,solve_work,
-     *                     termcd,jacflg(2),jacflg(3))
+         call mm10_chkjac2(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
+     *                     solve_work,termcd,jacflg(2),jacflg(3))
+      elseif( solve_work%props%tang_calc .eq. 3 ) then
+c        check using complex derivative
+         call mm10_chkjaci(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
+     &                     solve_work,termcd)
       else
-         call mm10_chkjac1(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,solve_work,
-     &                     termcd)
+         call mm10_chkjac1(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
+     &                     solve_work,termcd)
       endif
 
       return
@@ -4300,7 +4644,7 @@ c-----------------------------------------------------------------------
       double precision  epsm
       double precision  rjac(ldr,*),fz(*),xc(*),fc(*)
 $add include_mm10
-      type(mm10_working_data) :: solve_work
+      type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
 c
@@ -4331,6 +4675,9 @@ c-------------------------------------------------------------------------
       ndigit = -log10(epsm)
       p = sqrt(max(Rten**(-ndigit),epsm))
 
+c
+c Copy the work so that it is not over-written
+      call mm10_copy_work(solve_work,solve_work1)
       do j=1,n
          h = p + p * abs(xc(j))
 
@@ -4343,12 +4690,13 @@ c        avoid (small) rounding errors
 c        h = xc(j) - xcj  but not here to avoid clever optimizers
 
          h = mm10_rnudif(xc(j), xcj)
-         call mm10_fvec(solve_work,xc,fz,n,j)
+         call mm10_fvec(solve_work1,xc,fz,n,j)
          xc(j) = xcj
          do i=1,n
             rjac(i,j) = (fz(i)-fc(i)) / h
          enddo
       enddo
+      call mm10_delete_state(solve_work1%props)
 
       return
       end
@@ -4364,7 +4712,7 @@ c-----------------------------------------------------------------------
       double precision  rjac(ldr,*),fz(*),xc(*),fc(*)
       double precision  w(*), xstep(*)
 $add include_mm10
-      type(mm10_working_data) :: solve_work
+      type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
 c
@@ -4407,13 +4755,17 @@ c-------------------------------------------------------------------------
          xstep(k) = p + p * abs(xc(k))
       enddo
 
+c
+c Copy the work so that it is not over-written
+      call mm10_copy_work(solve_work,solve_work1)
+c
       do k=1,dsum
          do j=k,n,dsum
             w(j) = xc(j)
             xc(j) = xc(j) + xstep(j)
          enddo
 
-         call mm10_fvec(solve_work,xc,fz,n,n+k)
+         call mm10_fvec(solve_work1,xc,fz,n,n+k)
          do j=k,n,dsum
              call mm10_nuzero(n,rjac(1,j))
 c            fdjac0 for why
@@ -4425,6 +4777,7 @@ c            doing this ensures that results for fdjac2 and fdjac0 will be ident
              enddo
          enddo
       enddo
+      call mm10_delete_state(solve_work1%props)
 
       return
       end
@@ -4515,6 +4868,27 @@ c
 c-------------------------------------------------------------------------
 
       mm10_rnudif = x - y
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      function mm10_rnudifi(x, y)
+      double complex x, y
+      double complex mm10_rnudifi
+
+c-------------------------------------------------------------------------
+c
+c     Return difference of x and y (x - y)
+c
+c     Arguments
+c
+c     In   x  Comp      argument 1
+c     In   y  Comp      argument 2
+c
+c-------------------------------------------------------------------------
+
+      mm10_rnudifi = x - y
       return
       end
 
@@ -4884,6 +5258,35 @@ c-------------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 
+      subroutine mm10_vunsci(n,x,sx)
+
+      integer n
+      double complex  x(*)
+      double precision  sx(*)
+
+c-------------------------------------------------------------------------
+c
+c     Unscale a vector x
+c
+c     Arguments
+c
+c     In       n       Integer         size of x
+c     Inout    x       Comp(*)         vector to unscale
+c     In       sx      Real(*)         scaling vector
+c
+c-------------------------------------------------------------------------
+
+      integer i
+
+      do i = 1,n
+         x(i) = x(i) / sx(i)
+      enddo
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+
       subroutine mm10_nwfvec(x,n,scalex,solve_work,f,fnorm,xw)
 
       use mm10_defs
@@ -5147,3 +5550,160 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+c-----------------------------------------------------------------------
+
+      subroutine mm10_copy_work(solve_work,solve_work1)
+
+      use mm10_defs
+      implicit none
+$add include_mm10
+      type(mm10_working_data) :: solve_work, solve_work1
+      
+      solve_work1 = solve_work
+      return
+
+      write(*,*) 'I found out we did not need this'
+      call mm10_copy_props(solve_work1%props,solve_work%props)
+      call mm10_copy_state(solve_work1%np1,solve_work%np1)
+      call mm10_copy_state(solve_work1%np0,solve_work%np0)
+c      solve_work1%vec1 = solve_work%vec1
+c      solve_work1%vec2 = solve_work%vec2
+c      solve_work1%arr1 = solve_work%arr1
+c      solve_work1%arr2 = solve_work%arr2
+c      solve_work1%ivec1 = solve_work%ivec1
+c      solve_work1%ivec2 = solve_work%ivec2
+      solve_work1%gaspt = solve_work%gaspt
+      solve_work1%solvfnc = solve_work%solvfnc
+      solve_work1%x2 = solve_work%x2
+      solve_work1%locdebug = solve_work%locdebug
+
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      subroutine mm10_copy_props(props1,props)
+
+      use mm10_defs
+      implicit none
+
+      type(crystal_props) :: props, props1
+
+      props1%rate_n = props%rate_n
+      props1%tau_hat_y = props%tau_hat_y
+      props1%G_0_y = props%G_0_y
+      props1%burgers = props%burgers
+      props1%p_v = props%p_v
+      props1%q_v = props%q_v
+      props1%boltzman = props%boltzman
+      props1%theta_0 = props%theta_0
+      props1%eps_dot_0_v = props%eps_dot_0_v
+      props1%eps_dot_0_y = props%eps_dot_0_y
+      props1%p_y = props%p_y
+      props1%q_y = props%q_y
+      props1%tau_a = props%tau_a
+      props1%tau_hat_v = props%tau_hat_v
+      props1%G_0_v = props%G_0_v
+      props1%k_0 = props%k_0
+      props1%mu_0 = props%mu_0
+      props1%D_0 = props%D_0
+      props1%T_0 = props%T_0
+      props1%tau_y = props%tau_y
+      props1%tau_v = props%tau_v
+      props1%voche_m = props%voche_m
+      props1%u1 = props%u1
+      props1%u2 = props%u2
+      props1%u3 = props%u3
+      props1%u4 = props%u4
+      props1%u5 = props%u5
+      props1%u6 = props%u6
+      props1%atol = props%atol
+      props1%atol1 = props%atol1
+      props1%rtol = props%rtol
+      props1%rtol1 = props%rtol1
+      props1%xtol = props%xtol
+      props1%xtol1 = props%xtol1
+      props1%g = props%g
+      props1%ms = props%ms
+      props1%qs = props%qs
+      props1%ns = props%ns
+      props1%stiffness = props%stiffness
+      props1%angle_type = props%angle_type
+      props1%angle_convention = props%angle_convention
+      props1%nslip = props%nslip
+      props1%h_type = props%h_type
+      props1%miter = props%miter
+      props1%gpp = props%gpp
+      props1%s_type = props%s_type
+      props1%cnum = props%cnum
+      props1%method = props%method
+      props1%st_it = props%st_it
+      props1%num_hard = props%num_hard
+      props1%out = props%out
+      props1%tang_calc = props%tang_calc
+      props1%solver = props%solver
+      props1%strategy = props%strategy
+      props1%debug = props%debug
+      props1%gpall = props%gpall
+        ! constants for use in material models
+      call mm10_set_cons( props1%h_type,
+     &    props1%s_type,
+     &    props1%num_hard, props1, 1 )
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      subroutine mm10_delete_state(props1)
+
+      use mm10_defs
+      implicit none
+
+      type(crystal_props) :: props1
+
+      call mm10_set_cons( props1%h_type,
+     &    props1%s_type,
+     &    props1%num_hard, props1, 2 )
+      return
+      end
+
+c-----------------------------------------------------------------------
+
+      subroutine mm10_copy_state(n1,n)
+
+      use mm10_defs
+      implicit none
+
+      type(crystal_state) :: n,n1
+      n1%R = n%R
+      n1%gradFeinv = n%gradFeinv
+      n1%temp = n%temp
+      n1%tinc = n%tinc
+      n1%dg = n%dg
+      n1%tau_v = n%tau_v
+      n1%tau_y = n%tau_y
+      n1%tau_l = n%tau_l
+      n1%mu_harden = n%mu_harden
+      n1%stress = n%stress
+      n1%euler_angles = n%euler_angles
+      n1%Rp = n%Rp
+      n1%D = n%D
+      n1%eps = n%eps
+      n1%slip_incs = n%slip_incs
+      n1%tau_tilde = n%tau_tilde
+      n1%u = n%u
+      n1%tt_rate = n%tt_rate
+      n1%step = n%step
+      n1%elem = n%elem
+      n1%gp = n%gp
+      n1%iter = n%iter
+      n1%ms = n%ms
+      n1%qs = n%qs
+      n1%qc = n%qc
+
+      return
+      end
+

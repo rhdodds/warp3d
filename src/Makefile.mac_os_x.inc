@@ -69,7 +69,7 @@
 #   rhd   4/6/2016  add mm10_e.f
 #   rhd   5/6/2016  add align64 to some .f
 #   rhd   6/7/2016  add mm10_f.f and make oustates use -O3
-#   rhd   6/18/2016 renove f_clmloc
+#   rhd   6/18/2016 renove f_clmloc, mod_crystals.f dependency
 #
 #
 #
@@ -1008,7 +1008,7 @@ $(OD)/gpmas1$O : gpmas1.f param_def
 	$(MVC) filt_gpmas1$O  gpmas1$O
 	$(MVC) gpmas1$O $@
 
-$(OD)/gptns1$O : gptns1.f include_tan_ek \
+$(OD)/gptns1$O : gptns1.f include_tan_ek $(OD)/mod_crystals$O\
                    param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O
 	$(RMC)  $@
 	$(RMC)  filt_gptns1.f

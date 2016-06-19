@@ -61,6 +61,12 @@ c           call mm10_slipinc_mrr(props, np1, n,
 c     &           np1%stress,np1%tau_tilde, i, np1%slip_incs(i))
 c        end do
         np1%slip_incs(1:props%nslip)  = vec1(1:props%nslip)
+      elseif (props%h_type .eq. 9) then ! DJGM
+c        do i=1,props%nslip
+c           call mm10_slipinc_mrr(props, np1, n, 
+c     &           np1%stress,np1%tau_tilde, i, np1%slip_incs(i))
+c        end do
+        np1%slip_incs(1:props%nslip)  = vec1(1:props%nslip)
       else
         call mm10_unknown_hard_error(props)
       end if
@@ -156,6 +162,9 @@ c ******* START: Add new Constitutive Models into this block *********
      & np1%tau_tilde, dgammadtau)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_dgdt_mrr(props,np1, n, np1%stress,
+     & np1%tau_tilde, dgammadtau)
+      elseif (props%h_type .eq. 9) then ! DJGM
+        call mm10_dgdt_djgm(props,np1, n, np1%stress,
      & np1%tau_tilde, dgammadtau)
       else
         call mm10_unknown_hard_error(props)

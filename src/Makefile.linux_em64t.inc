@@ -58,7 +58,7 @@
 #              4/6/2016  added mm10_e.f
 #              5/6/2016  add align 64 for some .f
 #              6/7/2016  add mm10_f.f, use -O3 for oustates.f
-#              6/18/2016 remove f_clmloc 
+#              6/18/2016 remove f_clmloc, mod_crystals.f dependencies 
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
@@ -995,7 +995,7 @@ $(OD)/gpmas1$O : gpmas1.f param_def
 	$(MVC) filt_gpmas1$O  gpmas1$O
 	$(MVC) gpmas1$O $@
 
-$(OD)/gptns1$O : gptns1.f include_tan_ek \
+$(OD)/gptns1$O : gptns1.f include_tan_ek $(OD)/mod_crystals$O \
                    param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O
 	$(RMC)  $@
 	$(RMC)  filt_gptns1.f
