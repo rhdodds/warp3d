@@ -223,7 +223,7 @@ c                 Inserts "derived" properties like slip system geometry
 c                 and elasticity tensors
             subroutine finalize_new_crystal(num, out)
                   integer, intent(in) :: num, out
-                  double precision :: f,e,v,u,a,c
+                  double precision :: f,e,v,u,a,c,ac1,ac2
                   double precision :: z0,f2,f3,f112,f211,
      &                  f123,f213,f312
                   integer :: i,j,info
@@ -1580,7 +1580,7 @@ c
                           c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 9) then !DJGM
                           c_array(num)%num_hard = c_array(num)%nslip
-                          c_array(num)%tang_calc = 1
+                          c_array(num)%tang_calc = 0
                   else
                      write(*,101) c_array(num)%h_type
  101  format(

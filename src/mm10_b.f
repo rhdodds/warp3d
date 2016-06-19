@@ -4415,7 +4415,7 @@ c
         
         ! Equation [4]
         slipinc = dt * gamma_dot_tilde * 
-     &  abs(tau/g_alpha)**(1.d0/m_alpha) * dsign(1.d0,tau)
+     &  abs(tau/g_alpha)**(1.d0/m_alpha)*dsign(1.d0,tau)
       
       return
       end
@@ -4510,6 +4510,8 @@ c
       double precision, dimension(props%nslip) :: dslipinc
       integer :: slip_a, slip_b
       
+      et = 0.d0
+
       ! compute derivatives of slip increments with respect to resolved
       ! shear stress
         dslipinc(1:props%num_hard) = arr1(1:props%num_hard,1)
@@ -4530,6 +4532,8 @@ c
             gamma_dot = abs(slipinc)/dt
             dslip = dslipinc(slip_b)/dt
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
+c            write(*,*) 'slip_b', slip_b, 'dslip',dslip
+c            write(*,*) 'gamma_dot', gamma_dot, 'temp',temp
             if( temp .gt. 2.d0/3.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
                 g_s = temp
                 h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
@@ -4545,6 +4549,8 @@ c
      &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
                 dh(slip_b) = 0.d0
             endif
+c            write(*,*) 'h(slip_b)', h(slip_b), 'g_s',g_s
+c            write(*,*) 'dh(slip_b)', dh(slip_b)
         enddo
         
         ! Equation [5]
@@ -4590,6 +4596,8 @@ c
      &        :: dslipinc
       integer :: slip_a, slip_b
       
+       etau = 0.d0
+
        dslipinc = arr2(1:props%nslip,1:props%num_hard)
 
         ! Load material parameters
@@ -4701,12 +4709,9 @@ c transactions A 37.5 (2006): 1371-1388.
         ! Load hard coded material parameters
         ! q=Gmat matrix is loaded at top of mm10
         
-        dt = np1%tinc
-        
-        ! Equation [4]
-        slipinc = dt * gamma_dot_tilde * 
-     &  abs(tau/g_alpha)**(1.d0/m_alpha) * dsign(1.d0,tau)
+        dgdt = 0.d0
 
+        dt = np1%tinc
         
         ! Equation [4], slip rate vector
         do slip_a = 1,props%nslip
@@ -4753,6 +4758,7 @@ c
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
         
+        dgammadtt = 0.d0
         
         dt = np1%tinc
         

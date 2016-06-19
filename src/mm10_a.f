@@ -577,7 +577,7 @@ c
       double precision, dimension(props%num_hard,6) :: J21
       double precision, dimension(props%num_hard,12) :: beta
       double precision, dimension(3) :: w_p
-      double precision, dimension(props%nslip,6) :: symtqmat
+      double precision, dimension(6,props%nslip) :: symtqmat
       double precision, dimension(6,props%nslip) :: dgammadd
       double precision,
      &    dimension(props%num_hard,props%num_hard) :: J22, alpha
@@ -706,10 +706,15 @@ c
       do i=1,props%nslip
         call DGER(6,6,1.d0,
      &      matmul(props%stiffness, np1%ms(1:6,i))
-     &      + 2.0*symtqmat(1:6,i), 1, dgammadd(1:6,i),1,JA,6)
+     &      + 2.0*symtqmat(1:6,i), 1, dgammadd(1:6,i)
+     &      ,1,JA,6)
       end do
-c        if (debug) write (*,*) "JA", JA(1,2)
-c        if (debug) write (*,*) "JA", JA(1:6,1:6)
+      if (locdebug) write (*,*) "ms", np1%ms(1:6,1:18)
+      if (locdebug) write (*,*) "symtqmat",
+     & symtqmat(1:6,1:18)
+      if (locdebug) write (*,*) "dgammadd", 
+     & dgammadd(1:6,1:18)
+       if (locdebug) write (*,*) "JA", JA(1:6,1:6)
 c
 c Compute tangent matrix T where
 c T = JJ^-1*JR
@@ -749,6 +754,9 @@ c     JB = J12*beta(*,7:12)
 c        if (debug) write (*,*) "JB", JB(1,2)
 c
       JR = props%stiffness - JA - JB
+        if (locdebug) write (*,*) "JA", JA(1:6,1:6)
+        if (locdebug) write (*,*) "JB", JB(1:6,1:6)
+        if (locdebug) write (*,*) "ps", props%stiffness(1:6,1:6)
 c
 c      np1%tangent = matmul(JJ, JR)
 c     Avoid explicitly computing the inverse

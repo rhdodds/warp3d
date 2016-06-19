@@ -4623,7 +4623,7 @@ c      write(*,*) 'solve_work%solvfnc chkjac', solve_work%solvfnc
 c        user supplied and banded
          call mm10_chkjac2(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
      *                     solve_work,termcd,jacflg(2),jacflg(3))
-      elseif( solve_work%props%tang_calc .eq. 3 ) then
+      elseif( solve_work%props%tang_calc .eq. 4 ) then
 c        check using complex derivative
          call mm10_chkjaci(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
      &                     solve_work,termcd)
