@@ -706,49 +706,48 @@ c     *                      subroutine errchk_8                     *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 10/09/95                   *
+c     *                   last modified : 6/20/2016 rhd              *
 c     *                                                              *
 c     *  this subroutine checks the loading input for constistency.  *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_8( chkprm, debug1 )
-      implicit integer (a-z)     
+      implicit none    
 $add common.main
-      real dumr
-      character dums
-#dbl      double precision
-#sgl      real
-     &   dumd, d32460
-      logical scanms, debug1
-      data d32460 / 32460.0 /
 c
-c                       branch on timestep versus regular loadings.
+      integer :: i, chkprm, lodnum, step
+      logical, external :: scanms 
+      logical :: debug1
+c
+c                       branch on time step versus regular loadings.
 c                       chkprm is the loading number.
 c
-      if ( scanms( lodtyp(chkprm), 'TIMESTEP', 8 ) ) then
+      if( scanms( lodtyp(chkprm), 'TIMESTEP', 8 ) ) then
 c
 c                       timestep definition:
-c                            check to make sure all of the time steps
-c                            existing for the loading number chkprm
-c                            are defined.                   
+c                         check to make sure all of the time steps
+c                         existing for the loading number chkprm
+c                         are defined.                   
 c
          do i = 1, histep
-            if ( .not.stpchk(i) ) then
-               param= chkprm*two16+i
-               call errmsg( 87, param, dums, dumr, dumd )
-            end if
+            if( stpchk(i) ) cycle
+            num_error = num_error + 1
+            lodnum = chkprm
+            step = i
+            write(out,9084) step, lodnam(lodnum)
          end do
 c
-c                           place lowstp and histep, the range of time
+c                           set lowstp and histep, the range of time
 c                           steps defined for this loading.
 c                       
-         stprng(chkprm) = lowstp*two16 + histep
+         stprng(chkprm,1) = lowstp
+         stprng(chkprm,2) = histep
 c
 c                       regular loading definition:
-c                           if face and body loadings have been defined,
-c                           store the temporary data in the permanent data
-c                           structure.  Then deallocate temp data structures.
+c                        if face and body loadings have been defined,
+c                        store the temporary data in the permanent data
+c                        structure. Then deallocate temp data structures.
 c
       else
          call allocate_perm_load( 1, chkprm )
@@ -756,6 +755,12 @@ c
       endif
 c
       return 
+      
+9084  format(/1x,'>>>>> error: step number ',i6,' of loading ',a8,
+     &           ' has not been'/14x,'defined. an attempt to use this',
+     &           ' time step will not be'/14x,'allowed.'/)
+c
+      
       end
 c
 c     ****************************************************************

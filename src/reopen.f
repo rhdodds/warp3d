@@ -186,7 +186,7 @@ c
       call rdbk( fileno, matlst, mxmat )
       call init_maps( fileno, 2 )
       call rdbk( fileno, plrlst, mxlsz )
-      call rdbk( fileno, stprng, mxlc )
+      call rdbk( fileno, stprng, mxlc*2 )
       call rdbk( fileno, gpmap,  nogp )
       call mem_allocate( 9 )
       call rdbk( fileno, incmap, noelem )

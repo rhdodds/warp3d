@@ -97,7 +97,7 @@ c
 c
 c=======================================================================
 c
-      common/ivgenr/ stprng(mxlc), state(mxtgp), bits(31)
+      common/ivgenr/ stprng(mxlc,2), state(mxtgp), bits(31)
       integer :: stprng, state, bits
 c
 c=======================================================================

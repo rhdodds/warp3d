@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/16/2015 rhd             *
+c     *                   last modified : 6/20/2016 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -196,7 +196,7 @@ c
       call wrtbk( fileno, matlst, mxmat )
       call wrtbk( fileno, invdst, nodof )
       call wrtbk( fileno, plrlst, mxlsz )
-      call wrtbk( fileno, stprng, mxlc )
+      call wrtbk( fileno, stprng, mxlc*2 )
       call wrtbk( fileno, gpmap,  nogp )
       call wrtbk( fileno, incmap, noelem )
       call wrtbk( fileno, crdmap, nonode )

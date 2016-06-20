@@ -4,7 +4,7 @@ c     *                      subroutine stpdrv                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 10/30/2015 rhd             *
+c     *                   last modified : 6/20/2016 rhd              *
 c     *                                                              *
 c     *     drive the solution process list of steps specified       *
 c     *     on the compute command. compute intermediate             *
@@ -83,8 +83,8 @@ c
 c          find the range of time steps for which this
 c          loading is defined.
 c
-      lowstp = stprng(ldnum)/two16
-      histep = stprng(ldnum)-lowstp*two16
+      lowstp = stprng(ldnum,1)
+      histep = stprng(ldnum,2)
 c
 c          -----   loop over steps in user defined list -----
 c          extract each step from user step list and process.
@@ -265,7 +265,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/26/2015 rhd             *
+c     *                   last modified : 6/20/2016 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -287,16 +287,16 @@ c          puted is defined in the loading given. if
 c          not, then cease processing of the loading
 c          list given.
 c
-      if( (now_step .lt. lowstp)  .or.  (now_step .gt. histep) ) then
-        param = ldnum*two16+now_step
-        call errmsg( 124, param, dums, dumr, dumd )
+      if( (now_step .lt. lowstp) .or. (now_step .gt. histep) ) then
+        write(out,9121) now_step, lodnam(ldnum)
+        num_error = num_error + 1
         stpdrv_error = .true.
-        return
+        call die_abort
       else if ( .not. stpchk(now_step) ) then
-        param = ldnum*two16+now_step
-        call errmsg( 124, param, dums, dumr, dumd )
+        write(out,9121) now_step, lodnam(ldnum)
+        num_error = num_error + 1
         stpdrv_error = .true.
-        return
+        call die_abort
       end if
 c
 c          the step is a valid one. will load step
@@ -371,6 +371,10 @@ c
 c
       return
 c
+ 9121 format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i6,
+     &       /1x,'                   is not defined for loading: ',a8,
+     &       /1x,'                   job terminated....')
+
  9160 format(7x,
      & '>> computing first element stiffness matrices (@ t=0)')
 c

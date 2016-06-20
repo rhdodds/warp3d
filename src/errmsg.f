@@ -3,7 +3,7 @@ c     *                      suboutine errmsg                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/18/2103 rhd             *
+c     *                   last modified : 6/20/2016 rhd              *
 c     *                                                              *
 c     *     this subroutine prints assorted error messages in re-    *
 c     *     ponse to calls from all over the program. virtually all  *
@@ -819,15 +819,8 @@ c
 c
 c
  750  continue
-      num_error = num_error + 1
-      shrtst= 'columns '
-      node= param/two16
-      write(out,9073) shrtst,node,shrtst
- 9073 format(/1x,'>>>>> error: the number of ',a8,' input for a row of',
-     &           ' the transformation'/14x,'matrix of node ',i6,
-     &           ' exceeds the maximum number of'/14x,'degrees of',
-     &           ' freedom allowed any node. the number of'/14x,a8,
-     &           ' stored will be the above maximum.'/)
+      write(out,9073) 
+ 9073 format(/1x,' ** available **',/)
       go to 9999
 c
 c
@@ -914,14 +907,8 @@ c
 c
 c
  850  continue
-      num_error = num_error + 1
-      lodnum= param/two16
-      step= param-lodnum*two16
-      shrtst= lodnam(lodnum)
-      write(out,9082) step,shrtst
- 9082 format(/1x,'>>>>> error: step number ',i6,' of loading ',a8,
-     &           ' has not been'/14x,'defined. this step cannot be ',
-     &           'processed.'/)
+      write(out,9082) 
+ 9082 format(/1x,' ** available **',/)
       go to 9999
 c
 c
@@ -933,15 +920,9 @@ c
       go to 9999
 c
 c
- 870  continue
-      num_error = num_error + 1
-      lodnum= param/two16
-      step = param-lodnum*two16
-      shrtst= lodnam(lodnum)
-      write(out,9084) step,shrtst
- 9084 format(/1x,'>>>>> error: step number ',i6,' of loading ',a8,
-     &           ' has not been'/14x,'defined. an attempt to use this',
-     &           ' time step will not be'/14x,'allowed.'/)
+ 870  continue   ! # 87 available
+      write(out,9084)
+ 9084 format(/1x,' ** available **',/)
       go to 9999
 c
 c
@@ -1277,15 +1258,8 @@ c
 c
 c
  1240 continue
-      num_error = num_error + 1
-      ldnum     = param/two16
-      step      = param-ldnum*two16
-      shrtst    = lodnam(ldnum)
-      write(out,9121) step, shrtst
- 9121 format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i6,
-     &       /1x,'                   is not defined for loading: ',a8,
-     &       /1x,'                   job terminated....')
-      call die_abort
+      write(out,9121) 
+ 9121 format(/1x,' ** available **',/)
       go to 9999
 c
 c
@@ -1440,13 +1414,8 @@ c
 c
 c
  1400 continue
-      num_warn = num_warn + 1
-      elem= param/two16
-      strpt= param-elem*two16
-      write(out,9137) strpt,elem
- 9137 format(/1x,'>>>>> warning: principal stress or strain results ',
-     &           'for strain point'/16x,i6,' of element ',i6,' fail',
-     &           'ed to converge.'/)
+      write(out,9137)
+ 9137 format(/1x,' ** available **',/)
       go to 9999
 c
 c

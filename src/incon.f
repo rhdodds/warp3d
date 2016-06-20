@@ -4,7 +4,7 @@ c     *                subroutine release_constraints                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 2/26/2014 RHD               *
+c     *                   last modified: 6/20/2016 rhd               *
 c     *                                                              *
 c     *     read/store data for the release constraints command      *
 c     *                                                              *
@@ -205,10 +205,10 @@ c     *              subroutine release_cons_scan                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/22.2104 RHD             *
+c     *                   last modified : 02/222104 RHD              *
 c     *                                                              *
 c     *     scan/store list of nodes and constraint directions to    *
-c     *     be released
+c     *     be released                                              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -385,10 +385,11 @@ c
      &     d32460
       data d32460 / 32460.0d00 /
 c
-c             traverse the singly-linked list of constraints in the model. If
-c             the user has input new constraints, then some of the previously
-c             released nodes may be re-constrained.  If a released node
-c             has been re-constrained, remove the constraint.
+c             traverse the singly-linked list of constraints in the 
+c             model. If the user has input new constraints, then some 
+c             of the previously released nodes may be re-constrained.  
+c             If a released node has been re-constrained, remove the 
+c             constraint.
 c
 c                set up indexes for constraint linked list
 c
@@ -441,7 +442,7 @@ c     *                      subroutine incon                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 06/29/2011 rhd             *
+c     *                   last modified : 06/20/2016 rhd             *
 c     *                                                              *
 c     *     input of nodal displacement constraints                  *
 c     *                                                              *
@@ -726,8 +727,8 @@ c
             col = col+1
             if( col .gt. mxndof ) then
                col = mxndof
-               param = node*two16+col
-               call errmsg(75,param,dums,dumr,dumd)
+               write(out,9073) 'columns ', node, 'columns '
+               num_error = num_error + 1
                if( true(dum) ) go to 717 
             end if
             trans(row,col) = tval
@@ -886,7 +887,7 @@ c **********************************************************************
 c *                                                                    *
 c *                     store the constraint vector globally           *
 c *                                                                    *
-c *       ndof  -   number of dof per node                             *
+c *                     ndof  -   number of dof per node               *
 c *                                                                    *
 c *                                                                    *
 c *                                                                    *
@@ -947,6 +948,13 @@ c
       end do
 c
       return
+c
+ 9073 format(/1x,'>>>>> error: the number of ',a8,' input for a row of',
+     &           ' the transformation'/14x,'matrix of node ',i6,
+     &           ' exceeds the maximum number of'/14x,'degrees of',
+     &           ' freedom allowed any node. the number of'/14x,a8,
+     &           ' stored will be the above maximum.'/)
+c      
       end
 c     ****************************************************************
 c     *                                                              *
