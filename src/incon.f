@@ -442,7 +442,7 @@ c     *                      subroutine incon                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 06/20/2016 rhd             *
+c     *                   last modified : 06/22/2016 rhd             *
 c     *                                                              *
 c     *     input of nodal displacement constraints                  *
 c     *                                                              *
@@ -501,6 +501,7 @@ c
          if (mpcs_exist) then
             if (allocated(user_mpc_table)) deallocate(user_mpc_table)
             num_user_mpc = 0
+            mpcs_exist = .false.
          end if
       endif
       cons_defined = .true.
