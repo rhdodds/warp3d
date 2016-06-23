@@ -428,7 +428,7 @@ $(OD)/assemble_code$O : assemble_code.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_assemble_code.f
 	$(FILTER) < assemble_code.f > filt_assemble_code.f
-	$(F90) -O3 -ip  -c filt_assemble_code.f
+	$(F90) -O3 -ip -qopt-report=5  -c filt_assemble_code.f
 	$(MVC) filt_assemble_code$O  assemble_code$O
 	$(MVC) assemble_code$O $@
 #
