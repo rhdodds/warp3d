@@ -623,9 +623,9 @@ c
      &      k_indexes(1:2*ncoeff + neqns))
         if( cpu_stats .and. show_details ) write(out,9999) wcputime(1)
         k_coeffs = zero 
-        call assem_by_row_a( neqns, nnz, num_threads, eqn_node_map,
-     &                     dof_eqn_map, k_ptrs, k_indexes, iprops,
-     &                     dcp, noelem, k_coeffs )
+        call assem_by_row_asymmetric( neqns, num_threads, eqn_node_map,
+     &                                dof_eqn_map, k_ptrs, k_indexes,
+     &                                iprops, k_coeffs )
 
       else
 c             3b. assemble symmetric  equilibrium equations 
