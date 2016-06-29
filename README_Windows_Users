@@ -2,7 +2,8 @@
 
                Highest Level README for Windows Users
 
-                last Update: February 22, 2016
+                last Update: June 29, 2016
+                             slow command 
                              cleanup
                              continued issues with libiomp5md.dll
                              now using Intel Fortran 2016
@@ -106,8 +107,8 @@ Quick Start Using the Ready-to-Run Executable
     cd c:\warp3d\example_problems_for_READMEs
     set OMP_NUM_THREADS=4
     set MKL_NUM_THREADS=4
-    %warp3d% <test_18a
-    %warp3d% <test_18b
+    %warp3d% <test_18a.inp > outa
+    %warp3d% <test_18b.inp > outb
 
    Above we use the "set" command to define a convenient, short reference to the
    WARP3D executable. Example test_18 computes extensive
@@ -126,8 +127,9 @@ Quick Start Using the Ready-to-Run Executable
    hyper-threading option on newer machines.
 
    The above command sequence starts WARP3D execution with input
-   taken from the file test_18a. All output is sent to the command shell
-   window. Add > test_18_out to re-direct WARP3D output to a file.
+   taken from the file test_18a. All output is sent to a file
+   ==>> output directly to the Command Shell in Windows is very, very slow.
+        recommend output to a file, then load file into viewer/editor.
 
    Various Windows shell commands can also be placed into a *.bat
    file to run in batch mode.
