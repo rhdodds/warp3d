@@ -34,8 +34,7 @@ c                    allocatables used to support stiffness
 c                    assembly in sparse format. note those
 c                    saved across solves to reduce work.
 c
-      allocatable dof_eqn_map(:), eqn_node_map(:), p_vec(:),
-     &            scol_flags(:), scol_list(:)
+      allocatable dof_eqn_map(:), eqn_node_map(:), p_vec(:)
 #dbl      double precision
 #sgl      real
      &    p_vec
@@ -297,16 +296,17 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *         set up equation sparsity for local assembly          *
+c     *   set up equation sparsity for local assembly: symmetric     *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 04/13/2015                 *
+c     *                   last modified : 7/21/2016 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine ds_setup_sparsity_local( ireturn )
 c      
       integer :: ireturn  ! local to this routine
+      integer, allocatable :: scol_list(:)
 c
 c              1. generate equation numbers for all unconstrained
 c                 nodal dof. dof_eqn_map(i) gives equation
@@ -322,7 +322,7 @@ c
       call thyme( 21, 1 )
       if( cpu_stats .and. show_details ) 
      &    write(out,9400) num_threads, wcputime(1)
-      if ( .not. allocated ( dof_eqn_map ) ) then
+      if( .not. allocated ( dof_eqn_map ) ) then
           allocate( dof_eqn_map(num_struct_dof) )
           allocate( eqn_node_map(num_struct_dof) )
       end if
@@ -360,15 +360,10 @@ c                 changed later in this routine if, for example, there
 c                 are mpc equations which modify the starting
 c                 "assembled" stiffness.
 c
-      allocate( scol_flags(neqns+1) )
-      allocate( scol_list(mxndel*mxndof*mxconn*10) )
 c
-      call count_profile_terms( neqns, eqn_node_map, ncoeff,
-     &                          iprops, mxelpr, edest, mxedof,
-     &                          dof_eqn_map, scol_flags, scol_list,
-     &                          repeat_incid)
+      call count_profile_symmetric( neqns, ncoeff, num_threads,
+     &                              eqn_node_map, iprops, dof_eqn_map )
 c
-      deallocate( scol_list, scol_flags )
       num_terms  = neqns + ncoeff
       old_ncoeff = ncoeff
       ncoeff_from_assembled_profile = ncoeff
@@ -398,14 +393,14 @@ c
       if( local_debug ) write(out,*) 
      &                 ' @ 2.2 ... saving K-indexes, ptrs'
 c
-      call build_col_sparse( neqns, eqn_node_map, next_space,
+      call build_col_sparse_symm( neqns, eqn_node_map, next_space,
      &                       dof_eqn_map, scol_list,
      &                       save_k_indexes, save_k_ptrs,
      &                       iprops, mxelpr, edest, mxedof,
      &                       repeat_incid )
 c
       deallocate( scol_list )
-      if( next_space .ne. ncoeff_from_assembled_profile ) then
+      if( next_space .ne. ncoeff_from_assembled_profile ) then ! sanity
          write(out,9210)
          call die_gracefully
       end if
@@ -613,9 +608,10 @@ c
       if( asymmetric_assembly ) then
 c
 c             3a. The only difference is we convert the UT
-c                 VSS ptrs and indexes to a full, structurally s
+c                 VSS ptrs and indexes to a full, structurally 
 c                 symmetric CSR format and use a modified 
-c                 assem_by_row which picks up the LT terms
+c                 assem_by_row which picks up the LT terms.
+c                 rows are assembled in parallel
 c
         nnz = 0  ! total number of non-zero terms in assembled eqns.
         call convert_vss_csr( neqns, ncoeff, save_k_ptrs(1:neqns),

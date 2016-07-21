@@ -12,39 +12,40 @@ c     *  non-zero entries.                                           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/20/2016 rhd              *
+c     *                   last modified : 7/19/2016 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine count_profile_terms( neqns, eqn_node_map, ncoeff,
-     &                                iprops, mxelpr,
-     &                                edest, mxedof, dof_eqn_map,
-     &                                scol_flags, scol_list,
-     &                                repeat_incid)
+      subroutine count_profile_symmetric( neqns, ncoeff, num_threads, 
+     &                                    eqn_node_map, iprops, 
+     &                                    dof_eqn_map )
       use main_data, only : inverse_incidences
       implicit none
+$add param_def      
 c
 c                    parameter declarations
 c
-      integer :: neqns, ncoeff, mxelpr, mxedof
-      integer :: eqn_node_map(*), dof_eqn_map(*), scol_flags(*),
-     &            scol_list(*), iprops(mxelpr,*), edest(mxedof,*)
-      logical repeat_incid(*)
+      integer :: neqns, ncoeff, num_threads
+      integer :: eqn_node_map(*), iprops(mxelpr,*), dof_eqn_map(*)
 c
-      integer :: scol, num_non_zero_terms, count, previous_snode, srow,
-     &           snode, num_ele_on_snode, next_scol_list, j,
-     &           ele_on_snode, totdof, erow, ecol       
+c                    locals
+c
+      integer :: srow, safety_factor, now_thread      
+      integer, external :: omp_get_thread_num
+      integer, allocatable :: edest(:,:,:), scol_flags(:,:), 
+     &                        scol_lists(:,:)
+      integer :: thread_previous_node(max_threads),
+     &           num_non_zero_terms(max_threads)    
 c
 c            simulate assembly of the equilibrium equations directly
 c            in sparse matrix format, i.e., only the non-zero
 c            coefficients are stored on each row of the upper
-c            triangle. the assembly process
-c            proceeds equation-by-equation, rather than the
-c            traditional element-by-element manner. the outline
-c            of the algorithm is:
+c            triangle. the assembly process proceeds equation-by-equation, 
+c            rather than the traditional element-by-element manner. 
+c            algorithm outline:
 c
-c            loop over all equations:
+c            loop over all equations: (thread parallel)
 c
 c             (a) find the corresponding structure node number
 c
@@ -93,33 +94,79 @@ c             crack front collapsed elements. Then have to process
 c             all element [Ke] rows since more than 1 erow will
 c             correspond to srow being processed.
 c
-      scol_flags(1:neqns) = 0
-      num_non_zero_terms  = 0
+      safety_factor = 10
+      allocate( scol_flags(neqns,num_threads) )
+      allocate( edest(mxedof,mxconn,num_threads) )      
+      allocate( scol_lists(mxconn*mxedof*safety_factor,num_threads) )
+      scol_flags           = 0 ! 2d array
+      scol_lists           = 0 ! 2d array
+      num_non_zero_terms   = 0 ! vector
+      thread_previous_node = 0 ! vector
 c
-c                 loop sequentially over structural equations. omit
-c                 last eqn since it has no terms right of diagonal.
+c             loop over structural equations. omit last eqn since it 
+c             has no terms right of diagonal. with a few temps based on 
+c             number of threads, the srow loop runs in parallel
 c
-      count          = 0
-      previous_snode = 0
-c      
-c                 with a few temps based on number of threads,
-c                 the srow loop can be run in parallel
-c
+      call omp_set_dynamic( .false. )
+c$OMP PARALLEL DO PRIVATE( srow, num_threads ) ! all else shared
       do srow = 1, neqns-1
-       snode             = eqn_node_map(srow) ! structure node
-       num_ele_on_snode  = inverse_incidences(snode)%element_count
-       next_scol_list    = 0
-       if( snode .ne. previous_snode ) then
+       now_thread = omp_get_thread_num() + 1
+       call count_profile_symmetric_srow( srow, neqns,
+     &      thread_previous_node(now_thread),
+     &      num_non_zero_terms(now_thread), eqn_node_map, 
+     &      edest(1,1,now_thread), iprops, dof_eqn_map, 
+     &      scol_flags(1,now_thread), scol_lists(1,now_thread) )
+       end do
+c$OMP END PARALLEL DO       
+c
+c                 set the total number of non-zero terms in the upper
+c                 triangle 
+c
+      ncoeff = sum( num_non_zero_terms )
+      deallocate( scol_flags, edest, scol_lists )
+c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                    count_profile_symmetric_srow              *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/19/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine count_profile_symmetric_srow(
+     &  srow, neqns, previous_snode, num_non_zero_terms, eqn_node_map,
+     &  edest, iprops, dof_eqn_map, scol_flags, scol_list )
+c     
+      use main_data, only : repeat_incid, inverse_incidences
+c     
+      implicit none
+$add param_def      
+c      
+      integer :: srow, neqns, previous_snode, num_non_zero_terms            
+      integer :: eqn_node_map(*), edest(mxedof,*), iprops(mxelpr,*),
+     &           dof_eqn_map(*), scol_flags(*), scol_list(*)
+c      
+      integer :: snode, num_ele_on_snode, next_scol_list, ele_on_snode,
+     &           totdof, erow, ecol, scol, j
+c             
+      snode             = eqn_node_map(srow) ! structure node
+      num_ele_on_snode  = inverse_incidences(snode)%element_count
+      next_scol_list    = 0
+      if( snode .ne. previous_snode ) then
          call get_edest_terms_assemble( edest,
      &         inverse_incidences(snode)%element_list(1), 
      &         num_ele_on_snode, iprops )
          previous_snode = snode
-       end if
+      end if
 c
 c                 process all elements which contribute stiffness terms
 c                 to this structural equation.
 c
-       do j = 1, num_ele_on_snode 
+      do j = 1, num_ele_on_snode 
           ele_on_snode = inverse_incidences(snode)%element_list(j)
           if( ele_on_snode .le. 0 ) cycle
           totdof = iprops(2,ele_on_snode) * iprops(4,ele_on_snode)
@@ -135,26 +182,19 @@ c
                 scol_list(next_scol_list) = scol
               end if
             end do ! on ecol
-            if( .not. repeat_incid(ele_on_snode)) exit ! erow loop
+            if( .not. repeat_incid(ele_on_snode) ) exit ! erow loop
           end do  ! on erow
       end do  ! on j
 c
 c                 zero the flags used by this equation to set 
 c                 up next one. faster than zeroing entire vector
 c
-        do j = 1, next_scol_list
+      do j = 1, next_scol_list
           scol_flags(scol_list(j)) = 0
-        end do
-c
-      end do
-c
-c                 set the total number of non-zero terms in the upper
-c                 triangle for the calling routine.
-c
-      ncoeff = num_non_zero_terms
+      end do  
 c
       return
-      end
+      end       
 c     ****************************************************************
 c     *                                                              *
 c     *  create the key sparse data structures that describe the     *
@@ -167,32 +207,39 @@ c     *  the algortihm here uses an equation-by-equation process to  *
 c     *  build the terms in k_indexes and the corresponding k_ptrs   *
 c     *  entry.                                                      *
 c     *                                                              *
+c     *  note: code runs serial now due to k_ptrs, k_indexes design. *
+c     *        can be made thread parallel with some prior data      *
+c     *        structures that build indexes on each row in separate *
+c     *        vectors. then insert into k_indexes afterwards.       *
+c     *        count_profile_symmetric will no longer be needed      *
+c     *                                                              *
 c     *                   written by : rhd                           *
 c     *                                                              *
-c     *                   last modified : 04/25/97                   *
+c     *                   last modified : 07/20/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine build_col_sparse( neqns, eqn_node_map, last_k_index,
-     &                             dof_eqn_map, scol_list, k_indexes,
-     &                             k_ptrs, iprops, mxelpr, edest,
-     &                             mxedof, repeat_incid )
+      subroutine build_col_sparse_symm(
+     &  neqns, eqn_node_map, last_k_index, dof_eqn_map, scol_list,
+     &  k_indexes, k_ptrs, iprops, mxelpr, edest, mxedof, 
+     &  repeat_incid )
       use main_data, only : inverse_incidences
-      implicit integer (a-z)
+      implicit none
 c
 c                    parameter declarations
 c
-      dimension   eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),
+      integer :: neqns, last_k_index, mxelpr, mxedof
+      integer ::  eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),
      &            k_indexes(*), scol_list(*),
      &            iprops(mxelpr,*), edest(mxedof,*)
-c
-      logical repeat_incid(*)
+      logical :: repeat_incid(*)
 c
 c                    local declarations
 c
-c
-      data one / 1 /
+      integer :: next_k_index, previous_node, srow, scol, snode, 
+     &           num_scols_used, j, totdof, ele_on_snode, erow, ecol,
+     &           num_unique_cols, num_ele_on_snode
 c
 c                 simulate assembly of the equilibrium equations directly
 c                 in sparse matrix format, i.e., only the non-zero
@@ -246,112 +293,135 @@ c                 loop over all structural equations (skip last one
 c                 since it has no terms right of diagonal).
 c
       previous_node = 0
-      do srow = 1, neqns-one
-       node           = eqn_node_map(srow)
-       numele         = inverse_incidences(node)%element_count
-       num_scols_used = 0
-       if ( node .ne. previous_node ) then
-         call get_edest_terms(
-     &       edest, inverse_incidences(node)%element_list(1), numele,
-     &       iprops )
-         previous_node = node
+      do srow = 1, neqns-1
+       snode            = eqn_node_map(srow)
+       num_ele_on_snode = inverse_incidences(snode)%element_count
+       num_scols_used   = 0
+       if( snode .ne. previous_node ) then
+         call get_edest_terms( edest, 
+     &        inverse_incidences(snode)%element_list(1),
+     &        num_ele_on_snode, iprops )
+         previous_node = snode
        end if
 c
 c                 process all elements which contribute stiffness terms
 c                 to this structural equation.
 c
-       do 300 j = 1, numele
-          felem = inverse_incidences(node)%element_list(j)
-          if ( felem .le. 0 ) go to 300
-          totdof = iprops(2,felem) * iprops(4,felem)
-          do 200 erow = 1, totdof
-            if ( dof_eqn_map(edest(erow,j)) .ne. srow ) go to 200
-            do 100 ecol = 1, totdof
+       do j = 1, num_ele_on_snode
+          ele_on_snode = inverse_incidences(snode)%element_list(j)
+          if( ele_on_snode .le. 0 ) cycle
+          totdof = iprops(2,ele_on_snode) * iprops(4,ele_on_snode)
+          do erow = 1, totdof
+            if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+            do ecol = 1, totdof
               scol = dof_eqn_map(edest(ecol,j))
-              if ( scol .le. srow ) go to 100
-              num_scols_used = num_scols_used + one
+              if( scol .le. srow ) cycle
+              num_scols_used = num_scols_used + 1
               scol_list(num_scols_used) = scol
- 100        continue
-            if ( .not. repeat_incid(felem)) go to 300
- 200      continue
- 300    continue
+            end do
+            if( .not. repeat_incid(ele_on_snode)) exit ! erow loop
+          end do ! erow
+       end do  ! 
 c
-c               sort the list of non-zero columns on this row. use an
-c               in-place heap sort algorithm. duplicates in the list
-c               of columns are still present.
+c               sort the list of non-zero columns on this row.
+c               duplicates in the list of columns are still present.
 c
-        if ( num_scols_used .lt. 2 ) go to 600
-        k  = num_scols_used/2 + one
-        ir = num_scols_used
-400     continue
-          if( k .gt. one ) then
-            k   = k - one
-            rra = scol_list(k)
-          else
-            rra           = scol_list(ir)
-            scol_list(ir) = scol_list(one)
-            ir            = ir - one
-            if( ir .eq. one ) then
-              scol_list(one) = rra
-              go to 600
-            end if
-          end if
-          i = k
-          j = k + k
-500       if( j .le. ir ) then
-            if( j .lt. ir ) then
-              if( scol_list(j) .lt. scol_list(j+1) ) j = j + one
-            end if
-            if( rra .lt. scol_list(j) ) then
-              scol_list(i) = scol_list(j)
-              i = j
-              j = j + j
-            else
-              j = ir + one
-            end if
-          go to 500
-          end if
-          scol_list(i) = rra
-        go to 400
+        if( num_scols_used > 1 )
+     &       call build_col_sparse_sort( num_scols_used, scol_list )
 c
-c               sort for this equation completed. copy the used
-c               (unique) column numbers from the sorted list into
-c               k_indexes (skip duplicates). count of moved
+c               copy the used (unique) column numbers from the sorted
+c               list into k_indexes (skip duplicates). count of moved
 c               column numbers is k_ptrs for this equations. we
-c               can have no terms to right of diagonal or only
+c               can have zero terms to right of diagonal or only
 c               1 term. treat as special cases.
 c
- 600    continue
-        if ( num_scols_used .eq. 0 ) then
+        if( num_scols_used .eq. 0 ) then
           k_ptrs(srow) = 0
-          go to 700
+          cycle
         end if
-        num_unique_cols         = one
-        next_k_index            = next_k_index + one
-        k_indexes(next_k_index) = scol_list(one)
-        if ( num_scols_used .eq. one ) then
-           k_ptrs(srow) = one
-           go to 700
+        num_unique_cols         = 1
+        next_k_index            = next_k_index + 1
+        k_indexes(next_k_index) = scol_list(1)
+        if( num_scols_used .eq. 1 ) then
+           k_ptrs(srow) = 1
+           cycle
         end if
         do j = 2, num_scols_used
-           if ( scol_list(j) .ne. scol_list(j-1) ) then
-               num_unique_cols         = num_unique_cols + one
-               next_k_index            = next_k_index + one
+           if( scol_list(j) .ne. scol_list(j-1) ) then
+               num_unique_cols         = num_unique_cols + 1
+               next_k_index            = next_k_index + 1
                k_indexes(next_k_index) = scol_list(j)
            end if
         end do
         k_ptrs(srow) = num_unique_cols
- 700    continue
 c
-c               do next equation...
-c
-      end do
+      end do !  srow
 c
       k_ptrs(neqns) = 0
       last_k_index  = next_k_index
 c
       return
       end
+      
+c     ****************************************************************
+c     *                                                              *
+c     *  heap sort the list of used column numbers for the equation  *
+c     *    -- this routine is inlined by the compilers --            *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  7/20/2016 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+      
+      subroutine build_col_sparse_sort( n, vec )
+      implicit none
+      integer :: n, vec(n)
+c
+      integer :: l, ir,rra, i, j
+c            
+      l = n/2 + 1
+      ir = n
+c      
+c               the index l will be decremented from its initial 
+c               value during the "hiring" (heap creation) phase. once 
+c               it reaches 1, the index ir will be decremented from 
+c               its initial value down to 1 during the 
+c               "retirement-and-promotion" (heap selection) phase.
+c
+10    continue
+      if( l > 1 )then
+        l = l - 1
+        rra = vec(l)
+      else
+        rra = vec(ir)
+        vec(ir) = vec(1)
+        ir = ir-1
+        if( ir .eq. 1 )then
+          vec(1) = rra
+          return
+        end if
+      end if
+      i = l
+      j = l + l
+20    if( j .le. ir )then
+        if( j < ir )then
+           if( vec(j) < vec(j+1) )  j = j + 1
+        end if
+        if( rra < vec(j) )then
+          vec(i) = vec(j)
+          i = j; j = j + j
+        else
+          j = ir + 1
+        end if
+        go to 20
+      end if
+      vec(i) = rra
+      go to 10
+c      
+      end
+c         
 c     ****************************************************************
 c     *                                                              *
 c     *  build mapping between dof at all structure nodes to the     *
@@ -391,11 +461,10 @@ c
       end do
 c
       do dof = 1, ndof*nonode
-       if( cstmap(dof) .eq. 0 ) then ! dof has no abs constraint
-           eqn_counter      = eqn_counter + 1
-           dof_eqn_map(dof) = eqn_counter
-           eqn_node_map(eqn_counter) = (dof-1)/ndof + 1
-        end if
+       if( cstmap(dof) .ne. 0 ) cycle ! no abs constraint
+       eqn_counter      = eqn_counter + 1
+       dof_eqn_map(dof) = eqn_counter
+       eqn_node_map(eqn_counter) = (dof-1)/ndof + 1
       end do
 c      
 c         set the number of equilibrium equations to be solved in each 
@@ -479,8 +548,7 @@ c
       integer :: thread_previous_node(max_threads)
       data zero / 0.0d0 /
 c
-@!DIR$ ASSUME_ALIGNED coeff_row:64       
-      
+@!DIR$ ASSUME_ALIGNED coeff_row:64           
 c
 c                 assemble the equilibrium equations directly in
 c                 sparse matrix format, i.e., only the non-zero
@@ -853,6 +921,7 @@ c                    local declarations
 c
       integer, allocatable :: edest(:,:,:)
       integer :: srow, now_thread, num_indexes_for_srow
+      integer :: thread_previous_node(max_threads)
       integer, external :: omp_get_thread_num
       logical, parameter :: print_cpu_time = .false.
       real :: start_time, stop_time
@@ -876,9 +945,10 @@ c                   f) Loop over all columns in this local row and
 c                      insert/add their values where they belong
 c
       allocate( edest(mxedof,mxconn,num_threads) )
+      thread_previous_node = 0 ! vector
 c
       if( print_cpu_time ) call cpu_time( start_time )
-
+c
 c$OMP PARALLEL DO  PRIVATE(srow, now_thread, num_indexes_for_srow)
       do srow = 1, neqns
         now_thread = omp_get_thread_num() + 1
@@ -886,7 +956,7 @@ c$OMP PARALLEL DO  PRIVATE(srow, now_thread, num_indexes_for_srow)
         call assem_a_row_asym( srow, eqn_node_map,
      &    dof_eqn_map, iprops, num_indexes_for_srow,
      &    k_indexes(k_ptrs(srow)), edest(1,1,now_thread), 
-     &    k_coeffs(k_ptrs(srow)) )
+     &    k_coeffs(k_ptrs(srow)), thread_previous_node(now_thread) )
       end do
 c$OMP END PARALLEL DO
       if( print_cpu_time ) then
@@ -914,7 +984,7 @@ c     ****************************************************************
 c
       subroutine assem_a_row_asym( srow, eqn_node_map, dof_eqn_map,
      &                             iprops, num_k_indexes, k_indexes, 
-     &                             edest, k_coeffs)
+     &                             edest, k_coeffs, previous_snode)
       use elem_block_data, only : estiff_blocks
       use main_data, only: elems_to_blocks, repeat_incid,
      &                     inverse_incidences
@@ -923,7 +993,7 @@ $add param_def
 c
 c                 parameter declarations
 c
-      integer :: srow, num_k_indexes
+      integer :: srow, num_k_indexes, previous_snode
       integer :: dof_eqn_map(*), eqn_node_map(*), iprops(mxelpr,*),
      &           edest(mxedof,*), k_indexes(num_k_indexes)
 #dbl      double precision :: k_coeffs(num_k_indexes)
@@ -936,8 +1006,7 @@ c
      &           bs_finish, bs_range 
 #dbl      double precision, dimension(:,:), pointer :: emat
 #sgl      real, dimension(:,:), pointer :: emat
-@!DIR$ ASSUME_ALIGNED k_coeffs:64,emat:64   
-      
+@!DIR$ ASSUME_ALIGNED k_coeffs:64,emat:64         
 c
 c                 - get structure node number for this equation
 c                 - number of element connected to snode
@@ -946,9 +1015,12 @@ c                   connected to snode (sdof, not eqn #s)
 c
       snode            = eqn_node_map(srow)
       num_ele_on_snode = inverse_incidences(snode)%element_count
-      call get_edest_terms( edest, 
+      if( snode .ne. previous_snode ) then      
+        call get_edest_terms( edest, 
      &      inverse_incidences(snode)%element_list(1), 
      &      num_ele_on_snode, iprops)
+        previous_snode = snode
+      end if
 c
 c                 - loop over element connected to this snode
 c                   - skip killed elements
