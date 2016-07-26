@@ -298,7 +298,7 @@ c
        num_ele_on_snode = inverse_incidences(snode)%element_count
        num_scols_used   = 0
        if( snode .ne. previous_node ) then
-         call get_edest_terms( edest, 
+         call get_edest_terms_assemble( edest, 
      &        inverse_incidences(snode)%element_list(1),
      &        num_ele_on_snode, iprops )
          previous_node = snode
