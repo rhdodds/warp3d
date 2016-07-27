@@ -284,35 +284,38 @@ c     *                      subroutine gptns1_a                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/25/2015 rhd             *
+c     *                   last modified : 07/21/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine gptns1_a
 c
+      logical :: axisymm
+c      
+      axisymm = etype .eq. 10  .or.  etype .eq. 11
+c      
       if( geonl ) then
           call getrm1( span, local_work%qn1,
      &                 local_work%rot_blk_n1(1,1,gpn), 2 )
           call qmply1( span, mxvl, nstr, local_work%qn1,
      &                 local_work%urcs_blk_n1(1,1,gpn),
      &                 local_work%cs_blk_n1 )
-          call blcmp1_srt
-     &         ( span, local_work%b_block,
+      end if
+c      
+      if( axisymm )
+     &   call blcmp1_axisymm( span, local_work%b_block,
      &                 local_work%gama_block(1,1,1,gpn),
      &                 local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &                 local_work%nzeta(1,gpn),
      &                 local_work%shape(1,gpn),
      &                 local_work%ce, rad, etype, nnode )
-      else
-          call blcmp1_srt
-     &         ( span, local_work%b_block,
+      if( .not. axisymm ) 
+     &   call blcmp1(  span, local_work%b_block,
      &                 local_work%gama_block(1,1,1,gpn),
      &                 local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &                 local_work%nzeta(1,gpn), 
-     &                 local_work%shape(1,gpn),
-     &                 local_work%ce, rad, etype, nnode )
-      end if
+     &                 local_work%nzeta(1,gpn),
+     &                 nnode )
 c
       if( bbar ) then
           call bmod ( local_work%b_block, local_work%vol_block,
