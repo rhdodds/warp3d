@@ -667,7 +667,7 @@ c      if( ngp .ne. 8 ) then
          end do
         end do
         return
-      end if
+c      end if
 c
 c                number of gauss points = 8, unroll.
 c
