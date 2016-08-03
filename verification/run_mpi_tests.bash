@@ -10,7 +10,7 @@ function hybrid-test-short {
 echo -e "\n>>> Hypre solver. Crk growth w/ cohesive. C(T): ~1.5 mins"
 echo      "    ====================================================="
 cd hybrid-test-short
-./run_tests_and_check
+bash ./run_tests_and_check  2>/dev/null # fixes lower shell issue
 cd ..
 }
 
@@ -18,7 +18,7 @@ function hybrid-test-long {
 echo -e "\n>>> Hypre sovler. Crk growth w/ cohesive. C(T) ~8 mins"
 echo      "    =================================================="
 cd hybrid-test-long
-./run_tests_and_check
+bash ./run_tests_and_check 2>/dev/null
 cd ..
 }
 
@@ -26,7 +26,7 @@ function threads-hybrid-test {
 echo -e "\n>>> MPI + MKL sparse iterative (Pressure vessel)"
 echo      "    ============================================"
 cd threads-hybrid-test
-./run_tests_and_check
+bash ./run_tests_and_check 2>/dev/null
 cd ..
 }
 
@@ -78,8 +78,7 @@ select menu_list in "$all" "$m_testhybrid_short" "$m_testhybrid_long" "$m_testth
 do
       case $menu_list in
             $all)
-                  run_all
-                  break;;
+                  run_all;;
             $m_testhybrid_short)
                   hybrid-test-short;;
             $m_testhybrid_long)
