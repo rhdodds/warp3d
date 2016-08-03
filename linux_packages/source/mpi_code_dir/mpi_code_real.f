@@ -1246,7 +1246,7 @@ c     *                      subroutine wmpi_send_analysis           *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 06/2/2015 rhd              *
+c     *                   last modified : 08/3/2016 rhd              *
 c     *                                                              *
 c     *       send data from anaylsis parameters to all the MPI      *
 c     *       processors                                             *
@@ -1254,7 +1254,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_send_analysis
-      use main_data,       only : umat_serial
+      use main_data,only : umat_serial, cp_matls_present, 
+     &                     cp_unloading, creep_model_used 
       implicit integer (a-z)
       include "mpif.h"
 $add common.main
@@ -1269,7 +1270,7 @@ c     &         myid
 c
 c         broadcast element properties and element blocking info
 c
-c            values from analysis parameters
+c         values from analysis parameters
 c
       call MPI_BCAST(eps_bbar,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(qbar_flag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
@@ -1281,7 +1282,11 @@ c
       call MPI_BCAST(signal_flag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(adaptive_flag,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(umat_serial,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
-c
+      call MPI_BCAST(cp_matls_present,1,MPI_INTEGER,0,MPI_COMM_WORLD,
+     &               ierr)
+      call MPI_BCAST(cp_unloading,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(creep_model_used,1,MPI_LOGICAL,0,MPI_COMM_WORLD,
+     &               ierr)
       return
       end
 c
