@@ -278,6 +278,8 @@ c
       character*1  dums
       dimension  k_ptrs(*), abs_trm(*)
       intrinsic size
+@!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_trm:32      
+      
 c
 c        allocate local variables
 c
@@ -359,7 +361,7 @@ c
             tmp_idx = tmp_idx + len
             mpc = dep_check(row)
          if (mpc .gt. 0) then
-            call store_term(row, row)
+            call mpc_store_term(row, row)
             ntrms = num_terms(mpc)
             tmp_ptr = 0
             trm_ptr = abs_trm(mpc)
@@ -367,29 +369,29 @@ c
                ind = ind_dof(trm)
                tmp_ptr = tmp_ptr + 1
                tmp_trms(tmp_ptr) = ind
-               call store_term(row, ind)
+               call mpc_store_term(row, ind)
             end do
             do ptr = 1, len
                col = eqn_tmp(ptr)
-               call store_term(row, col)
+               call mpc_store_term(row, col)
                mpc = dep_check(col)
                if (mpc .gt. 0) then
                   ntrms = num_terms(mpc)
                   trm_ptr = abs_trm(mpc)
                   do trm = trm_ptr, trm_ptr+ntrms-1
                      ind = ind_dof(trm)
-                     call store_term(row, ind)
+                     call mpc_store_term(row, ind)
                   end do
-                  call store_term(col, row)
+                  call mpc_store_term(col, row)
                   do trm = 1, tmp_ptr
                      ind = tmp_trms(trm)
-                     call store_term(col, ind)
+                     call mpc_store_term(col, ind)
                   end do
                end if
             end do
             dlen = dep_ptr(row)
             row_ptr => eqn_row(row)%loc_list
-            call heapsort(dlen, row_ptr(1:dlen))
+            call mpc_heapsort(dlen, row_ptr(1))
             if (dlen .gt. max_len)  max_len = dlen
             do dptr = 1, dlen
                eqn = row_ptr(dptr)
@@ -400,17 +402,17 @@ c
                      if (dep_check(ind) .gt. 0) then
                         cycle
                      end if
-                     call store_term(ind, eqn)
+                     call mpc_store_term(ind, eqn)
                   else if (eqn .lt. ind) then
                      if (dep_check(eqn) .gt. 0) then
                         cycle
                      end if
-                     call store_term(eqn, ind)
+                     call mpc_store_term(eqn, ind)
                   end if
                end do
             end do
             fin = dep_idx + dlen - 1
-            if (fin .gt. dep_trms_len)  call resize_vector(4)
+            if (fin .gt. dep_trms_len)  call mpc_resize_vector(4)
 c
 c              store dep eqn in f77 form, deallocate structure
 c
@@ -426,7 +428,7 @@ c
                col = eqn_tmp(ptr)
                if (col .gt. max_dep)  cycle nxt_row
                if (dep_check(col) .gt. 0) then
-                  call store_term(col, row)
+                  call mpc_store_term(col, row)
                end if
             end do
          end if
@@ -450,11 +452,11 @@ c     *                   found in 'find_dep_eqns'                   *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 7/17/03                   *
+c     *                    last modified : 7/30/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  store_term(eqn, index)
+      subroutine  mpc_store_term(eqn, index)
 c
       use mod_mpc, only :  eqn_row, dep_check, dep_ptr
       use stiffness_data, only : new_ptrs
@@ -479,7 +481,7 @@ c
 c        if structure too small, call resizer routine
 c
       if (ptr .gt. len) then
-         call resize_eqn_row(eqn, len)
+         call mpc_resize_eqn_row(eqn, len)
          eqn_row(eqn)%length = len
       end if
 c
@@ -499,11 +501,11 @@ c     *           increases the size of eqn_row(eqn)%loc_list        *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 7/03/03                   *
+c     *                    last modified : 7/30/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  resize_eqn_row(eqn, len)
+      subroutine  mpc_resize_eqn_row(eqn, len)
 c
       use mod_mpc, only : eqn_row
       implicit integer (a-z)
@@ -557,10 +559,11 @@ c     *                    last modified : 7/22/03                   *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  heapsort(n, ra)
+      subroutine  mpc_heapsort(n, ra)
 c
       implicit integer (a-z)
       dimension  ra(*)
+@!DIR$ ASSUME_ALIGNED ra:32    
 c
       if (n .lt. 2) then
          return
@@ -721,7 +724,7 @@ c
             deallocate(eqn_row(eqn)%loc_list)
             nullify(eqn_row(eqn)%loc_list)
             eqn_tmp(beg:len) = old_ind(old_idx:old_idx+num-1)
-            call heapsort(len, eqn_tmp)
+            call mpc_heapsort(len, eqn_tmp)
             new_ptrs(eqn) = len
             old_idx = old_idx + num
          end if
@@ -729,7 +732,7 @@ c
          tmp_idx = 0
          max_cof = cof_idx + k_ptrs(eqn) - 1
          fin = ptr_idx+len-1
-         if (fin .gt. temp_len)  call resize_tempk(neqns, eqn, len)
+         if(fin .gt. temp_len) call mpc_resize_tempk(neqns, eqn, len)
          do ind_idx = ptr_idx, fin
             tmp_idx = tmp_idx + 1
             ind_temp(ind_idx) = eqn_tmp(tmp_idx)
@@ -740,8 +743,8 @@ c
             else
                new_idx = new_idx + 1
                if (new_idx .gt. new_len) then
-                  call resize_vector(5)
-                  call resize_vector(6)
+                  call mpc_resize_vector(5)
+                  call mpc_resize_vector(6)
                end if
                new_loc(new_idx) = ind_idx
                new_ind(new_idx) = ind_temp(ind_idx)
@@ -800,13 +803,13 @@ c     *              increases the size of temp [K] vectors          *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 02/19/2016 rhd            *
+c     *                    last modified : 07/30/2016 rhd            *
 c     *                                                              *
 c     * edit: zero to end of new cof_temp to prevent uninitializeds  *          
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  resize_tempk(neqns, eqn, len)
+      subroutine  mpc_resize_tempk(neqns, eqn, len)
 c
       use stiffness_data, only : ind_temp, cof_temp, temp_len
       implicit integer (a-z)
@@ -871,8 +874,8 @@ c     *                    last modified : 11/04/03                  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_find_locations(neqns, k_ptrs, k_diag, abs_ptr, 
-     &                               max_len)
+      subroutine  mpc_find_locations( neqns, k_ptrs, k_diag, abs_ptr, 
+     &                                max_len)
 c
       use mod_mpc, only : dep_ptr, dep_dof, ind_dof, num_terms,
      &                    nmpc, dep_trms, dep_coef, num_dep_trms,
@@ -881,15 +884,30 @@ c
      &                           dep_locations, ind_locations,
      &                           diag_locations, dep_loc, dep_len,
      &                           ind_loc, ind_len, dia_loc, dia_len
-      implicit integer (a-z)
+      implicit none
+c
+c                      parameter declarations
+c
+      integer :: neqns, max_len
+      integer :: k_ptrs(*), abs_ptr(*)
+#dbl      double precision :: k_diag(*)
+#sgl      real :: k_diag(*)
+
+c
+c                      local declarations
+c
       integer, allocatable, dimension(:) :: dep_eqn_tmp
-      real  dumr
-      double precision  dumd
-#dbl      double precision
-#sgl      real
-     &          k_diag
+      real :: dumr
+      double precision ::  dumd
       character*1  dums
-      dimension  k_ptrs(*), k_diag(*), abs_ptr(*)
+c
+      integer :: err, mpc, dep, len, dptr, beg, eqn, idx, dep_idx,
+     &           ptr, ntrms,trm, ind, dia_idx, ind_idx, ind_ptr,
+     &           dumi, cnt       
+      
+@!DIR$ ASSUME_ALIGNED k_diag:64
+@!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32      
+c
 c
 c        allocate temp storage space
 c        an initial guess is made for the sizes of the temp spaces
@@ -897,17 +915,17 @@ c        for the dep term locations, ind term locations, and the
 c        locations of the terms that update the ind diagonals, but
 c        a resizer routine is used as needed to prevent overflow
 c
-      if (allocated(dep_coef))  deallocate(dep_coef)
+      if( allocated(dep_coef) )  deallocate( dep_coef )
       dep_len = neqns*10
       ind_len = neqns*10
       dia_len = neqns
-      allocate ( dep_eqn_tmp(max_len), 
-     &           dep_loc(dep_len),
-     &           ind_loc(ind_len),
-     &           dia_loc(dia_len),
-     &           dep_coef(dep_trms_len),
-     &           stat=err )
-      if (err .ne. 0) then
+      allocate( dep_eqn_tmp(max_len), 
+     &          dep_loc(dep_len),
+     &          ind_loc(ind_len),
+     &          dia_loc(dia_len),
+     &          dep_coef(dep_trms_len),
+     &          stat=err )
+      if( err .ne. 0 ) then
          call errmsg2(48,dumi,dums,dumr,dumd)
          call die_abort
       end if
@@ -923,7 +941,7 @@ c
 c           find all the dep term locations for current mpc
 c
          dep  = dep_dof(mpc)
-         if (dep .eq. 0)  cycle
+         if( dep .eq. 0 )  cycle
          len  = num_dep_trms(dep)
          dptr = dep_ptr(dep)
          beg  = abs_dep_ptr(dep)
@@ -931,9 +949,9 @@ c
          nxt_eqn: do ptr = 1, dptr-1
             eqn = dep_eqn_tmp(ptr)
             do idx = abs_ptr(eqn), abs_ptr(eqn)+k_ptrs(eqn)-1
-               if (k_indexes(idx) .eq. dep) then
+               if( k_indexes(idx) .eq. dep ) then
                   dep_idx = dep_idx + 1
-                  if (dep_idx .gt. dep_len)  call resize_vector(1)
+                  if( dep_idx .gt. dep_len ) call mpc_resize_vector(1)
                   dep_loc(dep_idx) = idx
                   dep_coef(dep_idx) = k_coeffs(idx)
                   cycle nxt_eqn
@@ -941,12 +959,12 @@ c
             end do
          end do  nxt_eqn
          dep_idx = dep_idx + 1
-         if (dep_idx .gt. dep_len)  call resize_vector(1)
+         if( dep_idx .gt. dep_len )  call mpc_resize_vector(1)
          dep_loc(dep_idx) = 0
          dep_coef(dep_idx) = k_diag(dep)
          do ptr = abs_ptr(dep), abs_ptr(dep)+k_ptrs(dep)-1
             dep_idx = dep_idx + 1
-            if (dep_idx .gt. dep_len)  call resize_vector(1)
+            if( dep_idx .gt. dep_len )  call mpc_resize_vector(1)
             dep_loc(dep_idx) = ptr
             dep_coef(dep_idx) = k_coeffs(ptr)
          end do
@@ -960,34 +978,38 @@ c
             ind = ind_dof(trm)
             do cnt = 1, len
                eqn = dep_eqn_tmp(cnt)
-               if (ind .gt. eqn) then
+               if( ind .gt. eqn ) then
                   do ptr = abs_ptr(eqn), abs_ptr(eqn)+k_ptrs(eqn)-1
-                     if (k_indexes(ptr) .eq. ind) then
+                     if( k_indexes(ptr) .eq. ind ) then
                         if (eqn .eq. dep) then
-                           dia_idx = dia_idx + 1
-                           if (dia_idx.gt.dia_len) call resize_vector(3)
-                           dia_loc(dia_idx) = ptr
+                         dia_idx = dia_idx + 1
+                         if( dia_idx.gt.dia_len )
+     &                     call mpc_resize_vector(3)
+                         dia_loc(dia_idx) = ptr
                         end if
                         ind_idx = ind_idx + 1
-                        if (ind_idx .gt. ind_len)  call resize_vector(2)
+                        if( ind_idx .gt. ind_len )
+     &                    call mpc_resize_vector(2)
                         ind_loc(ind_idx) = ptr
                         exit
                      end if
                   end do
-               else if (ind .eq. eqn) then
+               else if( ind .eq. eqn ) then
                   ind_idx = ind_idx + 1
-                  if (ind_idx .gt. ind_len)  call resize_vector(2)
+                  if( ind_idx .gt. ind_len )  call mpc_resize_vector(2)
                   ind_loc(ind_idx) = 0
-               else if (ind .lt. eqn) then
+               else if( ind .lt. eqn ) then
                   do ptr = abs_ptr(ind), abs_ptr(ind)+k_ptrs(ind)-1
-                     if (k_indexes(ptr) .eq. eqn) then
-                        if (eqn .eq. dep) then
-                           dia_idx = dia_idx + 1
-                           if (dia_idx.gt.dia_len) call resize_vector(3)
-                           dia_loc(dia_idx) = ptr
+                     if( k_indexes(ptr) .eq. eqn ) then
+                        if( eqn .eq. dep ) then
+                         dia_idx = dia_idx + 1
+                         if( dia_idx.gt.dia_len ) 
+     &                         call mpc_resize_vector(3)
+                         dia_loc(dia_idx) = ptr
                         end if
                         ind_idx = ind_idx + 1
-                        if (ind_idx .gt. ind_len)  call resize_vector(2)
+                        if (ind_idx .gt. ind_len) 
+     &                  call mpc_resize_vector(2)
                         ind_loc(ind_idx) = ptr
                         exit
                      end if
@@ -1001,14 +1023,14 @@ c
 c        allocate storage space of exact size, copy data from temp space,
 c        deallocate temp space
 c
-      if (allocated(dep_locations))   deallocate(dep_locations)
-      if (allocated(ind_locations))   deallocate(ind_locations)
-      if (allocated(diag_locations))  deallocate(diag_locations)
-      allocate ( dep_locations(dep_idx),
+      if( allocated(dep_locations) )   deallocate(dep_locations)
+      if( allocated(ind_locations) )   deallocate(ind_locations)
+      if( allocated(diag_locations) )  deallocate(diag_locations)
+      allocate(  dep_locations(dep_idx),
      &           ind_locations(ind_idx),
      &           diag_locations(dia_idx),
-     &           stat=err)
-      if (err .ne. 0) then
+     &           stat=err )
+      if( err .ne. 0 ) then
          call errmsg2(48,dumi,dums,dumr,dumd)
          call die_abort
       end if
@@ -1030,11 +1052,11 @@ c     *              increases the size of indicated vector          *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 01/31/04                  *
+c     *                    last modified : 07/30/2016 rhd            *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  resize_vector(vec_ptr)
+      subroutine mpc_resize_vector(vec_ptr)
 c
       use mod_mpc, only : dep_trms, dep_trms_len
       use stiffness_data, only : dep_loc, dep_len, ind_loc, ind_len,
@@ -1169,6 +1191,8 @@ c
      &         dep_trm, k_diag, p_vec
       character*1  dums
       dimension  k_diag(*), p_vec(*)
+@!DIR$ ASSUME_ALIGNED k_diag:64, p_vec:64     
+      
 c
 c        intialize counters, use the terms in the dep_locations to
 c        modify those in the ind_locations
@@ -1406,6 +1430,7 @@ c
       character*1  dums
       logical new_size
       dimension  k_ptrs(*)
+@!DIR$ ASSUME_ALIGNED k_ptrs:32      
 c
 c        allocate temp storage space
 c
@@ -1479,7 +1504,7 @@ c     *                   last modified : 04/19/2015                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine apply_mpcs(x, neqns, nodof, cstmap)
+      subroutine mpcs_apply(x, neqns, nodof, cstmap)
 c
       use mod_mpc, only : num_tied_con_mpc, tied_con_mpc_table,
      &                    num_user_mpc, user_mpc_table, nmpc,
@@ -1499,6 +1524,9 @@ c
       character*1  dums
       dimension  x(*), cstmap(*)
       data zero / 0.0d00 /
+@!DIR$ ASSUME_ALIGNED x:64
+@!DIR$ ASSUME_ALIGNED cstmap:32      
+
 c
       allocate( lagmlt(neqns), stat=err)
       if (err .ne. 0) then
@@ -1509,7 +1537,7 @@ c
 c        calculate displacements for dep dofs
 c
       ptr = 1
-      do mpc = 1, nmpc
+      do mpc = 1, nmpc 
          dep = dep_dof(mpc)
          if (dep .eq. 0)  cycle
          ntrms = num_terms(mpc)

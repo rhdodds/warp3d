@@ -656,7 +656,7 @@ c
      & global_hist(hist_size,ngp,span)
 @!DIR$ ASSUME_ALIGNED local_hist:64, global_hist:64
 c
-      if( ngp .ne. 8 ) then
+c      if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, hist_size
 @!DIR$ LOOP COUNT MAX=###  
@@ -671,20 +671,20 @@ c
 c
 c                number of gauss points = 8, unroll.
 c
-      do  j = 1, hist_size
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do  i = 1, span
-            local_hist(i,j,1) = global_hist(j,1,i)
-            local_hist(i,j,2) = global_hist(j,2,i)
-            local_hist(i,j,3) = global_hist(j,3,i)
-            local_hist(i,j,4) = global_hist(j,4,i)
-            local_hist(i,j,5) = global_hist(j,5,i)
-            local_hist(i,j,6) = global_hist(j,6,i)
-            local_hist(i,j,7) = global_hist(j,7,i)
-            local_hist(i,j,8) = global_hist(j,8,i)
-        end do
-      end do
+c     do  j = 1, hist_size
+c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ IVDEP
+c        do  i = 1, span
+c            local_hist(i,j,1) = global_hist(j,1,i)
+c            local_hist(i,j,2) = global_hist(j,2,i)
+c            local_hist(i,j,3) = global_hist(j,3,i)
+c            local_hist(i,j,4) = global_hist(j,4,i)
+c            local_hist(i,j,5) = global_hist(j,5,i)
+c            local_hist(i,j,6) = global_hist(j,6,i)
+c            local_hist(i,j,7) = global_hist(j,7,i)
+c            local_hist(i,j,8) = global_hist(j,8,i)
+c        end do
+c      end do
 c
       return
       end
@@ -947,8 +947,8 @@ c
 #sgl      real
      &  vec(n), zero
       data zero / 0.0d00 /
+@!DIR$ ASSUME_ALIGNED vec:64
 c
-
 @!DIR$ IVDEP
       vec = zero
 c

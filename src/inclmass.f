@@ -83,6 +83,7 @@ c
       logical :: symmetric_assembly
       integer :: felem, num_enode, totdof, span,i, j, k, l 
       data one / 1.0d00 /
+@!DIR$ ASSUME_ALIGNED mel:64, mmat:64, emat:64
 c
 c             newmark multiplication factor.
 c                       

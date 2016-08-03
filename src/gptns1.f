@@ -1540,22 +1540,24 @@ c
 c
 c                       locals
 c
-      integer :: i, j, row, col
+      integer :: i, j, k, row, col
 @!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_full:64
 c
 c              set trans( [B] )
 c
       do j = 1, totdof
+      	do k = 1, 6
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
         do i = 1, span
-          bt(i,1,j)= b(i,j,1)
-          bt(i,2,j)= b(i,j,2)
-          bt(i,3,j)= b(i,j,3)
-          bt(i,4,j)= b(i,j,4)    
-          bt(i,5,j)= b(i,j,5) 
-          bt(i,6,j)= b(i,j,6)
+          bt(i,k,j)= b(i,j,k)
+c          bt(i,2,j)= b(i,j,2)
+c          bt(i,3,j)= b(i,j,3)
+c          bt(i,4,j)= b(i,j,4)    
+c          bt(i,5,j)= b(i,j,5) 
+c          bt(i,6,j)= b(i,j,6)
        end do
+      end do
       end do
 c
 c              perform multiplication of [D]*[B-mat]. 

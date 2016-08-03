@@ -65,6 +65,8 @@ c
       data zero, local_debug, old_neqns, old_ncoeff, cpu_stats
      &     / 0.0d00, .false., 0, 0, .true. /
       data save_solver / .false. /
+@!DIR$ ASSUME_ALIGNED dof_eqn_map:32
+@!DIR$ ASSUME_ALIGNED u_vec:64
 c
 c
       if( local_debug ) write(*,*) '... direct_driver_sparse ... @ 1'
@@ -233,7 +235,7 @@ c              positions in u_vec.
 c
       if( tied_con_mpcs_constructed .or. mpcs_exist ) then
          if( local_debug ) write(out,*) ' @ 9.1'
-         call apply_mpcs( u_vec, neqns, nodof, cstmap )
+         call mpcs_apply( u_vec, neqns, nodof, cstmap )
       end if
 c
 c

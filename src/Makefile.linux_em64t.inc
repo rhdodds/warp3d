@@ -2162,7 +2162,7 @@ $(OD)/rstgp1$O : rstgp1.f param_def  $(OD)/mod_crystals$O  \
 	$(RMC)  $@
 	$(RMC)  filt_rstgp1.f
 	$(FILTER) < rstgp1.f > filt_rstgp1.f
-	$(F90) -O2 -ip  -c filt_rstgp1.f
+	$(F90) -O3 -ip  -c filt_rstgp1.f
 	$(MVC) filt_rstgp1$O  rstgp1$O
 	$(MVC) rstgp1$O $@
 #

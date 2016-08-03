@@ -4,7 +4,7 @@ c     *                      subroutine rplstr                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/9/2016 rhd               *
+c     *                   last modified : 7/28/2016 rhd              *
 c     *                                                              *
 c     *     stores globally the recovered material                   *
 c     *     and stress states.                                       *
@@ -19,16 +19,21 @@ c
      &                            urcs_n1_blocks, history_blk_list
 
       use segmental_curves, only : max_seg_points, max_seg_curves 
-      implicit integer (a-z)
+      implicit none
+c      
 $add common.main
 $add include_sig_up
-      logical :: process_hist, save_history_1,
-     &           save_history_2
 c
 c                   parameter declarations
 c
-c      
-      logical geonl
+      integer :: span, felem, ngp, iter, blk  
+      logical :: geonl
+c
+c                   local declarations
+c
+      integer :: mat_type, hist_size
+      logical :: process_hist, save_history_1, save_history_2
+      
 c
 c                                         
 c             replace stress/strain data:
@@ -86,7 +91,7 @@ c     *                      subroutine rp_gastr                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/22/2015 rhd             *
+c     *                   last modified : 7/30/2016 rhd              *
 c     *                                                              *
 c     *     gathers element stresses from the global                 *
 c     *     stress data structure to a block of similar,             *
@@ -96,48 +101,56 @@ c     ****************************************************************
 c
 c           
       subroutine rp_gastr( ml, mg, ngp, nprm, span )
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c               parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      integer :: ngp, nprm, span
+#dbl      double precision ::
+#sgl      real :: 
      & ml(mxvl,nprm,*), mg(nprm,ngp,*)
+c
+c               local declarations
+c
+      integer :: i, j, k      
 @!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c    
-      if ( ngp .ne. 8 ) then                            
+c               on current hardware, the manual unroll runs
+c               slower
+c
+c      if( ngp .ne. 8 ) then                            
 @!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
          do  j = 1, nprm
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
-            do  i = 1, span
+            do i = 1, span
                ml(i,j,k) = mg(j,k,i)
             end do
          end do
         end do
         return
-      end if
+c      end if
 c
 c                number of gauss points = 8, unroll.
 c
-      do  j = 1, nprm
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do  i = 1, span
-            ml(i,j,1) = mg(j,1,i)
-            ml(i,j,2) = mg(j,2,i)
-            ml(i,j,3) = mg(j,3,i)
-            ml(i,j,4) = mg(j,4,i)
-            ml(i,j,5) = mg(j,5,i)
-            ml(i,j,6) = mg(j,6,i)
-            ml(i,j,7) = mg(j,7,i)
-            ml(i,j,8) = mg(j,8,i)
-        end do
-      end do
+c      do j = 1, nprm
+c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ IVDEP
+c        do i = 1, span
+c            ml(i,j,1) = mg(j,1,i)
+c            ml(i,j,2) = mg(j,2,i)
+c            ml(i,j,3) = mg(j,3,i)
+c            ml(i,j,4) = mg(j,4,i)
+c            ml(i,j,5) = mg(j,5,i)
+c            ml(i,j,6) = mg(j,6,i)
+c            ml(i,j,7) = mg(j,7,i)
+c            ml(i,j,8) = mg(j,8,i)
+c        end do
+c      end do
 c
-      return
+c      return
       end
       
 c     ****************************************************************
@@ -146,7 +159,7 @@ c     *                      subroutine rp_scstr                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/22/2015 rhd             *
+c     *                   last modified : 7/30/2016 rhd              *
 c     *                                                              *
 c     *     scatters element stresses to the global                  *
 c     *     stress data structure from a block of similar            *
@@ -156,15 +169,27 @@ c     ****************************************************************
 c
 c           
       subroutine rp_scstr( ml, mg, ngp, nprm, span )                       
-      implicit integer (a-z)
+      implicit none
 $add param_def
-#dbl      double precision
-#sgl      real
+c
+c               parameter declarations
+c
+      integer :: ngp, nprm, span
+#dbl      double precision ::
+#sgl      real ::
      &     ml(mxvl,nprm,*),mg(nprm,ngp,*)
+c
+c               local declarations
+c
+      integer :: i, j, k     
 @!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c
+c    
+c               on current hardware, the manual unroll runs
+c               slower
 c
-      if( ngp .ne. 8 ) then
+c
+c      if( ngp .ne. 8 ) then
 @!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
            do j = 1, nprm
@@ -176,26 +201,26 @@ c
            end do
         end do
         return
-      end if
+c      end if
 c
 c                       number of gauss points = 8
 c
-      do j = 1, nprm
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP
-        do i = 1, span
-          mg(j,1,i) = ml(i,j,1)
-          mg(j,2,i) = ml(i,j,2)
-          mg(j,3,i) = ml(i,j,3)
-          mg(j,4,i) = ml(i,j,4)
-          mg(j,5,i) = ml(i,j,5)
-          mg(j,6,i) = ml(i,j,6)
-          mg(j,7,i) = ml(i,j,7)
-          mg(j,8,i) = ml(i,j,8)
-        end do
-      end do
+c      do j = 1, nprm
+c@!DIR$ LOOP COUNT MAX=### 
+c@!DIR$ IVDEP
+c        do i = 1, span
+c          mg(j,1,i) = ml(i,j,1)
+c          mg(j,2,i) = ml(i,j,2)
+c          mg(j,3,i) = ml(i,j,3)
+c          mg(j,4,i) = ml(i,j,4)
+c          mg(j,5,i) = ml(i,j,5)
+c          mg(j,6,i) = ml(i,j,6)
+c          mg(j,7,i) = ml(i,j,7)
+c          mg(j,8,i) = ml(i,j,8)
+c        end do
+c      end do
 c
-      return
+c      return
       end
 c     ****************************************************************
 c     *                                                              *
@@ -203,7 +228,7 @@ c     *                      subroutine rp_scstr_history             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/18/04 rhd               *
+c     *                   last modified : 07/28/2016 rhd             *
 c     *                                                              *
 c     *     scatters element history to the global                   *
 c     *     history data structure from a block of similar           *
@@ -214,16 +239,25 @@ c
 c           
       subroutine rp_scstr_history( local_history, global_history,
      &                          ngp, hist_size, span )
-      implicit integer (a-z)
+      implicit none
+c
+c               parameter declarations
+c
+      integer :: ngp, hist_size, span
 #dbl      double precision
 #sgl      real
      &      local_history(span,hist_size,ngp),
      &      global_history(hist_size,ngp,span)
+c
+c               local declarations
+c
+      integer :: i, j, k     
 @!DIR$ ASSUME_ALIGNED global_history:64, local_history:64  
-     
+c    
+c               on current hardware, the manual unroll runs
+c               slower
 c
-c
-      if( ngp .ne. 8 ) then
+c      if( ngp .ne. 8 ) then
 @!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
            do j = 1, hist_size
@@ -235,25 +269,25 @@ c
            end do
         end do
         return
-      end if
+c      end if
 c
 c                       number of gauss points = 8
 c
-      do j = 1, hist_size
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-          global_history(j,1,i) = local_history(i,j,1)
-          global_history(j,2,i) = local_history(i,j,2)
-          global_history(j,3,i) = local_history(i,j,3)
-          global_history(j,4,i) = local_history(i,j,4)
-          global_history(j,5,i) = local_history(i,j,5)
-          global_history(j,6,i) = local_history(i,j,6)
-          global_history(j,7,i) = local_history(i,j,7)
-          global_history(j,8,i) = local_history(i,j,8)
-        end do
-      end do
+c      do j = 1, hist_size
+c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ IVDEP
+c        do i = 1, span
+c          global_history(j,1,i) = local_history(i,j,1)
+c          global_history(j,2,i) = local_history(i,j,2)
+c          global_history(j,3,i) = local_history(i,j,3)
+c          global_history(j,4,i) = local_history(i,j,4)
+c          global_history(j,5,i) = local_history(i,j,5)
+c          global_history(j,6,i) = local_history(i,j,6)
+c          global_history(j,7,i) = local_history(i,j,7)
+c          global_history(j,8,i) = local_history(i,j,8)
+c        end do
+c      end do
 c
-      return
+c      return
       end
 c

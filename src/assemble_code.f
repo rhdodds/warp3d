@@ -152,6 +152,8 @@ c
 c      
       integer :: snode, num_ele_on_snode, next_scol_list, ele_on_snode,
      &           totdof, erow, ecol, scol, j
+@!DIR$ ASSUME_ALIGNED eqn_node_map:32, edest:32, iprops:32
+@!DIR$ ASSUME_ALIGNED dof_eqn_map:32, scol_flags:32, scol_list:32      
 c             
       snode             = eqn_node_map(srow) ! structure node
       num_ele_on_snode  = inverse_incidences(snode)%element_count
@@ -230,9 +232,9 @@ c
 c                    parameter declarations
 c
       integer :: neqns, last_k_index, mxelpr, mxedof
-      integer ::  eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),
-     &            k_indexes(*), scol_list(*),
-     &            iprops(mxelpr,*), edest(mxedof,*)
+      integer :: eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),
+     &           k_indexes(*), scol_list(*),
+     &           iprops(mxelpr,*), edest(mxedof,*)
       logical :: repeat_incid(*)
 c
 c                    local declarations
@@ -240,6 +242,9 @@ c
       integer :: next_k_index, previous_node, srow, scol, snode, 
      &           num_scols_used, j, totdof, ele_on_snode, erow, ecol,
      &           num_unique_cols, num_ele_on_snode
+@!DIR$ ASSUME_ALIGNED eqn_node_map:32, edest:32, iprops:32
+@!DIR$ ASSUME_ALIGNED dof_eqn_map:32, scol_list:32, k_ptrs:32
+@!DIR$ ASSUME_ALIGNED k_indexes:32      
 c
 c                 simulate assembly of the equilibrium equations directly
 c                 in sparse matrix format, i.e., only the non-zero
@@ -347,11 +352,10 @@ c
            cycle
         end if
         do j = 2, num_scols_used
-           if( scol_list(j) .ne. scol_list(j-1) ) then
-               num_unique_cols         = num_unique_cols + 1
-               next_k_index            = next_k_index + 1
-               k_indexes(next_k_index) = scol_list(j)
-           end if
+           if( scol_list(j) .eq. scol_list(j-1) ) cycle
+           num_unique_cols         = num_unique_cols + 1
+           next_k_index            = next_k_index + 1
+           k_indexes(next_k_index) = scol_list(j)
         end do
         k_ptrs(srow) = num_unique_cols
 c
@@ -380,6 +384,7 @@ c
       integer :: n, vec(n)
 c
       integer :: l, ir,rra, i, j
+@!DIR$ ASSUME_ALIGNED vec:32
 c            
       l = n/2 + 1
       ir = n
@@ -445,6 +450,7 @@ c
 c         local
 c
       integer :: eqn_counter, dof 
+@!DIR$ ASSUME_ALIGNED cstmap:32, dof_eqn_map:32, eqn_node_map:32
 c
 c         assign the equation number for each structure dof.
 c         dof with absolute constraints do not appear in the equations.
@@ -548,7 +554,9 @@ c
       integer :: thread_previous_node(max_threads)
       data zero / 0.0d0 /
 c
-@!DIR$ ASSUME_ALIGNED coeff_row:64           
+@!DIR$ ASSUME_ALIGNED coeff_row:64  
+@!DIR$ ASSUME_ALIGNED eqn_node_map:32, dof_eqn_map:32, k_ptrs:32
+@!DIR$ ASSUME_ALIGNED k_indexes:32, iprops:32, dcp:32         
 c
 c                 assemble the equilibrium equations directly in
 c                 sparse matrix format, i.e., only the non-zero
@@ -682,7 +690,10 @@ c
 c
       logical :: repeated
       data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED k_diag:64, k_coeffs:64, coeff_row:64, emat:64      
+@!DIR$ ASSUME_ALIGNED k_diag:64, k_coeffs:64, coeff_row:64, emat:64
+@!DIR$ ASSUME_ALIGNED eqn_node_map:32, dof_eqn_map:32, k_ptrs:32
+@!DIR$ ASSUME_ALIGNED k_indexes:32, iprops:32, dcp:32 
+@!DIR$ ASSUME_ALIGNED row_start_index:32, edest:32, local_scol:32    
 c
 c                 get the structure node number corresponding to this 
 c                 equation.
@@ -727,6 +738,7 @@ c
              cycle
           end if
           if( totdof .eq. 60 ) then
+             local_scol(1:60) =  dof_eqn_map(edest(1:60,j))
              call assem_a_row_60
              cycle
           end if  
@@ -776,12 +788,12 @@ c
       local_scol(1:24) =  dof_eqn_map(edest(1:24,j))
 c      
       do erow = 1, 24
-       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+       if( local_scol(erow) .ne. srow ) cycle
 @!DIR$ IVDEP
        do ecol = 1, 24
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if ( scol .lt. srow ) cycle ! lower triange
-         kk = dcp(max(ecol,erow))-iabs(ecol - erow)
+         kk = dcp(max0(ecol,erow))-iabs(ecol - erow)
          ekterm = emat(kk,rel_col)
          coeff_row(scol) = coeff_row(scol) + ekterm
        end do
@@ -799,12 +811,12 @@ c
       local_scol(1:30) =  dof_eqn_map(edest(1:30,j))
 c      
       do erow = 1, 30
-       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+       if( local_scol(erow) .ne. srow ) cycle
 @!DIR$ IVDEP
        do ecol = 1, 30
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if( scol .lt. srow ) cycle
-         kk = dcp(max(ecol,erow))-iabs(ecol - erow)
+         kk = dcp(max0(ecol,erow))-iabs(ecol - erow)
          ekterm = emat(kk,rel_col)
          coeff_row(scol) = coeff_row(scol) + ekterm
        end do
@@ -822,12 +834,12 @@ c
       local_scol(1:36) =  dof_eqn_map(edest(1:36,j))
 c      
       do erow = 1, 36
-       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+       if( local_scol(erow) .ne. srow ) cycle
 @!DIR$ IVDEP
        do ecol = 1, 36
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if( scol .lt. srow ) cycle
-         kk = dcp(max(ecol,erow))-iabs(ecol - erow)
+         kk = dcp(max0(ecol,erow))-iabs(ecol - erow)
          ekterm = emat(kk,rel_col)
          coeff_row(scol) = coeff_row(scol) + ekterm
        end do
@@ -841,16 +853,14 @@ c
 c      
       integer :: erow, ecol, scol, kk
       double precision :: ekterm
-c            
-      local_scol(1:60) =  dof_eqn_map(edest(1:60,j))
-c      
+            
       do erow = 1, 60
-       if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+       if( local_scol(erow) .ne. srow ) cycle
 @!DIR$ IVDEP
        do ecol = 1, 60
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if( scol .lt. srow ) cycle
-         kk = dcp(max(ecol,erow))-iabs(ecol - erow)
+         kk = dcp(max0(ecol,erow))-iabs(ecol - erow)
          ekterm = emat(kk,rel_col)
          coeff_row(scol) = coeff_row(scol) + ekterm
        end do
@@ -868,12 +878,12 @@ c
       local_scol(1:totdof) =  dof_eqn_map(edest(1:totdof,j))
 c      
       do erow = 1, totdof
-        if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle
+       if( local_scol(erow) .ne. srow ) cycle
 @!DIR$ IVDEP
         do ecol = 1, totdof
           scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
           if( scol .lt. srow ) cycle
-          kk = dcp(max(ecol,erow))-iabs(ecol - erow)
+          kk = dcp(max0(ecol,erow))-iabs(ecol - erow)
           ekterm = emat(kk,rel_col)
           coeff_row(scol) = coeff_row(scol) + ekterm
         end do
@@ -883,6 +893,7 @@ c
       end subroutine assem_a_row_gen
        
       end subroutine assem_a_row
+      
 
 c
 c     ****************************************************************
@@ -1148,9 +1159,10 @@ $add param_def
 c
       integer :: table(mxedof,*), elem_list(*), list_length,
      &           iprops(mxelpr,*) 
-      integer, dimension (:,:), pointer :: edest
+      integer, dimension (:,:), contiguous, pointer :: edest
 c
       integer :: i, elem, totdof, blk, rel_elem, dof      
+@!DIR$ ASSUME_ALIGNED table:32, elem_list:32, iprops:32, edest:32
 c
       do i = 1, list_length
        elem = elem_list(i)   ! absolute element number

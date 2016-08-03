@@ -1,5 +1,5 @@
 c
-c           Updated:  10/18/2015 rhd
+c           Updated:  17/30/2016 rhd
 c
 c
 c     ****************************************************************
@@ -167,12 +167,11 @@ c             point. build simple vectors, constants needed
 c             by the routine that updates a single point.
 c
       do i = 1, span
-c      
-      if( elem_killed_vec(i) ) then
-          stress_np1(i,1:6) = zero
-          cycle
-      end if
+        if( elem_killed_vec(i) ) stress_np1(i,1:6) = zero
+      end do
 c
+      do i = 1, span
+      if( elem_killed_vec(i) ) cycle	
       props(1) = e_vec(i)  ! emod
       props(2) = nu_vec(i)
       props(3) = n_power_vec(i)

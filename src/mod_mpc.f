@@ -70,9 +70,9 @@ c
       type :: mpc_eqn
         integer num_terms
         real constant
-        integer, pointer, dimension (:) :: node_list
-        integer, pointer, dimension (:) :: dof_list
-        real, pointer, dimension (:) :: multiplier_list
+        integer, pointer, contiguous, dimension (:) :: node_list
+        integer, pointer, contiguous, dimension (:) :: dof_list
+        real, pointer, contiguous, dimension (:) :: multiplier_list
       end type
 c
       type (mpc_eqn), allocatable, 
@@ -145,8 +145,8 @@ c
       type :: surface
         character (len=16) :: id
         integer num_elems
-        integer, pointer, dimension (:) :: elem_list
-        integer, pointer, dimension (:) :: face_list
+        integer, pointer, contiguous, dimension (:) :: elem_list
+        integer, pointer, contiguous, dimension (:) :: face_list
       end type
 c
       type :: tied_set
@@ -154,8 +154,8 @@ c
         real tolerance
         logical adjust_gap
         integer num_pairs
-        integer, pointer, dimension (:) :: master_list
-        integer, pointer, dimension (:) :: slave_list
+        integer, pointer, contiguous, dimension (:) :: master_list
+        integer, pointer, contiguous, dimension (:) :: slave_list
       end type
 c
 c
@@ -179,7 +179,7 @@ c               This structure is deallocated after the first MPC solve.
 c
       type :: nonzero_locs
         integer length
-        integer, pointer, dimension (:) :: loc_list
+        integer, pointer, contiguous, dimension (:) :: loc_list
       end type
 c
       type (nonzero_locs), allocatable, dimension(:) :: eqn_row
@@ -210,7 +210,7 @@ c               they are created and then deallocated for each MPC solve.
 c
       integer  dep_trms_len
 c
-      integer, allocatable,
+      integer, allocatable, 
      &        dimension (:) :: dep_check, dep_dof, 
      &                         ind_dof, num_terms,
      &                         dep_ptr, num_dep_trms,
