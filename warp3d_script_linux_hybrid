@@ -125,10 +125,12 @@ ulimit -s 100000
 #   =======  no need to change below here =======================
 #
 #
+is_Ubuntu=`uname -a | grep Ubuntu |wc --lines`
 export MPI_TYPE_MAX=4096
 export I_MPI_PIN_DOMAIN=omp
 export I_MPI_PIN_HOST=1
 export I_MPI_FABRICS=shm:tcp
+export I_MPI_SHM_LMT=shm
 #
 #       touch core file and make it non-writable in case we dump
 #
