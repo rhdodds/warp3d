@@ -309,6 +309,9 @@ c
 c      
       integer :: ireturn  ! local to this routine
       integer, allocatable :: scol_list(:)
+      character(len=200) mkl_string
+      integer :: mkl_num_thrds
+      integer, external :: mkl_get_max_threads
 c
 c              1. generate equation numbers for all unconstrained
 c                 nodal dof. dof_eqn_map(i) gives equation
@@ -322,8 +325,12 @@ c
 c
       if( local_debug ) write(out,*) '.. @ (1)  '
       call thyme( 21, 1 )
-      if( cpu_stats .and. show_details ) 
-     &    write(out,9400) num_threads, wcputime(1)
+      if( cpu_stats .and. show_details ) then
+      	  call mkl_get_version_string( mkl_string )
+      	  mkl_num_thrds = mkl_get_max_threads()
+          write(out,9400) num_threads, mkl_string(37:44),
+     &                    mkl_string(59:66), wcputime(1)
+      end if    
       if( .not. allocated ( dof_eqn_map ) ) then
           allocate( dof_eqn_map(num_struct_dof) )
           allocate( eqn_node_map(num_struct_dof) )
@@ -420,8 +427,9 @@ c
      & /,    '                job terminated' )
  9400  format (
      &  10x, '>> solver wall time statistics (secs):'
-     & /,15x,'number of threads used:         ',i10,
-     & /15x, 'starting work                 @ ',f10.2 )
+     & /,15x,'number of MKL threads used      ',i10,
+     & /,15x,'MKL version, build: ',5x,a8,1x,a8,
+     & /,15x,'starting work                 @ ',f10.2 )
  9409  format(
      &  15x, 'finished dof setup            @ ',f10.2 )
  9410  format(
