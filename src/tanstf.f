@@ -395,8 +395,15 @@ c
       use elem_block_data, only:  estiff_blocks 
       use main_data, only: asymmetric_assembly
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
+c
+      integer :: type
+      
+      integer :: iok, idummy, iout, dummy, blk, felem, num_enodes, 
+     &           num_enode_dof, totdof, span, utsz, nterms
+
+
       logical :: myblk
 c
 c
@@ -511,17 +518,19 @@ c
      &                            eps_n1_blocks, urcs_n1_blocks,
      &                            history_blk_list
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 $add include_tan_ek
 c
 c           parameter declarations
 c
-      dimension :: belinc(nnode,*)
-      logical ::   geonl
+      integer :: blk, span, felem, ngp, nnode, ndof, totdof, mat_type
+      integer :: belinc(nnode,*)
+      logical :: geonl
 c
 c           local declarations
 c
+      integer :: hist_size 
       logical :: local_debug
 #dbl      double precision :: zero
 #sgl      real :: zero
@@ -598,14 +607,17 @@ c
 c
       use main_data, only : trnmat, trn, incid, incmap
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
 c           parameters
 c
-#dbl      double precision
-#sgl      real
-     &  trnmte(mxvl,mxedof,3)
+       integer :: span, felem
+#dbl      double precision ::  trnmte(mxvl,mxedof,3)
+#sgl      real ::  trnmte(mxvl,mxedof,3)
+c
+c
+      integer :: nnode, ndof, totdof, j, k, node, jj
 @!DIR$ ASSUME_ALIGNED trnmte:64
 c
 c           for this block of elements, gather the transformation
@@ -658,14 +670,17 @@ c
 c
       subroutine dptstf_copy_history( local_hist, global_hist,
      &                                ngp, hist_size, span )
-      implicit integer (a-z)
+      implicit none
 c
 c               parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      integer :: ngp, hist_size, span
+#dbl      double precision ::
+#sgl      real ::
      & local_hist(span,hist_size,ngp),
      & global_hist(hist_size,ngp,span)
+c
+      integer :: k, j, i     
 @!DIR$ ASSUME_ALIGNED local_hist:64, global_hist:64
 c
 c      if( ngp .ne. 8 ) then
@@ -718,10 +733,12 @@ c
 c
       subroutine tanstf_allocate( local_work )
       use segmental_curves, only : max_seg_points, max_seg_curves
-      implicit integer (a-z)
+      implicit none
 
 $add common.main
 $add include_tan_ek
+c
+      integer :: error
 #dbl      double precision :: zero
 #sgl      real :: zero
       data zero / 0.0d00 /
@@ -832,10 +849,11 @@ c     ****************************************************************
 c
 c
       subroutine tanstf_deallocate( local_work )
-      implicit integer (a-z)
+      implicit none
 $add common.main
 $add include_tan_ek
 c
+      integer :: local_mt, error
       logical :: local_debug
 c
       local_debug = .false.
@@ -955,9 +973,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine tanstf_zero_vector( vec, n )
-#dbl      double precision
-#sgl      real
-     &  vec(n), zero
+      implicit none
+c
+      integer :: n      
+#dbl      double precision :: vec(n), zero
+#sgl      real :: vec(n), zero
       data zero / 0.0d00 /
 @!DIR$ ASSUME_ALIGNED vec:64
 c

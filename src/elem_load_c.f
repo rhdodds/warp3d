@@ -1162,14 +1162,15 @@ c
 c
       use main_data
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
 c     parameter declarations
 c     ----------------------
 c
-      integer element, etype, nnode, face, elem_nodes(*)
-      logical tet_elem
+      integer::  element, etype, nnode, face
+      integer :: elem_nodes(*)
+      logical :: tet_elem
 c     
 #dbl      double precision
 #sgl      real
@@ -1179,26 +1180,26 @@ c
 c     declare local variables 
 c     -----------------------   
 c
-#dbl      double precision
-#sgl      real 
+#dbl      double precision ::
+#sgl      real ::
      &     jacob(3,3), jacobi(3,3), nrmvec(3), sf(32), dsf(32,3), 
      &     xi, eta, zeta, oecoord(3,mxndel), lvec(3),
      &     dwdt, dv1, dv2, dv3, dwidt, du1, du2, du3, dwi,
      &     dsidx, dsidy, dsidz, dsidf, dwdf, fpv, g1, g2, g3, nv1,
-     &     zero, half, one, four, twlv, x, y, z
-      logical debug
-      integer enode, fnodes(10), node, nfnode, fnd
+     &     zero, half, one, four, twlv, x, y, z, det 
+      logical ::  debug
+      integer :: enode, fnodes(10), node, nfnode, fnd, ierr
       data zero, half, one, four, twlv, debug 
-     &     / 0.0, 0.5, 1.0, 4.0, 12.0, .false. /
+     &     / 0.0d0, 0.5d0, 1.0d0, 4.0d0, 12.0d0, .false. /
 c
-      if(debug) write(*,*) '>> In piston_face_intens'
+      if( debug ) write(*,*) '>> In piston_face_intens'
 c
       face_intens = zero
 c
 c     determine the center of an element face
 c
       call ccfe( xi, eta, zeta, face, tet_elem )
-      if(debug) write(*,9010) xi, eta, zeta
+      if( debug ) write(*,9010) xi, eta, zeta
 c
 c     determine original face normal vector (outwards)
 c
@@ -1208,7 +1209,7 @@ c
          oecoord(3,node) = c(crdmap(elem_nodes(node))+2)
       end do   
 c
-      if ( tet_elem ) then
+      if( tet_elem ) then
          call tet_face_nvec( xi, eta, zeta, oecoord, lvec,
      &        element, etype, nnode, face )
       else
@@ -1223,31 +1224,31 @@ c
       call eqelfn( fnodes, etype, face, nfnode )
       call shapef( etype, xi, eta, zeta, sf )
       dwdt = zero
-      if (debug) then
-         x = 0
-         y = 0
-         z = 0
+      if( debug ) then
+         x = zero
+         y = zero
+         z = zero
       end if
 c
 c        get the velocities for each node on face and then
 c        take the dot product with org. face vector
 c        
-      do node = 1,nfnode
+      do node = 1, nfnode
          fnd = fnodes(node)
          dv1 = v(3*elem_nodes(fnd)-2)
          dv2 = v(3*elem_nodes(fnd)-1)
          dv3 = v(3*elem_nodes(fnd)  )
          dwidt = dv1*lvec(1) + dv2*lvec(2) + dv3*lvec(3)
-         if(debug) write(*,9030) elem_nodes(fnd),
+         if( debug ) write(*,9030) elem_nodes(fnd),
      &        dv1,dv2,dv3,dwidt
-         if(debug) then
+         if( debug ) then
             x = x + oecoord(1,fnd)*sf(fnd)
             y = y + oecoord(2,fnd)*sf(fnd)
             z = z + oecoord(3,fnd)*sf(fnd)
          end if
          dwdt = dwdt + dwidt*sf(fnd)
       end do
-      if(debug) write(*,9040) dwdt 
+      if( debug ) write(*,9040) dwdt 
 c
 c     determine change in deformation wrt flow direction
 c
@@ -1264,7 +1265,7 @@ c
          du2 = u(3*elem_nodes(fnd)-1)
          du3 = u(3*elem_nodes(fnd)  )
          dwi = du1*lvec(1) + du2*lvec(2) + du3*lvec(3)
-         if(debug) write(*,9050) elem_nodes(fnd),
+         if( debug ) write(*,9050) elem_nodes(fnd),
      &        du1,du2,du3,dwi
 c          get the derivative of shape functions wrt real coordinates
          dsidx = dsf(fnd,1)*jacobi(1,1) + dsf(fnd,2)*jacobi(1,2) 
@@ -1276,10 +1277,10 @@ c          get the derivative of shape functions wrt real coordinates
 c          get the derivatives shape function wrt flow direction
 c          and sum
          dsidf = dsidx*fdirc(1) + dsidy*fdirc(2) + dsidz*fdirc(3)
-         if(debug) write(*,9060) dsidx,dsidy,dsidz,dsidf
+         if( debug ) write(*,9060) dsidx,dsidy,dsidz,dsidf
          dwdf  = dwdf + dwi*dsidf
       end do
-      if(debug) write(*,9070) dwdf
+      if( debug ) write(*,9070) dwdf
 c
 c     compute piston theory flow pressure
 c
@@ -1290,10 +1291,10 @@ c
       nv1 = g1*fpv*( one + g2*fpv + g3*fpv*fpv )
 c
       face_intens = p3*(one+nv1)
-      if(debug) write(*,9080) face_intens
-      if(debug) write(*,9090) x, y, z
+      if( debug ) write(*,9080) face_intens
+      if( debug ) write(*,9090) x, y, z
 c
-      if(debug) write(*,*) '>> Leaving piston_face_intens'
+      if( debug ) write(*,*) '>> Leaving piston_face_intens'
 c
  9010 format(4x,'(xi,eta,zeta)            ',5x,3f10.6 )
  9020 format(4x,'lvec                     ',5x,3f10.6 )

@@ -25,38 +25,43 @@ c
 c
 c
       subroutine drive_eps_sig_internal_forces( step, iter,
-     &                                     material_cut_step )
+     &                                          material_cut_step )
 c
       use elem_block_data,   only :  einfvec_blocks, edest_blocks
       use elem_extinct_data, only :  dam_blk_killed, dam_ifv, dam_state
       use damage_data, only : growth_by_kill
       use main_data, only: umat_serial
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
+      integer :: step, iter
       logical :: material_cut_step
 c
 c             locals
 c
+      integer :: blk, felem, mat_type, now_thread, num_enodes, 
+     &           num_enode_dof, span, i, j, kkk, totdof
+      integer :: num_term_ifv_threads(max_threads), 
+     &           idummy1(1), idummy2(1)
+      integer, external :: omp_get_thread_num
+c
 #sgl      real, allocatable, dimension(:) ::
 #dbl      double precision, allocatable, dimension(:) ::
      &  block_energies, block_plastic_work
-#sgl      real, allocatable, dimension(:,:) ::
 c
 #sgl      real ::
 #dbl      double precision ::
      & zero, mag, dummy(mxvl,mxedof), start_time, end_time,
-     & omp_get_wtime, sum_ifv_threads(max_threads)
-c
-      integer :: num_term_ifv_threads(max_threads), 
-     &           idummy1(1), idummy2(1)
-c
+     & sum_ifv_threads(max_threads)
+c     
+      double precision, external :: omp_get_wtime
       logical, allocatable, dimension(:)  :: step_cut_flags,
      &    blks_reqd_serial
+c     
       logical :: local_debug, umat_matl
       real :: spone
-      data zero, local_debug, spone / 0.0d00, .false., 1.0d0 /
+      data zero, local_debug, spone / 0.0d00, .false., 1.0 /
 c
 c             MPI:
 c               alert workers we are in the strain-
@@ -257,7 +262,7 @@ c
      &                iprops, felem, sum_ifv_threads(now_thread),
      &                num_term_ifv_threads(now_thread),
      &                einfvec_blocks(blk)%ptr(1,1), dam_ifv,
-     &                dam_state,iout )
+     &                dam_state, out )
          else
            call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,
      &                ifv(1),
@@ -360,19 +365,24 @@ c
       use segmental_curves, only : max_seg_points, max_seg_curves
       use damage_data, only : dam_ptr, growth_by_kill
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 $add include_sig_up
+c
+      integer :: blk, iter, step
 #dbl      double precision
 #sgl      real
-     &    zero, block_energy, block_plastic_work
+     &    block_energy, block_plastic_work
       logical material_cut_step
 c
+      integer :: elem, ii, jj, span, felem, matnum, mat_type, 
+     &           num_enodes, num_enode_dof, totdof, num_int_points,
+     &           elem_type, int_order, cohes_type, surface
+      double precision :: zero
       integer, external :: omp_get_thread_num
       logical local_debug, geo_non_flg, bbar_flg, tet_elem, tri_elem,
      &            axisymm_elem, cohesive_elem, used_flg
       data zero, local_debug / 0.0d00, .false. /
-      integer :: elem, ii, jj
 #dbl      double precision :: gp_coords(mxvl,3,mxgp)
 #sgl      real :: gp_coords(mxvl,3,mxgp)
 c
@@ -605,7 +615,9 @@ c     ****************************************************************
 c
 c
       subroutine do_nleps_block_a
-     &                          
+      implicit none                        
+c
+      integer :: i, elem_num
 c
       local_work%block_has_nonlocal_solids = .false.
       if( .not. nonlocal_analysis ) return ! regular local analysis
@@ -653,11 +665,13 @@ c
       subroutine recstr_allocate( local_work )
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
-      implicit integer (a-z)
+      implicit none
 
 $add common.main
 $add include_sig_up
-      double precision zero
+c
+      integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      double precision :: zero
 	  data zero / 0.0d00 /
 c
       local_mt = local_work%mat_type
@@ -927,10 +941,11 @@ c     ****************************************************************
 c
 c
       subroutine recstr_deallocate( local_work )
-      implicit integer (a-z)
+      implicit none 
 $add common.main
 $add include_sig_up
 c
+      integer :: local_mt, error
       logical :: local_debug
 c
       local_debug = .false.
@@ -1237,14 +1252,16 @@ c
 c
       use segmental_curves, only : max_seg_points, max_seg_curves
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 $add include_sig_up
 c
 c           parameter declarations
 c
+      integer :: blk, span, felem, ngp, nnode, ndof, totdof, mat_type,
+     &           step, iter, hist_size
       logical :: geonl
-      dimension belinc(nnode,*), bcdst(totdof,*)
+      integer :: belinc(nnode,*), bcdst(totdof,*)
 #dbl      double precision ::
 #sgl      real ::
      & ce_0(mxvl,*), ce_mid(mxvl,*), ue(mxvl,*), due(mxvl,*),
@@ -1252,6 +1269,7 @@ c
 c
 c           local declarations
 c
+      integer :: elem_type, surf, k, j, i, matl_no
       logical ::local_debug, update, update_coords, middle_surface
 #dbl      double precision ::
 #sgl      real ::
@@ -1534,14 +1552,17 @@ c     ****************************************************************
 c
 c
       subroutine recstr_gastr( mlocal, mglobal, ngp, nprm, span )
-      implicit integer (a-z)
+      implicit none 
 $add param_def
 c
 c               parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      integer :: ngp, nprm, span
+#dbl      double precision ::
+#sgl      real ::
      & mlocal(mxvl,nprm,*), mglobal(nprm,ngp,*)
+c
+      integer :: k, j, i      
 @!DIR$ ASSUME_ALIGNED mlocal:64, mglobal:64  
 c
 c           unroll inner loop for most common number of integration
@@ -1595,8 +1616,13 @@ c
 c
       subroutine allocate_ifv( action  )
       use elem_block_data, only:  einfvec_blocks
-      implicit integer (a-z)
+      implicit none
 $add common.main
+c
+      integer :: action
+c
+      integer :: iok, blk, felem, num_enodes, num_enode_dof, totdof, 
+     &           span       
 c
       select case ( action )
       case( 1 )
@@ -1688,7 +1714,7 @@ c
       use elem_block_data, only:  solid_interface_lists
       use main_data, only:  nonlocal_analysis
 c
-      implicit integer (a-z)
+      implicit none
 $add param_def
 $add include_sig_up
 c
@@ -1696,6 +1722,9 @@ c
 c
 c           local declarations.
 c
+      integer :: span, felem, iout, iter, blk, rel_elem, j, n, step,
+     &           elem_top, elem_bott, matl_top, ngp_top, ngp_bott,
+     &           matl_bott, top_mat_model, bott_mat_model 
       logical :: local_debug
 #dbl      double precision :: 
 #sgl      real ::
@@ -1903,8 +1932,10 @@ c
       subroutine recstr_get_solid_matl( elem_top, elem_bott,
      &              top_model, bott_model )
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
+c
+      integer :: elem_top, elem_bott, top_model, bott_model
 c
 c           extract WARP3D material type for top & bottom
 c           solid element
@@ -1937,16 +1968,18 @@ c
      &                top_local_vals, bott_local_vals, iout, nsize )
       use elem_block_data, only:  nonlocal_flags, nonlocal_data_n
 c
-      implicit integer (a-z)
+      implicit none
 c
 c           parameter declarations
 c
+      integer :: elem_top, elem_bott, iout, nsize
 #dbl      double precision ::
 #sgl      real ::
      &  top_local_vals(nsize), bott_local_vals(nsize)
 c
 c           local declarations
 c
+      integer :: n
       logical :: chk1, chk2
 c
       n = nsize
@@ -2007,15 +2040,22 @@ c
 c
       use main_data, only: elems_to_blocks
       use elem_block_data, only: urcs_n_blocks, eps_n_blocks
-      implicit integer (a-z)
+      implicit none
 $add common.main
+c
+c           global declarations
+c
+      integer :: solid_elem, ngp_solid
+#dbl      double precision ::
+#sgl      real ::
+     &    stress_n(nstrs,mxgp), eps_n(nstr,mxgp)
 c
 c           local declarations
 c
+      integer :: blk, span, felem, rel_elem, i
       logical :: local_debug
-#dbl      double precision ::
-#sgl      real ::
-     &    zero, stress_n(nstrs,mxgp), eps_n(nstr,mxgp)
+      double precision :: zero
+           
 c
 c           given solid element, build 2D arrays of strain-stress
 c           values at integration points. use service routine
