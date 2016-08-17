@@ -4,7 +4,7 @@ c     *                      subroutine tanstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 01/10/2016 rhd             *
+c     *                   last modified : 08/16/2016 rhd             *
 c     *                                                              *
 c     *     drive computation of all element [K]s. can be symmetric  *
 c     *     (store upper-triangle) or asymmetric (store full [K])    *
@@ -19,18 +19,23 @@ c
       use elem_block_data, only : estiff_blocks, edest_blocks
       use main_data,       only : asymmetric_assembly
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
 c                       parameter dclarations
 c
-      logical ::  first 
+      logical :: first 
+      integer :: now_step, now_iter
+c      
 c                       local declarations
 c
 #dbl      double precision ::
 #sgl      real ::
-     &  zero, start_estiff, end_estiff, omp_get_wtime
+     &  zero, start_estiff, end_estiff
+      double precision, external :: omp_get_wtime
       logical :: local_debug
+      integer :: blk, now_thread
+      integer, external :: omp_get_thread_num
       data local_debug, zero / .false., 0.0d00 /
 c
 c
@@ -106,7 +111,7 @@ c     *                      subroutine do_nlek_block                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/27/2015 rhd              *
+c     *                   last modified : 8/16/2016 rhd              *
 c     *                                                              *
 c     *     computes the global nonlinear stiffness                  *
 c     *     matrices for a block of elements. the data structures    *
@@ -131,13 +136,15 @@ c
      &                              axisymm_ele_types,
      &                              nonlocal_analysis,
      &                              asymmetric_assembly,
-     &                              dmatprp, imatprp
+     &                              dmatprp, imatprp,
+     &                              temperatures_ref, 
+     &                              fgm_node_values_defined
 c
       use damage_data, only : dam_ptr, growth_by_kill
 c 
       use contact, only : use_contact     
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
 c                       parameter declarations
@@ -152,7 +159,12 @@ $add include_tan_ek
 #sgl      real ::
      &  zero, lambda(mxvl,3,3) ! on stack
       logical :: local_debug, geo_non_flg, bbar_flg, 
-     &           symmetric_assembly, block_is_killable
+     &           symmetric_assembly, block_is_killable 
+      integer :: felem, elem_type, int_order, mat_type, num_enodes,
+     &           num_enode_dof, totdof, num_int_points, span, utsz,
+     &           cohes_type, surface, matnum, nrow_ek, ispan, relem,
+     &           element
+c     
       data local_debug, zero / .false., 0.0d0 /
 c
       felem          = elblks(1,blk)
@@ -361,7 +373,7 @@ c
      &     /,10x,'elem_type, int_order, geo_non_flg:',2i10,l10,
      &     /,10x,'bbar_flg:                        :',l10 )
 c
-      end
+      end      
 c     ****************************************************************
 c     *                                                              *
 c     *                subroutine estiff_allocate                    *
