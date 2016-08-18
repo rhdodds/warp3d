@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: June 18, 2016
+#   Last modifications: August 17, 2016
 #
 #   Description:
 #
@@ -59,6 +59,7 @@
 #              5/6/2016  add align 64 for some .f
 #              6/7/2016  add mm10_f.f, use -O3 for oustates.f
 #              6/18/2016 remove f_clmloc, mod_crystals.f dependencies 
+#              8/17/2016 added new macro F90TRAP
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
@@ -83,15 +84,20 @@
 #                the "pre" makefiles: Makefile.linux_em64t.omp
 #                or Makefile.linux_em64t.mpi
 #
-F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz
-F90INC = -xHost -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
+#F90TRAP = -ftrapuv -check uninit
+F90TRAP = 
+F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz $(F90TRAP)
+INLINEOPT =  -no-inline-factor
+#INLINEOPT =  -inline-level=0   # no inlining
+F90INC = -xHOST -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #F90INC =  -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #
 PROFILEOPT =
-#PROFILEOPT = -pg
+#PROFILEOPT = -pg  # for use with gprof
+#PROFILEOPT = -g   # for use with Intel Adviser
 #
 F90      = $(COMPILER) $(F90OPTS1) $(F90INC) \
-           $(MPIOPT) $(OPENMPOPT) $(PROFILEOPT)
+           $(MPIOPT) $(OPENMPOPT) $(INLINEOPT) $(PROFILEOPT)
 LINK90   = $(COMPILER) $(F90OPTS1) $(MPIOPT) \
            $(OPENMPOPT) $(PROFILEOPT)
 #
