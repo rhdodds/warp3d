@@ -31,6 +31,7 @@ c
      &                    mm10_rs,pt1,curslip, B_eff, s_trace
       double precision, dimension(max_slip_sys) :: dgammadtau
 c
+      pt1 = 0.1d0
 c     Store the slip increments
 c
 c ******* START: Add new Constitutive Models into this block *********

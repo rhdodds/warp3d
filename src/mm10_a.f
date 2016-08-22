@@ -156,6 +156,8 @@ c
           eh2  = indexes_common(2,2)
           sh3  = indexes_common(3,1)
           eh3  = indexes_common(3,2)
+          write(*,*) sh2, sh3, hist_sz
+          write(*,*) co, cn, i
           call mm10_copy_cc_hist( history_n(i,co:cn),
      &         history_n(i,sh2:eh2),
      &         history_n(i,sh3:eh3),
@@ -542,6 +544,8 @@ c
 c
 c       So total history size is going to be:
 c
+      write(*,*) 'common_hist_size', common_hist_size
+      write(*,*) 'one_crystal_hist_size', one_crystal_hist_size
 c
       size_data(1) = common_hist_size+
      &               ncrystals*(one_crystal_hist_size)
@@ -985,8 +989,8 @@ c     *     store other output                                       *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_solve_crystal(props, np1, n, cut, iout, fat,gp,
-     &                  p_strain_ten_c,iter_0_extrapolate_off)
+      subroutine mm10_solve_crystal(props, np1, n, cut, iout, fat,
+     &                  gp,p_strain_ten_c,iter_0_extrapolate_off)
       use mm10_defs
       use main_data, only: asymmetric_assembly
       implicit none
@@ -1032,9 +1036,11 @@ c
 c
       call mm10_formvecs(props, np1, n, np1%stress, np1%tau_tilde,
      &  vec1, vec2)
+c      write(*,*) np1%tau_tilde(1), vec1(1)
 c
       call mm10_update_rotation(props, np1, n, vec1, vec2)
 c
+c      write(*,*) p_strain_ten_c(1:6)
       call mm10_output(props, np1, n, vec1, vec2,p_strain_ten_c)
 c
       return
@@ -1551,9 +1557,11 @@ c
 c
       double precision, dimension(9) :: Rur
       double precision, dimension(6) :: dstrain
-      double precision :: dt, T
+      double precision :: dt, T, zero
       integer :: step, elem, gp, iter
       type(crystal_state) :: np1
+c
+      zero = 0.d0
 c
       np1%R = reshape(Rur(1:9), (/3,3/))
       np1%D = dstrain(1:6)
@@ -1563,6 +1571,28 @@ c
       np1%elem = elem
       np1%iter = iter
       np1%gp = gp
+c     Other arrays that are initialized to zero
+      np1%Rp = zero
+      np1%stress = zero
+      np1%eps = zero
+      np1%euler_angles = zero
+      np1%tau_l = zero
+      np1%slip_incs = zero
+      np1%gradFeinv = zero
+      np1%tangent = zero
+      np1%tau_tilde = zero
+      np1%tt_rate = zero
+      np1%dg = zero
+      np1%tau_v = zero
+      np1%tau_y = zero
+      np1%mu_harden = zero
+      np1%work_inc = zero
+      np1%p_work_inc = zero
+      np1%p_strain_inc = zero
+      np1%ms = zero
+      np1%qs = zero
+      np1%qc = zero
+      np1%u = zero
 c
       end subroutine
 
@@ -1808,10 +1838,24 @@ c     Continuum effective rate
       dgc = np1%dg / np1%tinc
 c
 c     New shear modulus
+c      write(*,*) '.. np1%tinc: ',np1%tinc
+c      write(*,*) '.. mu_0, D_0: ',props%mu_0, props%D_0
+c      write(*,*) '.. T_0, temp: ',props%T_0,np1%temp      
+
+      if(np1%temp.eq.0.d0) then
+        np1%mu_harden = props%mu_0
+      else
       np1%mu_harden = props%mu_0 - props%D_0 / (exp(props%T_0/np1%temp)
      &      - 1.0d0)
+      endif
 c
 c     Get the threshold contributions
+c
+c
+c      write(*,*) '.... props%eps_dot_0_v: ', props%eps_dot_0_v
+c      write(*,*) '.... dgc: ', dgc
+c      write(*,*) '.... props%q_v: ', props%q_v
+c      
       np1%tau_v = props%tau_hat_v*(1.d0-(props%boltzman*np1%temp
      &       /(np1%mu_harden*(props%burgers**3.d0)*props%G_0_v)*
      &       dlog(props%eps_dot_0_v/dgc))**(1.d0/props%q_v))

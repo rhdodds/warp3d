@@ -446,14 +446,22 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1,vec2
+      double precision :: zero
+c
+      zero = 0.d0
 c
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
+         vec1 = zero
+         vec2 = zero
       elseif (props%h_type .eq. 2) then ! MTS
+         vec1 = zero
+         vec2 = zero
       elseif (props%h_type .eq. 3) then ! User
+         vec1 = zero
+         vec2 = zero
       elseif (props%h_type .eq. 4) then ! ORNL
         call mm10_v_ornl(props, np1, n, stress, tt, 
-
      &   vec1, vec2)
       elseif (props%h_type .eq. 7) then ! MRR
         call mm10_v_mrr(props, np1, n, stress, tt, 
@@ -826,13 +834,13 @@ c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
       dbar = 0.0d0
       do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
+        call mm10_slipinc(props, np1, n, stress, tt(1), i, slipinc)
         dbar = dbar + slipinc*np1%ms(1:6,i)
       end do
       elseif (props%h_type .eq. 2) then ! MTS
       dbar = 0.0d0
       do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
+        call mm10_slipinc(props, np1, n, stress, tt(1), i, slipinc)
         dbar = dbar + slipinc*np1%ms(1:6,i)
       end do
       elseif (props%h_type .eq. 3) then ! User
@@ -1621,6 +1629,9 @@ c
 c
       double precision :: slipinc, mm10_rs
       double precision :: rs
+c      write(*,*) stress
+c      write(*,*) i
+c      write(*,*) tt
 c
       rs = mm10_rs(props, np1, n, stress, tt, i)
       slipinc = np1%dg/tt * dabs(rs/tt)**(props%rate_n-1.0)*rs
