@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: August 17, 2016
+#   Last modifications: August 20, 2016
 #
 #   Description:
 #
@@ -60,6 +60,7 @@
 #              6/7/2016  add mm10_f.f, use -O3 for oustates.f
 #              6/18/2016 remove f_clmloc, mod_crystals.f dependencies 
 #              8/17/2016 added new macro F90TRAP
+#              8/20/2016 combined mm03p.f & mm03.f into mm03.f for more inlining
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
@@ -246,7 +247,6 @@ OBJ =	 \
 	$(OD)/mm01$O	 \
 	$(OD)/mm02$O	 \
 	$(OD)/mm03$O	 \
-	$(OD)/mm03p$O	 \
 	$(OD)/mm04$O	 \
 	$(OD)/mm05$O	 \
 	$(OD)/mm06$O	 \
@@ -776,7 +776,7 @@ $(OD)/dielem_b$O : dielem_b.f
 	$(RMC)  $@
 	$(RMC)  filt_dielem_b.f
 	$(FILTER) < dielem_b.f > filt_dielem_b.f
-	$(F90) -O2 -ip  -c filt_dielem_b.f
+	$(F90) -O2 -ip -c filt_dielem_b.f
 	$(MVC) filt_dielem_b$O  dielem_b$O
 	$(MVC) dielem_b$O $@
 
@@ -1262,7 +1262,7 @@ $(OD)/inmat$O : inmat.f common.main \
 	$(RMC)  $@
 	$(RMC)  filt_inmat.f
 	$(FILTER) < inmat.f > filt_inmat.f
-	$(F90) -O2 -ip  -c filt_inmat.f
+	$(F90) -O0 -c filt_inmat.f
 	$(MVC) filt_inmat$O  inmat$O
 	$(MVC) inmat$O $@
 
@@ -1380,18 +1380,9 @@ $(OD)/mm03$O : mm03.f
 	$(RMC)  $@
 	$(RMC)  filt_mm03.f
 	$(FILTER) < mm03.f > filt_mm03.f
-	$(F90) -O3 -ip  -c filt_mm03.f
+	$(F90) -O3 -ip  -align array64byte -c filt_mm03.f
 	$(MVC) filt_mm03$O  mm03$O
 	$(MVC) mm03$O $@
-
-$(OD)/mm03p$O : mm03p.f param_def \
-                   $(OD)/mod_segmental_curves$O
-	$(RMC)  $@
-	$(RMC)  filt_mm03p.f
-	$(FILTER) < mm03p.f > filt_mm03p.f
-	$(F90) -O3 -ip  -c filt_mm03p.f
-	$(MVC) filt_mm03p$O  mm03p$O
-	$(MVC) mm03p$O $@
 
 $(OD)/mm04$O : mm04.f
 	$(RMC)  $@
@@ -1405,7 +1396,7 @@ $(OD)/mm05$O : mm05.f
 	$(RMC)  $@
 	$(RMC)  filt_mm05.f
 	$(FILTER) < mm05.f > filt_mm05.f
-	$(F90) -O3 -ip  -c filt_mm05.f
+	$(F90) -O3 -ip -c filt_mm05.f
 	$(MVC) filt_mm05$O  mm05$O
 	$(MVC) mm05$O $@
 
@@ -1445,7 +1436,8 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_a.f
 	$(FILTER) < mm10_a.f > filt_mm10_a.f
-	$(F90) -O3 -ip  -inline-level=1 -c filt_mm10_a.f -opt-report=5
+	$(F90) -O0 -c filt_mm10_a.f -opt-report=5
+#	$(F90) -O3 -ip  -inline-level=1 -c filt_mm10_a.f -opt-report=5
 	$(MVC) filt_mm10_a$O  mm10_a$O
 	$(MVC) mm10_a$O $@
 

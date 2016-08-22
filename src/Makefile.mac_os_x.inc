@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: June 18, 2016
+#   Last modifications: August 20, 20916
 #
 #   Description:
 #
@@ -70,6 +70,8 @@
 #   rhd   5/6/2016  add align64 to some .f
 #   rhd   6/7/2016  add mm10_f.f and make oustates use -O3
 #   rhd   6/18/2016 renove f_clmloc, mod_crystals.f dependency
+#   rhd   8/17/2016 added new macro F90TRAP
+#   rhd   8/20/2016 combined mm03p.f & mm03.f into mm03.f for more inlining
 #
 #
 #
@@ -96,9 +98,13 @@
 #
 #        Intel F90 (fort) compiler options. see also Makefile.mac_os_x.omp
 #
+#F90TRAP = -ftrapuv -check uninit
+F90TRAP = 
 F90OPTS1 =  -fpconstant -fixed -72 -traceback -no-inline-factor
-F90OPTS2 =  -module $(ODIR) -ftz -xHost
+F90OPTS2 =  -module $(ODIR) -ftz -xHost  $(F90TRAP)
 PROFILEOPT =
+#PROFILEOPT = -pg  # for use with gprof
+#PROFILEOPT = -g   # for use with Intel Adviser
 #
 F90      = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) $(PROFILEOPT)
 #
@@ -244,7 +250,6 @@ OBJ =	 \
 	$(OD)/mm01$O	 \
 	$(OD)/mm02$O	 \
 	$(OD)/mm03$O	 \
-	$(OD)/mm03p$O	 \
 	$(OD)/mm04$O	 \
 	$(OD)/mm05$O	 \
 	$(OD)/mm06$O	 \
@@ -678,15 +683,6 @@ $(OD)/direct_sparse_mkl$O : direct_sparse_mkl.f
 	$(MVC) filt_direct_sparse_mkl$O  direct_sparse_mkl$O
 	$(MVC) direct_sparse_mkl$O $@
 
-$(OD)/discon$O : discon.f common.main \
-                   param_def $(OD)/mod_main$O
-	$(RMC)  $@
-	$(RMC)  filt_discon.f
-	$(FILTER) < discon.f > filt_discon.f
-	$(F90) -O2 -ip  -c filt_discon.f
-	$(MVC) filt_discon$O  discon$O
-	$(MVC) discon$O $@
-
 $(OD)/distributed_assembly$O : distributed_assembly.f \
                                  $(OD)/mod_local_stiffness$O  \
                                  param_def
@@ -758,8 +754,7 @@ $(OD)/dimrot$O : dimrot.f common.main \
 	$(MVC) filt_dimrot$O  dimrot$O
 	$(MVC) dimrot$O $@
 #
-#         note that OS X ifort 13.0.2 needs -O0 for code to
-#         function
+#         note lower opt level
 #
 $(OD)/dicmj$O : dicmj.f param_def \
                    $(OD)/mod_jintegral$O common.main \
@@ -1386,18 +1381,9 @@ $(OD)/mm03$O : mm03.f
 	$(RMC)  $@
 	$(RMC)  filt_mm03.f
 	$(FILTER) < mm03.f > filt_mm03.f
-	$(F90) -O3 -ip  -c filt_mm03.f
+	$(F90) -O3 -ip -align array64byte -c filt_mm03.f
 	$(MVC) filt_mm03$O  mm03$O
 	$(MVC) mm03$O $@
-
-$(OD)/mm03p$O : mm03p.f param_def \
-                   $(OD)/mod_segmental_curves$O
-	$(RMC)  $@
-	$(RMC)  filt_mm03p.f
-	$(FILTER) < mm03p.f > filt_mm03p.f
-	$(F90) -O3 -ip  -c filt_mm03p.f
-	$(MVC) filt_mm03p$O  mm03p$O
-	$(MVC) mm03p$O $@
 
 $(OD)/mm04$O : mm04.f param_def 
 	$(RMC)  $@
