@@ -30,6 +30,8 @@ c
       use distributed_stiffness_data, only: parallel_assembly_allowed,
      &      parallel_assembly_used, distributed_stiffness_used,
      &      initial_map_type, final_map_type
+      use mm10_defs, only : one_crystal_hist_size, common_hist_size
+c     
       implicit integer (a-z)
 $add common.main
 c
@@ -127,6 +129,7 @@ c
      &              initial_map_type, final_map_type,
      &              coarsening, agg_levels, interpolation, relaxation,
      &              sweeps, cf, cycle_type, max_levels
+     &              one_crystal_hist_size, common_hist_size
       call chk_data_key( fileno, 1, 0 )
 c
 c
