@@ -5,7 +5,7 @@ c     *              subroutine check_for_step_reduction             *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 6/11/03 rhd                *
+c     *                   last modified : 8/21/2016 rhd              *
 c     *                                                              *
 c     *        This routine branches on the type of load step        *
 c     *        reduction to check before computing the step.         *
@@ -16,7 +16,8 @@ c     ****************************************************************
 c
 c
 c
-      subroutine check_for_step_reduction( temp_load_fact, mf, mf_nm1 )
+      subroutine check_for_step_reduction( temp_load_fact, 
+     &                                     mf, mf_nm1 )
       use damage_data
       implicit integer (a-z)
       logical debug
@@ -33,6 +34,8 @@ c
          write(*,*) '   load_size_...: ',load_size_control_crk_grth
          write(*,*) '   crack_growth_type: ',crack_growth_type
       end if
+c
+      temp_load_fact = one
 c
 c        1) check for permanent step size reductions:
 c
@@ -72,11 +75,6 @@ c           - overshoot control for crack growth routines; reduces
 c             step size to prevent large overshoots of criterion
 c             for crack growth. Branch on type of crack growth if
 c             overshoot control is enabled.
-c
-c
-c             set temp load factor to one (ie. no load reduction)
-c
-      temp_load_fact = one
 c
       if ( overshoot_control_crk_grth ) then
          if ( crack_growth_type .eq. 2 ) then

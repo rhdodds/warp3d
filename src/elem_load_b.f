@@ -942,7 +942,7 @@ c
      &     tn1, pn1, un1, mn1, gn1, fn1(3), one, fac1, fac2, 
      &     mx, my, mz, norm
       logical debug
-      data one, debug / 1.0, .false. /
+      data zero, one, debug / 0.0d0, 1.0d0, .false. /
 c
       if (debug) write (*,*) ' >>>>> inside of interp_piston_params'
 c

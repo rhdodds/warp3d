@@ -743,7 +743,7 @@ c     *                  subroutine rotate_loads                     *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/1/02 rhd                 *
+c     *                   last modified : 8/21/2016 rhd              *
 c     *                                                              *
 c     *     this subroutine rotates the global nodal load vector     *
 c     *     into constraint compatable global coordinates.           *
@@ -755,17 +755,21 @@ c
 c
       use main_data, only : trn, trnmat, inverse_incidences
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
-#dbl      double precision
-#sgl      real
-     &  ndlod(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof),
-     &  rload(*)
-      logical debug, loads_found, trne(mxvl,mxndel)
-      data zero / 0.0 /
+#dbl      double precision :: rload(*)
+#sgl      real :: rload(*)
+      logical :: debug
 c
-      if ( debug ) write(*,*) '>> in rotate_loads -- rotating loads'
+      integer :: node, dptr, ndof, i
+#dbl      double precision ::
+#sgl      real :: 
+     &  ndlod(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof)
+      logical :: loads_found, trne(mxvl,mxndel)
+      data zero / 0.0d0 /
+c
+      if( debug ) write(*,*) '>> in rotate_loads -- rotating loads'
 c
 c           loop over all the nodes in the structure. If the node
 c           has a local coordinate system for definition of
@@ -782,10 +786,8 @@ c           trne (local) arrays.
 c
 c           the value of ndof = 3 is hard coded here ....
 c
-      if ( debug ) write(*,*) '>> in rotate_loads...'
-c
       do node = 1, nonode
-       if ( .not. trn(node) ) cycle
+       if( .not. trn(node) ) cycle
        dptr        = dstmap(node)
        ndof        = iprops(4,inverse_incidences(node)%element_list(1))
        ndlod(1,1)  = rload(dptr+0)
@@ -793,13 +795,12 @@ c
        ndlod(1,3)  = rload(dptr+2)
        loads_found = abs(ndlod(1,1)) + abs(ndlod(1,2)) +
      &               abs(ndlod(1,3)) .ne. zero
-       if ( debug ) then
-         write(*,*) '>> node, dptr, ndof,
-     &              loads_found: ',node, dptr, ndof, loads_found
-         if ( loads_found ) write(*,9000) ndlod(1,1),
-     &                      ndlod(1,2), ndlod(1,3)
+       if( debug ) then
+         write(*,*) '>> node, dptr, ndof, loads_found: ',node, dptr, 
+     &    ndof, loads_found
+         if( loads_found ) write(*,9000) ndlod(1,1:3)
        end if
-       if ( .not. loads_found ) cycle
+       if( .not. loads_found ) cycle
 c
 c           extract trans. matrix to constraint compatable
 c           global coordinates for this node and transform the
@@ -823,8 +824,6 @@ c
        rload(dptr+2) = ndlod(1,3)
 c
       end do
-c
-      if ( debug ) write(*,*) '<< leave rotate_loads'
 c
       return
 c

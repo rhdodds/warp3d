@@ -1047,7 +1047,7 @@ c
         if ( abs(res) .lt. tol*sig_y ) then
            if ( lambda .lt. zero ) then       
              call mm05_find_pos_lambda(iout, sig_y, sig_t, equiv, 
-     &              aps_n, gamma, lambda, k_np1, Q_bar, H_bar, lg,
+     &              aps_n, gamma, lambda, k_np1, Q_bar, b, H_bar, lg,
      &              g, alpha_s, adaptive_possible, cut_step_size_now, 
      &              H_np1, tol, aps_np1 )
            end if              
@@ -1105,7 +1105,7 @@ c *                                                                 *
 c *******************************************************************
 c
        subroutine mm05_find_pos_lambda(iout, sigy, sig_t, equiv,
-     &            aps_n, gamma, lambda, k_np1, Q, H_bar, lg, g,
+     &            aps_n, gamma, lambda, k_np1, Q, b, H_bar, lg, g,
      &            alpha_n, adaptive_possible, cut_step_size_now,
      &            H_np1, tol, aps_np1 )
 
@@ -1278,7 +1278,7 @@ c
 c
       data zero, one, two, root2third
      &   / 0.0, 1.0, 2.0, 0.8164956809 /
-c
+c 
        aps_np1 = aps_n + lambda
        k_np1  = root2third*(sigy + Q_bar*(one-exp( -b*aps_np1 )))
        dk_np1 = root2third*b*Q_bar*(exp( -b*aps_np1 ))

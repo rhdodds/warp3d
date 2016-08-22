@@ -25,18 +25,21 @@ c
      &                      temper_nodes_ref
       use stiffness_data, only : total_lagrange_forces
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
-#dbl      double precision ::
-#sgl      real ::
-     &     react_sums(*)
+c
+      integer :: node, pgnum, ndof, elem, dva, lsttyp
+#dbl      double precision :: react_sums(*)
+#sgl      real :: react_sums(*)
       logical :: wide, eform, prec, newel, noheader,
-     &        react_totals_only, write_to_packet
-      character*8 :: doflbl(*)
-      character*20 :: hedtyp
+     &           react_totals_only, write_to_packet
+      character(len=8) :: doflbl(*)
+      character(len=20) :: hedtyp
 c
 c                       local declarations
 c
+      integer :: i, dof, sdof, fnsh, nitm, hfmtyp, fmtyp, nl, 
+     &           nvalues_out, lnum, cl, strt
 #dbl      double precision ::
 #sgl      real ::
      &     edva(mxvl,mxndof), nfac, one, zero, force_lag,
@@ -51,6 +54,7 @@ c
 c                       set the number of lines to be output per node.
 c
       hardcopy = .not. write_to_packet
+      nitm = 0
 c
       if( hardcopy ) then
         if( wide .and. prec ) then
@@ -182,7 +186,7 @@ c
 c
 c                       print the first line of nodal d/v/a/r/T output.
 c
-      if( nitm .gt. ndof ) then
+      if( nitm .gt. ndof ) then 
          fnsh = ndof
       else
          fnsh = nitm

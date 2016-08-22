@@ -2715,6 +2715,9 @@ c                  beta = shape_t = intfprps(,28)   [ shape_shear ]
 c                  ln = ratio_n   = intfprps(,25)   [ ratio_normal ]
 c                  lt = ratio_t   = intfprps(,26)   [ ratio_shear ]
 c
+      dn = zero; gn = zero; dGnt = zero; dGtn = zero
+      Gam_n = zero; Gam_t = zero
+c
       do i = 1, span
 c
       if ( elem_killed(i) ) cycle
@@ -2811,9 +2814,22 @@ c
      &        half, tol, one
       data half, tol, one / 0.5d00, 1.0d-08, 1.0d00 /
 c
+c                            bug in do while itr = 1.
+c                            for some set up step 1 iter = 1
+c                            floating invalid on fx = 
+c    
+c                            only detected with float trapping set	 
+c
       itr = 0
       dnb = half*dn
-      fx = Gam_n*(1-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt
+c      	write(iout,*) '.. Gam_n: ', Gam_n
+c      	write(iout,*) '.. dnb: ', dnb
+c      	write(iout,*) '.. dn: ', dn
+c      	write(iout,*) '.. alph: ', alph
+c      	write(iout,*) '.. m: ', m
+c      	write(iout,*) '.. Gam_n: ', Gam_n
+c      	write(iout,*) '.. dGnt: ', dGnt      	
+      fx = Gam_n*(one-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt      
 c
 c      Newton Raphson method is used to solve a nonlinear equation fx
 c      The solution of the nonlinear equation fx is unique,
@@ -2821,6 +2837,14 @@ c      and exists between 0 and dn. The initial guess is set to be
 c      0.5*dn. Please, see Ref. JMPS 57 (6), 891-908 (2009) for more detail.
 c
       do while ((abs(fx) .gt. tol) .and. (itr .lt. 200))
+c      	write(iout,*) '.. itr: ', itr
+c      	write(iout,*) '.. Gam_n: ', Gam_n
+c      	write(iout,*) '.. dnb: ', dnb
+c      	write(iout,*) '.. dn: ', dn
+c      	write(iout,*) '.. alph: ', alph
+c      	write(iout,*) '.. m: ', m
+c      	write(iout,*) '.. Gam_n: ', Gam_n
+c      	write(iout,*) '.. dGnt: ', dGnt      	
         fx = Gam_n*(one-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt
         dfx = (-alph*(one-dnb/dn)**(alph-one)*(m/alph+dnb/dn)**m +
      &        m*(one-dnb/dn)**alph*(m/alph+dnb/dn)**(m-one))*Gam_n/dn

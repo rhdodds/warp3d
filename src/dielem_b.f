@@ -304,7 +304,7 @@ c
 c
 c             quadrant I
 c
-      if( x_local.ge.zero .and. y_local.ge.zero ) then
+      if( x_local.gt.zero .and. y_local.gt.zero ) then
          theta = acos( abs(base)/r1 )
       end if
 c
