@@ -117,6 +117,8 @@ c
      9               4,  4,  4,  4,  4, 12,  4,  4,  4, 33,
      a               4,  8,  8,  4,  4,  8,  4,  8,  8,  8  /
 c
+      dvalue = zero
+      flt = zero
 c
       nent=nent+1
       nchar = 0

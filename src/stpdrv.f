@@ -265,7 +265,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/20/2016 rhd              *
+c     *                   last modified : 8/21/2016 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -323,6 +323,12 @@ c          and equivalent element nodal forces
 c          for end of step conditions. put into
 c          user specified nodal coordinate systems.
 c
+      if( now_step .eq. 1 ) then
+        mf = 1.0
+        mf_nm1 = 1.0
+        mf_ratio_change = .false.
+      end if     
+c
       call eqivld( mf, mf_nm1, mf_ratio_change, now_step, ldnum )
 c
 c          check if any algorithms require a smaller load step
@@ -344,8 +350,12 @@ c
          cnstrn(i) = cnstrn_in(i) * con_stp_factor
          if ( cnstrn_in(i) .eq. d32460 ) cnstrn(i) = d32460
       end do
-      call check_for_step_reduction( load_reduce_fact, mf,
-     &                               mf_nm1 )
+      if( now_step == 1 ) then
+      	 load_reduce_fact = 1.0d0
+      else
+        call check_for_step_reduction( load_reduce_fact, mf,
+     &                                mf_nm1 )
+      end if
       call modify_load( load_reduce_fact, mf, mf_nm1, now_step )
 c
 c          flags for new constraints and new dynamic

@@ -1666,29 +1666,33 @@ c     ****************************************************************
 c
 c
       subroutine inmat_fgm( status, prop_id )
-      implicit integer (a-z)
-      logical string, ok
-      character * 80 text, dums*1
-      character *(*) prop_id
-      real dumr
-#dbl      double precision
-#sgl      real
-     & dumd
+      implicit none
+c
+      integer :: status
+      character(len=*) :: prop_id
+c
+      integer :: idummy, ncstring
+      logical, external :: string
+      logical :: ok
+      character(len=80) :: text
+      real :: dumr
+      double precision :: dumd 
 c
       status = -1
-      if ( .not. string( dummy ) ) return
+      if( .not. string(idummy) ) return
       call entits( text, ncstring )
-      if ( ncstring .lt. 3 ) then
-         call errmsg2(30,dummy,prop_id,dumr,dumd)
+c      
+      if( ncstring .lt. 3 ) then
+         call errmsg2(30,idummy,prop_id,dumr,dumd)
          status = 1
          return
       end if
       ok = text(1:3) .eq. 'fgm' .or. text(1:3) .eq. 'FGM'
-      if ( ok ) then
+      if( ok ) then
          status = 0
       else
          status = 1
-         call errmsg2(30,dummy,prop_id,dumr,dumd)
+         call errmsg2(30,idummy,prop_id,dumr,dumd)
       end if
 c
       return

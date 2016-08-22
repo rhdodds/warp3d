@@ -1,7 +1,7 @@
 c
 c           user_routines_umat.f   Distribution version
 c
-c           Updated:  2/6/2015
+c           Updated: 8/20/2016 rhd
 c
 c
 c           The first routine here, umat_set_features, is called by WARP3D
@@ -81,21 +81,26 @@ c     ****************************************************************
      4 noel, npt, layer, kspt, kstep, kinc, kiter, kout,
      5 kthread, knumthreads, nonlocal_shared, nshared )
 c
-      implicit real*8(a-h,o-z)
-      parameter (nprecd=2)
+      implicit none
+      
+      integer :: ndi, nshr, ntens, nstatv, nprops, noel, npt, layer, 
+     1           kspt, kstep, kinc, kiter, kout, kthread, 
+     2           knumthreads, nshared
+      integer, parameter :: nprecd=2
 c
-      parameter(zero=0.d0, one=1.d0, two=2.d0, three=3.d0, six=6.d0,
-     &     enumax=.4999d0, toler=1.0d-6)
+      double precision :: stress(*), statev(nstatv),
+     1 ddsdde(ntens,ntens), ddsddt(ntens), drplde(ntens), stran(ntens),
+     2 dstran(ntens), predef(1), dpred(1), props(nprops), coords(3),
+     3 drot(3,3), dfgrd0(3,3), dfgrd1(3,3), nonlocal_shared(nshared)
 c
-      character*8 cmname
-      real*8 nonlocal_shared
-      dimension stress(*), statev(nstatv), ddsdde(ntens, ntens),
-     1 ddsddt(ntens), drplde(ntens), stran(ntens), dstran(ntens),
-     2 predef(1), dpred(1), props(nprops), coords(3), drot(3,3),
-     3 dfgrd0(3,3), dfgrd1(3,3), nonlocal_shared(nshared)
+      double precision :: time, dtime, temp, dtemp, sse, spd, scd, rpl,
+     1                    drpldt, celent, pnewdt                          
+     
+      character(len=8) cmname
+     
 c
 c
-c           local arrays
+c           locals
 c
 c              eelas  - elastic strains
 c              eplas  - plastic strains
@@ -104,9 +109,19 @@ c              flow   - plastic flow directions
 c              olds   - stress at start of increment
 c              oldpl  - plastic strains at start of increment
 c
-      dimension eelas(6), eplas(6), alpha(6), flow(6), olds(6),
-     &          oldpl(6)
-      logical debug
+      integer :: k1, k2
+      double precision :: eelas(6), eplas(6), alpha(6), flow(6), 
+     1                    olds(6), oldpl(6)
+      logical, parameter ::  debug = .false.
+      double precision :: cte, emod, enu, ebulk3, eg2, eg, eg3, elam,
+     1                    old_eqpl, deqpl, smises, syield, hard, shydro, 
+     2                    avg_stress, effg, effg2, effg3, efflam, effhrd
+      double precision :: state_np1, dspd, dsst
+      double precision, parameter :: zero=0.d0, one=1.d0, two=2.d0,
+     1                               three=3.d0, six=6.d0,
+     2                               enumax=.4999d0, toler=1.0d-6
+c
+     
 c
 c ----------------------------------------------------------------
 c           umat for isotropic elasticity and mises plasticity
@@ -165,6 +180,8 @@ c
       call rotsig( statev(13), drot, alpha, 1, 3, 3)
       old_eqpl   = statev(19)
       deqpl      = zero
+      dspd       = zero
+      dsst       = zero
       state_np1  = zero
       if( old_eqpl .gt. zero ) state_np1 = two
 c
@@ -239,7 +256,6 @@ c
 c
 c                 calculate increment of plastic dissipation
 c
-         dspd = zero
          do k1 = 1, 6
            avg_stress = ( stress(k1) + olds(k1) ) / two
            dspd = dspd +  avg_stress * ( eplas(k1) - oldpl(k1) )
@@ -272,7 +288,6 @@ c
 c          store elastic strains, plastic strains, shift tensor
 c          and updated (scalar) plastic strain in state variable array.
 c
-      dsst = zero
       do k1 = 1, 6
          statev(k1)    = eelas(k1)
          statev(k1+6)  = eplas(k1)

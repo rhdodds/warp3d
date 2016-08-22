@@ -376,13 +376,16 @@ c
       subroutine release_cons_update_constraints( sdof )
 c
       use main_data, only : cnstrn_in, cnstrn
+      use damage_data, only : csttail
 c
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
-#sgl      real
-#dbl      double precision
-     &     d32460
+      integer :: sdof
+c
+      integer :: cst_ptr, above_ptr      
+#sgl      real :: d32460
+#dbl      double precision :: d32460
       data d32460 / 32460.0d00 /
 c
 c             traverse the singly-linked list of constraints in the 

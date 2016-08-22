@@ -3083,7 +3083,8 @@ c
       temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
-      adaptive_possible = local_work%allow_cut    
+      adaptive_possible = local_work%allow_cut  
+      local_debug       = .false.  
 c
       if( local_debug ) then
         write(iout,9000) felem, gpn, span
