@@ -32,7 +32,8 @@ c
       use distributed_stiffness_data, only: parallel_assembly_allowed,
      &      parallel_assembly_used, distributed_stiffness_used,
      &      initial_map_type, final_map_type
-      use mm10_defs, only : one_crystal_hist_size, common_hist_size
+      use mm10_defs, only : 
+     & one_crystal_hist_size, common_hist_size
 c
       implicit integer (a-z)
       intrinsic size
@@ -141,7 +142,7 @@ c
      &              precond_fail_count, ntimes_assembly,
      &              initial_map_type, final_map_type,
      &              coarsening, agg_levels, interpolation, relaxation,
-     &              sweeps, cf, cycle_type, max_levels
+     &              sweeps, cf, cycle_type, max_levels,
      &              one_crystal_hist_size, common_hist_size
       write (fileno) check_data_key
 c

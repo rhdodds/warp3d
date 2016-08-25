@@ -156,8 +156,8 @@ c
           eh2  = indexes_common(2,2)
           sh3  = indexes_common(3,1)
           eh3  = indexes_common(3,2)
-          write(*,*) sh2, sh3, hist_sz
-          write(*,*) co, cn, i
+c          write(*,*) sh2, sh3, hist_sz
+c          write(*,*) co, cn, i
           call mm10_copy_cc_hist( history_n(i,co:cn),
      &         history_n(i,sh2:eh2),
      &         history_n(i,sh3:eh3),
@@ -544,8 +544,8 @@ c
 c
 c       So total history size is going to be:
 c
-      write(*,*) 'common_hist_size', common_hist_size
-      write(*,*) 'one_crystal_hist_size', one_crystal_hist_size
+c      write(*,*) 'common_hist_size', common_hist_size
+c      write(*,*) 'one_crystal_hist_size', one_crystal_hist_size
 c
       size_data(1) = common_hist_size+
      &               ncrystals*(one_crystal_hist_size)
