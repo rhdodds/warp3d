@@ -1,0 +1,4 @@
+!
+ restart from file "restart.db"
+ compute displacements loading test step 6
+ stop

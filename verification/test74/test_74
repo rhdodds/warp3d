@@ -65,7 +65,7 @@ loading test
    minimum iterations 1
    convergence test norm res tol 0.01
    extrapolate on
-   line search on details
+   line search off details
    nonconvergent solutions stop
    adaptive on
    bbar stabilization factor 0.0
@@ -74,7 +74,9 @@ loading test
 !
 !  only run 10 steps to reduce effort
 !
-output commands use file "test_74_get_output.inp" steps 5 10 
-compute displacements for loading test step 5 10
+output commands use file "test_74_get_output.inp" steps 5 6 10 
+compute displacements for loading test step 5 
+save to file 'restart.db'
+compute displacements for loading test step 10
 !
 stop
