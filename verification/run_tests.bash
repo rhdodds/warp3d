@@ -201,8 +201,8 @@ cd ..
 }
 
 function test74 {
-echo -e "\n>>> Test 74 (Crystal plasticity)"
-echo      "    ============================"
+echo -e "\n>>> Test 74 (Crystal plasticity and restart)"
+echo      "    ======================================="
 cd test74
 ./run_tests_and_check
 cd ..
@@ -403,7 +403,7 @@ m_test70="Test 70: (generalized_plasticity w/ temperature dependent properties)"
 m_test71="Test 71: (piston loading for unsteady aerodynamic pressures)"
 m_test72="Test 72: (user-defined integer lists of nodes-elements)"
 m_test73="Test 73: (UMAT included in WARP3D - bilinear mises, kinematic hardening)"
-m_test74="Test 74: (Crystal plasticity)"
+m_test74="Test 74: (Crystal plasticity and restart)"
 m_test75="Test 75: (Release constraints)"
 m_test76="Test 76: (User-defined multi-point constraints)"
 m_test77="Test 77: (Finite strain transformations/output)"
