@@ -54,7 +54,7 @@ c      solver package
       integer global,xscalm,ldr,lrwork,qrwsiz
       integer outopt(5)
       double precision  xtol,ftol,btol,cndtol,stepmx,delta,sigma
-      double precision  t1,t2,s_trace,zero,one,two,three,ten
+      double precision  t1,t2,s_trace,zero,one,two,three,ten,dtrace
       double precision  xp(6+props%num_hard),fp(6+props%num_hard),
      &                  gp(6+props%num_hard),rjac1(6,2*6)
       double precision  rjac(6+props%num_hard,2*(6+props%num_hard)),
@@ -150,21 +150,29 @@ c                 displacement increment to indicate continuity of load
 c                 direction
 c
       d1(1:6) = np1%D(1:6)
-      alpha = d1(1) + d1(2) + d1(3)
-      d1(1) = d1(1) - one/three*alpha
-      d1(2) = d1(2) - one/three*alpha
-      d1(3) = d1(3) - one/three*alpha
+      dtrace = (d1(1) + d1(2) + d1(3))/three
+      d1(1) = d1(1) - dtrace
+      d1(2) = d1(2) - dtrace
+      d1(3) = d1(3) - dtrace
       t1 = d1(1)**2 + d1(2)**2 + d1(3)**2
       t2 = d1(4)**2 + d1(5)**2 + d1(6)**2
+      if( t1+t2 .eq. zero ) then
+      d1(1:6) = zero
+      else
       d1(1:6) = d1(1:6)/sqrt( t1+t2 )
+      endif
       d2(1:6) = np0%D(1:6)
-      alpha = d2(1) + d2(2) + d2(3)
-      d2(1) = d2(1) - one/three*alpha
-      d2(2) = d2(2) - one/three*alpha
-      d2(3) = d2(3) - one/three*alpha
+      dtrace = (d2(1) + d2(2) + d2(3))/three
+      d2(1) = d2(1) - dtrace
+      d2(2) = d2(2) - dtrace
+      d2(3) = d2(3) - dtrace
       t1 = d2(1)**2 + d2(2)**2 + d2(3)**2
       t2 = d2(4)**2 + d2(5)**2 + d2(6)**2
+      if( t1+t2 .eq. zero ) then
+      d2(1:6) = zero
+      else
       d2(1:6) = d2(1:6)/sqrt( t1+t2 )
+      endif
       t1 = d1(1)*d2(1) + d1(2)*d2(2) + d1(3)*d2(3)
       t2 = d1(4)*d2(4) + d1(5)*d2(5) + d1(6)*d2(6)
       cos_ang = dmax1( t1+t2, zero )

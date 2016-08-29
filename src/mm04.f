@@ -1260,6 +1260,7 @@ c
       modify_q              = props%modify_q
       include_nucleation    = props%include_nucleation  
       include_cavity_growth = props%include_cavity_growth
+      compute_solid_local   = props%compute_solid_local      
 c
 c              set options for nucleation model
 c

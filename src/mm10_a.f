@@ -217,8 +217,24 @@ c
      &                 p_strain_ten(3)**2
         t2           = p_strain_ten(4)**2 + p_strain_ten(5)**2 +
      &                 p_strain_ten(6)**2
-        p_strain_avg = sqrt( two/three * ( t1 + t2/two ) )
-        n_avg        = n_avg / p_strain_avg / rncry
+c        Handling elastic case by checking the exponent.
+c        write(*,*) 'base', radix(t1)
+c        write(*,*) 'exponent', EXPONENT(t1)
+c        write(*,*) 'fraction', fraction(t1)
+c        write(*,*) 'compare', t1 * RADIX(t1)**(-EXPONENT(t1))
+        s_trace = two/three * ( t1 + t2/two )
+c        write(*,*) 't1',t1,'t2',t2,two,three,
+c     & s_trace
+c        write(*,*) sqrt(s_trace)
+        if( (exponent(t1).lt. -400) .or.
+     &      (exponent(t1).gt. 600)  .or. 
+     &      (s_trace .eq. zero) ) then
+          p_strain_avg = zero
+          n_avg = zero
+        else
+          p_strain_avg = sqrt( s_trace )
+          n_avg        = n_avg / p_strain_avg / rncry
+        endif
         if( locdebug ) write(iout,*) "stress", sig_avg
         if( locdebug ) write(iout,*) "tang", tang_avg
 c
@@ -1831,8 +1847,9 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
 c
-      double precision :: dgc, init_hard
+      double precision :: dgc, init_hard, zero
       parameter(init_hard=0.1d0)
+      zero = 0.d0
 c
 c     Continuum effective rate
       dgc = np1%dg / np1%tinc
@@ -1842,7 +1859,7 @@ c      write(*,*) '.. np1%tinc: ',np1%tinc
 c      write(*,*) '.. mu_0, D_0: ',props%mu_0, props%D_0
 c      write(*,*) '.. T_0, temp: ',props%T_0,np1%temp      
 
-      if(np1%temp.eq.0.d0) then
+      if( np1%temp .eq. zero ) then
         np1%mu_harden = props%mu_0
       else
       np1%mu_harden = props%mu_0 - props%D_0 / (exp(props%T_0/np1%temp)
@@ -1856,6 +1873,10 @@ c      write(*,*) '.... props%eps_dot_0_v: ', props%eps_dot_0_v
 c      write(*,*) '.... dgc: ', dgc
 c      write(*,*) '.... props%q_v: ', props%q_v
 c      
+      if( dgc .eq. zero) then ! happens during initial stiffness matrix setup only
+      np1%tau_v = props%tau_hat_v
+      np1%tau_y = props%tau_hat_y
+      else
       np1%tau_v = props%tau_hat_v*(1.d0-(props%boltzman*np1%temp
      &       /(np1%mu_harden*(props%burgers**3.d0)*props%G_0_v)*
      &       dlog(props%eps_dot_0_v/dgc))**(1.d0/props%q_v))
@@ -1864,6 +1885,7 @@ c
      &       /(np1%mu_harden*(props%burgers**3.d0)*props%G_0_y)*
      &       dlog(props%eps_dot_0_y/dgc))**(1.d0/props%q_y))
      &       **(1.d0/props%p_y)
+      endif
 c
 c     Used existing labels as a convenience, actually get/set the history
       np1%u(1) = np1%tau_y
@@ -2486,11 +2508,14 @@ c
 c      Trust region solver
       integer maxfev,nfev,njev,lr, i
       double precision xtol,factor, mm10_enorm
+      double precision  t1,t2,dtrace,zero,one,two,three,ten
       double precision rout(6+props%num_hard,6+props%num_hard)
       double precision, dimension(6+props%num_hard) :: diag,qtf,
      *      wa1,wa2,wa3,wa4
 c      Cubic line search
       double precision stepmx
+      data zero, one, two, three, ten / 0.0d0, 1.0d00, 2.0d00, 3.0d00,
+     &    10.0d00 /
 c
 c      Convergence parameters: Newton with geometric line search
       parameter(c = 1.0d-4)
@@ -2551,18 +2576,32 @@ c
       ! displacement increment to indicate continuity of load
       ! direction
       d1(1:6) = np1%D(1:6)
-      alpha = d1(1) + d1(2) + d1(3)
-      d1(1) = d1(1) - 1.d0/3.d0*alpha
-      d1(2) = d1(2) - 1.d0/3.d0*alpha
-      d1(3) = d1(3) - 1.d0/3.d0*alpha
-      d1(1:6) = d1(1:6)/dsqrt(dot_product(d1,d1))
+      dtrace = (d1(1) + d1(2) + d1(3))/three
+      d1(1) = d1(1) - dtrace
+      d1(2) = d1(2) - dtrace
+      d1(3) = d1(3) - dtrace
+      t1 = d1(1)**2 + d1(2)**2 + d1(3)**2
+      t2 = d1(4)**2 + d1(5)**2 + d1(6)**2
+      if( t1+t2 .eq. zero ) then
+      d1(1:6) = zero
+      else
+      d1(1:6) = d1(1:6)/sqrt( t1+t2 )
+      endif
       d2(1:6) = n%D(1:6)
-      alpha = d2(1) + d2(2) + d2(3)
-      d2(1) = d2(1) - 1.d0/3.d0*alpha
-      d2(2) = d2(2) - 1.d0/3.d0*alpha
-      d2(3) = d2(3) - 1.d0/3.d0*alpha
-      d2(1:6) = d2(1:6)/dsqrt(dot_product(d2,d2))
-      cos_ang = dmax1(dot_product(d1,d2),0.d0)
+      dtrace = (d2(1) + d2(2) + d2(3))/three
+      d2(1) = d2(1) - dtrace
+      d2(2) = d2(2) - dtrace
+      d2(3) = d2(3) - dtrace
+      t1 = d2(1)**2 + d2(2)**2 + d2(3)**2
+      t2 = d2(4)**2 + d2(5)**2 + d2(6)**2
+      if( t1+t2 .eq. zero ) then
+      d2(1:6) = zero
+      else
+      d2(1:6) = d2(1:6)/sqrt( t1+t2 )
+      endif
+      t1 = d1(1)*d2(1) + d1(2)*d2(2) + d1(3)*d2(3)
+      t2 = d1(4)*d2(4) + d1(5)*d2(5) + d1(6)*d2(6)
+      cos_ang = dmax1( t1+t2, zero )
       !write(*,*) cos_ang, n%tt_rate(2)
       x2 = x(7:6+props%num_hard) + cos_ang*
      &        n%tt_rate(1:props%num_hard)*dt

@@ -21,17 +21,21 @@ c
       type(crystal_state) :: np1, n
 c
       integer :: i, info, sysID, numAct
-      double precision, dimension(6) :: ee, dbarp, ewwe, ep, eeunrot,
-     &                                  se
+      double precision, dimension(6) :: ee, dbarp, ewwe, ep, 
+     &                                  eeunrot, se
       double precision, dimension(3) :: wp
       double precision, dimension(6,6) :: S, erot
       double precision, dimension(6) :: p_strain_ten_c
       double precision, dimension(max_uhard) :: vec1,vec2
       double precision :: maxslip, ec_dot, n_eff, rs, ec_slip, 
-     &                    mm10_rs,pt1,curslip, B_eff, s_trace
+     &                    mm10_rs,curslip, B_eff, s_trace
       double precision, dimension(max_slip_sys) :: dgammadtau
+      double precision :: two, three, pt1, one, t1, t2
 c
       pt1 = 0.1d0
+      one = 1.d0
+      two = 2.d0
+      three = 3.d0
 c     Store the slip increments
 c
 c ******* START: Add new Constitutive Models into this block *********
@@ -186,17 +190,31 @@ c ******* END: Add new Constitutive Models into this block *********
       np1%u(12) = n_eff
       ! effective stress
       s_trace = (np1%stress(1)+np1%stress(2)+
-     &           np1%stress(3))/3.d0
+     &           np1%stress(3))/three
       se(1:6) = np1%stress(1:6)
       se(1) = se(1)-s_trace
       se(2) = se(2)-s_trace
       se(3) = se(3)-s_trace
-      s_trace = dsqrt(3.0d0/2.0d0*
-     &      (dot_product(se(1:3),se(1:3))+
-     &      2.0d0*dot_product(se(4:6),se(4:6))))
+c      write(*,*) 's_trace,se',s_trace,se(1:6)
+          t1      = se(1)**2 + se(2)**2 + se(3)**2
+          t2      = se(4)**2 + se(5)**2 + se(6)**2
+          s_trace = sqrt( three/two * ( t1 + two*t2 ) )
+c      s_trace = dsqrt(3.0d0/2.0d0*
+c     &      (dot_product(se(1:3),se(1:3))+
+c     &      2.0d0*dot_product(se(4:6),se(4:6))))
       np1%u(13) = s_trace
+c      write(*,*) 'ec_dot,s_trace,n_eff',ec_dot,s_trace,n_eff
+c      write(*,*) 'np1%stress(1:6)',np1%stress(1:6)
       ! power law B factor
-      B_eff = ec_dot/s_trace**n_eff
+      if( (ec_dot .lt. 1.d-100) ) then ! elastic
+c       .or. 
+        B_eff = 0.d0
+c      write(*,*) 'Beff',B_eff
+      elseif (n_eff .gt. 100.d0) then ! likely overflow
+        B_eff = -1.d0
+      else
+        B_eff = ec_dot/s_trace**n_eff
+      endif
       np1%u(14) = B_eff
 
       return
