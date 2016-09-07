@@ -154,7 +154,7 @@ c
  nonlinear analysis parameters
    solution technique direct sparse
    maximum iterations 100
-   minimum iterations 4
+   minimum iterations 2
    convergence test norm res tol 0.0005 max res tol 0.005
    extrapolate on
    line search on details
@@ -189,7 +189,7 @@ c
   stiffness 20.0e8
 c
 c
- output commands file "test_50_get_results" after steps all
+ output commands file "test_50_get_results" after steps 520 1000
 c
  compute displacements for loading alternate step  20
 c
