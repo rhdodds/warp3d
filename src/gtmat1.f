@@ -708,17 +708,19 @@ c     ****************************************************************
 c
 c
       subroutine getrm1( span, q, r, opt )
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
 c           parameter declarations
 c
-#dbl      double precision
-#sgl      real
-     &  q(mxvl,nstr,*), r(mxvl,ndim,*)
+      integer :: span, opt
+#dbl      double precision :: q(mxvl,nstr,*), r(mxvl,ndim,*)
+#sgl      real :: q(mxvl,nstr,*), r(mxvl,ndim,*)
+     &  
 c
 c           locals
 c
+      integer :: i
 #dbl      double precision
 #sgl      real
      & two, rbar(mxvl,3,3)
@@ -997,8 +999,7 @@ c     *                      subroutine ivcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 06/30/91                   *
-c     *                                 : 02/08/94                   *
+c     *                   last modified : 9/6/2016 rhd               *
 c     *                                                              *
 c     *     this subroutine computes the invariants of the right     *
 c     *     stretch tensor, the metric tensor, and its square.       *
@@ -1009,74 +1010,79 @@ c     ****************************************************************
 c
 c
       subroutine ivcmp1( span, f, c, cc, iu, iiu, iiiu )
-      implicit integer (a-z)
+      implicit none
 $add param_def
 c
-c                       parameter declarations
+c               parameter declarations
 c
-#dbl      double precision
-#sgl      real
-     &   f(mxvl,ndim,*), c(mxvl,*), cc(mxvl,*), iu(*), iiu(*), iiiu(*)
+      integer :: span
+#dbl      double precision ::
+#sgl      real ::
+     & f(mxvl,ndim,*), c(mxvl,*), cc(mxvl,*), iu(*), iiu(*), iiiu(*)
 c
-c                       locally allocated arrays
+c               locally allocated arrays
 c
-#dbl      double precision
-#sgl      real
-     &  ct(mxvl,nstr), ev(mxvl,ndim)
+      integer :: i
+      logical, parameter :: new = .true.
+#dbl      double precision :: ct(mxvl,nstr), ev(mxvl,ndim)
+#sgl      real :: ct(mxvl,nstr), ev(mxvl,ndim)
 @!DIR$ ASSUME_ALIGNED f:64, c:64, cc:64, iu:64, iiu:64, iiiu:64
 @!DIR$ ASSUME_ALIGNED ct:64, ev:64
 c
-c                       c and cc are in symmetric upper triangular
-c                       form.
-c
-c                       compute the metric tensor.
+c              c and cc are in symmetric upper triangular form.
+c              compute the metric tensor.
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
       do i = 1, span
-         c(i,1)= f(i,1,1)*f(i,1,1)+f(i,2,1)*f(i,2,1)+f(i,3,1)*f(i,3,1)
-         c(i,2)= f(i,1,1)*f(i,1,2)+f(i,2,1)*f(i,2,2)+f(i,3,1)*f(i,3,2)
-         c(i,3)= f(i,1,2)*f(i,1,2)+f(i,2,2)*f(i,2,2)+f(i,3,2)*f(i,3,2)
-         c(i,4)= f(i,1,1)*f(i,1,3)+f(i,2,1)*f(i,2,3)+f(i,3,1)*f(i,3,3)
-         c(i,5)= f(i,1,2)*f(i,1,3)+f(i,2,2)*f(i,2,3)+f(i,3,2)*f(i,3,3)
-         c(i,6)= f(i,1,3)*f(i,1,3)+f(i,2,3)*f(i,2,3)+f(i,3,3)*f(i,3,3)
+       c(i,1)= f(i,1,1)*f(i,1,1)+f(i,2,1)*f(i,2,1)+f(i,3,1)*f(i,3,1)
+       c(i,2)= f(i,1,1)*f(i,1,2)+f(i,2,1)*f(i,2,2)+f(i,3,1)*f(i,3,2)
+       c(i,3)= f(i,1,2)*f(i,1,2)+f(i,2,2)*f(i,2,2)+f(i,3,2)*f(i,3,2)
+       c(i,4)= f(i,1,1)*f(i,1,3)+f(i,2,1)*f(i,2,3)+f(i,3,1)*f(i,3,3)
+       c(i,5)= f(i,1,2)*f(i,1,3)+f(i,2,2)*f(i,2,3)+f(i,3,2)*f(i,3,3)
+       c(i,6)= f(i,1,3)*f(i,1,3)+f(i,2,3)*f(i,2,3)+f(i,3,3)*f(i,3,3)
       end do
 c
-c                       compute the square of the metric
-c                       tensor.
+c              compute the square of the metric tensor
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
       do i = 1, span
-         cc(i,1)= c(i,1)*c(i,1)+c(i,2)*c(i,2)+c(i,4)*c(i,4)
-         cc(i,2)= c(i,1)*c(i,2)+c(i,2)*c(i,3)+c(i,4)*c(i,5)
-         cc(i,3)= c(i,2)*c(i,2)+c(i,3)*c(i,3)+c(i,5)*c(i,5)
-         cc(i,4)= c(i,1)*c(i,4)+c(i,2)*c(i,5)+c(i,4)*c(i,6)
-         cc(i,5)= c(i,2)*c(i,4)+c(i,3)*c(i,5)+c(i,5)*c(i,6)
-         cc(i,6)= c(i,4)*c(i,4)+c(i,5)*c(i,5)+c(i,6)*c(i,6)
+       cc(i,1)= c(i,1)*c(i,1)+c(i,2)*c(i,2)+c(i,4)*c(i,4)
+       cc(i,2)= c(i,1)*c(i,2)+c(i,2)*c(i,3)+c(i,4)*c(i,5)
+       cc(i,3)= c(i,2)*c(i,2)+c(i,3)*c(i,3)+c(i,5)*c(i,5)
+       cc(i,4)= c(i,1)*c(i,4)+c(i,2)*c(i,5)+c(i,4)*c(i,6)
+       cc(i,5)= c(i,2)*c(i,4)+c(i,3)*c(i,5)+c(i,5)*c(i,6)
+       cc(i,6)= c(i,4)*c(i,4)+c(i,5)*c(i,5)+c(i,6)*c(i,6)
       end do
 c
-c                       copy the metric tensor to stress vector
-c                       form so that principal values may be
-c                       computed.
+c              old or new algorithm to get eivenvalues. old
+c              uses vectroized Givens rotations to diagonalize
+c              the 3x3 symmetric, real matrix. New uses closed
+c              form Cardano extraction of eigenvales for this
+c              specific type & size of matrix. New is 
+c              considerable faster.
+c
+      if( new ) call evcmp1_new( span, mxvl, c, ev )     
+      if( .not. new ) then   
+c
+c              copy the metric tensor to stress vector
+c              form then get principal values.
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
-      do i = 1, span
-         ct(i,1)= c(i,1)
-         ct(i,2)= c(i,3)
-         ct(i,3)= c(i,6)
-         ct(i,4)= c(i,2)
-         ct(i,5)= c(i,5)
-         ct(i,6)= c(i,4)
-      end do
+          do i = 1, span
+             ct(i,1)= c(i,1)
+             ct(i,2)= c(i,3)
+             ct(i,3)= c(i,6)
+             ct(i,4)= c(i,2)
+             ct(i,5)= c(i,5)
+             ct(i,6)= c(i,4)
+          end do
+          call evcmp1( span, ct, ev )
+      end if
 c
-c                       compute the principal values of the
-c                       metric tensor.
-c
-      call evcmp1( span, ct, ev )
-c
-c                       set the principal values.
+c              set the principal values.
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
@@ -1086,22 +1092,118 @@ c
          ev(i,3)= sqrt(ev(i,3))
       end do
 c
-c
-c                       compute the invariants of the right
-c                       stretch tensor.
-c
+c              invariants of right stretch tensor.
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
       do i = 1, span
-         iu(i)  = ev(i,1)+ev(i,2)+ev(i,3)
-         iiu(i) = ev(i,1)*ev(i,2)+ev(i,2)*ev(i,3)+ev(i,1)*ev(i,3)
-         iiiu(i)= ev(i,1)*ev(i,2)*ev(i,3)
+       iu(i)  = ev(i,1)+ev(i,2)+ev(i,3)
+       iiu(i) = ev(i,1)*ev(i,2)+ev(i,2)*ev(i,3)+ev(i,1)*ev(i,3)
+       iiiu(i)= ev(i,1)*ev(i,2)*ev(i,3)
       end do
 c
       return
       end
-
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine evcmp1_new                   *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 09/6/2016                  *
+c     *                                                              *
+c     *     eigenvalues of metric tensor. symmetric, real 3x3
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine evcmp1_new( span, mxvl, c, lamda )
+      implicit none
+c
+c                 parameter declarations
+c
+      integer :: span, mxvl
+#dbl      double precision :: c(mxvl,6), lamda(mxvl,3)
+#sgl      real :: c(mxvl,6), lamda(mxvl,3)
+c
+c                 locals
+c
+      integer :: bel
+#dbl      double precision ::
+#sgl      real ::
+     &  m11, m12, m13, m22, m23, m33, e1, e2, e3,
+     &  swap1, swap2, swap3, zero,
+     &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi,
+     &  one, two, three, third, oneptfive, thirteenptfive,
+     &  twentyseven, quarter, sixpt75, oneroot3
+      data zero, one, two, three / 0.0d0, 1.0d0, 2.0d0, 3.0d0 /
+      data third, oneptfive / 0.3333333333333333333d0, 1.5d0 /
+      data thirteenptfive, twentyseven / 13.5d0, 27.0d0 /
+      data quarter, sixpt75, oneroot3
+     &     / 0.25d0, 6.75d0, 0.5773502691896258d0 /
+c      
+@!DIR$ ASSUME_ALIGNED c:64, lamda:64
+c
+c              calculates the eigenvalues of a symmetric 3x3 matrix 
+c              using Cardano's analytical algorithm.
+c              Only the diagonal and upper triangular parts of matrix
+c              are accessed. The access is read-only.
+c              Copyright (C) 2006  Joachim Kopp. Avialble under 
+c              GNU Lesser General Public License
+c
+      do bel = 1, span
+       m11 = c(bel,1)
+       m12 = c(bel,2)
+       m13 = c(bel,4)
+       m22 = c(bel,3)
+       m23 = c(bel,5)
+       m33 = c(bel,6)
+       de  = m12 * m23
+       dd  = m12**2
+       ee  = m23**2
+       ff  = m13**2
+       m   = m11 + m22 + m33
+       c1  = ( m11*m22 + m11*m33 + m22*m33 ) - (dd + ee + ff)
+       c0  = m33*dd + m11*ee + m22*ff - m11*m22*m33 - two * m13*de
+       p   = m*m - three * c1
+       q   = m*(p - oneptfive*c1) - thirteenptfive*c0
+       sqrtp = sqrt(abs(p))
+       phi = twentyseven * ( quarter * c1*c1 * (p - c1)
+     &          + c0 * (q + sixpt75 * c0) )
+       phi = third * atan2(sqrt(abs(phi)), q)
+       cphi = sqrtp * cos(phi)
+       sphi = oneroot3 * sqrtp * sin(phi)
+       e2 = third * (m - cphi)
+       e3 = e2 + sphi
+       e1 = e2 + cphi
+       e2 = e2 - sphi
+c       
+       if( e2 .lt. e1 ) then
+            swap1 = e1
+            e1    = e2
+            e2    = swap1
+       end if
+c
+       if( e3 .lt. e1 ) then
+            swap2 = e1
+            e1    = e3
+            e3    = swap2
+       end if
+c
+       if( e3 .lt. e2 ) then
+            swap3 = e2
+            e2    = e3
+            e3    = swap3
+       end if
+c         
+       lamda(bel,1) = e1
+       lamda(bel,2) = e2
+       lamda(bel,3) = e3
+c
+      end do
+c       
+      return
+      end
+      
 
 c     ****************************************************************
 c     *                                                              *
@@ -1109,16 +1211,12 @@ c     *                      subroutine evcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/17/90                   *
-c     *                                 : 02/09/94                   *
+c     *                   last modified : 09/5/2016 rhd              *
 c     *                                                              *
-c     *     this subroutine computes the eigenvalues of a 3x3        *
-c     *     symmetric positive definite matrix in stress vector      *
-c     *     form for a block of solid elements.                      *
+c     *     eigenvalues of a 3x3 positive definite matrix in         *
+c     *     stress vector form for a block of solid elements.        *
 c     *                                                              *
 c     ****************************************************************
-c
-c
 c
       subroutine evcmp1( span, k, lamda )
       implicit integer (a-z)
@@ -1128,7 +1226,7 @@ c                 parameter declarations
 c
 #dbl      double precision
 #sgl      real
-     &  k(mxvl,*), lamda(mxvl,*)
+     &  k(mxvl,6), lamda(mxvl,3)
 c
 c                 local arrays allocated
 c
@@ -1152,15 +1250,13 @@ c
 @!DIR$ ASSUME_ALIGNED alpha:64, gamma:64, x:64, xsign:64, rad:64
 @!DIR$ ASSUME_ALIGNED errork:64, swap:64, ratiok:64
 c
-c
 c              initialize lamda, m, sweep parameters.
-c
 c
       swpnum = 0
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
-      do 10 bel= 1,span
+      do bel = 1, span
 c
          m(bel,1)= one
          m(bel,2)= one
@@ -1199,14 +1295,16 @@ c
          k(bel,5) = k(bel,5) * scale(bel)
          k(bel,3) = k(bel,3) * scale(bel)
 c
- 10   continue
+      end do
 c
 c              begin a new sweep
 c
-   15 swpnum = swpnum + 1
-      thold = ten_thouth ** swpnum
-      sqtol = jactol * jactol
-      if( thold .lt. sqtol ) thold = sqtol
+      do !  rotate iterations to eliminate off diagonals
+c      	
+      swpnum = swpnum + 1
+      thold  = ten_thouth ** swpnum
+      sqtol  = jactol * jactol
+      if( thold < sqtol ) thold = sqtol
 c
 c              enter sweep loop -- work on lower triangle only
 c                                          ( i > j )
@@ -1224,73 +1322,62 @@ c
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
-      do 20 bel= 1,span
+c 
+      do bel = 1, span
 c
 c                       check if term is within threshold
 c
-         ratiok(bel)= (k(bel,4)*k(bel,4))/(k(bel,2)*k(bel,1))
-         if ( ratiok(bel) .ge. thold ) then
+         ratiok(bel) = (k(bel,4)*k(bel,4))/(k(bel,2)*k(bel,1))
+         if( ratiok(bel) < thold )  cycle
 c
 c                      compute the rotatiom matrix:  an identity
 c                      matrix with alpha at position (2,1) and
 c                      gamma at position (1,2).
 c
-            kbari(bel)= -m(bel,2)*k(bel,4)
-            kbarj(bel)= -m(bel,1)*k(bel,4)
-            kbar(bel) = k(bel,2)*m(bel,1)-k(bel,1)*m(bel,2)
-            rad(bel)  = (kbar(bel)*kbar(bel)/four)+kbari(bel)*kbarj(bel)
+            kbari(bel) = -m(bel,2)*k(bel,4)
+            kbarj(bel) = -m(bel,1)*k(bel,4)
+            kbar(bel)  = k(bel,2)*m(bel,1)-k(bel,1)*m(bel,2)
+            rad(bel)   = (kbar(bel)*kbar(bel)/four) + 
+     &                   kbari(bel)*kbarj(bel)
 c
-#win            xsign(bel)= one
-#win            x(bel)= kbar(bel)/two+sign(xsign(bel),kbar(bel))*
-#win     &              sqrt(rad(bel))
-c
-#l64            xsign(bel)= one
-#l64            x(bel)= kbar(bel)/two+sign(xsign(bel),kbar(bel))*
-#l64     &              sqrt(rad(bel))
-c
-#mac            xsign(bel)= one
-#mac            x(bel)= kbar(bel)/two+sign(xsign(bel),kbar(bel))*
-#mac     &              sqrt(rad(bel))
+            xsign(bel) = one
+            x(bel) = kbar(bel)/two+sign(xsign(bel),kbar(bel))*
+     &               sqrt(rad(bel))
 c
             if( (abs(x(bel)).lt.jactol*abs(kbarj(bel))).or.
      &          (abs(x(bel)).lt.jactol*abs(kbari(bel)))    ) then
-               alpha(bel)= zero
-               gamma(bel)= -k(bel,4)/k(bel,2)
+               alpha(bel) = zero
+               gamma(bel) = -k(bel,4)/k(bel,2)
             else
-               alpha(bel)= kbarj(bel)/x(bel)
-               gamma(bel)= -kbari(bel)/x(bel)
+               alpha(bel) = kbarj(bel)/x(bel)
+               gamma(bel) = -kbari(bel)/x(bel)
             end if
 c
 c                       perform the rotation.
 c
-c
 c                       row 3, column 2
 c                       row 3, column 1
 c
-            ki(bel) = k(bel,5)
-            kj(bel) = k(bel,6)
-            k(bel,5)= ki(bel)+gamma(bel)*kj(bel)
-            k(bel,6)= kj(bel)+alpha(bel)*ki(bel)
+            ki(bel)  = k(bel,5)
+            kj(bel)  = k(bel,6)
+            k(bel,5) = ki(bel)+gamma(bel)*kj(bel)
+            k(bel,6) = kj(bel)+alpha(bel)*ki(bel)
 c
 c                       term (2,1) and diagonal terms (2,2) and (1,1).
 c
+            kj(bel)  = k(bel,1)
+            mj(bel)  = m(bel,1)
+            ki(bel)  = k(bel,2)
+            mi(bel)  = m(bel,2)
+            k(bel,1) = kj(bel)+alpha(bel)*alpha(bel)*ki(bel)+
+     &                 two*alpha(bel)*k(bel,4)
+            m(bel,1) = mj(bel)+alpha(bel)*alpha(bel)*mi(bel)
+            k(bel,2) = ki(bel)+gamma(bel)*gamma(bel)*kj(bel)+
+     &                 two*gamma(bel)*k(bel,4)
+            m(bel,2) = mi(bel)+gamma(bel)*gamma(bel)*mj(bel)
+            k(bel,4) = zero
 c
-            kj(bel) = k(bel,1)
-            mj(bel) = m(bel,1)
-            ki(bel) = k(bel,2)
-            mi(bel) = m(bel,2)
-            k(bel,1)= kj(bel)+alpha(bel)*alpha(bel)*ki(bel)+
-     &                two*alpha(bel)*k(bel,4)
-            m(bel,1)= mj(bel)+alpha(bel)*alpha(bel)*mi(bel)
-            k(bel,2)= ki(bel)+gamma(bel)*gamma(bel)*kj(bel)+
-     &                two*gamma(bel)*k(bel,4)
-            m(bel,2)= mi(bel)+gamma(bel)*gamma(bel)*mj(bel)
-            k(bel,4)= zero
-c
-         end if
-c
- 20   continue
-c
+      end do
 c
 c           ***************************************
 c           *                                     *
@@ -1298,27 +1385,27 @@ c           *           row 3 and column 1.       *
 c           *                                     *
 c           ***************************************
 c
-c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
-      do 25 bel= 1,span
+      do bel = 1, span
 c
 c                       check if term is within threshold
 c
          ratiok(bel) = (k(bel,6)*k(bel,6))/(k(bel,3)*k(bel,1))
-         if ( ratiok(bel).ge.thold ) then
+         if( ratiok(bel) < thold ) cycle
 c
 c                       compute the rotatiom matrix:  an identity
 c                       matrix with alpha at position (3,1) and
 c                       gamma at position (1,3).
 c
-            kbari(bel)= -m(bel,3)*k(bel,6)
-            kbarj(bel)= -m(bel,1)*k(bel,6)
-            kbar(bel) = k(bel,3)*m(bel,1)-k(bel,1)*m(bel,3)
-            rad(bel)  = (kbar(bel)*kbar(bel)/four)+kbari(bel)*kbarj(bel)
+            kbari(bel) = -m(bel,3)*k(bel,6)
+            kbarj(bel) = -m(bel,1)*k(bel,6)
+            kbar(bel)  = k(bel,3)*m(bel,1)-k(bel,1)*m(bel,3)
+            rad(bel)   = (kbar(bel)*kbar(bel)/four) + 
+     &                   kbari(bel)*kbarj(bel)
 c
-            xsign(bel)= one
-            x(bel)= kbar(bel)/two+sign(xsign(bel),kbar(bel))*
+            xsign(bel) = one
+            x(bel) = kbar(bel)/two+sign(xsign(bel),kbar(bel))*
      &              sqrt(rad(bel))
             if( (abs(x(bel)).lt.jactol*abs(kbarj(bel))).or.
      &          (abs(x(bel)).lt.jactol*abs(kbari(bel)))    ) then
@@ -1331,7 +1418,6 @@ c
 c
 c                       perform the rotation.
 c
-c
 c                       row 3, column 2
 c                       row 2, column 1
 c
@@ -1342,22 +1428,19 @@ c
 c
 c                       term (3,1) and diagonal terms (3,3) and (1,1).
 c
-            kj(bel) = k(bel,1)
-            mj(bel) = m(bel,1)
-            ki(bel) = k(bel,3)
-            mi(bel) = m(bel,3)
-            k(bel,1)= kj(bel)+alpha(bel)*alpha(bel)*ki(bel)+
-     &                two*alpha(bel)*k(bel,6)
-            m(bel,1)= mj(bel)+alpha(bel)*alpha(bel)*mi(bel)
-            k(bel,3)= ki(bel)+gamma(bel)*gamma(bel)*kj(bel)+
-     &                two*gamma(bel)*k(bel,6)
-            m(bel,3)= mi(bel)+gamma(bel)*gamma(bel)*mj(bel)
-            k(bel,6)= zero
+            kj(bel)  = k(bel,1)
+            mj(bel)  = m(bel,1)
+            ki(bel)  = k(bel,3)
+            mi(bel)  = m(bel,3)
+            k(bel,1) = kj(bel)+alpha(bel)*alpha(bel)*ki(bel)+
+     &                 two*alpha(bel)*k(bel,6)
+            m(bel,1) = mj(bel)+alpha(bel)*alpha(bel)*mi(bel)
+            k(bel,3) = ki(bel)+gamma(bel)*gamma(bel)*kj(bel)+
+     &                 two*gamma(bel)*k(bel,6)
+            m(bel,3) = mi(bel)+gamma(bel)*gamma(bel)*mj(bel)
+            k(bel,6) = zero
 c
-         end if
-c
- 25   continue
-c
+      end do
 c
 c           ***************************************
 c           *                                     *
@@ -1365,128 +1448,135 @@ c           *           row 3 and column 2.       *
 c           *                                     *
 c           ***************************************
 c
-c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
-      do 30 bel= 1,span
+      do bel = 1, span
 c
 c                       check if term is within threshold
 c
          ratiok(bel) = (k(bel,5)*k(bel,5))/(k(bel,3)*k(bel,2))
-         if ( ratiok(bel).ge.thold ) then
+         if( ratiok(bel) < thold ) cycle
 c
 c                       compute the rotatiom matrix:  an identity
 c                       matrix with alpha at position (3,2) and
 c                       gamma at position (2,3).
 c
-            kbari(bel)= -m(bel,3)*k(bel,5)
-            kbarj(bel)= -m(bel,2)*k(bel,5)
-            kbar(bel) =  k(bel,3)*m(bel,2)-k(bel,2)*m(bel,3)
-            rad(bel)  = (kbar(bel)*kbar(bel)/four)+kbari(bel)*kbarj(bel)
+            kbari(bel) = -m(bel,3)*k(bel,5)
+            kbarj(bel) = -m(bel,2)*k(bel,5)
+            kbar(bel)  =  k(bel,3)*m(bel,2)-k(bel,2)*m(bel,3)
+            rad(bel)   = (kbar(bel)*kbar(bel)/four)
+     &                   + kbari(bel)*kbarj(bel)
 c
-            xsign(bel)= one
-            x(bel)= kbar(bel)/two+sign(xsign(bel),kbar(bel))*
-     &              sqrt(rad(bel))
+            xsign(bel) = one
+            x(bel) = kbar(bel)/two+sign(xsign(bel),kbar(bel))*
+     &               sqrt(rad(bel))
             if( (abs(x(bel)).lt.jactol*abs(kbarj(bel))).or.
      &          (abs(x(bel)).lt.jactol*abs(kbari(bel)))    ) then
-               alpha(bel)= zero
-               gamma(bel)= -k(bel,5)/k(bel,3)
+               alpha(bel) = zero
+               gamma(bel) = -k(bel,5)/k(bel,3)
             else
-               alpha(bel)=  kbarj(bel)/x(bel)
-               gamma(bel)= -kbari(bel)/x(bel)
+               alpha(bel) =  kbarj(bel)/x(bel)
+               gamma(bel) = -kbari(bel)/x(bel)
             end if
 c
 c                       perform the rotation.
 c
-c
 c                       row 3, column 1
 c                       row 2, column 1
 c
-            ki(bel) = k(bel,6)
-            kj(bel) = k(bel,4)
-            k(bel,6)= ki(bel)+gamma(bel)*kj(bel)
-            k(bel,4)= kj(bel)+alpha(bel)*ki(bel)
+            ki(bel)  = k(bel,6)
+            kj(bel)  = k(bel,4)
+            k(bel,6) = ki(bel)+gamma(bel)*kj(bel)
+            k(bel,4) = kj(bel)+alpha(bel)*ki(bel)
 c
 c                       term (3,2) and diagonal terms (3,3) and (2,2).
 c
-            kj(bel) = k(bel,2)
-            mj(bel) = m(bel,2)
-            ki(bel) = k(bel,3)
-            mi(bel) = m(bel,3)
-            k(bel,2)= kj(bel)+alpha(bel)*alpha(bel)*ki(bel)+
-     &                two*alpha(bel)*k(bel,5)
-            m(bel,2)= mj(bel)+alpha(bel)*alpha(bel)*mi(bel)
-            k(bel,3)= ki(bel)+gamma(bel)*gamma(bel)*kj(bel)+
-     &                two*gamma(bel)*k(bel,5)
-            m(bel,3)= mi(bel)+gamma(bel)*gamma(bel)*mj(bel)
-            k(bel,5)= zero
+            kj(bel)  = k(bel,2)
+            mj(bel)  = m(bel,2)
+            ki(bel)  = k(bel,3)
+            mi(bel)  = m(bel,3)
+            k(bel,2) = kj(bel)+alpha(bel)*alpha(bel)*ki(bel)+
+     &                 two*alpha(bel)*k(bel,5)
+            m(bel,2) = mj(bel)+alpha(bel)*alpha(bel)*mi(bel)
+            k(bel,3) = ki(bel)+gamma(bel)*gamma(bel)*kj(bel)+
+     &                 two*gamma(bel)*k(bel,5)
+            m(bel,3) = mi(bel)+gamma(bel)*gamma(bel)*mj(bel)
+            k(bel,5) = zero
 c
-         end if
-c
- 30   continue
+      end do
 c
 c              end sweep
 c
-c              update eigenvalue vector -- lamda
-c
-
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-      do 35 bel= 1,span
-c
-         lamda(bel,1)= k(bel,1)/m(bel,1)
-         lamda(bel,2)= k(bel,2)/m(bel,2)
-         lamda(bel,3)= k(bel,3)/m(bel,3)
-c
- 35   continue
-c
 c              check off-diagonal elements for convergence
 c
-      cvgtst= .true.
+      cvgtst = .true.
 c
-      do 40 bel= 1,span
+      do bel = 1, span
 c
-         errork(bel)= k(bel,4)*k(bel,4)/(k(bel,2)*k(bel,1))
-         if (errork(bel).gt.sqtol) cvgtst= .false.
+         errork(bel) = k(bel,4)*k(bel,4)/(k(bel,2)*k(bel,1))
+         if( errork(bel) .gt. sqtol ) then
+           cvgtst = .false.
+           exit
+         end if  
 c
-         errork(bel)= k(bel,6)*k(bel,6)/(k(bel,3)*k(bel,1))
-         if (errork(bel).gt.sqtol) cvgtst= .false.
+         errork(bel) = k(bel,6)*k(bel,6)/(k(bel,3)*k(bel,1))
+         if( errork(bel) .gt. sqtol ) then
+         	  cvgtst = .false.
+         	  exit
+         end if
 c
-         errork(bel)= k(bel,5)*k(bel,5)/(k(bel,3)*k(bel,2))
-         if (errork(bel).gt.sqtol) cvgtst= .false.
+         errork(bel) = k(bel,5)*k(bel,5)/(k(bel,3)*k(bel,2))
+         if( errork(bel) .gt. sqtol ) then
+            cvgtst = .false.
+            exit
+         end if
 c
- 40   continue
+      end do
 c
-      if( cvgtst ) go to 45
-      if( swpnum .lt. maxswp ) go to 15
+      if( cvgtst ) exit
+      if( swpnum .lt. maxswp ) cycle
+c      
+      end do   ! over rotation iterations
 c
-c                       reorder the eigenvalues
+c              update eigenvalue vector 
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
- 45   do 50 bel= 1,span
+      do bel = 1, span
+         lamda(bel,1) = k(bel,1) / m(bel,1)
+         lamda(bel,2) = k(bel,2) / m(bel,2)
+         lamda(bel,3) = k(bel,3) / m(bel,3)
+      end do
 c
-         if(lamda(bel,2).lt.lamda(bel,1)) then
-            swap(bel)= lamda(bel,1)
-            lamda(bel,1)= lamda(bel,2)
-            lamda(bel,2)= swap(bel)
+c             reorder the eigenvalues. small to big
+c
+@!DIR$ LOOP COUNT MAX=###  
+@!DIR$ IVDEP
+c
+      do bel = 1, span
+c
+         if( lamda(bel,2) .lt. lamda(bel,1) ) then
+            swap(bel)    = lamda(bel,1)
+            lamda(bel,1) = lamda(bel,2)
+            lamda(bel,2) = swap(bel)
          end if
 c
-         if(lamda(bel,3).lt.lamda(bel,1)) then
-            swap(bel)= lamda(bel,1)
-            lamda(bel,1)= lamda(bel,3)
-            lamda(bel,3)= swap(bel)
+         if( lamda(bel,3) .lt. lamda(bel,1) ) then
+            swap(bel)    = lamda(bel,1)
+            lamda(bel,1) = lamda(bel,3)
+            lamda(bel,3) = swap(bel)
          end if
 c
-         if(lamda(bel,3).lt.lamda(bel,2)) then
-            swap(bel)= lamda(bel,2)
-            lamda(bel,2)= lamda(bel,3)
-            lamda(bel,3)= swap(bel)
+         if( lamda(bel,3) .lt. lamda(bel,2) ) then
+            swap(bel)    = lamda(bel,2)
+            lamda(bel,2) = lamda(bel,3)
+            lamda(bel,3) = swap(bel)
          end if
 c
- 50   continue
+      end do
 c
       return
       end
+
 
 
