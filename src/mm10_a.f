@@ -1816,8 +1816,17 @@ c
       ! No setup actually required, but define a mu_harden at state np1
       ! for the sake of the CP model
       np1%mu_harden = props%stiffness(6,6)
+      np1%dg =  np1%tinc    !    BOB 
+      write(*,9000)
+      call die_abort
 c
       return
+ 9000 format(/1x,'>>>>> Warning: routine mm10_init_voche has',
+     &  /,1x,    '      coded patch to eliminate \dot gamma^0',
+     &  /,1x,    '      change code if desired, comment this',
+     &  /,1x,    '      message and run....',
+     &  /,1x,    '      terminated.'/)
+c
       end subroutine
 c -------------
 c     MTS:
