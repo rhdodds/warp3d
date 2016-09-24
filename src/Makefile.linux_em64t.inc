@@ -87,9 +87,9 @@
 #
 #F90TRAP = -ftrapuv -check uninit
 F90TRAP = 
-F90OPTS1 = -fpconstant -fixed -72 -traceback  -no-inline-factor -ftz $(F90TRAP)
-INLINEOPT =  -no-inline-factor
-#INLINEOPT =  -inline-level=0   # no inlining
+F90OPTS1 = -fpconstant -fixed -72 -traceback  -ftz $(F90TRAP)
+#INLINEOPT =  -no-inline-factor
+INLINEOPT =  -inline-level=0   # no inlining
 F90INC = -xHOST -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #F90INC =  -module $(ODIR) -I$(MKLROOT)/include $(HYINC)
 #
@@ -1436,8 +1436,8 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_a.f
 	$(FILTER) < mm10_a.f > filt_mm10_a.f
-	$(F90) -O0 -c filt_mm10_a.f -opt-report=5
-#	$(F90) -O3 -ip  -inline-level=1 -c filt_mm10_a.f -opt-report=5
+#	$(F90) -O0 -c filt_mm10_a.f -opt-report=5
+	$(F90) -O3 -ip -c filt_mm10_a.f -opt-report=5
 	$(MVC) filt_mm10_a$O  mm10_a$O
 	$(MVC) mm10_a$O $@
 

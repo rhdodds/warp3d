@@ -29,7 +29,7 @@ HYLIB = -L$(HYPRE_ROOT)/lib -lHYPRE
 HYINC = -I$(HYPRE_ROOT)/include
 
 MPIOPT = -mt_mpi 
-OPENMPOPT =  -openmp -reentrancy 
+OPENMPOPT =  -qopenmp -reentrancy 
 ODIR  = ././../obj_linux_em64t_mpi
 EXE_NAME = warp3d.mpi_omp
 #
