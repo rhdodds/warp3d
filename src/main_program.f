@@ -39,11 +39,14 @@ c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
       logical fatal,coor,numnod,numel,elprop,elinc,constr,block
       integer return_type
+      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
+      real*8 tanstf_comps, sig_eps_comps, assem_comps
 c
 c                       MPI: initialize all processors
 c                       and make workers go into the worker handler. if
 c                       else   wmpi_init is a dummy routine.
 c
+      tanstf_comps = 0.0d0; sig_eps_comps=0.0d0; assem_comps=0.0d0
       call wmpi_init
 c
 c                       initialize the load step timing and debug
@@ -988,7 +991,7 @@ c
      &     ' 17.7.3      **',/,
 #win     &     '    **     Code Build Number: 3204             ',
 #win     &     '                     **',/,
-!win     &     "    **     Built on: Fri Jun 17 14:56:17 EDT 2016 ",
+!win     &     "    **     Built on: Fri Sep 23 22:12:46 EDT 2016 ",
 !win     &     '                   **',/,
      &     '    **     University of Illinois @ U-C.',
      &     '    Civil & Env Engineering  **',/,
@@ -1137,6 +1140,8 @@ c
 c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
       logical fatal,coor,numnod,numel,elprop,elinc,constr,block
+      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
+      real*8 tanstf_comps, sig_eps_comps, assem_comps
 c
 c                       cleanup some allocs first
 c
@@ -1154,6 +1159,11 @@ c
       write(out,*)
       t1 = wcputime ( 1 )
       write(out,'(">> total job wall time (secs): ", f12.2)') t1
+      
+c      write(out,*) " "
+c      write(out,*) "..... tanstf time: ", tanstf_comps
+c      write(out,*) "..... sig_eps_comps time: ", sig_eps_comps
+c      write(out,*) "..... assem time: ",assem_comps      
 c
 c                      close input and output files
 c
