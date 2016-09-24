@@ -4,7 +4,7 @@ c     *                      subroutine gptns1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *               last modified : 6/12/2016  rhd                  *
+c     *               last modified : 9/19/2016 rhd                  *
 c     *                                                              *
 c     *     computes the contributon to the tangent                  *
 c     *     stiffnes matrices for a block of similar elements in     *
@@ -224,37 +224,13 @@ c
      &                local_work%bt_block, local_work%bd_block, 
      &                local_work%cep, local_work%ek_full, mxvl,
      &                mxedof, totdof*totdof, totdof )
-     
       else   ! symmetric assembly
-
-        if( totdof .eq. 24 ) then 
-           call bdbt24( span, icp, local_work%b_block, 
-     &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, local_work%ek_symm, mxvl,
-     &                mxedof, utsz, nstr, totdof, mxutsz )
-        elseif( totdof .eq. 30 ) then
-           call bdbt30( span, icp, local_work%b_block, 
-     &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, local_work%ek_symm, mxvl,
-     &                mxedof, utsz, nstr, totdof, mxutsz )
-         elseif( totdof .eq. 36 ) then
-           call bdbt36( span, icp, local_work%b_block, 
-     &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, local_work%ek_symm, mxvl,
-     &                mxedof, utsz, nstr, totdof, mxutsz )
-        elseif( totdof .eq. 60 ) then 
-           call bdbt60( span, icp, local_work%b_block, 
-     &                local_work%bt_block, local_work%bd_block, 
-     &                local_work%cep, local_work%ek_symm,
-     &                mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-        else
          call bdbtgen( span, icp, local_work%b_block,
      &                 local_work%bt_block, local_work%bd_block,
      &                 local_work%cep, local_work%ek_symm, mxvl, 
      &                 mxedof, utsz, nstr, totdof, mxutsz )
-        end if
       end if
-
+c
       if( geonl ) then  ! add tans([G]) M [G] to [Ke]
         call kgstiff( span, cp, icp, local_work%gama_block(1,1,1,gpn),
      &            local_work%nxi(1,gpn), local_work%neta(1,gpn),
@@ -997,529 +973,11 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine bdbt24                       *
-c     *                                                              *
-c     *                       written by : bh                        *
-c     *                                                              *
-c     *                   last modified : 6/8/2016 rhd               *
-c     *                                                              *
-c     *     performs the multiplication of the                       *
-c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine bdbt24( span, icp, b, bt, bd, d, ek_symm,
-     &                   mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-      implicit none
-c
-c                       parameter declarations
-c
-      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
-     &           icp(mxutsz,*)
-#dbl      double precision ::
-#sgl      real ::
-     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-c
-c                       locals
-c
-      integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64
-c
-c              set trans( [B] )
-c
-      do j = 1, 24
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-          bt(i,1,j)= b(i,j,1)
-          bt(i,2,j)= b(i,j,2)
-          bt(i,3,j)= b(i,j,3)
-          bt(i,4,j)= b(i,j,4)    
-          bt(i,5,j)= b(i,j,5) 
-          bt(i,6,j)= b(i,j,6)
-       end do
-      end do
-c
-c              perform multiplication of [D]*[B-mat]. 
-c              assumes full [D] and [B]full matrix. 
-c              [D] for solids is 6x6. Also for cohesive,
-c              i: 4->6 and j: 4->6 should be zeroed by
-c              cnst.. routine.
-c
-      do j = 1, 24
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-       do i = 1, span
-           bd(i,j,1) = d(i,1,1) * b(i,j,1)
-     &               + d(i,2,1) * b(i,j,2)
-     &               + d(i,3,1) * b(i,j,3)
-     &               + d(i,4,1) * b(i,j,4)
-     &               + d(i,5,1) * b(i,j,5)
-     &               + d(i,6,1) * b(i,j,6)
-
-
-           bd(i,j,2) = d(i,1,2) * b(i,j,1)
-     &               + d(i,2,2) * b(i,j,2)
-     &               + d(i,3,2) * b(i,j,3)
-     &               + d(i,4,2) * b(i,j,4)
-     &               + d(i,5,2) * b(i,j,5)
-     &               + d(i,6,2) * b(i,j,6)
-     
-           bd(i,j,3) = d(i,1,3) * b(i,j,1)
-     &               + d(i,2,3) * b(i,j,2)
-     &               + d(i,3,3) * b(i,j,3)
-     &               + d(i,4,3) * b(i,j,4)
-     &               + d(i,5,3) * b(i,j,5)
-     &               + d(i,6,3) * b(i,j,6)
-
-           bd(i,j,4) = d(i,1,4) * b(i,j,1)
-     &               + d(i,2,4) * b(i,j,2)
-     &               + d(i,3,4) * b(i,j,3)
-     &               + d(i,4,4) * b(i,j,4)
-     &               + d(i,5,4) * b(i,j,5)
-     &               + d(i,6,4) * b(i,j,6)
-
-
-
-           bd(i,j,5) = d(i,1,5) * b(i,j,1)
-     &               + d(i,2,5) * b(i,j,2)
-     &               + d(i,3,5) * b(i,j,3)
-     &               + d(i,4,5) * b(i,j,4)
-     &               + d(i,5,5) * b(i,j,5)
-     &               + d(i,6,5) * b(i,j,6)
-
-           bd(i,j,6) = d(i,1,6) * b(i,j,1)
-     &               + d(i,2,6) * b(i,j,2)
-     &               + d(i,3,6) * b(i,j,3)
-     &               + d(i,4,6) * b(i,j,4)
-     &               + d(i,5,6) * b(i,j,5)
-     &               + d(i,6,6) * b(i,j,6)
-
-       end do
-      end do
-c
-c              perform multiplication of tran(B)*([D][B]).
-c              do only for upper triangular entries.
-c
-c              note for all variations of these loop in other
-c              btdb... routines.
-c              
-c              the upper triangle of each element stiffness is
-c              stored. but the row/column ordering corresponds to
-c              element dof: u1 u2 u3, .. v1 v2 v3, .. w1 w2 w3, .. 
-c              not the typical u1 v1 w1, u2 v2 w2, ...
-c              
-      do j = 1, 300
-        row = icp(j,1)
-        col = icp(j,2)
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-         ek_symm(i,j) = ek_symm(i,j)
-     &         +   bt(i,1,col) * bd(i,row,1)
-     &         +   bt(i,2,col) * bd(i,row,2)
-     &         +   bt(i,3,col) * bd(i,row,3)
-     &         +   bt(i,4,col) * bd(i,row,4)
-     &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)
-        end do
-      end do
-c
-      return
-      end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine bdbt30                       *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 6/8/2016 rhd               *
-c     *                                                              *
-c     *     performs the multiplication of the                       *
-c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine bdbt30( span, icp, b, bt, bd, d, ek_symm,
-     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-      implicit none
-c
-c                       parameter declarations
-c
-      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
-     &           icp(mxutsz,*)
-#dbl      double precision ::
-#sgl      real ::
-     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-c
-c                       locals
-c
-      integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
-c
-c              set trans( [B] )
-c
-      do j = 1, 30
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-          bt(i,1,j)= b(i,j,1)
-          bt(i,2,j)= b(i,j,2)
-          bt(i,3,j)= b(i,j,3)
-          bt(i,4,j)= b(i,j,4)    
-          bt(i,5,j)= b(i,j,5) 
-          bt(i,6,j)= b(i,j,6)
-       end do
-      end do
-c
-c              perform multiplication of [D]*[B-mat]. 
-c              assumes full [D] and [B]full matrix. 
-c              [D] for solids is 6x6. Also for cohesive,
-c              i: 4->6 and j: 4->6 should be zeroed by
-c              cnst.. routine.
-c
-      do j = 1, 30
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-       do i = 1, span
-           bd(i,j,1) = d(i,1,1) * b(i,j,1)
-     &               + d(i,2,1) * b(i,j,2)
-     &               + d(i,3,1) * b(i,j,3)
-     &               + d(i,4,1) * b(i,j,4)
-     &               + d(i,5,1) * b(i,j,5)
-     &               + d(i,6,1) * b(i,j,6)
-
-
-           bd(i,j,2) = d(i,1,2) * b(i,j,1)
-     &               + d(i,2,2) * b(i,j,2)
-     &               + d(i,3,2) * b(i,j,3)
-     &               + d(i,4,2) * b(i,j,4)
-     &               + d(i,5,2) * b(i,j,5)
-     &               + d(i,6,2) * b(i,j,6)
-     
-           bd(i,j,3) = d(i,1,3) * b(i,j,1)
-     &               + d(i,2,3) * b(i,j,2)
-     &               + d(i,3,3) * b(i,j,3)
-     &               + d(i,4,3) * b(i,j,4)
-     &               + d(i,5,3) * b(i,j,5)
-     &               + d(i,6,3) * b(i,j,6)
-
-           bd(i,j,4) = d(i,1,4) * b(i,j,1)
-     &               + d(i,2,4) * b(i,j,2)
-     &               + d(i,3,4) * b(i,j,3)
-     &               + d(i,4,4) * b(i,j,4)
-     &               + d(i,5,4) * b(i,j,5)
-     &               + d(i,6,4) * b(i,j,6)
-
-
-
-           bd(i,j,5) = d(i,1,5) * b(i,j,1)
-     &               + d(i,2,5) * b(i,j,2)
-     &               + d(i,3,5) * b(i,j,3)
-     &               + d(i,4,5) * b(i,j,4)
-     &               + d(i,5,5) * b(i,j,5)
-     &               + d(i,6,5) * b(i,j,6)
-
-           bd(i,j,6) = d(i,1,6) * b(i,j,1)
-     &               + d(i,2,6) * b(i,j,2)
-     &               + d(i,3,6) * b(i,j,3)
-     &               + d(i,4,6) * b(i,j,4)
-     &               + d(i,5,6) * b(i,j,5)
-     &               + d(i,6,6) * b(i,j,6)
-
-       end do
-      end do
-c
-c              perform multiplication of tran(B)*([D][B]).
-c              do only for upper triangular entries.
-c
-      do j = 1, 465
-        row = icp(j,1)
-        col = icp(j,2)
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-         ek_symm(i,j) = ek_symm(i,j)
-     &         +   bt(i,1,col) * bd(i,row,1)
-     &         +   bt(i,2,col) * bd(i,row,2)
-     &         +   bt(i,3,col) * bd(i,row,3)
-     &         +   bt(i,4,col) * bd(i,row,4)
-     &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)
-        end do
-      end do
-c
-      return
-      end      
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine bdbt36                       *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 6/8/2016  rhd              *
-c     *                                                              *
-c     *     performs the multiplication of the                       *
-c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine bdbt36( span, icp, b, bt, bd, d, ek_symm,
-     &                 mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-      implicit none
-c
-c                       parameter declarations
-c
-      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
-     &           icp(mxutsz,*)
-#dbl      double precision ::
-#sgl      real ::
-     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-c
-c                       locals
-c
-      integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64,d:64, ek_symm:64  
-c
-c              set trans( [B] )
-c
-      do j = 1, 36
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-          bt(i,1,j)= b(i,j,1)
-          bt(i,2,j)= b(i,j,2)
-          bt(i,3,j)= b(i,j,3)
-          bt(i,4,j)= b(i,j,4)    
-          bt(i,5,j)= b(i,j,5) 
-          bt(i,6,j)= b(i,j,6)
-       end do
-      end do
-c
-c              perform multiplication of [D]*[B-mat]. 
-c              assumes full [D] and [B]full matrix. 
-c              [D] for solids is 6x6. Also for cohesive,
-c              i: 4->6 and j: 4->6 should be zeroed by
-c              cnst.. routine.
-c
-      do j = 1, 36
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-       do i = 1, span
-           bd(i,j,1) = d(i,1,1) * b(i,j,1)
-     &               + d(i,2,1) * b(i,j,2)
-     &               + d(i,3,1) * b(i,j,3)
-     &               + d(i,4,1) * b(i,j,4)
-     &               + d(i,5,1) * b(i,j,5)
-     &               + d(i,6,1) * b(i,j,6)
-
-
-           bd(i,j,2) = d(i,1,2) * b(i,j,1)
-     &               + d(i,2,2) * b(i,j,2)
-     &               + d(i,3,2) * b(i,j,3)
-     &               + d(i,4,2) * b(i,j,4)
-     &               + d(i,5,2) * b(i,j,5)
-     &               + d(i,6,2) * b(i,j,6)
-     
-           bd(i,j,3) = d(i,1,3) * b(i,j,1)
-     &               + d(i,2,3) * b(i,j,2)
-     &               + d(i,3,3) * b(i,j,3)
-     &               + d(i,4,3) * b(i,j,4)
-     &               + d(i,5,3) * b(i,j,5)
-     &               + d(i,6,3) * b(i,j,6)
-
-           bd(i,j,4) = d(i,1,4) * b(i,j,1)
-     &               + d(i,2,4) * b(i,j,2)
-     &               + d(i,3,4) * b(i,j,3)
-     &               + d(i,4,4) * b(i,j,4)
-     &               + d(i,5,4) * b(i,j,5)
-     &               + d(i,6,4) * b(i,j,6)
-
-
-
-           bd(i,j,5) = d(i,1,5) * b(i,j,1)
-     &               + d(i,2,5) * b(i,j,2)
-     &               + d(i,3,5) * b(i,j,3)
-     &               + d(i,4,5) * b(i,j,4)
-     &               + d(i,5,5) * b(i,j,5)
-     &               + d(i,6,5) * b(i,j,6)
-
-           bd(i,j,6) = d(i,1,6) * b(i,j,1)
-     &               + d(i,2,6) * b(i,j,2)
-     &               + d(i,3,6) * b(i,j,3)
-     &               + d(i,4,6) * b(i,j,4)
-     &               + d(i,5,6) * b(i,j,5)
-     &               + d(i,6,6) * b(i,j,6)
-
-       end do
-      end do
-c
-c              perform multiplication of tran(B)*([D][B]).
-c              do only for upper triangular entries.
-c
-      do j = 1, 666
-        row = icp(j,1)
-        col = icp(j,2)
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-         ek_symm(i,j) = ek_symm(i,j)
-     &         +   bt(i,1,col) * bd(i,row,1)
-     &         +   bt(i,2,col) * bd(i,row,2)
-     &         +   bt(i,3,col) * bd(i,row,3)
-     &         +   bt(i,4,col) * bd(i,row,4)
-     &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)
-        end do
-      end do
-c
-      return
-      end      
-     
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine bdbt60                       *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 6/8/2016 rhd               *
-c     *                                                              *
-c     *     performs the multiplication of the                       *
-c     *     transpose( [B] ) * [D] * [B] at integration pt.          *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine bdbt60( span, icp, b, bt, bd, d, ek_symm,
-     &                   mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-      implicit none
-c
-c                       parameter declarations
-c
-      integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
-     &           icp(mxutsz,*)
-#dbl      double precision ::
-#sgl      real ::
-     &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-c
-c                       locals
-c
-      integer :: i, j, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
-c
-c              set trans( [B] )
-c
-      do j = 1, 60
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-          bt(i,1,j)= b(i,j,1)
-          bt(i,2,j)= b(i,j,2)
-          bt(i,3,j)= b(i,j,3)
-          bt(i,4,j)= b(i,j,4)    
-          bt(i,5,j)= b(i,j,5) 
-          bt(i,6,j)= b(i,j,6)
-       end do
-      end do
-c
-c              perform multiplication of [D]*[B-mat]. 
-c              assumes full [D] and [B]full matrix. 
-c              [D] for solids is 6x6. Also for cohesive,
-c              i: 4->6 and j: 4->6 should be zeroed by
-c              cnst.. routine.
-c
-      do j = 1, 60
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-       do i = 1, span
-           bd(i,j,1) = d(i,1,1) * b(i,j,1)
-     &               + d(i,2,1) * b(i,j,2)
-     &               + d(i,3,1) * b(i,j,3)
-     &               + d(i,4,1) * b(i,j,4)
-     &               + d(i,5,1) * b(i,j,5)
-     &               + d(i,6,1) * b(i,j,6)
-
-
-           bd(i,j,2) = d(i,1,2) * b(i,j,1)
-     &               + d(i,2,2) * b(i,j,2)
-     &               + d(i,3,2) * b(i,j,3)
-     &               + d(i,4,2) * b(i,j,4)
-     &               + d(i,5,2) * b(i,j,5)
-     &               + d(i,6,2) * b(i,j,6)
-     
-           bd(i,j,3) = d(i,1,3) * b(i,j,1)
-     &               + d(i,2,3) * b(i,j,2)
-     &               + d(i,3,3) * b(i,j,3)
-     &               + d(i,4,3) * b(i,j,4)
-     &               + d(i,5,3) * b(i,j,5)
-     &               + d(i,6,3) * b(i,j,6)
-
-           bd(i,j,4) = d(i,1,4) * b(i,j,1)
-     &               + d(i,2,4) * b(i,j,2)
-     &               + d(i,3,4) * b(i,j,3)
-     &               + d(i,4,4) * b(i,j,4)
-     &               + d(i,5,4) * b(i,j,5)
-     &               + d(i,6,4) * b(i,j,6)
-
-
-
-           bd(i,j,5) = d(i,1,5) * b(i,j,1)
-     &               + d(i,2,5) * b(i,j,2)
-     &               + d(i,3,5) * b(i,j,3)
-     &               + d(i,4,5) * b(i,j,4)
-     &               + d(i,5,5) * b(i,j,5)
-     &               + d(i,6,5) * b(i,j,6)
-
-           bd(i,j,6) = d(i,1,6) * b(i,j,1)
-     &               + d(i,2,6) * b(i,j,2)
-     &               + d(i,3,6) * b(i,j,3)
-     &               + d(i,4,6) * b(i,j,4)
-     &               + d(i,5,6) * b(i,j,5)
-     &               + d(i,6,6) * b(i,j,6)
-
-       end do
-      end do
-c
-c              perform multiplication of tran(B)*([D][B]).
-c              do only for upper triangular entries.
-c
-      do j = 1, 1830
-        row = icp(j,1)
-        col = icp(j,2)
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-         ek_symm(i,j) = ek_symm(i,j)
-     &         +   bt(i,1,col) * bd(i,row,1)
-     &         +   bt(i,2,col) * bd(i,row,2)
-     &         +   bt(i,3,col) * bd(i,row,3)
-     &         +   bt(i,4,col) * bd(i,row,4)
-     &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)     
-        end do
-      end do
-c
-      return
-      end      
-c
-
-c     ****************************************************************
-c     *                                                              *
 c     *                  subroutine bdbt_asym                        * 
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                last modified : 6/12/2016 rhd                 *
+c     *                last modified : 9/22/2016 rhd                 *
 c     *                                                              *
 c     *     trans(B) * D * B for the asymmetric case.  Handles all   *
 c     *     element types                                            *
@@ -1551,11 +1009,6 @@ c
 @!DIR$ IVDEP
         do i = 1, span
           bt(i,k,j)= b(i,j,k)
-c          bt(i,2,j)= b(i,j,2)
-c          bt(i,3,j)= b(i,j,3)
-c          bt(i,4,j)= b(i,j,4)    
-c          bt(i,5,j)= b(i,j,5) 
-c          bt(i,6,j)= b(i,j,6)
        end do
       end do
       end do
@@ -1650,7 +1103,7 @@ c     *               subroutine bdbtgen   (symmetric only)          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/12/2016 rhd              *
+c     *                   last modified : 9/22/2016 rhd              *
 c     *                                                              *
 c     *     this subroutine performs the multiplication of the       *
 c     *     transpose of the strain-displacement matrix by the       *
@@ -1676,21 +1129,15 @@ c
 c
 c                       locals
 c
-      integer :: i, j, row, col
+      integer :: i, j, k, row, col
 @!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
       do j = 1, totdof
+      	do k = 1, 6
 @!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-        do i = 1, span
-          bt(i,1,j)= b(i,j,1)
-          bt(i,2,j)= b(i,j,2)
-          bt(i,3,j)= b(i,j,3)
-          bt(i,4,j)= b(i,j,4)    
-          bt(i,5,j)= b(i,j,5) 
-          bt(i,6,j)= b(i,j,6)
+          bt(1:span,k,j) = b(1:span,j,k)
        end do
       end do
 c
@@ -2021,26 +1468,26 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-c      subroutine bdbt_asym_mcm( span, icp, b, bt, bd, d, ek,
-c     &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
-c      implicit integer (a-z)
+      subroutine bdbt_asym_mcm( span, icp, b, bt, bd, d, ek,
+     &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
+      implicit integer (a-z)
 c
 c                       parameter declarations
 c
-c#dbl      double precision
-c#sgl      real
-c     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),
-c     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
-c      integer icp(mxutsz,*)
+#dbl      double precision
+#sgl      real
+     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),
+     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
+      integer icp(mxutsz,*)
 c
-c      do i=1,span
-c        ek(:,i) = ek(:,i) + reshape(matmul(b(i,1:totdof,1:6),
-c     &      matmul(d(i,1:6,1:6), transpose(b(i,1:totdof,1:6)))),
-c     &      (/totdof*totdof/))
-c      end do
+      do i=1,span
+        ek(:,i) = ek(:,i) + reshape(matmul(b(i,1:totdof,1:6),
+     &      matmul(d(i,1:6,1:6), transpose(b(i,1:totdof,1:6)))),
+     &      (/totdof*totdof/))
+      end do
 c      
-c      return
-c      end subroutine
+      return
+      end subroutine
 c     ****************************************************************
 c     *                                                              *
 c     *           subroutine bdbt_asym2 : not used. saved for        *
