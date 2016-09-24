@@ -29,6 +29,8 @@ c
 c                    parameter declarations
 c
       logical :: first_solve, suggested_new_precond
+      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
+      
 c
 c                    allocatables used to support stiffness
 c                    assembly in sparse format. note those
@@ -65,10 +67,17 @@ c
       data zero, local_debug, old_neqns, old_ncoeff, cpu_stats
      &     / 0.0d00, .false., 0, 0, .true. /
       data save_solver / .false. /
+      
+      real*8 tanstf_comps, sig_eps_comps, assem_comps
+      real*8 start, end
+      
+      
 @!DIR$ ASSUME_ALIGNED dof_eqn_map:32
 @!DIR$ ASSUME_ALIGNED u_vec:64
 c
-c
+c    
+      call cpu_time( start ) 
+      
       if( local_debug ) write(*,*) '... direct_driver_sparse ... @ 1'
       if( .not. show_details ) cpu_stats = .false.
 c
@@ -151,6 +160,10 @@ c
 c
       if( local_debug ) write(*,*) '... direct_driver_sparse @ 4'
       call t_end_assembly( assembly_total, start_assembly_step )
+      
+      call cpu_time( end )
+      assem_comps = assem_comps + (end-start)
+      
 c
 c
 c          3.  solve the equations

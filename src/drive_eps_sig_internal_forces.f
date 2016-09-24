@@ -61,12 +61,19 @@ c
 c     
       logical :: local_debug, umat_matl
       real :: spone
+      
+      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
+      real*8 tanstf_comps, sig_eps_comps, assem_comps
+      real *8 start, end
+      
+      
       data zero, local_debug, spone / 0.0d00, .false., 1.0 /
 c
 c             MPI:
 c               alert workers we are in the strain-
 c               stress-internal force routines.
 c
+      call cpu_time( start )
       call wmpi_alert_slaves( 14 )
       call wmpi_bcast_int( step )
       call wmpi_bcast_int( iter )
@@ -328,6 +335,8 @@ c
       ifvcmp = .true.
       call thyme( 6, 2 )
 c
+       call cpu_time( end )
+        sig_eps_comps = sig_eps_comps + (end-start )
       return
 c
 c

@@ -1865,12 +1865,18 @@ c
       logical :: stiff_update_flg, show_details
 c
       integer :: local_step, local_iter
+      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
+      real*8 tanstf_comps, sig_eps_comps, assem_comps
+      real *8 start, end
 c
       stiff_update_flg = .true.
       local_step = step   ! just protect values
       local_iter = iter
       if ( show_details ) write(out,9110) step, iter
+      call cpu_time( start )
       call tanstf( .false., local_step, local_iter )
+      call cpu_time( end )
+      tanstf_comps = tanstf_comps + (end-start)
       return
 c
  9110 format(7x,
