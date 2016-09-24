@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 11/25/2015 rhd             *
+c     *                   last modified : 9/23/2018  rhd             *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -720,6 +720,9 @@ c
         allocate( output_step_bitmap_list(maplength ) )
         read(fileno) output_step_bitmap_list
       end if
+c      
+      call uexternaldb_reopen( fileno, out ) 
+
 c
 c                       read final check variable -- check if correct.
 c                       if not, the restored data is corrupted.

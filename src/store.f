@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/20/2016 rhd              *
+c     *                   last modified : 9/23/2016 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -711,6 +711,10 @@ c
       else
         write(fileno) 0
       end if
+      
+      
+      
+      call uexternaldb_store( fileno, out ) 
 c
 c                       to help indicate if a restart file has been corrupted.
 c                       The number is 2**31 - 1

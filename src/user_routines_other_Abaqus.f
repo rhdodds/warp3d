@@ -84,3 +84,69 @@ c
      & /,10x,"kstep, kinc: ",2i3,//)
 c
       end
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                    subroutine uexternaldb_store              *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/23/2016 rhd              *
+c     *                                                              *
+c     *                   uexternaldb support routine                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine uexternaldb_store( fileno, iout )
+c
+      use mod_user_routines
+      implicit none
+c
+      integer :: fileno, iout
+c
+c              local variables
+c
+      logical, parameter :: local_debug = .true.
+      
+c      write(fileno) active_profile_up
+c      if( local_debug ) write(iout,9000) active_profile_up
+      
+      return
+c
+ 9000 format(".... uexternaldb_store ...",
+     & /,10x"active_profile_up: ",i6,// )    
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                    subroutine uexternaldb_reopen             *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/23/2016 rhd              *
+c     *                                                              *
+c     *                   uexternaldb support routine                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine uexternaldb_reopen( fileno, iout )
+c
+      use mod_user_routines
+      implicit none
+c
+      integer :: fileno, iout
+c
+c              local variables
+c
+      logical, parameter ::  local_debug = .true.
+      
+c      read(fileno) computed_profile_from_restart
+c      if( local_debug ) write(iout,9000) 
+c     &  computed_profile_from_restart
+      
+      return
+c
+ 9000 format(".... uexternaldb_reopen ...",
+     & /,10x"computed_profile_from_restart: ",i6,// )    
+      end
