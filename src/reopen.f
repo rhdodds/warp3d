@@ -710,6 +710,7 @@ c
           read(fileno) release_cons_table(1:3,i)%reaction_force 
         end do
       end if
+      write(out,9210)
 c
 c                       get output commands file ... information
 c                       save file name and bitmap list if it exists
@@ -722,7 +723,7 @@ c
       end if
 c      
       call uexternaldb_reopen( fileno, out ) 
-
+      write(out,9220)
 c
 c                       read final check variable -- check if correct.
 c                       if not, the restored data is corrupted.
@@ -801,6 +802,8 @@ c
  9190 format(15x,'> user list definitions read...')
  9195 format(15x,'> nonlocal material data read...')
  9200 format(15x,'> crystal data read...')
+ 9210 format(15x,'> convergence history read...')
+ 9220 format(15x,'> user routine data read...')
       return
       end
 c     ****************************************************************

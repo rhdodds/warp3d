@@ -700,6 +700,8 @@ c
           write(fileno) release_cons_table(1:3,i)%reaction_force 
         end do
       end if
+      write(out,9210)
+      
 c
 c                       save for output commands file ... information
 c                       save file name and bitmap list if it exists
@@ -711,10 +713,11 @@ c
       else
         write(fileno) 0
       end if
-      
-      
-      
+c
+c                       USER routines data 
+c      
       call uexternaldb_store( fileno, out ) 
+      write(out,9220)
 c
 c                       to help indicate if a restart file has been corrupted.
 c                       The number is 2**31 - 1
@@ -765,6 +768,8 @@ c
  9190 format(15x,'> user list definitions written...')
  9195 format(15x,'> nonlocal material data...')
  9200 format(15x,'> crystal data written...')
+ 9210 format(15x,'> convergence history written...')
+ 9220 format(15x,'> user routine data written...')
       return
       end
 c     ****************************************************************
