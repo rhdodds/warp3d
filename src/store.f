@@ -74,7 +74,7 @@ c
       fileno = 11
       dbname = ' '
       if ( scanms(savfil,'namenone',8) ) then
-	       if ( scanms(savnam,'itsblank',8) ) then
+        if ( scanms(savnam,'itsblank',8) ) then
           call errmsg( 151, dum, dums, dumr, dumd )
           dbname = 'default_db'
         else
@@ -534,7 +534,7 @@ c
      &        node_release_frac,num_crack_plane_nodes * prec_fact )
          write (fileno) check_data_key
 
-	 if ( overshoot_control_crk_grth ) call wrt2d( fileno,
+      if ( overshoot_control_crk_grth ) call wrt2d( fileno,
      &        old_angles_at_front, num_crack_plane_nodes * prec_fact,
      &        num_crack_plane_nodes * prec_fact, mxconn )
          write (fileno) check_data_key
@@ -708,8 +708,9 @@ c                       save file name and bitmap list if it exists
 c
       write(fileno) output_command_file
       if( allocated( output_step_bitmap_list ) ) then
-        write(fileno) mxstep
-        write(fileno) output_step_bitmap_list(1:mxstep)
+        maplength = (mxstep - 1)/30 + 1
+        write(fileno) maplength
+        write(fileno) output_step_bitmap_list(1:maplength)
       else
         write(fileno) 0
       end if
