@@ -6217,22 +6217,82 @@ c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_DJGM_GH(s_type,num_hard,G,H)
+      subroutine mm10_DJGM_GH(local_work,s_type,num_hard,G,H)
+      use mm10_defs ! to get definition of cc_props
       implicit none
+$add include_sig_up
 c
       integer :: s_type, num_hard
       double precision, dimension(num_hard,num_hard) ::  G
       double precision, dimension(7,num_hard) ::  H
+      double precision :: one
 c
-      if( s_type .eq. 9 ) then ! HCP6
-         call mm10_DJGM_GHhcp6( G,H )
-      elseif( s_type .eq. 10 ) then ! HCP18
-         call mm10_DJGM_GHhcp18( G,H )
-      else ! calculate manually
-         write(*,*) 'cannot use manual interaction G,H matrices'
-         write(*,*) 'routine mm10_DJGM_GH. terminate job'
-         call die_gracefully
-      endif
+      one = 1.d0
+c
+      if( (local_work%c_props(1,1)%k_o+100.d0) .lt. 1d-12 ) then
+c
+        if( s_type .eq. 9 ) then ! HCP6
+c       Parameters
+      H(1,1:3) = local_work%c_props(1,1)%u1
+      H(2,1:3) = local_work%c_props(1,1)%u4
+      H(3,1:3) = local_work%c_props(1,1)%u7
+      H(4,1:3) = local_work%c_props(1,1)%u10
+      H(5,1:3) = local_work%c_props(1,1)%q_y
+      H(6,1:3) = local_work%c_props(1,1)%burgers
+      H(7,1:3) = local_work%c_props(1,1)%Go_y
+      H(1,4:6) = local_work%c_props(1,1)%u2
+      H(2,4:6) = local_work%c_props(1,1)%u5
+      H(3,4:6) = local_work%c_props(1,1)%u8
+      H(4,4:6) = local_work%c_props(1,1)%p_y
+      H(5,4:6) = local_work%c_props(1,1)%q_v
+      H(6,4:6) = local_work%c_props(1,1)%tau_a
+      H(7,4:6) = local_work%c_props(1,1)%eps_dot_o_y
+c     q matrix
+      G(1:6,1:6) = one
+        elseif( s_type .eq. 10 ) then ! HCP18
+c       Parameters
+      H(1,1:3) = local_work%c_props(1,1)%u1
+      H(2,1:3) = local_work%c_props(1,1)%u4
+      H(3,1:3) = local_work%c_props(1,1)%u7
+      H(4,1:3) = local_work%c_props(1,1)%u10
+      H(5,1:3) = local_work%c_props(1,1)%q_y
+      H(6,1:3) = local_work%c_props(1,1)%burgers
+      H(7,1:3) = local_work%c_props(1,1)%Go_y
+      H(1,4:6) = local_work%c_props(1,1)%u2
+      H(2,4:6) = local_work%c_props(1,1)%u5
+      H(3,4:6) = local_work%c_props(1,1)%u8
+      H(4,4:6) = local_work%c_props(1,1)%p_y
+      H(5,4:6) = local_work%c_props(1,1)%q_v
+      H(6,4:6) = local_work%c_props(1,1)%tau_a
+      H(7,4:6) = local_work%c_props(1,1)%eps_dot_o_y
+      H(1,7:18) = local_work%c_props(1,1)%u3
+      H(2,7:18) = local_work%c_props(1,1)%u6
+      H(3,7:18) = local_work%c_props(1,1)%u9
+      H(4,7:18) = local_work%c_props(1,1)%p_v
+      H(5,7:18) = local_work%c_props(1,1)%boltzman
+      H(6,7:18) = local_work%c_props(1,1)%tauHat_v
+      H(7,7:18) = local_work%c_props(1,1)%Go_v
+c     q matrix
+      G(1:18,1:18) = one
+        else ! calculate manually
+           write(*,*) 'cannot use manual interaction G,H matrices'
+           write(*,*) 'routine mm10_DJGM_GH. terminate job'
+           call die_gracefully
+        endif
+c
+      else
+c
+        if( s_type .eq. 9 ) then ! HCP6
+           call mm10_DJGM_GHhcp6( G,H )
+        elseif( s_type .eq. 10 ) then ! HCP18
+           call mm10_DJGM_GHhcp18( G,H )
+        else ! calculate manually
+           write(*,*) 'cannot use manual interaction G,H matrices'
+           write(*,*) 'routine mm10_DJGM_GH. terminate job'
+           call die_gracefully
+        endif
+c
+      endif ! user input
 c
       return
       end subroutine

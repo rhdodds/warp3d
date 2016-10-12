@@ -174,7 +174,7 @@ c     *                   subroutine rknstr_finish_cp                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/12/2016 tjt              *
+c     *                   last modified : 10/12/2016 rhd             *
 c     *                                                              *
 c     *     make calls to the specific material model for block      *
 c     *                                                              *
@@ -190,16 +190,18 @@ c
       eh  = indexes_common(2,2) ! last index of grad_fe
 c
       do i = 1, local_work%span
+        iblkrow = i
         if( local_work%ncrystals(i) .gt. 1 )  then
              local_work%elem_hist1(i,sh:eh,1:ngp) = zero
         else
-             rs = index_crys_hist(1,3,1) ! first index of Rp, 1st crystal
-             re = index_crys_hist(1,3,2) ! last index of Rp, 1st crystal
-             call mm10_calc_grads(ngp, elem_type, order, geonl,
-     &           local_work%rot_blk_n1(i,1:9,1:ngp),
-     &           local_work%jac(i,1:3,1:3),
-     &           local_work%elem_hist(i,rs:re,1:ngp),
-     &           local_work%elem_hist1(i,sh:eh,1:ngp)) 
+         rs = index_crys_hist(1,3,1) ! first index of Rp, 1st crystal
+         re = index_crys_hist(1,3,2) ! last index of Rp, 1st crystal
+         call mm10_calc_grads( ngp, elem_type, order, geonl,
+     &       local_work%rot_blk_n1(1,1,1),
+     &       local_work%jac(1,1,1),
+     &       local_work%elem_hist(1,rs,1),
+     &       local_work%elem_hist1(1,sh,1), out, iblkrow, span,
+     &       local_work%hist_size_for_blk ) 
         end if
       end do
 c
@@ -1567,10 +1569,15 @@ c
                   local_work%c_props(i,c)%u4 = c_array(cnum)%u4
                   local_work%c_props(i,c)%u5 = c_array(cnum)%u5
                   local_work%c_props(i,c)%u6 = c_array(cnum)%u6
+                  local_work%c_props(i,c)%u7 = c_array(cnum)%u7
+                  local_work%c_props(i,c)%u8 = c_array(cnum)%u8
+                  local_work%c_props(i,c)%u9 = c_array(cnum)%u9
+                  local_work%c_props(i,c)%u10 = c_array(cnum)%u10
                   local_work%c_props(i,c)%tau_y = c_array(cnum)%tau_y
                   local_work%c_props(i,c)%tau_v = c_array(cnum)%tau_v
                   local_work%c_props(i,c)%voche_m = 
      &                  c_array(cnum)%voche_m
+                  local_work%c_props(i,c)%iD_v = c_array(cnum)%iD_v
 c         Solver flags
                   local_work%c_props(i,c)%solver = c_array(cnum)%solver
                   local_work%c_props(i,c)%strategy = 
@@ -1587,6 +1594,9 @@ c         Solver flags
                   local_work%c_props(i,c)%rtol1 = c_array(cnum)%rtol1
                   local_work%c_props(i,c)%xtol = c_array(cnum)%xtol
                   local_work%c_props(i,c)%xtol1 = c_array(cnum)%xtol1
+c          Alternative model flag
+                  local_work%c_props(i,c)%alter_mode = 
+     &                  c_array(cnum)%alter_mode 
 c                   call a helper to get the crystal -> 
 c                   reference rotation
                   if (local_work%angle_type(i) .eq. 1) then

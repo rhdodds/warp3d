@@ -1,7 +1,7 @@
 c     ****************************************************************
 c     *                                                              *
 c     *                subroutine outime                             *
-c     *  output cpu times for each major part of solution at        *
+c     *  output cpu times for each major part of solution at         *
 c     *  job termination                                             *
 c     *                                                              *
 c     *                                                              *

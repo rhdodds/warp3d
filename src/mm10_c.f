@@ -5597,6 +5597,7 @@ c-----------------------------------------------------------------------
       use mm10_defs
       implicit none
 
+      integer :: sizeArr, allocate_status, dim1, dim2
       type(crystal_props) :: props, props1
 
       props1%rate_n = props%rate_n
@@ -5655,10 +5656,34 @@ c-----------------------------------------------------------------------
       props1%strategy = props%strategy
       props1%debug = props%debug
       props1%gpall = props%gpall
+
         ! constants for use in material models
-      call mm10_set_cons( props1%h_type,
-     &    props1%s_type,
-     &    props1%num_hard, props1, 1 )
+
+c     Gmat: First full determine size of allocated array
+      dim1 = size(props%Gmat,1)
+      dim2 = size(props%Gmat,2)
+      sizeArr = dim1*dim2
+c     Allocate G
+      allocate( props1%Gmat(dim1,dim2), stat=allocate_status)
+      if( allocate_status .ne. 0 ) then
+            write(*,*) ' error allocating G matrix inside solverB'
+            call die_gracefully
+      endif
+c     Copy the contents
+      call mm10_c_copy_darray(props%Gmat,sizeArr,props1%Gmat)
+
+c     Hmat: First full determine size of allocated array
+      dim1 = size(props%Hmat,1)
+      dim2 = size(props%Hmat,2)
+      sizeArr = dim1*dim2
+c     Allocate G
+      allocate( props1%Hmat(dim1,dim2), stat=allocate_status)
+      if( allocate_status .ne. 0 ) then
+            write(*,*) ' error allocating G matrix inside solverB'
+            call die_gracefully
+      endif
+c     Copy the contents
+      call mm10_c_copy_darray(props%Hmat,sizeArr,props1%Hmat)
 
       return
       end
@@ -5672,9 +5697,8 @@ c-----------------------------------------------------------------------
 
       type(crystal_props) :: props1
 
-      call mm10_set_cons( props1%h_type,
-     &    props1%s_type,
-     &    props1%num_hard, props1, 2 )
+         deallocate( props1%Gmat, props1%Hmat )
+
       return
       end
 
@@ -5714,4 +5738,18 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+c-----------------------------------------------------------------------
+
+      subroutine mm10_c_copy_darray(A,n,B)
+
+      integer :: n, i
+      double precision, dimension(n) :: A,B
+
+      do i = 1,n
+          B(i) = A(i)
+      enddo
+
+      return
+      end subroutine
 

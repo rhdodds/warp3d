@@ -81,8 +81,24 @@ c           Read in properties
                               c_array(cnum)%elastic_type = 1
                         elseif (lab(1:nc) .eq. 'cubic') then
                               c_array(cnum)%elastic_type = 2
+                        elseif (lab(1:nc) .eq. 'ti6242') then
+                              c_array(cnum)%elastic_type = 3
                         else
                               call errmsg(354,dumi,dums,dumr,dumd)
+                        end if
+                  elseif ( matchs_exact('alter_mode')) then
+                        if (.not. label(dumi)) then
+                              call errmsg(364,dumi,dums,dumr,dumd)
+                        else
+                              lab = ' '
+                              call entits(lab,nc)
+                        end if
+                        if (lab(1:nc) .eq. 'true') then
+                              c_array(cnum)%alter_mode = .true.
+                        elseif (lab(1:nc) .eq. 'false') then
+                              c_array(cnum)%alter_mode = .false.
+                        else
+                              call errmsg(364,dumi,dums,dumr,dumd)
                         end if
                   elseif ( matchs_exact('e')) then
                         if (.not. numd(c_array(cnum)%e)) then
@@ -188,6 +204,10 @@ c           Read in properties
                      if (.not. numd(c_array(cnum)%voche_m)) then
                            call errmsg(5,dumi,'voche_m',dumr,dumd)
                      end if
+                  elseif ( matchs_exact('iD_v')) then
+                     if (.not. numd(c_array(cnum)%iD_v)) then
+                           call errmsg(5,dumi,'iD_v',dumr,dumd)
+                     end if
                   elseif ( matchs_exact('u_1')) then
                      if (.not. numd(c_array(cnum)%u1)) then
                            call errmsg(5,dumi,'u_1',dumr,dumd)
@@ -211,6 +231,22 @@ c           Read in properties
                   elseif ( matchs_exact('u_6')) then
                      if (.not. numd(c_array(cnum)%u6)) then
                            call errmsg(5,dumi,'u_6',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('u_7')) then
+                     if (.not. numd(c_array(cnum)%u7)) then
+                           call errmsg(5,dumi,'u_7',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('u_8')) then
+                     if (.not. numd(c_array(cnum)%u8)) then
+                           call errmsg(5,dumi,'u_8',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('u_9')) then
+                     if (.not. numd(c_array(cnum)%u9)) then
+                           call errmsg(5,dumi,'u_9',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('u_10')) then
+                     if (.not. numd(c_array(cnum)%u10)) then
+                           call errmsg(5,dumi,'u_10',dumr,dumd)
                      end if
                   elseif ( matchs_exact('hardening')) then
                      if (.not. label(dumi)) then
@@ -283,6 +319,10 @@ c           Read in properties
                   elseif ( matchs_exact('delem')) then
                      if (.not. numi(c_array(cnum)%st_it(3))) then
                            call errmsg(5,dumi,'delem',dumr,dumd)
+                     end if
+                  elseif ( matchs_exact('tang_calc')) then
+                     if (.not. numi(c_array(cnum)%tang_calc)) then
+                           call errmsg(5,dumi,'tang_calc',dumr,dumd)
                      end if
                   elseif ( matchs_exact('method')) then
                      if (.not. numi(c_array(cnum)%method)) then

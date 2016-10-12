@@ -26,7 +26,7 @@ c
      &        p_v, q_v, boltzman, theta_0, eps_dot_0_v, eps_dot_0_y,
      &        p_y, q_y, tau_a, tau_hat_v, G_0_v,
      &        k_0, mu_0, D_0, T_0, tau_y, tau_v, voche_m,
-     &        u1, u2, u3, u4, u5, u6
+     &        u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, iD_v
         double precision :: atol, atol1, rtol, rtol1, xtol, xtol1
         double precision, dimension(3,3) :: g
         double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
@@ -35,7 +35,7 @@ c
         integer :: angle_type, angle_convention, nslip,
      &        h_type, miter, gpp, s_type, cnum, method,
      &        st_it(3), num_hard, tang_calc, out
-        logical :: solver, strategy, debug, gpall
+        logical :: solver, strategy, debug, gpall, alter_mode
         ! constants for use in material models
         double precision, dimension(:,:), allocatable :: Gmat,Hmat
       end type
@@ -110,7 +110,7 @@ c                             4) ornl
 c                             7) roters
 c                             9) DJGM - Ti-6242
 c                 Solver flags
-                  logical :: solver, strategy, gpall
+                  logical :: solver, strategy, gpall, alter_mode
                   integer :: tang_calc, miter, gpp, method, st_it(3)
                   double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
@@ -122,9 +122,10 @@ c                 Material parameters
      &                                theta_o, tau_bar_o,
      &                                tau_hat_v, g_o_v,
      &                                eps_dot_o_v, k_o,
-     &                                mu_o, D_o, tau_y, tau_v,
+     &                                mu_o, D_o, tau_y, tau_v, iD_v,
      &                                voche_m !  yes it is spelled wrong
-                  double precision :: u1, u2, u3, u4, u5, u6
+                  double precision :: u1, u2, u3, u4, u5, u6,
+     &                                u7, u8, u9, u10
                   double precision, dimension(6,6) :: elast_stiff,
      &                                                elast_flex
                   double precision, dimension(max_slip_sys,3) :: ni,bi
@@ -189,6 +190,7 @@ c
                   c_array(num)%tau_y = 0.0
                   c_array(num)%tau_v = 0.0
                   c_array(num)%voche_m = 1.0
+                  c_array(num)%iD_v = 0.0
 
                   c_array(num)%u1 = 0.0
                   c_array(num)%u2 = 0.0
@@ -216,6 +218,8 @@ c            Solver parameters
                   c_array(num)%st_it(1) = -2
                   c_array(num)%st_it(2) = -2
                   c_array(num)%st_it(3) = -2
+c            Alternative model features, currently Voce only
+                  c_array(num)%alter_mode = .false.
 
             end subroutine
 c
@@ -226,6 +230,8 @@ c                 and elasticity tensors
                   double precision :: f,e,v,u,a,c,ac1,ac2
                   double precision :: z0,f2,f3,f112,f211,
      &                  f123,f213,f312
+                  double precision :: C11,C22,C44,C55,C66
+                  double precision :: C12,C33,C13,C23
                   integer :: i,j,info
                   double precision, dimension(600) :: work
                   integer, dimension(600) :: lwork
@@ -1563,24 +1569,27 @@ c   2 for complex finite difference
 c   3 for checking with real finite difference
 c   4 for checking with complex finite difference
 c
+c   Note: TJT 10/4/16: tang_calc is now specified through user-input
+c                      default value if not specified is 0
+c
                   if (c_array(num)%h_type .eq. 1) then !Voche
                           c_array(num)%num_hard = 1
-                          c_array(num)%tang_calc = 0
+c                          c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 2) then !MTS
                           c_array(num)%num_hard = 1
-                          c_array(num)%tang_calc = 0
+c                          c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 3) then !User
                           c_array(num)%num_hard = 0
                           c_array(num)%tang_calc = 1
                   elseif (c_array(num)%h_type .eq. 4) then !ORNL
                           c_array(num)%num_hard = c_array(num)%nslip
-                          c_array(num)%tang_calc = 0
+c                          c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 7) then !MRR
                           c_array(num)%num_hard = c_array(num)%nslip
-                          c_array(num)%tang_calc = 0
+c                          c_array(num)%tang_calc = 0
                   elseif (c_array(num)%h_type .eq. 9) then !DJGM
                           c_array(num)%num_hard = c_array(num)%nslip
-                          c_array(num)%tang_calc = 0
+c                          c_array(num)%tang_calc = 0
                   else
                      write(*,101) c_array(num)%h_type
  101  format(
@@ -1667,13 +1676,65 @@ c
                         c_array(num)%elast_flex(6,4)=0
                         c_array(num)%elast_flex(6,5)=0
                         c_array(num)%elast_flex(6,6)=1/u
+                  elseif (c_array(num)%elastic_type .eq. 3) then
+                        ! do nothing here
                   else
                         write (out,*) "Error: invalid elasticity type."
                         call die_gracefully
                   end if
 c                       Generate (one time) the inverse of the flexibility
+                  if (c_array(num)%elastic_type .ne. 3) then
                   c_array(num)%elast_stiff = c_array(num)%elast_flex
                   call mm10_invsym(c_array(num)%elast_stiff,6)
+                  else
+                        C11 = c_array(num)%mu_o
+                        C13 = c_array(num)%e
+                        C44 = c_array(num)%nu
+                        C55 = c_array(num)%voche_m
+
+                        C33 = c_array(num)%D_o
+                        C12 = c_array(num)%t_o
+                        C22 = C11
+                        C23 = C13
+                        C66 = C55               
+                        c_array(num)%elast_stiff(1,1)=C11
+                        c_array(num)%elast_stiff(1,2)=C12
+                        c_array(num)%elast_stiff(1,3)=C13
+                        c_array(num)%elast_stiff(1,4)=0.d0
+                        c_array(num)%elast_stiff(1,5)=0.d0
+                        c_array(num)%elast_stiff(1,6)=0.d0
+                        c_array(num)%elast_stiff(2,1)=C12
+                        c_array(num)%elast_stiff(2,2)=C22
+                        c_array(num)%elast_stiff(2,3)=C23
+                        c_array(num)%elast_stiff(2,4)=0.d0
+                        c_array(num)%elast_stiff(2,5)=0.d0
+                        c_array(num)%elast_stiff(2,6)=0.d0
+                        c_array(num)%elast_stiff(3,1)=C13
+                        c_array(num)%elast_stiff(3,2)=C23
+                        c_array(num)%elast_stiff(3,3)=C33
+                        c_array(num)%elast_stiff(3,4)=0.d0
+                        c_array(num)%elast_stiff(3,5)=0.d0
+                        c_array(num)%elast_stiff(3,6)=0.d0
+                        c_array(num)%elast_stiff(4,1)=0.d0
+                        c_array(num)%elast_stiff(4,2)=0.d0
+                        c_array(num)%elast_stiff(4,3)=0.d0
+                        c_array(num)%elast_stiff(4,4)=C44
+                        c_array(num)%elast_stiff(4,5)=0.d0
+                        c_array(num)%elast_stiff(4,6)=0.d0
+                        c_array(num)%elast_stiff(5,1)=0.d0
+                        c_array(num)%elast_stiff(5,2)=0.d0
+                        c_array(num)%elast_stiff(5,3)=0.d0
+                        c_array(num)%elast_stiff(5,4)=0.d0
+                        c_array(num)%elast_stiff(5,5)=C55
+                        c_array(num)%elast_stiff(5,6)=0.d0
+                        c_array(num)%elast_stiff(6,1)=0.d0
+                        c_array(num)%elast_stiff(6,2)=0.d0
+                        c_array(num)%elast_stiff(6,3)=0.d0
+                        c_array(num)%elast_stiff(6,4)=0.d0
+                        c_array(num)%elast_stiff(6,5)=0.d0
+                        c_array(num)%elast_stiff(6,6)=C66 
+c                       write(*,*) c_array(num)%elast_stiff(1:6,1:6)
+                    endif
 c
                   c_array(num)%valid = .true.
             end subroutine

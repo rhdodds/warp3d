@@ -828,7 +828,7 @@ c
 c
       integer :: i
 c
-      double precision :: slipinc
+      double precision :: slipinc, rs, mm10_rs
 c
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
@@ -836,6 +836,9 @@ c ******* START: Add new Constitutive Models into this block *********
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt(1), i, slipinc)
         dbar = dbar + slipinc*np1%ms(1:6,i)
+c    addition for diffusion
+        rs = mm10_rs(props, np1, n, stress, tt, i)
+        dbar = dbar + rs*np1%tinc*props%iD_v*np1%ms(1:6,i)
       end do
       elseif (props%h_type .eq. 2) then ! MTS
       dbar = 0.0d0
@@ -900,7 +903,7 @@ c
 c
       integer :: i
 c
-      double precision :: slipinc
+      double precision :: slipinc, rs, mm10_rs
 c
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
@@ -908,6 +911,9 @@ c ******* START: Add new Constitutive Models into this block *********
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
         wbar = wbar + slipinc*np1%qs(1:3,i)
+c    addition for diffusion
+        rs = mm10_rs(props, np1, n, stress, tt, i)
+        wbar = wbar + rs*np1%tinc*props%iD_v*np1%qs(1:3,i)
       end do
       elseif (props%h_type .eq. 2) then ! MTS
       wbar = 0.0d0
@@ -970,7 +976,7 @@ c
 c
       integer :: i
 c
-      double precision :: slipinc
+      double precision :: slipinc, rs, mm10_rs
 c
 c ******* START: Add new Constitutive Models into this block *********
       if (props%h_type .eq. 1) then ! voche
@@ -978,6 +984,9 @@ c ******* START: Add new Constitutive Models into this block *********
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
         w = w + slipinc*np1%qc(1:3,i)
+c    addition for diffusion
+        rs = mm10_rs(props, np1, n, stress, tt, i)
+        w = w + rs*np1%tinc*props%iD_v*np1%qc(1:3,i)
       end do
       elseif (props%h_type .eq. 2) then ! MTS
       w = 0.0d0
@@ -1692,6 +1701,7 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(1) :: tt, h
+      double precision :: h_term
       double precision :: dg
       integer :: i
 c
@@ -1700,9 +1710,21 @@ c
       h = 0.0d0
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        h = h + (1.0d0-(tt-props%tau_y)/props%tau_v+np1%tau_l(i)/(
-     &      tt-props%tau_y))**(props%voche_m)*
-     &      dabs(slipinc)
+        h_term = 1.0d0 - (tt(1)-props%tau_y)/props%tau_v
+     &           + np1%tau_l(i)/(tt(1)-props%tau_y)
+c        if (i.eq.1) then
+c        write(*,*) 'hterm', h_term,
+c     &   'theta_0', props%theta_0
+c        write(*,*) 'tt', tt(1),
+c     &   'slipinc', slipinc
+c        write(*,*) 'g_s', props%tau_y+props%tau_v,
+c     &   'whole', props%theta_0*
+c     &      abs(h_term)**(props%voche_m) * 
+c     &      sign(1.d0,h_term) * abs(slipinc)
+c        endif
+        h(1) = h(1) + abs(h_term)**(props%voche_m) * 
+     &      sign(1.d0,h_term)
+     &      * abs(slipinc)
       end do
       h(1) = n%tau_tilde(1) + props%theta_0*h(1)
 c
@@ -1721,15 +1743,17 @@ c
       double precision, dimension(6) :: et
 c
       double precision :: mm10_rs
-      double precision :: rs
+      double precision :: rs, h_term
       integer :: i
 c
       et = 0.0d0
 c
       do i=1,props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, i)
-        et = et + (1.0d0-(tt(1)-props%tau_y)/props%tau_v+np1%tau_l(i)
-     &      /(tt(1)-props%tau_y))**(props%voche_m)*
+        h_term = 1.0d0 - (tt(1)-props%tau_y)/props%tau_v
+     &           + np1%tau_l(i)/(tt(1)-props%tau_y)
+        et(1:6) = et(1:6) + abs(h_term)**(props%voche_m) * 
+     &      sign(1.d0,h_term) * 
      &      dabs(rs)**(props%rate_n-2.d0)*rs*np1%ms(1:6,i)
       end do
 c
@@ -1747,7 +1771,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, etau
+      double precision, dimension(1) :: tt
+      double precision :: etau, h_term
 c
       double precision :: slipinc
       integer :: i
@@ -1755,16 +1780,17 @@ c
       etau = 0.0d0
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        etau = etau + (props%voche_m*(1.0d0/props%tau_v+np1%tau_l(i)/
-     &      (tt-props%tau_y)**2.0d0)*(1.0d0-(tt-props%tau_y)/
-     &       props%tau_v+
-     &      np1%tau_l(i)/(tt-props%tau_y))**(-1.0d0)+props%rate_n/tt)*
-     &      (1.0d0-(tt-props%tau_y)/props%tau_v+np1%tau_l(i)/
-     &      (tt-props%tau_y))**(props%voche_m)*
-     &      dabs(slipinc)
+        h_term = 1.0d0 - (tt(1)-props%tau_y)/props%tau_v
+     &           + np1%tau_l(i)/(tt(1)-props%tau_y)
+        etau = etau + ( props%voche_m * 
+     &      (-1.0d0/props%tau_v - np1%tau_l(i)/
+     &      (tt(1)-props%tau_y)**2) * abs(slipinc)/abs(h_term)
+     &      - abs(slipinc) * props%rate_n/tt(1) * 
+     &      sign(1.d0,h_term)
+     &      * sign(1.d0,slipinc) ) * (abs(h_term)**props%voche_m)
       end do
 
-      etau = -props%theta_0*etau
+      etau = props%theta_0*etau
       etau = 1.0d0 - etau
 c
       return
@@ -1785,13 +1811,6 @@ c
       double precision, dimension(6) :: d_mod
 c
       ed = 0.0d0
-c
-      call mm10_h_voche(props, np1, n, stress, tt, h)
-      d_mod = np1%D
-      d_mod(4:6) = 0.5d0 * d_mod(4:6)
-c
-      ed = 2.0d0*(h(1) - n%tau_tilde(1))/
-     &     (3.0d0*np1%dg**2.0d0)*d_mod
 c
       return
       end subroutine
@@ -1816,6 +1835,8 @@ c
         dgammadtau(s) = dabs(rs)**(props%rate_n-1.0d0)
         dgammadtau(s) = np1%dg*props%rate_n/tt**(props%rate_n)
      &     *dgammadtau(s)
+c   additional term for diffusion
+        dgammadtau(s) = dgammadtau(s) + np1%tinc*props%iD_v
       end do
 c
       return
@@ -1856,17 +1877,7 @@ c
       double precision :: tt, alpha, dgam
       double precision, dimension(props%nslip,6) :: dgammadd
 c
-      double precision :: slipinc
-c
-      integer :: s
-c
-      d_mod = D
-      d_mod(4:6) = 0.5d0 * d_mod(4:6)
-      alpha = 2.0d0/(3.0d0*np1%dg**2.0d0)
-      do s=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, s, dgam)
-        dgammadd(s,1:6) = alpha * dgam * d_mod(1:6)
-      end do
+      dgammadd = 0.d0
 c
       return
       end subroutine
@@ -4475,9 +4486,19 @@ c evolution of hardening parameter 'g'
             slipinc = vec1(slip_b)
             gamma_dot = abs(slipinc)/dt
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
-            g_s = max(temp, 2.d0/3.d0*g_0_alpha) ! threshold to ensure no slip during elastic response
+            g_s = max(temp, 1.d0/4.d0*g_0_alpha) ! threshold to ensure no slip during elastic response
             h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
      &      **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+c        if (slip_b.eq.1) then
+c        write(*,*) 'hterm', (1.d0-tt(slip_b)/g_s),
+c     &   'h_0_alpha', h_0_alpha
+c        write(*,*) 'tt', tt(slip_b),
+c     &   'slipinc', vec1(slip_b)
+c        write(*,*) 'g_s', g_s,
+c     &   'whole', h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
+c     &      **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+c     &      * abs(vec1(slip_b))/dt
+c        endif
         enddo
         
         ! Equation [5]
@@ -4545,7 +4566,7 @@ c
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
 c            write(*,*) 'slip_b', slip_b, 'dslip',dslip
 c            write(*,*) 'gamma_dot', gamma_dot, 'temp',temp
-            if( temp .gt. 2.d0/3.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
+            if( temp .gt. 1.d0/4.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
                 g_s = temp
                 h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
      &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
@@ -4555,7 +4576,7 @@ c            write(*,*) 'gamma_dot', gamma_dot, 'temp',temp
      &              abs(1.d0-tt(slip_b)/g_s)**(r_alpha-1.d0)
      &              *(dg_s*tt(slip_b)/g_s**2)
             else
-                g_s = 2.d0/3.d0*g_0_alpha
+                g_s = 1.d0/4.d0*g_0_alpha
                 h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
      &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
                 dh(slip_b) = 0.d0
@@ -4628,7 +4649,7 @@ c
             gamma_dot = abs(slipinc)/dt
             dslip = dslipinc(slip_b,slip_b)/dt
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
-            if( temp .gt. 2.d0/3.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
+            if( temp .gt. 1.d0/4.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
                 g_s = temp
                 h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
      &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
@@ -4638,7 +4659,7 @@ c
      &              abs(1.d0-tt(slip_b)/g_s)**(r_alpha-1.d0)
      &              *(-1.d0/g_s + dg_s*tt(slip_b)/g_s**2)
             else
-                g_s = 2.d0/3.d0*g_0_alpha
+                g_s = 1.d0/4.d0*g_0_alpha
                 h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
      &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
                 dh(slip_b) = 0.d0

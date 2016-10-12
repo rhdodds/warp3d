@@ -1393,6 +1393,9 @@ c
 $add common.main
       integer, intent(in) :: cnum
 
+      if (c_array(cnum)%elastic_type .ne. 3) then
+c           special values allowed for ti6242
+
       if (c_array(cnum)%nu .ge. 0.5) then
             write(out,9002) cnum
             go to 1001
@@ -1413,8 +1416,15 @@ $add common.main
             go to 1001
       end if
 
+      end if ! elasticity = ti6242
+
       if (c_array(cnum)%harden_n .le. 0.0) then
             write(out,9001) cnum, 'harden_n'
+            go to 1001
+      end if
+
+      if (c_array(cnum)%iD_v .lt. 0.0) then
+            write (out,9003) cnum, 'iD_v'
             go to 1001
       end if
 
@@ -1422,24 +1432,26 @@ $add common.main
 c           simple voche
 
       if (c_array(cnum)%k_o .lt. 0.0) then
-            write (out,9002) cnum, 'k_o'
+            write (out,9003) cnum, 'k_o'
             go to 1001
       end if
 
-      if (c_array(cnum)%theta_o .le. 0.0) then
-            write(out,9001) cnum, 'theta_o'
-            go to 1001
-      end if
+c     ! Now softening is allowed
+c      if (c_array(cnum)%theta_o .le. 0.0) then
+c            write(out,9001) cnum, 'theta_o'
+c            go to 1001
+c      end if
 
       if (c_array(cnum)%tau_y .le. 0.0) then
             write(out,9001) cnum, 'tau_y'
             go to 1001
       end if
 
-      if (c_array(cnum)%tau_v .le. 0.0) then
-            write(out,9001) cnum, 'tau_v'
-            go to 1001
-      end if
+c     ! Now softening is allowed
+c      if (c_array(cnum)%tau_v .le. 0.0) then
+c            write(out,9001) cnum, 'tau_v'
+c            go to 1001
+c      end if
 
       if (c_array(cnum)%voche_m .le. 0.0) then
             write(out,9001) cnum, 'voche_m'
@@ -1459,7 +1471,7 @@ c     Handle errors locally
       end if
 
       if (c_array(cnum)%k_o .lt. 0.0) then
-            write (out,9002) cnum, 'k_o'
+            write (out,9003) cnum, 'k_o'
             go to 1001
       end if
 
@@ -1559,5 +1571,7 @@ c           User, just exit
      &            a8, ' must be greater than zero.'/)
  9002 format(/1x,'>>>> Fatal error in crystal ', i3, '. Nu must be ',
      &            'less than 0.5.'/)
+ 9003 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
+     &            a8, ' must not be less than zero.'/)
 
       end subroutine

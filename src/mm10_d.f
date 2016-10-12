@@ -13,7 +13,8 @@ c     *     Calculate various other user output quantities           *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_output(props, np1, n,vec1,vec2,p_strain_ten_c)
+      subroutine mm10_output(props, np1, n,vec1,vec2,
+     &   p_strain_ten_c)
       use mm10_defs
       implicit none
 c
@@ -43,6 +44,11 @@ c ******* START: Add new Constitutive Models into this block *********
         do i=1,props%nslip
            call mm10_slipinc(props, np1, n, np1%stress,
      &                        np1%tau_tilde, i, np1%slip_incs(i))
+c    addition for diffusion
+        rs = mm10_rs(props, np1, n, np1%stress,
+     &                        np1%tau_tilde, i)
+        np1%slip_incs(i) = np1%slip_incs(i) + 
+     &                     rs*np1%tinc*props%iD_v
         end do
       elseif (props%h_type .eq. 2) then ! MTS
         do i=1,props%nslip
@@ -118,7 +124,7 @@ c     Plastic strain and work
 c      call mm10_invsym(S, 6)
 c     Avoid forming the inverse explicitly
       call dcopy(6, np1%stress, 1, eeunrot, 1)
-      call DPOSV( 'U', 6, 6, S, 6, eeunrot, 6, INFO )
+      call DPOSV( 'U', 6, 1, S, 6, eeunrot, 6, INFO )
       call mm10_RT2RVE(np1%R, erot)
       ee = matmul(erot, eeunrot)
 c      ee = matmul(erot, matmul(S, np1%stress))
@@ -146,6 +152,7 @@ c     Compute plastic creep rate and effective creep exponent
 c
       ec_dot = np1%p_strain_inc/np1%tinc
       np1%u(11) = ec_dot
+c      write(*,*) 'ec_dot',ec_dot
       if(ec_dot.gt.0.d0) then
       ep(1:6) = ep(1:6)/np1%tinc
 c

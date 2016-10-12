@@ -21,10 +21,10 @@ c
      &            mu_o, D_o, eps_dot_o_v,
      &            tau_a, t_o,  tauHat_v, Go_v,
      &            k_o, tau_y, tau_v, voche_m, u1, u2, u3, u4,
-     &            u5, u6
+     &            u5, u6, u7, u8, u9, u10, iD_v
             integer :: nslip, h_type, num_hard, s_type, cnum
 c              new variables to control local solvers inside mm10
-            logical :: solver, strategy, gpall
+            logical :: solver, strategy, gpall, alter_mode
             integer :: tang_calc, miter, gpp, method, st_it(3)
             double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
