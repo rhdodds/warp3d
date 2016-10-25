@@ -59,25 +59,38 @@ c
 c                       compute the linear strain-
 c                       displacement matrices, using btemp.
 c       
-      do  j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
-         do i = 1, span
+c!      do  j = 1, nnode
+c!@!DIR$ LOOP COUNT MAX=###  
+c!@!DIR$ IVDEP
+c!         do i = 1, span
 c
-            b(i,j,1)=       btemp(i,j,1)
-            b(i,j,4)=       btemp(i,j,2)
-            b(i,j,6)=       btemp(i,j,3)
+c!            b(i,j,1)=       btemp(i,j,1)
+c!            b(i,j,4)=       btemp(i,j,2)
+c!            b(i,j,6)=       btemp(i,j,3)
+c!c
+c!            b(i,bpos1+j,2)= btemp(i,j,2)
+c!            b(i,bpos1+j,4)= btemp(i,j,1)
+c!            b(i,bpos1+j,5)= btemp(i,j,3)
+c!c
+c!            b(i,bpos2+j,3)= btemp(i,j,3)
+c!            b(i,bpos2+j,5)= btemp(i,j,2)
+c!            b(i,bpos2+j,6)= btemp(i,j,1) 
+c!         end do
+c!      end do
 c
-            b(i,bpos1+j,2)= btemp(i,j,2)
-            b(i,bpos1+j,4)= btemp(i,j,1)
-            b(i,bpos1+j,5)= btemp(i,j,3)
+      do j = 1, nnode
+            b(1:span,j,1)=       btemp(1:span,j,1)
+            b(1:span,j,4)=       btemp(1:span,j,2)
+            b(1:span,j,6)=       btemp(1:span,j,3)
 c
-            b(i,bpos2+j,3)= btemp(i,j,3)
-            b(i,bpos2+j,5)= btemp(i,j,2)
-            b(i,bpos2+j,6)= btemp(i,j,1) 
-         end do
-      end do
+            b(1:span,bpos1+j,2)= btemp(1:span,j,2)
+            b(1:span,bpos1+j,4)= btemp(1:span,j,1)
+            b(1:span,bpos1+j,5)= btemp(1:span,j,3)
 c
+            b(1:span,bpos2+j,3)= btemp(1:span,j,3)
+            b(1:span,bpos2+j,5)= btemp(1:span,j,2)
+            b(1:span,bpos2+j,6)= btemp(1:span,j,1) 
+      end do 
       return
       end
 c
