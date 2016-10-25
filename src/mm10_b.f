@@ -1,13 +1,14 @@
 c
-c ****************************************************************************
-c *                                                                          *
-c *    mm10.f                                                                *
-c *                                                                          *
-c *         written by : mcm                                                 *
-c *                                                                          *
-c *         Slip rate and hardening functions                                *
-c *                                                                          *
-c ****************************************************************************
+c **********************************************************************
+c *                                                                    *
+c *    mm10.f                                                          *
+c *                                                                    *
+c *         written by : mcm                                           *
+c *                                                                    *
+c *         Slip rate and hardening functions                          *
+c *         Updated extensively by TJT and RHD                         *
+c *                                                                    *
+c **********************************************************************
 c
 c
 c     ****************************************************************
@@ -22,7 +23,7 @@ c     *     A common error message for the general hardening setup   *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10b_unknown_hard_error(props)
+      subroutine mm10b_unknown_hard_error( props )
       use mm10_defs
       implicit none
 c
@@ -34,7 +35,8 @@ c
      &    /,10x, 'Aborting...')
       call die_gracefully
 
-      end subroutine
+      end
+c
 c
 c
 c --------------------------------------------------------------------
@@ -52,100 +54,109 @@ c     *                 subroutine mm10_formR2                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
-c     *     Form R2                                                  *
+c     *                         Form R2                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formR2(props, np1, n,vec1,vec2, 
-     &           stress, tt, R2, gp)
+      subroutine mm10_formR2( props, np1, n, vec1, vec2, 
+     &                        stress, tt, R2, gp )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+      integer :: gp
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: R2, h
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1,vec2
-      integer :: gp
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-        call mm10_h_voche(props, np1, n, stress, tt, h)
-      elseif (props%h_type .eq. 2) then ! MTS
-        call mm10_h_mts(props, np1, n, stress, tt, h)
-      elseif (props%h_type .eq. 3) then ! User
-        call mm10_h_user(props, np1, n, stress, tt, h)
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_h_ornl(props, np1, n, vec1, vec2,stress,tt,h,gp)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_h_mrr(props, np1, n, vec1, vec2,stress,tt,h,gp)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_h_DJGM(props, np1, n, vec1, vec2,stress,tt,h)
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+      integer :: len
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
-      R2(1:props%num_hard) = tt(1:props%num_hard) - h(1:props%num_hard)
-c Compute time rate of change of hardening parameters, store for
-c possible prediction during next time/load step
-      np1%tt_rate(1:props%num_hard) = (h(1:props%num_hard)
-     &     - n%tau_tilde(1:props%num_hard))/np1.tinc
-c      if(gp.ne.0) then
-c        write(*,*) "R2 =", R2(6), " h= ", h(6), " ttrate= ", 
-c     &  np1%tt_rate(6)
-c      endif
+c              add new Constitutive Models into this block 
+c
+      select case( props%h_type )
+        case( 1 ) ! Voche
+           call mm10_h_voche( props, np1, n, stress, tt, h ) 
+        case( 2 ) ! MTS
+           call mm10_h_mts( props, np1, n, stress, tt, h )
+        case( 3 ) ! User
+           call mm10_h_user( props, np1, n, stress, tt, h )
+        case( 4 ) ! ORNL
+           call mm10_h_ornl( props, np1, n, vec1, vec2, stress,
+     &                       tt, h, gp )
+        case( 7 ) !MRR
+           call mm10_h_mrr( props, np1, n, vec1, vec2, stress,
+     &                      tt, h, gp )
+        case( 9 ) ! DJGM
+           call mm10_h_DJGM( props, np1, n, vec1, vec2, stress,
+     &                      tt, h )
+        case default
+           call mm10b_unknown_hard_error( props )
+      end select
+c
+c              compute time rate of change of hardening parameters, 
+c              store for possible prediction during next time/load step
+c
+      len = props%num_hard
+      R2(1:len) = tt(1:len) - h(1:len)
+      np1%tt_rate(1:len) = ( h(1:len) - n%tau_tilde(1:len) ) / np1.tinc
 c      
       return
-      end subroutine
+      end 
 c
 c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_formR2i                      *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/18/2016 rhd              *
 c     *                                                              *
-c     *     Form R2                                                  *
+c     *                       Form R2                                *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formR2i(props, np1, n,ivec1,ivec2, 
-     &           stress, tt, R2)
+      subroutine mm10_formR2i( props, np1, n, ivec1, ivec2, 
+     &                         stress, tt, R2 )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: h
       double complex, dimension(props%num_hard) :: R2
       double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      double complex, dimension(max_uhard) :: ivec1, ivec2
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      elseif (props%h_type .eq. 2) then ! MTS
-      elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_hi_ornl(props, np1, n, ivec1, ivec2, stress, tt, h)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_hi_mrr(props, np1, n, ivec1, ivec2, stress, tt, h)
-      elseif (props%h_type .eq. 9) then ! DJGM
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+c              locals - automatics
+c
+      double complex, dimension(props%num_hard) :: h
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, R2:64
+c
+c              add new Constitutive Models into this block 
+c
+      select case( props%h_type )
+        case( 1, 2, 3, 9 ) ! Voche, MTS, USER, DJGM
+          continue
+        case( 4 )  ! ORNL
+          call mm10_hi_ornl( props, np1, n, ivec1, ivec2, stress, tt, h)
+        case( 7 ) ! MRR
+          call mm10_hi_mrr( props, np1, n, ivec1, ivec2, stress, tt, h)
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
 c
       R2 = tt - h
 c      
       return
-      end subroutine
+      end 
 c
 c     ****************************************************************
 c     *                                                              *
@@ -153,15 +164,16 @@ c     *                 subroutine mm10_formJ11                      *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 03/31/15                    *
+c     *                   last modified: 10/14/2016 rhd              *
 c     *                                                              *
 c     *     Form the stress varying with stress part                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ11(props, np1, n, vec1, vec2,
-     &      arr1, arr2, stress, tt, J11)
+      subroutine mm10_formJ11( props, np1, n, vec1, vec2,
+     &                         arr1, arr2, stress, tt, J11 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -169,68 +181,69 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(6,6) :: J11
       double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
+      double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: 
-     &  arr1,arr2
+     &                             arr1,arr2
 c
-      double precision :: mm10_rs
-c
-      double precision, dimension(6,props%nslip) :: symtqmat
-      double precision, dimension(props%nslip) :: dgammadtau
-      double precision, dimension(3) :: wp
-      double precision, dimension(6,6) :: Iw
-      double precision :: rs
       integer :: i
       logical :: debug
+      double precision, dimension(6,props%nslip) :: symtqmat
+      double precision, dimension(props%nslip) :: dgammadtau
+      double precision :: wp(3), work_vec(6), Iw(6,6)
+      double precision :: rs
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J11:64
+cc
+      debug = .false.
+      if( debug ) write(props%out,*) "In mm10"
+c      
+      J11 = zero
+      call mm10_symSWmat( stress, np1%qc, props%nslip, symtqmat )
 c
+c              generalization of CP model implementation for other 
+c              slip rate equations, requiring other forms of
+c              d_gamma/d_tau.
+c              vector dgammadtau should be 1 x n_slip
 c
-            debug = .false.
+c              add new constitutive models into this block 
 c
-            if (debug) write (*,*) "In mm10"
+      select case( props%h_type )
+       case( 1 ) ! voche
+        call mm10_dgdt_voche( props,np1, n, stress, tt, dgammadtau )
+       case( 2 ) ! MTS
+        call mm10_dgdt_mts( props, np1,n, stress, tt, dgammadtau )
+       case( 3 ) ! User
+        call mm10_dgdt_user( props,np1, n, stress, tt, dgammadtau )
+       case( 4 ) ! ORNL
+        call mm10_dgdt_ornl( props,np1, n, stress, tt, dgammadtau )
+       case( 7 ) ! MRR
+        call mm10_dgdt_mrr( props,np1, n, stress, tt, dgammadtau )
+       case( 9 ) ! DJGM
+        call mm10_dgdt_DJGM( props,np1, n, stress, tt, dgammadtau )
+       case default
+        call mm10b_unknown_hard_error( props )
+      end select
 c
-      J11 = 0.0
-      call mm10_symSWmat(stress, np1%qc, props%nslip, symtqmat)
-c
-c Generalization of CP model implementation for other slip rate
-c equations, requiring other forms of d_gamma/d_tau
-c Vector dgammadtau should be 1 x n_slip
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-        call mm10_dgdt_voche(props,np1, n, stress, tt, dgammadtau)
-      elseif (props%h_type .eq. 2) then ! MTS
-        call mm10_dgdt_mts(props, np1,n, stress, tt, dgammadtau)
-      elseif (props%h_type .eq. 3) then ! User
-        call mm10_dgdt_user(props,np1, n, stress, tt, dgammadtau)
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_dgdt_ornl(props,np1, n, stress, tt, dgammadtau)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_dgdt_mrr(props,np1, n, stress, tt, dgammadtau)
-           if (debug) write (*,*) "dgammadtau", dgammadtau(1:3)
-           if (debug) write (*,*) "stress", stress(1:3)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_dgdt_DJGM(props,np1, n, stress, tt, dgammadtau)
-      else
-        call mm10b_unknown_hard_error(props)
-      endif
-c ******* END: Add new Constitutive Models into this block *********
-c
-      do i=1,props%nslip
-        call DGER(6,6,dgammadtau(i),
-     &      matmul(props%stiffness, np1%ms(1:6,i))
-     &      + 2.0d0*symtqmat(1:6,i), 1, np1%ms(1:6,i),1,J11,6)
-c        if (debug) write (*,*) "J11", J11(1,1)
+      do i = 1, props%nslip
+       call mm10_b_mult_type_4( work_vec, props%stiffness, np1%ms(1,i),
+     &                          symtqmat(1,i), two )             
+       call DGER( 6, 6, dgammadtau(i), work_vec, 1, np1%ms(1,i),
+     &            1, J11, 6 )
+c        call DGER(6,6,dgammadtau(i),
+c     &      matmul(props%stiffness, np1%ms(1:6,i))
+c     &      + 2.0d0*symtqmat(1:6,i), 1, np1%ms(1:6,i),1,J11,6)
       end do
 c
-      call mm10_form_wp(props, np1, n, vec1, vec2, stress, tt, wp)
-      call mm10_IW(wp, Iw)
+      call mm10_form_wp( props, np1, n, vec1, vec2, stress, tt, wp )
+      call mm10_IW (wp, Iw )
       J11 = J11 + Iw
 c
-      do i=1,6
-        J11(i,i) = J11(i,i) + 1.0d0
+      do i = 1, 6
+        J11(i,i) = J11(i,i) + one
       end do
 c
       return
-      end subroutine
+      end
 c
 c     ****************************************************************
 c     *                                                              *
@@ -238,79 +251,94 @@ c     *                 subroutine mm10_formJ12                      *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 03/31/15                    *
+c     *                   last modified: 10/14/2016 rhd              *
 c     *                                                              *
 c     *     Form the stress varying with hardening part              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ12(props, np1, n, vec1, vec2, arr1,
-     &            arr2,stress, tt, J12)
+      subroutine mm10_formJ12( props, np1, n, vec1, vec2, arr1,
+     &                         arr2, stress, tt, J12 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+c
       double precision, dimension(6) :: stress
       double precision, dimension(6,props%num_hard) :: J12
       double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
+      double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) ::
      &     arr1,arr2
 c
-      double precision, dimension(6) :: symTW
-      double precision, dimension(6,props%nslip) :: symtqmat
-      double precision, dimension(6) :: tempmat
-      double precision, dimension(props%nslip,props%num_hard)
-     & :: dgammadtt
-      double precision :: dgam, mm10_slipinc
-      integer :: i
+      integer :: i, len
       logical :: debug
+      double precision :: dgam, mm10_slipinc
+      double precision, dimension(6) :: symTW
+      double precision, dimension(6) :: tempmat
+      double precision :: work_vec(max_uhard)
+c
+c              automatics
+c      
+      double precision, dimension(6,props%nslip) :: symtqmat
+      double precision, dimension(props%nslip,props%num_hard)
+     &                  :: dgammadtt
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J12:64     
+c
+      debug = .false.
+      J12 = zero
+      call mm10_symSWmat( stress, np1%qc, props%nslip, symtqmat )
 c
 c
-            debug = .false.
+c              generalization of CP model implementation for other 
+c              slip rate equations, requiring other forms of 
+c              d_gamma/d_hardening. Vector dgammadtt should be 
+c              n_slip x n_hardening, which is the
+c              derivative of slip rate alpha with respect to 
+c              hardening variable beta.
 c
-      J12 = 0.0d0
-      call mm10_symSWmat(stress, np1%qc, props%nslip, symtqmat)
-c        if (debug) write (*,*) "symtqmat", symtqmat(1:6,1:props%nslip)
+c              add new constitutive models into this block
 c
-c Generalization of CP model implementation for other slip rate
-c equations, requiring other forms of d_gamma/d_hardening
-c Vector dgammadtt should be n_slip x n_hardening, which is the
-c derivative of slip rate alpha with respect to hardening variable
-c beta.
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-        call mm10_dgdh_voche(props,np1, n, stress, tt, dgammadtt)
-      elseif (props%h_type .eq. 2) then ! MTS
-        call mm10_dgdh_mts(props, np1,n, stress, tt, dgammadtt)
-      elseif (props%h_type .eq. 3) then ! User
-        call mm10_dgdh_user(props,np1, n, stress, tt, dgammadtt)
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_dgdh_ornl(props,np1, n, stress, tt, dgammadtt)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_dgdh_mrr(props,np1, n, stress, tt, dgammadtt)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_dgdh_DJGM(props,np1, n, stress, tt, dgammadtt)
-      else
-        call mm10b_unknown_hard_error(props)
-      endif
-c      if (debug) write(*,*) "dgammadtt", dgammadtt(1:12,1:12)
-c      if (debug) write(*,*) "np1%ms(1:6,i)", np1%ms(1:6,1:props%nslip)
-c      if (debug) write(*,*) "np1%qc(1:3,i)", np1%qc(1:3,1:props%nslip)
-c ******* END: Add new Constitutive Models into this block *********
+      select case( props%h_type )
+       case( 1 )  ! voche
+        call mm10_dgdh_voche( props,np1, n, stress, tt, dgammadtt )
+       case( 2 )  ! MTS
+        call mm10_dgdh_mts( props, np1,n, stress, tt, dgammadtt )
+       case( 3 ) ! User
+        call mm10_dgdh_user( props,np1, n, stress, tt, dgammadtt )
+       case( 4 ) ! ORNL
+        call mm10_dgdh_ornl( props,np1, n, stress, tt, dgammadtt )
+       case( 7 ) ! MRR
+        call mm10_dgdh_mrr( props,np1, n, stress, tt, dgammadtt )
+       case( 9)  ! DJGM
+        call mm10_dgdh_DJGM( props,np1, n, stress, tt, dgammadtt )
+       case default 
+        call mm10b_unknown_hard_error( props )
+      end select
 c
-      do i=1,props%nslip
-        tempmat(1:6) = matmul(props%stiffness, np1%ms(1:6,i))
-     &      + 2.0d0*symtqmat(1:6,i)
-        if (debug) write (*,*) "tempmat", tempmat(1:6)
-        call DGER(6,props%num_hard,1.d0,
-     &      tempmat(1:6), 1, dgammadtt(i,1:props%num_hard),1,
-     &      J12(1:6,1:props%num_hard),6)
-      end do !props%nslip,
+      len = props%num_hard
+c      
+      do i = 1, props%nslip
+        call mm10_b_mult_type_4( tempmat, props%stiffness, np1%ms(1,i),
+     &                           symtqmat(1,i), two )             
+        work_vec(1:len) = dgammadtt(i,1:len) 
+        call DGER( 6, len, one, tempmat, 1, work_vec, 1, J12, 6 )
+      end do  
+c
+c              original code
+c
+c        tempmat(1:6) = matmul(props%stiffness, np1%ms(1:6,i))
+c     &      + two*symtqmat(1:6,i) 
+c        call DGER( 6, props%num_hard, one,
+c     &      tempmat(1:6), 1, dgammadtt(i,1:props%num_hard),1,
+c     &      J12(1:6,1:props%num_hard),6)
 c
       return
-      end subroutine
+      end 
+
 
 c
 c     ****************************************************************
@@ -319,15 +347,16 @@ c     *                 subroutine mm10_formJ21                      *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/27/13                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form the hardening varying with stress part              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ21(props, np1, n, vec1, vec2,
-     &     arr1, arr2, stress, tt, J21)
+      subroutine mm10_formJ21( props, np1, n, vec1, vec2,
+     &                         arr1, arr2, stress, tt, J21 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -335,39 +364,41 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard,6) :: J21
       double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
-      double precision, dimension(max_uhard,max_uhard) :: 
-     &    arr1,arr2
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
+c
+c              automatics
 c
       double precision, dimension(props%num_hard,6) :: estr
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J21:64     
 c
-      J21 = 0.0d0
+c              add new Constitutive Models into this block 
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-        call mm10_estress_voche(props, np1, n, stress, tt, estr)
-      elseif (props%h_type .eq. 2) then ! MTS
-        call mm10_estress_mts(props, np1, n, stress, tt, estr)
-      elseif (props%h_type .eq. 3) then ! User
-        call mm10_estress_user(props, np1, n, stress, tt, estr)
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_estress_ornl(props, np1, n, vec1, vec2, arr1, arr2,
-     &            stress, tt, estr)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_estress_mrr(props, np1, n, vec1, vec2, arr1, arr2,
-     &            stress, tt, estr)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_estress_DJGM(props, np1, n, vec1, vec2, arr1, arr2,
-     &            stress, tt, estr)
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+      select case( props%h_type ) 
+        case( 1 ) ! Voche
+          call mm10_estress_voche( props, np1, n, stress, tt, estr )
+        case( 2 )  ! MTS
+          call mm10_estress_mts( props, np1, n, stress, tt, estr )
+        case( 3 ) ! User
+          call mm10_estress_user( props, np1, n, stress, tt, estr )
+        case( 4 ) ! ORNL
+          call mm10_estress_ornl( props, np1, n, vec1, vec2, arr1, 
+     &                            arr2, stress, tt, estr )
+        case( 7 ) ! MRR
+          call mm10_estress_mrr( props, np1, n, vec1, vec2, arr1,
+     &                           arr2, stress, tt, estr )
+        case( 9 ) ! DJGM
+          call mm10_estress_DJGM( props, np1, n, vec1, vec2, arr1,
+     &                            arr2, stress, tt, estr )
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
 c
       J21 = -estr
 c
       return
-      end subroutine
+      end 
 c
 c     ****************************************************************
 c     *                                                              *
@@ -375,54 +406,60 @@ c     *                 subroutine mm10_formJ22                      *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/27/13                    *
+c     *                   last modified: 10/16/2016 rhd              *
 c     *                                                              *
 c     *     Form the hardening varying with hardening part           *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ22(props, np1, n, vec1, vec2,
-     &     arr1, arr2, stress, tt, J22)
+      subroutine mm10_formJ22( props, np1, n, vec1, vec2,
+     &                         arr1, arr2, stress, tt, J22 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard
-     &         ,props%num_hard) :: J22, etau
+      double precision, 
+     &       dimension(props%num_hard,props%num_hard) :: J22
       double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
-      double precision, dimension(max_uhard,max_uhard) :: 
-     &   arr1,arr2
+      double precision, dimension(max_uhard) :: vec1, vec2
+      double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
+c              automatics
 c
-      J22 = 0.0d0
+      double precision, 
+     &      dimension(props%num_hard,props%num_hard) :: etau
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J22:64     
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-        call mm10_ehard_voche(props, np1, n, stress, tt, etau)
-      elseif (props%h_type .eq. 2) then ! MTS
-        call mm10_ehard_mts(props, np1, n, stress, tt, etau)
-      elseif (props%h_type .eq. 3) then ! User
-        call mm10_ehard_user(props, np1, n, stress, tt, etau)
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_ehard_ornl(props, np1, n, vec1, vec2, arr1, arr2,
-     &          stress, tt, etau)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_ehard_mrr(props, np1, n, vec1, vec2, arr1, arr2,
-     &          stress, tt, etau)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_ehard_DJGM(props, np1, n, vec1, vec2, arr1, arr2,
-     &          stress, tt, etau)
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+c              add new Constitutive Models into this block
+c
+      select case( props%h_type ) 
+        case( 1 ) ! Voche
+          call mm10_ehard_voche( props, np1, n, stress, tt, etau )
+        case( 2 ) ! MTS
+          call mm10_ehard_mts( props, np1, n, stress, tt, etau )
+        case( 3 ) ! User
+          call mm10_ehard_user( props, np1, n, stress, tt, etau )
+        case( 4 ) ! ORNL
+          call mm10_ehard_ornl( props, np1, n, vec1, vec2, arr1, arr2,
+     &                          stress, tt, etau )
+        case( 7 ) ! MRR
+          call mm10_ehard_mrr( props, np1, n, vec1, vec2, arr1, arr2,
+     &                         stress, tt, etau )
+        case( 9 ) ! DJGM
+          call mm10_ehard_DJGM( props, np1, n, vec1, vec2, arr1, arr2,
+     &                          stress, tt, etau )
+        case default
+          call mm10b_unknown_hard_error(props)
+      end select
 c
       J22 = etau
+      return
 c
-      end subroutine
+      end
 c
 c     ****************************************************************
 c     *                                                              *
@@ -430,15 +467,16 @@ c     *                 subroutine mm10_formvecs                     *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 05/30/15                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form intermediate vectors which are repeatedly used by   *
 c     *     other constitutive routines (e.g. precompute slip rates) *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formvecs(props, np1, n, stress, tt, vec1, vec2)
+      subroutine mm10_formvecs( props, np1, n, stress, tt, vec1, vec2 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -446,36 +484,27 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1,vec2
-      double precision :: zero
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
 c
-      zero = 0.d0
+c              add new Constitutive Models into this block
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
+      select case( props%h_type )
+        case( 1, 2, 3 ) ! Voche, MTS, User
          vec1 = zero
          vec2 = zero
-      elseif (props%h_type .eq. 2) then ! MTS
-         vec1 = zero
-         vec2 = zero
-      elseif (props%h_type .eq. 3) then ! User
-         vec1 = zero
-         vec2 = zero
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_v_ornl(props, np1, n, stress, tt, 
-     &   vec1, vec2)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_v_mrr(props, np1, n, stress, tt, 
-     &   vec1, vec2)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_v_DJGM(props, np1, n, stress, tt, 
-     &   vec1, vec2)
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+        case( 4 ) ! ORNL
+          call mm10_v_ornl( props, np1, n, stress, tt, vec1, vec2 )
+        case( 7 ) ! MRR
+          call mm10_v_mrr( props, np1, n, stress, tt, vec1, vec2 )
+        case( 9 ) ! DJGM
+          call mm10_v_DJGM( props, np1, n, stress, tt, vec1, vec2 )
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
 c
+      return
 c
-      end subroutine
+      end
 c
 c     ****************************************************************
 c     *                                                              *
@@ -483,46 +512,47 @@ c     *                 subroutine mm10_formarrs                     *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 05/30/15                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form intermediate arrays which are repeatedly used by    *
 c     *     other constitutive routines                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formarrs(props, np1, n, stress, tt, vec1, vec2,
-     &          arr1, arr2, both)
+      subroutine mm10_formarrs( props, np1, n, stress, tt, vec1, vec2,
+     &                          arr1, arr2, both )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+      integer :: both
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1,vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1,arr2
-      integer both
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      elseif (props%h_type .eq. 2) then ! MTS
-      elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_a_ornl(props, np1, n, stress, tt, vec1, vec2,
-     &          arr1, arr2, both)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_a_mrr(props, np1, n, stress, tt, vec1, vec2,
-     &          arr1, arr2, both)
-      elseif (props%h_type .eq. 9) then ! DJGM
-        call mm10_a_DJGM(props, np1, n, stress, tt, vec1, vec2,
-     &          arr1, arr2, both)
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+c              add new constitutive models into this block
 c
+      select case( props%h_type )
+        case( 1, 2, 3 ) ! Voche, MTS, User
+          continue
+        case( 4 ) ! ORNL
+          call mm10_a_ornl( props, np1, n, stress, tt, vec1, vec2,
+     &                      arr1, arr2, both )
+        case( 7 ) ! MRR
+          call mm10_a_mrr( props, np1, n, stress, tt, vec1, vec2,
+     &                     arr1, arr2, both )
+        case( 9 ) ! DJGM
+         call mm10_a_DJGM( props, np1, n, stress, tt, vec1, vec2,
+     &                     arr1, arr2, both)
+        case default
+         call mm10b_unknown_hard_error( props )
+      end select
 c
-      end subroutine
+      return      
+c
+      end
 
 c
 c     ****************************************************************
@@ -537,169 +567,185 @@ c     *     Form the stress varying with stress part                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ11i(props, np1, n, ivec1, ivec2,
-     &      stress, tt, J11)
+      subroutine mm10_formJ11i( props, np1, n, ivec1, ivec2,
+     &                          stress, tt, J11)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, zeroA
+      double precision, dimension(6) :: stress
       double precision, dimension(6,6) :: J11
-      double precision, dimension(props%num_hard) :: tt, zeroB
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      double precision, dimension(props%num_hard) :: tt
+      double complex, dimension(max_uhard) :: ivec1, ivec2
 c
       integer :: i, k
       logical :: debug
 c
       double complex, dimension(6) :: A, Ri
-      double complex, dimension(props%num_hard) :: B
-c
-      double precision :: h, hi
+      double precision :: h, hi, zeroA(6)
       double complex :: i1
 c
+c              automatics
 c
-            debug = .false.
+      double complex, dimension(props%num_hard) :: B
+      double precision, dimension(props%num_hard) :: zeroB
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J11:64     
 c
-            if (debug) write (*,*) "In mm10"
+      debug = .false.
+      if( debug ) write (props%out,*) "In mm10_formJ11i"
       h = 1.0d-12
-      i1 = (0.d0, 1.d0)
+      i1 = (zero, one)
 c
-      J11 = 0.0d0
-      zeroA = 0.d0
-      zeroB = 0.d0
-            do k = 1,6
-                A = dcmplx (stress, zeroA)
-                B = dcmplx (tt, zeroB)
-                if(stress(k).eq.0.d0) then
-                hi = h
-                else
-                hi = h*dabs(stress(k))
-                endif
-                A(k) = A(k) + i1*hi
-                call mm10_formvecsi(props,np1,n,A,B,ivec1,ivec2)
-                call mm10_formR1i(props,np1,n,ivec1,ivec2,A,B,Ri)
-                J11(1:6,k) = 1.d0/hi*aimag(Ri)
-            enddo
+      J11   = zero
+      zeroA = zero
+      zeroB = zero
+c      
+      do k = 1, 6
+       A = dcmplx( stress, zeroA )
+       B = dcmplx( tt, zeroB )
+       if( stress(k) == zero) then
+         hi = h
+       else
+         hi = h*dabs(stress(k))
+       end if
+       A(k) = A(k) + i1*hi
+       call mm10_formvecsi( props, np1, n, A, B, ivec1, ivec2 )
+       call mm10_formR1i( props, np1, n, ivec1, ivec2, A, B, Ri )
+       J11(1:6,k) = one / hi*aimag(Ri)
+      end do
 c
       return
-      end subroutine
+      end 
 c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_formJ12i                     *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 03/31/15                    *
+c     *                   last modified: 10/18/2016 rhd              *
 c     *                                                              *
 c     *     Form the stress varying with hardening part              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ12i(props, np1, n, ivec1, ivec2,
-     &            stress, tt, J12)
+      subroutine mm10_formJ12i( props, np1, n, ivec1, ivec2,
+     &                          stress, tt, J12 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, zeroA
+c      
+      double precision, dimension(6) :: stress
       double precision, dimension(6,props%num_hard) :: J12
-      double precision, dimension(props%num_hard) :: tt, zeroB
+      double precision, dimension(props%num_hard) :: tt
       double complex, dimension(max_uhard) :: ivec1,ivec2
 c
       integer :: i, k
       logical :: debug
 c
       double complex, dimension(6) :: Ri, A
-      double complex, dimension(props%num_hard) :: B
-c
+      double precision, dimension(6) :: zeroA
       double precision :: h, hi
       double complex :: i1
 c
+c              automatics
 c
-            debug = .false.
+      double complex, dimension(props%num_hard) :: B
+      double precision, dimension(props%num_hard) :: zeroB
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J12:64     
 c
-            if (debug) write (*,*) "In mm10"
+      debug = .false.
+      if( debug ) write (props%out,*) "In mm10_formJ12i"
       h = 1.0d-12
-      i1 = (0.d0, 1.d0)
+      i1 = (zero, one)
 c
-      J12 = 0.0d0
-      zeroA = 0.d0
-      zeroB = 0.d0
-            do k = 1,props%num_hard
-                A = dcmplx (stress, zeroA)
-                B = dcmplx (tt, zeroB)
-                if(tt(k).eq.0.d0) then
-                hi = h
-                else
-                hi = h*dabs(tt(k))
-                endif
-                B(k) = B(k) + i1*hi
-                call mm10_formvecsi(props,np1,n,A,B,ivec1,ivec2)
-                call mm10_formR1i(props,np1,n,ivec1,ivec2,A,B,Ri)
-                J12(1:6,k) = 1.d0/hi*aimag(Ri)
-            enddo
+      J12   = zero
+      zeroA = zero
+      zeroB = zero
+c      
+      do k = 1,props%num_hard
+        A = dcmplx (stress, zeroA)
+        B = dcmplx (tt, zeroB)
+        if( tt(k) == zero ) then
+          hi = h
+        else
+          hi = h*dabs(tt(k))
+        end if
+        B(k) = B(k) + i1*hi
+        call mm10_formvecsi( props, np1, n, A, B, ivec1, ivec2 )
+        call mm10_formR1i( props, np1, n, ivec1, ivec2, A, B, Ri )
+        J12(1:6,k) = one/ hi*aimag(Ri)
+      end do
 c
       return
-      end subroutine
+      end
 c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_formJ21i                     *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 11/27/13                    *
+c     *                   last modified: 10/18/2016 rhd              *
 c     *                                                              *
 c     *     Form the hardening varying with stress part              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ21i(props, np1, n, ivec1, ivec2,
-     &     stress, tt, J21)
+      subroutine mm10_formJ21i( props, np1, n, ivec1, ivec2,
+     &                          stress, tt, J21 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, zeroA
+      double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard,6) :: J21
-      double precision, dimension(props%num_hard) :: tt, zeroB
+      double precision, dimension(props%num_hard) :: tt
       double complex, dimension(max_uhard) :: ivec1,ivec2
       integer :: i, k
       logical :: debug
 c
       double complex, dimension(6) :: A
-      double complex, dimension(props%num_hard) :: B, Ri
-c
-      double precision :: h, hi
+      double precision :: h, hi, zeroA(6)
       double complex :: i1
 c
+c              automatics
 c
-            debug = .false.
+      double complex, dimension(props%num_hard) :: B, Ri
+      double precision, dimension(props%num_hard) :: zeroB
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J21:64     
 c
-            if (debug) write (*,*) "In mm10"
+      debug = .false.
+      if( debug ) write (props%out,*) "In mm10_formJ121i"
       h = 1.0d-12
-      i1 = (0.d0, 1.d0)
+      i1 = (zero, one)
 c
-      J21 = 0.0d0
-      zeroA = 0.d0
-      zeroB = 0.d0
-            do k = 1,6
-                A = dcmplx (stress, zeroA)
-                B = dcmplx (tt, zeroB)
-                if(stress(k).eq.0.d0) then
-                hi = h
-                else
-                hi = h*dabs(stress(k))
-                endif
-                A(k) = A(k) + i1*hi
-                call mm10_formvecsi(props,np1,n,A,B,ivec1,ivec2)
-                call mm10_formR2i(props,np1,n,ivec1,ivec2,A,B,Ri)
-                J21(1:props%num_hard,k) = 1.d0/hi*aimag(Ri)
-            enddo
+      J21   = zero
+      zeroA = zero
+      zeroB = zero
+      do k = 1, 6
+        A = dcmplx (stress, zeroA)
+        B = dcmplx (tt, zeroB)
+        if( stress(k) == zero ) then
+          hi = h
+        else
+          hi = h*dabs(stress(k))
+        endif
+        A(k) = A(k) + i1*hi
+        call mm10_formvecsi( props, np1, n, A, B, ivec1, ivec2 )
+        call mm10_formR2i( props, np1, n, ivec1, ivec2, A, B, Ri )
+        J21(1:props%num_hard,k) = one / hi*aimag(Ri)
+      end do
 c
       return
       end subroutine
@@ -708,62 +754,67 @@ c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_formJ22i                     *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 11/27/13                    *
+c     *                   last modified: 10/18/2016 rhd              *
 c     *                                                              *
 c     *     Form the hardening varying with hardening part           *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ22i(props, np1, n, ivec1, ivec2,
-     &     stress, tt, J22)
+      subroutine mm10_formJ22i( props, np1, n, ivec1, ivec2,
+     &                          stress, tt, J22 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, zeroA
+      double precision, dimension(6) :: stress
       double precision, 
      &   dimension(props%num_hard,props%num_hard) :: J22
-      double precision, dimension(props%num_hard) :: tt, zeroB
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      double precision, dimension(props%num_hard) :: tt
+      double complex, dimension(max_uhard) :: ivec1, ivec2
 c
       integer :: i, k
       logical :: debug
 c
       double complex, dimension(6) :: A
-      double complex, dimension(props%num_hard) :: Ri, B
-c
-      double precision :: h, hi
+      double precision :: h, hi, zeroA(6)
       double complex :: i1
 c
+c              automatics
 c
-            debug = .false.
+      double precision, dimension(props%num_hard) :: zeroB
+      double complex, dimension(props%num_hard) :: Ri, B
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J22:64     
 c
-            if (debug) write (*,*) "In mm10"
+      debug = .false.
+      if( debug ) write(props%out,*) "In mm10_formJ22i"
       h = 1.0d-12
-      i1 = (0.d0, 1.d0)
+      i1 = (zero, one)
 c
-      J22 = 0.0d0
-      zeroA = 0.d0
-      zeroB = 0.d0
-            do k = 1,props%num_hard
-                A = dcmplx (stress, zeroA)
-                B = dcmplx (tt, zeroB)
-                if(tt(k).eq.0.d0) then
-                hi = h
-                else
-                hi = h*dabs(tt(k))
-                endif
-                B(k) = B(k) + i1*hi
-                call mm10_formvecsi(props,np1,n,A,B,ivec1,ivec2)
-                call mm10_formR2i(props,np1,n,ivec1,ivec2,A,B,Ri)
-                J22(1:props%num_hard,k) = 1.d0/hi*aimag(Ri)
-            enddo
+      J22   = zero
+      zeroA = zero
+      zeroB = zero
+c      
+      do k = 1, props%num_hard
+        A = dcmplx (stress, zeroA)
+        B = dcmplx (tt, zeroB)
+        if( tt(k) == zero ) then
+          hi = h
+        else
+          hi = h*dabs(tt(k))
+        end if
+        B(k) = B(k) + i1*hi
+        call mm10_formvecsi( props, np1, n, A, B, ivec1, ivec2 )
+        call mm10_formR2i( props, np1, n, ivec1, ivec2, A, B, Ri )
+        J22(1:props%num_hard,k) = one / hi*aimag(Ri)
+      end do
 c
       return
-      end subroutine
+      end 
 c
 c     ****************************************************************
 c     *                                                              *
@@ -771,14 +822,15 @@ c     *                 subroutine mm10_formvecsi                    *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 05/30/15                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form intermediate vectors which are repeatedly used by   *
 c     *     other constitutive routines (e.g. precompute slip rates) *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formvecsi(props, np1, n, stress, tt, ivec1, ivec2)
+      subroutine mm10_formvecsi( props, np1, n, stress, tt, 
+     &                           ivec1, ivec2 )
       use mm10_defs
       implicit none
 c
@@ -786,347 +838,43 @@ c
       type(crystal_state) :: np1, n
       double complex, dimension(6) :: stress
       double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      double complex, dimension(max_uhard) :: ivec1, ivec2
 c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      elseif (props%h_type .eq. 2) then ! MTS
-      elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 4) then ! ORNL
-        call mm10_vi_ornl(props, np1, n, stress, tt, 
-     &   ivec1, ivec2)
-      elseif (props%h_type .eq. 7) then ! MRR
-        call mm10_vi_mrr(props, np1, n, stress, tt, 
-     &   ivec1, ivec2)
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+c              add new constitutive models into this block 
 c
-c
-      end subroutine
-c
-c *****************************************************************************
-c *                                                                           *
-c *         Small constitutive functions                                      *
-c *                                                                           *
-c *****************************************************************************
-c
-c
-c           Form d_bar_p
-      subroutine mm10_form_dbarp(props, np1, n, vec1, vec2,
-     &     stress, tt, dbar)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(6) :: dbar
-      double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
-c
-      integer :: i
-c
-      double precision :: slipinc, rs, mm10_rs
-c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      dbar = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt(1), i, slipinc)
-        dbar = dbar + slipinc*np1%ms(1:6,i)
-c    addition for diffusion
-        rs = mm10_rs(props, np1, n, stress, tt, i)
-        dbar = dbar + rs*np1%tinc*props%iD_v*np1%ms(1:6,i)
-      end do
-      elseif (props%h_type .eq. 2) then ! MTS
-      dbar = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt(1), i, slipinc)
-        dbar = dbar + slipinc*np1%ms(1:6,i)
-      end do
-      elseif (props%h_type .eq. 3) then ! User
-      dbar = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc_user(props, np1, n, stress, tt, i, slipinc)
-        dbar = dbar + slipinc*np1%ms(1:6,i)
-      end do
-      elseif (props%h_type .eq. 4) then ! ORNL
-c      dbar = 0.0
-c      do i=1,props%nslip
-c c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
-c        slipinc = vec1(i)
-c        dbar = dbar + slipinc*np1%ms(1:6,i)
-c      end do
-        dbar(1:6) = matmul(np1%ms(1:6,1:props%nslip),
-     &                     vec1(1:props%nslip))
-      elseif (props%h_type .eq. 7) then ! MRR
-c      dbar = 0.0
-c      do i=1,props%nslip
-c c        call mm10_slipinc_mrr(props, np1, n, stress, tt, i, slipinc)
-c        slipinc = vec1(i)
-c        dbar = dbar + slipinc*np1%ms(1:6,i)
-c      end do
-        dbar(1:6) = matmul(np1%ms(1:6,1:props%nslip),
-     &                     vec1(1:props%nslip))
-      elseif (props%h_type .eq. 9) then ! DJGM
-c      dbar = 0.0
-c      do i=1,props%nslip
-c c        call mm10_slipinc_DJGM(props, np1, n, stress, tt, i, slipinc)
-c        slipinc = vec1(i)
-c        dbar = dbar + slipinc*np1%ms(1:6,i)
-c      end do
-        dbar(1:6) = matmul(np1%ms(1:6,1:props%nslip),
-     &                     vec1(1:props%nslip))
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
+      select case( props%h_type )
+       case( 1, 2, 3 )  ! voche, MTS, User
+         continue
+       case( 4 ) ! ORNL
+        call mm10_vi_ornl( props, np1, n, stress, tt, ivec1, ivec2 )
+       case( 7 ) ! MRR
+        call mm10_vi_mrr( props, np1, n, stress, tt, ivec1, ivec2 )
+       case default
+        call mm10b_unknown_hard_error( props )
+      end select
 c
       return
-      end subroutine
 c
-c
-c           Form w_bar_p
-      subroutine mm10_form_wbarp(props, np1, n, vec1, vec2,
-     &   stress, tt, wbar)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(3) :: wbar
-      double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
-c
-      integer :: i
-c
-      double precision :: slipinc, rs, mm10_rs
-c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      wbar = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        wbar = wbar + slipinc*np1%qs(1:3,i)
-c    addition for diffusion
-        rs = mm10_rs(props, np1, n, stress, tt, i)
-        wbar = wbar + rs*np1%tinc*props%iD_v*np1%qs(1:3,i)
-      end do
-      elseif (props%h_type .eq. 2) then ! MTS
-      wbar = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        wbar = wbar + slipinc*np1%qs(1:3,i)
-      end do
-      elseif (props%h_type .eq. 3) then ! User
-      wbar = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc_user(props, np1, n, stress, tt, i, slipinc)
-        wbar = wbar + slipinc*np1%qs(1:3,i)
-      end do
-      elseif (props%h_type .eq. 4) then ! ORNL
-c      wbar = 0.0
-c      do i=1,props%nslip
-c c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
-c        slipinc = vec1(i)
-c        wbar = wbar + slipinc*np1%qs(1:3,i)
-c      end do
-        wbar(1:3) = matmul(np1%qs(1:3,1:props%nslip),
-     &                     vec1(1:props%nslip))
-      elseif (props%h_type .eq. 7) then ! MRR
-c      wbar = 0.0
-c      do i=1,props%nslip
-c c        call mm10_slipinc_mrr(props, np1, n, stress, tt, i, slipinc)
-c        slipinc = vec1(i)
-c        wbar = wbar + slipinc*np1%qs(1:3,i)
-c      end do
-        wbar(1:3) = matmul(np1%qs(1:3,1:props%nslip),
-     &                     vec1(1:props%nslip))
-      elseif (props%h_type .eq. 9) then ! DJGM
-c      wbar = 0.0
-c      do i=1,props%nslip
-c c        call mm10_slipinc_DJGM(props, np1, n, stress, tt, i, slipinc)
-c        slipinc = vec1(i)
-c        wbar = wbar + slipinc*np1%qs(1:3,i)
-c      end do
-        wbar(1:3) = matmul(np1%qs(1:3,1:props%nslip),
-     &                     vec1(1:props%nslip))
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
-c
-      return
-      end subroutine
-
-c           Form w_p (in the current configuration)
-      subroutine mm10_form_wp(props, np1, n, vec1, vec2, stress, tt, w)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision, dimension(3) :: w
-      double precision, dimension(props%num_hard) :: tt
-      double precision, dimension(max_uhard) :: vec1,vec2
-c
-      integer :: i
-c
-      double precision :: slipinc, rs, mm10_rs
-c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      w = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-c    addition for diffusion
-        rs = mm10_rs(props, np1, n, stress, tt, i)
-        w = w + rs*np1%tinc*props%iD_v*np1%qc(1:3,i)
-      end do
-      elseif (props%h_type .eq. 2) then ! MTS
-      w = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      elseif (props%h_type .eq. 3) then ! User
-      w = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc_user(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      elseif (props%h_type .eq. 4) then ! ornl
-      w = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      elseif (props%h_type .eq. 7) then ! MRR
-      w = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc_mrr(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      elseif (props%h_type .eq. 9) then ! DJGM
-      w = 0.0d0
-      do i=1,props%nslip
-        call mm10_slipinc_DJGM(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
-c
-      return
-      end subroutine
-c
-c           Form d_bar_p
-      subroutine mm10_form_dbarpi(props, np1, n, ivec1, ivec2,
-     &     stress, tt, dbar)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(6) :: dbar
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
-c
-      integer :: i
-c
-      double complex :: slipinc
-c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      elseif (props%h_type .eq. 2) then ! MTS
-      elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 4) then ! ORNL
-      dbar = (0.d0,0.d0)
-      do i=1,props%nslip
-c        call mm10_slipinc_ornl(props, np1, n, stress, tt, i, slipinc)
-        slipinc = ivec1(i)
-        dbar = dbar + slipinc*np1%ms(1:6,i)
-      end do
-      elseif (props%h_type .eq. 7) then ! MRR
-      dbar = (0.d0,0.d0)
-      do i=1,props%nslip
-c        call mm10_slipinc_mrr(props, np1, n, stress, tt, i, slipinc)
-        slipinc = ivec1(i)
-        dbar = dbar + slipinc*np1%ms(1:6,i)
-      end do
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
-c
-      return
-      end subroutine
-c
-c           Form w_p (in the current configuration)
-      subroutine mm10_form_wpi(props, np1, n, ivec1, ivec2, 
-     &     stress, tt, w)
-      use mm10_defs
-      implicit none
-c
-      type(crystal_props) :: props
-      type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(3) :: w
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
-c
-      integer :: i
-c
-      double complex :: slipinc
-c
-c ******* START: Add new Constitutive Models into this block *********
-      if (props%h_type .eq. 1) then ! voche
-      elseif (props%h_type .eq. 2) then ! MTS
-      elseif (props%h_type .eq. 3) then ! User
-      elseif (props%h_type .eq. 4) then ! ORNL
-      w = (0.d0,0.d0)
-      do i=1,props%nslip
-        call mm10_slipinci_ornl(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      elseif (props%h_type .eq. 7) then ! MRR
-      w = (0.d0,0.d0)
-      do i=1,props%nslip
-        call mm10_slipinci_mrr(props, np1, n, stress, tt, i, slipinc)
-        w = w + slipinc*np1%qc(1:3,i)
-      end do
-      else
-        call mm10b_unknown_hard_error(props)
-      end if
-c ******* END: Add new Constitutive Models into this block *********
-c
-      return
-      end subroutine
-
+      end 
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                 subroutine mm10_formJ                        *
+c     *                 subroutine mm10_formJnew                     *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/15/2016                  *
 c     *                                                              *
 c     *     Form the jacobian from lower subroutines                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJ(props, np1, n, vec1, vec2, arr1, arr2,
-     &           stress, tt, J)
+      subroutine mm10_formJ( props, np1, n, vec1, vec2, arr1, arr2,
+     &                       stress, tt, J )
       use mm10_defs
       implicit none
+c
+c              parameters
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
@@ -1137,27 +885,45 @@ c
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
-      call mm10_formarrs(props, np1, n, stress, tt, vec1, vec2,
-     &       arr1, arr2,2)
+c              locals
 c
-      call mm10_formJ11(props, np1, n, vec1, vec2, arr1, arr2,
-     &   stress, tt, J(1:6,1:6))
-c      write (*,*) "J11", J(1,1)
-      call mm10_formJ12(props, np1, n, vec1, vec2, arr1, arr2,
-     & stress, tt,
-     & J(1:6,7:6+props%num_hard))
-c      write (*,*) "J12", J(1,7)
-      call mm10_formJ21(props, np1, n, vec1, vec2, arr1, arr2,
-     & stress, tt,
-     & J(7:6+props%num_hard, 1:6))
-c      write (*,*) "J21", J(7,1)
-      call mm10_formJ22(props, np1, n, vec1, vec2, arr1, arr2,
-     & stress, tt,
-     & J(7:6+props%num_hard,7:6+props%num_hard))
-c      write (*,*) "J22", J(7,7)
+      integer :: len
+      double precision :: local_J11(6,6), local_J12(6,max_uhard)
+      double precision, allocatable, dimension(:,:) :: local_J21,
+     &                                                 local_J22
+c
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J:64
+c
+c
+c              use local arrays with size of J submatrices to 
+c              support calls.  no copyin req'd. only copyout
+c
+      len = props%num_hard
+      allocate( local_J21(len,6), local_J22(len,len) )
+c
+      call mm10_formarrs( props, np1, n, stress, tt, vec1, vec2,
+     &                    arr1, arr2, 2 )
+c
+      call mm10_formJ11( props, np1, n, vec1, vec2, arr1, arr2,
+     &                   stress, tt, local_J11 ) ! J(1:6,1:6))
+      call mm10_formJ12( props, np1, n, vec1, vec2, arr1, arr2,
+     &                   stress, tt, local_J12 ) !
+      call mm10_formJ21( props, np1, n, vec1, vec2, arr1, arr2,
+     &                   stress, tt, local_J21 ) !
+      call mm10_formJ22( props, np1, n, vec1, vec2, arr1, arr2,
+     &                   stress, tt, local_J22 ) 
+c
+      J(1:6,1:6)         = local_J11
+      J(1:6,7:6+len)     = local_J12(1:6,1:len)
+      J(7:6+len,1:6)     = local_J21(1:len,1:6)
+      J(7:6+len,7:6+len) = local_J22(1:len,1:len)
+c
+      deallocate( local_J21, local_J22 )
 c
       return
-      end subroutine
+      end    
+
 c
 c     ****************************************************************
 c     *                                                              *
@@ -1165,16 +931,18 @@ c     *                 subroutine mm10_formJi                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form the jacobian from lower subroutines                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formJi(props, np1, n, ivec1, ivec2,
-     &           stress, tt, J)
+      subroutine mm10_formJi( props, np1, n, ivec1, 
+     &                        ivec2, stress, tt, J )
       use mm10_defs
       implicit none
+c
+c              parameters
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
@@ -1184,21 +952,34 @@ c
       double precision, dimension(props%num_hard) :: tt
       double complex, dimension(max_uhard) :: ivec1, ivec2
 c
-      call mm10_formJ11i(props, np1, n, ivec1, ivec2, 
-     &   stress, tt, J(1:6,1:6))
-c      write (*,*) "J11", J(1,1)
-      call mm10_formJ12i(props, np1, n, ivec1, ivec2, 
-     & stress, tt,
-     & J(1:6,7:6+props%num_hard))
-c      write (*,*) "J12", J(1,7)
-      call mm10_formJ21i(props, np1, n, ivec1, ivec2, 
-     & stress, tt,
-     & J(7:6+props%num_hard, 1:6))
-c      write (*,*) "J21", J(7,1)
-      call mm10_formJ22i(props, np1, n, ivec1, ivec2, 
-     & stress, tt,
-     & J(7:6+props%num_hard,7:6+props%num_hard))
-c      write (*,*) "J22", J(7,7)
+c              locals
+c
+      integer :: len
+      double precision :: local_J11(6,6), local_J12(6,max_uhard)
+      double precision, allocatable, dimension(:,:) :: local_J21,
+     &                                                 local_J22
+c
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, J:64
+c
+      len = props%num_hard
+      allocate( local_J21(len,6), local_J22(len,len) )
+c
+      call mm10_formJ11i( props, np1, n, ivec1, ivec2, 
+     &                    stress, tt, local_J11 )
+      call mm10_formJ12i( props, np1, n, ivec1, ivec2, 
+     &                    stress, tt, local_J12 )
+      call mm10_formJ21i( props, np1, n, ivec1, ivec2, 
+     &                    stress, tt, local_J21 )
+      call mm10_formJ22i( props, np1, n, ivec1, ivec2, 
+     &                    stress, tt, local_J22 )
+c
+      J(1:6,1:6)         = local_J11
+      J(1:6,7:6+len)     = local_J12(1:6,1:len)
+      J(7:6+len,1:6)     = local_J21(1:len,1:6)
+      J(7:6+len,7:6+len) = local_J22(1:len,1:len)
+c
+      deallocate( local_J21, local_J22 )
 c
       return
       end subroutine
@@ -1209,33 +990,35 @@ c     *                 subroutine mm10_formR                        *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form the residual from lower subroutines                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formR(props, np1, n, vec1, vec2,
-     &   stress, tt, R, gp)
+      subroutine mm10_formR( props, np1, n, vec1, vec2, stress, tt, 
+     &                       R, gp)
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+c
+      integer :: gp      
       double precision, dimension(6) :: stress
       double precision, dimension(6+props%num_hard) :: R
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
-      integer :: gp
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64, R:64
 c
-      call mm10_formvecs(props, np1, n, stress, tt,
-     &    vec1, vec2)
-      call mm10_formR1(props, np1, n, vec1, vec2,stress, tt, R(1:6), gp)
-      call mm10_formR2(props, np1, n, vec1, vec2,stress, tt,
-     & R(7:6+props%num_hard),gp)
+      call mm10_formvecs( props, np1, n, stress, tt, vec1, vec2 )
+      call mm10_formR1( props, np1, n, vec1, vec2, stress, 
+     &                  tt, R(1), gp )
+      call mm10_formR2( props, np1, n, vec1, vec2, stress, tt,
+     &                  R(7), gp )
 c
       return
-      end subroutine
+      end
 c
 c     ****************************************************************
 c     *                                                              *
@@ -1243,15 +1026,16 @@ c     *                 subroutine mm10_formR1                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form R1                                                  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formR1(props, np1, n, vec1, vec2,
-     &     stress, tt, R1,gp)
+      subroutine mm10_formR1( props, np1, n, vec1, vec2,
+     &                        stress, tt, R1, gp )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1261,52 +1045,48 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
 c
-      double precision, dimension(6) :: dbarp
-      double precision, dimension(3) :: wp
-      double precision, dimension(6) :: symTW,temp
       integer :: gp
+      double precision :: dbarp(6), wp(3), symTW(6), work_vec1(6),
+     &                    work_vec2(6) 
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64, R1:64
 c
-      call mm10_form_dbarp(props, np1, n, vec1, vec2, 
-     &   stress, tt, dbarp)
-      call mm10_form_wp(props, np1, n, vec1, vec2,stress, tt, wp)
-      call mm10_symSW(stress, wp, symTW)
+      call mm10_form_dbarp( props, np1, n, vec1, vec2, 
+     &                      stress, tt, dbarp )
+      call mm10_form_wp( props, np1, n, vec1, vec2, stress, tt, wp )
+      call mm10_symSW( stress, wp, symTW) 
 c
-      R1 = stress - n%stress - matmul(props%stiffness, np1%D - dbarp) 
-     &      + 2.0d0 * symTW
-c      if(gp.eq.0) then
-c       write(*,*) "R1=", R1(2), " de=", np1%D(2) - dbarp(2)
-c       write(*,*) "dp=", dbarp(2), " d=", np1%D(2)
-c       write(*,*) "wp=", wp(2), "STW=", symTW(2)
-c       temp = matmul(props%stiffness, np1%D - dbarp)
-c       write(*,*) "C*de= ", temp(2)
-c       temp = stress - n%stress
-c       write(*,*) "sn-sn_1= ", temp(2)
-c       write(*,*) "C= ", props%stiffness(1,1)
-c       write(*,*) "slipinc= ", vec1(6)
-c      endif
+      work_vec1 =  np1%D - dbarp
+      call mm10_b_mult_type_2( work_vec2, props%stiffness, work_vec1 )
+      R1 = stress - n%stress - work_vec2 + two * symTW
+c
+c              original code
+c      
+c      R1 = stress - n%stress - matmul(props%stiffness, work_vec1) 
+c     &      + two * symTW
 c
       return
-      end subroutine
+      end
 c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_formR1i                      *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 11/26/13                    *
+c     *                   last modified: 10/15/2016 rhd              *
 c     *                                                              *
 c     *     Form R1                                                  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_formR1i(props, np1, n, ivec1, ivec2,
-     &     stress, tt, R1)
+      subroutine mm10_formR1i( props, np1, n, ivec1, ivec2,
+     &                         stress, tt, R1 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
-      type(crystal_state) :: np1, n
+      type(crystal_state) :: np1, n  
       double complex, dimension(6) :: stress
       double complex, dimension(6) :: R1
       double complex, dimension(props%num_hard) :: tt
@@ -1317,165 +1097,495 @@ c
       double precision, dimension(6,6) :: zeroff
       double complex, dimension(3) :: wp
       double complex, dimension(6) :: symTW
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64, tt:64, R1:64
 c
-      call mm10_form_dbarpi(props, np1, n, ivec1, ivec2, 
-     &   stress, tt, dbarp)
-      call mm10_form_wpi(props, np1, n, ivec1, ivec2,stress, tt, wp)
-      call mm10_symSWi(stress, wp, symTW)
+      call mm10_form_dbarpi( props, np1, n, ivec1, ivec2, 
+     &                       stress, tt, dbarp )
+      call mm10_form_wpi( props, np1, n, ivec1, ivec2 ,stress, tt, wp )
+      call mm10_symSWi( stress, wp, symTW )
 c
-      zeroff = 0.d0
-      stiff2 = dcmplx(props%stiffness, zeroff)
+      zeroff = zero
+      stiff2 = dcmplx( props%stiffness, zeroff )
       temp = np1%D - dbarp
       R1 = stress - n%stress - matmul(stiff2, np1%D - dbarp) 
-     &      + 2.0d0 * symTW
+     &      + two * symTW
+c
+      return
+      end 
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_form_dbarp                   *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_form_dbarp( props, np1, n, vec1, vec2,
+     &                            stress, tt, dbar )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(6) :: dbar
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(max_uhard) :: vec1, vec2
+c
+      integer :: i, nslip
+      double precision :: slipinc, rs
+      double precision, external :: mm10_rs
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, dbar:64
+c
+      nslip = props%nslip
+c
+      select case( props%h_type )
+        case( 1 ) ! Voche
+          dbar = zero
+          do i = 1, nslip
+            call mm10_slipinc( props, np1, n, stress, tt, i, slipinc )
+            rs = mm10_rs( props, np1, n, stress, tt, i )
+            dbar = dbar + (rs*np1%tinc*props%iD_v + slipinc) *
+     &             np1%ms(1:6,i)
+          end do
+        case( 2 ) ! MTS     
+          dbar = zero
+          do i = 1, nslip
+            call mm10_slipinc( props, np1, n, stress, tt, i, slipinc )
+            dbar = dbar + slipinc*np1%ms(1:6,i)
+          end do
+        case( 3 ) ! User
+          dbar = zero
+          do i = 1, nslip
+            call mm10_slipinc_user( props, np1, n, stress, tt, i,
+     &                              slipinc )
+            dbar = dbar + slipinc*np1%ms(1:6,i)
+          end do
+        case( 4 ) ! ORNL
+          call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
+        case( 7 ) ! MRR
+          call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
+        case( 9 ) !DJGM
+          call mm10_b_mult_type_2a( dbar, np1%ms(1,1), vec1, nslip  )
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
+c
+      return
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_form_wbarp                   *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_form_wbarp( props, np1, n, vec1, vec2,
+     &                            stress, tt, wbar )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(3) :: wbar
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(max_uhard) :: vec1, vec2
+c
+      integer :: i, nslip
+      double precision :: slipinc, rs
+      double precision, external :: mm10_rs
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, wbar:64
+
+      nslip = props%nslip
+c
+      select case( props%h_type )
+        case( 1 )  ! voche
+          wbar = zero
+          do i = 1, nslip
+            call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
+            wbar = wbar + slipinc*np1%qs(1:3,i)
+c                       addition for diffusion
+            rs = mm10_rs( props, np1, n, stress, tt, i )
+            wbar = wbar + rs*np1%tinc*props%iD_v*np1%qs(1:3,i)
+          end do
+        case( 2 ) ! MTS
+          wbar = zero
+          do i = 1, nslip
+            call mm10_slipinc( props, np1, n, stress, tt, i, slipinc )
+            wbar = wbar + slipinc*np1%qs(1:3,i)
+          end do
+        case( 3 ) ! User
+          wbar = zero
+          do i = 1, nslip
+            call mm10_slipinc_user( props, np1, n, stress, tt, i, 
+     &                              slipinc )
+            wbar = wbar + slipinc*np1%qs(1:3,i)
+          end do
+        case( 4 ) ! ORNL
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )          
+        case( 7 )  ! MRR
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )          
+        case( 9 )  ! DJGM
+          call mm10_b_mult_type_2b( wbar, np1%qs(1,1), vec1, nslip  )          
+         case default
+          call mm10b_unknown_hard_error( props )
+      end select
 c
       return
       end subroutine
-c
-c ****************************************************************************
-c *                                                                          *
-c *    mm10_symSW                                                            *    *
-c *                                                                          *
-c *         written by : mcm                                                 *
-c *         last modified : 12/11/12 mcm                                     *
-c *                                                                          *
-c *   Take the symmetric part of S*W for some stress and skew tensor         *
-c *                                                                          *
-c ****************************************************************************
-c
-      subroutine mm10_symSW(S, W, SW)
-            implicit none
-            double precision, dimension(6), intent(in) :: S
-            double precision, dimension(3), intent(in) :: W
-            double precision, dimension(6), intent(out) :: SW
-c
-            SW = 0.0d0
-            SW(1) = S(4)*W(3) - S(6)*W(2)
-            SW(2) = S(4)*W(3) - S(5)*W(1)
-            SW(3) = S(6)*W(2) + S(5)*W(1)
-            SW(4) = 0.5d0*(W(3)*(S(1)-S(2)) + W(1)*S(6) - W(2)*S(5))
-            SW(5) = 0.5d0*(W(1)*(S(2)-S(3)) + W(2)*S(4) + W(3)*S(6))
-            SW(6) = 0.5d0*(W(2)*(S(1)-S(3)) + W(1)*S(4) - W(3)*S(5))
 
-            return
-
+c           Form w_p (in the current configuration)
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_form_wp                      *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_form_wp( props, np1, n, vec1, vec2, stress, 
+     &                         tt, w )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: stress
+      double precision, dimension(3) :: w
+      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(max_uhard) :: vec1, vec2
+c
+      integer :: i, nslip
+      double precision :: slipinc, rs
+      double precision, external :: mm10_rs
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, w:64
+c
+      nslip = props%nslip
+c      
+      select case ( props%h_type )
+        case( 1 ) ! Voche
+          w = zero
+          do i = 1, nslip
+            call mm10_slipinc( props, np1, n, stress, tt, i, slipinc )
+            w = w + slipinc*np1%qc(1:3,i)
+c             addition for diffusion
+            rs = mm10_rs ( props, np1, n, stress, tt, i )
+            w = w + rs*np1%tinc*props%iD_v*np1%qc(1:3,i)
+          end do
+        case( 2 ) ! MTS
+          w = zero
+          do i = 1, nslip
+            call mm10_slipinc( props, np1, n, stress, tt, i, slipinc )
+            w = w + slipinc*np1%qc(1:3,i)
+          end do
+        case( 3 ) ! User
+          w = zero
+          do i = 1, nslip
+            call mm10_slipinc_user( props, np1, n, stress, tt, i, 
+     &                              slipinc )
+            w = w + slipinc*np1%qc(1:3,i)
+          end do
+        case( 4 ) ! ornl
+          w = zero
+          do i = 1, nslip
+            call mm10_slipinc_ornl( props, np1, n, stress, tt, i,
+     &                              slipinc)
+            w = w + slipinc*np1%qc(1:3,i)
+          end do
+        case( 7 ) ! MRR
+          w = zero
+          do i = 1, nslip
+            call mm10_slipinc_mrr( props, np1, n, stress, tt, i,
+     &                             slipinc )
+            w = w + slipinc*np1%qc(1:3,i)
+          end do
+        case( 9 ) ! DJGM
+          w = zero
+          do i = 1, nslip
+            call mm10_slipinc_DJGM( props, np1, n, stress, tt, i, 
+     &                              slipinc )
+            w = w + slipinc*np1%qc(1:3,i)
+          end do
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
+c
+      return
+      end 
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_form_dbarpi                  *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/18/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_form_dbarpi( props, np1, n, ivec1, ivec2,
+     &                             stress, tt, dbar)
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double complex, dimension(6) :: stress
+      double complex, dimension(6) :: dbar
+      double complex, dimension(props%num_hard) :: tt
+      double complex, dimension(max_uhard) :: ivec1,ivec2
+c
+      integer :: i
+      double complex :: slipinc
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, dbar:64
+c
+      select case( props%h_type )
+        case( 1, 2, 3 ) ! Voche, MTS, User
+          continue
+        case(4 ) ! ORNL
+          dbar = (zero,zero)
+          do i = 1, props%nslip
+            slipinc = ivec1(i)
+            dbar = dbar + slipinc*np1%ms(1:6,i)
+          end do
+        case( 7 ) ! MRR
+          dbar = (zero,zero)
+          do i = 1, props%nslip
+            slipinc = ivec1(i)
+            dbar = dbar + slipinc*np1%ms(1:6,i)
+          end do
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
+c      
+      return
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_form_wbarpi                  *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     *           Form w_p (in the current configuration)            *
+c     *                                                              *
+c     ****************************************************************
+c
+       subroutine mm10_form_wpi( props, np1, n, ivec1, ivec2, 
+     &                           stress, tt, w)
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double complex, dimension(6) :: stress
+      double complex, dimension(3) :: w
+      double complex, dimension(props%num_hard) :: tt
+      double complex, dimension(max_uhard) :: ivec1,ivec2
+c
+      integer :: i
+      double complex :: slipinc
+@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64, w:64
+c
+      select case( props%h_type )
+         case( 1, 2, 3 )  !Voche, MTS, User
+           continue
+         case( 4 ) ! ORNL
+           w = (zero,zero)
+           do i = 1, props%nslip
+            call mm10_slipinci_ornl( props, np1, n, stress, tt, i, 
+     &                               slipinc)
+            w = w + slipinc*np1%qc(1:3,i)
+           end do
+        case( 7 )  ! MRR
+          w = (zero,zero)
+          do i = 1, props%nslip
+           call mm10_slipinci_mrr( props, np1, n, stress, tt, i, 
+     &                             slipinc )
+           w = w + slipinc*np1%qc(1:3,i)
+          end do
+        case default
+          call mm10b_unknown_hard_error( props )
+      end select
+c
+      return
       end subroutine
-c
-c ****************************************************************************
-c *                                                                          *
-c *    mm10_symSWi                                                           *
-c *                                                                          *
-c *         written by : mcm                                                 *
-c *         last modified : 12/11/12 mcm                                     *
-c *                                                                          *
-c *   Take the symmetric part of S*W for some stress and skew tensor         *
-c *                                                                          *
-c ****************************************************************************
-c
-      subroutine mm10_symSWi(S, W, SW)
-            implicit none
-            double complex, dimension(6), intent(in) :: S
-            double complex, dimension(3), intent(in) :: W
-            double complex, dimension(6), intent(out) :: SW
-c
-            SW = 0.d0
-            SW(1) = S(4)*W(3) - S(6)*W(2)
-            SW(2) = S(4)*W(3) - S(5)*W(1)
-            SW(3) = S(6)*W(2) + S(5)*W(1)
-            SW(4) = 0.5d0*(W(3)*(S(1)-S(2)) + W(1)*S(6) - W(2)*S(5))
-            SW(5) = 0.5d0*(W(1)*(S(2)-S(3)) + W(2)*S(4) + W(3)*S(6))
-            SW(6) = 0.5d0*(W(2)*(S(1)-S(3)) + W(1)*S(4) - W(3)*S(5))
 
-            return
-
-      end subroutine
 c
-c ****************************************************************************
-c *                                                                          *
-c *    mm10_symSWmat                                                         *
-c *                                                                          *
-c *         written by : tjt                                                 *
-c *         last modified : 03/31/15 tjt                                     *
-c *                                                                          *
-c *   Take the symmetric part of S*W for some stress and skew tensor         *
-c *                                                                          *
-c ****************************************************************************
+c **********************************************************************
+c *                                                                    *
+c *           mm10_symSW                                               * 
+c *                                                                    *
+c *         written by : mcm                                           *
+c *         last modified : 10/15/2016 rhd                             *
+c *                                                                    *
+c *   Take the symmetric part of S*W for some stress and skew tensor   *
+c *                                                                    *
+c **********************************************************************
 c
-      subroutine mm10_symSWmat(S, W, n, SW)
-            implicit none
-            integer n
-            double precision, dimension(6), intent(in) :: S
-            double precision, dimension(3,n), intent(in) :: W
-            double precision, dimension(6,n), intent(out) :: SW
+      subroutine mm10_symsw(s, w, sw)
+      use mm10_constants
+      implicit none
+c      
+      double precision, dimension(6), intent(in) :: s
+      double precision, dimension(3), intent(in) :: w
+      double precision, dimension(6), intent(out) :: sw
+@!dir$ assume_aligned s:64, w:64, sw:64     
 c
-            SW = 0.0d0
-            SW(1,1:n) = S(4)*W(3,1:n) - S(6)*W(2,1:n)
-            SW(2,1:n) = S(4)*W(3,1:n) - S(5)*W(1,1:n)
-            SW(3,1:n) = S(6)*W(2,1:n) + S(5)*W(1,1:n)
-            SW(4,1:n) = 0.5d0*(W(3,1:n)*(S(1)-S(2))
-     & + W(1,1:n)*S(6) - W(2,1:n)*S(5))
-            SW(5,1:n) = 0.5d0*(W(1,1:n)*(S(2)-S(3))
-     & + W(2,1:n)*S(4) + W(3,1:n)*S(6))
-            SW(6,1:n) = 0.5d0*(W(2,1:n)*(S(1)-S(3))
-     & + W(1,1:n)*S(4) - W(3,1:n)*S(5))
-
-            return
-
-      end subroutine
+      sw = zero
+      sw(1) = s(4)*w(3) - s(6)*w(2)
+      sw(2) = s(4)*w(3) - s(5)*w(1)
+      sw(3) = s(6)*w(2) + s(5)*w(1)
+      sw(4) = half*(w(3)*(s(1)-s(2)) + w(1)*s(6) - w(2)*s(5))
+      sw(5) = half*(w(1)*(s(2)-s(3)) + w(2)*s(4) + w(3)*s(6))
+      sw(6) = half*(w(2)*(s(1)-s(3)) + w(1)*s(4) - w(3)*s(5))
+c
+      return
+c
+      end
+c
+c **********************************************************************
+c *                                                                    *
+c *         written by : tjt                                           *
+c *         last modified : 10/15/2016 rhd                             *
+c *                                                                    *
+c *   Take the symmetric part of S*W for some stress and skew tensor   *
+c *                                                                    *
+c **********************************************************************
+c
+      subroutine mm10_symswi(s, w, sw)
+      use mm10_constants
+      implicit none
+c      
+      double complex, dimension(6), intent(in) :: s
+      double complex, dimension(3), intent(in) :: w
+      double complex, dimension(6), intent(out) :: sw
+@!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
+c
+      sw = zero
+      sw(1) = s(4)*w(3) - s(6)*w(2)
+      sw(2) = s(4)*w(3) - s(5)*w(1)
+      sw(3) = s(6)*w(2) + s(5)*w(1)
+      sw(4) = half*(w(3)*(s(1)-s(2)) + w(1)*s(6) - w(2)*s(5))
+      sw(5) = half*(w(1)*(s(2)-s(3)) + w(2)*s(4) + w(3)*s(6))
+      sw(6) = half*(w(2)*(s(1)-s(3)) + w(1)*s(4) - w(3)*s(5))
+c
+      return
+c
+      end 
+c
+c **********************************************************************
+c *                                                                    *
+c *                      mm10_symSWmat                                 *
+c *                                                                    *
+c *         written by : tjt                                           *
+c *         last modified : 10/15/2016 rhd                             *
+c *                                                                    *
+c *   Take the symmetric part of S*W for some stress and skew tensor   *
+c *                                                                    *
+c **********************************************************************
+c
+      subroutine mm10_symswmat(s, w, n, sw)
+      use mm10_constants
+      implicit none
+c      
+      integer :: n
+      double precision, dimension(6), intent(in) :: s
+      double precision, dimension(3,n), intent(in) :: w
+      double precision, dimension(6,n), intent(out) :: sw
+@!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
+c
+      sw = zero
+      sw(1,1:n) = s(4)*w(3,1:n) - s(6)*w(2,1:n)
+      sw(2,1:n) = s(4)*w(3,1:n) - s(5)*w(1,1:n)
+      sw(3,1:n) = s(6)*w(2,1:n) + s(5)*w(1,1:n)
+      sw(4,1:n) = half*(w(3,1:n)*(s(1)-s(2))
+     &             + w(1,1:n)*s(6) - w(2,1:n)*s(5))
+      sw(5,1:n) = half*(w(1,1:n)*(s(2)-s(3))
+     &           + w(2,1:n)*s(4) + w(3,1:n)*s(6))
+                  sw(6,1:n) = half*(w(2,1:n)*(s(1)-s(3))
+     &             + w(1,1:n)*s(4) - w(3,1:n)*s(5))
+c
+      return
+c
+      end 
 c
 c
-c ****************************************************************************
-c *                                                                          *
-c *    mm10_IW                                                               *
-c *                                                                          *
-c *         written by : mcm                                                 *
-c *         last modified : 12/11/12 mcm                                     *
-c *                                                                          *
-c *   Get Iik*Wlj - Wik*Ijl in our voigt notation                            *
-c *                                                                          *
-c ****************************************************************************
+c **********************************************************************
+c *                                                                    *
+c *                             mm10_IW                                *
+c *                                                                    *
+c *         written by : mcm                                           *
+c *         last modified : 10/15/2016 rhd                             *
+c *                                                                    *
+c *        Get Iik*Wlj - Wik*Ijl in our voigt notation                 *
+c *                                                                    *
+c **********************************************************************
 c
-      subroutine mm10_IW(W, IW)
-            implicit none
-            double precision, dimension(3), intent(in) :: W
-            double precision, dimension(6,6), intent(out) :: IW
+      subroutine mm10_iw(w, iw)
+      use mm10_constants
+      implicit none
+c            
+      double precision, dimension(3), intent(in) :: w
+      double precision, dimension(6,6), intent(out) :: iw
+@!DIR$ ASSUME_ALIGNED w:64, iw:64    
 c
-            IW = 0.0d0
-            IW(1,4) =  2.0d0*W(3)
-            IW(1,6) = -2.0d0*W(2)
-            IW(2,4) =  2.0d0*W(3)
-            IW(2,5) = -2.0d0*W(1)
-            IW(3,5) =  2.0d0*W(1)
-            IW(3,6) =  2.0d0*W(2)
-            IW(4,1) =  W(3)
-            IW(4,2) = -W(3)
-            IW(4,5) = -W(2)
-            IW(4,6) =  W(1)
-            IW(5,2) =  W(1)
-            IW(5,3) = -W(1)
-            IW(5,4) =  W(2)
-            IW(5,6) =  W(3)
-            IW(6,1) =  W(2)
-            IW(6,3) = -W(2)
-            IW(6,4) =  W(1)
-            IW(6,5) = -W(3)
-
-            return
-      end subroutine
+      iw = zero
+      iw(1,4) =  two*w(3)
+      iw(1,6) = -two*w(2)
+      iw(2,4) =  two*w(3)
+      iw(2,5) = -two*w(1)
+      iw(3,5) =  two*w(1)
+      iw(3,6) =  two*w(2)
+      iw(4,1) =  w(3)
+      iw(4,2) = -w(3)
+      iw(4,5) = -w(2)
+      iw(4,6) =  w(1)
+      iw(5,2) =  w(1)
+      iw(5,3) = -w(1)
+      iw(5,4) =  w(2)
+      iw(5,6) =  w(3)
+      iw(6,1) =  w(2)
+      iw(6,3) = -w(2)
+      iw(6,4) =  w(1)
+      iw(6,5) = -w(3)
+c
+      return
+      end
+c
+c **********************************************************************
+c *                                                                    *
+c *         User hardening routines                                    *
+c *                                                                    *
+c **********************************************************************
 c
 c
-c
-c
-c *****************************************************************************
-c *                                                                           *
-c *         User hardening routines                                           *
-c *                                                                           *
-c *****************************************************************************
-c
-c
-c           Actual user sliprate function
-      subroutine mm10_slipinc_user(props, np1, n, stress, tt, i,
-     &                             slipinc)
+      subroutine mm10_slipinc_user( props, np1, n, stress, tt, i,
+     &                              slipinc )
       use mm10_defs
       implicit none
 c
@@ -1486,7 +1596,7 @@ c
       double precision :: slipinc
       integer :: i
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_slipinc_user"
       call die_gracefully
 c
       return
@@ -1502,7 +1612,7 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, h
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_h_user"
       call die_gracefully
 c
       return
@@ -1519,7 +1629,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(props%num_hard,6) :: et
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_estress_user"
       call die_gracefully
 c
       return
@@ -1537,7 +1647,7 @@ c
       double precision, 
      &   dimension(props%num_hard,props%num_hard) :: etau
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_ehard_user"
       call die_gracefully
 c
       return
@@ -1555,7 +1665,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(6,props%num_hard) :: ed
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_ed_user"
       call die_gracefully
 c
       return
@@ -1574,7 +1684,7 @@ c
       double precision, dimension(props%num_hard) :: tt
 c
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_dgdt_user"
       call die_gracefully
 c
       return
@@ -1593,7 +1703,7 @@ c
      &        :: dgammadtt
 c
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_dgdh_user"
       call die_gracefully
 c
       return
@@ -1611,72 +1721,97 @@ c
       double precision, dimension(props%nslip,6) :: dgammadd
 c
 c
-      write (*,*) "Not implemented"
+      write(props%out,*) "Not implemented: mm10_dgdd_user"
       call die_gracefully
 c
       return
       end subroutine
 c
-c *****************************************************************************
-c *                                                                           *
-c *         Built in hardening routines                                       *
-c *                                                                           *
-c *****************************************************************************
+c **********************************************************************
+c *                                                                    *
+c *         Built in hardening routines                                *
+c *                                                                    *
+c **********************************************************************
 c
 c
-c           Calculate the slip increment along system i
-      subroutine mm10_slipinc(props, np1, n, stress, tt, i,
-     &                             slipinc)
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_slipinc                      *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     *       Calculate the slip increment along system i            *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_slipinc( props, np1, n, stress, tt, i, slipinc )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt
+      double precision :: tt, slipinc
       integer :: i
 c
-      double precision :: slipinc, mm10_rs
       double precision :: rs
-c      write(*,*) stress
-c      write(*,*) i
-c      write(*,*) tt
+      double precision, external :: mm10_rs
+@!DIR$ ASSUME_ALIGNED stress:64
 c
-      rs = mm10_rs(props, np1, n, stress, tt, i)
-      slipinc = np1%dg/tt * dabs(rs/tt)**(props%rate_n-1.0)*rs
+      rs = mm10_rs( props, np1, n, stress, tt, i )
+      slipinc = np1%dg/tt * dabs(rs/tt)**(props%rate_n-one)*rs
+c
       return
-      end subroutine
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                 function mm10_rs                             *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     &          Calculate the resolved shear along system i         *  
+c     *                                                              *
+c     ****************************************************************
 c      
-c           Calculate the resolved shear along system i     
-      function mm10_rs(props, np1, n, stress, tt, i)
+      function mm10_rs( props, np1, n, stress, tt, i )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress
-      double precision :: tt
-      integer :: i
+c
+      integer :: i      
+      double precision :: stress(6), tt
 c
       double precision :: mm10_rs
+@!DIR$ ASSUME_ALIGNED stress:64
 c
-      mm10_rs = dot_product(stress, np1%ms(1:6,i))
+      mm10_rs =  stress(1)*np1%ms(1,i)
+     &         + stress(2)*np1%ms(2,i)
+     &         + stress(3)*np1%ms(3,i)
+     &         + stress(4)*np1%ms(4,i)
+     &         + stress(5)*np1%ms(5,i)
+     &         + stress(6)*np1%ms(6,i)
 c
       return
-      end function
+      end
 c      
-c           Calculate the resolved shear along system i     
-      function mm10_rsi(props, np1, n, stress, tt, i)
+      function mm10_rsi( props, np1, n, stress, tt, i )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex :: tt
       integer :: i
+      double complex :: stress(6), tt
 c
       double complex :: mm10_rsi
+@!DIR$ ASSUME_ALIGNED stress:64
 c
       mm10_rsi = stress(1)*np1%ms(1,i)
      &         + stress(2)*np1%ms(2,i)
@@ -1686,7 +1821,7 @@ c
      &         + stress(6)*np1%ms(6,i)
 c
       return
-      end function
+      end 
 c -----------------------
 c     Simple voche:
 c
@@ -1695,6 +1830,7 @@ c
 c           Actual voche law hardening function
       subroutine mm10_h_voche(props, np1, n, stress, tt, h)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1707,23 +1843,13 @@ c
 c
       double precision :: slipinc
 c
-      h = 0.0d0
+      h = zero
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        h_term = 1.0d0 - (tt(1)-props%tau_y)/props%tau_v
+        h_term = one - (tt(1)-props%tau_y)/props%tau_v
      &           + np1%tau_l(i)/(tt(1)-props%tau_y)
-c        if (i.eq.1) then
-c        write(*,*) 'hterm', h_term,
-c     &   'theta_0', props%theta_0
-c        write(*,*) 'tt', tt(1),
-c     &   'slipinc', slipinc
-c        write(*,*) 'g_s', props%tau_y+props%tau_v,
-c     &   'whole', props%theta_0*
-c     &      abs(h_term)**(props%voche_m) * 
-c     &      sign(1.d0,h_term) * abs(slipinc)
-c        endif
         h(1) = h(1) + abs(h_term)**(props%voche_m) * 
-     &      sign(1.d0,h_term)
+     &      sign(one,h_term)
      &      * abs(slipinc)
       end do
       h(1) = n%tau_tilde(1) + props%theta_0*h(1)
@@ -1734,6 +1860,7 @@ c
 c           Derivative of hardening fn wrt stress
       subroutine mm10_estress_voche(props, np1, n, stress, tt, et)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1746,15 +1873,15 @@ c
       double precision :: rs, h_term
       integer :: i
 c
-      et = 0.0d0
+      et = zero
 c
       do i=1,props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, i)
-        h_term = 1.0d0 - (tt(1)-props%tau_y)/props%tau_v
+        h_term = one - (tt(1)-props%tau_y)/props%tau_v
      &           + np1%tau_l(i)/(tt(1)-props%tau_y)
         et(1:6) = et(1:6) + abs(h_term)**(props%voche_m) * 
-     &      sign(1.d0,h_term) * 
-     &      dabs(rs)**(props%rate_n-2.d0)*rs*np1%ms(1:6,i)
+     &      sign(one,h_term) * 
+     &      dabs(rs)**(props%rate_n-two)*rs*np1%ms(1:6,i)
       end do
 c
       et = props%theta_0*np1%dg*props%rate_n/tt(1)**
@@ -1766,6 +1893,7 @@ c
 c           Derivative of hardening fn wrt hardening
       subroutine mm10_ehard_voche(props, np1, n, stress, tt, etau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1777,21 +1905,21 @@ c
       double precision :: slipinc
       integer :: i
 c
-      etau = 0.0d0
+      etau = zero
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        h_term = 1.0d0 - (tt(1)-props%tau_y)/props%tau_v
+        h_term = one - (tt(1)-props%tau_y)/props%tau_v
      &           + np1%tau_l(i)/(tt(1)-props%tau_y)
         etau = etau + ( props%voche_m * 
-     &      (-1.0d0/props%tau_v - np1%tau_l(i)/
+     &      (-one/props%tau_v - np1%tau_l(i)/
      &      (tt(1)-props%tau_y)**2) * abs(slipinc)/abs(h_term)
      &      - abs(slipinc) * props%rate_n/tt(1) * 
-     &      sign(1.d0,h_term)
-     &      * sign(1.d0,slipinc) ) * (abs(h_term)**props%voche_m)
+     &      sign(one,h_term)
+     &      * sign(one,slipinc) ) * (abs(h_term)**props%voche_m)
       end do
 
       etau = props%theta_0*etau
-      etau = 1.0d0 - etau
+      etau = one - etau
 c
       return
       end subroutine
@@ -1799,6 +1927,7 @@ c
 c           Derivative of hardening fn wrt strain
       subroutine mm10_ed_voche(props, np1, n, stress, tt, ed)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1810,7 +1939,7 @@ c
       double precision, dimension(1) :: h
       double precision, dimension(6) :: d_mod
 c
-      ed = 0.0d0
+      ed = zero
 c
       return
       end subroutine
@@ -1818,6 +1947,7 @@ c
 c           Derivative of sliprate wrt resolved shear stress
       subroutine mm10_dgdt_voche(props, np1, n, stress, tt, dgammadtau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1832,7 +1962,7 @@ c
 c
       do s=1,props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, s)
-        dgammadtau(s) = dabs(rs)**(props%rate_n-1.0d0)
+        dgammadtau(s) = dabs(rs)**(props%rate_n-one)
         dgammadtau(s) = np1%dg*props%rate_n/tt**(props%rate_n)
      &     *dgammadtau(s)
 c   additional term for diffusion
@@ -1869,6 +1999,7 @@ c           Derivative of sliprate wrt strain increment
       subroutine mm10_dgdd_voche(props, np1, n, stress, tt, D, 
      &                         dgammadd)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1877,7 +2008,7 @@ c
       double precision :: tt, alpha, dgam
       double precision, dimension(props%nslip,6) :: dgammadd
 c
-      dgammadd = 0.d0
+      dgammadd = zero
 c
       return
       end subroutine
@@ -1891,6 +2022,7 @@ c
 c           Actual MTS hardening function
       subroutine mm10_h_mts(props, np1, n, stress, tt, h)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1905,15 +2037,15 @@ c
       cta = (props%mu_0/
      &      np1%mu_harden)*tt(1) - (props%mu_0/np1%mu_harden)*
      &     props%tau_a - np1%tau_y
-      ct = 1.0d0 - cta/np1%tau_v
-      h = 0.0d0
+      ct = one - cta/np1%tau_v
+      h = zero
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
         h(1) = h(1) + (ct + np1%tau_l(i)/cta)**(props%voche_m)*
      &      dabs(slipinc)
       end do
 c
-      h(1) = props%tau_a*(1.0d0 - np1%mu_harden/n%mu_harden) + 
+      h(1) = props%tau_a*(one - np1%mu_harden/n%mu_harden) + 
      &      (np1%mu_harden/props%mu_0)*(np1%tau_y - n%tau_y) + 
      &      (np1%mu_harden/n%mu_harden)*n%tau_tilde(1) + 
      &      props%theta_0 * (np1%mu_harden/props%mu_0)*h(1)
@@ -1924,6 +2056,7 @@ c
 c           Derivative of hardening fn wrt stress
       subroutine mm10_estress_mts(props, np1, n, stress, tt, et)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1940,12 +2073,12 @@ c
       cta = (props%mu_0/
      &      np1%mu_harden)*tt - (props%mu_0/np1%mu_harden)*props%tau_a -
      &      np1%tau_y
-      ct = 1.0d0 - cta/np1%tau_v
-      et = 0.0d0
+      ct = one - cta/np1%tau_v
+      et = zero
       do i = 1, props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, i)
         et = et + (ct+np1%tau_l(i)/cta)**(props%voche_m)*
-     &      dabs(rs)**(props%rate_n-2.0d0)*rs*np1%ms(1:6,i)
+     &      dabs(rs)**(props%rate_n-two)*rs*np1%ms(1:6,i)
       end do
 
       et =  props%theta_0 * 
@@ -1959,6 +2092,7 @@ c
 c           Derivative of hardening fn wrt hardening
       subroutine mm10_ehard_mts(props, np1, n, stress, tt, etau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1974,22 +2108,22 @@ c
       cta = (props%mu_0/
      &      np1%mu_harden)*tt - (props%mu_0/np1%mu_harden)*props%tau_a -
      &      np1%tau_y
-      ct = 1.0d0 - cta/np1%tau_v
+      ct = one - cta/np1%tau_v
 c
       ur = np1%mu_harden / props%mu_0
 c
-      etau = 0.0d0
+      etau = zero
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        etau = etau+(props%voche_m*(1.d0/np1%tau_v+np1%tau_l(i)/
-     &         cta**2.0d0)*
-     &      (ct+np1%tau_l(i)/cta)**(-1.0d0) + ur*props%rate_n/tt)*
+        etau = etau+(props%voche_m*(one/np1%tau_v+np1%tau_l(i)/
+     &         cta**2)*
+     &      (ct+np1%tau_l(i)/cta)**(-one) + ur*props%rate_n/tt)*
      &      (ct+np1%tau_l(i)/cta)**(props%voche_m)*
      &      dabs(slipinc)
       end do
 c
       etau = -props%theta_0*etau
-      etau = 1.0d0 - etau
+      etau = one - etau
 
       return
       end subroutine
@@ -1997,6 +2131,7 @@ c
 c           Derivative of hardening fn wrt strain
       subroutine mm10_ed_mts(props, np1, n, stress, tt, ed)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2015,7 +2150,7 @@ c     Form a bunch of simple constitutive things
 c
 c
       d_mod = np1%D
-      d_mod(4:6) = 0.5d0 * d_mod(4:6)
+      d_mod(4:6) = half * d_mod(4:6)
 c
       dgc = np1%dg / np1%tinc
 c
@@ -2025,10 +2160,10 @@ c
       ty = props%boltzman*np1%temp
      &       /(np1%mu_harden*(props%burgers**3)*props%G_0_y)*
      &       lny
-      dydd = 2.0d0*props%tau_hat_y/(3.0d0*np1%dg**2.0d0*
+      dydd = two*props%tau_hat_y/(three*np1%dg**2*
      &        props%q_y*props%p_y*
-     &      lny)*(1.0d0-ty**(1.0d0/props%q_y))**(1.0d0/props%p_y-1.0d0)*
-     &      ty**(1.0d0/props%q_y)*d_mod
+     &      lny)*(one-ty**(one/props%q_y))**(one/props%p_y-one)*
+     &      ty**(one/props%q_y)*d_mod
 
 c
 c     Form d_tauv/d_deltad by steps
@@ -2037,10 +2172,10 @@ c
       tv = props%boltzman*np1%temp
      &       /(np1%mu_harden*(props%burgers**3)*props%G_0_v)*
      &       lnv
-      dvdd = 2.0d0*props%tau_hat_v/(3.0d0*np1%dg**2.0d0*
+      dvdd = two*props%tau_hat_v/(three*np1%dg**2*
      &        props%q_v*props%p_v*
-     &      lnv)*(1.0d0-tv**(1.0d0/props%q_v))**(1.0d0/props%p_v-1.0d0)*
-     &      tv**(1.0d0/props%q_v)*d_mod
+     &      lnv)*(one-tv**(one/props%q_v))**(one/props%p_v-one)*
+     &      tv**(one/props%q_v)*d_mod
 
 c
 c     Form a couple more common components
@@ -2050,17 +2185,17 @@ c
 c
 c     Glue everything together
 c
-      ed = 0.0d0
+      ed = zero
       do s=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, s, slipinc)
-        ed = ed + (props%voche_m*(1.d0/np1%tau_v
-     &      +np1%tau_l(s)/sc**2.0d0)*
-     &      (1.0d0-sc/np1%tau_v+np1%tau_l(s)/sc)
-     &         **(props%voche_m-1.0d0)*dydd
-     &      + props%voche_m/(np1%tau_v)**2.0d0*sc*
-     &      (1.0d0-sc/np1%tau_v+np1%tau_l(s)/sc)
-     &         **(props%voche_m-1.0)*dvdd
-     &      + 2.0d0/(3.0d0*np1%dg**2.0d0)*(1.0d0-sc/np1%tau_v
+        ed = ed + (props%voche_m*(one/np1%tau_v
+     &      +np1%tau_l(s)/sc**2)*
+     &      (one-sc/np1%tau_v+np1%tau_l(s)/sc)
+     &         **(props%voche_m-one)*dydd
+     &      + props%voche_m/(np1%tau_v)**2*sc*
+     &      (one-sc/np1%tau_v+np1%tau_l(s)/sc)
+     &         **(props%voche_m-one)*dvdd
+     &      + two/(three*np1%dg**2)*(one-sc/np1%tau_v
      &         +np1%tau_l(s)/sc)
      &      **(props%voche_m)*d_mod) * 
      &      dabs(slipinc)
@@ -2074,6 +2209,7 @@ c
 c           Derivative of sliprate wrt resolved shear stress
       subroutine mm10_dgdt_mts(props, np1, n, stress, tt, dgammadtau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2088,7 +2224,7 @@ c
 c
       do s=1,props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, s)
-        dgammadtau(s) = dabs(rs)**(props%rate_n-1.0d0)
+        dgammadtau(s) = dabs(rs)**(props%rate_n-one)
         dgammadtau(s) = np1%dg*props%rate_n/tt**(props%rate_n)
      &     *dgammadtau(s)
       end do
@@ -2123,6 +2259,7 @@ c           Derivative of sliprate wrt strain increment
       subroutine mm10_dgdd_mts(props, np1, n, stress, tt, D, 
      &                         dgammadd)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2136,8 +2273,8 @@ c
       integer :: s
 c
       d_mod = D
-      d_mod(4:6) = 0.5d0 * d_mod(4:6)
-      alpha = 2.0d0/(3.0d0*np1%dg**2.0d0)
+      d_mod(4:6) = half * d_mod(4:6)
+      alpha = two/(three*np1%dg**2)
       do s=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, s, dgam)
         dgammadd(1:6,s) = alpha * dgam * d_mod(1:6)
@@ -2204,29 +2341,57 @@ c
       enddo
 c
       end subroutine
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_a_mrr                        *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     *     Form the stress varying with hardening part              *
+c     *                                                              *
+c     ****************************************************************
 c
-c           Form intermediate arrays for faster calculations
-      subroutine mm10_a_mrr(props, np1, n, stress, tt, 
-     &   vec1, vec2, arr1, arr2, both)
+      subroutine mm10_a_mrr( props, np1, n, stress, tt, vec1, vec2,
+     &                       arr1, arr2, both )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+      integer both      
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-      integer both
 c
-         call mm10_dgdt_mrr(props, np1, n, stress, tt, 
-     &                            arr1(1:props%num_hard,1))
-      if(both.eq.2) then
-         call mm10_dgdh_mrr(props, np1, n, stress, tt, 
-     &               arr2(1:props%nslip,1:props%num_hard))
-      endif
+      integer :: nslip, num_hard  
+      double precision, allocatable :: temp_arr2(:,:)    
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64     
 c
-      end subroutine
+c              arr1 treated as vector inside
+c
+      nslip    = props%nslip
+      num_hard = props%num_hard
+c      
+      call mm10_dgdt_mrr( props, np1, n, stress, tt, arr1(1,1) )
+c      
+c              arr2 must have lead dimension = nslip for compatibility 
+c              with _dgdh_mrr. values defined inside the routine - no
+c              need to copyin. only copyout needed
+c
+      if( both == 2 ) then
+         allocate( temp_arr2(nslip,num_hard) )
+         call mm10_dgdh_mrr( props, np1, n, stress, tt, temp_arr2 )
+         arr2(1:nslip,1:num_hard) = temp_arr2
+         deallocate( temp_arr2 ) 
+      end if
+c
+      return
+      end 
 c
 c           Form intermediate vectors for faster calculations
       subroutine mm10_vi_mrr(props, np1, n, stress, tt, 
@@ -2254,6 +2419,7 @@ c           Actual mrr sliprate function
       subroutine mm10_slipinc_mrr(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2284,16 +2450,16 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
+        if(G.lt.zero) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = third*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
@@ -2301,7 +2467,7 @@ c        [Gmat,Hmat] = mm10_mrr_GH(props);
 c        
 c      ms = np1.ms(1:6,alpha);
 c      rs = stress*ms; % tau^a
-      rs = mm10_rs(props, np1, n, stress, tt, alpha)
+      rs = mm10_rs( props, np1, n, stress, tt, alpha )
 c        
 c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
           rhoF = dot_product(props%Gmat(alpha,1:props%num_hard),
@@ -2315,43 +2481,29 @@ c Compute some stresses and rates
         tcut = Qslip/(c2*c3*b*b)*dsqrt(rhoF) ! (17)
         fract = ((dabs(rs)-tpass)/tcut)
 c
-c Evaluate the slip rate equation
-c        if(alpha.eq.6) then
-c          write(*,*) "fract=", fract, "rs=", rs
-c          write(*,*) "tcut=", tcut, "tpass=", tpass
-c          write(*,*) "gamma_0=", gamma_0, "dt=", dt
-c          write(*,*) "exp=", dexp (-(Qslip/k/theta)*(1.d0 - fract))
-c        endif
-
-            call splunj
-        if(fract.gt.1.d0) then
+        if(fract.gt.one) then
             ! linear extrapolation past the too-high stress (rs) value
-c          write(*,*) 'rs too high', fract, rs, 'rhoP', rhoP 
-c     &   , tpass, alpha, c1, G
             b = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
-     &  **(q_e-1.d0))
-     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
+            m = b * (-q_e*(Qslip/k/theta))
+     &         * (- p_e) * dsign(one,rs)/tcut
             y = m*x + b
             slipinc = dt * y
-        elseif(dabs(rs).gt.0.d0) then
-        slipinc = dt * gamma_0 * dsign(1.d0,rs)
-     & * dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
+        elseif(dabs(rs).gt.zero) then
+        slipinc = dt * gamma_0 * dsign(one,rs)
+     & * dexp (-(Qslip/k/theta)*(one - fract**p_e)**q_e) !(14)
         else
-            slipinc = 0.d0
+            slipinc = zero
         endif
-c       if(np1.step.gt.21) then
-c       write(*,*) alpha, "rs", rs, "fract", fract, "slipinc", slipinc
-c       endif
 c
       return
-      end subroutine
+      end 
 c
 c           Actual mrr hardening function
       subroutine mm10_h_mrr(props, np1, n, vec1, vec2, 
      & stress, tt, h,gp)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2366,7 +2518,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -2378,8 +2530,8 @@ c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
         theta = np1%temp
-        if(theta.le.0.d0) then
-          write (*,*) "Roters model requires non-zero 
+        if(theta.le.zero) then
+          write (props%out,*) "Roters model requires non-zero 
      &   nodal temperatures"
       call die_gracefully
         endif
@@ -2395,32 +2547,28 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
-c      write(*,*) "pi", pi
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
+        if(G.lt.zero) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = third*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c
 c
-c      write(*,*) "Gmat", Gmat(1,1)
-c      write(*,*) "G", G
       do alpha = 1,props%num_hard
 c
 c Get dislocation density
@@ -2430,7 +2578,6 @@ c
 c          ms = np1.ms(1:6,alpha);
 c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
-c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
 c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
@@ -2443,62 +2590,32 @@ c     &    tt(1:props%num_hard))
         write(*,*) "rhoF", rhoF
         write(*,*) "rhoP", rhoP
         endif
-c        write(*,*) "rhoF", rhoF
-c        write(*,*) "rhoP", rhoP
 c          
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
-          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+          ddipole = dsqrt(three)*G*b/(16.d0*pi*(one-v))/
      &       (dabs(rs)) ! (42)
-          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*dsqrt(rhoF*rhoP) ! (13)
-c        write(*,*) "tpass", tpass
-c        write(*,*) "ddipole", ddipole
-c        write(*,*) "rhoM", rhoM
-c          
-c          call mm10_slipinc_mrr(props, np1, n, stress, tt, alpha, 
-c     &     slipinc)
           slipinc = vec1(alpha)
-c       if(np1.step.gt.21) then
-c       write(*,*) alpha, "slipinc", slipinc
-c       endif
           gammadot = dabs(slipinc/dt)
-c      if((alpha.eq.6).and.(gp.eq.1)) then
-c      write(*,*) "rhoF=", rhoF, "rhoP=", rhoP
-c      write(*,*) "tpass=", tpass, "dd=", ddipole
-c      write(*,*) "rhoM=", rhoM, "gdot=", gammadot
-c      endif
-c        write(*,*) "gammadot", gammadot
-c              
-c Evaluate the hardening equation
-c      write(*,*) "c4", c4
-c      write(*,*) "c5", c5
-c      write(*,*) "c6", c6
-c      write(*,*) "c7", c7
-c      write(*,*) "c8", c8
-c      write(*,*) "Qbulk", Qbulk
-c      write(*,*) "rho", rho
-c      write(*,*) "b", b
       tem1 = c4/b*dsqrt(rhoP)*gammadot
       tem2 = c6*ddipole/b*rhoM*gammadot
       tem3 = c5*rho*gammadot
       tem4 = c7*dexp(-Qbulk/k/theta)*dabs(rs)/(k*theta)
      &        *rho*rho*gammadot**c8
-c      if((alpha.eq.6).and.(gp.eq.1)) then
-c      write(*,*) "h1=", tem1, "h2=", tem2
-c      write(*,*) "h3=", tem3, "h4=", tem4
-c      endif
           h(alpha) = rho_n + dt*(tem1
      &        + tem2 - tem3
      &        - tem4) ! (18)
       enddo
 c
       return
-      end subroutine
+      end 
 c
 c           Imaginary mrr sliprate function
       subroutine mm10_slipinci_mrr(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2530,16 +2647,16 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
+        if(G.lt.zero) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
+        K11=123.323d0+6.7008d-8*theta**3
      &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
+        K12=70.6512d0+4.4105d-8*theta**3
      &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = one/three*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
@@ -2557,40 +2674,40 @@ c         [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
      &     tt(1:props%num_hard))
           rhoP = sum(temp)
 c
-c Compute some stresses and rates
+c                Compute some stresses and rates
         gamma_0 = v_attack*k*theta/(c1*c3*G*b*b)*cdsqrt(rhoP) ! (15)
         tpass = c1*G*b*cdsqrt(rhoP) ! (16)
         tcut = Qslip/(c2*c3*b*b)*cdsqrt(rhoF) ! (17)
-          if(dreal(rs).lt.0.d0) then
+          if(dreal(rs).lt.zero) then
         fract = (-rs-tpass)/tcut
           else
         fract = (rs-tpass)/tcut
           endif
 c
-c Evaluate the slip rate equation
-        if(dreal(fract).gt.1.d0) then
+c            Evaluate the slip rate equation
+        if(dreal(fract).gt.one) then
             ! linear extrapolation past the too-high stress (rs) value
             b = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
-     &  **(q_e-1.d0))
-     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,dreal(rs))/tcut
+            m = b * (-q_e*(Qslip/k/theta))
+     &         * (- p_e) * dsign(one,dreal(rs))/tcut
             y = m*x + b
             slipinc = dt * y
-        elseif(dabs(dreal(rs)).gt.0.d0) then
-        slipinc = dt * gamma_0 * dsign(1.d0,dreal(rs))
-     & * cdexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
+        elseif(dabs(dreal(rs)).gt.zero) then
+        slipinc = dt * gamma_0 * dsign(one,dreal(rs))
+     & * cdexp (-(Qslip/k/theta)*(one - fract**p_e)**q_e) !(14)
         else
-            slipinc = 0.d0
+            slipinc = zero
         endif
 c
       return
-      end subroutine
+      end 
 c
 c           Imaginary mrr hardening function
       subroutine mm10_hi_mrr(props, np1, n, ivec1, ivec2, 
      & stress, tt, h)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2602,7 +2719,7 @@ c
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
-     &  pi, c4, c5, c6, c7, c8, v, Qbulk
+     &  c4, c5, c6, c7, c8, v, Qbulk
       double complex :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  mm10_rsi,
@@ -2614,8 +2731,8 @@ c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
         theta = np1%temp
-        if(theta.le.0.d0) then
-          write (*,*) "Roters model requires non-zero 
+        if(theta.le.zero) then
+          write (props%out,*) "Roters model requires non-zero 
      &   nodal temperatures"
       call die_gracefully
         endif
@@ -2631,28 +2748,24 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
-c      write(*,*) "pi", pi
 c        
 c Compute the shear modulus using Roter's function
         if(G.lt.0.d0) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = one/three*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
 c
 c
-c      write(*,*) "Gmat", Gmat(1,1)
-c      write(*,*) "G", G
       do alpha = 1,props%num_hard
 c
 c Get dislocation density
@@ -2662,8 +2775,7 @@ c
 c          ms = np1.ms(1:6,alpha);
 c          rs = stress*ms; % tau^a
           rs = mm10_rsi(props, np1, n, stress, tt, alpha)
-          rs = dsign(1.d0,dreal(rs))*rs
-c        write(*,*) "rs", rs
+          rs = dsign(one,dreal(rs))*rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
           temp = (props%Gmat(alpha,1:props%num_hard)
@@ -2672,56 +2784,39 @@ c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
           temp = (props%Hmat(alpha,1:props%num_hard)
      &      *tt(1:props%num_hard))
           rhoP = sum(temp)
-c        write(*,*) "rhoF", rhoF
-c        write(*,*) "rhoP", rhoP
 c          
           tpass = c1*G*b*cdsqrt(rhoP) ! (16)
-          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+          ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (rs) ! (42)
-          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*cdsqrt(rhoF*rhoP) ! (13)
-c        write(*,*) "tpass", tpass
-c        write(*,*) "ddipole", ddipole
-c        write(*,*) "rhoM", rhoM
 c          
 c          call mm10_slipinc_mrr(props, np1, n, stress, tt, alpha, 
 c     &     slipinc)
           slipinc = ivec1(alpha)
-          slipinc = dsign(1.d0,dreal(slipinc))*slipinc
+          slipinc = dsign(one,dreal(slipinc))*slipinc
           gammadot = slipinc/dt
-c        write(*,*) "gammadot", gammadot
 c              
-c Evaluate the hardening equation
-c      write(*,*) "c4", c4
-c      write(*,*) "c5", c5
-c      write(*,*) "c6", c6
-c      write(*,*) "c7", c7
-c      write(*,*) "c8", c8
-c      write(*,*) "Qbulk", Qbulk
-c      write(*,*) "rho", rho
-c      write(*,*) "b", b
+c             Evaluate the hardening equation
       tem1 = c4/b*cdsqrt(rhoF)*gammadot
       tem2 = c6*ddipole/b*rhoM*gammadot
       tem3 = c5*rho*gammadot
-c      write(*,*) "c1", tem1
-c      write(*,*) "c2", tem2
-c      write(*,*) "c3", tem3
       tem1 = c7*dexp(-Qbulk/k/theta)*rs/(k*theta)
      &        *rho*rho*gammadot**c8
-c      write(*,*) "c1", tem1
           h(alpha) = rho_n + dt*(c4/b*cdsqrt(rhoP)*gammadot
      &        + c6*ddipole/b*rhoM*gammadot - c5*rho*gammadot
      &        - c7*dexp(-Qbulk/k/theta)*rs/(k*theta)
      &        *rho*rho*gammadot**c8) ! (18)
-      enddo
+      end do
 c
       return
-      end subroutine
+      end
 c
 c           Wrapper version, mrr slipinc function
       subroutine mm10_slipinc_mrrW(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2735,7 +2830,7 @@ c
       double complex, dimension(props%num_hard) :: tti
       double complex :: slipinci
 c
-      zerosV = 0.d0
+      zerosV = zero
       stressi = dcmplx(stress,zerosV(1:6))
       tti = dcmplx(tt,zerosV)
 c
@@ -2751,6 +2846,7 @@ c           Derivative of hardening fn wrt stress
       subroutine mm10_estress_mrr(props, np1, n, vec1, vec2, 
      &        arr1, arr2, stress, tt, et)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2764,7 +2860,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -2787,7 +2883,6 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
 c
 c compute derivatives of slip increments with respect to resolved
 c shear stress
@@ -2796,24 +2891,24 @@ c     &         tt, dslip)
         dslip(1:props%num_hard) = arr1(1:props%num_hard,1)
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
+        if(G.lt.zero) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = one/third*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c
       do alpha = 1,props%num_hard
 
@@ -2833,11 +2928,11 @@ c     &    tt(1:props%num_hard))
           rhoP = rhoPs(alpha)
 c
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
-          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+          ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (dabs(rs)) ! (42)
-          dddipole = -dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
-     &          (dabs(rs))**2.d0*dsign(1.d0,rs)
-          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          dddipole = -root3*G*b/(16.d0*pi*(one-v))/
+     &          (dabs(rs))**2*dsign(one,rs)
+          rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*dsqrt(rhoF*rhoP) ! (13)
 c          
 c          call mm10_slipinc_mrr(props, np1, n, stress, tt, alpha, 
@@ -2848,17 +2943,17 @@ c     &     slipinc)
           dslipinc = dslip(alpha)/dt ! always positive
 
           ! Evaluate the equation
-          if(gammadot.eq.0.d0) then
-          badterm = 0.d0
+          if(gammadot.eq.zero) then
+          badterm = zero
           else
-          badterm = c8*dabs(rs)*gammadot**(c8-1.d0)*dslipinc
+          badterm = c8*dabs(rs)*gammadot**(c8-one)*dslipinc
           endif
-          et(alpha,1:6) = dt*(c4/b*dsqrt(rhoF)*dsign(1.d0,rs)
-     &         *dslipinc + c6/b*rhoM*(ddipole*dsign(1.d0,rs)
+          et(alpha,1:6) = dt*(c4/b*dsqrt(rhoF)*dsign(one,rs)
+     &         *dslipinc + c6/b*rhoM*(ddipole*dsign(one,rs)
      &         *dslipinc + dddipole*gammadot)
-     &        - c5*rho*dsign(1.d0,rs)*dslipinc
-     &    - c7*dexp(-Qbulk/k/theta)/(k*theta)*rho**2.d0*
-     &      (badterm + dsign(1.d0,rs)*gammadot**c8))
+     &        - c5*rho*dsign(one,rs)*dslipinc
+     &    - c7*dexp(-Qbulk/k/theta)/(k*theta)*rho**2*
+     &      (badterm + dsign(one,rs)*gammadot**c8))
      &    *dtdstress(1:6) ! d(18)
       
       enddo
@@ -2870,6 +2965,7 @@ c           Derivative of hardening fn wrt hardening
       subroutine mm10_ehard_mrr(props, np1, n, vec1, vec2,
      &       arr1, arr2, stress, tt, etau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2883,7 +2979,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM
@@ -2914,27 +3010,26 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
 c       
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
+        if(G.lt.zero) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = one/third*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c
 c Compute drho_alpha/drho_beta
 c loop over numerator hardening variable
@@ -2961,13 +3056,10 @@ c     &     slipinc)
           gammadot = dabs(slipinc/dt)
           
         tpass = c1*G*b*dsqrt(rhoP) ! (16)
-        ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+        ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (dabs(rs)) ! (42)
-        rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+        rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*dsqrt(rhoF*rhoP) ! (13)
-c        write(*,*) "tpass", tpass
-c        write(*,*) "ddipole", ddipole
-c        write(*,*) "rhoM", rhoM
 c          
 c loop over denominator hardening variable
         do beta = 1,props%num_hard
@@ -2975,48 +3067,44 @@ c
 c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
           drhoF = props%Gmat(alpha,beta)
           drhoP = props%Hmat(alpha,beta)
-          
-          dddipole = 0.d0
-          drhoM = 0.5d0*(2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          dddipole = zero
+          drhoM = half*(two*k/(c1*c2*c3*G*b**3))*
      &       theta/dsqrt(rhoF*rhoP) * (drhoF*rhoP + rhoF*drhoP)
-          
           dslipinc = dslip(alpha,beta)/dt
-c        write(*,*) "dslipinc", dslipinc
-          
           if(alpha.eq.beta) then
-              deltaij = 1.d0
+              deltaij = one
           else
-              deltaij = 0.d0
+              deltaij = zero
           endif
 
 c Evaluate the equation
-          if(gammadot.eq.0.d0) then
-          badterm = 0.d0
+          if(gammadot.eq.zero) then
+          badterm = zero
           else
-          badterm = c8*gammadot**(c8-1.d0)*dslipinc
+          badterm = c8*gammadot**(c8-one)*dslipinc
           endif
-          etau(alpha,beta) = deltaij - dt*(c4/b*(0.5d0*drhoF/
-     &        dsqrt(rhoF)*gammadot*dsign(1.d0,rs) 
+          etau(alpha,beta) = deltaij - dt*(c4/b*(half*drhoF/
+     &        dsqrt(rhoF)*gammadot*dsign(one,rs) 
      &     + dsqrt(rhoF)*dslipinc) + c6/b*(rhoM*ddipole*dslipinc
-     &     + rhoM*dddipole*gammadot*dsign(1.d0,rs)
-     &     + drhoM*ddipole*gammadot*dsign(1.d0,rs))
-     &     - c5*(rho*dslipinc + deltaij*gammadot*dsign(1.d0,rs))
+     &     + rhoM*dddipole*gammadot*dsign(one,rs)
+     &     + drhoM*ddipole*gammadot*dsign(one,rs))
+     &     - c5*(rho*dslipinc + deltaij*gammadot*dsign(one,rs))
      &     - c7*dexp(-Qbulk/k/theta)/(k*theta)*dabs(rs)*
-     &      (rho**2.d0*badterm + 2.d0*rho*dsign(1.d0,rs)
-     &      *deltaij*gammadot**c8))*dsign(1.d0,rs)
+     &      (rho**2*badterm + two*rho*dsign(one,rs)
+     &      *deltaij*gammadot**c8))*dsign(one,rs)
       
-c          write(*,*) "etau", etau(alpha,beta)
-        enddo !beta
+        end do !beta
       
-      enddo !alpha
+      end do !alpha
 c
       return
-      end subroutine
+      end 
 c
 c
 c           Derivative of hardening fn wrt strain
-      subroutine mm10_ed_mrr(props, np1, n, stress, tt, ed)
+      subroutine mm10_ed_mrr(props, np1, n, stress, tt, ed)   
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3025,7 +3113,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(6,props%num_hard) :: ed
 c
-      ed = 0.d0
+      ed = zero
 c
       return
       end subroutine
@@ -3033,6 +3121,7 @@ c
 c           Derivative of sliprate wrt resolved shear stress
       subroutine mm10_dgdt_mrr(props, np1, n, stress, tt, dgammadtau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3066,24 +3155,24 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
+        if(G.lt.zero) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
         G = 1.d0/3.d0*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c        
       do alpha = 1,props%num_hard
 c        
@@ -3111,29 +3200,30 @@ c Evaluate the equation
 c            write(*,*) G, b, theta, c1, rhoP
 c linear extrapolation past the too-high stress (rs) value
             b = gamma_0
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)**(q_e-1.d0))
-     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
+            m = b * (-q_e*(Qslip/k/theta))
+     &         * (- p_e) * dsign(one,rs)/tcut
             dslipinc = dt * m
-        elseif(dabs(rs).gt.0.d0) then
-        slipexp = dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e)
-     &          * dsign(1.d0,rs)
+        elseif(dabs(rs).gt.zero) then
+        slipexp = dexp (-(Qslip/k/theta)*(one - fract**p_e)**q_e)
+     &          * dsign(one,rs)
         dslipinc = dt * (gamma_0 * slipexp * -(Qslip/k/theta)*q_e*
-     &      (1.d0 - fract**p_e)**(q_e-1.d0)
-     &      * -p_e*fract**(p_e-1.d0) * dfract) !(14)
+     &      (one - fract**p_e)**(q_e-one)
+     &      * -p_e*fract**(p_e-one) * dfract) !(14)
         else
-            dslipinc = 0.d0
+            dslipinc = zero
         endif
         
         dgammadtau(alpha) = dslipinc
 
-      enddo
+      end do
 c
       return
-      end subroutine
+      end 
 c
 c           Derivative of sliprate wrt hardening variables
       subroutine mm10_dgdh_mrr(props, np1, n, stress, tt, dgammadtt)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3171,21 +3261,21 @@ c Compute the shear modulus using Roter's function
         if(G.lt.0.d0) then
         G = -G
         else
-        K11=123.323d0+6.7008d-8*theta**3.d0
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3.d0
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3.d0
-     &     -1.2136d-5*theta**2.d0-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
+        K11=123.323d0+6.7008d-8*theta**3
+     &     -1.1342d-4*theta**2-7.8788d-3*theta
+        K12=70.6512d0+4.4105d-8*theta**3
+     &     -7.5498d-5*theta**2-3.9992d-3*theta
+        K44=31.2071d0+7.0477d-9*theta**3
+     &     -1.2136d-5*theta**2-8.3274d-3*theta
+        G = one/three*(K11-K12+K44)*1d9
         endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
         
 c Compute derivative of slip rate alpha w.r.t. density beta
 c loop over slip rate
@@ -3212,33 +3302,32 @@ c
 c loop over density
         do beta = 1,props%num_hard
         
-c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
+c       [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
           drhoF = props%Gmat(alpha,beta)
           drhoP = props%Hmat(alpha,beta)
         
-          dgamma_0 = 0.5d0*v_attack*k*theta/(c1*c3*G*b*b)
+          dgamma_0 = half*v_attack*k*theta/(c1*c3*G*b*b)
      &              /dsqrt(rhoP)*drhoP ! (15)
-          dtpass = 0.5d0*c1*G*b/dsqrt(rhoP)*drhoP ! (16)
-          dtcut = 0.5d0*Qslip/(c2*c3*b*b)/dsqrt(rhoF)*drhoF ! (17)
+          dtpass = half*c1*G*b/dsqrt(rhoP)*drhoP ! (16)
+          dtcut = half*Qslip/(c2*c3*b*b)/dsqrt(rhoF)*drhoF ! (17)
           dfract = ((-dtpass)*tcut - 
-     &             (dabs(rs)-tpass)*dtcut)/tcut**2.d0
+     &             (dabs(rs)-tpass)*dtcut)/tcut**2
 
 c Evaluate the equation
-          if(fract.gt.1.d0) then
+          if(fract.gt.one) then
               ! linear extrapolation past the too-high stress (rs) value
-              dslipinc = dt * (-q_e*(Qslip/k/theta)*(1.d0 - 1.d0)
-     &           **(q_e-1.d0)) * (- p_e*(1.d0)**(p_e-1.d0))
-     &            * dsign(1.d0,rs) * (dgamma_0/tcut 
-     &             - gamma_0*dtcut/tcut**2.d0)
-          elseif(dabs(rs).gt.0.d0) then
+              dslipinc = dt * (-q_e*(Qslip/k/theta)) * (- p_e)
+     &            * dsign(one,rs) * (dgamma_0/tcut 
+     &             - gamma_0*dtcut/tcut**2)
+          elseif(dabs(rs).gt.zero) then
           slipexp = dexp (-(Qslip/k/theta)*
-     &             (1.d0 - fract**p_e)**q_e) !(14)
-          dslipinc = dt * (dgamma_0 * slipexp * dsign(1.d0,rs)
-     &          + gamma_0 * dsign(1.d0,rs) * slipexp *
-     &          -(Qslip/k/theta)*q_e*(1.d0 - fract**p_e)**(q_e-1.d0)
-     &        * -p_e*fract**(p_e-1.d0) * dfract)
+     &             (one - fract**p_e)**q_e) !(14)
+          dslipinc = dt * (dgamma_0 * slipexp * dsign(one,rs)
+     &          + gamma_0 * dsign(one,rs) * slipexp *
+     &          -(Qslip/k/theta)*q_e*(one - fract**p_e)**(q_e-one)
+     &        * -p_e*fract**(p_e-one) * dfract)
           else
-              dslipinc = 0.d0
+              dslipinc = zero
           endif
         
           dgammadtt(alpha,beta) = dslipinc
@@ -3248,12 +3337,13 @@ c Evaluate the equation
       enddo !alpha
 c
       return
-      end subroutine
+      end
 c
 c           Derivative of sliprate wrt strain increment
       subroutine mm10_dgdd_mrr(props, np1, n, stress, tt, D, 
      &              dgammadd)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3262,7 +3352,7 @@ c
       double precision, dimension(6,props%nslip) :: dgammadd
       double precision, dimension(props%num_hard) :: tt
 c
-      dgammadd = 0.d0
+      dgammadd = zero
 c
       return
       end subroutine
@@ -3325,28 +3415,54 @@ c
 c
       end subroutine
 c
-c           Form intermediate arrays for faster calculations
-      subroutine mm10_a_ornl(props, np1, n, stress, tt, 
-     &   vec1, vec2, arr1, arr2, both)
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_a_ornl                       *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_a_ornl( props, np1, n, stress, tt, vec1, vec2,
+     &                        arr1, arr2, both )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+      integer :: both
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-      integer both
 c
-         call mm10_dgdt_ornl(props, np1, n, stress, tt, 
-     &                            arr1(1:props%num_hard,1))
-      if(both.eq.2) then
-         call mm10_dgdh_ornl(props, np1, n, stress, tt, 
-     &               arr2(1:props%nslip,1:props%num_hard))
-      endif
+      integer :: nslip, num_hard  
+      double precision, allocatable :: temp_arr2(:,:)    
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64     
 c
-      end subroutine
+c              arr1 treated as vector inside
+c
+      nslip    = props%nslip
+      num_hard = props%num_hard
+c      
+      call mm10_dgdt_ornl( props, np1, n, stress, tt, arr1(1,1) )
+c      
+c              arr2 must have lead dimension = nslip for compatibility 
+c              with _dgdh_ornl. values defined inside the routine - no
+c              need to copyin. only copyout needed
+c
+      if( both == 2 ) then
+         allocate( temp_arr2(nslip,num_hard) )
+         call mm10_dgdh_ornl( props, np1, n, stress, tt, temp_arr2 )
+         arr2(1:nslip,1:num_hard) = temp_arr2
+         deallocate( temp_arr2 ) 
+      end if
+c
+      return
+      end 
 c
 c           Form intermediate vectors for faster calculations
       subroutine mm10_vi_ornl(props, np1, n, stress, tt, 
@@ -3374,6 +3490,7 @@ c           Actual ornl sliprate function
       subroutine mm10_slipinc_ornl(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3403,14 +3520,14 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
-        if( v_s.lt.0.d0 ) then
+        if( v_s.lt.zero ) then
             v_s = exp(-v_s)
         endif
         fM = 0.1d0
         lamda = c2*b
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -3433,41 +3550,33 @@ c Compute some stresses and rates
         fract = ((dabs(rs)-tpass)/tcut)
 c
 c Evaluate the slip rate equation
-c        if(alpha.eq.6) then
-c          write(*,*) "fract=", fract, "rs=", rs
-c          write(*,*) "tcut=", tcut, "tpass=", tpass
-c          write(*,*) "gamma_0=", gamma_0, "dt=", dt
-c          write(*,*) "exp=", dexp (-(Qslip/k/theta)*(1.d0 - fract))
-c        endif
 
-        if(fract.gt.1.d0) then
+        if(fract.gt.one) then
             ! linear extrapolation past the too-high stress (rs) value
             b = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0))
-     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
+            m = b * (-q_e*(Qslip/k/theta))
+     &         * (- p_e) * dsign(one,rs)/tcut
             y = m*x + b
             slipinc = dt * y
-        elseif(dabs(rs).eq.0.d0) then
-            slipinc = 0.d0
+        elseif(dabs(rs).eq.zero) then
+            slipinc = zero
         else
-          if(fract.lt.0.d0) then
-            p_e = 1.d0 ! deal with low stresses by allowing the fraction to be small
+          if(fract.lt.zero) then
+            p_e = one ! deal with low stresses by allowing the fraction to be small
           endif
-          slipinc = dt * gamma_0 * dsign(1.d0,rs)
-     & * dexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)x
+          slipinc = dt * gamma_0 * dsign(one,rs)
+     & * dexp (-(Qslip/k/theta)*(one - fract**p_e)**q_e) !(14)x
         endif
-c       if(np1.step.gt.21) then
-c       write(*,*) alpha, "rs", rs, "fract", fract, "slipinc", slipinc
-c       endif
 c
       return
-      end subroutine
+      end 
 c
 c           Actual ornl hardening function
       subroutine mm10_h_ornl(props, np1, n, vec1, vec2, 
      & stress, tt, h,gp)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3481,7 +3590,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4, G0
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -3507,22 +3616,18 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
-c      write(*,*) "pi", pi
 c        
-c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
-c Load the interaction matrices for parallel and forest dislocs
+c              New shear modulus
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
+c       Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c
 c
-c      write(*,*) "Gmat", Gmat(1,1)
-c      write(*,*) "G", G
       do alpha = 1,props%num_hard
 c
 c Get dislocation density
@@ -3532,7 +3637,6 @@ c
 c          ms = np1.ms(1:6,alpha);
 c          rs = stress*ms; % tau^a
           rs = mm10_rs(props, np1, n, stress, tt, alpha)
-c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
 c          rhoF = dot_product(Gmat(alpha,1:props%num_hard),
@@ -3541,62 +3645,35 @@ c          rhoP = dot_product(Hmat(alpha,1:props%num_hard),
 c     &    tt(1:props%num_hard))
           rhoF = rhoFs(alpha)
           rhoP = rhoPs(alpha)
-c        write(*,*) "rhoF", rhoF
-c        write(*,*) "rhoP", rhoP
 c          
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
-          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+          ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (dabs(rs)) ! (42)
-          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*dsqrt(rhoF*rhoP) ! (13)
-c        write(*,*) "tpass", tpass
-c        write(*,*) "ddipole", ddipole
-c        write(*,*) "rhoM", rhoM
 c          
 c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
 c     &     slipinc)
           slipinc = vec1(alpha)
-c       if(np1.step.gt.21) then
-c       write(*,*) alpha, "slipinc", slipinc
-c       endif
           gammadot = dabs(slipinc/dt)
-c      if((alpha.eq.6).and.(gp.eq.1)) then
-c      write(*,*) "rhoF=", rhoF, "rhoP=", rhoP
-c      write(*,*) "tpass=", tpass, "dd=", ddipole
-c      write(*,*) "rhoM=", rhoM, "gdot=", gammadot
-c      endif
-c        write(*,*) "gammadot", gammadot
-c              
-c Evaluate the hardening equation
-c      write(*,*) "c4", c4
-c      write(*,*) "c5", c5
-c      write(*,*) "c6", c6
-c      write(*,*) "c7", c7
-c      write(*,*) "c8", c8
-c      write(*,*) "Qbulk", Qbulk
-c      write(*,*) "rho", rho
-c      write(*,*) "b", b
       tem1 = c4/b*dsqrt(rhoP)*gammadot
       tem2 = c6*ddipole/b*rhoM*gammadot
       tem3 = c5*rho*gammadot
       tem4 = c7*dexp(-Qbulk/k/theta)*dabs(rs)/(k*theta)
      &        *rho*rho*gammadot**c8
-c      if((alpha.eq.6).and.(gp.eq.1)) then
-c      write(*,*) "h1=", tem1, "h2=", tem2
-c      write(*,*) "h3=", tem3, "h4=", tem4
-c      endif
           h(alpha) = rho_n + dt*(tem1
      &        + tem2 - tem3
      &        - tem4) ! (18)
       enddo
 c
       return
-      end subroutine
+      end 
 c
 c           Imaginary ornl sliprate function
       subroutine mm10_slipinci_ornl(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3627,14 +3704,14 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
-        if( v_s.lt.0.d0 ) then
+        if( v_s.lt.zero ) then
             v_s = exp(-v_s)
         endif
         fM = 0.1d0
         lamda = c2*b
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -3653,38 +3730,39 @@ c Compute some stresses and rates
         gamma_0 = rhoM*b*v_s/b*lamda
         tpass = c1*G*b*cdsqrt(rhoP) ! (16)
         tcut = tau0*G/G0
-          if(dreal(rs).lt.0.d0) then
+          if(dreal(rs).lt.zero) then
         fract = (-rs-tpass)/tcut
           else
         fract = (rs-tpass)/tcut
           endif
 c
 c Evaluate the slip rate equation
-        if(dreal(fract).gt.1.d0) then
+        if(dreal(fract).gt.one) then
             ! linear extrapolation past the too-high stress (rs) value
             b = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0))
-     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,dreal(rs))/tcut
+            m = b * (-q_e*(Qslip/k/theta))* (- p_e) *
+     &           dsign(one,dreal(rs))/tcut
             y = m*x + b
             slipinc = dt * y
-        elseif(dabs(dreal(rs)).eq.0.d0) then
-            slipinc = 0.d0
+        elseif(dabs(dreal(rs)).eq.zero) then
+            slipinc = zero
         else
-          if(dreal(fract).lt.0.d0) then
-            p_e = 1.d0 ! deal with low stresses by allowing the fraction to be small
+          if(dreal(fract).lt.zero) then
+            p_e = one ! deal with low stresses by allowing the fraction to be small
           endif
-          slipinc = dt * gamma_0 * dsign(1.d0,dreal(rs))
-     & * cdexp (-(Qslip/k/theta)*(1.d0 - fract**p_e)**q_e) !(14)
+          slipinc = dt * gamma_0 * dsign(one,dreal(rs))
+     & * cdexp (-(Qslip/k/theta)*(one - fract**p_e)**q_e) !(14)
         endif
 c
       return
-      end subroutine
+      end 
 c
 c           Imaginary ornl hardening function
       subroutine mm10_hi_ornl(props, np1, n, ivec1, ivec2, 
      & stress, tt, h)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3696,7 +3774,7 @@ c
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
-     &  pi, c4, c5, c6, c7, c8, v, Qbulk
+     &  c4, c5, c6, c7, c8, v, Qbulk
       double complex :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  mm10_rsi,
@@ -3708,10 +3786,9 @@ c Load some material parameters
         Qbulk = props%tau_a
         k = props%boltzman
         theta = np1%temp
-        if(theta.le.0.d0) then
-          write (*,*) "Roters model requires non-zero 
-     &   nodal temperatures"
-      call die_gracefully
+        if(theta.le.zero) then
+            write (props%out,9000)
+       call die_gracefully
         endif
         c1 = props%u1
         c2 = props%u2
@@ -3725,21 +3802,17 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
-c      write(*,*) "pi", pi
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
 c
 c
-c      write(*,*) "Gmat", Gmat(1,1)
-c      write(*,*) "G", G
       do alpha = 1,props%num_hard
 c
-c Get dislocation density
+c                Get dislocation density
           rho = tt(alpha) ! rho^a_SSD
           rho_n = n%tau_tilde(alpha) ! rho^a_SSD
 c
@@ -3747,7 +3820,6 @@ c          ms = np1.ms(1:6,alpha);
 c          rs = stress*ms; % tau^a
           rs = mm10_rsi(props, np1, n, stress, tt, alpha)
           rs = dsign(1.d0,dreal(rs))*rs
-c        write(*,*) "rs", rs
 c          
 c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
           temp = (props%Gmat(alpha,1:props%num_hard)
@@ -3756,43 +3828,23 @@ c           [rhoF,rhoP] = mm10_rhoFP_mrr(props, np1, n, tt, alpha);
           temp = (props%Hmat(alpha,1:props%num_hard)
      &      *tt(1:props%num_hard))
           rhoP = sum(temp)
-c        write(*,*) "rhoF", rhoF
-c        write(*,*) "rhoP", rhoP
 c          
           tpass = c1*G*b*cdsqrt(rhoP) ! (16)
-          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+          ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (rs) ! (42)
-          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*cdsqrt(rhoF*rhoP) ! (13)
-c        write(*,*) "tpass", tpass
-c        write(*,*) "ddipole", ddipole
-c        write(*,*) "rhoM", rhoM
 c          
 c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
 c     &     slipinc)
           slipinc = ivec1(alpha)
-          slipinc = dsign(1.d0,dreal(slipinc))*slipinc
+          slipinc = dsign(one,dreal(slipinc))*slipinc
           gammadot = slipinc/dt
-c        write(*,*) "gammadot", gammadot
-c              
-c Evaluate the hardening equation
-c      write(*,*) "c4", c4
-c      write(*,*) "c5", c5
-c      write(*,*) "c6", c6
-c      write(*,*) "c7", c7
-c      write(*,*) "c8", c8
-c      write(*,*) "Qbulk", Qbulk
-c      write(*,*) "rho", rho
-c      write(*,*) "b", b
       tem1 = c4/b*cdsqrt(rhoF)*gammadot
       tem2 = c6*ddipole/b*rhoM*gammadot
       tem3 = c5*rho*gammadot
-c      write(*,*) "c1", tem1
-c      write(*,*) "c2", tem2
-c      write(*,*) "c3", tem3
       tem1 = c7*dexp(-Qbulk/k/theta)*rs/(k*theta)
      &        *rho*rho*gammadot**c8
-c      write(*,*) "c1", tem1
           h(alpha) = rho_n + dt*(c4/b*cdsqrt(rhoP)*gammadot
      &        + c6*ddipole/b*rhoM*gammadot - c5*rho*gammadot
      &        - c7*dexp(-Qbulk/k/theta)*rs/(k*theta)
@@ -3800,12 +3852,16 @@ c      write(*,*) "c1", tem1
       enddo
 c
       return
-      end subroutine
 c
+9000  format('>> FATAL ERROR: Roters model requires non-zero nodal',
+     & /,     '                temperatures. terminated' )
+      end 
+
 c           Wrapper version, ornl slipinc function
       subroutine mm10_slipinc_ornlW(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3819,7 +3875,7 @@ c
       double complex, dimension(props%num_hard) :: tti
       double complex :: slipinci
 c
-      zerosV = 0.d0
+      zerosV = zero
       stressi = dcmplx(stress,zerosV(1:6))
       tti = dcmplx(tt,zerosV)
 c
@@ -3835,6 +3891,7 @@ c           Derivative of hardening fn wrt stress
       subroutine mm10_estress_ornl(props, np1, n, vec1, vec2, 
      &        arr1, arr2, stress, tt, et)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3849,7 +3906,7 @@ c
 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, G0
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -3872,7 +3929,6 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
 c
 c compute derivatives of slip increments with respect to resolved
 c shear stress
@@ -3881,14 +3937,14 @@ c     &         tt, dslip)
         dslip(1:props%num_hard) = arr1(1:props%num_hard,1)
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c
       do alpha = 1,props%num_hard
 
@@ -3908,11 +3964,11 @@ c     &    tt(1:props%num_hard))
           rhoP = rhoPs(alpha)
 c
           tpass = c1*G*b*dsqrt(rhoP) ! (16)
-          ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+          ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (dabs(rs)) ! (42)
-          dddipole = -dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
-     &          (dabs(rs))**2.d0*dsign(1.d0,rs)
-          rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          dddipole = -root3*G*b/(16.d0*pi*(one-v))/
+     &          (dabs(rs))**2*dsign(one,rs)
+          rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*dsqrt(rhoF*rhoP) ! (13)
 c          
 c          call mm10_slipinc_ornl(props, np1, n, stress, tt, alpha, 
@@ -3923,17 +3979,17 @@ c     &     slipinc)
           dslipinc = dslip(alpha)/dt ! always positive
 
           ! Evaluate the equation
-          if(gammadot.eq.0.d0) then
-          badterm = 0.d0
+          if(gammadot.eq.zero) then
+          badterm = zero
           else
-          badterm = c8*dabs(rs)*gammadot**(c8-1.d0)*dslipinc
+          badterm = c8*dabs(rs)*gammadot**(c8-one)*dslipinc
           endif
-          et(alpha,1:6) = dt*(c4/b*dsqrt(rhoF)*dsign(1.d0,rs)
-     &         *dslipinc + c6/b*rhoM*(ddipole*dsign(1.d0,rs)
+          et(alpha,1:6) = dt*(c4/b*dsqrt(rhoF)*dsign(one,rs)
+     &         *dslipinc + c6/b*rhoM*(ddipole*dsign(one,rs)
      &         *dslipinc + dddipole*gammadot)
-     &        - c5*rho*dsign(1.d0,rs)*dslipinc
-     &    - c7*dexp(-Qbulk/k/theta)/(k*theta)*rho**2.d0*
-     &      (badterm + dsign(1.d0,rs)*gammadot**c8))
+     &        - c5*rho*dsign(one,rs)*dslipinc
+     &    - c7*dexp(-Qbulk/k/theta)/(k*theta)*rho**2*
+     &      (badterm + dsign(one,rs)*gammadot**c8))
      &    *dtdstress(1:6) ! d(18)
       
       enddo
@@ -3945,6 +4001,7 @@ c           Derivative of hardening fn wrt hardening
       subroutine mm10_ehard_ornl(props, np1, n, vec1, vec2,
      &       arr1, arr2, stress, tt, etau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -3958,7 +4015,7 @@ c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, pi, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM,G0
@@ -3989,17 +4046,16 @@ c Load some material parameters
         b = props%burgers
         v = 0.3d0 !props%nu
         dt = np1%tinc
-        PI=4.D0*DATAN(1.D0)
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 
 c
 c Compute drho_alpha/drho_beta
@@ -4027,49 +4083,45 @@ c     &     slipinc)
           gammadot = dabs(slipinc/dt)
           
         tpass = c1*G*b*dsqrt(rhoP) ! (16)
-        ddipole = dsqrt(3.d0)*G*b/(16.d0*pi*(1.d0-v))/
+        ddipole = root3*G*b/(16.d0*pi*(one-v))/
      &       (dabs(rs)) ! (42)
-        rhoM = (2.d0*k/(c1*c2*c3*G*b**3.d0))*
+        rhoM = (two*k/(c1*c2*c3*G*b**3))*
      &       theta*dsqrt(rhoF*rhoP) ! (13)
-c        write(*,*) "tpass", tpass
-c        write(*,*) "ddipole", ddipole
-c        write(*,*) "rhoM", rhoM
 c          
-c loop over denominator hardening variable
+c               loop over denominator hardening variable
         do beta = 1,props%num_hard
 c          
 c           [drhoF,drhoP] = mm10_drhoFP_ornl(props, np1, n, tt, alpha, beta);
           drhoF = props%Gmat(alpha,beta)
           drhoP = props%Hmat(alpha,beta)
           
-          dddipole = 0.d0
-          drhoM = 0.5d0*(2.d0*k/(c1*c2*c3*G*b**3.d0))*
+          dddipole = zero
+          drhoM = half*(two*k/(c1*c2*c3*G*b**3))*
      &       theta/dsqrt(rhoF*rhoP) * (drhoF*rhoP + rhoF*drhoP)
           
           dslipinc = dslip(alpha,beta)/dt
-c        write(*,*) "dslipinc", dslipinc
           
           if(alpha.eq.beta) then
-              deltaij = 1.d0
+              deltaij = one
           else
-              deltaij = 0.d0
+              deltaij = zero
           endif
 
 c Evaluate the equation
-          if(gammadot.eq.0.d0) then
-          badterm = 0.d0
+          if(gammadot.eq.zero) then
+          badterm = zero
           else
-          badterm = c8*gammadot**(c8-1.d0)*dslipinc
+          badterm = c8*gammadot**(c8-one)*dslipinc
           endif
-          etau(alpha,beta) = deltaij - dt*(c4/b*(0.5d0*drhoF/
-     &        dsqrt(rhoF)*gammadot*dsign(1.d0,rs) 
+          etau(alpha,beta) = deltaij - dt*(c4/b*(half*drhoF/
+     &        dsqrt(rhoF)*gammadot*dsign(one,rs) 
      &     + dsqrt(rhoF)*dslipinc) + c6/b*(rhoM*ddipole*dslipinc
-     &     + rhoM*dddipole*gammadot*dsign(1.d0,rs)
-     &     + drhoM*ddipole*gammadot*dsign(1.d0,rs))
-     &     - c5*(rho*dslipinc + deltaij*gammadot*dsign(1.d0,rs))
+     &     + rhoM*dddipole*gammadot*dsign(one,rs)
+     &     + drhoM*ddipole*gammadot*dsign(one,rs))
+     &     - c5*(rho*dslipinc + deltaij*gammadot*dsign(one,rs))
      &     - c7*dexp(-Qbulk/k/theta)/(k*theta)*dabs(rs)*
-     &      (rho**2.d0*badterm + 2.d0*rho*dsign(1.d0,rs)
-     &      *deltaij*gammadot**c8))*dsign(1.d0,rs)
+     &      (rho**2*badterm + two*rho*dsign(one,rs)
+     &      *deltaij*gammadot**c8))*dsign(one,rs)
       
 c          write(*,*) "etau", etau(alpha,beta)
         enddo !beta
@@ -4083,6 +4135,7 @@ c
 c           Derivative of hardening fn wrt strain
       subroutine mm10_ed_ornl(props, np1, n, stress, tt, ed)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4091,7 +4144,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(6,props%num_hard) :: ed
 c
-      ed = 0.d0
+      ed = zero
 c
       return
       end subroutine
@@ -4099,6 +4152,7 @@ c
 c           Derivative of sliprate wrt resolved shear stress
       subroutine mm10_dgdt_ornl(props, np1, n, stress, tt, dgammadtau)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4114,8 +4168,6 @@ c
      &  p_e, q_e, Qslip, v_s, K11, K12, K44, dfract,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  dslipinc, slipexp, G0, fM, lamda, rhoM, p2
-       !double precision, dimension(props%num_hard,props%num_hard)
-       !&   :: Gmat, Hmat
 c
 c Load some material parameters
         dt = np1%tinc
@@ -4130,21 +4182,21 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
-        if( v_s.lt.0.d0 ) then
+        if( v_s.lt.zero ) then
             v_s = exp(-v_s)
         endif
         fM = 0.1d0
         lamda = c2*b
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
 c        
       do alpha = 1,props%num_hard
 c        
@@ -4168,26 +4220,26 @@ c Compute one dependency
         fract = ((dabs(rs)-tpass)/tcut)
 
 c Evaluate the equation
-        dfract = dsign(1.d0,rs)/tcut
-        if(fract.gt.1.d0) then
+        dfract = dsign(one,rs)/tcut
+        if(fract.gt.one) then
 c linear extrapolation past the too-high stress (rs) value
             b = gamma_0
-            m = b * (-q_e*(Qslip/k/theta)*(1.d0))
-     &         * (- p_e*(1.d0)**(p_e-1.d0)) * dsign(1.d0,rs)/tcut
+            m = b * (-q_e*(Qslip/k/theta))
+     &         * (- p_e) * dsign(one,rs)/tcut
             dslipinc = dt * m
-        elseif(dabs(rs).eq.0.d0) then
-            dslipinc = 0.d0
+        elseif(dabs(rs).eq.zero) then
+            dslipinc = zero
         else
-          if(fract.lt.0.d0) then
-            p2 = 1.d0 ! deal with low stresses by allowing the fraction to be small
+          if(fract.lt.zero) then
+            p2 = one ! deal with low stresses by allowing the fraction to be small
           else
             p2 = p_e
           endif
-        slipexp = dexp (-(Qslip/k/theta)*(1.d0 - fract**p2)**q_e)
-     &          * dsign(1.d0,rs)
+        slipexp = dexp (-(Qslip/k/theta)*(one - fract**p2)**q_e)
+     &          * dsign(one,rs)
         dslipinc = dt * (gamma_0 * slipexp * -(Qslip/k/theta)*q_e*
-     &      (1.d0 - fract**p2)**(q_e-1.d0)
-     &      * -p2*fract**(p2-1.d0) * dfract) !(14)
+     &      (one - fract**p2)**(q_e-one)
+     &      * -p2*fract**(p2-one) * dfract) !(14)
         endif
         
         dgammadtau(alpha) = dslipinc
@@ -4200,6 +4252,7 @@ c
 c           Derivative of sliprate wrt hardening variables
       subroutine mm10_dgdh_ornl(props, np1, n, stress, tt, dgammadtt)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4232,24 +4285,24 @@ c Load some material parameters
         q_e = props%q_v
         Qslip = props%G_0_v
         v_s = props%G_0_y
-        if( v_s.lt.0.d0 ) then
+        if( v_s.lt.zero ) then
             v_s = exp(-v_s)
         endif
         fM = 0.1d0
         lamda = c2*b
 c        
 c New shear modulus
-        G = G0 - props%D_0 / (exp(props%T_0/theta) - 1.d0)
+        G = G0 - props%D_0 / (exp(props%T_0/theta) - one)
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Gmat,props%num_hard,tt,1,0.d0,rhoFs,1)
-      call dgemv('N',props%num_hard,props%num_hard,1.d0,
-     &           props%Hmat,props%num_hard,tt,1,0.d0,rhoPs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Gmat,props%num_hard,tt,1,zero,rhoFs,1)
+      call dgemv('N',props%num_hard,props%num_hard,one,
+     &           props%Hmat,props%num_hard,tt,1,zero,rhoPs,1)
         
-c Compute derivative of slip rate alpha w.r.t. density beta
-c loop over slip rate
+c        Compute derivative of slip rate alpha w.r.t. density beta
+c        loop over slip rate
       do alpha = 1,props%num_hard
 c        
 c          ms = np1.ms(1:6,alpha);
@@ -4281,36 +4334,36 @@ c           [drhoF,drhoP] = mm10_drhoFP_mrr(props, np1, n, tt, alpha, beta);
           if(alpha.eq.beta) then
              drhoM = fM
           else
-             drhoM = 0.d0
+             drhoM = zero
           endif
         
           dgamma_0 = drhoM*b*v_s/b*lamda ! (15)
-          dtpass = 0.5d0*c1*G*b/dsqrt(rhoP)*drhoP ! (16)
-          dtcut = 0.d0 ! (17)
+          dtpass = half*c1*G*b/dsqrt(rhoP)*drhoP ! (16)
+          dtcut = zero ! (17)
           dfract = ((-dtpass)*tcut - 
      &             (dabs(rs)-tpass)*dtcut)/tcut**2
 
 c Evaluate the equation
-          if(fract.gt.1.d0) then
+          if(fract.gt.one) then
               ! linear extrapolation past the too-high stress (rs) value
-              dslipinc = dt * (-q_e*(Qslip/k/theta)*(1.d0)
-     &            * (- p_e*(1.d0)**(p_e-1.d0)))
-     &            * dsign(1.d0,rs) * (dgamma_0/tcut 
+              dslipinc = dt * (-q_e*(Qslip/k/theta)
+     &            * (- p_e))
+     &            * dsign(one,rs) * (dgamma_0/tcut 
      &             - gamma_0*dtcut/tcut**2)
-          elseif(dabs(rs).eq.0.d0) then
-              dslipinc = 0.d0
+          elseif(dabs(rs).eq.zero) then
+              dslipinc = zero
           else
-            if(fract.lt.0.d0) then
-              p2 = 1.d0
+            if(fract.lt.zero) then
+              p2 = one
             else
               p2 = p_e
             endif
           slipexp = dexp (-(Qslip/k/theta)*
-     &             (1.d0 - fract**p2)**q_e) !(14)
-          dslipinc = dt * (dgamma_0 * slipexp * dsign(1.d0,rs)
-     &          + gamma_0 * dsign(1.d0,rs) * slipexp *
-     &          -(Qslip/k/theta)*q_e*(1.d0 - fract**p2)**(q_e-1.d0)
-     &        * -p2*fract**(p2-1.d0) * dfract)
+     &             (one - fract**p2)**q_e) !(14)
+          dslipinc = dt * (dgamma_0 * slipexp * dsign(one,rs)
+     &          + gamma_0 * dsign(one,rs) * slipexp *
+     &          -(Qslip/k/theta)*q_e*(one - fract**p2)**(q_e-one)
+     &        * -p2*fract**(p2-one) * dfract)
           endif
         
           dgammadtt(alpha,beta) = dslipinc
@@ -4326,6 +4379,7 @@ c           Derivative of sliprate wrt strain increment
       subroutine mm10_dgdd_ornl(props, np1, n, stress, tt, D, 
      &              dgammadd)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4334,7 +4388,7 @@ c
       double precision, dimension(6,props%nslip) :: dgammadd
       double precision, dimension(props%num_hard) :: tt
 c
-      dgammadd = 0.d0
+      dgammadd = zero
 c
       return
       end subroutine
@@ -4375,30 +4429,52 @@ c
       return
       end
 c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_a_DJGM                       *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified: 10/15/2016 rhd              *
+c     *                                                              *
+c     ****************************************************************
 c
-c     DJGM:
-c
-c           Form intermediate arrays for faster calculations
-       subroutine mm10_a_DJGM(props, np1, n, stress, tt, 
-     &   vec1, vec2, arr1, arr2, both)
+      subroutine mm10_a_DJGM( props, np1, n, stress, tt, vec1, vec2,
+     &                        arr1, arr2, both )
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
+      integer :: both
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, h
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-      integer both
 c
-         call mm10_dgdt_DJGM(props, np1, n, stress, tt, 
-     &                            arr1(1:props%num_hard,1))
-      if(both.eq.2) then
-         call mm10_dgdh_DJGM(props, np1, n, stress, tt, 
-     &               arr2(1:props%nslip,1:props%num_hard))
-      endif
-      
+      integer :: nslip, num_hard  
+      double precision, allocatable :: temp_arr2(:,:)    
+@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+@!DIR$ ASSUME_ALIGNED tt:64     
+c
+c              arr1 treated as vector inside
+c
+      nslip    = props%nslip
+      num_hard = props%num_hard
+c      
+      call mm10_dgdt_DJGM( props, np1, n, stress, tt, arr1(1,1) )
+c
+c              arr2 must have lead dimension = nslip for compatibility 
+c              with _dgdh_DJGM. values defined inside the routine - no
+c              need to copyin. only copyout needed
+c
+      if( both == 2 ) then
+         allocate( temp_arr2(nslip,num_hard) )
+         call mm10_dgdh_DJGM( props, np1, n, stress, tt, temp_arr2 )
+         arr2(1:nslip,1:num_hard) = temp_arr2
+         deallocate( temp_arr2 ) 
+      end if
+c      
       return
       end
 c
@@ -4408,6 +4484,7 @@ c           mrr model
      &                             alpha, slipinc)
 c
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4437,7 +4514,7 @@ c
         
         ! Equation [4]
         slipinc = dt * gamma_dot_tilde * 
-     &  abs(tau/g_alpha)**(1.d0/m_alpha)*dsign(1.d0,tau)
+     &  abs(tau/g_alpha)**(one/m_alpha)*dsign(one,tau)
       
       return
       end
@@ -4449,6 +4526,7 @@ c
      &             n,vec1,vec2, stress, tt, g)
 c
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4486,24 +4564,14 @@ c evolution of hardening parameter 'g'
             slipinc = vec1(slip_b)
             gamma_dot = abs(slipinc)/dt
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
-            g_s = max(temp, 1.d0/4.d0*g_0_alpha) ! threshold to ensure no slip during elastic response
-            h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
-     &      **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
-c        if (slip_b.eq.1) then
-c        write(*,*) 'hterm', (1.d0-tt(slip_b)/g_s),
-c     &   'h_0_alpha', h_0_alpha
-c        write(*,*) 'tt', tt(slip_b),
-c     &   'slipinc', vec1(slip_b)
-c        write(*,*) 'g_s', g_s,
-c     &   'whole', h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
-c     &      **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
-c     &      * abs(vec1(slip_b))/dt
-c        endif
+            g_s = max(temp, one/four*g_0_alpha) ! threshold to ensure no slip during elastic response
+            h(slip_b) = h_0_alpha * abs(one-tt(slip_b)/g_s)
+     &      **r_alpha * sign(one,one-tt(slip_b)/g_s)
         enddo
         
         ! Equation [5]
         do slip_a = 1,props%nslip
-            g_dot = 0.d0
+            g_dot = zero
             do slip_b = 1,props%nslip
                 slipinc = vec1(slip_b)
                 gamma_dot = abs(slipinc)/dt
@@ -4525,6 +4593,7 @@ c           Derivative of hardening fn wrt stress
      & np1, n,vec1,vec2,arr1,arr2, stress, tt, et)
  
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4542,7 +4611,7 @@ c
       double precision, dimension(props%nslip) :: dslipinc
       integer :: slip_a, slip_b
       
-      et = 0.d0
+      et = zero
 
       ! compute derivatives of slip increments with respect to resolved
       ! shear stress
@@ -4564,25 +4633,21 @@ c
             gamma_dot = abs(slipinc)/dt
             dslip = dslipinc(slip_b)/dt
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
-c            write(*,*) 'slip_b', slip_b, 'dslip',dslip
-c            write(*,*) 'gamma_dot', gamma_dot, 'temp',temp
-            if( temp .gt. 1.d0/4.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
+            if( temp .gt. one/four*g_0_alpha ) then ! threshold to ensure no slip during elastic response
                 g_s = temp
-                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
-     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+                h(slip_b) = h_0_alpha * abs(one-tt(slip_b)/g_s)
+     &          **r_alpha * sign(one,one-tt(slip_b)/g_s)
                 dg_s = g_tilde * n_alpha / gamma_dot * 
      &              (gamma_dot/gamma_dot_tilde)**n_alpha * dslip
                 dh(slip_b) = h_0_alpha * r_alpha * 
-     &              abs(1.d0-tt(slip_b)/g_s)**(r_alpha-1.d0)
+     &              abs(one-tt(slip_b)/g_s)**(r_alpha-one)
      &              *(dg_s*tt(slip_b)/g_s**2)
             else
-                g_s = 1.d0/4.d0*g_0_alpha
-                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
-     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
-                dh(slip_b) = 0.d0
+                g_s = one/four*g_0_alpha
+                h(slip_b) = h_0_alpha * abs(one-tt(slip_b)/g_s)
+     &          **r_alpha * sign(one,one-tt(slip_b)/g_s)
+                dh(slip_b) = zero
             endif
-c            write(*,*) 'h(slip_b)', h(slip_b), 'g_s',g_s
-c            write(*,*) 'dh(slip_b)', dh(slip_b)
         enddo
         
         ! Equation [5]
@@ -4610,6 +4675,7 @@ c           Derivative of hardening fn wrt hardening
      &      np1, n,vec1,vec2,arr1,arr2, stress, tt, etau)
  
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -4628,7 +4694,7 @@ c
      &        :: dslipinc
       integer :: slip_a, slip_b
       
-       etau = 0.d0
+       etau = zero
 
        dslipinc = arr2(1:props%nslip,1:props%num_hard)
 
@@ -4649,20 +4715,20 @@ c
             gamma_dot = abs(slipinc)/dt
             dslip = dslipinc(slip_b,slip_b)/dt
             temp = g_tilde * (gamma_dot/gamma_dot_tilde)**n_alpha
-            if( temp .gt. 1.d0/4.d0*g_0_alpha ) then ! threshold to ensure no slip during elastic response
+            if( temp .gt. one/four*g_0_alpha ) then ! threshold to ensure no slip during elastic response
                 g_s = temp
-                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
-     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
+                h(slip_b) = h_0_alpha * abs(one-tt(slip_b)/g_s)
+     &          **r_alpha * sign(one,one-tt(slip_b)/g_s)
                 dg_s = g_tilde * n_alpha / gamma_dot * 
      &              (gamma_dot/gamma_dot_tilde)**n_alpha * dslip
                 dh(slip_b) = h_0_alpha * r_alpha * 
-     &              abs(1.d0-tt(slip_b)/g_s)**(r_alpha-1.d0)
-     &              *(-1.d0/g_s + dg_s*tt(slip_b)/g_s**2)
+     &              abs(one-tt(slip_b)/g_s)**(r_alpha-one)
+     &              *(-one/g_s + dg_s*tt(slip_b)/g_s**2)
             else
-                g_s = 1.d0/4.d0*g_0_alpha
-                h(slip_b) = h_0_alpha * abs(1.d0-tt(slip_b)/g_s)
-     &          **r_alpha * sign(1.d0,1.d0-tt(slip_b)/g_s)
-                dh(slip_b) = 0.d0
+                g_s = one/four*g_0_alpha
+                h(slip_b) = h_0_alpha * abs(one-tt(slip_b)/g_s)
+     &          **r_alpha * sign(one,one-tt(slip_b)/g_s)
+                dh(slip_b) = zero
             endif
             
         enddo
@@ -4671,9 +4737,9 @@ c
         do slip_a = 1,props%nslip
             do slip_b = 1,props%nslip
                   if( slip_a.eq.slip_b ) then
-                      deltaij = 1.d0
+                      deltaij = one
                   else
-                      deltaij = 0.d0
+                      deltaij = zero
                   endif
                 slipinc = vec1(slip_b)
                 gamma_dot = abs(slipinc)/dt
@@ -4832,3 +4898,406 @@ c
 c
       return
       end subroutine
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_b_mult...                    *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 9/29/2016 rhd               *
+c     *                                                              *
+c     *     various matrix multiplication routines for mm10_a        *
+c     *     these should be all inlined                              *
+c     *                                                              *
+c     ****************************************************************
+c      
+      subroutine mm10_b_mult_type_1( a, b, c )
+      implicit none
+      double precision :: a(3,3), b(3,3), c(3,3)
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     [a] = [b] * [c]
+c
+      a(1,1) = b(1,1)*c(1,1) + b(1,2)*c(2,1) + b(1,3)*c(3,1)
+      a(2,1) = b(2,1)*c(1,1) + b(2,2)*c(2,1) + b(2,3)*c(3,1)
+      a(3,1) = b(3,1)*c(1,1) + b(3,2)*c(2,1) + b(3,3)*c(3,1)
+c
+      a(1,2) = b(1,1)*c(1,2) + b(1,2)*c(2,2) + b(1,3)*c(3,2)
+      a(2,2) = b(2,1)*c(1,2) + b(2,2)*c(2,2) + b(2,3)*c(3,2)
+      a(3,2) = b(3,1)*c(1,2) + b(3,2)*c(2,2) + b(3,3)*c(3,2)
+c
+      a(1,3) = b(1,1)*c(1,3) + b(1,2)*c(2,3) + b(1,3)*c(3,3)
+      a(2,3) = b(2,1)*c(1,3) + b(2,2)*c(2,3) + b(2,3)*c(3,3)
+      a(3,3) = b(3,1)*c(1,3) + b(3,2)*c(2,3) + b(3,3)*c(3,3)
+c
+      return
+      end
+c      
+      subroutine mm10_b_mult_type_1a( a, b )
+      implicit none
+      double precision :: a(3,3), b(3,3)
+c
+      double precision :: w(3,3)      
+@!DIR$ ASSUME_ALIGNED a:64, b:64, w:64    
+c
+c                     [b] = [a] * [b]
+c
+      w(1,1) = a(1,1)*b(1,1) + a(1,2)*b(2,1) + a(1,3)*b(3,1)
+      w(2,1) = a(2,1)*b(1,1) + a(2,2)*b(2,1) + a(2,3)*b(3,1)
+      w(3,1) = a(3,1)*b(1,1) + a(3,2)*b(2,1) + a(3,3)*b(3,1) 
+c
+      w(1,2) = a(1,1)*b(1,2) + a(1,2)*b(2,2) + a(1,3)*b(3,2)
+      w(2,2) = a(2,1)*b(1,2) + a(2,2)*b(2,2) + a(2,3)*b(3,2)
+      w(3,2) = a(3,1)*b(1,2) + a(3,2)*b(2,2) + a(3,3)*b(3,2) 
+c
+      w(1,3) = a(1,1)*b(1,3) + a(1,2)*b(2,3) + a(1,3)*b(3,3)
+      w(2,3) = a(2,1)*b(1,3) + a(2,2)*b(2,3) + a(2,3)*b(3,3)
+      w(3,3) = a(3,1)*b(1,3) + a(3,2)*b(2,3) + a(3,3)*b(3,3) 
+c
+      b = w   !   a = b * a
+c      
+      return
+      end
+c
+      subroutine mm10_b_mult_type_2( a, b, c )
+      implicit none
+      double precision :: a(6), b(6,6), c(6)
+      integer :: j
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     a = [b] * c
+c
+      a(1) = b(1,1)*c(1)
+      a(2) = b(2,1)*c(1)
+      a(3) = b(3,1)*c(1)
+      a(4) = b(4,1)*c(1)
+      a(5) = b(5,1)*c(1)
+      a(6) = b(6,1)*c(1)
+
+      do j = 2, 6
+        a(1) = a(1) + b(1,j)*c(j)
+        a(2) = a(2) + b(2,j)*c(j)
+        a(3) = a(3) + b(3,j)*c(j)
+        a(4) = a(4) + b(4,j)*c(j)
+        a(5) = a(5) + b(5,j)*c(j)
+        a(6) = a(6) + b(6,j)*c(j)
+      end do
+c
+      return
+      end
+
+c
+      subroutine mm10_b_mult_type_2a( a, b, c, n )
+      implicit none
+      integer :: j, n
+      double precision :: a(6), b(6,n), c(n)
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     a = [b] * c
+c
+      a(1) = b(1,1)*c(1)
+      a(2) = b(2,1)*c(1)
+      a(3) = b(3,1)*c(1)
+      a(4) = b(4,1)*c(1)
+      a(5) = b(5,1)*c(1)
+      a(6) = b(6,1)*c(1)
+      if ( n == 1 ) return
+
+      do j = 2, n
+        a(1) = a(1) + b(1,j)*c(j)
+        a(2) = a(2) + b(2,j)*c(j)
+        a(3) = a(3) + b(3,j)*c(j)
+        a(4) = a(4) + b(4,j)*c(j)
+        a(5) = a(5) + b(5,j)*c(j)
+        a(6) = a(6) + b(6,j)*c(j)
+      end do
+c
+      return
+      end
+
+      subroutine mm10_b_mult_type_2b( a, b, c, n )
+      implicit none
+      integer :: j, n
+      double precision :: a(3), b(3,n), c(n)
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     a = [b] * c
+c
+      a(1) = b(1,1)*c(1)
+      a(2) = b(2,1)*c(1)
+      a(3) = b(3,1)*c(1)
+      if ( n == 1 ) return
+
+      do j = 2, n
+        a(1) = a(1) + b(1,j)*c(j)
+        a(2) = a(2) + b(2,j)*c(j)
+        a(3) = a(3) + b(3,j)*c(j)
+      end do
+c
+      return
+      end
+
+
+      subroutine mm10_b_mult_type_4( a, b, c, d, const )
+      implicit none
+      double precision :: a(6), b(6,6), c(6), d(6), const
+      integer :: j
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64, d:64      
+c
+c                     a = [b] * c + const * d
+c
+      a(1) = const * d(1)
+      a(2) = const * d(2)
+      a(3) = const * d(3)
+      a(4) = const * d(4)
+      a(5) = const * d(5)
+      a(6) = const * d(6)
+
+      do j = 1, 6
+        a(1) = a(1) + b(1,j)*c(j)
+        a(2) = a(2) + b(2,j)*c(j)
+        a(3) = a(3) + b(3,j)*c(j)
+        a(4) = a(4) + b(4,j)*c(j)
+        a(5) = a(5) + b(5,j)*c(j)
+        a(6) = a(6) + b(6,j)*c(j)
+      end do
+
+
+c
+      return
+      end
+
+
+      subroutine mm10_b_mult_type_2t( a, b, c )
+      implicit none
+      double precision :: a(6), b(6,6), c(6)
+      integer :: j
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     a = trans( [b] ) * c
+c
+      a(1) = b(1,1)*c(1) + b(2,1)*c(2) + b(3,1)*c(3) + b(4,1)*c(4) +
+     &       b(5,1)*c(5) + b(6,1)*c(6) 
+c
+      a(2) = b(1,2)*c(1) + b(2,2)*c(2) + b(3,2)*c(3) + b(4,2)*c(4) +
+     &       b(5,2)*c(5) + b(6,2)*c(6) 
+c
+      a(3) = b(1,3)*c(1) + b(2,3)*c(2) + b(3,3)*c(3) + b(4,3)*c(4) +
+     &       b(5,3)*c(5) + b(6,3)*c(6) 
+c
+      a(4) = b(1,4)*c(1) + b(2,4)*c(2) + b(3,4)*c(3) + b(4,4)*c(4) +
+     &       b(5,4)*c(5) + b(6,4)*c(6) 
+c
+      a(5) = b(1,5)*c(1) + b(2,5)*c(2) + b(3,5)*c(3) + b(4,5)*c(4) +
+     &       b(5,5)*c(5) + b(6,5)*c(6) 
+c
+      a(6) = b(1,6)*c(1) + b(2,6)*c(2) + b(3,6)*c(3) + b(4,6)*c(4) +
+     &       b(5,6)*c(5) + b(6,6)*c(6) 
+c
+      return
+      end
+
+      subroutine mm10_b_mult_type_3t( a, b, c )
+      implicit none
+      double precision :: a(3,3), b(3,3), c(3,3)
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     [a] = [b] * trans( [c] )
+c
+      a(1,1) = b(1,1)*c(1,1) +  b(1,2)*c(1,2) +  b(1,3)*c(1,3)
+      a(1,2) = b(1,1)*c(2,1) +  b(1,2)*c(2,2) +  b(1,3)*c(2,3)
+      a(1,3) = b(1,1)*c(3,1) +  b(1,2)*c(3,2) +  b(1,3)*c(3,3)
+
+      a(2,1) = b(2,1)*c(1,1) +  b(2,2)*c(1,2) +  b(2,3)*c(1,3)
+      a(2,2) = b(2,1)*c(2,1) +  b(2,2)*c(2,2) +  b(2,3)*c(2,3)
+      a(2,3) = b(2,1)*c(3,1) +  b(2,2)*c(3,2) +  b(2,3)*c(3,3)
+
+      a(3,1) = b(3,1)*c(1,1) +  b(3,2)*c(1,2) +  b(3,3)*c(1,3)
+      a(3,2) = b(3,1)*c(2,1) +  b(3,2)*c(2,2) +  b(3,3)*c(2,3)
+      a(3,3) = b(3,1)*c(3,1) +  b(3,2)*c(3,2) +  b(3,3)*c(3,3)
+
+c
+      return
+      end
+
+      subroutine mm10_b_mult_type_5( a, b, c )
+      implicit none
+      double precision :: a(6,6), b(6), c(6)
+      integer :: i, j
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                    [a] = [a] + b * trans( c )
+c
+      do i = 1 , 6
+       do j = 1, 6
+         a(i,j) = a(i,j) + b(i)*c(j)
+       end do
+      end do   
+c
+      return
+      end
+
+
+      subroutine mm10_b_mult_type_3( a, b, c )
+      implicit none
+      double precision :: a(3), b(3,3), c(3)
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+c                     a = [b] * c
+c
+      a(1) = b(1,1)*c(1) + b(1,2)*c(2) + b(1,3)*c(3)
+      a(2) = b(2,1)*c(1) + b(2,2)*c(2) + b(2,3)*c(3)
+      a(3) = b(3,1)*c(1) + b(3,2)*c(2) + b(3,3)*c(3)
+c
+      return
+      end
+ 
+      
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_b_zero_vec                   *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 9/29/2016 rhd               *
+c     *                                                              *
+c     *    zero a vector - should be inlined                         *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_b_zero_vec( vec, nterms )
+      implicit none
+      integer :: nterms
+      double precision :: vec(nterms)
+      double precision, parameter :: zero = 0.0d0
+@!DIR$ ASSUME_ALIGNED vec:64       
+c
+      vec = zero
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_b_make_symm_1                *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 9/29/2016 rhd               *
+c     *                                                              *
+c     *                 make a symmetric 6x6 matrix                  *
+c     *                                                              *
+c     ****************************************************************
+c
+
+      subroutine mm10_b_make_symm_1( a )
+      implicit none
+c
+      integer :: i, j      
+      double precision :: a(6,6), work(6,6)
+      double precision, parameter :: half = 0.5d0
+@!DIR$ ASSUME_ALIGNED a:64, work(3,3):64      
+c
+c                     [a] = ( [a] + trans[a] ) / 2.0
+c
+      do j = 1, 6
+        do i = 1, 6
+          work(i,j) = ( a(i,j) + a(j,i) ) * half
+        end do
+      end do
+c      
+      a = work
+c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_b_copy_vec                   *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 9/29/2016 rhd               *
+c     *                                                              *
+c     *     copy a vector - should be inlined                        *
+c     *                                                              *
+c     ****************************************************************
+c
+ 
+      subroutine mm10_b_copy_vector( a, b, nterms )
+      implicit none
+      integer :: nterms
+      double precision :: a(nterms), b(nterms), c(nterms)
+@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c
+      a = b
+c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_b_invert_33                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 10/11/2016 rhd              *
+c     *                                                              *
+c     *                     invert a general 3 x 3 matrix            *
+c     *                                                              *
+c     ****************************************************************
+c
+ 
+ 
+      subroutine mm10_b_invert_33( ainv, a,  ok_flag )
+      implicit none
+c
+      double precision, dimension(3,3), intent(in)  :: a
+      double precision, dimension(3,3), intent(out) :: ainv
+      logical, intent(out) :: ok_flag
+c
+      double precision, parameter :: eps = 1.0d-10
+      double precision :: det
+      double precision, dimension(3,3) :: cofactor
+@!DIR$ ASSUME_ALIGNED a:64, ainv:64
+c
+      det =    a(1,1)*a(2,2)*a(3,3)  
+     1       - a(1,1)*a(2,3)*a(3,2)  
+     2       - a(1,2)*a(2,1)*a(3,3)  
+     3       + a(1,2)*a(2,3)*a(3,1)  
+     4       + a(1,3)*a(2,1)*a(3,2)  
+     5       - a(1,3)*a(2,2)*a(3,1)
+
+      if( abs(det) .le. eps ) then
+         ainv = 0.0d0
+         ok_flag = .false.
+         return
+      end if
+c
+      cofactor(1,1) = +(a(2,2)*a(3,3)-a(2,3)*a(3,2))
+      cofactor(1,2) = -(a(2,1)*a(3,3)-a(2,3)*a(3,1))
+      cofactor(1,3) = +(a(2,1)*a(3,2)-a(2,2)*a(3,1))
+      cofactor(2,1) = -(a(1,2)*a(3,3)-a(1,3)*a(3,2))
+      cofactor(2,2) = +(a(1,1)*a(3,3)-a(1,3)*a(3,1))
+      cofactor(2,3) = -(a(1,1)*a(3,2)-a(1,2)*a(3,1))
+      cofactor(3,1) = +(a(1,2)*a(2,3)-a(1,3)*a(2,2))
+      cofactor(3,2) = -(a(1,1)*a(2,3)-a(1,3)*a(2,1))
+      cofactor(3,3) = +(a(1,1)*a(2,2)-a(1,2)*a(2,1))
+c
+c                ainv = transpose(cofactor) / det
+c
+      ainv(1,1) = cofactor(1,1) / det
+      ainv(2,1) = cofactor(1,2) / det
+      ainv(3,1) = cofactor(1,3) / det
+c
+      ainv(1,2) = cofactor(2,1) / det
+      ainv(2,2) = cofactor(2,2) / det
+      ainv(3,2) = cofactor(2,3) / det
+c
+      ainv(1,3) = cofactor(3,1) / det
+      ainv(2,3) = cofactor(3,2) / det
+      ainv(3,3) = cofactor(3,3) / det
+c
+      ok_flag = .true.
+c
+      return
+c
+      end
+
+      

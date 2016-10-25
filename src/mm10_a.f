@@ -34,6 +34,7 @@ c
 c
       use segmental_curves, only: max_seg_points
       use mm10_defs
+      use mm10_constants
 c
       implicit none
 $add include_sig_up
@@ -61,14 +62,11 @@ c
      &                    p_strain_ten(6),
      &                    tang_avg(6,6), tang_avg_vec(36), ! see equiv 
      &                    slip_avg(length_comm_hist(5))
-      double precision :: t_work_inc, p_work_inc,p_strain_inc, zero,
-     &                    one, two, three, ten, onept5, n_avg,
-     &                    p_strain_avg
+      double precision :: t_work_inc, p_work_inc,p_strain_inc,
+     &                    n_avg, p_strain_avg
       logical :: debug, gpall, locdebug, mat_debug
       equivalence( tang_avg, tang_avg_vec )
 c
-      data zero, one, two, three, ten, onept5
-     &    / 0.0d0, 1.0d0, 2.0d0, 3.0d0, 10.0d0, 1.5d0 /
 @!DIR$ ASSUME_ALIGNED history_n:64, history_np1:64, uddt:64
 @!DIR$ ASSUME_ALIGNED gp_temps:64, gp_temp_inc:64, nonlocal_state:64     
 c
@@ -371,6 +369,7 @@ c
       subroutine mm10_set_cons( local_work, cc_props, isw )
 c
       use mm10_defs ! to get definition of cc_props
+      use mm10_constants
 c
       implicit none
 $add include_sig_up
@@ -449,6 +448,7 @@ c
       subroutine mm10_init_cc_hist0( props, angles, history, span,
      &                               crys_no, hist_size )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -458,7 +458,6 @@ c
       integer :: a, sh, eh, sh2, eh2, len1, len2
       double precision :: work_hist1(hist_size), 
      &                    work_hist2(hist_size) ! automatics
-      double precision, parameter :: zero = 0.d0, one = 1.0d0
 c
 c              Stress
 c
@@ -555,6 +554,7 @@ c     ****************************************************************
 c
       subroutine mm10_unknown_hard_error( props )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -589,6 +589,7 @@ c
       subroutine mm10_set_sizes_special( size_data, local_el  )
       use main_data, only : imatprp
       use mm10_defs, only : one_crystal_hist_size, common_hist_size
+      use mm10_constants
       implicit none
 c      
 $add common.main
@@ -624,6 +625,7 @@ c
       subroutine mm10_tangent( props, np1, n, gaspt, Jmat, nrJmat,
      &                         ncJmat )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
 c                 parameter definitions
@@ -655,11 +657,6 @@ c
       double precision,
      &    dimension(props%num_hard,props%num_hard) :: J22, alpha
       double precision :: alpha1
-c
-c                 constants
-c
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0,
-     &                               two = 2.0d0
 @!DIR$ ASSUME_ALIGNED Jmat:64
 c
       debug    = .false.     ! props%debug
@@ -797,6 +794,7 @@ c     ****************************************************************
 c
       subroutine mm10_setup( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -806,12 +804,10 @@ c              locals
 c
       integer :: i, j, k, s, t
       double precision :: RE(6,6), rw(3,3), rwc(3,3), trans_nRp(3,3),
-     &                    curv(3,3,3), cn(3), tm(3), half, 
-     &                    zero, two, const, t1, t2,
+     &                    curv(3,3,3), cn(3), tm(3), const, t1, t2,
      &                    work(3,3), work_vec(3)
       double precision, parameter :: alpha = 1.0d0/3.0d0, ! geometric hardening
      &                               twothirds = 2.0d0/3.0d0 
-      data zero, half, two / 0.0d0, 0.5d0, 2.0d0 /
 c
 c              effective strain increment
 c
@@ -944,6 +940,7 @@ c
       subroutine mm10_store_cryhist( crys_no, span, props, np1, 
      &                               n, history )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       integer :: span, crys_no
@@ -1042,6 +1039,7 @@ c
      &                               gp, p_strain_ten_c, 
      &                               iter_0_extrapolate_off )
       use mm10_defs
+      use mm10_constants
       use main_data, only: asymmetric_assembly
       implicit none
 c
@@ -1122,25 +1120,24 @@ c     ****************************************************************
 c
       subroutine mm10_update_euler_angles( props, np1, n )
       use mm10_defs
+      use mm10_constants
 c      
       implicit none
       type (crystal_props) :: props
       type (crystal_state) :: n, np1
 c
-      double precision, dimension(3,3) :: full_rot
+      double precision, dimension(3,3) :: full_rot, work1
       double precision :: psiK, phiK, thetaK, psi, phi, theta,
      &                    pps, pms
       double precision, external :: mm10_atan2
-      double precision, parameter :: tol=1.0d-16,
-     &                               pi = 3.14159265358979d0,
-     &                               one = 1.0d0,
-     &                               one_eighty = 180.0d0
+      double precision, parameter :: tol=1.0d-16
 c
 c           Note: This subroutine needs a major fix if
 c           ever going to support anything other than degrees+
 c           Kocks convention
 c
-      full_rot = matmul(props%g, matmul(np1%Rp, transpose(np1%R)))
+      call mm10_a_mult_type_2t( work1, np1%Rp, np1%R )
+      call mm10_a_mult_type_2( full_rot, props%g, work1 )
 c
       psiK = mm10_atan2( full_rot(3,2), full_rot(3,1) )
       phiK = mm10_atan2( full_rot(2,3), full_rot(1,3) )
@@ -1175,10 +1172,9 @@ c
 c              helper for the above, atan2 with range 0 to 2*pi
 c
       double precision function mm10_atan2(a, b) ! inlined
+      use mm10_constants
       implicit none
       double precision ::  a, b
-      double precision, parameter :: pi = 3.141592653589793d0,
-     &                               zero = 1.0d0, two = 2.0d0 
 c
       mm10_atan2 = datan2(a, b)
       if( mm10_atan2 .lt. zero ) mm10_atan2 = mm10_atan2 + two*pi
@@ -1239,6 +1235,7 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine mm10_rotation_matrix( angles, aconv, atype, r, out )
+      use mm10_constants
       implicit none 
 c      
       double precision, dimension(3), intent(in) :: angles
@@ -1248,10 +1245,6 @@ c
 c
       double precision, dimension(3,3), intent(out) :: r
       double precision :: a, b, c, psi, theta, phi
-      double precision, parameter :: pi = 3.14159265358979d0,
-     &                               one = 1.0d0, two = 2.0d0,
-     &                               one_eighty = 180.0d0,
-     &                               three = 3.0d0
 @!dir$ assume_aligned angles:64, r:64      
 c
       a = angles(1)
@@ -1355,12 +1348,12 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine mm10_rt2rve( rt, rv )
+      use mm10_constants
       implicit none
 c      
       double precision, dimension(3,3), intent(in) :: rt
       double precision, dimension(6,6), intent(out) :: rv
 c
-      double precision, parameter :: two = 2.0d0      
 @!DIR$ ASSUME_ALIGNED rt:64, rv:64
 c    
       rv(1,1) = rt(1,1)**2
@@ -1447,12 +1440,12 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine mm10_et2ev( et, ev )
+      use mm10_constants
       implicit none
 c      
       double precision, dimension(3,3), intent(in) :: et
       double precision, dimension(6), intent(out) :: ev
 c
-      double precision, parameter :: two = 2.0d0      
 @!DIR$ ASSUME_ALIGNED et:64, ev:64
 c
       ev(1) = et(1,1)
@@ -1505,6 +1498,7 @@ c
       subroutine mm10_calc_grads( ngp, elem_type, order, geonl,
      &                            rot_blk, jac, Rps, gradFes, iout,
      &                            now_elem, span, hist_size )
+      use mm10_constants
       implicit none
 $add param_def 
 c
@@ -1529,7 +1523,6 @@ c
 c
 c                 constants
 c
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0                           two = 2.0d0
 @!DIR$ ASSUME_ALIGNED rot_blk:64, Rps:64, gradFes:64, jac:64
 c
 c                get R components and stick in the right place
@@ -1615,6 +1608,7 @@ c
       subroutine mm10_setup_np1( Rur, dstrain, dt, T, step, elem,
      &                           iter, gp, np1 )
       use mm10_defs
+      use mm10_constants
       implicit none
 c      
       integer :: step, elem, gp, iter
@@ -1622,7 +1616,6 @@ c
       double precision :: Rur(3,3), dstrain(6)
       double precision :: dt, T
 c
-      double precision, parameter ::  zero = 0.0d0
       integer :: i, j
 c
 @!DIR$ ASSUME_ALIGNED Rur:64, dstrain:64         
@@ -1702,12 +1695,12 @@ c     ****************************************************************
 c
       subroutine mm10_init_uout_hist( span, history )
       use mm10_defs, only : indexes_common
+      use mm10_constants
 c      
       implicit none
       integer :: span
       double precision :: history(span,*)
 c
-      double precision, parameter :: zero = 0.d0
       integer :: sh      
 @!DIR$ ASSUME_ALIGNED history:64
 c
@@ -1733,13 +1726,13 @@ c     ****************************************************************
 c
       subroutine mm10_init_slip_hist( span, history )
       use mm10_defs, only : indexes_common
+      use mm10_constants
 c
       implicit none
       integer :: span
       double precision :: history(span,*)
 c
       integer :: sh, eh
-      double precision, parameter :: zero = 0.d0      
 @!DIR$ ASSUME_ALIGNED history:64      
 c
       sh  = indexes_common(5,1)
@@ -1766,6 +1759,7 @@ c
       subroutine mm10_init_cc_props( inc_props, atype, aconv, debug,
      &                               cc_props )
       use mm10_defs
+      use mm10_constants
       implicit none
 $add include_sig_up
       integer :: atype, aconv
@@ -1860,6 +1854,7 @@ c *********************************************************************
 c
       subroutine mm10_init_user( props, tau_tilde, uhist )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1874,6 +1869,7 @@ c
 c
       subroutine mm10_setup_user( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1893,6 +1889,7 @@ c *********************************************************************
 c
       subroutine mm10_init_voche( props, tau_tilde, uhist )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1907,6 +1904,7 @@ c
 c
       subroutine mm10_setup_voche( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1939,6 +1937,7 @@ c *********************************************************************
 c
       subroutine mm10_init_mts( props, tau_tilde, uhist )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -1957,15 +1956,14 @@ c
 c
       subroutine mm10_setup_mts( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
 c
       double precision :: dgc
-      double precision, parameter :: init_hard = 0.1d0,
-     &                               zero = 0.d0, one = 1.0d0,
-     &                               three = 3.0d0
+      double precision, parameter :: init_hard = 0.1d0
 c
 c              continuum effective rate
 c
@@ -2061,13 +2059,13 @@ c      u6            c6
 c
       subroutine mm10_init_mrr( props, tau_tilde, uhist )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       double precision :: tau_tilde(props%num_hard)
       double precision, dimension(max_uhard) :: uhist
 c
-      double precision, parameter :: zero = 0.d0
 c      
       if( props%theta_0 .eq. zero ) then
          tau_tilde(1:props%num_hard) = 1.0d8 ! initial densities for 
@@ -2082,6 +2080,7 @@ c
 c
       subroutine mm10_setup_mrr( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2134,13 +2133,12 @@ c
 c
       subroutine mm10_init_ornl( props, tau_tilde, uhist )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       double precision :: tau_tilde(props%num_hard)
       double precision, dimension(max_uhard) :: uhist
-c
-      double precision, parameter :: zero = 0.d0
 c
 c              initial densities for edges
 c
@@ -2155,6 +2153,7 @@ c
 c
       subroutine mm10_setup_ornl( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2178,6 +2177,7 @@ c **********************************************************************
 c
       subroutine mm10_init_DJGM( props, tau_tilde, uhist )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2259,6 +2259,7 @@ c
 c
       subroutine mm10_setup_DJGM( props, np1, n )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2281,6 +2282,7 @@ c     ****************************************************************
 c
       subroutine mm10c_unknown_hard_error( props )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
@@ -2308,6 +2310,7 @@ c
       subroutine mm10_copy_cc_hist( crys_no, span, history, gradfe,
      &                              R, props, n)
       use mm10_defs
+      use mm10_constants
       implicit none
 c
       integer :: crys_no, span, sh, eh
@@ -2317,7 +2320,6 @@ c
       type(crystal_state) :: n
 c
       integer :: len1, len2
-      double precision, parameter :: one = 1.0d0, zero = 0.0d0
 @!DIR$ ASSUME_ALIGNED history:64, gradfe:64, R:64
 c
       len1 = props%num_hard
@@ -2411,12 +2413,12 @@ c     ****************************************************************
 c
       subroutine mm10_init_general_hist( span, history )
       use mm10_defs, only : indexes_common
+      use mm10_constants
       implicit none
 c      
       integer :: span
       double precision :: history(span,*)
 c      
-      double precision, parameter :: zero = 0.d0, one = 1.0d0
       integer :: sh, eh
 @!DIR$ ASSUME_ALIGNED history:64      
 c
@@ -2466,6 +2468,7 @@ c
      &                             iter_0_extrapolate_off,
      &                             no_load, Jmat, nrJmat, ncJmat )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
 c              parameters  -- mm10_defs has param_def -> maxuhard)
@@ -2492,8 +2495,7 @@ c              automatic vectors
 c
       double precision :: tt(props%num_hard), ott(props%num_hard)
 c
-      double precision, parameter :: mult = 0.5d0, zero = 0.0d0,
-     &                               one = 1.0d0 
+      double precision, parameter :: mult = 0.5d0 
       integer, parameter :: mcuts = 4
 @!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, Jmat:64      
 c
@@ -2691,6 +2693,7 @@ c
      &                       ivec1, ivec2, stress, tt, fail, faili,
      &                       failr, gp, dtinc, J, nrJ, ncJ )
       use mm10_defs
+      use mm10_constants
       implicit none
 c
 c                 parameter definitions
@@ -2734,8 +2737,7 @@ c
 c                 constants
 c
       double precision, parameter :: c = 1.0d-4, red = 0.5d0,
-     &    zero = 0.0d0, one = 1.0d0, two = 2.0d0, three = 3.0d0,
-     &    ten = 10.0d0, half = 0.5d0, xtol = 0.001d0  
+     &                               xtol = 0.001d0  
       integer, parameter :: mls = 10, mmin = 1
 c
 @!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64
@@ -3138,6 +3140,7 @@ c     ****************************************************************
 c
       subroutine mm10_update_rotation( props, np1, n, vec1, vec2 )
       use mm10_defs
+      use mm10_constants
 c      
       implicit none
 c
@@ -3171,12 +3174,12 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine mm10_wv2wt( wv, wt )
+      use mm10_constants
       implicit none
 c      
       double precision, dimension(3,3), intent(out) :: wt
       double precision, dimension(3), intent(in) :: wv
 c
-      double precision, parameter :: zero = 0.d0      
 c      
 @!DIR$ ASSUME_ALIGNED wv:64, wt:64     
 c
@@ -3208,13 +3211,13 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine mm10_expmw3x3( w, a )
+      use mm10_constants
       implicit none
 c      
       double precision, dimension(3,3), intent(in) :: w
       double precision, dimension(3,3), intent(out) :: a
       double precision :: alpha
       integer :: i
-      double precision, parameter :: zero = 0.d0, one = 1.0d0
 @!DIR$ ASSUME_ALIGNED w:64, a:64    
 c
 c              compute alpha
@@ -3240,6 +3243,210 @@ c
 c
       return
       end
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm10_output                       *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified: 10/22/2016 rhd              *
+c     *                                                              *
+c     *     Calculate various other user output quantities           *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm10_output( props, np1, n, vec1, vec2,
+     &                        p_strain_ten_c )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+c              parameters
+c
+      type(crystal_props) :: props
+      type(crystal_state) :: np1, n
+      double precision, dimension(6) :: p_strain_ten_c
+      double precision, dimension(max_uhard) :: vec1, vec2
+c
+c              locals
+c
+      integer :: i, info, sysID, numAct, nslip
+      double precision, dimension(6) :: ee, dbarp, ewwe, ep, 
+     &                                  eeunrot, se
+      double precision, dimension(3) :: wp
+      double precision, dimension(6,6) :: S, erot
+      double precision :: maxslip, ec_dot, n_eff, rs, ec_slip, 
+     &                    mm10_rs,curslip, B_eff, s_trace
+      double precision, dimension(max_slip_sys) :: dgammadtau
+      double precision ::  t1, t2
+c
+c              add new constitutive models into this block
+c
+      nslip = nslip
+      select case( props%h_type )
+        case( 1 ) ! Voche
+          do i = 1, nslip
+           call mm10_slipinc( props, np1, n, np1%stress,
+     &                        np1%tau_tilde, i, np1%slip_incs(i) )
+c                    addition for diffusion
+           rs = mm10_rs( props, np1, n, np1%stress, np1%tau_tilde, i )
+           np1%slip_incs(i) = np1%slip_incs(i) + 
+     &                        rs*np1%tinc*props%iD_v
+          end do
+       case( 2 ) ! MTS
+         do i = 1, nslip
+           call mm10_slipinc( props, np1, n, np1%stress,
+     &                        np1%tau_tilde, i, np1%slip_incs(i) )
+         end do
+       case(3)  ! User
+         do i =1, nslip
+           call mm10_slipinc_user( props, np1, n, np1%stress,
+     &                        np1%tau_tilde, i, np1%slip_incs(i) )
+         end do
+       case( 4 )  ! ORNL
+         np1%slip_incs(1:nslip)  = vec1(1:nslip)
+       case( 7 ) ! MRR
+         np1%slip_incs(1:nslip)  = vec1(1:nslip)
+       case( 9 )  ! DJGM
+         np1%slip_incs(1:nslip)  = vec1(1:nslip)
+       case default
+         call mm10_unknown_hard_error( props )
+      end select
+c
+      call mm10_update_euler_angles( props, np1, n )
+c
+c              compute user history output
+c
+c              6:8 is about the active slip systems: maximum slip rate,
+c              identifier of that system, and how many systems have rates
+c              on the same order of magnitude as that one.
+c
+      maxslip = zero
+      sysID = 0
+      do i = 1, nslip
+        curslip = dabs(np1%slip_incs(i))
+        if( curslip > maxslip ) then
+          maxslip = curslip
+          sysID = i
+        end if
+      end do
+      np1%u(6) = maxslip/np1%tinc
+      np1%u(7) = dble(sysID)
+c
+      numAct = 0
+      maxslip = pt1*maxslip
+      do i = 1, nslip
+        curslip = dabs(np1%slip_incs(i))
+        if( curslip >= maxslip ) numAct = numAct + 1
+      end do
+      np1%u(8) = dble(numAct)
+c
+c              miscellaneous things
+c
+      np1%work_inc = np1%stress(1)*np1%D(1) + np1%stress(2)*np1%D(2) +
+     &               np1%stress(3)*np1%D(3) + np1%stress(4)*np1%D(4) +
+     &               np1%stress(5)*np1%D(5) + np1%stress(6)*np1%D(6)
+c              plastic strain and work
+      call mm10_a_copy_vector( S, props%stiffness, 36 )
+      eeunrot(1:6) = np1%stress(1:6)
+      call DPOSV( 'U', 6, 1, S, 6, eeunrot, 6, INFO )
+      call mm10_RT2RVE( np1%R, erot )
+      call mm10_a_mult_type_2( ee, erot, eeunrot )
+      call mm10_form_dbarp( props, np1, n,vec1, vec2, np1%stress,
+     &                      np1%tau_tilde, dbarp )
+      call mm10_form_wp( props, np1, n,vec1, vec2, np1%stress, 
+     &                   np1%tau_tilde, wp )
+      call mm10_symSW( ee, wp, ewwe )
+c
+      ep = dbarp + ewwe
+c          store the plastic strain increment for nonlocal averages
+      p_strain_ten_c(1:6) = ep(1:6)
+      t1 = ep(1)**2 + ep(2)**2 + ep(3)**2
+      t2 = ep(4)**2 + ep(5)**2 + ep(6)**2
+      np1%p_strain_inc = dsqrt( two/three*(t1+ half*t2) )
+c      np1%p_work_inc = dot_product(np1%stress, ep)
+      np1%work_inc = np1%stress(1)*ep(1) + np1%stress(2)*ep(2) +
+     &               np1%stress(3)*ep(3) + np1%stress(4)*ep(4) +
+     &               np1%stress(5)*ep(5) + np1%stress(6)*ep(6)
+c           store the lattice strains
+      np1%eps = ee
+c      
+c           compute plastic creep rate and effective creep exponent
+c
+      ec_dot = np1%p_strain_inc / np1%tinc
+      np1%u(11) = ec_dot
+      if( ec_dot > zero ) then  !   AAA
+        ep(1:6) = ep(1:6) / np1%tinc
+c
+c           generalization of CP model implementation for other 
+c           slip rate eqns, requiring other forms of d_gamma/d_tau.
+c           vector dgammadtau should be 1 x n_slip
+c           add new constitutive models into this block
+c
+        select case( props%h_type  ) 
+          case( 1 ) ! Voche
+            call mm10_dgdt_voche( props, np1, n, np1%stress,
+     &                            np1%tau_tilde, dgammadtau )
+          case( 2 )! MTS
+            call mm10_dgdt_mts( props, np1, n, np1%stress,
+     &                          np1%tau_tilde, dgammadtau )
+          case( 3 )  ! User
+            call mm10_dgdt_user( props, np1, n, np1%stress,
+     &                           np1%tau_tilde, dgammadtau )
+          case( 4 ) ! ORNL
+            call mm10_dgdt_ornl( props, np1, n, np1%stress,
+     &                           np1%tau_tilde, dgammadtau )
+          case( 7 ) ! MRR
+            call mm10_dgdt_mrr( props, np1, n, np1%stress,
+     &                          np1%tau_tilde, dgammadtau )
+          case( 9 ) ! DJGM
+            call mm10_dgdt_djgm( props, np1, n, np1%stress,
+     &                          np1%tau_tilde, dgammadtau)
+          case default
+            call mm10_unknown_hard_error( props )
+        end select
+        n_eff = zero
+        do i = 1, nslip
+           rs = mm10_rs( props, np1, n, np1%stress, np1%tau_tilde, i )
+           t1 = np1%ms(1,i)*ep(1) + np1%ms(2,i)*ep(2) + 
+     &          np1%ms(3,i)*ep(3)
+           t2 = np1%ms(4,i)*ep(4) + np1%ms(5,i)*ep(5) + 
+     &          np1%ms(6,i)*ep(6)
+           ec_slip = t1 + half*t2
+           n_eff = n_eff + two/three/ec_dot/ec_dot*rs*
+     &             dgammadtau(i)/np1%tinc*ec_slip ! from D. Parks
+        end do
+      else
+        n_eff = one
+      end if  !  AAA
+c
+      np1%u(12) = n_eff
+      s_trace = (np1%stress(1)+np1%stress(2)+np1%stress(3))/three
+      se(1:6) = np1%stress(1:6)
+      se(1) = se(1) - s_trace
+      se(2) = se(2) - s_trace
+      se(3) = se(3) - s_trace
+      t1    = se(1)**2 + se(2)**2 + se(3)**2
+      t2    = se(4)**2 + se(5)**2 + se(6)**2
+      s_trace = sqrt( onept5 * ( t1 + two*t2 ) )
+      np1%u(13) = s_trace
+      if( ec_dot < 1.d-100 ) then ! elastic
+        B_eff = zero
+      elseif( n_eff > 100.d0 ) then ! likely overflow
+        B_eff = -one
+      else
+        B_eff = ec_dot / s_trace**n_eff
+      end if
+      np1%u(14) = B_eff
+c
+      return
+      end
+
+
+
+
 
 
 c     ****************************************************************
@@ -3458,10 +3665,10 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_a_zero_vec( vec, nterms )
+      use mm10_constants
       implicit none
       integer :: nterms
       double precision :: vec(nterms)
-      double precision, parameter :: zero = 0.0d0
 @!DIR$ ASSUME_ALIGNED vec:64       
 c
       vec = zero
@@ -3481,11 +3688,11 @@ c     ****************************************************************
 c
 
       subroutine mm10_a_make_symm_1( a )
+      use mm10_constants
       implicit none
 c
       integer :: i, j      
       double precision :: a(6,6), work(6,6)
-      double precision, parameter :: half = 0.5d0
 @!DIR$ ASSUME_ALIGNED a:64, work(3,3):64      
 c
 c                     [a] = ( [a] + trans[a] ) / 2.0
