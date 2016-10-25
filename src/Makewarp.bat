@@ -27,7 +27,7 @@ cls
 ::       shell does not automatically set up to see Microsoft Visual Studio 8
 ::       located under the 32-bit c:\Program Files (x86)
 ::
-set nmake_exe="c:\Program Files (x86)\Microsoft Visual Studio 10.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe"
+set nmake_exe="c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe"
 #
 if not exist %nmake_exe% (
   echo.
@@ -131,6 +131,7 @@ set build_mode=64
 ::
 ::	Run the makefile.
 ::
+
 if "%build_mode%" == "64" (
   echo -- Compiling WARP3D for 64-bit execution on
   echo -- Windows XP, Vista, Windows 7 with nmake utility...

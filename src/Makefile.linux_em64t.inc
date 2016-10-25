@@ -1468,7 +1468,7 @@ $(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_e.f
 	$(FILTER) < mm10_e.f > filt_mm10_e.f
-	$(F90) -O2 -ip   -c filt_mm10_e.f
+	$(F90) -O3 -ip   -c filt_mm10_e.f
 	$(MVC) filt_mm10_e$O  mm10_e$O
 	$(MVC) mm10_e$O $@
 
