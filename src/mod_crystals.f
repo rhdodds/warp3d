@@ -73,6 +73,35 @@ c
      &           one_crystal_hist_size, common_hist_size
 c
       end module
+      
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                       module mm10_constants                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 10/13/2016 rhd              *
+c     *                                                              *
+c     *       small module to hold numerical constants for           *
+c     *       connivence                                             *
+c     *                                                              *
+c     ****************************************************************
+c
+      module mm10_constants
+      implicit none
+      
+      double precision, parameter ::
+     &   zero = 0.0d0, one = 1.d0, two = 2.0, three = 3.0d0, 
+     &   four = 4.0d0, ten = 10.0d0, one_eighty = 180.0d0
+c
+      double precision, parameter ::
+     &   ptone = 0.1d0, half = 0.5d0, third = 0.33333333333333333333d0,
+     &   pi = 3.141592653589793d0, root3 = 1.7320508075688772d0,
+     &   one pt5 = 1.5d0, pt1 = 0.1d0
+    
+      end module      
+      
 c
 c ****************************************************************************
 c *                                                                          *
