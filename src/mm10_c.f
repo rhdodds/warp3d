@@ -950,25 +950,28 @@ c     *                      subroutine mm10_fvec                    *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 10/23/2016 rhd              *
+c     *                   last modified: 11/3/2016 rhd               *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_fveci( solve_work, x, fz, n, j )
 c
       use mm10_defs
+      use mm10_constants
       implicit none
 $add include_mm10
       type(mm10_working_data) :: solve_work
       double complex, dimension(n) :: x, fz
       integer :: n,j
 c
-      double complex, dimension (n) :: x2i !  was dimension(n-6) :: x2i
-      double precision, dimension(n) :: zero2 ! was dimension(n-6) :: zero2
+      integer :: length
+      double complex, dimension (solve_work%props%num_hard) :: x2i !  was dimension(n-6) :: x2i
+      double precision, dimension(solve_work%props%num_hard) :: zero2 ! was dimension(n-6) :: zero2
 @!DIR$ ASSUME_ALIGNED x:64, fz:64
       if( solve_work%solvfnc == 1 ) then
-        zero2 = 0.d0
-        x2i(1:n-6) = cmplx(solve_work%x2(1:n-6),zero2)
+        zero2 = zero
+        length = solve_work%props%num_hard
+        x2i(1:length) = cmplx(solve_work%x2(1:length),zero2)
         call mm10_formvecsi( solve_work%props, solve_work%np1,
      &                    solve_work%np0, x(1), x2i, 
      &                    solve_work%ivec1, solve_work%ivec2 )
@@ -996,8 +999,6 @@ c
 
       return
       end
-      
-
 c-----------------------------------------------------------------------------
 
       subroutine mm10_liqrfa(a, lda, n, tau, work, wsiz, info)
