@@ -1,0 +1,6 @@
+ output displacements 321
+ output stresses 64
+ output flat stream displacements
+ output flat stream element stresses
+ output flat stream element strains
+ output flat stream element states type 7
