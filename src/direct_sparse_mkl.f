@@ -59,7 +59,7 @@ c
       iparm(18) = -1 ! output nnz in factorization
       iparm(19) = -1 ! output MFLOPS
       iparm(21) = 0 ! Different pivoting not available
-      iparm(24) = 1 ! More parallelism
+      iparm(24) = 1 ! use 2-level parallelism for triangulation
       iparm(25) = 0 ! Parallel backsolve
       iparm(27) = 0 ! Don't check matrices
       iparm(28) = 0 ! double precision
@@ -309,9 +309,10 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(17) = 0 ! not in use
       iparm(18) = -1 ! Output: number of nonzeros in the factor LU
       iparm(19) = -1 ! Output: Mflops for LU factorization
-      iparm(20) = -1 ! Output: Numbers of CG Iterations
-      iparm(24) = 1 ! two-level factorization for better performance
+      iparm(20) = -1 ! Output: Numbers of CG Iterations 
+      iparm(24) = 1 ! use 2 level factorization
       iparm(25) = 0 ! parallel forward-backward solve
+      iparm(27) = 1 !  check input matrix for errors (=1)
       iparm(60) = mkl_ooc_flag 
       error = 0 ! initialize error flag
       msglvl = 0 ! print statistical information

@@ -57,21 +57,22 @@ c
 c                    local variables
 c
       integer :: code_vec(mxedof,mxvl), edest(mxedof,mxconn)
-      logical :: new_size, local_debug, cpu_stats, save_solver
-     &    hypre_solver, mkl_asymmetric, mkl_symmetric 
+      logical :: new_size, cpu_stats, save_solver
+     &           hypre_solver, mkl_asymmetric, mkl_symmetric 
+      logical, parameter :: local_debug = .false.,
+     &                      local_debug2 = .false.
       double precision :: zero
       real, external :: wcputime
       integer :: error_code, nnz, mkl_threads
       integer, external :: curr_neqns
 c
-      data zero, local_debug, old_neqns, old_ncoeff, cpu_stats
-     &     / 0.0d00, .false., 0, 0, .true. /
+      double precision :: tanstf_comps, sig_eps_comps, assem_comps,
+     &                    start, end
+c
+      data zero, old_neqns, old_ncoeff, cpu_stats
+     &     / 0.0d00, 0, 0, .true. /
       data save_solver / .false. /
-      
-      real*8 tanstf_comps, sig_eps_comps, assem_comps
-      real*8 start, end
-      
-      
+c      
 @!DIR$ ASSUME_ALIGNED dof_eqn_map:32
 @!DIR$ ASSUME_ALIGNED u_vec:64
 c
@@ -270,7 +271,7 @@ c
        end if
       end do
 c
-      if( local_debug ) write(out,9900) (i, u_vec(i), i=1, neqns)
+      if( local_debug2 ) write(out,9900) (i, u_vec(i), i=1, neqns)
 c      
       deallocate( u_vec ) ! scratch vec used by solvers
 c
@@ -339,8 +340,8 @@ c
       if( local_debug ) write(out,*) '.. @ (1)  '
       call thyme( 21, 1 )
       if( cpu_stats .and. show_details ) then
-      	  call mkl_get_version_string( mkl_string )
-      	  mkl_num_thrds = mkl_get_max_threads()
+          call mkl_get_version_string( mkl_string )
+          mkl_num_thrds = mkl_get_max_threads()
           write(out,9400) num_threads, mkl_string(37:44),
      &                    mkl_string(59:66), wcputime(1)
       end if    
@@ -497,22 +498,22 @@ c
       call wmpi_alert_slaves( 41 )
       call determine_local_sparsity
 c
-c           Determine the initial map for assembling the sparse structure
-c           this should just be a simple heuristic to keep a good amount of
-c           locality
+c           Determine the initial map for assembling the sparse 
+c           structure this should just be a simple heuristic to keep 
+c           a good amount of locality
 c
       call wmpi_alert_slaves( 42 )
       call determine_initial_map
 c
 c           Assemble the sparse structure for the above map, now we know
-c           global nnz and full sparsity.  We can make a parmetis graph to
-c           balance.
+c           global nnz and full sparsity.  We can make a parmetis graph
+c           to balance.
 c
       call wmpi_alert_slaves( 43 )
       call assemble_sparsity
 c
-c           Determine a better mapping for load balance, pass rows as necessary
-c           and make a note of the new equation numbers
+c           Determine a better mapping for load balance, pass rows as
+c           necessary and make a note of the new equation numbers
 c
       call wmpi_alert_slaves( 44 )
       call determine_ordering
@@ -617,7 +618,12 @@ c
         p_vec(i)  = zero
         u_vec(i)  = zero
       end do
-      if( local_debug ) write(out,*) '  @ 3.2, ncoeff: ',ncoeff
+      if( local_debug ) then
+         write(out,*)  '  @ 3.2, ncoeff: ',ncoeff
+         write(out,*)  '         ncoeff_from_assembled_profile: ',
+     &                        ncoeff_from_assembled_profile  
+         write(out,*)  '         size k_indexes: ', size(k_indexes)
+      end if
       k_indexes(1:ncoeff_from_assembled_profile) =
      &            save_k_indexes(1:ncoeff_from_assembled_profile)
       if( local_debug ) write(out,*) ' @ 4'
@@ -637,9 +643,8 @@ c                 assem_by_row which picks up the LT terms.
 c                 rows are assembled in parallel
 c
         nnz = 0  ! total number of non-zero terms in assembled eqns.
-        call convert_vss_csr( neqns, ncoeff, save_k_ptrs(1:neqns),
-     &      save_k_indexes(1:ncoeff), nnz, k_ptrs(1:neqns+1), 
-     &      k_indexes(1:2*ncoeff + neqns))
+        call convert_vss_csr( neqns, ncoeff, save_k_ptrs(1),
+     &      save_k_indexes(1), nnz, k_ptrs(1), k_indexes(1) )
         if( cpu_stats .and. show_details ) write(out,9999) wcputime(1)
         k_coeffs = zero 
         call assem_by_row_asymmetric( neqns, num_threads, eqn_node_map,
@@ -665,7 +670,7 @@ c
 c              4. set the rhs of the equations. p_vec has the
 c                 neqns terms for unconstrained dof from res.
 c
-      if( local_debug ) then 
+      if( local_debug2 ) then 
          write(out,9500)
          i_offset = 0
          do i = 1, nonode
@@ -707,26 +712,38 @@ c                 The re-insert code has a bug. minimize effects
 c                 by rebuilding MPC data structures on 1st iteration 
 c                 of each step.
 c
+      if( local_debug2 ) then
+          write(out,*) '... before MPC enforcement ...'
+          write(out,*) '       neqns, ncoeff: ', neqns, ncoeff
+          write(out,*) '       .... k_ptrs ....'
+          write(out,9010) (i, k_ptrs(i), i = 1, neqns+1)
+          k_ptrs(neqns+1) = 0
+          write(out,*) '       .... k_indexes ....'  
+          write(out,*) '      sizeof k_indexes: ', sizeof(k_indexes)   
+          write(out,9010) (i, k_indexes(i), i = 1, ncoeff+neqns)
+      end if
+      
+
       if( tied_con_mpcs_constructed .or. mpcs_exist ) then
           rebuild_mpcs = now_iteration .eq. 1
           if( new_size .or. modified_mpcs .or. rebuild_mpcs ) then
-            if( local_debug ) write(*,*) '.... @ 6.1'
+            if( local_debug ) write(out,*) '.... @ 6.1'
             call mpc_insert_terms(neqns, k_ptrs, k_diag, dstmap,
      &                            dof_eqn_map)
-            if( local_debug ) write(*,*) '.... @ 6.2'
+            if( local_debug ) write(out,*) '.... @ 6.2'
             call mpc_modify_stiffness(neqns, k_diag, p_vec)
-            if( local_debug ) write(*,*) '.... @ 6.3'
+            if( local_debug ) write(out,*) '.... @ 6.3'
             call mpc_remove_dep_eqns(neqns, k_ptrs)
-            if( local_debug ) write(*,*) '.... @ 6.4'
+            if( local_debug ) write(out,*) '.... @ 6.4'
             modified_mpcs = .false.
          else
-            if( local_debug ) write(*,*) '.... @ 6.5'
+            if( local_debug ) write(out,*) '.... @ 6.5'
             call mpc_reinsert_terms(neqns, k_ptrs, dstmap, dof_eqn_map)
-            if( local_debug ) write(*,*) '.... @ 6.6'
+            if( local_debug ) write(out,*) '.... @ 6.6'
             call mpc_modify_stiffness(neqns, k_diag, p_vec)
-            if( local_debug ) write(*,*) '.... @ 6.7'
+            if( local_debug ) write(out,*) '.... @ 6.7'
             call mpc_remove_dep_eqns(neqns, k_ptrs)
-            if( local_debug ) write(*,*) '.... @ 6.8'
+            if( local_debug ) write(out,*) '.... @ 6.8'
          end if
          if( cpu_stats .and. show_details ) then
             write(out,9490) wcputime(1)
@@ -741,7 +758,17 @@ c
          
       end if ! on tied_con_mpcs_constructed .or. mpcs_exist
 c
+      if( local_debug2 ) then      
+          write(out,*) '... after MPC enforcement ...'
+          write(out,*) '       neqns, ncoeff: ', neqns, ncoeff
+          write(out,*) '       .... k_ptrs ....'
+          write(out,9010) (i, k_ptrs(i), i = 1, neqns+1)
+          write(out,*) '       .... k_indexes ....'     
+          write(out,9010) (i, k_indexes(i), i = 1, ncoeff+neqns)
+      end if
+c
       if( local_debug ) write(out,*) ' @ 7'
+      
 c
 c              6. write equations ready to solve in various formats
 c                 as requested by user. makes our equations available
@@ -768,7 +795,8 @@ c
       if( local_debug ) write(*,*) ' @ 8'
 c      
       return
-c      
+c
+ 9010 format(6x,12i8)
  9300 format(10x,i5,3(1x,f10.6))                     
  9412  format(
      &  15x, 'non-zero terms in profile       ',i10)

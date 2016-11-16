@@ -98,7 +98,7 @@ c
       double precision, parameter ::
      &   ptone = 0.1d0, half = 0.5d0, third = 0.33333333333333333333d0,
      &   pi = 3.141592653589793d0, root3 = 1.7320508075688772d0,
-     &   one pt5 = 1.5d0, pt1 = 0.1d0
+     &   onept5 = 1.5d0, pt1 = 0.1d0
     
       end module      
       

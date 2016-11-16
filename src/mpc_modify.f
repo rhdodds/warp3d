@@ -116,12 +116,12 @@ c     *                                                              *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                   last modified : 01/19/04                   *
+c     *                   last modified : 11/12/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_new_structures(neqns, max_dep, abs_trm, dstmap,
-     &                               dof_eqn_map)
+      subroutine  mpc_new_structures( neqns, max_dep, abs_trm, dstmap,
+     &                                dof_eqn_map )
 c
       use mod_mpc, only : num_tied_con_mpc, tied_con_mpc_table, nmpc,
      &                    num_user_mpc, user_mpc_table, dep_check,
@@ -131,6 +131,7 @@ c
       double precision  dumd
       character*1  dums
       logical  last_good
+      logical, parameter :: local_debug = .false.
       dimension  abs_trm(*), dstmap(*), dof_eqn_map(*)
 c
 c        allocate module variables
@@ -150,14 +151,16 @@ c
          call die_abort
       end if
 c
-c        reorganize tied_mesh and user mpc equations into f77 structures
+c        reorganize tied_mesh and user mpc equations into simpler 
+c        structures
 c
-      dep_check = 0
+      dep_check = 0  ! vector
       max_dep = 0
       skip = 0
       ptr = 0
       abs_trm(1) = 1
       last_good = .true.
+c      
       nxt_mpc: do mpc = 1, nmpc
          if (mpc .le. num_tied_con_mpc) then
             ntrms = tied_con_mpc_table(mpc)%num_terms
@@ -243,9 +246,33 @@ c
      &            user_mpc_table(pnt)%multiplier_list(trm)
             end do
          end if
-      end do  nxt_mpc
+      end do  nxt_mpc    
 c     
+      if( local_debug ) then
+        write(*,*) " .... mpc_new_structures ...."
+        write(*,*) " "
+        write(*,*) "       nmpc, max_dep, ptr: ",nmpc,max_dep,ptr
+        write(*,*)
+        write(*,*) "       ... dep_check ..."
+        write(*,9000) ( i, dep_check(i), i = 1, neqns)
+        write(*,*) " "
+        write(*,*) "       ... dep_dof ..."
+        write(*,9000) ( i, dep_dof(i), i = 1, nmpc)
+        write(*,*) " "
+        write(*,*) "       ... num_terms ..."
+        write(*,9000) ( i, num_terms(i), i = 1, nmpc)
+        write(*,*) " "
+        write(*,*) "       ... ind_dof ..."
+        write(*,9000) ( i, ind_dof(i), i = 1, 8*nmpc)
+        write(*,*) " "
+        write(*,*) "       ... multi_list ..."
+        write(*,9010) ( i, multi_list(i), i = 1, 8*nmpc)
+      end if
+c      
       return
+c
+ 9000 format(2x,8i10)  
+ 9010 format(2x,8(i5,d14.6))    
 c
       end
 c
@@ -258,12 +285,12 @@ c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                      last modifed : rhd                      *
 c     *                                                              *
-c     *                   last modified : 07/28/2011                 *
+c     *                   last modified : 11/12/2016 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_find_dep_terms(neqns, k_ptrs, abs_trm, max_dep,
-     &                               max_len)
+      subroutine  mpc_find_dep_terms( neqns, k_ptrs, abs_trm, max_dep,
+     &                                max_len )
 c
       use mod_mpc, only : tied_con_mpc_table, user_mpc_table, nmpc,
      &                    eqn_row, dep_check, dep_dof, ind_dof,
@@ -272,25 +299,27 @@ c
       use stiffness_data, only : new_ptrs, k_indexes
       implicit integer (a-z)
       integer, allocatable, dimension(:) :: tmp_trms, eqn_tmp
-      integer, dimension(:), pointer :: row_ptr
       real  dumr
       double precision  dumd
       character*1  dums
       dimension  k_ptrs(*), abs_trm(*)
       intrinsic size
+      logical, parameter :: local_debug = .false.
+c      
 @!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_trm:32      
-      
+c
+      if( local_debug ) write(*,9000)
 c
 c        allocate local variables
 c
-      if (allocated(new_ptrs))      deallocate(new_ptrs)
-      if (allocated(num_dep_trms))  deallocate(num_dep_trms)
-      if (allocated(dep_trms))      deallocate(dep_trms)
+      if(allocated(new_ptrs) )      deallocate(new_ptrs)
+      if(allocated(num_dep_trms) )  deallocate(num_dep_trms)
+      if(allocated(dep_trms) )      deallocate(dep_trms)
 c
-      if ( allocated(eqn_tmp) ) deallocate(eqn_tmp)
-      if ( allocated(dep_ptr) ) deallocate(dep_ptr)
-      if ( allocated(abs_dep_ptr) ) deallocate(abs_dep_ptr)
-      if ( allocated(tmp_trms) ) deallocate(tmp_trms)
+      if( allocated(eqn_tmp) ) deallocate(eqn_tmp)
+      if( allocated(dep_ptr) ) deallocate(dep_ptr)
+      if( allocated(abs_dep_ptr) ) deallocate(abs_dep_ptr)
+      if( allocated(tmp_trms) ) deallocate(tmp_trms)
 c
 c        number of equations could be changing in
 c        model. discard data vectors from ptrs then
@@ -316,6 +345,8 @@ c
            end if
       end if
 c
+      if( local_debug ) write(*,*) '   @ 2. neqns: ', neqns
+c
       dep_trms_len = neqns
       allocate( eqn_row(neqns),
      &          eqn_tmp(neqns),
@@ -338,8 +369,8 @@ c        note that the 'eqn_row' structure stores the entire equation
 c        (row, diag, col) for a dep dof but stores only the row section
 c        of every other eqn
 c
-      new_ptrs = 0
-      dep_ptr  = 0
+      new_ptrs = 0  ! vector
+      dep_ptr  = 0  ! vector
       do eqn = 1, neqns
          jsize = max(10,k_ptrs(eqn))
          eqn_row(eqn)%length = jsize
@@ -355,6 +386,7 @@ c
       max_len = 0
       tmp_idx = 1
       dep_idx = 1
+c      
       nxt_row: do row = 1, max_dep
             len = k_ptrs(row)
             eqn_tmp(1:len) = k_indexes(tmp_idx:tmp_idx+len-1)
@@ -390,11 +422,10 @@ c
                end if
             end do
             dlen = dep_ptr(row)
-            row_ptr => eqn_row(row)%loc_list
-            call mpc_heapsort(dlen, row_ptr(1))
+            call mpc_heapsort(dlen, eqn_row(row)%loc_list(1) )
             if (dlen .gt. max_len)  max_len = dlen
             do dptr = 1, dlen
-               eqn = row_ptr(dptr)
+               eqn = eqn_row(row)%loc_list(dptr)
                if (eqn .eq. row)  dep_ptr(row) = dptr
                do trm = 1, tmp_ptr
                   ind = tmp_trms(trm)
@@ -414,12 +445,10 @@ c
             fin = dep_idx + dlen - 1
             if (fin .gt. dep_trms_len)  call mpc_resize_vector(4)
 c
-c              store dep eqn in f77 form, deallocate structure
+c              store dep eqn in simpler form, deallocate structure
 c
-            dep_trms(dep_idx:fin) = row_ptr(1:dlen)
-            nullify(row_ptr)
+            dep_trms(dep_idx:fin) = eqn_row(row)%loc_list(1:dlen)
             deallocate(eqn_row(row)%loc_list)
-            nullify(eqn_row(row)%loc_list)
             num_dep_trms(row) = dlen
             abs_dep_ptr(row) = dep_idx
             dep_idx = dep_idx + dlen
@@ -437,9 +466,46 @@ c
 c        deallocate temp space
 c
       deallocate(tmp_trms,eqn_tmp)
-c
+
+      if( local_debug ) then
+        write(*,*) " .... updated data ...."
+        write(*,*) " "
+        write(*,*) "  max_len, tmp_idx, dep_idx: ", max_len, tmp_idx,
+     &                   dep_idx
+        write(*,*) "       ... eqn_row data structure..."
+        do eqn = 1, neqns
+         jsize = eqn_row(eqn)%length 
+         write(*,9020) eqn, jsize
+         if( associated( eqn_row(eqn)%loc_list) ) then
+            write(*,9025) eqn_row(eqn)%loc_list(1:jsize)
+         else
+            write(*,*) '       already deleted'
+         end if
+        end do
+
+        write(*,*) "       ... dep_ptr ..."
+        write(*,9005) ( i, dep_ptr(i), i = 1, neqns)
+        write(*,*) " "
+        write(*,*) "       ... new_ptrs ..."
+        write(*,9005) ( i, new_ptrs(i), i = 1, neqns)
+        write(*,*) " "
+        write(*,*) "       ... num_dep_trms ..."
+        write(*,9005) ( i, num_dep_trms(i), i = 1,neqns)
+        write(*,*) " "
+        write(*,*) "       ... abs_dep_ptr..."
+        write(*,9005) ( i, abs_dep_ptr(i), i = 1, neqns)
+        write(*,*) " "
+        write(*,*) "       ... dep_trms..."
+        write(*,9005 ) ( i, dep_trms(i), i = 1, dep_trms_len)
+      end if
+      
       return
 c
+ 9000 format(/,2x,'   .... entered  mpc_find_dep_terms ....',//)
+ 9005 format(2x,8i10)  
+ 9010 format(2x,8(i5,d14.6))    
+ 9020 format(10x,'eqn #, size: ',2i8)
+ 9025 format(15x,10i6)
       end
 c
 c
@@ -452,43 +518,41 @@ c     *                   found in 'find_dep_eqns'                   *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 7/30/2016 rhd             *
+c     *                    last modified : 11/11/2016 rhd            *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_store_term(eqn, index)
+      subroutine  mpc_store_term( eqn, index )
 c
       use mod_mpc, only :  eqn_row, dep_check, dep_ptr
       use stiffness_data, only : new_ptrs
-      implicit integer (a-z)
-      integer, dimension(:), pointer :: row_ptr
+      implicit none
+c
+      integer :: eqn, index, mpc, ptr, len      
 c
 c        increment counter, check current size of structure
 c
       mpc = dep_check(eqn)
-      if (mpc .gt. 0) then
+      if( mpc .gt. 0 ) then
          ptr = dep_ptr(eqn) + 1
       else
          ptr = new_ptrs(eqn) + 1
       end if
       len = eqn_row(eqn)%length
-      if (mpc .gt. 0) then
+      if( mpc .gt. 0 ) then
          dep_ptr(eqn) = ptr
       else
          new_ptrs(eqn) = ptr
       end if
 c
-c        if structure too small, call resizer routine
+c        if structure too small, call resizer routine. also
+c        updates stored length
 c
-      if (ptr .gt. len) then
-         call mpc_resize_eqn_row(eqn, len)
-         eqn_row(eqn)%length = len
-      end if
+      if( ptr .gt. len ) call mpc_resize_eqn_row( eqn, len )
 c
 c        add new term to eqn
 c
-      row_ptr => eqn_row(eqn)%loc_list
-      row_ptr(ptr) = index
+      eqn_row(eqn)%loc_list(ptr) = index
 c
       return
 c
@@ -501,23 +565,26 @@ c     *           increases the size of eqn_row(eqn)%loc_list        *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 7/30/2016 rhd             *
+c     *                    last modified : 11/11/2016 rhd            *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_resize_eqn_row(eqn, len)
+      subroutine  mpc_resize_eqn_row( eqn, old_len )
 c
       use mod_mpc, only : eqn_row
-      implicit integer (a-z)
+      implicit none
+
+      integer :: eqn, old_len, new_len
+
+      integer :: err, dumi
       integer, allocatable, dimension (:) :: temp_loc
-      integer, dimension(:), pointer :: row_ptr
       real  dumr
       double precision  dumd
       character*1  dums
 c
 c        allocate temp space
 c
-      allocate(temp_loc(len), stat=err)
+      allocate( temp_loc(old_len), stat=err )
       if (err .ne. 0) then
          call errmsg2(48,dumi,dums,dumr,dumd)
          call die_abort
@@ -525,28 +592,27 @@ c
 c
 c        copy data to temp space, deallocate, double size, reallocate
 c
-      row_ptr => eqn_row(eqn)%loc_list
-      temp_loc(1:len) = row_ptr(1:len)
-      nullify(row_ptr)
-      deallocate(eqn_row(eqn)%loc_list)
-      nullify(eqn_row(eqn)%loc_list)
-      len = len*2
-      allocate (eqn_row(eqn)%loc_list(len), stat=err)
-      if (err .ne. 0) then
+      temp_loc(1:old_len) = eqn_row(eqn)%loc_list(1:old_len)
+      deallocate( eqn_row(eqn)%loc_list )
+      nullify( eqn_row(eqn)%loc_list )
+      new_len = old_len*2
+      allocate( eqn_row(eqn)%loc_list(new_len), stat=err )
+      if( err .ne. 0 ) then
          call errmsg2(48,dumi,dums,dumr,dumd)
          call die_abort
       end if
 c
-c        copy data back into structure, deallocate temp space
+c        copy data back into structure, deallocate temp space. no need
+c        to zero end of new space.
 c
-      eqn_row(eqn)%loc_list(1:len/2) = temp_loc(1:len/2)
+      eqn_row(eqn)%loc_list(1:old_len) = temp_loc(1:old_len)
+      eqn_row(eqn)%length = new_len
 c
       deallocate(temp_loc)
 c
       return
 c
       end
-c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -630,7 +696,7 @@ c     * edit: zero end of new k_coeffs so no uninitializeds          *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_copy_new_terms(neqns, k_ptrs, abs_ptr)
+      subroutine  mpc_copy_new_terms( neqns, k_ptrs, abs_ptr )
 c
       use mod_mpc, only : eqn_row, dep_check, dep_ptr, abs_dep_ptr,
      &                    num_dep_trms, dep_trms
@@ -640,18 +706,24 @@ c
      &                           cof_temp, big_ncoeff, 
      &                           new_len, new_loc, new_ind
       implicit integer (a-z)
-      integer, allocatable, dimension(:) :: eqn_tmp, old_ind
-      integer, dimension(:), pointer :: row_ptr
+c
+      integer :: k_ptrs(*), abs_ptr(*)
+c
+      logical, parameter :: local_debug = .false.
+      integer, intrinsic :: size
+@      integer, allocatable, dimension(:) :: eqn_tmp, old_ind
       real  dumr
       double precision  dumd
 #dbl      double precision,
 #sgl      real,
      &          allocatable, dimension(:) :: old_cof
       character*1  dums
-      dimension  k_ptrs(*), abs_ptr(*)
+@!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32    
 c
 c        allocate temp storage space, copy old data to temp space
 c
+      if( local_debug ) write(*,*) ' ... entered mpc_copy_new_terms '
+c      
       eqn_len = max(100,neqns/10)
       new_len = max(300,neqns*2)
       allocate ( eqn_tmp(eqn_len),
@@ -667,8 +739,17 @@ c
          call die_abort
       end if
       temp_len = ncoeff + neqns
-      old_ind = k_indexes
-      old_cof = k_coeffs
+c 
+      if( local_debug ) then  ! some sanity cehcks 
+        write(*,*) '     neqns, ncoeff: ',neqns, ncoeff
+        write(*,*) '     eqn_len, new_len, temp_len: ',eqn_len, new_len,
+     &                     temp_len
+        write(*,*) '     size k_indexes: ', size(k_indexes)
+        write(*,*) '     size k_coeffs:  ', size(k_coeffs)
+      end if   
+c
+      old_ind = k_indexes ! vector
+      old_cof = k_coeffs  ! vector
       call mpc_chk_nan( 15 )
 c
 c        initialize counters and structures, move data now in 'eqn_row'
@@ -682,9 +763,10 @@ c
       ptr_idx  = 1
       cof_idx  = 1
       new_idx  = 0
-      ind_temp = 0
-      cof_temp = 0.0d00
+      ind_temp = 0       ! vector
+      cof_temp = 0.0d00  ! vector
       abs_ptr(1) = 1
+c      
       do eqn = 1, neqns
          if (dep_check(eqn) .gt. 0) then
             dlen = num_dep_trms(eqn)
@@ -718,10 +800,8 @@ c
                end if
                eqn_len = len
             end if
-            row_ptr => eqn_row(eqn)%loc_list
-            eqn_tmp(1:beg-1) = row_ptr(1:beg-1)
-            nullify(row_ptr)
-            deallocate(eqn_row(eqn)%loc_list)
+            eqn_tmp(1:beg-1) = eqn_row(eqn)%loc_list(1:beg-1)
+            deallocate( eqn_row(eqn)%loc_list )
             nullify(eqn_row(eqn)%loc_list)
             eqn_tmp(beg:len) = old_ind(old_idx:old_idx+num-1)
             call mpc_heapsort(len, eqn_tmp)
@@ -773,9 +853,33 @@ c
          call errmsg2(48,dumi,dums,dumr,dumd)
          call die_abort
       end if
+c
+      if( local_debug ) then  ! some sanity checks
+        write(*,*) '     neqns, ncoeff: ',neqns, ncoeff
+        write(*,*) '     eqn_len, new_len, temp_len: ',eqn_len, new_len,
+     &                     temp_len
+        write(*,*) '     size k_indexes: ', size(k_indexes)
+        write(*,*) '     size k_coeffs:  ', size(k_coeffs)
+      end if   
+c
       k_indexes(1:ncoeff) = ind_temp(1:ncoeff)
+      k_indexes(ncoeff) = neqns      ! critical. was long standing bug
+c      
+      if( local_debug ) then
+         write(*,*) '    ..... new k_indexes from ind_temp .....'
+         write(*,9000) (i,k_indexes(i), i = 1, ncoeff)
+      end if
+c      
+      do i = 1, ncoeff ! check for critical error
+         if( k_indexes(i) .eq. 0 ) then
+             write(*,9010) i
+             call die_abort
+         end if
+      end do
+c
       k_coeffs(1:ncoeff)  = cof_temp(1:ncoeff)
       k_coeffs(ncoeff+1:) = 0.0d00
+c      
       newcount = new_idx
       if (allocated(new_locations))  deallocate(new_locations)
       if (allocated(new_indexes))    deallocate(new_indexes)
@@ -789,11 +893,16 @@ c
       new_locations(1:newcount) = new_loc(1:newcount)
       new_indexes(1:newcount)   = new_ind(1:newcount)
 c
-      deallocate (eqn_tmp,old_ind,old_cof,new_loc,new_ind,ind_temp,
-     &            cof_temp)
+      deallocate( eqn_tmp, old_ind, old_cof, new_loc, new_ind, 
+     &            ind_temp, cof_temp )
 c
       return
 c
+ 9000 format(2x,8i8)
+ 9010 format('>> FATAL ERROR: routine mpc_copy_new_terms',
+     & /,     '                zero entry in k_indexes @ ',i8,
+     & /,     '                job terminated....')
+c 
       end
 c
 c
@@ -803,60 +912,76 @@ c     *              increases the size of temp [K] vectors          *
 c     *                                                              *
 c     *                       written by  : bjb                      *
 c     *                                                              *
-c     *                    last modified : 07/30/2016 rhd            *
+c     *                    last modified : 11/12/2016 rhd            *
 c     *                                                              *
 c     * edit: zero to end of new cof_temp to prevent uninitializeds  *          
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_resize_tempk(neqns, eqn, len)
+      subroutine  mpc_resize_tempk( neqns, eqn, len )
 c
       use stiffness_data, only : ind_temp, cof_temp, temp_len
-      implicit integer (a-z)
+      implicit none
+
+      integer :: neqns, eqn, len
+
+      integer :: add, err, dumi, old_len
       integer, allocatable, dimension (:) :: itmp
-      real  dumr
-      double precision  dumd
+      real  :: dumr
+      double precision ::  dumd
 #dbl      double precision,
 #sgl      real,
      &          allocatable, dimension (:) :: dtmp
-      character*1  dums
+      character*1 :: dums
+      logical, parameter :: local_debug = .false.
 c
 c        this routine is used to resize
 c
 c        get length of indicated vector, allocate temp space
 c
-      allocate (itmp(temp_len), 
+      allocate( itmp(temp_len), 
      &          dtmp(temp_len),
-     &          stat=err)
-      if (err .ne. 0) then
-         call errmsg2(48,dumi,dums,dumr,dumd)
+     &          stat=err )
+      if( err .ne. 0 ) then
+         call errmsg2( 48,dumi,dums,dumr,dumd )
          call die_abort
       end if
 c
 c        copy data from indicated vector, deallocate vector
 c
-      itmp = ind_temp
-      dtmp = cof_temp
-      deallocate(ind_temp,cof_temp)
+      if( local_debug ) then   ! sanity checks on sizes
+        write(*,*) '   .... mpc_resize_tempk ....'
+        write(*,*) ' '
+        write(*,*) '     neqns, eqn, len, temp_len: ',
+     &                   neqns, eqn, len, temp_len
+        write(*,*) '     size ind_temp: ', size(ind_temp)
+        write(*,*) '     size cof_temp: ', size(cof_temp)
+      end if
+c      
+      itmp = ind_temp  ! vector
+      dtmp = cof_temp  ! vector
+      deallocate( ind_temp, cof_temp )
 c
 c        increase size of vector, reallocate vector
 c
       add = (neqns-eqn)*len/2
+      old_len = temp_len
       temp_len = temp_len + add
-      allocate (ind_temp(temp_len+1), 
+      allocate( ind_temp(temp_len+1), ! not sure why Barron has +1
      &          cof_temp(temp_len+1),
-     &          stat=err)
-      if (err .ne. 0) then
-         call errmsg2(48,dumi,dums,dumr,dumd)
+     &          stat=err )
+      if( err .ne. 0 ) then
+         call errmsg2( 48,dumi,dums,dumr,dumd )
          call die_abort
       end if
 c
 c        copy data from temp space, deallocate temp space
 c
-      ind_temp(1:temp_len-add) = itmp(1:temp_len-add)
-      cof_temp(1:temp_len-add) = dtmp(1:temp_len-add)
-      cof_temp(temp_len-add+1:) = 0.0d00
-      deallocate (itmp,dtmp)
+      ind_temp(1:old_len) = itmp(1:old_len)
+      cof_temp(1:old_len) = dtmp(1:old_len)
+      cof_temp(old_len+1:) = 0.0d00 
+c      
+      deallocate( itmp, dtmp )
 c
       return
 c
@@ -936,6 +1061,7 @@ c
       ind_idx = 0
       dia_idx = 0
       ind_ptr = 1
+c      
       do mpc = 1, nmpc
 c
 c           find all the dep term locations for current mpc
@@ -1177,7 +1303,7 @@ c     *                    last modified : 11/06/03                  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  mpc_modify_stiffness(neqns, k_diag, p_vec)
+      subroutine  mpc_modify_stiffness( neqns, k_diag, p_vec )
 c
       use mod_mpc, only : nmpc, dep_dof, ind_dof, num_terms, multi_list,
      &                    dep_rhs, num_dep_trms
@@ -1209,6 +1335,7 @@ c
       dia_ptr = 1
       dep_loc_idx = 1
       ind_loc_idx = 1 
+c      
       do mpc = 1, nmpc
          dep = dep_dof(mpc)
          if (dep .eq. 0)  cycle
@@ -1287,6 +1414,7 @@ c
       character*1  dums
       logical  last_good
       dimension  k_ptrs(*), dstmap(*), dof_eqn_map(*)
+@!DIR$ ASSUME_ALIGNED k_ptrs:32, dstmap:32, dof_eqn_map:32     
 c
 c        allocate temp storage space, copy data into temp space
 c
