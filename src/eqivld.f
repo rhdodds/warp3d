@@ -4,7 +4,7 @@ c     *                      subroutine eqivld                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 10/31/2013 rhd             *
+c     *                   last modified : 11/17/2016 rhd             *
 c     *                                                              *
 c     *     compute the applied total load vector at end of current  *
 c     *     step based on user specified definition of the load step.*
@@ -29,54 +29,68 @@ c
      &                      load_pattern_factors, elem_eq_loads,
      &                      eq_node_force_indexes, eq_node_forces,
      &                      node_load_defs, crdmap, cnstrn_in,
-     &                      temper_nodes_ref
+     &                      temper_nodes_ref, total_user_nodal_forces 
 c
       implicit integer (a-z)
 $add common.main
 c
 c
-c          step       - load step number for which loads are required
-c          lodnum     - loading number for the nonlinear loading
-c                       condition (loading patterns and nonlinear
-c                       loading definitions are stored together)\
-c          numlod     - total number of loading patterns and nonlinear
-c                       loading conditions defined by user
-c          mf_tot
-c          mf_nm1_tot         multipliers and flags used for displaement
-c          mf_ratio_change    extrapolation and adaptive sub-stepping
-c                             if req'd
-c          rload      - total of all user specified nodal forces and
-c                       equivalent nodal forces from specified tractions-
-c                       pressures. values here are based on accumulated
-c                       multipliers of step loading patterns (as adjusted
-c                       by global load reductions during damage-crack
-c                       growth) + the user specified patterns-multipliers
-c                       for this step.
-c          rload_nm1  - rload at start of this load step.
-c          load_pattern_factors - col. 2 stores user specified pattern
-c                       multipliers for this step. col. 1 stores accumulated
-c                       pattern multipliers prior to this step (as adjusted
-c                       by any global loading reductions)
+c      step       - load step number for which loads are required
+c      lodnum     - loading number for the nonlinear loading
+c                   condition (loading patterns and nonlinear
+c                   loading definitions are stored together)\
+c      numlod     - total number of loading patterns and nonlinear
+c                   loading conditions defined by user
+c      mf_tot
+c      mf_nm1_tot         multipliers and flags used for displaement
+c      mf_ratio_change    extrapolation and adaptive sub-stepping
+c                         if req'd
+c      rload      - total of all user specified nodal forces and
+c                   equivalent nodal forces from specified tractions-
+c                   pressures. values here are based on accumulated
+c                   multipliers of step loading patterns (as adjusted
+c                   by global load reductions during damage-crack
+c                   growth) + the user specified patterns-multipliers
+c                   for this step.
+c      rload_nm1  - rload at start of this load step.
+c      load_pattern_factors - col. 2 stores user specified pattern
+c                   multipliers for this step. col. 1 stores accumulated
+c                   pattern multipliers prior to this step (as adjusted
+c                   by any global loading reductions)
 c
-#dbl      double precision
-#sgl      real
-     &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio, zero,
+c      total_user_nodal_forces - exists only if there are loading
+c                   patterns that reference the user_routine. contains
+c                   the accumulated increments of nodal forces supplied
+c                   by the user_routine thru step n. Updated here to 
+c                   n+1. More than 1 load pattern can employ the
+c                   user_routine. The total_user_nodal_forces are 
+c                   saved across restarts. user_routines may
+c                   provide any spatial or temporal varition of
+c                   incremental (nodal) forces and nodal temperatures.
+c
+#dbl      double precision ::
+#sgl      real ::
+     &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio, 
      &  step_factor, total_factor, dummy
-      logical debug, mf_ratio_change, user_mf_ratio_change
-      character * 80  user_file_name 
-      data zero / 0.0d00 /
-      data debug / .false. /
+      logical :: mf_ratio_change, user_mf_ratio_change
+      character(len=80) :: user_file_name 
+      double precision, parameter :: zero = 0.0d00
+      logical, parameter :: debug = .false.
 c
 c        1) initialization:
 c
       dtemp_nodes(1:nonode) = zero
       dtemp_elems(1:noelem) = zero
       temperatures          = .false.
-      rload(1:nodof)        = zero
       load_pattern_factors(1:mxlc,2) = zero
+c      
+      if( allocated( total_user_nodal_forces ) ) then
+       rload(1:nodof) = total_user_nodal_forces(1:nodof)
+      else
+       rload(1:nodof)= zero
+      end if
+c
       call mem_allocate( 21 )
-c
-c
 c
 c        2) resolve the various multiplication factors and logical flag
 c           used to support possible displacement extrapolation and
@@ -96,9 +110,7 @@ c        3) loop over all loading conditions (patterns). if that pattern
 c           contributes to the incremental load for this step,
 c           set the step increment factor for the pattern.
 c
-      do i = 1, mxlc
-         load_pattern_factors(i,2) = zero
-      end do
+      load_pattern_factors(1:mxlc,2) = zero
 c
       do ldcond = 1, numlod
          call get_step_factor( ldcond, step, mf )
@@ -109,9 +121,9 @@ c
       end do
 c
       if ( debug ) then
-        write(*,*) '.. updated pattern factors. incr and total...'
+        write(out,*) '.. updated pattern factors. incr and total...'
         do ldcond = 1, numlod
-          write(*,*) '  ',lodnam(ldcond),'  ',
+          write(out,*) '  ',lodnam(ldcond),'  ',
      &                    load_pattern_factors(ldcond,2),
      &                    load_pattern_factors(ldcond,1)
         end do
@@ -132,6 +144,13 @@ c           nodal loads (dload) for the step reflect an approximate
 c           treatement of deformation dependent imposed element
 c           tractions-pressures.
 c
+c           for user_routine we keep an accumulation of incremental
+c           nodal forces from the user routine to include in rload.
+c           by keeping the acummulation vector (and across restarts),
+c           the user_routine can truly have varying incremental forces
+c           over time, temperature, etc.
+c
+c      
       do ldcond = 1, numlod
          how_defined = node_load_defs(ldcond)%how_defined
          step_factor  = load_pattern_factors(ldcond,2)
@@ -147,17 +166,21 @@ c
      &         call nodal_incr_temps( step_factor, ldcond,
      &                                temperatures, debug )
          case ( 1 ) ! user subroutine
+            if( .not. allocated( total_user_nodal_forces ) ) then
+              allocate( total_user_nodal_forces(nodof) )   
+              total_user_nodal_forces(1:nodof) = zero
+            end if      
             user_mf_ratio_change = .false.
             user_file_name = node_load_defs(ldcond)%user_file_name
-            call eqivld_drive_user_nodal( step, total_factor,
+            call eqivld_drive_user_nodal( step, 
      &            step_factor, ldcond, temper_nodes_ref,
-     &            rload, dtemp_nodes,
+     &            total_user_nodal_forces, rload, dtemp_nodes,
      &            crdmap, user_mf_ratio_change, user_file_name,
      &            debug  )
             if( user_mf_ratio_change ) mf_ratio_change = .true.
          case default
-            write(iout,*) '>>> invalid material model number'
-            write(iout,*) '    in rstgp1'
+            write(iout,*) '>>> invalid loading condition type'
+            write(iout,*) '    in routine eqivld'
             call die_abort
          end select
       end do
@@ -193,6 +216,7 @@ c
       if ( debug ) write(*,*) '<<<< leaving eqivld.f'
 c
       return
+c
       end
 c     ****************************************************************
 c     *                                                              *
@@ -200,42 +224,42 @@ c     *                subroutine eqivld_drive_user_nodal            *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                 last modified : 10/31/2013                   *
+c     *                 last modified : 11/19/2016 rhd               *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine eqivld_drive_user_nodal(
-     &  step, force_factor, temps_factor, ldcond, initial_temps,
-     &  warp_incr_loads, warp_incr_temperatures, crdmap,
+     &  step, step_factor, ldcond, initial_temps,
+     &  tunf, rload, warp_incr_temperatures, crdmap,
      &  user_mf_ratio_change, user_file_name, debug )
-      implicit integer (a-z)
+      implicit none
 $add common.main
 c
-#dbl      double precision
-#sgl      real
-     &  force_factor, temps_factor, warp_incr_loads(*),
+c         parameters
+c
+      integer :: step, ldcond, crdmap(*)
+      logical :: debug, user_mf_ratio_change
+#dbl      double precision ::
+#sgl      real ::
+     &  step_factor, tunf(nodof), rload(nodof),
      &  warp_incr_temperatures(*), initial_temps(*)
-      dimension crdmap(*)
-      logical debug, user_mf_ratio_change
-      character user_file_name*80
+      character(len=80) :: user_file_name
 c
 c        local variables
 c
-      character * 8  load_name
-      logical forces_set, temps_set
-#dbl      double precision
-#sgl      real
-     & zero, ff, time_n, dtime
-
+      integer :: num_model_nodes, step_np1, kout, node, dloc, i
+      character(len=8) :: load_name
+      logical :: forces_set, temps_set, process
+#dbl      double precision ::
+#sgl      real ::
+     & time_n, dtime, f1, f2, f3
+      double precision, parameter :: zero = 0.0d0
+c
 #dbl      double precision,
 #sgl      real,
      &       dimension(:,:), allocatable :: incr_values,
      &                                      node_coords
-c
-      data zero
-#dbl     & / 0.0d00 /
-#sgl     & / 0.0 /
 c
 c        set local copies of key variables just in case the user rouitne
 c        decides to change them
@@ -249,6 +273,8 @@ c
       kout = out
       forces_set = .false.
       temps_set  = .false.
+      process = step_factor .ne. zero
+      if( .not. process ) return
 c
 c        local work tables for user routine to store load values
 c        in flat data structures. build flat structure for nodal
@@ -266,12 +292,14 @@ c
       end do
 c
       if( debug ) then
-         write(out,9010) nonode, step, time_n, dt
+         write(out,9010) nonode, step, time_n, dt, step_factor
          write(out,*) '... load_name: ', load_name
       end if
 c
 c        invoke user routine. it sets two logical flags
-c        about what it did.
+c        about what it did. returns nodal forces and temperatures
+c        interpreted here as patttern values to be scaled by user factor
+c        in nonlinear step definition
 c
       call user_nodal_loads(
      &  load_name, user_file_name, incr_values, initial_temps,
@@ -282,24 +310,33 @@ c
       if( debug ) write(out,*) '... forces_set, temps_set',
      &                        forces_set, temps_set
 c
+c        tunf -> total_user_nodal_forces (shorthand). rload was
+c        preloaded with tunf at step n before call. include
+c        incremental forces from user routine in both. 
+c
+c        this scheme allows user routine to provide non-proportional
+c        loads across load(time) steps.
+c
       if( forces_set ) then
-        ff = force_factor
-        do node = 1, nonode
+       do node = 1, nonode
           dloc = dstmap(node)
-          warp_incr_loads(dloc+0) = warp_incr_loads(dloc+0) +
-     &                              incr_values(node,1) * ff
-          warp_incr_loads(dloc+1) = warp_incr_loads(dloc+1) +
-     &                              incr_values(node,2) * ff
-          warp_incr_loads(dloc+2) = warp_incr_loads(dloc+2) +
-     &                              incr_values(node,3) * ff
-        end do
+          f1 = incr_values(node,1) * step_factor
+          f2 = incr_values(node,2) * step_factor
+          f3 = incr_values(node,3) * step_factor
+          tunf(dloc+0)  = tunf(dloc+0) + f1
+          tunf(dloc+1)  = tunf(dloc+1) + f2
+          tunf(dloc+2)  = tunf(dloc+2) + f3
+          rload(dloc+0) = rload(dloc+0) + f1
+          rload(dloc+1) = rload(dloc+1) + f2
+          rload(dloc+2) = rload(dloc+2) + f3
+       end do
       end if
 c
       if( temps_set ) then
         temperatures = .true.  ! common.main
         do node = 1, nonode
           warp_incr_temperatures(node) = warp_incr_temperatures(node) +
-     &                              incr_values(node,4) * temps_factor
+     &                              incr_values(node,4) * step_factor
         end do
       end if
 c
@@ -309,7 +346,8 @@ c
 c
       return
 c
- 9010 format(' ... nonode, step, time_n, dt: ',i10,i6,2e14.6)
+ 9010 format(' ... nonode, step, time_n, dt, step_factor: ',i10,i6,
+     & 3e14.6)
 c
       end
 

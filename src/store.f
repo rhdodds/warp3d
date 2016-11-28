@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/23/2016 rhd              *
+c     *                   last modified : 11/17/2016 rhd             *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -268,6 +268,12 @@ c
       call wrtbk( fileno, dload, prec_fact*nodof )
       call wrtbk( fileno, rload, prec_fact*nodof )
       call wrtbk( fileno, rload_nm1, prec_fact*nodof )
+      if( allocated( total_user_nodal_forces ) ) then
+         write(fileno) .true.
+         call wrtbk( fileno, total_user_nodal_forces, prec_fact*nodof )
+      else
+         write(fileno) .false.
+      end if   
       call wrt2d( fileno, load_pattern_factors, mxlc*prec_fact,
      &            numlod*prec_fact, 2 )
       call wrtbk( fileno, cnstrn_in, prec_fact*nodof )

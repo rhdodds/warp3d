@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 9/23/2018  rhd             *
+c     *                   last modified : 11/18/2016 rhd             *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -41,7 +41,7 @@ c
       character *(*) resfil
       logical numel, numnod, fatal, coor, elprop, elinc, constr,
      &        block, flexst, sbflg1, sbflg2, scanms, nameok,
-     &        read_nod_load, msg_flag, read_table
+     &        read_nod_load, msg_flag, read_table, exist_flag
       real dumr, restart_time, wcputime
       external wcputime
 #dbl      double precision
@@ -258,6 +258,11 @@ c
       call rdbk( fileno, dload, prec_fact*nodof )
       call rdbk( fileno, rload, prec_fact*nodof )
       call rdbk( fileno, rload_nm1, prec_fact*nodof )
+      read(fileno) exist_flag ! for total_user_nodal_forces
+      if( exist_flag ) then
+        allocate( total_user_nodal_forces(nodof) )
+        call rdbk( fileno, total_user_nodal_forces, prec_fact*nodof )
+      end if
       call rd2d( fileno, load_pattern_factors, mxlc*prec_fact,
      &           numlod*prec_fact, 2 )
       call mem_allocate( 15 )

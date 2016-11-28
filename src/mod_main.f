@@ -155,7 +155,8 @@ c
 c
 #dbl      double precision,
 #sgl      real,
-     &      save, allocatable, dimension(:) :: rload, dload, rload_nm1
+     &      save, allocatable, dimension(:) :: rload, dload, rload_nm1,
+     &                                         total_user_nodal_forces
 #dbl      double precision,
 #sgl      real,
      &      save, allocatable, dimension(:,:) :: load_pattern_factors
