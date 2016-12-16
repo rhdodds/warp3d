@@ -39,7 +39,7 @@ c
 c
       data zero, one / 0.0d00, 1.0d00 /
 c
-@!DIR$ ASSUME_ALIGNED qnhalf:64, qn1:64        
+c!DIR$ ASSUME_ALIGNED qnhalf:64, qn1:64        
 c
       span  = local_work%span
       felem = local_work%felem
@@ -191,7 +191,7 @@ c
      &  zero, one
 c
         data zero, one / 0.0d00, 1.0d00 /
-@!DIR$ ASSUME_ALIGNED fn:64, dfn:64
+c!DIR$ ASSUME_ALIGNED fn:64, dfn:64
 c
 c                       set [F @ 0] to identity. set determinant
 c                       to 1.0 (no deformation). routine will
@@ -241,8 +241,8 @@ c
 #sgl      real
      &   factor, third, j_bar
       data third / 0.3333333333333333333333d00 /
-@!DIR$ ASSUME_ALIGNED deformed_elem_vols:64, undeformed_elem_vols:64
-@!DIR$ ASSUME_ALIGNED f:64, det_f:64
+c!DIR$ ASSUME_ALIGNED deformed_elem_vols:64, undeformed_elem_vols:64
+c!DIR$ ASSUME_ALIGNED f:64, det_f:64
 c
 c                      bar [F] = [F] * (bar J/J)**0.333 where
 c                      J = det [F], bar J is volume of deformed
@@ -311,9 +311,9 @@ c
      &           ldum1, ldum2, ldum3, ldum4, ldum5, ldum6
       data zero, zero_check, one, half, local_debug
      &    / 0.0d0,    1.0d-20, 1.0d0,  0.5d0, .false. /
-@!DIR$ ASSUME_ALIGNED jac:64, dj:64, gama:64, nxi:64,neta:64
-@!DIR$ ASSUME_ALIGNED nzeta:64, ce:64, j1:64, j2:64, j3:64, lambda:64
-@!DIR$ ASSUME_ALIGNED ce_rotated:64
+c!DIR$ ASSUME_ALIGNED jac:64, dj:64, gama:64, nxi:64,neta:64
+c!DIR$ ASSUME_ALIGNED nzeta:64, ce:64, j1:64, j2:64, j3:64, lambda:64
+c!DIR$ ASSUME_ALIGNED ce_rotated:64
 c
 c           set flag for 2-D, 3-D, cohesive element.
 c
@@ -508,8 +508,8 @@ c
 #sgl      real
      &     thtemp(mxvl,mxndel,ndim), zero
       data zero / 0.0d00 /
-@!DIR$ ASSUME_ALIGNED theta:64, nxi:64, neta:64, nzeta:64, gama:64
-@!DIR$ ASSUME_ALIGNED ue:64, thtemp:64
+c!DIR$ ASSUME_ALIGNED theta:64, nxi:64, neta:64, nzeta:64, gama:64
+c!DIR$ ASSUME_ALIGNED ue:64, thtemp:64
 c
 c           initialize theta
 c
@@ -590,7 +590,7 @@ c
      &   f1(mxvl), f2(mxvl), f3(mxvl), zero_check, one
 c
       data zero_check, one /1.0d-20, 1.0d00/
-@!DIR$ ASSUME_ALIGNED f:64, theta:64, df:64, f1:64, f2:64, f3:64
+c!DIR$ ASSUME_ALIGNED f:64, theta:64, df:64, f1:64, f2:64, f3:64
 c
 c                       compute the deformation gradient matrix
 c                       and its determinate.
@@ -665,7 +665,7 @@ $add param_def
 #dbl      double precision
 #sgl      real
      &     f(mxvl,ndim,*),r(mxvl,ndim,*),ui(mxvl,nstr)
-@!DIR$ ASSUME_ALIGNED r:64, f:64,ui:64
+c!DIR$ ASSUME_ALIGNED r:64, f:64,ui:64
 c
 c                       compute the inverse of the right
 c                       stretch tensor.
@@ -725,7 +725,7 @@ c
 #sgl      real
      & two, rbar(mxvl,3,3)
       data two / 2.0d00 /
-@!DIR$ ASSUME_ALIGNED q:64, r:64, rbar:64
+c!DIR$ ASSUME_ALIGNED q:64, r:64, rbar:64
 c
 c           compute q. branch on quantity & direction of rotation.
 c
@@ -955,8 +955,8 @@ c
      &   c2(mxvl),d2(mxvl), one, two
 c
       data one, two / 1.0d00, 2.0d00 /
-@!DIR$ ASSUME_ALIGNED f:64, ui:64, c:64, cc:64, iu:64, iiu:64, iiiu:64
-@!DIR$ ASSUME_ALIGNED a2:64, b2:64, c2:64, d2:64
+c!DIR$ ASSUME_ALIGNED f:64, ui:64, c:64, cc:64, iu:64, iiu:64, iiiu:64
+c!DIR$ ASSUME_ALIGNED a2:64, b2:64, c2:64, d2:64
 c
 c                       ui is in symmetric upper triangular form.
 c
@@ -1026,8 +1026,8 @@ c
       logical, parameter :: new = .true.
 #dbl      double precision :: ct(mxvl,nstr), ev(mxvl,ndim)
 #sgl      real :: ct(mxvl,nstr), ev(mxvl,ndim)
-@!DIR$ ASSUME_ALIGNED f:64, c:64, cc:64, iu:64, iiu:64, iiiu:64
-@!DIR$ ASSUME_ALIGNED ct:64, ev:64
+c!DIR$ ASSUME_ALIGNED f:64, c:64, cc:64, iu:64, iiu:64, iiiu:64
+c!DIR$ ASSUME_ALIGNED ct:64, ev:64
 c
 c              c and cc are in symmetric upper triangular form.
 c              compute the metric tensor.
@@ -1141,7 +1141,7 @@ c
       data quarter, sixpt75, oneroot3
      &     / 0.25d0, 6.75d0, 0.5773502691896258d0 /
 c      
-@!DIR$ ASSUME_ALIGNED c:64, lamda:64
+c!DIR$ ASSUME_ALIGNED c:64, lamda:64
 c
 c              calculates the eigenvalues of a symmetric 3x3 matrix 
 c              using Cardano's analytical algorithm.
@@ -1245,10 +1245,10 @@ c
       data maxswp/15/,zero, one, two, jactol, four, ten, ten_thouth
      &   / 0.0d00, 1.0d00, 2.0d00, 1.0d-08,
      &     4.0d00, 10.0d00, 0.0001d00 /
-@!DIR$ ASSUME_ALIGNED k:64, lamda:64, m:64, kbari:64, kbarj:64
-@!DIR$ ASSUME_ALIGNED kbar:64, ki:64, kj:64, mi:64, mj:64, scale:64
-@!DIR$ ASSUME_ALIGNED alpha:64, gamma:64, x:64, xsign:64, rad:64
-@!DIR$ ASSUME_ALIGNED errork:64, swap:64, ratiok:64
+c!DIR$ ASSUME_ALIGNED k:64, lamda:64, m:64, kbari:64, kbarj:64
+c!DIR$ ASSUME_ALIGNED kbar:64, ki:64, kj:64, mi:64, mj:64, scale:64
+c!DIR$ ASSUME_ALIGNED alpha:64, gamma:64, x:64, xsign:64, rad:64
+c!DIR$ ASSUME_ALIGNED errork:64, swap:64, ratiok:64
 c
 c              initialize lamda, m, sweep parameters.
 c
