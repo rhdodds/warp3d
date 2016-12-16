@@ -734,8 +734,8 @@ c
      & sum1(span), sum2(span), sum3(span), avg1, avg2, avg3, zero,
      & fnnodel
        data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED dtemps_node_blk:64, temps_node_blk:64
-@!DIR$ ASSUME_ALIGNED temps_ref_node_blk:64, sum1:64, sum2:64, sum3:64  
+c!DIR$ ASSUME_ALIGNED dtemps_node_blk:64, temps_node_blk:64
+c!DIR$ ASSUME_ALIGNED temps_ref_node_blk:64, sum1:64, sum2:64, sum3:64  
   
 
 c
@@ -1937,7 +1937,7 @@ c
       logical local_debug, brick, tet, wedge, linear
       integer node_pairs(4,2)
       data half, one, zero, local_debug / 0.5, 1.0, 0.0, .false. /
-@!DIR$ ASSUME_ALIGNED node_coords:64, lengths:64  
+c!DIR$ ASSUME_ALIGNED node_coords:64, lengths:64  
 
 c
       brick = etype .ge. 1  .and. etype .le. 5
