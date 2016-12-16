@@ -20,8 +20,8 @@ c
 #sgl      real
      &  in_jacob(mxvl,3,*), dj(*), vol(mxvl,8,*),
      &  nxi(*), neta(*), nzeta(*), volume(*), a, b, c, d
-@!DIR$ ASSUME_ALIGNED in_jacob:64, dj:64, vol:64, nxi:64, neta:64
-@!DIR$ ASSUME_ALIGNED nzeta:64
+c!DIR$ ASSUME_ALIGNED in_jacob:64, dj:64, vol:64, nxi:64, neta:64
+c!DIR$ ASSUME_ALIGNED nzeta:64
 c
 c             compute b-bar terms for the 8-node 3-D
 c             element using the "mean dilatation" scheme.
