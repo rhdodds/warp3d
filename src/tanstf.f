@@ -618,7 +618,7 @@ c
 c
 c
       integer :: nnode, ndof, totdof, j, k, node, jj
-@!DIR$ ASSUME_ALIGNED trnmte:64
+c!DIR$ ASSUME_ALIGNED trnmte:64
 c
 c           for this block of elements, gather the transformation
 c           matrices (3x3) used to rotate between global and constraint
@@ -681,7 +681,7 @@ c
      & global_hist(hist_size,ngp,span)
 c
       integer :: k, j, i     
-@!DIR$ ASSUME_ALIGNED local_hist:64, global_hist:64
+c!DIR$ ASSUME_ALIGNED local_hist:64, global_hist:64
 c
 c      if( ngp .ne. 8 ) then
         do k = 1, ngp
@@ -979,7 +979,7 @@ c
 #dbl      double precision :: vec(n), zero
 #sgl      real :: vec(n), zero
       data zero / 0.0d00 /
-@!DIR$ ASSUME_ALIGNED vec:64
+c!DIR$ ASSUME_ALIGNED vec:64
 c
 @!DIR$ IVDEP
       vec = zero
