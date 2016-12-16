@@ -39,8 +39,8 @@ c
 c
 c                      locals
 c
-@!DIR$ ASSUME_ALIGNED due:64, deps:64, gama:64, nxi:64, neta:64
-@!DIR$ ASSUME_ALIGNED nzeta:64, vol_block:64, b:64  
+c!DIR$ ASSUME_ALIGNED due:64, deps:64, gama:64, nxi:64, neta:64
+c!DIR$ ASSUME_ALIGNED nzeta:64, vol_block:64, b:64  
 c      
 c                       compute linear strain-displacement
 c                       [B] matrix for this material (gauss) point at
@@ -125,8 +125,8 @@ c
 #sgl      real, parameter :: zero = 0.0
       logical :: local_debug
       data local_debug / .false. /
-@!DIR$ ASSUME_ALIGNED due:64, dgstrn:64, dgstrs:64, rot:64
-@!DIR$ ASSUME_ALIGNED shape:64, b:64  
+c!DIR$ ASSUME_ALIGNED due:64, dgstrn:64, dgstrs:64, rot:64
+c!DIR$ ASSUME_ALIGNED shape:64, b:64  
 c      
 c         compute linear relative displacement jump
 c         [b] matrix for this gauss point at all elements in 
