@@ -48,7 +48,7 @@ c
       data local_debug, dummy_logic / .false., .true. /
       data zero, one, dummy / 0.d0, 1.d0, 1.d0 /
 c
-@!DIR$ ASSUME_ALIGNED glb_ek_blk:64
+c!DIR$ ASSUME_ALIGNED glb_ek_blk:64
 c
       local_iout = local_work%iout
       if( local_debug ) write(local_iout,9100)
@@ -230,7 +230,7 @@ c
 #dbl      double precision ::
 #sgl      real ::
      & local_ek(span,nrow_ek), ek(nrow_ek,span)
-@!DIR$ ASSUME_ALIGNED ek:64, local_ek:64     
+c!DIR$ ASSUME_ALIGNED ek:64, local_ek:64     
 c
 c                 time 4.59 secs, tanstf time 12.64 
 c
@@ -323,7 +323,7 @@ c
      &   vec(nterms), zero
       integer  nterms
       data zero / 0.0d00 /
-@!DIR$ ASSUME_ALIGNED vec:64
+c!DIR$ ASSUME_ALIGNED vec:64
 c
       vec = zero
 c
