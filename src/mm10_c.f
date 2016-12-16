@@ -4316,7 +4316,7 @@ c-------------------------------------------------------------------------
       integer MAXERR
       parameter(MAXERR=10)
 
-      double precision Rquart, Rten
+      double precision Rquart, Rten, t1, t2
       parameter(Rquart=0.25d0, Rten=10.0d0)
 
 c      write(*,*) 'got to start'
@@ -4326,7 +4326,9 @@ c     compute the finite difference jacobian and check it against
 c     the analytic one
 
       ndigit = -log10(epsm)
-      p = sqrt(max(Rten**(-ndigit),epsm))
+      t1 = sqrt( epsm )
+      t2 = sqrt( 1.0d0 / Rten**ndigit )
+      p = max( t1, t2 )
       tol    = epsm**Rquart
 
       errcnt = 0
@@ -4426,7 +4428,7 @@ c-------------------------------------------------------------------------
       integer MAXERR
       parameter(MAXERR=10)
 
-      double precision Rquart, Rten, Rzero
+      double precision Rquart, Rten, Rzero, t1, t2
       parameter(Rquart=0.25d0, Rten=10.0d0, Rzero=0.0d0)
 
       dsum = dsub + dsuper + 1
@@ -4437,7 +4439,9 @@ c     compute the finite difference jacobian and check it against
 c     the user supplied one
 
       ndigit = -log10(epsm)
-      p = sqrt(max(Rten**(-ndigit),epsm))
+      t1 = sqrt( epsm )
+      t2 = sqrt( 1.0d0 / Rten**ndigit )
+      p = max( t1, t2 )
       tol    = epsm**Rquart
 
       errcnt = 0
@@ -4552,8 +4556,11 @@ c      write(*,*) 'got to start'
 c     compute the complex difference jacobian and check it against
 c     the analytic one
 
+
       ndigit = -log10(epsm)
-      p = sqrt*(max(Rten**(-ndigit),epsm))
+      t1 = sqrt( epsm )
+      t2 = sqrt( 1.0d0 / Rten**ndigit )
+      p = max( t1, t2 )
 c      p = (Rten**4)*(max(Rten**(-ndigit),epsm)) ! this one did not work, gave small errors
       tol    = epsm**Rquart
       
@@ -4705,11 +4712,13 @@ c-------------------------------------------------------------------------
       double precision  ndigit,p,h,xcj
       double precision  mm10_rnudif
 
-      double precision Rten
-      parameter(Rten=10d0)
+      double precision Rten, t1, t2
+      parameter(Rten=10.d0)
 
       ndigit = -log10(epsm)
-      p = sqrt(max(Rten**(-ndigit),epsm))
+      t1 = sqrt( epsm )
+      t2 = sqrt( 1.0d0 / Rten**ndigit )
+      p = max( t1, t2 )
 
 c
 c Copy the work so that it is not over-written
@@ -4777,15 +4786,17 @@ c-------------------------------------------------------------------------
       double precision  ndigit,p,h
       double precision  mm10_rnudif
 
-      double precision Rten
-      parameter(Rten=10d0)
+      double precision Rten, t1, t2
+      parameter(Rten=10.d0)
 
       integer dsum
 
       dsum = dsub + dsuper + 1
 
       ndigit = -log10(epsm)
-      p = sqrt(max(Rten**(-ndigit),epsm))
+      t1 = sqrt( epsm )
+      t2 = sqrt( 1.0d0 / Rten**ndigit )
+      p = max( t1, t2 )
 
       do k=1,n
          xstep(k) = p + p * abs(xc(k))

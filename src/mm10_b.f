@@ -4860,11 +4860,6 @@ c
         
         dt = np1%tinc
         
-        ! Equation [4]
-        slipinc = dt * gamma_dot_tilde * 
-     &  abs(tau/g_alpha)**(1.d0/m_alpha) * dsign(1.d0,tau)
-
-        
         ! Equation [4], slip rate vector
       do slip_a = 1,props%num_hard
         slip_b = slip_a
