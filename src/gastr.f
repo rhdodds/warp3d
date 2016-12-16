@@ -23,7 +23,7 @@ c
 #dbl      double precision
 #sgl      real
      & ml(mxvl,nprm,*), mg(nprm,ngp,*)
-@!DIR$ ASSUME_ALIGNED ml:64, mg:64     
+c!DIR$ ASSUME_ALIGNED ml:64, mg:64     
 c    
       if ( ngp .ne. 8 ) then                            
 @!DIR$ LOOP COUNT MAX=27
