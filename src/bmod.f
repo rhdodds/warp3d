@@ -24,7 +24,7 @@ c
      &   dummy_1, dummy_2, dummy_3, dummy_4,
      &   dummy_5, dummy_6, dummy_7, dummy_8
       data two, third, one / 2.0d0, 0.3333333333333d0, 1.0d0 /
-@!DIR$ ASSUME_ALIGNED b:64, vol:64  
+c!DIR$ ASSUME_ALIGNED b:64, vol:64  
       
 c
 c        
