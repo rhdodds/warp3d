@@ -17,7 +17,7 @@ c
 #sgl      real
      &  vol(mxvl,8,3), volume(span), zero
       data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED vol:64, volume:64      
+c!DIR$ ASSUME_ALIGNED vol:64, volume:64      
       vol = zero
       volume = zero
       return
