@@ -41,7 +41,7 @@ c
      &        temps_to_process, iscp, symmetric_assembly
       data one  / 1.0d00 /
 c      
-@!DIR$ ASSUME_ALIGNED glb_ek_blk:64, rad:64,factors:64      
+c!DIR$ ASSUME_ALIGNED glb_ek_blk:64, rad:64,factors:64      
 c
 c                       set local versions of the data structure
 c                       scalars. set logical to include/not include the
@@ -460,7 +460,7 @@ c
 #sgl      real :: weight, symm_part_cep(6), f
       logical :: ldebug
       integer :: span, felem, now_blk, ielem, k, i
-@!DIR$ ASSUME_ALIGNED symm_part_cep:64
+c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c    
       ldebug  = .false.
       span    = local_work%span
@@ -669,7 +669,7 @@ c
 #dbl      double precision :: weight, symm_part_cep(21), f
 #sgl      real :: weight, symm_part_cep(21), f
       integer :: span, now_blk, ielem, sloc, k, felem
-@!DIR$ ASSUME_ALIGNED symm_part_cep:64
+c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c      
       span    = local_work%span
       weight  = local_work%weights(gpn)
@@ -757,7 +757,7 @@ c
 #sgl      real
      & weight, symm_part_cep(21), factor
       logical local_debug, debug_now
-@!DIR$ ASSUME_ALIGNED symm_part_cep:64
+c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c
 c           1. pull a few values from work space for block
 c
@@ -999,7 +999,7 @@ c
 c                       locals
 c
       integer :: i, j, k, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_full:64
+c!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_full:64
 c
 c              set trans( [B] )
 c
@@ -1130,7 +1130,7 @@ c
 c                       locals
 c
       integer :: i, j, k, row, col
-@!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
+c!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
@@ -1245,7 +1245,7 @@ $add param_def
       logical :: qbar, is_umat, is_crys_pls
       data half, two / 0.5d00, 2.0d00 /
 c      
-@!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64, cs:64, dj:64
+c!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64, cs:64, dj:64
 c
 c             [cep] (mxvl x 6 x 6) relates increments
 c             of unrotated cauchy stress to increments
@@ -1525,9 +1525,9 @@ c     &   local_b, local_bt, local_db, local_btdb
 c#dbl      double precision :: local_d(6,6)
 c#sgl      real :: local_d(6,6)
 c
-c@!DIR$ ASSUME_ALIGNED b:64, d:64, ek:64
-c@!DIR$ ASSUME_ALIGNED local_b:64, local_bt:64, local_btdb:64
-c@!DIR$ ASSUME_ALIGNED local_d:64 
+cc!DIR$ ASSUME_ALIGNED b:64, d:64, ek:64
+cc!DIR$ ASSUME_ALIGNED local_b:64, local_bt:64, local_btdb:64
+cc!DIR$ ASSUME_ALIGNED local_d:64 
 c
 c      allocate( local_b(6,totdof), local_bt(totdof,6), 
 c     &          local_db(6,totdof), local_btdb(totdof,totdof) )
