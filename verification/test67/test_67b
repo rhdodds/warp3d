@@ -1239,7 +1239,7 @@ loading unit_end  $ x = 14.1
      plane z = 0 symmetry 
 !     
 list 'left' x= 0.0     $ for use in output
-list 'right' x=14.01   $  "     "     "
+list 'right' x=14.1    $  "     "     "
 ! 
  output model flat patran convention text file "block"
  output patran neutral file
