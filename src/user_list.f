@@ -361,6 +361,9 @@ c
       case( 26 )
          write(out,9026)
          num_error = num_error + 1
+      case( 27 )
+         call entits( string, strlng )
+         write(out,9027) string(1:strlng)
       case default
         write(out,9999)
         stop
@@ -441,6 +444,8 @@ c
      & /14x,'command ignored...')
  9026 format(/1x,'>>>>> error: coordinates of origin not specified',
      & /14x,'or radius not positivecommand ignored...')
+ 9027 format(/1x,'>>>>> warning: the user-list named: ',a,
+     & /16x,'has no entries...')
  9999 format(/1x,'>>>>> Fatal Error: routine ulist_error.',
      &   /16x,   'should have not reach this point.')
 c
@@ -610,7 +615,9 @@ c
          end do
          write(out,9200) count
        else
+         write(out,*) " "
          write(out,9210) 
+         write(out,*) " "
          do_display = .false.
        end if
 c
@@ -625,7 +632,8 @@ c
      & /,5x,"nonode: ",i8,
      & /,5x,"x, y, z tolerance: ", 3e15.8, //)
  9200 format(1x,">>>>> number of nodes placed inlist: ", i8 )
- 9210 format(1x,">>>>> no nodes match the line/point specification")
+ 9210 format(1x,">>>>> WARNING: no nodes match the line/point ",
+     & " specification")
  9220 format(1x,">>>>> (x,y,z) distances for proximity checks: ",
      &      3f15.8 )
 c
@@ -1026,6 +1034,12 @@ c          put the next line entity into the scanner.
 c
  100  continue
       stored_length = user_lists(i)%length_list
+      if( stored_length == 0 ) then
+         ierr = 2
+         call ulist_error( 27 )
+         call scan
+         return
+      end if 
       if( mlist < stored_length ) then
         ierr = 3; return
       end if
