@@ -1560,14 +1560,14 @@ c
 #dbl      double precision
 #sgl      real
      &     dqx, dqy, dqz, dux, dvx, dwx, dtx, csig(10,27),
-     &     aux_stress(9,7), ceps_gp(9,27), aux_strain(9,7),
-     &     dstrain_x1(9), daux_strain_x1(9,7), dcijkl_x1(3),
-     &     du11_aux(7),  du21_aux(7),  du31_aux(7),
-     &     du111_aux(7), du112_aux(7), du113_aux(7),
-     &     du211_aux(7), du212_aux(7), du213_aux(7),
-     &     du311_aux(7), du312_aux(7), du313_aux(7),
+     &     aux_stress(9,8), ceps_gp(9,27), aux_strain(9,8),
+     &     dstrain_x1(9), daux_strain_x1(9,8), dcijkl_x1(3),
+     &     du11_aux(8),  du21_aux(8),  du31_aux(8),
+     &     du111_aux(8), du112_aux(8), du113_aux(8),
+     &     du211_aux(8), du212_aux(8), du213_aux(8),
+     &     du311_aux(8), du312_aux(8), du313_aux(8),
      &     elem_alpha(6), dalpha_x1(6), point_temp, point_q, weight,
-     &     iterm(8,7)
+     &     iterm(8,8)
       logical process_temps, fgm_e, fgm_nu, debug
 c
 c             local variables
