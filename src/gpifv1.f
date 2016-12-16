@@ -36,8 +36,8 @@ c
 #sgl      real
      &   qtn1(mxvl,nstr,nstr), cs_blk_n1(mxvl,nstr),
      &   eps_bbar, w, scalar 
-@!DIR$ ASSUME_ALIGNED eleifv:64, dj:64, element_volumes:64
-@!DIR$ ASSUME_ALIGNED b:64, urcs_blk_n1:64, qtn1:64, cs_blk_n1:64
+c!DIR$ ASSUME_ALIGNED eleifv:64, dj:64, element_volumes:64
+c!DIR$ ASSUME_ALIGNED b:64, urcs_blk_n1:64, qtn1:64, cs_blk_n1:64
 c
 c
       span            = local_work%span
