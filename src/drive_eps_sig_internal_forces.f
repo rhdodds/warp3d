@@ -1285,7 +1285,7 @@ c
      &   half, zero, one, mag, mags(3), djcoh(mxvl)
       data local_debug, half, zero, one
      &  / .false., 0.5d00, 0.0d00, 1.0d00 /
-@!DIR$ ASSUME_ALIGNED ce_0:64, ce_N:64, ce_mid:64, ce_n1:64  
+c!DIR$ ASSUME_ALIGNED ce_0:64, ce_N:64, ce_mid:64, ce_n1:64  
 
 c
       if( local_debug ) write(out,9100)
@@ -1572,7 +1572,7 @@ c
      & mlocal(mxvl,nprm,*), mglobal(nprm,ngp,*)
 c
       integer :: k, j, i      
-@!DIR$ ASSUME_ALIGNED mlocal:64, mglobal:64  
+c!DIR$ ASSUME_ALIGNED mlocal:64, mglobal:64  
 c
 c           unroll inner loop for most common number of integration
 c           points (ngp).
@@ -2131,7 +2131,7 @@ c
 #dbl      double precision ::
 #sgl      real ::
      &  outmat(nrow,ncol), in3dmat(nrow,ncol,nz)
-@!DIR$ ASSUME_ALIGNED in3dmat:64, outmat:64  
+c!DIR$ ASSUME_ALIGNED in3dmat:64, outmat:64  
 c
 c           pull results from k-plane of 3D array into 2D array.
 c           used as it exposes structure of 3D array. compiler
@@ -2162,7 +2162,7 @@ c
 #dbl      double precision ::
 #sgl      real ::
      &  averages(nrows), matrix(nrows,ncols)
-@!DIR$ ASSUME_ALIGNED matrix:64, averages:64      
+c!DIR$ ASSUME_ALIGNED matrix:64, averages:64      
 c
 c           compute the average of each row in matrix. averages was
 c           zeroed before entry. compiler should inline this routine.
