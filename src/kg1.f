@@ -39,9 +39,9 @@ c
      &    gtg(mxvl,mxnusz), gxi(mxvl,mxndel), 
      &    geta(mxvl,mxndel), gzeta(mxvl,mxndel)
 c
-@!DIR$ ASSUME_ALIGNED gama:64, nxi:64, neta:64, nzeta:64
-@!DIR$ ASSUME_ALIGNED sig:64, dj:64, ek_full:64, ek_symm:64,  vol:64
-@!DIR$ ASSUME_ALIGNED gtg:64, gxi:64, geta:64, gzeta:64
+c!DIR$ ASSUME_ALIGNED gama:64, nxi:64, neta:64, nzeta:64
+c!DIR$ ASSUME_ALIGNED sig:64, dj:64, ek_full:64, ek_symm:64,  vol:64
+c!DIR$ ASSUME_ALIGNED gtg:64, gxi:64, geta:64, gzeta:64
 c
 c              the geometric stiffness, trans([G[) [M] [G] is 
 c              symmetric. calculate building blocks then use separate 
