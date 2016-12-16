@@ -550,7 +550,7 @@ $(OD)/con_dump$O : con_dump.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_mpc$O
 	$(FILTER) < con_dump.f > filt_con_dump.f
-	$(F90) /O2 /Qip  /c filt_con_dump.f
+	$(F90) /O3 /Qip  /c filt_con_dump.f
 	$(MVC) filt_con_dump$O  con_dump$O
 	$(MVC) con_dump$O $@
 
@@ -1204,7 +1204,7 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 
 $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 	$(FILTER) < mm10_b.f > filt_mm10_b.f
-	$(F90) /O3 /Qip  /c filt_mm10_b.f
+	$(F90) /O3  /Qinline-factor:1 /Qip  /c filt_mm10_b.f
 	$(MVC) filt_mm10_b$O  mm10_b$O
 	$(MVC) mm10_b$O $@
 

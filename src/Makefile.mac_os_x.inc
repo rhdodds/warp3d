@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: August 20, 20916
+#   Last modifications: November 13, 2016
 #
 #   Description:
 #
@@ -100,15 +100,20 @@
 #
 #F90TRAP = -ftrapuv -check uninit
 F90TRAP = 
-F90OPTS1 =  -fpconstant -fixed -72 -traceback -no-inline-factor
-F90OPTS2 =  -module $(ODIR) -ftz -xHost  $(F90TRAP)
+#
+INLINEOPT =  -no-inline-factor
+#INLINEOPT =  -inline-level=0   # no inlining
+#
 PROFILEOPT =
 #PROFILEOPT = -pg  # for use with gprof
 #PROFILEOPT = -g   # for use with Intel Adviser
 #
-F90      = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) $(PROFILEOPT)
+F90OPTS1 =  -fpconstant -fixed -72 -traceback $(PROFILEOPT)
+F90OPTS2 =  -module $(ODIR) -ftz -xHost  $(F90TRAP) $(INLINEOPT)
 #
-LINK90   = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) $(PROFILEOPT)
+F90      = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT)
+#
+LINK90   = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) 
 LIBS     = -mkl
 #
 #                where is the executable filter program for
@@ -1445,7 +1450,7 @@ $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_b.f 
 	$(FILTER) < mm10_b.f > filt_mm10_b.f
-	$(F90) -O3 -ip  -c filt_mm10_b.f
+	$(F90) -O3  -inline-level=1 -ip  -c filt_mm10_b.f
 	$(MVC) filt_mm10_b$O  mm10_b$O
 	$(MVC) mm10_b$O $@
 
@@ -1461,7 +1466,7 @@ $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_d.f
 	$(FILTER) < mm10_d.f > filt_mm10_d.f
-	$(F90) -O2 -ip   -c filt_mm10_d.f
+	$(F90) -O3 -ip   -c filt_mm10_d.f
 	$(MVC) filt_mm10_d$O  mm10_d$O
 	$(MVC) mm10_d$O $@
 	
@@ -1469,7 +1474,7 @@ $(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_e.f
 	$(FILTER) < mm10_e.f > filt_mm10_e.f
-	$(F90) -O2 -ip   -c filt_mm10_e.f
+	$(F90) -O3 -ip   -c filt_mm10_e.f
 	$(MVC) filt_mm10_e$O  mm10_e$O
 	$(MVC) mm10_e$O $@
 
@@ -1514,7 +1519,7 @@ $(OD)/mpc_modify$O : mpc_modify.f $(OD)/mod_stiffness$O \
 	$(RMC)  $@
 	$(RMC)  filt_mpc_modify.f
 	$(FILTER) < mpc_modify.f > filt_mpc_modify.f
-	$(F90) -O2 -ip  -c filt_mpc_modify.f
+	$(F90) -O3 -ip  -c filt_mpc_modify.f
 	$(MVC) filt_mpc_modify$O  mpc_modify$O
 	$(MVC) mpc_modify$O $@
 

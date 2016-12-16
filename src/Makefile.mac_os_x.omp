@@ -22,7 +22,7 @@
 #    Notes:
 #      - Static linking of system and mkl libraries
 #    
-OPENMPOPT = -openmp -reentrancy -static-intel 
+OPENMPOPT = -qopenmp -reentrancy -static-intel 
 ODIR = ././../obj_mac_os_x
 EXE_NAME = warp3d.omp
 #

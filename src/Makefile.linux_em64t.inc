@@ -668,7 +668,7 @@ $(OD)/direct_driver_sparse$O : direct_driver_sparse.f param_def \
 	$(RMC)  $@
 	$(RMC)  filt_direct_driver_sparse.f
 	$(FILTER) < direct_driver_sparse.f > filt_direct_driver_sparse.f
-	$(F90) -O2 -ip  -c filt_direct_driver_sparse.f
+	$(F90) -O3 -ip  -c filt_direct_driver_sparse.f
 	$(MVC) filt_direct_driver_sparse$O  direct_driver_sparse$O
 	$(MVC) direct_driver_sparse$O $@
 
@@ -1436,15 +1436,17 @@ $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_a.f
 	$(FILTER) < mm10_a.f > filt_mm10_a.f
-	$(F90) -O3 -ip -c filt_mm10_a.f -opt-report=5
+	$(F90) -O3 -ip -c filt_mm10_a.f 
 	$(MVC) filt_mm10_a$O  mm10_a$O
 	$(MVC) mm10_a$O $@
-
+#
+#       note the reduced inline level required for ifort 17 update 1
+#    
 $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
 	$(RMC)  filt_mm10_b.f
 	$(FILTER) < mm10_b.f > filt_mm10_b.f
-	$(F90) -O3 -ip -c filt_mm10_b.f
+	$(F90) -O3 -ip -inline-level=1 -c filt_mm10_b.f 
 	$(MVC) filt_mm10_b$O  mm10_b$O
 	$(MVC) mm10_b$O $@
 
@@ -1469,6 +1471,7 @@ $(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  filt_mm10_e.f
 	$(FILTER) < mm10_e.f > filt_mm10_e.f
 	$(F90) -O3 -ip   -c filt_mm10_e.f
+#	$(F90) -O1 -ftrapuv -check uninit -inline-level=0 -c filt_mm10_e.f
 	$(MVC) filt_mm10_e$O  mm10_e$O
 	$(MVC) mm10_e$O $@
 
@@ -1513,7 +1516,7 @@ $(OD)/mpc_modify$O : mpc_modify.f $(OD)/mod_stiffness$O \
 	$(RMC)  $@
 	$(RMC)  filt_mpc_modify.f
 	$(FILTER) < mpc_modify.f > filt_mpc_modify.f
-	$(F90) -O2 -ip  -c filt_mpc_modify.f
+	$(F90) -O3 -ip  -c filt_mpc_modify.f
 	$(MVC) filt_mpc_modify$O  mpc_modify$O
 	$(MVC) mpc_modify$O $@
 
