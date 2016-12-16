@@ -1137,7 +1137,7 @@ $(OD)/mem_allocate$O : mem_allocate.f $(OD)/mod_main$O \
 
 $(OD)/mm01$O : mm01.f param_def
 	$(FILTER) < mm01.f > filt_mm01.f
-	$(F90) /O3 /Qip /Ob1 /align:array64byte /c filt_mm01.f
+	$(F90) /O3 /Qip /Ob1 /c filt_mm01.f
 	$(MVC) filt_mm01$O  mm01$O
 	$(MVC) mm01$O $@
 
@@ -1156,13 +1156,13 @@ $(OD)/mm03$O : mm03.f
 $(OD)/mm03p$O : mm03p.f param_def \
                    $(OD)/mod_segmental_curves$O
 	$(FILTER) < mm03p.f > filt_mm03p.f
-	$(F90) /O3 /Qip  /align:array64byte /c filt_mm03p.f
+	$(F90) /O3 /Qip  /c filt_mm03p.f
 	$(MVC) filt_mm03p$O  mm03p$O
 	$(MVC) mm03p$O $@
 
 $(OD)/mm04$O : mm04.f param_def 
 	$(FILTER) < mm04.f > filt_mm04.f
-	$(F90) /O3 /Qip   /align:array64byte /c filt_mm04.f
+	$(F90) /O3 /Qip   /c filt_mm04.f
 	$(MVC) filt_mm04$O  mm04$O
 	$(MVC) mm04$O $@
 
@@ -1174,7 +1174,7 @@ $(OD)/mm05$O : mm05.f
 
 $(OD)/mm06$O : mm06.f
 	$(FILTER) < mm06.f > filt_mm06.f
-	$(F90) /O3 /Qip  /align:array64byte /c filt_mm06.f
+	$(F90) /O3 /Qip  /c filt_mm06.f
 	$(MVC) filt_mm06$O  mm06$O
 	$(MVC) mm06$O $@
 
