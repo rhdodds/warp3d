@@ -29,7 +29,7 @@ c
       integer :: bedst(totdof,*), iprops(mxelpr,*),
      &           dam_state(*)
       logical :: debug
-@!DIR$ ASSUME_ALIGNED ifv:64, eleifv:64, dam_ifv:64
+c!DIR$ ASSUME_ALIGNED ifv:64, eleifv:64, dam_ifv:64
 c
       debug = .false.
 c
