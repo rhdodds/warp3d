@@ -119,6 +119,26 @@ $add param_def
 c                 Crystal array data structures
 c
             type :: crystal
+                  double precision, dimension(6,6) :: elast_stiff,
+     &                                                elast_flex
+                  double precision, dimension(max_slip_sys,3) :: ni,bi
+
+c                 Material parameters
+                  double precision :: e, nu, mu, harden_n, tau_a,
+     &                                tau_hat_y, g_o_y, b, p_v, q_v,
+     &                                p_y, q_y, boltz, 
+     &                                eps_dot_o_y, t_o,
+     &                                theta_o, tau_bar_o,
+     &                                tau_hat_v, g_o_v,
+     &                                eps_dot_o_v, k_o,
+     &                                mu_o, D_o, tau_y, tau_v, iD_v,
+     &                                voche_m !  yes it is spelled wrong
+                  double precision :: u1, u2, u3, u4, u5, u6,
+     &                                u7, u8, u9, u10
+
+                  double precision :: atol, atol1, rtol, rtol1,
+     &                                xtol, xtol1
+                  integer :: st_it(3)
                   integer ::  slip_type
 c                             1) fcc
 c                             2) bcc
@@ -138,26 +158,10 @@ c                             3) user
 c                             4) ornl
 c                             7) roters
 c                             9) DJGM - Ti-6242
+                  integer :: tang_calc, miter, gpp, method
+
 c                 Solver flags
                   logical :: solver, strategy, gpall, alter_mode
-                  integer :: tang_calc, miter, gpp, method, st_it(3)
-                  double precision :: atol, atol1, rtol, rtol1,
-     &                                xtol, xtol1
-c                 Material parameters
-                  double precision :: e, nu, mu, harden_n, tau_a,
-     &                                tau_hat_y, g_o_y, b, p_v, q_v,
-     &                                p_y, q_y, boltz, 
-     &                                eps_dot_o_y, t_o,
-     &                                theta_o, tau_bar_o,
-     &                                tau_hat_v, g_o_v,
-     &                                eps_dot_o_v, k_o,
-     &                                mu_o, D_o, tau_y, tau_v, iD_v,
-     &                                voche_m !  yes it is spelled wrong
-                  double precision :: u1, u2, u3, u4, u5, u6,
-     &                                u7, u8, u9, u10
-                  double precision, dimension(6,6) :: elast_stiff,
-     &                                                elast_flex
-                  double precision, dimension(max_slip_sys,3) :: ni,bi
 c
                   logical :: valid
 
