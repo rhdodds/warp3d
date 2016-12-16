@@ -42,7 +42,7 @@ c
      &  veca(*), vecb(*), vecc(*), zero, const
       integer opcode
       data zero / 0.0d0/
-@!DIR$ ASSUME_ALIGNED veca:64, vecb:64, vecc:64
+c!DIR$ ASSUME_ALIGNED veca:64, vecb:64, vecc:64
 c      
       go to ( 100, 200, 300, 400, 500, 600, 700 ), opcode
 c
