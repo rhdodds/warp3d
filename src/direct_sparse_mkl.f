@@ -581,7 +581,7 @@ c
       integer, allocatable :: kpt_l(:)
       integer :: i_old, i_new, i, j, nonzt_sum
       data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED diag:64, rhs:64, amat:64  
+c!DIR$ ASSUME_ALIGNED diag:64, rhs:64, amat:64  
 c
       allocate( kpt_l(neq+1) )
       kpt_l(1:neq) = kpt(1:neq)
