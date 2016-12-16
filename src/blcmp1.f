@@ -30,8 +30,8 @@ c
 #sgl      real ::
      &  btemp(mxvl,mxndel,ndim), zero  ! on stack
       data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
-@!DIR$ ASSUME_ALIGNED btemp:64  
+c!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
+c!DIR$ ASSUME_ALIGNED btemp:64  
 c
 c                       compute building blocks of b. 
 c                       btemp - j,1 = NX for node j at gpn        
@@ -123,7 +123,7 @@ c
       integer :: i, j, bpos1, bpos2     
       double precision :: zero
       data zero  / 0.0d00 /
-@!DIR$ ASSUME_ALIGNED b:64, sh:64, rot:64, shape:64
+c!DIR$ ASSUME_ALIGNED b:64, sh:64, rot:64, shape:64
 c
 c            compute sh = L*N (N -> shape fn. array)
 c       
@@ -279,8 +279,8 @@ c
      &  btemp(mxvl,mxndel,ndim), zero ! on stack
       logical ::  local_debug, axisym
       data zero, local_debug / 0.0d0, .false. /
-@!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
-@!DIR$ ASSUME_ALIGNED btemp:64  
+c!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
+c!DIR$ ASSUME_ALIGNED btemp:64  
 c
 c                  compute building blocks of b for axisymmetric
 c                  elements.
