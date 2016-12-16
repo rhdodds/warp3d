@@ -46,9 +46,9 @@ c
       logical local_debug, quad_interface, tri_interface
       data local_debug /.false. /
       data third, zero / 0.33333333333333333333d0, 0.0d0 /
-@!DIR$ ASSUME_ALIGNED ce:64, bigR:64, ce_rotated:64, nzeta:64
-@!DIR$ ASSUME_ALIGNED neta:64, nxi:64, jac:64, dj:64
-@!DIR$ ASSUME_ALIGNED g_to_e123:64
+c!DIR$ ASSUME_ALIGNED ce:64, bigR:64, ce_rotated:64, nzeta:64
+c!DIR$ ASSUME_ALIGNED neta:64, nxi:64, jac:64, dj:64
+c!DIR$ ASSUME_ALIGNED g_to_e123:64
 c
 c
 c               for geonl these are deformed coordinates of the
@@ -258,7 +258,7 @@ c
 c                  local declarations
 c
       integer i, j, jj, k
-@!DIR$ ASSUME_ALIGNED rot:64, var:64, rvar:64
+c!DIR$ ASSUME_ALIGNED rot:64, var:64, rvar:64
 c
 c
 c              var has nnode * 3 terms. 1-nnode are x components.
@@ -322,8 +322,8 @@ c
      & zero, j1, j2, j3
 c
       data zero / 0.0d0 /
-@!DIR$ ASSUME_ALIGNED coords:64, nzeta:64, neta:64, nxi:64, jac:64
-@!DIR$ ASSUME_ALIGNED dj:64
+c!DIR$ ASSUME_ALIGNED coords:64, nzeta:64, neta:64, nxi:64, jac:64
+c!DIR$ ASSUME_ALIGNED dj:64
 c
 @!DIR$ LOOP COUNT MAX=###  
 @!DIR$ IVDEP
@@ -444,7 +444,7 @@ c
       data zero, half / 0.0d0, 0.5d0 /
       logical local_debug
       data local_debug /.false./
-@!DIR$ ASSUME_ALIGNED ce_upd:64, ce:64, dj:64, ce_refsurf:64
+c!DIR$ ASSUME_ALIGNED ce_upd:64, ce:64, dj:64, ce_refsurf:64
 c
       shift = nnode/2
       xb = 0
@@ -1005,8 +1005,8 @@ c
      &  / 1.0d-08, 1.0d-03, 0.2d0, 0.05d0, 0.5d0 /
       data trint12_list / 1,4,2,  2,5,3,  3,6,1,  7,10,8,  8,11,9,
      &                    9,12,7 /
-@!DIR$ ASSUME_ALIGNED ce:64, xb:64, yb:64, zb:64, xt:64, yt:64
-@!DIR$ ASSUME_ALIGNED zt:64, x:64, y:64, z:64, long_edge:64
+c!DIR$ ASSUME_ALIGNED ce:64, xb:64, yb:64, zb:64, xt:64, yt:64
+c!DIR$ ASSUME_ALIGNED zt:64, x:64, y:64, z:64, long_edge:64
 c
 c             1. all 3 sides must have lengths > 0.0 (tolmin)
 c             2. no side can have less length tol_edge * longest side
@@ -1181,8 +1181,8 @@ c
       integer nsurf, i, j
       data tolmin, tol_edge, top_bott_tol
      &  / 1.0d-08, 1.0d-03, 0.05d0 /
-@!DIR$ ASSUME_ALIGNED ce:64, xb:64, yb:64, zb:64, xt:64, yt:64
-@!DIR$ ASSUME_ALIGNED zt:64, x:64, y:64, z:64, long_edge:64
+c!DIR$ ASSUME_ALIGNED ce:64, xb:64, yb:64, zb:64, xt:64, yt:64
+c!DIR$ ASSUME_ALIGNED zt:64, x:64, y:64, z:64, long_edge:64
 c
 c             1. all 4 sides must have lengths > 0.0 (tolmin)
 c             2. no side can have less length tol_edge * longest side
