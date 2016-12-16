@@ -109,7 +109,7 @@ c             has no terms right of diagonal. with a few temps based on
 c             number of threads, the srow loop runs in parallel
 c
       call omp_set_dynamic( .false. )
-c$OMP PARALLEL DO PRIVATE( srow, num_threads ) ! all else shared
+c$OMP PARALLEL DO PRIVATE( srow, now_thread ) ! all else shared
       do srow = 1, neqns-1
        now_thread = omp_get_thread_num() + 1
        call count_profile_symmetric_srow( srow, neqns,
