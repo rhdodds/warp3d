@@ -306,7 +306,7 @@ c
       intrinsic size
       logical, parameter :: local_debug = .false.
 c      
-@!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_trm:32      
+c!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_trm:32      
 c
       if( local_debug ) write(*,9000)
 c
@@ -629,7 +629,7 @@ c
 c
       implicit integer (a-z)
       dimension  ra(*)
-@!DIR$ ASSUME_ALIGNED ra:32    
+c!DIR$ ASSUME_ALIGNED ra:32    
 c
       if (n .lt. 2) then
          return
@@ -718,7 +718,7 @@ c
 #sgl      real,
      &          allocatable, dimension(:) :: old_cof
       character*1  dums
-@!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32    
+c!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32    
 c
 c        allocate temp storage space, copy old data to temp space
 c
@@ -1030,8 +1030,8 @@ c
      &           ptr, ntrms,trm, ind, dia_idx, ind_idx, ind_ptr,
      &           dumi, cnt       
       
-@!DIR$ ASSUME_ALIGNED k_diag:64
-@!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32      
+c!DIR$ ASSUME_ALIGNED k_diag:64
+c!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32      
 c
 c
 c        allocate temp storage space
@@ -1317,7 +1317,7 @@ c
      &         dep_trm, k_diag, p_vec
       character*1  dums
       dimension  k_diag(*), p_vec(*)
-@!DIR$ ASSUME_ALIGNED k_diag:64, p_vec:64     
+c!DIR$ ASSUME_ALIGNED k_diag:64, p_vec:64     
       
 c
 c        intialize counters, use the terms in the dep_locations to
@@ -1414,7 +1414,7 @@ c
       character*1  dums
       logical  last_good
       dimension  k_ptrs(*), dstmap(*), dof_eqn_map(*)
-@!DIR$ ASSUME_ALIGNED k_ptrs:32, dstmap:32, dof_eqn_map:32     
+c!DIR$ ASSUME_ALIGNED k_ptrs:32, dstmap:32, dof_eqn_map:32     
 c
 c        allocate temp storage space, copy data into temp space
 c
@@ -1558,7 +1558,7 @@ c
       character*1  dums
       logical new_size
       dimension  k_ptrs(*)
-@!DIR$ ASSUME_ALIGNED k_ptrs:32      
+c!DIR$ ASSUME_ALIGNED k_ptrs:32      
 c
 c        allocate temp storage space
 c
@@ -1652,8 +1652,8 @@ c
       character*1  dums
       dimension  x(*), cstmap(*)
       data zero / 0.0d00 /
-@!DIR$ ASSUME_ALIGNED x:64
-@!DIR$ ASSUME_ALIGNED cstmap:32      
+c!DIR$ ASSUME_ALIGNED x:64
+c!DIR$ ASSUME_ALIGNED cstmap:32      
 
 c
       allocate( lagmlt(neqns), stat=err)
