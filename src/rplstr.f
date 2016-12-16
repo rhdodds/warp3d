@@ -114,7 +114,7 @@ c
 c               local declarations
 c
       integer :: i, j, k      
-@!DIR$ ASSUME_ALIGNED mg:64, ml:64  
+c!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c    
 c               on current hardware, the manual unroll runs
 c               slower
@@ -182,7 +182,7 @@ c
 c               local declarations
 c
       integer :: i, j, k     
-@!DIR$ ASSUME_ALIGNED mg:64, ml:64  
+c!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c
 c    
 c               on current hardware, the manual unroll runs
@@ -252,7 +252,7 @@ c
 c               local declarations
 c
       integer :: i, j, k     
-@!DIR$ ASSUME_ALIGNED global_history:64, local_history:64  
+c!DIR$ ASSUME_ALIGNED global_history:64, local_history:64  
 c    
 c               on current hardware, the manual unroll runs
 c               slower
