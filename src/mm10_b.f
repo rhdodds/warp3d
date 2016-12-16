@@ -74,8 +74,8 @@ c
       double precision, dimension(max_uhard) :: vec1,vec2
 c
       integer :: len
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, R2:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
 c              add new Constitutive Models into this block 
 c
@@ -137,8 +137,8 @@ c
 c              locals - automatics
 c
       double complex, dimension(props%num_hard) :: h
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, R2:64
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
 c              add new Constitutive Models into this block 
 c
@@ -191,8 +191,8 @@ c
       double precision, dimension(props%nslip) :: dgammadtau
       double precision :: wp(3), work_vec(6), Iw(6,6)
       double precision :: rs
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J11:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J11:64
 cc
       debug = .false.
       if( debug ) write(props%out,*) "In mm10"
@@ -285,8 +285,8 @@ c
       double precision, dimension(6,props%nslip) :: symtqmat
       double precision, dimension(props%nslip,props%num_hard)
      &                  :: dgammadtt
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J12:64     
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J12:64     
 c
       debug = .false.
       J12 = zero
@@ -370,8 +370,8 @@ c
 c              automatics
 c
       double precision, dimension(props%num_hard,6) :: estr
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J21:64     
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J21:64     
 c
 c              add new Constitutive Models into this block 
 c
@@ -431,8 +431,8 @@ c              automatics
 c
       double precision, 
      &      dimension(props%num_hard,props%num_hard) :: etau
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J22:64     
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J22:64     
 c
 c              add new Constitutive Models into this block
 c
@@ -484,7 +484,7 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1,vec2
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
 c
 c              add new Constitutive Models into this block
 c
@@ -591,8 +591,8 @@ c              automatics
 c
       double complex, dimension(props%num_hard) :: B
       double precision, dimension(props%num_hard) :: zeroB
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J11:64     
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J11:64     
 c
       debug = .false.
       if( debug ) write (props%out,*) "In mm10_formJ11i"
@@ -658,8 +658,8 @@ c              automatics
 c
       double complex, dimension(props%num_hard) :: B
       double precision, dimension(props%num_hard) :: zeroB
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J12:64     
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J12:64     
 c
       debug = .false.
       if( debug ) write (props%out,*) "In mm10_formJ12i"
@@ -722,8 +722,8 @@ c              automatics
 c
       double complex, dimension(props%num_hard) :: B, Ri
       double precision, dimension(props%num_hard) :: zeroB
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J21:64     
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J21:64     
 c
       debug = .false.
       if( debug ) write (props%out,*) "In mm10_formJ121i"
@@ -787,8 +787,8 @@ c              automatics
 c
       double precision, dimension(props%num_hard) :: zeroB
       double complex, dimension(props%num_hard) :: Ri, B
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J22:64     
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J22:64     
 c
       debug = .false.
       if( debug ) write(props%out,*) "In mm10_formJ22i"
@@ -892,8 +892,8 @@ c
       double precision, allocatable, dimension(:,:) :: local_J21,
      &                                                 local_J22
 c
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J:64
 c
 c
 c              use local arrays with size of J submatrices to 
@@ -959,8 +959,8 @@ c
       double precision, allocatable, dimension(:,:) :: local_J21,
      &                                                 local_J22
 c
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, J:64
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, J:64
 c
       len = props%num_hard
       allocate( local_J21(len,6), local_J22(len,len) )
@@ -1009,7 +1009,7 @@ c
       double precision, dimension(6+props%num_hard) :: R
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64, R:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64, R:64
 c
       call mm10_formvecs( props, np1, n, stress, tt, vec1, vec2 )
       call mm10_formR1( props, np1, n, vec1, vec2, stress, 
@@ -1048,7 +1048,7 @@ c
       integer :: gp
       double precision :: dbarp(6), wp(3), symTW(6), work_vec1(6),
      &                    work_vec2(6) 
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64, R1:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64, R1:64
 c
       call mm10_form_dbarp( props, np1, n, vec1, vec2, 
      &                      stress, tt, dbarp )
@@ -1097,7 +1097,7 @@ c
       double precision, dimension(6,6) :: zeroff
       double complex, dimension(3) :: wp
       double complex, dimension(6) :: symTW
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64, tt:64, R1:64
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64, tt:64, R1:64
 c
       call mm10_form_dbarpi( props, np1, n, ivec1, ivec2, 
      &                       stress, tt, dbarp )
@@ -1140,8 +1140,8 @@ c
       integer :: i, nslip
       double precision :: slipinc, rs
       double precision, external :: mm10_rs
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, dbar:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
       nslip = props%nslip
 c
@@ -1206,8 +1206,8 @@ c
       integer :: i, nslip
       double precision :: slipinc, rs
       double precision, external :: mm10_rs
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, wbar:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, wbar:64
 
       nslip = props%nslip
 c
@@ -1275,8 +1275,8 @@ c
       integer :: i, nslip
       double precision :: slipinc, rs
       double precision, external :: mm10_rs
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, w:64
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, w:64
 c
       nslip = props%nslip
 c      
@@ -1356,8 +1356,8 @@ c
 c
       integer :: i
       double complex :: slipinc
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, dbar:64
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
       select case( props%h_type )
         case( 1, 2, 3 ) ! Voche, MTS, User
@@ -1408,8 +1408,8 @@ c
 c
       integer :: i
       double complex :: slipinc
-@!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64, w:64
+c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64, w:64
 c
       select case( props%h_type )
          case( 1, 2, 3 )  !Voche, MTS, User
@@ -1484,7 +1484,7 @@ c
       double complex, dimension(6), intent(in) :: s
       double complex, dimension(3), intent(in) :: w
       double complex, dimension(6), intent(out) :: sw
-@!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
+c!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
 c
       sw = zero
       sw(1) = s(4)*w(3) - s(6)*w(2)
@@ -1517,7 +1517,7 @@ c
       double precision, dimension(6), intent(in) :: s
       double precision, dimension(3,n), intent(in) :: w
       double precision, dimension(6,n), intent(out) :: sw
-@!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
+c!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
 c
       sw = zero
       sw(1,1:n) = s(4)*w(3,1:n) - s(6)*w(2,1:n)
@@ -1552,7 +1552,7 @@ c
 c            
       double precision, dimension(3), intent(in) :: w
       double precision, dimension(6,6), intent(out) :: iw
-@!DIR$ ASSUME_ALIGNED w:64, iw:64    
+c!DIR$ ASSUME_ALIGNED w:64, iw:64    
 c
       iw = zero
       iw(1,4) =  two*w(3)
@@ -1759,7 +1759,7 @@ c
 c
       double precision :: rs
       double precision, external :: mm10_rs
-@!DIR$ ASSUME_ALIGNED stress:64
+c!DIR$ ASSUME_ALIGNED stress:64
 c
       rs = mm10_rs( props, np1, n, stress, tt, i )
       slipinc = np1%dg/tt * dabs(rs/tt)**(props%rate_n-one)*rs
@@ -1789,7 +1789,7 @@ c
       double precision :: stress(6), tt
 c
       double precision :: mm10_rs
-@!DIR$ ASSUME_ALIGNED stress:64
+c!DIR$ ASSUME_ALIGNED stress:64
 c
       mm10_rs =  stress(1)*np1%ms(1,i)
      &         + stress(2)*np1%ms(2,i)
@@ -1811,7 +1811,7 @@ c
       double complex :: stress(6), tt
 c
       double complex :: mm10_rsi
-@!DIR$ ASSUME_ALIGNED stress:64
+c!DIR$ ASSUME_ALIGNED stress:64
 c
       mm10_rsi = stress(1)*np1%ms(1,i)
      &         + stress(2)*np1%ms(2,i)
@@ -2369,8 +2369,8 @@ c
 c
       integer :: nslip, num_hard  
       double precision, allocatable :: temp_arr2(:,:)    
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64     
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64     
 c
 c              arr1 treated as vector inside
 c
@@ -3440,8 +3440,8 @@ c
 c
       integer :: nslip, num_hard  
       double precision, allocatable :: temp_arr2(:,:)    
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64     
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64     
 c
 c              arr1 treated as vector inside
 c
@@ -4454,8 +4454,8 @@ c
 c
       integer :: nslip, num_hard  
       double precision, allocatable :: temp_arr2(:,:)    
-@!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
-@!DIR$ ASSUME_ALIGNED tt:64     
+c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
+c!DIR$ ASSUME_ALIGNED tt:64     
 c
 c              arr1 treated as vector inside
 c
@@ -4909,7 +4909,7 @@ c
       subroutine mm10_b_mult_type_1( a, b, c )
       implicit none
       double precision :: a(3,3), b(3,3), c(3,3)
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     [a] = [b] * [c]
 c
@@ -4933,7 +4933,7 @@ c
       double precision :: a(3,3), b(3,3)
 c
       double precision :: w(3,3)      
-@!DIR$ ASSUME_ALIGNED a:64, b:64, w:64    
+c!DIR$ ASSUME_ALIGNED a:64, b:64, w:64    
 c
 c                     [b] = [a] * [b]
 c
@@ -4958,7 +4958,7 @@ c
       implicit none
       double precision :: a(6), b(6,6), c(6)
       integer :: j
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     a = [b] * c
 c
@@ -4986,7 +4986,7 @@ c
       implicit none
       integer :: j, n
       double precision :: a(6), b(6,n), c(n)
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     a = [b] * c
 c
@@ -5014,7 +5014,7 @@ c
       implicit none
       integer :: j, n
       double precision :: a(3), b(3,n), c(n)
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     a = [b] * c
 c
@@ -5037,7 +5037,7 @@ c
       implicit none
       double precision :: a(6), b(6,6), c(6), d(6), const
       integer :: j
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64, d:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64, d:64      
 c
 c                     a = [b] * c + const * d
 c
@@ -5067,7 +5067,7 @@ c
       implicit none
       double precision :: a(6), b(6,6), c(6)
       integer :: j
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     a = trans( [b] ) * c
 c
@@ -5095,7 +5095,7 @@ c
       subroutine mm10_b_mult_type_3t( a, b, c )
       implicit none
       double precision :: a(3,3), b(3,3), c(3,3)
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     [a] = [b] * trans( [c] )
 c
@@ -5119,7 +5119,7 @@ c
       implicit none
       double precision :: a(6,6), b(6), c(6)
       integer :: i, j
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                    [a] = [a] + b * trans( c )
 c
@@ -5136,7 +5136,7 @@ c
       subroutine mm10_b_mult_type_3( a, b, c )
       implicit none
       double precision :: a(3), b(3,3), c(3)
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     a = [b] * c
 c
@@ -5165,7 +5165,7 @@ c
       integer :: nterms
       double precision :: vec(nterms)
       double precision, parameter :: zero = 0.0d0
-@!DIR$ ASSUME_ALIGNED vec:64       
+c!DIR$ ASSUME_ALIGNED vec:64       
 c
       vec = zero
       return
@@ -5189,7 +5189,7 @@ c
       integer :: i, j      
       double precision :: a(6,6), work(6,6)
       double precision, parameter :: half = 0.5d0
-@!DIR$ ASSUME_ALIGNED a:64, work(3,3):64      
+c!DIR$ ASSUME_ALIGNED a:64, work(3,3):64      
 c
 c                     [a] = ( [a] + trans[a] ) / 2.0
 c
@@ -5220,7 +5220,7 @@ c
       implicit none
       integer :: nterms
       double precision :: a(nterms), b(nterms), c(nterms)
-@!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
       a = b
 c
@@ -5250,7 +5250,7 @@ c
       double precision, parameter :: eps = 1.0d-10
       double precision :: det
       double precision, dimension(3,3) :: cofactor
-@!DIR$ ASSUME_ALIGNED a:64, ainv:64
+c!DIR$ ASSUME_ALIGNED a:64, ainv:64
 c
       det =    a(1,1)*a(2,2)*a(3,3)  
      1       - a(1,1)*a(2,3)*a(3,2)  
