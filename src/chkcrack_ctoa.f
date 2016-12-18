@@ -183,7 +183,7 @@ c     *                      subroutine dam_print_front              *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 4/23/02 rhd                *
+c     *                   last modified : 12/18/2016 rhd             *
 c     *                                                              *
 c     *     This routine prints out the status of the crack front    *
 c     *     nodes for a crack growth by node release model at the    *
@@ -197,17 +197,21 @@ c
       use main_data, only : output_packets, packet_file_no 
       use damage_data
 c
-      implicit integer (a-z)
-      parameter (max_local_list=200)
+      implicit none
 $add common.main
-#sgl      real
-#dbl      double precision
+
+      integer :: step, iter
+
+      integer, parameter ::  max_local_list = 200
+#sgl      real ::
+#dbl      double precision ::
      &     d32460, angle, zero, max_angle, two,
      &     local_angles_list(max_local_list)
-      dimension local_master_list(max_local_list)
-      character * 3  special_char
-      data d32460, zero, two, star / 32460.0, 0.0, 2.0, '*'/
-      logical use_init
+      integer :: i, local_master_list(max_local_list), max_node,
+     &           max_neighbor, num_local_list, num_line, node, idummy
+      character(len=3) :: special_char
+      data d32460, zero, two / 32460.0d0, 0.0d0, 2.0d0 /
+      logical :: use_init
 c
 c           print the header
 c
@@ -232,23 +236,23 @@ c
       do num_line = 1, num_crack_fronts
 c
          call get_slope_master_line( num_line, use_init, angle, 
-     &                               dum )
+     &                               idummy )
          if ( angle .eq. zero ) cycle
          node  = master_lines( num_line, 1)
          angle = angle * two
          if( angle .gt. max_angle ) then
             max_angle = angle
             max_node = node
-         endif
-	 special_char(1:3) = ' '
+         end if
+         special_char(1:3) = ' '
          if( use_init ) special_char(1:3) = '(*)'
-	 if( use_init ) then
+         if( use_init ) then
           write(out,'(6x,i5,7x,f7.2,a3,11x,f4.1,3x,2h<=)')
      &        node, angle, special_char, angle/(init_crit_ang*two)
-	 else
+         else
           write(out,'(6x,i5,7x,f7.2,a3,11x,f4.1,3x,2h<=)')
      &        node, angle, special_char, angle/(critical_angle*two)
-	 end if 
+         end if 
 c
 c          save into vector for packet output after loop
 c
@@ -275,7 +279,7 @@ c
            write(packet_file_no) node, angle, 0,
      &                           angle/(init_crit_ang*two)
           else
-	   write(packet_file_no) node, angle, 1,
+           write(packet_file_no) node, angle, 1,
      &                           angle/(critical_angle*two)
           end if 
         end do
@@ -792,7 +796,7 @@ c                  if the master_lines entry is now zero, then the
 c                  crack has coalesed or grown to a free surface: 
 c 		   exit the release loop.
 c
-	       if( master_lines(num_line,1) .eq. 0 ) exit
+           if( master_lines(num_line,1) .eq. 0 ) exit
 c
 c                  now get the distance between current master node and
 c                  the old master node which initiated the growth increment.
@@ -1106,18 +1110,18 @@ c                          from, or if node found is not on same crack
 c                          front.
 c
                if (neigh2 .eq. node) cycle
-	       if (.not. same_front(neighbor_node, neighbor_data_entry,
+           if (.not. same_front(neighbor_node, neighbor_data_entry,
      &               node) ) cycle
 c
-	       crack_node = .true.
+               crack_node = .true.
                exit
-            enddo
+            end do
 c
 c                       if node is a crack node, then put it in
 c                       crack_front_list
 c
             if (crack_node) then
-	       ptr_last = ptr_last + 1
+               ptr_last = ptr_last + 1
                if (debug) write (out,*) '     cfn neighbor:', 
      &                neighbor_node,' into ',ptr_last
                if (ptr_last .gt. num_nodes_thick) then
@@ -1129,11 +1133,11 @@ c
             endif
 c
  100        continue
-         enddo
+         end do
 c
 c              loop over to next entry in crack_front_list
 c
-      enddo
+      end do
 c
 c              if we are using release by steps, then we don't a
 c              need the nodal list anymore.  Clear it out.
@@ -1141,7 +1145,7 @@ c
       if (release_type .eq. 1) then
          do i=1, num_nodes_thick
             crack_front_list(list_entry,i) = 0
-         enddo
+         end do
       endif
 c
 c
@@ -1244,7 +1248,7 @@ c                         the new node.
 c     
             new_node = neighbor_node
             next_node_found = .true.
-	    if (find_in_list(neighbor_node,dumi).eq.-1) then
+           if (find_in_list(neighbor_node,dumi).eq.-1) then
                call add_to_list (neighbor_node)
                master_entry = master(node)
                if (master_entry .gt. 0) then
@@ -1252,7 +1256,7 @@ c
                endif
             endif
          end if
-      enddo
+      end do
 c
 c	     If we are using the constant front algorithm:
 c            Since we have removed a node, we need to update the master
@@ -1754,8 +1758,8 @@ c                  are on the same crack front.
 c
       same_front = .false.
       do i = 1, num_neighbors(new_data_entry)
-	 node1 = neighbor_nodes(i,new_data_entry)
-	 if( node1 .eq. check_node ) cycle
+         node1 = neighbor_nodes(i,new_data_entry)
+         if( node1 .eq. check_node ) cycle
          node1_data_entry = inv_crkpln_nodes(node1)
          dof = dstmap(node1)+crk_pln_normal_idx-1
          if( cnstrn(dof) .ne. d32460 ) cycle
