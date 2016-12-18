@@ -42,7 +42,6 @@ c
          tstr(6,i) = str(i,3) 
       end do
 c             
-#cvxc$dir scalar
       do i = 1, span
          call ou3dpr( tstr(1,i), ndim, 1, ev(1,i), evec(1,1,i),
      &                ndim, wk(1,i), ier )
