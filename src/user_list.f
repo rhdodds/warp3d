@@ -190,9 +190,8 @@ c
       use main_data, only : user_lists, crdmap
       implicit integer(a-z)
       logical debug, display_coords
-#dbl      double precision ::
-#dgl      real ::
-     & coords(*)       
+#dbl      double precision :: coords(*)
+#sgl      real :: coords(*)
 c      
       integer line(9)
       double precision ::  xcoord, ycoord, zcoord
