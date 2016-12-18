@@ -1311,7 +1311,7 @@ c     *                 subroutine store_csr_formatted               *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 04/25/11                   *
+c     *                   last modified : 12/18/2016                 *
 c     *                                                              *
 c     *     write assembled equations IN CSR in the following format:*
 c     *     n, nnz  (2I8)                                            *
@@ -1321,21 +1321,21 @@ c     *     RHS (E25.16)                                             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine store_csr_formatted(filename, n, nnz, row_ptrs,
-     &                        col_indexes, values,rhs, diagonal)
-c     Input
-      integer :: n, nnz, row_ptrs, col_indexes
-      double precision ::  diagonal, rhs, values
-      dimension diagonal(*), rhs(*), values(*), row_ptrs(*),
-     &       col_indexes(*)
-c     Local variables
-      integer :: i,fileno
+      subroutine store_csr_formatted( filename, n, nnz, row_ptrs,
+     &                        col_indexes, values, rhs, diagonal )
+      implicit none
+
+      integer :: n, nnz, row_ptrs(*), col_indexes(*)
+      double precision ::  diagonal(*), rhs(*), values(*)
+      character(len=*) :: filename
+
+      integer :: i, fileno
       logical :: connected
 c
 c          Find a file number
 c
       do fileno = 11, 99
-        inquire(unit=fileno, opened=  connected )
+        inquire(unit=fileno, opened=connected )
         if ( .not. connected ) go to 100
       end do
       write(*,*) "Couldn't find a file number to write to, skipping"
@@ -1354,15 +1354,15 @@ c
       write(*,*) "Writing"
       write(fileno,5) n,nnz
 5     format(2I10)
-      do i=1,nnz
+      do i=1, nnz
             write(fileno,10) values(i), col_indexes(i)
       end do
 10    format(E25.16,2X,I10)
-      do i=1,n+1
+      do i = 1, n+1
             write(fileno,15) row_ptrs(i)
       end do
 15    format(I10)
-      do i=1,n
+      do i = 1, n
             write(fileno,20) rhs(i)
       end do
 20    format(E25.16)
