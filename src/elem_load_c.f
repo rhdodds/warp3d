@@ -1298,10 +1298,10 @@ c
 c
  9010 format(4x,'(xi,eta,zeta)            ',5x,3f10.6 )
  9020 format(4x,'lvec                     ',5x,3f10.6 )
- 9030 format(4x,'node, vel (dx,dy,dz,dwdt)',i5,4f10.6f)
+ 9030 format(4x,'node, vel (dx,dy,dz,dwdt)',i5,4f10.6)
  9040 format(4x,'value of dwdt            ',5x,f10.6)
- 9050 format(4x,'node, dis (dx,dy,dz,dw)  ',i5,4f10.6f)
- 9060 format(4x,'dsf wrt (x,y,z,f)        ',5x,4f10.6f)
+ 9050 format(4x,'node, dis (dx,dy,dz,dw)  ',i5,4f10.6)
+ 9060 format(4x,'dsf wrt (x,y,z,f)        ',5x,4f10.6)
  9070 format(4x,'value of dwdf            ',5x,f10.6)
  9080 format(4x,'face intensity           ',5x,e13.6)
  9090 format(4x,'at location (x,y,z)      ',5x,3f10.6)
