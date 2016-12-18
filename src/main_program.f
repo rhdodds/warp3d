@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/22/2016 rhd              *
+c     *                   last modified : 12/17/2016 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -64,10 +64,7 @@ c
 c
 c                       print warp3d header
 c
-#lnx      call fdate (sdate_)
-#l64      call fdate (sdate_)
-#mac      call fdate (sdate_)
-#win      call fdate (sdate_)
+      call fdate (sdate_)
 c
 
       write (*,9000) sdate_ , mxnod, mxel
@@ -984,14 +981,13 @@ c
      &     '   33333  DDDD    **',/,
      &     '    **                                             ',
      &     '                  **',/,
-#win     &     '    **     Windows (Intel)            -dev-    Release: ',
-#lnx     &     '    **     Linux (Intel)              -dev-    Release: ',
+#win     &     '    **     Windows 64-bit             -dev-    Release: ',
 #l64     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
-#mac     &     '    **     Mac OS X (Intel)           -dev-    Release: ',
+#mac     &     '    **     Mac OS X                   -dev-    Release: ',
      &     ' 17.7.4      **',/,
 #win     &     '    **     Code Build Number: 3204             ',
 #win     &     '                     **',/,
-!win     &     "    **     Built on: Wed Oct 12 12:55:00 EDT 2016 ",
+!win     &     "    **     Built on: Sat Dec 17 21:39:16 EST 2016 ",
 !win     &     '                   **',/,
      &     '    **     University of Illinois @ U-C.',
      &     '    Civil & Env Engineering  **',/,
@@ -1186,7 +1182,3 @@ c
       call die_gracefully
 c
       end
-
-
-
-
