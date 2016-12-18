@@ -130,7 +130,7 @@ c
       return
 c
  9000 format(2x,'... in count_profile_symmetric: ',
-     & \,10x,'ncoeff: ',i8)
+     & /,10x,'ncoeff: ',i8)
 c
       end
 c     ****************************************************************
@@ -382,7 +382,7 @@ c
       return
 c      
  9000 format(2x,'... in build_col_sparse_symm: ',
-     & \,10x,'last_k_index, neqns: ',2i8)  
+     & /,10x,'last_k_index, neqns: ',2i8)  
  9010 format(6x,12i8) 
 c
       end
