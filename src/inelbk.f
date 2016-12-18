@@ -260,21 +260,28 @@ c     ****************************************************************
 c
       subroutine inelbk_simple_blocking( auto_size, auto_domains,
      &                       auto_num_domains, display )
-      implicit integer (a-z)
+      implicit none
 $add common.main
-      logical display
+      integer :: auto_size, auto_num_domains
+      logical :: auto_domains, display
 c
 c
 c                     locals also visible by contains
 c
-      logical geonon, bbar, cohesive, cyclic_plasticity,
-     &        umat,
-     &        blk_geonon, blk_bbar, blk_cohesive,
-     &        blk_cyclic_plasticity, blk_umat,
-     &        newblk, compatible, auto_domains, blk_dmg, dmg
-      integer blk_matmodel, matmodel, blk_eletype, eletype,
-     &        blk_intord, intord, blk_intnum, intnum,
-     &        blk_matnum, matnum
+      logical :: geonon, bbar, cohesive, cyclic_plasticity,
+     &           umat,
+     &           blk_geonon, blk_bbar, blk_cohesive,
+     &           blk_cyclic_plasticity, blk_umat,
+     &           newblk, compatible, blk_dmg, dmg
+c     
+      integer ::  blk_matmodel, matmodel, blk_eletype, eletype,
+     &            blk_intord, intord, blk_intnum, intnum, i, 
+     &            blk_matnum, matnum, current_size, felem, 
+     &            element, param, idomain, hblk, lblk, blks_per_domain
+
+      character(len=1) :: dums
+      double precision :: dumd
+      real :: dumr
 c
 c                     first generation of automatic assignment of
 c                     elements to blocks.
@@ -289,7 +296,7 @@ c                        blocking in this first set of
 c                        features.
 c
 c
-      nelblk       = 1
+      nelblk       = 1   ! in common main
       current_size = 1
       felem        = 1
       elblks(1,1)  = 1  ! first element in block
@@ -334,11 +341,11 @@ c
       end do
 
       if( .not. auto_domains ) go to 200
-      write(*,*) '.. auto_num_domains: ' , auto_num_domains
+      write(out,*) '.. auto_num_domains: ' , auto_num_domains
       if( use_mpi ) auto_num_domains = numprocs
       lblk = 1
       blks_per_domain = nelblk / auto_num_domains
-      write(*,*) '.. blks_per_domain: ',blks_per_domain
+      write(out,*) '.. blks_per_domain: ',blks_per_domain
       do idomain = 1, auto_num_domains
         hblk = min( nelblk, idomain * blks_per_domain )
         if( idomain .eq. auto_num_domains ) hblk = nelblk
@@ -375,7 +382,8 @@ c ********************************************************************
 c
 c
       subroutine inelbk_load_block_props( now_elem )
-      implicit integer (a-z)
+      implicit none
+      integer :: now_elem
 c
       blk_matmodel  = iprops(25,now_elem)
       blk_eletype   = iprops(1,now_elem)
@@ -400,7 +408,8 @@ c ********************************************************************
 c
 c
       subroutine inelbk_load_elem_props( now_elem )
-      implicit integer (a-z)
+      implicit none
+      integer :: now_elem
 c
       matmodel  = iprops(25,now_elem)
       eletype   = iprops(1,now_elem)
@@ -425,7 +434,7 @@ c ********************************************************************
 c
 c
       subroutine inelbk_chk_match( match )
-      implicit integer (a-z)
+      implicit none
       logical match
 c
       match = .true.
@@ -465,14 +474,14 @@ c
       if( blk_intnum .ne. intnum ) match = .false.
       if( .not. match ) return
 c
-      if( blk_bbar .ne. bbar ) match = .false.
+      if( blk_bbar .neqv. bbar ) match = .false.
       if( .not. match ) return
 c
 c                       Mark modification -- also need to check if 
 c                       you are spoofing this material type for a
 c                       damage calculation or not.
 c
-      if ( blk_dmg .ne. dmg) match = .false.
+      if ( blk_dmg .neqv. dmg) match = .false.
       if( .not. match ) return
       return
       end subroutine inelbk_chk_match
