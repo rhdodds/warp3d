@@ -386,7 +386,6 @@ c
       word = ( item - 1 ) / 30  + 1
       bit  = item - ( word-1 ) * 30
 !sun          mapvec(word) = ior( mapvec(word),bits(bit) )
-#sun          mapvec(word) = or( mapvec(word),bits(bit) )
 c
       return
       end
@@ -408,7 +407,6 @@ c             bit map.
 c
       word = ( entry-1 ) / 30  + 1
       bit  = entry - ( word-1 ) * 30
-#sun      dibmck = and( bits(bit),mapvec(word) ) .ne. 0 
 !sun      dibmck = iand( bits(bit),mapvec(word) ) .ne. 0 
 c
       return

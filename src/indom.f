@@ -511,7 +511,6 @@ c
       word = ( elemno-1 ) / 30 + 1
       bit  = elemno - (word-1)*30       
 !sun      q_element_maps(word) = ior( q_element_maps(word), bits(bit) )
-#sun      q_element_maps(word) = or( q_element_maps(word), bits(bit) )
 c
  720  if ( iplist .ne. 0 ) go to 710
       go to 10
@@ -689,7 +688,6 @@ c
            word = ( elemno-1 ) / 30  + 1
            bit  = elemno - ( word-1 ) * 30
 !sun           if ( iand( bits(bit),q_element_maps(word) ) .ne. 0 ) 
-#sun           if ( and( bits(bit),q_element_maps(word) ) .ne. 0 ) 
      &         write(out,9200) elemno
          end do
       end if

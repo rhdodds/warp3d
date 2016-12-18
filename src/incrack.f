@@ -434,7 +434,6 @@ c
      &     icn, elem )
       if( growth_by_kill ) then
 !sun          if ( iand (iprops(30,elem),2).ne.0 ) then
-#sun          if ( and (iprops(30,elem),2).ne.0 ) then
               num_print_list = num_print_list + 1
          end if
       end if
@@ -537,7 +536,6 @@ c
       call trxlst( scan_kill_order_list, scan_kill_order_length,
      &     iplist, icn, elem )
 !sun      if ( iand (iprops(30,elem),2).ne.0 ) then
-#sun      if ( and (iprops(30,elem),2).ne.0 ) then
          num_kill_order_list = num_kill_order_list + 1
       endif
       if ( iplist.ne.0 ) goto 665
@@ -1517,7 +1515,6 @@ c
       call trxlst( scan_order_list, scan_order_list_size, iplist, icn,
      &     elem )
 !sun      if ( iand (iprops(30,elem),2).ne.0 ) then
-#sun      if ( and (iprops(30,elem),2).ne.0 ) then
          list_entry = list_entry + 1
          dam_print_list(list_entry) = elem
       end if
@@ -1571,7 +1568,6 @@ c
       call trxlst( scan_kill_order_list, scan_kill_order_length,
      &     iplist, icn, elem )
 !sun      if ( iand (iprops(30,elem),2).ne.0 ) then
-#sun      if ( and (iprops(30,elem),2).ne.0 ) then
          list_entry = list_entry + 1
          kill_order_list(list_entry) = elem
          if ( debug ) write(out,'(" entry:",i3," elem:",i7)')list_entry,
