@@ -689,7 +689,7 @@ c
         local_work%number_points    = no_pts
         local_work%curve_set_number = curve_set_number
         local_work%eps_curve(1:no_pts) =
-     &          seg_curves(1:no_points,1,first_curve)
+     &          seg_curves(1:no_pts,1,first_curve)
       end if
 c
       return
