@@ -623,7 +623,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity model       * 
 c *                                                                 *
-c *        mm05_fa_compute  -- last modified 5/29/09 by kbc         *
+c *        mm05_fa_compute  -- last modified 12/18/2016 rhd         *
 c *                                                                 *
 c *        subincrementation based on truncation error with         *
 c *        extrapolation                                            *
@@ -664,7 +664,7 @@ c
      & alpha_n(6), alpha_np1(6), alpha_1step(6),  stress_1step(6), 
      & alpha_2step(6), stress_2step(6), alpha_nstep(6), stress_nstep(6),
      & dev_stress_n(6), dev_stress_np1(6),diff(6), devdeps(6), sig_t(6),
-     & norm_equiv_sm1(6), alpha_sm1(6)
+     & norm_equiv_sm1, alpha_sm1(6)
 c
        data  two, one, three,  root2third
      &   /  2.0, 1.0, 3.0, 0.81649658  /
@@ -720,11 +720,11 @@ c     use only one substep and return (for debugging)
            write(*,*) 'elastic fraction: ', eta
            write(iout,9005) (devdeps(j), j=1,6)
            write(iout,9004) (trial_stress(i,j), j=1,6)
-        call mm05_fa_nsteps(1, devdeps, dev_stress_n, alpha_n, aps_n, 
+        call mm05_fa_nsteps( 1, devdeps, dev_stress_n, alpha_n, aps_n, 
      &      g, Q_bar, b, H_bar, gamma,  sigyld_vec(i),
      &      stress_1step, alpha_1step, aps_1step, lambda_1step,
-     &      sig_t, alpha_sm1, norm_equiv_sm1,iout,gpn,felem, i, step,
-     &      iter, signal_flag, adaptive_possible, cut_step_size_now)
+     &      sig_t, alpha_sm1, norm_equiv_sm1, iout, gpn, felem, i, step,
+     &      iter, signal_flag, adaptive_possible, cut_step_size_now )
 c
          stress_np1(i,1:6) = stress_1step(1:6)
          history_np1(i,1) = lambda_1step
@@ -742,7 +742,7 @@ c
         call mm05_fa_nsteps(1, devdeps, dev_stress_n, alpha_n, aps_n, 
      &      g, Q_bar, b, H_bar, gamma,  sigyld_vec(i),
      &      stress_1step, alpha_1step, aps_1step, lambda_1step,
-     &      sig_t, alpha_sm1, norm_equiv_sm1,iout,gpn,felem, i, step,
+     &      sig_t, alpha_sm1, norm_equiv_sm1, iout,gpn, felem, i, step,
      &      iter, signal_flag, adaptive_possible, cut_step_size_now)
 c
 c        write(*,*) 'return from 1step calcs'
@@ -805,8 +805,9 @@ c
            call mm05_fa_nsteps(nsubinc, devdeps, dev_stress_n, alpha_n,
      &         aps_n, g, Q_bar, b, H_bar, gamma,  sigyld_vec(i),
      &         stress_nstep, alpha_nstep, aps_nstep, lambda_nstep,
-     &         sig_t, alpha_sm1, norm_equiv_sm1,iout,gpn,felem, i, step,
-     &         iter, signal_flag, adaptive_possible, cut_step_size_now)
+     &         sig_t, alpha_sm1, norm_equiv_sm1, iout, gpn, felem, 
+     &         i, step, iter, signal_flag, adaptive_possible,
+     &         cut_step_size_now )
 c
             a = (one*nsubinc)/(nsubinc-2)
             bb = (one*2)/(nsubinc-2)
@@ -926,7 +927,7 @@ c
               call  mm05_fa_lambda_solve( iout, sigyld, alpha_j,
      &          sig_t, equiv, aps_j,gamma, lambda, k_np1, Q_bar, b,
      &          H_bar, lg, g, adaptive_possible, cut_step_size_now,
-     &          signal_flag,gpn, felem, step, i, H_np1, iter, s )
+     &          signal_flag, gpn, felem, step, i, H_np1, iter, s )
 c
                kappa = two*g*lambda/k_np1
                beta  = lambda*H_np1/k_np1
