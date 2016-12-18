@@ -1961,7 +1961,6 @@ c
       logical anucleation
 c
       type :: arguments
-#r60        sequence
         integer :: iter, abs_element, relem, ipoint, iout
         logical :: allow_cut, segmental, power_law,
      &             rate_depend_segmental, signal_flag, cut_step
