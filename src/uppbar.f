@@ -19,8 +19,7 @@ c
 c
 c          parameters
 c
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      &  pbar(nodof), mdiag(nodof), accel(nodof), veloc(nodof),
      &  load(nodof), dload(nodof),
      &  nbeta, dt, adapt_load_fact
@@ -30,8 +29,7 @@ c
 c          locals
 c
       integer :: i
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      & nfac1, nfac2, one, two, adfact, force_lag, zero, inertia
       logical :: have_mpcs
       logical, parameter :: local_debug = .false.
