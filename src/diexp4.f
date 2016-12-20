@@ -11,7 +11,7 @@ c
       use j_data
       use main_data, only : inverse_incidences
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                     parameter declarations
 c
@@ -147,7 +147,7 @@ c
       use j_data
       use main_data, only : inverse_incidences
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                     parameter declarations
 c
@@ -385,7 +385,7 @@ c             turn on bit in bit map for integer.
 c
       word = ( item - 1 ) / 30  + 1
       bit  = item - ( word-1 ) * 30
-!sun          mapvec(word) = ior( mapvec(word),bits(bit) )
+      mapvec(word) = ior( mapvec(word),bits(bit) )
 c
       return
       end
@@ -407,7 +407,7 @@ c             bit map.
 c
       word = ( entry-1 ) / 30  + 1
       bit  = entry - ( word-1 ) * 30
-!sun      dibmck = iand( bits(bit),mapvec(word) ) .ne. 0 
+      dibmck = iand( bits(bit),mapvec(word) ) .ne. 0 
 c
       return
       end
