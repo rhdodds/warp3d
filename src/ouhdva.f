@@ -25,7 +25,7 @@ c
      &                      inverse_dof_map
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical wide, eform, prec, noheader, react_totals_only,
      &        out_packet_now
       dimension intlst(*)
@@ -36,11 +36,9 @@ c
       character*20 hedtyp
       logical newel, write_to_packet
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd, zero, react_sums(3)
-#sgl      data zero / 0.0 /
-#dbl      data zero / 0.0d00 /
+      data zero / 0.0d00 /
 c
 c                       initialize parameters controlling output.
 c
