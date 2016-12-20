@@ -19,9 +19,8 @@ c
       subroutine innum( sbflg1, sbflg2 )
       use main_data, only : elstor, incmap, crdmap
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &   dumd
       real dumr
       character dums
