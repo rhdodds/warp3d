@@ -20,11 +20,10 @@ c
      &                   type, macrointer, minum )
       use main_data, only : elstor
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       logical defmat, deftyp, macrointer
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd
       character dums
       dimension intlst(*)               
