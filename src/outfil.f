@@ -16,7 +16,7 @@ c
       subroutine outfil
       use file_info
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
       character*8 dums
       character*80 filnam, outfle
