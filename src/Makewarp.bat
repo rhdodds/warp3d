@@ -6,7 +6,7 @@ cls
 ::
 ::                             Makewarp.windows.cmd
 ::
-::   A command prompt batch file to build WARP3D on Windows XP, Vista, Windows 7.
+::   A command prompt batch file to build WARP3D on Windows.
 ::   Uses the windows nMake utility and the Makefile.windows.nmake makefile.
 ::
 ::   This script builds a 64-bit version of WARP3D.
@@ -16,11 +16,9 @@ cls
 ::
 ::   usage:     Makewarp.bat
 ::
-::   This set up works for Intel ifort compiler version 13.0 and later.
+::   This set up works for Intel ifort compiler.
 ::
 :: ****************************************************************************
-::
-::
 ::
 ::
 ::       Location of the "nmake" tool must be set here. The 64-bit command
@@ -28,7 +26,7 @@ cls
 ::       located under the 32-bit c:\Program Files (x86)
 ::
 set nmake_exe="c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe"
-#
+::
 if not exist %nmake_exe% (
   echo.
   echo .... Fatal Error: the Windows nmake program must be available
@@ -43,23 +41,11 @@ set build_mode=64
   echo.
   echo    ******************************************************
   echo    *                                                    *
-  echo    *   Makewarp batch file for WinXP/Vista/Windows 7    *
+  echo    *       Makewarp batch file for Windows              *
   echo    *             (64-bit architectures)                 *
   echo    *                                                    *
   echo    ******************************************************
   echo.
-::
-::   ==================================================================
-::
-::	 Build the usual filter program if required. WARP3D source code
-::       files pass thru the filter to make the OS specific version.
-::
-  if not exist .\filter_intel_windows.exe (
-     echo -- Building filter program...
-     echo.
-     ifort /O2 /nologo /nowarn filter_intel_windows.f /o filter_intel_windows.exe
-     if exist .\filter_intel_windows.obj (del .\filter_intel_windows.obj)
-     )
 ::
 ::   ==================================================================
 ::
@@ -131,10 +117,14 @@ set build_mode=64
 ::
 ::	Run the makefile.
 ::
-
+::  touch main so it always gets compiled. internally gets date/time
+::  of this compile and includes in warp3d header block
+::
+copy /b main_program.f +,,
+::
 if "%build_mode%" == "64" (
   echo -- Compiling WARP3D for 64-bit execution on
-  echo -- Windows XP, Vista, Windows 7 with nmake utility...
+  echo -- Windows with nmake utility...
   echo.
   %nmake_exe% /f Makefile.windows.nmake ARCH64=64
  )
