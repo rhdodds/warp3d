@@ -17,7 +17,7 @@ c
      &      max_comment_lines, num_comment_lines,
      &      nterms_crystal_list, crystal_list )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                       parameters
 c
@@ -877,8 +877,7 @@ c
      &           hist_size, int_points, span, iout, ncrystals_blk,
      &           max_num_crystals, user_output_opt1, user_output_opt2,
      &           nterms_crystal_list, crystal_list(*)
-#dbl      double precision ::
-#sgl      real  ::
+      double precision ::
      & elem_states_output(num_states,span),
      & history_blk(hist_size,int_points,span)
 c
@@ -1021,9 +1020,8 @@ c
 c              parameters. history_blk passed to declare alignment
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c              locals
@@ -1142,16 +1140,14 @@ c
 c              parameters. history_blk passed to declare alignment
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c              locals
 c
       integer :: num_states_here, s, e, sh, eh, cry_id, nc
-#dbl      double precision :: nyevec(9),  gradvec(27)
-#sgl      real :: nyevec(9),  gradvec(27)
+      double precision :: nyevec(9),  gradvec(27)
 c
 c!DIR$ ASSUME_ALIGNED one_elem_states:64
 c!DIR$ ASSUME_ALIGNED gradvec:64, nyevec:64, hisblk:64
@@ -1394,9 +1390,8 @@ c               parameters. history_blk passed so alignment
 c               can be declared
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c               locals
@@ -1468,9 +1463,8 @@ c               parameters. history_blk passed so alignment
 c               can be declared
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c               locals
@@ -1556,9 +1550,8 @@ c               parameters. history_blk passed so alignment
 c               can be declared
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c               locals
@@ -1662,16 +1655,14 @@ c               parameters. history_blk passed so alignment
 c               can be declared
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c               locals
 c
       integer :: s, e, sh, eh, num_states_here, nc, cry_id
-#dbl      double precision :: nyevec(9),  gradvec(27)
-#sgl      real :: nyevec(9),  gradvec(27)
+      double precision :: nyevec(9),  gradvec(27)
 c
 c!DIR$ ASSUME_ALIGNED one_elem_states:64
 c!DIR$ ASSUME_ALIGNED gradvec:64, nyevec:64, hisblk:64
@@ -1791,16 +1782,14 @@ c                       parameters. history_blk passed so alignment
 c                       can be declared
 c
       implicit none
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      & one_elem_states(num_states), hisblk(hist_size,int_points,span)
 c
 c                       locals
 c
       integer :: num_states_here, s, e, sh, eh
-#dbl      double precision :: nyevec(9),  gradvec(27)
-#sgl      real :: nyevec(9),  gradvec(27)
+      double precision :: nyevec(9),  gradvec(27)
 c
 c!DIR$ ASSUME_ALIGNED one_elem_states:64
 c!DIR$ ASSUME_ALIGNED gradvec:64, nyevec:64, hisblk:64
@@ -1918,7 +1907,7 @@ c
       do d = 1,3
           do z = 1,3
             do b = 1,3
-@!DIR$ IVDEP
+!DIR$ IVDEP
                 do w = 1,3
                   kk = (z-b)*(b-w)*(w-z)/2
                   nye(d,z) = nye(d,z) - dble(kk)*gradFe(d,b,w)
@@ -1949,13 +1938,11 @@ c
       implicit none
 
       integer :: s, e, sh, eh,  hist_size, int_points
-#dbl      double precision ::
-#sgl      real  ::
+      double precision ::
      & states_vec(*), hisblk(hist_size,int_points)
 
       integer :: igp, len1, len2
-#dbl      double precision :: one, dint_pts
-#sgl      real  :: one, dint_pts
+      double precision :: one, dint_pts
 c
       data one / 1.0d00 /
 c!DIR$ ASSUME_ALIGNED states_vec:64, hisblk:64
@@ -1969,7 +1956,7 @@ c
 c
       dint_pts = one / dble( int_points )
 c
-@!DIR$ IVDEP
+!DIR$ IVDEP
       do igp = 1, int_points
          states_vec(s:e) = states_vec(s:e) + hisblk(sh:eh,igp)
       end do
