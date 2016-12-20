@@ -30,8 +30,7 @@ c          been verified. they are shared read-only across threads
 c
 c                     double precision/reals
 c
-#dbl       double precision
-#sgl       real
+       double precision
      & seg_curves(max_seg_points,2,max_seg_curves),
      & seg_curves_min_stress(max_seg_curves),
      & seg_curves_value(max_seg_curves),
@@ -70,20 +69,17 @@ c          module. We use the threadprivate declaration so
 c          each thread gets their own copy. This works even for
 c          allocated arrays
 c
-#dbl       double precision,
-#sgl       real,
+       double precision,
      &  dimension (:), allocatable :: sigma_curve_min_values,
      &  curve_temps, curve_e_values, curve_nu_values,
      &  curve_alpha_values, curve_rates,
      &  curve_gp_sig_0_values, curve_gp_h_u_values,
      &  curve_gp_beta_u_values, curve_gp_delta_u_values
-#dbl       double precision,
-#sgl       real, 
+       double precision,
      &   dimension(max_seg_points) ::
      &   curve_plseps_values
 c
-#dbl       double precision,
-#sgl       real,
+       double precision,
      &  dimension (:,:), allocatable :: sigma_curves,
      &                                  sigma_inter_table
 c
