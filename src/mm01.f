@@ -26,7 +26,7 @@ c
      &                 deps, history, history1, rtse, dtemps,
      &                 ym_n, nu_n )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c          update the stresses and internal state variables at gauss
 c          point "gpn" for "span" elements in the current block.
@@ -101,8 +101,7 @@ c
 c
 c                     parameters
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     nu_n1(*), beta(*), hprime_n1(*), cgn(mxvl,*),
      &     cgn1(mxvl,*), deps(mxvl,*), ym_n1(*), history(span,*),
      &     yld_n1(*), history1(span,*), rtse(mxvl,*), dtemps(*),
@@ -114,8 +113,7 @@ c                     allocated because both mxvl and nstr
 c                     are defined as parameters in the include file
 c                     param_def
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     yfn(mxvl), mrts(mxvl), alpha_n(mxvl,6), devstr_n1(mxvl,nstr),
      &     shear_mod_n1(mxvl), lk(mxvl), kbar(mxvl), eps_vol_n1(mxvl),
      &     zero
@@ -123,8 +121,7 @@ c
       logical yield(mxvl), trcmat, local_debug, prior_linear(mxvl),
      &        isothermal
 c
-#sgl      data zero / 0.0 /
-#dbl      data zero / 0.0d00 /
+      data zero / 0.0d00 /
 c
 c                       get the current output device for any meesages.
 c                       set up history if this is an iteration during
@@ -241,27 +238,23 @@ c
 c
 c                     parameters
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     hprime(*), cgn(mxvl,*), history(span,*), sigma_o(*),
      &     history1(span,*), ym_n1(*), nu_n1(*)
 c
 c                     locals
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   kn, dword
       integer iword(2)
       equivalence ( dword, iword )
 c
 c                     numerical constants
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   root3, zero
 c
-#sgl      data zero, root3 / 0.0, 1.7320508 / 
-#dbl      data zero, root3 / 0.0d00, 1.73205080756888d00 / 
+      data zero, root3 / 0.0d00, 1.73205080756888d00 / 
 c
 c           set up the history vector for the material.
 c           (1) -- updated estimate for lamda * deltat
@@ -341,8 +334,7 @@ c
       integer span, mxvl, iostat(*), instat(*), iter, iout
       logical   prior_linear(*), isothermal, debug, yield(*),
      &          lnelas(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & deps(mxvl,*), history(span,*), cgn(mxvl,*), ym_n1(*),
      & shear_mod(*), alpha_n(mxvl,*), nu_n1(*), rtse(mxvl,*), dtemps(*),
      & lk(*), beta(*), hprime_n1(*), yld_n1(*), kbar(*), mrts(*), yf(*),
@@ -350,8 +342,7 @@ c
 c
 c                     locals
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & dword, three, eps_mean, de1, de2, de3, de4, de5, de6,
      & one, two, temper_tol, htol, deps_vol,
      & hbari_np1, hbark_np1, hbark_n, root3, root2, yld_tol,
@@ -362,11 +353,9 @@ c
       equivalence ( dword, iword )
       data one, two, three, temper_tol, htol, root3, root2, yld_tol,
      &     zero 
-#sgl     & / 1.0, 2.0, 3.0, 0.00001, 0.000001, 1.7320508, 
-#sgl     &   1.414213562373095, 0.0000001, 0.0 /
-#dbl     & / 1.0d00, 2.0d00, 3.0d00, 0.00001d00, 0.000001d00,
-#dbl     &   1.7320508075688d00,
-#dbl     &   1.414213562373095d00, 0.0000001d00, 0.0d00 /
+     & / 1.0d00, 2.0d00, 3.0d00, 0.00001d00, 0.000001d00,
+     &   1.7320508075688d00,
+     &   1.414213562373095d00, 0.0000001d00, 0.0d00 /
 c
 c
 c                       do the basic setup of the trial elastic stress
@@ -557,8 +546,7 @@ c
 c                     parameters
 c
       integer span, mxvl
-#dbl      double precision
-#sgl      real
+      double precision
      & cgn(mxvl,*), cgn1(mxvl,*), deps(mxvl,*), nu(*), ym(*),
      & shear_mod(*)
       logical yield(*)
@@ -566,14 +554,12 @@ c
 c                     locals
 c
       integer i
-#dbl      double precision
-#sgl      real
+      double precision
      & zero, deps_plas_bar, dsig(6), deps_plas(6), half, root2, three,
      & two, factor1, factor2
 c     
       data zero, half, root2, three, two 
-#sgl     &  / 0.0, 0.5, 1.414213562373095, 3.0, 2.0 /
-#dbl     &  / 0.0d00, 0.5d00, 1.414213562373095d00, 3.0d00, 2.0d00 /
+     &  / 0.0d00, 0.5d00, 1.414213562373095d00, 3.0d00, 2.0d00 /
 
 c
 c                       for plastic points, compute the updated
@@ -642,8 +628,7 @@ c                     parameters
 c
       integer span, mxvl, instat(*)
       logical debug
-#dbl      double precision
-#sgl      real
+      double precision
      & cgn(mxvl,*), cgn1(mxvl,*),
      & ym(*), nu(*), shear_mod(*), devstr_n1(mxvl,*), deps(mxvl,*),
      & history1(span,*), eps_vol_n1(*)
@@ -651,13 +636,11 @@ c
 c                     locals
 c
       integer i, iword(2), k
-#dbl      double precision
-#sgl      real
+      double precision
      & sig_mean_np1, one, two, three, half, dword
       equivalence ( dword, iword )
       data one, two, three, half
-#sgl     &  / 1.0, 2.0, 3.0, 0.5 /
-#dbl     &  / 1.0d00, 2.0d00, 3.0d00, 0.5d00 /
+     &  / 1.0d00, 2.0d00, 3.0d00, 0.5d00 /
 c
 c                       compute the updated stresses from their
 c                       deviator values at state (n+1) and the
@@ -723,8 +706,7 @@ c                     parameters
 c
       integer  mxvl, span
       logical debug, yield(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & history(span,*), history1(span,*), kbar(*),
      & mrts(*), shear_mod_n1(*), hprime_n1(*), beta(*),
      & rtse(mxvl,*), devstr_n1(mxvl,*)
@@ -732,20 +714,16 @@ c
 c                     locals 
 c
       integer j, i
-#dbl      double precision
-#sgl      real
+      double precision
      & lambda_deltat, k_np1, hbark_np1, const1, hbari_np1, const2
 c
 c                     numerical constants
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & root2, twthrd, one, two, three, root23, root3
       data root2, twthrd, one, two, three, root23
-#sgl     & / 1.414213562373095, 0.666666666666667, 1.0, 2.0, 3.0, 
-#sgl     &   0.816496580927 / 
-#dbl     & / 1.414213562373095d00, 0.666666666666667d00, 1.0d00, 
-#dbl     &   2.0d00, 3.0d00, 0.816496580927d00 / 
+     & / 1.414213562373095d00, 0.666666666666667d00, 1.0d00, 
+     &   2.0d00, 3.0d00, 0.816496580927d00 / 
 c
 c                       see mm01_init_history for map of history
 c                       vector for a gauss point.
@@ -826,8 +804,7 @@ c                     parameters
 c
       integer  mxvl, span, iout
       logical debug, yield(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & history(span,*), history1(span,*), kbar(*),
      & mrts(*), shear_mod_n1(*), hprime_n1(*), beta(*),
      & rtse(mxvl,*), devstr_n1(mxvl,*), lk(*), dtemps(*)
@@ -835,24 +812,20 @@ c
 c                     locals
 c
       integer j, i
-#dbl      double precision
-#sgl      real
+      double precision
      & lambda_deltat, hbark_np1, const1, term1, term2,
      & hbari_np1, const2, a, b, d, vbar, wbar, vwbar,
      & t1, t2, t3, hbark_n, discr, qroot1, qroot2, hbari_n
 c
 c                     constants
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & root2, twthrd, one, two, three, root23, four, zero, root2o3
       data root2, twthrd, one, two, three, root23, four, zero,
      &     root2o3
-#sgl     & / 1.414213562373095, 0.666666666666667, 1.0, 2.0, 3.0, 
-#sgl     &   0.816496580927, 4.0, 0.0, 0.4714045207910 /
-#dbl     & / 1.414213562373095d00, 0.666666666666667d00, 1.0d00,
-#dbl     &   2.0d00, 3.0d00,  0.816496580927d00, 4.0d00, 
-#dbl     &   0.0d00, 0.4714045207910d00 /
+     & / 1.414213562373095d00, 0.666666666666667d00, 1.0d00,
+     &   2.0d00, 3.0d00,  0.816496580927d00, 4.0d00, 
+     &   0.0d00, 0.4714045207910d00 /
 c
 c                       see mm01_init_history for map of history
 c                       vector for a gauss point.
@@ -1048,18 +1021,16 @@ c
       use main_data, only: elems_to_blocks
 c      
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
 c                       locals
 c
-#dbl      double precision, 
-#sgl      real,
+      double precision, 
      & allocatable :: history_dump(:,:,:), one_elem_states(:)
       integer :: relem, elnum, hist_size, blockno
       logical :: do_a_block
@@ -1145,8 +1116,7 @@ c
 c                       locals
 c
       integer :: ipt   
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      & epspls, kbar, state, back_stress(6), dword
        integer :: iword(2)
        equivalence ( dword, iword )
@@ -1247,21 +1217,19 @@ c
       subroutine cnst1( span, cep, rtsg, nu, e, kn1, hprime,
      &                  beta, ldt, dstates, felem, iout )
       implicit none
-$add param_def        
+      include 'param_def'        
 c
 c                       parameter declarations
 c
       integer :: span, felem, iout
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   cep(mxvl,nstr,*), rtsg(mxvl,*), e(*), nu(*), kn1(*),
      &   hprime(*), beta(*), ldt(*), dstates(*)
 c
 c                      locals
 c
       integer :: i, j, iestate, iword(2)
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   bb(mxvl), albar(mxvl),
      &   thbar(mxvl), c1(mxvl), c2(mxvl), c3(mxvl), c4(mxvl), g(mxvl),
      &   l(mxvl), k(mxvl), mrtsq(mxvl), gambar(mxvl), gamma(mxvl),
@@ -1275,7 +1243,7 @@ c
 c
       local_debug = .false.
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
        dword   = dstates(i)
        iestate = iword(1)
@@ -1296,7 +1264,7 @@ c
         end do
       end if
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
        if( yield(i) ) cycle
        cep(i,1,4) = zero
@@ -1341,7 +1309,7 @@ c
        cep(i,3,2) = c4(i)
       end do  
 c                
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
        if( .not. yield(i) ) cycle
        g(i) = e(i)/(two*(one+nu(i)))
