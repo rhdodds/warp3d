@@ -15,11 +15,10 @@ c
       use main_data, only : output_packets, packet_file_name,
      &                      packet_file_no
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
       logical found, msg_flag 
 
@@ -54,11 +53,10 @@ c
       subroutine close_packets_file(msg_flag)
       use main_data, only : packet_file_name, packet_file_no
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
       logical connected, msg_flag
 c
