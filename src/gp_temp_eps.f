@@ -21,12 +21,11 @@ c
      &       temper_increment, temps_node_to_process,
      &       temperatures_ref, temps_ref_node_blk, gp_rtemps  )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dtemps_node_blk(mxvl,*), gp_dtemps(*), gp_temps(*),
      &  temps_node_blk(mxvl,*), temps_ref_node_blk(mxvl,*),
      &  gp_rtemps(*)
@@ -35,8 +34,7 @@ c
 c
 c                     locally defined arrays-variables
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &  sf(mxndel), xi, eta, zeta, weight, zero, xx
       logical local_debug
       data zero, local_debug / 0.0, .false. /
@@ -135,19 +133,17 @@ c
       subroutine gp_temp_eps( span, deps, alpha_n1, gp_dtemps,
      &                        gp_temps, gp_rtemps, alpha_n  )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  deps(mxvl,*), alpha_n1(mxvl,6), alpha_n(mxvl,6),
      &  gp_dtemps(*), gp_temps(*), gp_rtemps(*)
 c
 c                     locally defined arrays-variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  theta_n, dtn, dtn1, deps_theta(6), zero
 
       logical local_debug
