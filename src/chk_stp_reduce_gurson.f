@@ -21,14 +21,13 @@ c
       use elem_extinct_data, only : old_porosity, dam_state
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical debug
 c
 c           local declarations
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     new_porosity, two, dumd1, dumd2, dumd3, dumd4, max_del_poros,
      &     zero, dumd5, dumd6
       logical not_cut, duml, all_killed, 
@@ -147,8 +146,7 @@ c
 c
 c           local declarations
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     two, dumd1, dumd2, dumd3, dumd4, max_factor, min_factor,
      &     del_poros(*), max_porosity_change, zero, one, point_eight,
      &     ave_del_poros, ratio, perm_load_fact, tfactor, four          
