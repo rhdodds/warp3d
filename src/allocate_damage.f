@@ -21,12 +21,11 @@ c
       use damage_data
       implicit integer (a-z)
 c
-$add common.main  
+      include 'common.main'  
 c
 c
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     zero, dumd1, dumd2, dumd3, dumd4, dumd5, dumd6,
      &     porosity, plast_strain,
      &     values(20)
