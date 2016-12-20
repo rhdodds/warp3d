@@ -20,7 +20,7 @@ c
      &                     output_states_type_opt1,
      &                     output_states_type_opt2
       implicit none
-$add common.main
+      include 'common.main'
       logical :: ouflg, oubin, ouasc, ounod, flat_file, stream_file,
      &           text_file, compressed
 c
@@ -31,11 +31,9 @@ c
      &           last_blk
       integer, external :: warp3d_get_device_number, omp_get_thread_num,
      &                     warp3d_matl_num
-#sgl      real, allocatable, dimension(:) ::
-#dbl      double precision, allocatable, dimension(:,:) ::
+      double precision, allocatable, dimension(:,:) ::
      &  st_values
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  start_time, end_time, zero, start_time2, end_time2
       double precision, external :: omp_get_wtime
       integer :: num_values, num_states, num_matl_models, ncrystals,
@@ -734,8 +732,7 @@ c
 c
 c                       local declarations
 c
-#dbl      character(len=4) :: title(80), title1(80)
-#sgl      character(len=8) :: title(80), title1(80)
+      character(len=4) :: title(80), title1(80)
       character(len=80) :: string, strng1, stepstring*6
       integer :: titl(80), titl1(80), i
       equivalence (title,titl), (title1,titl1)
@@ -794,8 +791,7 @@ c
 c                       local declarations
 c
       integer :: elem, k
-#dbl      double precision :: small_tol, zero
-#sgl      real :: small_tol, zero
+      double precision :: small_tol, zero
       data small_tol, zero / 1.0d-80, 0.0d00 /
 c
 c           sanity check
@@ -1109,8 +1105,7 @@ c
      &           felem, span, ncrystals_blk, max_num_crystals,
      &           output_states_type_opt1, output_states_type_opt2,
      &           nterms_crystal_list, crystal_list(*)
-#dbl      double precision :: elem_states_output(num_states,*)
-#sgl      real  :: elem_states_output(num_states,*)
+      double precision :: elem_states_output(num_states,*)
 c
 c                       locals
 c
