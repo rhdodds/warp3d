@@ -31,12 +31,11 @@ c
       use pvars
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 
       integer dumi, dot
       real dumr
-#dbl      double precision
-#sgl      real 
+      double precision
      &   dumd
       character dums
       logical duml, matchs, endcrd, numd, label, integr
@@ -164,12 +163,11 @@ c
      &                  ascii_packet_file_name, ascii_packet_file_no
       use pvars
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 
       integer dumi
       real dumr
-#dbl      double precision
-#sgl      real 
+      double precision
      &   dumd
       character dums
       logical duml, binary_file_was_open, all_packets
@@ -404,7 +402,7 @@ c
 
       use main_data, only: packet_file_no, ascii_packet_file_no
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 
       integer, intent(in):: file
       logical connected
@@ -438,13 +436,12 @@ c
 
       use main_data, only: ascii_packet_file_name, ascii_packet_file_no
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 
       integer ios,dot
       integer dumi
       real dumr
-#dbl      double precision
-#sgl      real 
+      double precision
      &   dumd
       character dums
 c
