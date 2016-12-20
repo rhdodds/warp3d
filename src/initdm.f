@@ -17,13 +17,11 @@ c
       subroutine initdm
       use j_data
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real 
+      double precision
      &   zero, one
       real rword, rzero
       equivalence ( iword, rword )
-#dbl      data zero, rzero, one / 0.d0, 0.0, 1.d0 /   
-#sgl      data zero, rzero, one / 0.0, 0.0, 1.0 /   
+      data zero, rzero, one / 0.d0, 0.0, 1.d0 /   
 c
       if ( allocated( compr_q_list ) ) deallocate( compr_q_list )
       if ( allocated( q_element_maps ) ) deallocate( q_element_maps )
@@ -61,8 +59,7 @@ c
       comput_j               = .false.
       comput_i               = .false.
       ring_count             = 0
-#dbl      box_tol_relat      = 0.0003d0
-#sgl      box_tol_relat      = 0.0003
+      box_tol_relat      = 0.0003d0
       out_pstress            = .true.
       out_pstrain            = .true.
       output_packet_i        = .false.
