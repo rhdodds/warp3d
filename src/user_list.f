@@ -11,7 +11,7 @@ c
       subroutine trwlist( sbflg1, sbflg2 )
       use main_data, only : user_lists, crdmap
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug, string, scanms, matchs, do_display,
      &        found, match_exact, matchs_exact, true, display_coords
       character lname*24, name*80
@@ -190,8 +190,7 @@ c
       use main_data, only : user_lists, crdmap
       implicit integer(a-z)
       logical debug, display_coords
-#dbl      double precision :: coords(*)
-#sgl      real :: coords(*)
+      double precision :: coords(*)
 c      
       integer line(9)
       double precision ::  xcoord, ycoord, zcoord
@@ -266,7 +265,7 @@ c
       subroutine ulist_error( message )
       use main_data, only : user_lists
       implicit integer(a-z)
-$add common.main
+      include 'common.main'
       character *80 string
 c
       select case( message )
@@ -470,10 +469,9 @@ c
       use main_data, only : user_lists, crdmap
 
       implicit integer(a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   value, xvalue, yvalue, zvalue, tolerance, temp_t, zero,
      &   xcoord, ycoord, zcoord, x_toler, y_toler, z_toler
       logical :: do_display, xdefined, ydefined, zdefined, matchs, 
@@ -659,15 +657,13 @@ c
 c                 arguments
 c
       integer :: crdmap(*), out, nonode
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & tolerance, x_toler, y_toler, z_toler, coords(*) 
       logical :: debug
 c
 c                 locals
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  xcoord, ycoord, zcoord, xmin, xmax, ymin, ymax, 
      &  zmin, zmax
       integer :: position, node
@@ -731,10 +727,9 @@ c
       use main_data, only : user_lists, crdmap
 
       implicit integer(a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   tolerance, temp_t, zero,
      &   pt1(3), pt2(3), pt3(3),
      &   radius, flag, axis(3), axis_length, radius_tol,
@@ -990,7 +985,7 @@ c             intergerlist
 c
       use main_data, only : user_lists
       implicit integer(a-z)
-$add param_def
+      include 'param_def'
       dimension list(*)
       character lname*24, name*80
       logical isstring, scanms, debug
@@ -1074,10 +1069,9 @@ c
       use main_data, only : user_lists, crdmap
 c
       implicit integer(a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   tolerance, temp_t, zero, dot,
      &   x_toler, y_toler, z_toler, pt(3),
      &   flag, normvec(3), length, rel_tol,
@@ -1280,10 +1274,9 @@ c
       use main_data, only : user_lists, crdmap
 
       implicit integer(a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   tolerance, temp_t, zero,
      &   pt(3), radius, flag, radius_tol, dx, dy, dz, d12
       logical :: do_display, matchs, check,
