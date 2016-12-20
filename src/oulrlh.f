@@ -17,7 +17,7 @@ c
       subroutine oulrlh(pgnum,lnum,hedtyp,doflbl,ndof,newhed,
      &                  nitm,nl,fmtyp,step,stpitr,iter)
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical newhed
       character*8 doflbl(*)
       character*20 hedtyp
