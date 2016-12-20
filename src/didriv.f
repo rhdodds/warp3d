@@ -53,14 +53,13 @@ c
       use j_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                 local declarations
 c
       logical error, bad_domain, last_domain, user_def_ct, ldum
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & nx, ny, nz, zero
       real rword, rzero, e_tol
 c
@@ -69,8 +68,7 @@ c
       integer num_rings, block
       equivalence ( rword, iword )
 c
-#dbl      data rzero, zero, e_tol / 0.0, 0.0d0, 0.001 /
-#sgl      data rzero, zero, e_tol / 0.0, 0.0,   0.001 /
+      data rzero, zero, e_tol / 0.0, 0.0d0, 0.001 /
 c
       debug_driver = .false.   ! in module J-data
       if ( debug_driver ) write(out,9000)
@@ -458,7 +456,7 @@ c
       subroutine diheadr
       use j_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                 local declarations
 c
@@ -492,13 +490,11 @@ c
       use j_data
       implicit integer (a-z)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & scoord(*)
       dimension  coord_map(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  x, y, z, x1, y1, z1, zero, distance, cum_distance
       real rzero
 c
@@ -509,8 +505,7 @@ c
       data       labs / 'a','b','c','d' /
       data       inttbl / 4,0,0,  1,0,0,  3,1,0, 4,0,1,
      &                    4,3,0,  4,0,0,  4,4,3 /
-#dbl      data zero, rzero / 0.0, 0.0 /
-#sgl      data zero, rzero / 0.0d0, 0.0 /
+      data zero, rzero / 0.0, 0.0 /
 c
 c             check consistency of the domain definition
 c
@@ -774,7 +769,7 @@ c
      &                  seg_snode_nu, block_seg_curves,
      &                  process_temperatures, front_nodes, domain_origin
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             dummy arguments
 c
@@ -867,7 +862,7 @@ c
 c      use j_data, only : e_front, nu_front, alpha_front
       use segmental_curves, only: seg_curve_table, seg_curves_type
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             dummy arguments
 c
@@ -881,12 +876,10 @@ c
      &        bit_flags, curve_set, first_curve, curve_set_type, snode,
      &        incptr, i, span, elemno, num_enodes, enode,
      &        num_curves_in_set, curve_no, block_num
-#dbl      double precision
-#sgl      real
+      double precision
      &     elem_uniform_temp, enode_temper, alpha_temper, e_temper,
      &     nu_temper, linear_interpolate
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  dimension (:), allocatable :: curve_temp, curve_es, curve_nus,
      &                 curve_alphas
       real alphax, alphay, alphaz, alphaxy, alphaxz, alphayz, neg_99,
@@ -1078,7 +1071,7 @@ c
      &                          snode_alpha_ij )
       use main_data, only : incmap, incid, fgm_node_values
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             dummy variables
 c
@@ -1141,7 +1134,7 @@ c
      &                               snode_alpha_ij )
       use main_data, only : incmap, incid
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             dummy variables
 c
@@ -1217,7 +1210,7 @@ c
      &                             seg_curves_ym, seg_curves_nu,
      &                             seg_curves_alpha
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             dummy variables
 c
@@ -1228,12 +1221,10 @@ c
 c             local variables
 c
       integer i, curve_no, elemno, num_enodes, incptr, enode, snode
-#dbl      double precision
-#sgl      real
+      double precision
      &     elem_uniform_temp, enode_temper, alpha_temper, e_temper,
      &     nu_temper, linear_interpolate
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  dimension (:), allocatable :: curve_temp, curve_es, curve_nus,
      &                 curve_alphas
       real zero
@@ -1375,14 +1366,12 @@ c
 c
 c          local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     zero
       integer i, node, flags(3), ios
       logical debug, callit
 c
-#dbl      data zero /0.0d0/
-#sgl      data zero /0.0/
+      data zero /0.0d0/
 c
       debug = .false.
 c
@@ -1519,32 +1508,28 @@ c
 c
       implicit integer (a-z)
 c
-$add common.main
+      include 'common.main'
 c
 c         dummy variables
 c
       dimension extrap_counts(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     swd_at_nodes(*), strain_at_nodes(6,*)
 c
 c         local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     swd_at_gpts(mxgp), strain_at_gpts(6, mxgp), swd_sum,
      &     strain_sum(6), elem_ave_swd, elem_ave_strain(6),
      &     enode_swd(mxndel), enode_strains(6,mxndel), rnum_gpts,
      &     rcount
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &    dimension(:), pointer :: urcs_n, eps_n
 c
       logical debug, chk_killed
-#dbl      data one, zero /1.0d0, 0.0d0/
-#sgl      data one, zero /1.0, 0.0/
+      data one, zero /1.0d0, 0.0d0/
 c
       debug = .false.
 c
@@ -1578,8 +1563,7 @@ c
          num_enodes       = iprops(2,elemno)
          int_order        = iprops(5,elemno)
          num_gpts         = iprops(6,elemno)
-#sgl      rnum_gpts       = real( num_gpts )
-#dbl      rnum_gpts       = dble( num_gpts )
+      rnum_gpts       = dble( num_gpts )
          incptr           = incmap(elemno)
          rel_elem         = elems_to_blocks(elemno,2)
 c
@@ -1651,8 +1635,7 @@ c                average the values at structure nodes.
 c
       do snode = 1, nonode
          if ( extrap_counts(snode) .ne. 0 ) then
-#dbl        rcount                  = one / dble( extrap_counts(snode) )
-#sgl        rcount                  = one / real( extrap_counts(snode) )
+        rcount                  = one / dble( extrap_counts(snode) )
             swd_at_nodes(snode)      = swd_at_nodes(snode)      * rcount
             strain_at_nodes(1,snode) = strain_at_nodes(1,snode) * rcount
             strain_at_nodes(2,snode) = strain_at_nodes(2,snode) * rcount
@@ -1691,8 +1674,7 @@ c
       integer nonode, span, elemno, etype, num_enodes, int_order,
      &     num_gpts, extrap_counts(*), out, mxvl, mxoupr, mxndel, mxgp
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     swd_at_gpts(*), enode_swd(*), strain_at_gpts(6,*),
      &     enode_strains(6,*)
 c
@@ -1701,14 +1683,12 @@ c
       integer val, gpn, enode, i, j, k, eps, node, idummy_vec(1),
      &        value
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     lg(mxgp), rdummy_vec(1), rnum_gpts, node_value,
      &     xi, eta, zeta, zero, one, one_by_ngp
 c
       logical lagrangian_extrap, debug
-#dbl      data one, zero /1.0d0, 0.0d0/
-#sgl      data one, zero /1.0, 0.0/
+      data one, zero /1.0d0, 0.0d0/
 c
       debug = .false.
       enode_strains(1:6,1:num_enodes) = zero
@@ -1866,12 +1846,10 @@ c
 c             local variables
 c
       integer i, j, ring, skipped_killed
-#dbl      double precision
-#sgl      real
+      double precision
      & rg_count
 c
-#sgl      rg_count = real(ring_count)
-#dbl      rg_count = dble(ring_count)
+      rg_count = dble(ring_count)
 c
       write( out,9000 )
 c
@@ -2247,12 +2225,10 @@ c
 c             local variables
 c
       integer i, j, ring, skipped_killed, num_lines
-#dbl      double precision
-#sgl      real
+      double precision
      & rg_count
 c
-#sgl      rg_count = real(ring_count)
-#dbl      rg_count = dble(ring_count)
+      rg_count = dble(ring_count)
 c
 c             write J-integral data to packet 17
 c
@@ -2458,15 +2434,13 @@ c
 c             local declarations
 c
       integer i, j, nfn, ngp, nfelem, inc, elem, gp, node
-#dbl      double precision
-#sgl      real
+      double precision
      &  sf(4), dsf(4), jacob, jacobi, xsi, displ_coords(3,30),
      &  length_undisp, length_disp, j1, j2, j3, detj, dieldp, w,
      &  dummy, zero, half, one, two, x1, z1, x2, z2, x3, z3
       logical debug
 c
-#dbl      data zero, half, one, two / 0.0d0, 0.5d0, 1.0d0, 2.0d0 /
-#sgl      data zero, half, one, two / 0.0,   0.5,   1.0,   2.0   /
+      data zero, half, one, two / 0.0d0, 0.5d0, 1.0d0, 2.0d0 /
 c
       debug = .false.
 c
@@ -2599,14 +2573,12 @@ c
 c             local variables
 c
       integer i, j
-#dbl      double precision
-#sgl      real
+      double precision
      & zero, half, one, two, toler, x1, z1, x2, z2, x3, z3, x4, z4,
      & x5, z5, a, b, c, d, e, x_center, z_center, circle_radius, q
 c
       data zero, half, one, two, toler
-#dbl     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 1.0d-04 /
-#sgl     & / 0.0,   0.5,   1.0,   2.0,   1.0e-04 /
+     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 1.0d-04 /
 c
 c      debug = .true.
 c
@@ -2847,8 +2819,7 @@ c
 c             dummy arguments
 c
       integer out
-#dbl      double precision
-#sgl      real
+      double precision
      & x1, z1, x2, z2, x3, z3, x4, z4, x5, z5, aa, bb, cc, dd, ee
       logical debug
 c
@@ -2858,8 +2829,7 @@ c
       integer nrow_a, neqns
       dimension a(5,5), x(5), b(5), iwork(5), dwork(5)
       data zero, half, one, two, tolerance
-#dbl     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 1.0d-20 /
-#sgl     & / 0.0,   0.5,   1.0,   2.0,   1.0e-20 /
+     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 1.0d-20 /
 c
       nrow_a   = 5
       neqns    = 5
