@@ -22,12 +22,11 @@ c
      &                            inverse_dof_map
 c
       implicit integer (a-z) 
-$add common.main
+      include 'common.main'
       logical fatal, message_flag
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &     zero, dumd
       integer, allocatable, dimension(:) :: temp_invdst
       data zero / 0.0 /
@@ -290,7 +289,7 @@ c
      &                            inverse_dof_map
 c
       implicit integer (a-z) 
-$add common.main
+      include 'common.main'
       dimension element_node_counts(*)
 c
 c                       set the inverse mappings for the structure.
