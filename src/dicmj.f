@@ -15,7 +15,7 @@ c
      &                            history_blk_list
       use j_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                 parameter declarations (none)
 c
@@ -23,8 +23,7 @@ c
 c                 local declarations. includes pointers to simplify
 c                 addressing into blocks.
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & e_coord(3,mxndel), e_displ(3,mxndel), e_vel(3,mxndel),
      & e_accel(3,mxndel), q_element(mxndel), e_jresults(8),
      & e_stress(nstrs*mxgp), e_rots(9*mxgp),
@@ -45,15 +44,12 @@ c
        integer eps_offset, gpn, snodes(mxndel), node, node_id,
      &         orig_node
        integer, dimension (:,:), pointer :: edest, cdest
-#dbl       double precision,
-#sgl       real,
+       double precision,
      & dimension(:), pointer :: urcs_n, history, rot_n1, eps_n
-#dbl       double precision,
-#sgl       real,
+       double precision,
      & dimension(:), allocatable :: elem_hist
 c
-#sgl       data zero, one, two, toler_static_j / 0.0, 1.0, 2.0, 1.0e-5 /
-#dbl       data zero, one, two, toler_static_j / 0.0d0, 1.0d0, 2.0d0,
+       data zero, one, two, toler_static_j / 0.0d0, 1.0d0, 2.0d0,
      &                                           1.0d-5 /
 c
 c          if running parallel MPI:
@@ -495,12 +491,10 @@ c
 c
 c             store J-integral values for output in didriv.f
 c
-#sgl      j_storage(ring_count,1)   = real( nowring )
-#dbl      j_storage(ring_count,1)   = dble( nowring )
+      j_storage(ring_count,1)   = dble( nowring )
           j_storage(ring_count,2:9) = diterms(1:8)
           j_storage(ring_count,10)  = di_value_j
-#sgl      j_storage(ring_count,11)  = real(skipped_killed)
-#dbl      j_storage(ring_count,11)  = dble(skipped_killed)
+      j_storage(ring_count,11)  = dble(skipped_killed)
       end if
 c
 c             interaction-integral results:
@@ -595,14 +589,12 @@ c
 c
 c             store i-integral values for output in didriv.f
 c
-#sgl        i_storage(ring_count,1,j)   = real( nowring )
-#dbl        i_storage(ring_count,1,j)   = dble( nowring )
+        i_storage(ring_count,1,j)   = dble( nowring )
             i_storage(ring_count,2:9,j) = iiterms(1:8,j)
             i_storage(ring_count,10,j)  = di_value_i(j)
             i_storage(ring_count,11,j)  = Ki
             if( j.eq.7 ) i_storage(ring_count,12,j) = T33
-#sgl        i_storage(ring_count,13,j)  = real(skipped_killed)
-#dbl        i_storage(ring_count,13,j)  = dble(skipped_killed)
+        i_storage(ring_count,13,j)  = dble(skipped_killed)
          end do
       end if
 c
@@ -762,14 +754,12 @@ c
 c
 c     dummy variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & vec(3), transmat(3,3)
 c
 c     local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & tempvec(3)
 c
 c
