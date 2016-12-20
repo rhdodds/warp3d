@@ -21,14 +21,13 @@ c
      &                  text_file, compressed  )
 c  
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical ouflg, oupat, oubin, ouasc, wide, eform, prec, noheader,
      &        react_totals_only, matchs, endcrd, true,
      &        out_packet_now, flat_file, stream_file, 
      &        text_file, compressed 
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd
       character dums
       dimension intlst(mxlsz)
