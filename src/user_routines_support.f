@@ -77,20 +77,17 @@ c
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  in_vec(6), drot(3,3), out_vec(6)
       integer type, nrow, ncol
 c
 c                     locally defined arrays-variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  factor, one, half, two, a(3,3), t(3,3), c(3,3)
       logical local_debug
-#sgl      data one, half, two, local_debug / 1.0, 0.5, 2.0, .true. /
-#dbl      data one, half, two, local_debug / 1.0d00, 0.5d00,
-#dbl     &                                       2.0d00, .true. /
+      data one, half, two, local_debug / 1.0d00, 0.5d00,
+     &                                       2.0d00, .true. /
 c
 c
 c                     out = drot * in * trans(drot)
@@ -172,19 +169,16 @@ c
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  sig(*), sinv1, sinv2
       integer ndi, nshr
 c
 c                     locally defined arrays-variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  sig_dev(6), t1, t2, one_third, two, oneptfive
       data one_third, two, oneptfive
-#sgl     &    /  0.3333333, 2.0, 1.5 /
-#dbl     &    /  0.3333333333333333d00, 2.0d00, 1.5d00 /
+     &    /  0.3333333333333333d00, 2.0d00, 1.5d00 /
 c
       sinv1 = one_third * ( sig(1) + sig(2) + sig(3) )
 c
@@ -217,19 +211,16 @@ c     ****************************************************************
 c
       subroutine sprinc( s, ps, lstr, ndi, nshr )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     s(*), ps(*)
 c
 c                    locally allocated
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  temp(6), wk(3), evec(3,3), half, one, factor
 c
       data  half, one
-#sgl     &   / 0.5, 1.0 /
-#dbl     &   / 0.5d00, 1.0d00 /
+     &   / 0.5d00, 1.0d00 /
 c
 c        calculate the principal strains or stresses for UMAT support.
 c        Abaqus stress/strain ordering: xx, yy, zz, xy, xz, yz
@@ -263,19 +254,16 @@ c     ****************************************************************
 c
       subroutine sprind( s, ps, an, lstr, ndi, nshr )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     s(*), ps(*), an(3,3)
 c
 c                    locally allocated
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  temp(6), wk(3), half, one, factor
 c
       data  half, one
-#sgl     &   / 0.5, 1.0 /
-#dbl     &   / 0.5d00, 1.0d00 /
+     &   / 0.5d00, 1.0d00 /
 c
 c        calculate the principal strains or stresses and eigenvectors
 c        for UMAT support.
@@ -310,7 +298,7 @@ c     ****************************************************************
 c
       subroutine getnumcpus( nranks )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       nranks = 1
       if( use_mpi ) nranks = numrpocs
@@ -331,7 +319,7 @@ c     ****************************************************************
 c
       subroutine getrank( thisrank )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       thisrank = 0
       if( use_mpi ) thisrank = myid
@@ -352,7 +340,7 @@ c     ****************************************************************
 c
       subroutine getmodelsizes( num_model_nodes, num_model_elements )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       num_model_nodes    = nonode
       num_model_elements = noelem
