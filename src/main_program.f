@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/17/2016 rhd              *
+c     *                   last modified : 12/19/2016 rhd             *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -14,26 +14,28 @@ c
 c
       program warp3d
       use file_info
-      use main_data, only : output_packets
+      use main_data, only : output_packets, windows_os, osx_os, 
+     &                      linux_os
       use performance_data, only : time_assembly, assembly_total,
      &            ntimes_assembly
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real t1, wcputime, dumr
       external wcputime
-      character*8 stcnam, dums,
-     &     sdate_*24
+      character*8 stcnam, dums, sdate_*24
       character*80 name, stflnm, rtflnm
-      logical hilcmd,sbflg1,sbflg2
+      character(len=21) :: char_os
+      character(len=11) :: compile_date
+      character(len=8) :: compile_time
+      logical hilcmd,sbflg1,sbflg2, os_ok
       logical endcrd,label,matchs,debug1,debug2,debug,endfil,
      &        string, matchs_exact
 c
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-#dbl      double precision
-#sgl      real
+      double precision
      &  erprmd, dumd
       real erprmr
-      character erprms *50
+      character erprms *50 
       real :: wall, real_start, real_end, real_rate
 c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
@@ -51,7 +53,7 @@ c
 c
 c                       initialize the load step timing and debug
 c
-      debug1   = .false.
+      debug1   = .false. 
       debug2   = .false.
       call setstarttime
       t1 = wcputime ( 0 )
@@ -66,8 +68,42 @@ c                       print warp3d header
 c
       call fdate (sdate_)
 c
+      windows_os = .false.
+      linux_os   = .false.
+      osx_os     = .false.
 
-      write (*,9000) sdate_ , mxnod, mxel
+      compile_date(1:11) = __DATE__
+      compile_time(1:8)  = __TIME__
+c
+#ifdef Windows
+      windows_os = .true.
+#endif
+#ifdef OSX 
+      osx_os = .true.
+#endif      
+#ifdef Linux 
+      linux_os = .true.
+#endif
+
+      build_number = 0
+#ifdef Build
+      build_number = Build
+#endif
+c
+      os_ok = windows_os .or. linux_os .or. osx_os
+      if( .not. os_ok ) then
+         write(out,*) ' '
+         write(out,9010)
+         call die_abort
+      end if
+c      
+      char_os = ' ' 
+      if( windows_os ) char_os = 'Windows 64-bit'
+      if( linux_os )   char_os = 'Linux 64-bit'
+      if( osx_os )     char_os = 'OSX 64-bit'
+
+      write (*,9000) char_os, build_number, compile_date,
+     &               compile_time, sdate_ , mxnod, mxel
 c
 c                       read a high level command
 c
@@ -981,14 +1017,11 @@ c
      &     '   33333  DDDD    **',/,
      &     '    **                                             ',
      &     '                  **',/,
-#win     &     '    **     Windows 64-bit             -dev-    Release: ',
-#l64     &     '    **     Intel 64-bit on Linux      -dev-    Release: ',
-#mac     &     '    **     Mac OS X                   -dev-    Release: ',
+     &     '    **     ',a21,'      -dev-    Release: ',
      &     ' 17.7.4      **',/,
-#win     &     '    **     Code Build Number: 3204             ',
-#win     &     '                     **',/,
-!win     &     "    **     Built on: Sat Dec 17 21:39:16 EST 2016 ",
-!win     &     '                   **',/,
+     &     '    **     Code Build Number: ',i4.4,'              ',
+     &     '                     **',/,
+     &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
      &     '    **     University of Illinois @ U-C.',
      &     '    Civil & Env Engineering  **',/,
      &     '    **     Today: ',a24,27x,'**',/,
@@ -1009,6 +1042,8 @@ c
      &     '    ***********************************************',
      &     '********************')
 c
+ 9010 format('>>>>> FATAL ERROR: WARP3D is unable to determine OS...',
+     &  /    '                   job aborted'//)
  9100 format('>>>>> error: the structure library no longer exists,',
      &       ' and thus this command',/,7x,'is no longer valid.')
  9200 format(//'>>>>> error: not able to construct restart file',
@@ -1033,7 +1068,7 @@ c
 c
       subroutine error_count( outdev, clear )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical already_called, clear
       data already_called / .false. /
       save already_called
@@ -1116,7 +1151,7 @@ c
       use performance_data, only : time_assembly, assembly_total,
      &            ntimes_assembly
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real t1, wcputime, dumr
       external wcputime
       character*8 stcnam, dums,
@@ -1127,8 +1162,7 @@ $add common.main
      &        string, matchs_exact
 c
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-#dbl      double precision
-#sgl      real
+      double precision
      &  erprmd, dumd
       real erprmr
       character erprms *50
