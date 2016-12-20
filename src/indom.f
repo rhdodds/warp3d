@@ -18,19 +18,17 @@ c
       subroutine indom( sbflg1, sbflg2 )
       use j_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr, qnow, rword, rzero
       character dums*1, ltitle*80
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd, forval, zero
       dimension intlst(mxlsz)                          
       logical sbflg1, sbflg2, stress_flag, strain_flag
       logical matchs, endcrd, numd, realn, true,
      &        label, string, numi, user_def_ct
       equivalence (iword,rword)
-#dbl      data rzero, zero / 0.0, 0.0d0 /
-#sgl      data rzero, zero / 0.0, 0.0   /
+      data rzero, zero / 0.0, 0.0d0 /
 c
 c                       locally allocated
 c
@@ -510,7 +508,7 @@ c                       save the element number in the list bit map
 c       
       word = ( elemno-1 ) / 30 + 1
       bit  = elemno - (word-1)*30       
-!sun      q_element_maps(word) = ior( q_element_maps(word), bits(bit) )
+      q_element_maps(word) = ior( q_element_maps(word), bits(bit) )
 c
  720  if ( iplist .ne. 0 ) go to 710
       go to 10
@@ -687,7 +685,7 @@ c
          do elemno = 1, noelem
            word = ( elemno-1 ) / 30  + 1
            bit  = elemno - ( word-1 ) * 30
-!sun           if ( iand( bits(bit),q_element_maps(word) ) .ne. 0 ) 
+           if ( iand( bits(bit),q_element_maps(word) ) .ne. 0 ) 
      &         write(out,9200) elemno
          end do
       end if
