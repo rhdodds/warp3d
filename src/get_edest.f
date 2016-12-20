@@ -17,7 +17,7 @@ c     ****************************************************************
       use main_data,       only :  elems_to_blocks
 c 
       implicit integer (a-z)   
-$add common.main
+      include 'common.main'
 c
       dimension table(mxedof,*), elem_list(*)
       integer, dimension (:,:), pointer :: edest
@@ -52,7 +52,7 @@ c
       use main_data,       only :  elems_to_blocks
 c 
       implicit integer (a-z)   
-$add common.main
+      include 'common.main'
 c
       dimension edest_vec(*)
       integer, dimension (:,:), pointer :: edest
