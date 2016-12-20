@@ -84,18 +84,16 @@ c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
 c                       locals
 c
-#dbl      double precision, 
-#sgl      real,
+      double precision, 
      & allocatable :: history_dump(:,:,:), one_elem_states(:),
      &                avgs(:), ip_state_values(:)
       integer :: relem, elnum, hist_size, blockno
@@ -185,8 +183,7 @@ c
 c                       locals
 c
       integer :: ipt, num_states_returned 
-#dbl      double precision :: 
-#sgl      real :
+      double precision :: 
      & a_bar, b_bar
 c
       avgs(1:num_states) = zero
