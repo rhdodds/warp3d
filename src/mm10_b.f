@@ -1454,7 +1454,7 @@ c
       double precision, dimension(6), intent(in) :: s
       double precision, dimension(3), intent(in) :: w
       double precision, dimension(6), intent(out) :: sw
-@!dir$ assume_aligned s:64, w:64, sw:64     
+!dir$ assume_aligned s:64, w:64, sw:64     
 c
       sw = zero
       sw(1) = s(4)*w(3) - s(6)*w(2)
