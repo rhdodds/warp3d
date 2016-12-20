@@ -20,9 +20,8 @@ c
      &                      inverse_dof_map
 c
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &    eres(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof)
       logical newhed, trne(mxvl,mxndel)
       character*8 doflbl(mxndof)
