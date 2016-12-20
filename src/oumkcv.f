@@ -17,13 +17,12 @@ c
      &                   num_short_strain )
       use elblk_data, only : elestr
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
       logical stress
 c
 c                       local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     temvals(mxvl,mxoupr), zero, rngp
       data zero /0.0/
 c
@@ -57,8 +56,7 @@ c
 c                       3. compute average value of each strain/stress
 c                          value for each element.
 c 
-#sgl      rngp = real(ngp)         
-#dbl      rngp = dble(ngp)         
+      rngp = dble(ngp)         
       do j = 1, num_vals
         do i = 1, span
            temvals(i,j) = temvals(i,j) / rngp
