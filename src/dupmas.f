@@ -16,8 +16,7 @@ c
       subroutine dupmas( span, nnode, bcdst, c, totdof, ce_block,
      &                   mxvl ) 
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &  c(*), ce_block(mxvl,*)
       integer bcdst(totdof,*)         
 c
@@ -53,8 +52,7 @@ c
 c                        parameter declarations
 c
       real  fgm_node_values(num_struct_nodes,*)
-#dbl      double precision
-#sgl      real
+      double precision
      &   rho_block(mxndel,*)
       integer belinc(nnode,*)      
 c
