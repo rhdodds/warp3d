@@ -17,8 +17,7 @@ c     ****************************************************************
 c
       subroutine bmod ( b, vol, span, mxvl, eps_stab, mxedof ) 
       implicit integer ( a-z )
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   b(mxvl,mxedof,*), vol(mxvl,8,*), two, third, eps_stab,
      &   alpha, beta, one,
      &   dummy_1, dummy_2, dummy_3, dummy_4,
@@ -45,8 +44,8 @@ c
         alpha = (two + eps_stab)*third
         beta  = (one - eps_stab)*third
 c
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP 
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP 
         do i = 1, span  
 c
 c                  save value for use in later calculations
