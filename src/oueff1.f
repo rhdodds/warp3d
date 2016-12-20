@@ -15,8 +15,7 @@ c
 c
       subroutine oueff1( span, str, efeps, mxvl )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     str(mxvl,*), efeps(*), root23, onep5
       data root23, onep5 / 0.471404, 1.5 /
 c
