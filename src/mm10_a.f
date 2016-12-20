@@ -37,7 +37,7 @@ c
       use mm10_constants
 c
       implicit none
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                 parameter definitions
 c
@@ -375,7 +375,7 @@ c
       use mm10_constants
 c
       implicit none
-$add include_sig_up
+      include 'include_sig_up'
 c
       type(crystal_props) :: cc_props
       integer :: isw, s_type1, n_hard, h_type, allocate_status
@@ -595,7 +595,7 @@ c
       use mm10_constants
       implicit none
 c      
-$add common.main
+      include 'common.main'
       integer :: size_data(*), local_el, matnum, ncrystals
 c
 c        size_data(1)  :  no. of words of history data for each
@@ -874,7 +874,7 @@ c
 c                  tau lambdas for geometric hardening
 c                  lattice curvature
 c
-@!DIR$ IVDEP
+!DIR$ IVDEP
           do i = 1, 3
             curv(i,1,1) = n%gradFeinv(i,1,1) - n%gradFeinv(i,1,1)
             curv(i,1,2) = n%gradFeinv(i,1,2) - n%gradFeinv(i,2,1)
@@ -904,7 +904,7 @@ c
 c                  large-strain lambda
 c
            tm(1) = zero; tm(2) = zero; tm(3) = zero
-@!DIR$ IVDEP
+!DIR$ IVDEP
            do i = 1, 3
                tm(i) = tm(i) + half * (
      &           - curv(i,1,2) * cn(3)
@@ -1255,7 +1255,7 @@ c
 c
       double precision, dimension(3,3), intent(out) :: r
       double precision :: a, b, c, psi, theta, phi
-@!dir$ assume_aligned angles:64, r:64      
+!dir$ assume_aligned angles:64, r:64      
 c
       a = angles(1)
       b = angles(2)
@@ -1510,7 +1510,7 @@ c
      &                            now_elem, span, hist_size )
       use mm10_constants
       implicit none
-$add param_def 
+      include 'param_def' 
 c
 c                 parameter definitions
 c
@@ -1771,7 +1771,7 @@ c
       use mm10_defs
       use mm10_constants
       implicit none
-$add include_sig_up
+      include 'include_sig_up'
       integer :: atype, aconv
       logical :: debug
       type(crystal_properties) :: inc_props
