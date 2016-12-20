@@ -4,7 +4,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 5/22/2016 rhd                   *
+c     *              last modified : 12/19/2016 rhd                  *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -15,6 +15,8 @@ c
 c
 c
       module main_data
+
+      logical :: windows_os, linux_os, osx_os
 c
 c
 c                element incidencs and incmap.
@@ -74,8 +76,7 @@ c                nodal and element temperatures. current
 c                totals and step increments.
 c
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &       dimension(:), save, allocatable ::
      &        temper_nodes, dtemp_nodes, temper_elems,
      &        dtemp_elems, temper_nodes_ref
@@ -85,14 +86,12 @@ c
 c                nodal constraints definitions. release constraints
 c
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &       dimension(:), save, allocatable :: cnstrn, cnstrn_in
 c     
       type :: release_con_info
         integer num_release_steps, remaining_steps_for_release
-#dbl      double precision
-#sgl      real
+      double precision
      &   reaction_force
       end type
       type(release_con_info), save, allocatable,
@@ -104,8 +103,7 @@ c                nodal displacement vector for adaptive save/
 c                restart
 c
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &       dimension(:), save, allocatable :: du_nm1
 c
 c
@@ -134,8 +132,7 @@ c                transformations
 c
 c
       type :: trn_ptr_type
-#dbl      double precision, dimension(:,:), allocatable :: mat
-#sgl      real, dimension(:,:), allocatable :: mat
+      double precision, dimension(:,:), allocatable :: mat
       end type
 c
       type (trn_ptr_type), save, allocatable, dimension(:) :: trnmat
@@ -145,20 +142,17 @@ c
 c                global data for diagonal mass, pbar
 c
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &      save, allocatable, dimension(:) :: mdiag, pbar
 c
 c
 c                global data for rloads, dloads
 c
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &      save, allocatable, dimension(:) :: rload, dload, rload_nm1,
      &                                         total_user_nodal_forces
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &      save, allocatable, dimension(:,:) :: load_pattern_factors
 c
 c                global data to store the load pattern numbers and
@@ -167,8 +161,7 @@ c
       type :: load_data_for_a_step
         integer :: num_load_patterns
         integer, allocatable, dimension(:) :: load_patt_num
-#sgl        real,    allocatable, dimension(:) :: load_patt_factor
-#dbl        double precision,allocatable,dimension(:)::load_patt_factor
+        double precision,allocatable,dimension(:)::load_patt_factor
       end type
 c
       type(load_data_for_a_step), save, allocatable,
@@ -183,14 +176,12 @@ c
       logical elem_equiv_loads_now
       type :: elem_forces
         integer :: ncols
-#sgl        real, pointer, dimension(:,:) :: forces
-#dbl        double precision, pointer, dimension(:,:) :: forces
+        double precision, pointer, dimension(:,:) :: forces
       end type
 c
       type(elem_forces), save, allocatable,
      &                         dimension(:) :: elem_eq_loads
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &      save, allocatable, dimension(:) :: eq_node_forces
       integer, save, allocatable, dimension(:) :: eq_node_force_indexes
       integer eq_node_force_len
@@ -334,8 +325,7 @@ c
 c                 line search parameters
 c
       logical :: line_search, ls_details
-#sgl        real :: 
-#dbl        double precision ::
+        double precision ::
      & ls_min_step_length, ls_max_step_length, ls_rho,
      & ls_slack_tol
 c
