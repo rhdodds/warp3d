@@ -13,9 +13,8 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &   zero
       logical debug
       data zero, debug / 0.0, .false./
@@ -70,10 +69,9 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dbar_now, refer_deform, now_fraction, last_fraction,
      &  fraction, dbar_zero, ldincr, zero, one, dumd
       real dumr
@@ -120,12 +118,9 @@ c
 c            for fixed number of steps, the fraction is trivial.
 c            
         if ( release_type .eq. 1 ) then
-#dbl         fraction = one / dble(max_dam_state)
-#sgl         fraction = one / real(max_dam_state)
-#dbl             now_fraction =  dble(dam_state(elem_ptr)) /
-#dbl     &                       dble(max_dam_state)
-#sgl             now_fraction =  real(dam_state(elem_ptr)) /
-#sgl     &                       real(max_dam_state)
+         fraction = one / dble(max_dam_state)
+             now_fraction =  dble(dam_state(elem_ptr)) /
+     &                       dble(max_dam_state)
         end if
 c
 c            for traction-separation law we have to get current 
@@ -217,10 +212,9 @@ c
      &     crack_front_list, inv_crkpln_nodes
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  now_fraction, fraction, new_height, ldincr, zero, one
       logical debug, no_print
       real dumr
@@ -349,12 +343,9 @@ c            for fixed number of steps, the fraction is trivial. compute
 c            the total % released thus far for printing.
 c            
         if ( release_type .eq. 1 ) then
-#dbl         fraction = one / dble(max_dam_state)
-#sgl         fraction = one / real(max_dam_state)
-#dbl         now_fraction = dble(crkpln_nodes_state(node_loop)) /
-#dbl     &                      dble(max_dam_state)
-#sgl         now_fraction = dble(crkpln_nodes_state(node_loop)) /
-#sgl     &                      dble(max_dam_state)
+         fraction = one / dble(max_dam_state)
+         now_fraction = dble(crkpln_nodes_state(node_loop)) /
+     &                      dble(max_dam_state)
 c
 c            if traction-separation law, get distance from crack plane.
 c            the height at which the force is completely released was
