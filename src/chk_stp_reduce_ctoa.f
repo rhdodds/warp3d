@@ -27,10 +27,9 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     d32460, angle, two, new_load_fact, crit_angle, one, mf, 
      &     mf_nm1, zero, dtemp
       character * 1 dums
@@ -153,10 +152,9 @@ c
       subroutine over_CTOA_const ( new_load_fact, mf, mf_nm1, debug )
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     d32460, angle, two, new_load_fact, crit_angle, one, mf, 
      &     mf_nm1, zero, dtemp, dtol
       character * 1 dums
@@ -227,10 +225,9 @@ c
       use node_release_data, only : old_angles_at_front
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     angle, crit_angle, new_load_fact, mf, mf_nm1,
      &     new_angle, load_fact, two, one
       data two, one /2.0, 1.0/
@@ -302,10 +299,9 @@ c
       use main_data, only : cnstrn
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     d32460, angle, two, crit_angle, one
       character * 1 dums
       real dumr
@@ -424,10 +420,9 @@ c
      &     crkpln_nodes_state, master_lines
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     d32460, angle, two, crit_angle, one, zero
       character * 1 dums
       real dumr
