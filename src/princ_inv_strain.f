@@ -16,8 +16,7 @@ c     ****************************************************************
 c
       subroutine princ_inv_strain( results, nrowd, num )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     results(nrowd,*), half, t1, t2, t3
       data  half  / 0.5  / 
 c   
