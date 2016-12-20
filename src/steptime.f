@@ -20,13 +20,12 @@ c
       implicit integer (a-z)
 c      
       integer :: step, status
-$add common.main
+      include 'common.main'
 c
       integer :: idummy, last
       real, save :: last_step_time, time_before_step
       logical, save :: ignore
-#sgl      real :: dumd
-#dbl      double precision :: dumd
+      double precision :: dumd
       character(len=80) :: name
       real :: wcputime, wwalltime, dumr, percent, time_so_far
       external :: wcputime, wwalltime
