@@ -31,18 +31,15 @@ c         compilers can now handle allocatable types as rows of
 c         user-defeined types
 c
         type :: blocks_ptr_type
-#dbl          double precision, dimension(:), pointer :: ptr
-#sgl          real, dimension(:), pointer :: ptr
+          double precision, dimension(:), pointer :: ptr
         end type
 c
         type :: blocks_allocatable_type
-#dbl          double precision, dimension(:), allocatable :: vector
-#sgl          real, dimension(:), allocatable :: vector
+          double precision, dimension(:), allocatable :: vector
         end type
 c
         type :: array_blocks_ptr_type
-#dbl          double precision, dimension(:,:), pointer :: ptr
-#sgl          real, dimension(:,:), pointer :: ptr
+          double precision, dimension(:,:), pointer :: ptr
         end type
 c
         type :: int_blocks_ptr_type
@@ -145,8 +142,7 @@ c
 c
       logical, dimension (:), allocatable, save :: nonlocal_flags
       type :: vec_nonlocal
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &    allocatable, dimension(:) ::state_values
       end type
       type(vec_nonlocal), save, allocatable,
