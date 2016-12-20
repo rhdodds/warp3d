@@ -18,7 +18,7 @@ c
      &                      release_cons_steps, mdiag, rload
 c
       implicit integer (a-z)      
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
@@ -34,8 +34,7 @@ c
      &         realn, match_exact
       logical, save :: delete_release_cons
       real ::  dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &  dumd, zero, d32460, react
       character dums*1, curtyp *1, dof_names(3)*1
       data dof_names / 'u', 'v', 'w' /
@@ -379,13 +378,12 @@ c
       use damage_data, only : csttail
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: sdof
 c
       integer :: cst_ptr, above_ptr      
-#sgl      real :: d32460
-#dbl      double precision :: d32460
+      double precision :: d32460
       data d32460 / 32460.0d00 /
 c
 c             traverse the singly-linked list of constraints in the 
@@ -459,12 +457,11 @@ c
       use damage_data, only : csttail
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       locally allocated
 c  
-#dbl      double precision
-#sgl      real
+      double precision
      &  convec(mxndof), trans(mxndof,mxndof), tval, cval, dumd, zero,
      &  one, d32460, rlen1, rlen2, rlen3, rottol, t11, t12, t13,
      &  t21, t22, t23, t31, t32, t33 
@@ -979,7 +976,7 @@ c
       use main_data, only : cnstrn, cnstrn_in, crdmap
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
@@ -988,8 +985,7 @@ c
 c
 c                       locally allocated
 c  
-#dbl      double precision
-#sgl      real
+      double precision
      & convec(mxndof), tval, cval, dumd, zero, proximity_distance,
      & one, d32460, xmin, xmax, ymin, ymax, zmin, zmax, x, y, z,
      & coordtol(3), plane_coord, ctol, coordvec(3)
@@ -1218,7 +1214,7 @@ c
       subroutine incon_mpcs
       use mod_mpc, only : mpcs_exist, num_user_mpc, user_mpc_table
       use main_data, only : modified_mpcs
-$add common.main
+      include 'common.main'
 c
 c              locals 
 c 
@@ -1497,7 +1493,7 @@ c
 c
       subroutine incon_mpcs_store( nterm, const, node, dof, multi )
       use mod_mpc, only : num_user_mpc, user_mpc_table
-$add param_def
+      include 'param_def'
 c
 c              parameters
 c             
