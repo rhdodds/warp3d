@@ -20,7 +20,7 @@ c
       use main_data,       only : asymmetric_assembly
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
 c                       parameter dclarations
 c
@@ -29,8 +29,7 @@ c
 c      
 c                       local declarations
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  zero, start_estiff, end_estiff
       double precision, external :: omp_get_wtime
       logical :: local_debug
@@ -145,7 +144,7 @@ c
       use contact, only : use_contact     
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
 c                       parameter declarations
 c
@@ -154,9 +153,8 @@ c
 c
 c                       local declarations 
 c
-$add include_tan_ek
-#dbl      double precision ::
-#sgl      real ::
+      include 'include_tan_ek'
+      double precision ::
      &  zero, lambda(mxvl,3,3) ! on stack
       logical :: local_debug, geo_non_flg, bbar_flg, 
      &           symmetric_assembly, block_is_killable 
@@ -338,7 +336,7 @@ c
       if( growth_by_kill ) then
         block_is_killable = iand( iprops(30,felem),2 ) .ne. 0
         if( block_is_killable ) then
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
          do relem = 1, span
            element = felem + relem - 1
            if( dam_ptr(element) .eq. 0 ) cycle
@@ -396,7 +394,7 @@ c
       use main_data, only: asymmetric_assembly
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: type
       
@@ -519,8 +517,8 @@ c
      &                            history_blk_list
 c
       implicit none
-$add common.main
-$add include_tan_ek
+      include 'common.main'
+      include 'include_tan_ek'
 c
 c           parameter declarations
 c
@@ -532,8 +530,7 @@ c           local declarations
 c
       integer :: hist_size 
       logical :: local_debug
-#dbl      double precision :: zero
-#sgl      real :: zero
+      double precision :: zero
       data zero, local_debug / 0.0d00, .false. /
 c
 c               1) rotation matrices at integration points for geonl
@@ -608,13 +605,12 @@ c
       use main_data, only : trnmat, trn, incid, incmap
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
 c           parameters
 c
        integer :: span, felem
-#dbl      double precision ::  trnmte(mxvl,mxedof,3)
-#sgl      real ::  trnmte(mxvl,mxedof,3)
+      double precision ::  trnmte(mxvl,mxedof,3)
 c
 c
       integer :: nnode, ndof, totdof, j, k, node, jj
@@ -636,8 +632,8 @@ c
 c           this code below depends on ndof per node = 3
 c
       do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
        do k = 1, span
          node = incid(incmap(felem+k-1) + j-1)
          if ( .not. trn(node) ) cycle
@@ -675,8 +671,7 @@ c
 c               parameter declarations
 c
       integer :: ngp, hist_size, span
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & local_hist(span,hist_size,ngp),
      & global_hist(hist_size,ngp,span)
 c
@@ -686,8 +681,8 @@ c
 c      if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, hist_size
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
             do  i = 1, span
                local_hist(i,j,k) = global_hist(j,k,i)
             end do
@@ -699,7 +694,7 @@ c
 c                number of gauss points = 8, unroll.
 c
 c     do  j = 1, hist_size
-c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ LOOP COUNT MAX=128  
 c@!DIR$ IVDEP
 c        do  i = 1, span
 c            local_hist(i,j,1) = global_hist(j,1,i)
@@ -735,12 +730,11 @@ c
       use segmental_curves, only : max_seg_points, max_seg_curves
       implicit none
 
-$add common.main
-$add include_tan_ek
+      include 'common.main'
+      include 'include_tan_ek'
 c
       integer :: error
-#dbl      double precision :: zero
-#sgl      real :: zero
+      double precision :: zero
       data zero / 0.0d00 /
 c
 c               history data for block allocated in dptstf_blocks
@@ -850,8 +844,8 @@ c
 c
       subroutine tanstf_deallocate( local_work )
       implicit none
-$add common.main
-$add include_tan_ek
+      include 'common.main'
+      include 'include_tan_ek'
 c
       integer :: local_mt, error
       logical :: local_debug
@@ -976,12 +970,11 @@ c
       implicit none
 c
       integer :: n      
-#dbl      double precision :: vec(n), zero
-#sgl      real :: vec(n), zero
+      double precision :: vec(n), zero
       data zero / 0.0d00 /
 c!DIR$ ASSUME_ALIGNED vec:64
 c
-@!DIR$ IVDEP
+!DIR$ IVDEP
       vec = zero
 c
       return
