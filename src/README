@@ -1,7 +1,7 @@
 
 
                      README for WARP3D /src Directory
-                        (Updated May 2014)
+                        (Updated December 2016)
 
 
 ==========================================================================
@@ -15,14 +15,12 @@ WARP3D. All source code is in *.f files. Common areas are named
 
 We support WARP3D on:
 
-    o Windows 7 (64-bit) [W8 should work]
-    o Linux 64-bit (tested on Ubuntu 12.04, 13.10, RedHat 5.10)
-    o Max OS X Lion 10.9.x
+    o Windows (64-bit) 
+    o Linux 64-bit (tested on Ubuntu 14.04 LTS)
+    o Max OS 10.11
 
-On these platforms, we use the Intel F90 & MKL compiler suite.
-At present, these are at version Intel Fortran COMPOSER XE
-from May 2014. We keep up with all
-releases of the F90 compiler and the MKL library.
+On these platforms, we use the Intel ifort & MKL compiler suite.
+ON Linux we also use the Intel MPI.
 
 See the specific README files for each platform in the top level
 directory.
@@ -40,9 +38,6 @@ and run the "Makewarp.bash" script to re-compile. Likewise, the maximum "block"
 size for the data structure used throughout WARP3D
 is "mxvl" (usually 64 or 128).
 
-The default version of WARP3D has mxnod and mxel set to more than
-500,000 for most platforms. This should be sufficient for all but a few users.
-
 The "main" program for WARP3D is in the file "main_program.f".
 
 
@@ -52,7 +47,7 @@ The "main" program for WARP3D is in the file "main_program.f".
 2. BUILD/COMPILE PROCESS  ** Important **
 
 Precompiled executables are included for Windows (64-bit),
-64-bit Linux (Intel EM64T and AMD64), and Mac OS X). For other systems, or to
+64-bit Linux (Intel), and Mac OS X). For other systems, or to
 re-compile the code for any reason, follow the instructions below.
 
 Linux and OS X:
@@ -70,7 +65,7 @@ Windows:
 
 The compile and link process to create a WARP3D executable on Windows is 
 performed using a makefile and the "nmake" utility included in 
-Windows. nmake is installed as a prerequisite to the Intel Visual Fortran 
+Windows. nmake is installed as a prerequisite to the Intel Fortran 
 Compiler, so if you are planning on re-compiling the code, you already 
 have it installed.
 
@@ -89,41 +84,6 @@ Makefile.xxx.
 
 ==============================================================================
 
-
-3. SOURCE CODE MARKUPS
-
-We have only one version of the source code. In various *.f files, you
-will find statements of the form:
-
-#lnx     dibmck = and( bits(bit),mapvec(word) ) .ne. 0
-
-
-This statement is included only in the Linux version. Similarly,
-
-!lnx     ........
-
-means that statement is included in all versions but the Linux version.
-
-To handle single vs. double precision, we use statements of the form:
-
-#sgl      real .....
-
-#dbl      double precision ....
-
-Whenever the make file needs to compile a new *.f file, it first
-invokes a "filter" program in this directory, e.g., filter_linux.exe
-which reads the *.f file and emits a temp.f file properly
-"filtered" for that platform, in this case Linux.
-
-The temp.f file is compiled into temp.o but then is renamed to
-the correct prefix of *.f and moved to the proper ../obj directory.
-
-The makefiles are set up with very fine grained *.f units to enable
-rapid builds and to enable very finely tuned optimization of
-individual routines.
-
-
-==============================================================================
 
 
 END OF README
