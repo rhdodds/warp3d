@@ -15,8 +15,7 @@ c     ****************************************************************
 c
       subroutine yield_function ( results, maxnum, num )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     results(maxnum,*), iroot2, six
       data iroot2, six / 0.70711, 6.0 /
 c
