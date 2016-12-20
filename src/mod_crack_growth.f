@@ -32,8 +32,7 @@ c
       allocatable                         :: old_mises(:)
       allocatable                         :: old_mean(:)
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &  dam_ifv, dam_dbar_elems, old_porosity, old_plast_strain,
      &  old_mean, old_mises, old_deff
 c
@@ -61,8 +60,7 @@ c
       integer, allocatable, dimension(:,:):: crack_front_list
       integer, allocatable, dimension(:,:):: master_lines
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &  crkpln_nodes_react, node_release_frac, old_angles_at_front
 c
 c
