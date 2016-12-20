@@ -18,8 +18,7 @@ c
 c
       implicit integer (a-z)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & eps_curve_pts(*)
 c
 c          set the type of segmental stress-strain curve: curve_set
@@ -78,8 +77,7 @@ c
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & gp_temps(*), e_block(*), nu_block(*),
      & alpha_block(nrowd,*), gp_dtemps(*), gp_eps_rates(*),
      & e_block_n(*), nu_block_n(*), alpha_block_n(nrowd,*),
@@ -89,8 +87,7 @@ c
 c
 c                      local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & linear_interpolate,  stress_val, big_num, point_temp_np1,
      & point_temp_n, alpha, point_rate
 c
@@ -361,8 +358,7 @@ c
 
       function linear_interpolate( xvalue, n, x, y )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      & xvalue, x(n), y(n), x1, x2, y1, y2, linear_interpolate
 c
       if ( xvalue .le. x(1) ) then
@@ -409,18 +405,16 @@ c
       use segmental_curves, only : sigma_curves, curve_plseps_values
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & h_block(*), sigyld_vec(*)
 c
 c                      local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dsigma, depspls
       logical local_debug
       data local_debug / .false. /
@@ -468,20 +462,18 @@ c
      &      seg_curves_ym, seg_curves_nu, curve_nu_values
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   e_block(*), nu_block(*), temps_node_blk(mxvl,*)
       logical segmental, temps_node_to_process
 c
 c                local declarations
 c
       logical local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &   sf(mxndel), xi, eta, zeta, weight, zero, gp_temps(mxvl),
      &   point_temp, linear_interpolate
       data local_debug, zero / .false., 0.0 /
@@ -611,20 +603,18 @@ c
      &          span, felem, elem_type, gpn, nnode,
      &          blk_vec, shape, enode_mat_props, matcol, blk_fgm_flags )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   blk_vec(*), shape(*), enode_mat_props(mxndel,mxvl,*),
      &   blk_fgm_flags(*)
 c
 c                local declarations
 c
       logical local_debug, fgm
-#dbl      double precision
-#sgl      real
+      double precision
      &   zero, fgm_mark, fgm_tol
       data local_debug, zero, fgm_mark, fgm_tol
      &     / .false., 0.0, 99.0, 1.0 /
