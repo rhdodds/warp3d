@@ -161,8 +161,7 @@ c
      &  elemcon(dimelem,maxnodeperelem),
      &  cstmap(mxdof)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  nodecoord(dimnode,dimcoord)
 
       real props(mxelpr,mxel),epsilon_mpc
@@ -257,15 +256,13 @@ c
       integer, allocatable :: tiednodeid(:,:)
       logical, allocatable :: tiednodeadjustflag(:)
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero,epsilon,tiednodeisocoord,tiednodeglobalcoord
       allocatable
      &  tiednodeisocoord(:,:),tiednodeglobalcoord(:,:)
       real, allocatable ::    tiednodegaptolerance(:)
       data zero
-#sgl     &   / 0.0 /
-#dbl     &   / 0.0d00 /
+     &   / 0.0d00 /
 c
 c           set local debugging log file values
 c
@@ -1034,8 +1031,7 @@ c
      &  tiednodeid(maxtiednode,maxtieddatacol),
      &  elemcon(dimelem,maxnodeperelem)
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  tiednodeisocoord(maxtiednode,maxisodof),
      &  tiednodeglobalcoord(maxtiednode,dimcoord),
      &  nodecoord(dimnode,dimcoord)
@@ -1261,7 +1257,7 @@ c
 c           declare modules
 c
       implicit none
-$add param_def
+      include 'param_def'
 c
 c           declare variables
 c
@@ -1273,8 +1269,7 @@ c
      &  tiednodeid(maxtiednode,maxtieddatacol),
      &  elemcon(dimelem,maxnodeperelem)
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  tiednodeisocoord(maxtiednode,maxisodof),
      &  tiednodeglobalcoord(maxtiednode,dimcoord),
      &  nodecoord(dimnode,dimcoord)
@@ -1311,8 +1306,7 @@ c
       logical
      &  local_debug,twod_flag,iso_adjust_flag
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero,one,three,pi,
      &  constantisocoord,dist_point,epsilon,angle_point,
      &  epsilon_angle,delta1,delta2,delta_iso,scale1,scale2,
@@ -1324,22 +1318,19 @@ c
      &  isotetpoint(maxtetdof),vec1(maxdof),vec2(maxdof),
      &  dsf(32,3),coord(3,32),
      &  shapefunc,shapederivs,elemcoord
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  allocatable, dimension (:) :: gap_dists, gap_toler
       real rword,dumr
       double precision  dumd
       character*1  dums
       data zero, one, three
-#sgl     & / 0.0, 1.0, 3.0 /
-#dbl     & / 0.0d00, 1.0d00, 3.0d00 /
+     & / 0.0d00, 1.0d00, 3.0d00 /
       allocatable
      &  shapefunc(:),shapederivs(:,:),elemcoord(:,:)
 c
 c           declare functions
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dist3d,srt_getangle,srt_dotprod
 
       equivalence (rword,iword)
@@ -1411,12 +1402,9 @@ c
 c
 c           initialize values
 c
-#dbl      pi = 4.0d0*atan(1.0d0)
-#dbl      epsilon = 1.0d-6
-#dbl      epsilon_angle = 0.001d0*(pi/180.0d0)	! 0.001 degrees
-#sgl      pi = 4.0*atan(1.0)
-#sgl      epsilon = 1.0e-6
-#sgl      epsilon_angle = 0.001*(pi/180.0)	! 0.001 degrees
+      pi = 4.0d0*atan(1.0d0)
+      epsilon = 1.0d-6
+      epsilon_angle = 0.001d0*(pi/180.0d0)	! 0.001 degrees
 c
 c           set the check_iso_coord_flag value:
 c             0=no check or change to the isopoint() values
@@ -1426,13 +1414,11 @@ c
       check_iso_coord_flag = 2
       select case(check_iso_coord_flag)
       case(1)	! check xi,eta,zeta and give a warning
-#dbl        iso_error_val = 1.001d0
-#sgl        iso_error_val = 1.001
+        iso_error_val = 1.001d0
       case(2)	! set xi,eta,zeta to have a maximum of +/- 1.0
         iso_error_val = one
       case default
-#dbl        iso_error_val = 1.001d0
-#sgl        iso_error_val = 1.001
+        iso_error_val = 1.001d0
       end select
 
       min_iter_count = maxiterloop
@@ -1886,10 +1872,8 @@ c
                 scale2 = scale2 + 
      &                   abs(srt_dotprod(vec,tangent2,maxdof))
               end do
-#dbl              scale1 = scale1/dble(numcornerperface)
-#dbl              scale2 = scale2/dble(numcornerperface)
-#sgl              scale1 = scale1/float(numcornerperface)
-#sgl              scale2 = scale2/float(numcornerperface)
+              scale1 = scale1/dble(numcornerperface)
+              scale2 = scale2/dble(numcornerperface)
 
             case(6,13)	! 10 or 4 node tetrahedron
               scale1 = one
@@ -1907,14 +1891,12 @@ c
               close(unit=logunit)
             end if
 
-#dbl            if(dabs(scale1).lt.1.0d-8)then
-#sgl            if(abs(scale1).lt.1.0e-8)then
+            if(dabs(scale1).lt.1.0d-8)then
               mflag = 2
               message = 'internal error: scale1 = 0.0;'//
      &                ' cannot scale the delta1 value '//
      &                ' (tied_nodeiso).'
-#dbl            else if(dabs(scale2).lt.1.0d-8)then
-#sgl            else if(abs(scale2).lt.1.0e-8)then
+            else if(dabs(scale2).lt.1.0d-8)then
               mflag = 2
               message = 'internal error: scale2 = 0.0;'//
      &                ' cannot scale the delta2 value '//
@@ -2450,8 +2432,7 @@ c
      &  elemcon(dimelem,maxnodeperelem),
      &  cstmap(mxdof)
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  tiednodeisocoord(maxtiednode,maxisodof)
 
       real props(mxelpr,mxel),epsilon_mpc
@@ -2524,14 +2505,12 @@ c
       logical
      &  local_debug,warp3d_mpc_export,abaqus_mpc_export
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  row_sum,epsilon,zero,one,
      &  shapefunc,norm_mult
       real rword
 	data zero, one
-#dbl     &  / 0.0d00, 1.0d00 /
-#sgl     &  / 0.0, 1.0 /
+     &  / 0.0d00, 1.0d00 /
       allocatable
      &  shapefunc(:)
       character text*512,word*10,xyz_letter(3)*1
@@ -3186,8 +3165,7 @@ c           for example:
 c           6 1.5 u + 6 3.2 v + 6 -3.1 w = 0.0
 c
         if(warp3d_mpc_export)then
-#dbl          epsilon = 1.0d-15
-#sgl          epsilon = 1.0e-15
+          epsilon = 1.0d-15
           call tied_exportmpc_warp3dformat(epsilon,logunit)
         end if	! warp3d_mpc_export
 c
@@ -3212,8 +3190,7 @@ c           6, 1, 1.5, 6, 2, 3.2, 6, 3, -3.1
 c           (node 6, x, 1.5, node 6, y, 3.2, node 6, z, -3.1 = 0.0)
 c
         if(abaqus_mpc_export)then
-#dbl          epsilon = 1.0d-5
-#sgl          epsilon = 1.0e-5
+          epsilon = 1.0d-5
           call tied_exportmpc_abaqusformat(epsilon,logunit)
         end if	! abaqus_mpc_export
 
@@ -3294,8 +3271,7 @@ c
      &  tiednodeid(maxtiednode,maxtieddatacol),
      &  elemcon(dimelem,maxnodeperelem)
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  nodecoord(dimnode,dimcoord)
 
       real props(mxelpr,mxel),
@@ -3331,23 +3307,20 @@ c
      &  local_debug,inside_flag,dist_gap_flag,check1_flag,check2_flag,
      &  check3_flag,check_redundant_flag
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero,distance,given_epsilon,face_dist,
      &  max_elem_dist,sum_elem_dist,closest_distance,
      &  elemfacecentroid,normal_dist,gap_tolerance,
      &  best_distance
       real rword
       data zero
-#sgl     &  / 0.0 /
-#dbl     &  / 0.0d00 /
+     &  / 0.0d00 /
       allocatable
      &  elemfacecentroid(:,:)
 c
 c           declare functions
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dist3d
 
       equivalence (rword,iword)
@@ -3729,8 +3702,7 @@ c
             do dof=1,maxdof
               elemfacecentroid(nummasterlist,dof) = 
      &            elemfacecentroid(nummasterlist,dof)/
-#dbl     &            dble(numcornerperface)
-#sgl     &            float(numcornerperface)
+     &            dble(numcornerperface)
             end do
 
             dist_count = dist_count + 1
@@ -3798,8 +3770,7 @@ c               centroid; assign the slave node to that master element
 c 
       do nd=1,numtiednode
         node_id = tiednodeid(nd,1)
-#sgl        gap_tolerance = tiednodegaptolerance(nd)
-#dbl        gap_tolerance = DBLE(tiednodegaptolerance(nd))
+        gap_tolerance = DBLE(tiednodegaptolerance(nd))
 c
 c               use the given gap tolerance distance to check if a node
 c               is close to an element face
@@ -4195,8 +4166,7 @@ c
      &  numcornerperface,
      &  logflag,logunit,mflag,
      &  localfacenode(maxelemface,maxnodeperface)
-#dbl      double precision
-#sgl      real
+      double precision
      &  isotetpoint(maxtetdof),globalpoint(maxdof),
      &  elemcoord(maxnodeperelem,maxisodof)
       character*(*) logfile,message
@@ -4208,21 +4178,18 @@ c
      &  debug_level,corner1,corner2,corner3
       logical
      &  local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &  s1,s2,s3,s4,face_length,point_dist,iso_tet_sum,
      &  edge_vec_1(dim3),edge_vec_2(dim3),position(dim3),
      &  normal(dim3),edgenormal(dim3),
      &  midedge1(dim3),midedge2(dim3),
      &  zero,one
       data zero, one
-#sgl     & / 0.0, 1.0 /
-#dbl     & / 0.0d00, 1.0d00 /
+     & / 0.0d00, 1.0d00 /
 c
 c           declare functions
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dotprod
 c
       debug_level = 10
@@ -4663,8 +4630,7 @@ c
      &  numcornerperface,
      &  logflag,logunit,mflag,
      &  localfacenode(maxelemface,maxnodeperface)
-#dbl      double precision
-#sgl      real
+      double precision
      &  tangent_a(maxdof),tangent_b(maxdof),normal(maxdof),
      &  elemcoord(maxnodeperelem,maxisodof)
       character*(*) logfile,message
@@ -4676,12 +4642,10 @@ c
      &  debug_level,corner1,corner2,corner3
       logical
      &  local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero,edge_vec_1(dim3),edge_vec_2(dim3)
       data zero
-#sgl     & / 0.0 /
-#dbl     & / 0.0d00 /
+     & / 0.0d00 /
 c
       debug_level = 10
       local_debug = .false.
@@ -4805,8 +4769,7 @@ c
       integer 
      &  constantisodof,faceid,nodesperelem,elemchoice,meshformat,
      &  logflag,logunit,mflag
-#dbl      double precision
-#sgl      real
+      double precision
      &  constantisocoord
       character*(*) logfile,message
 c
@@ -4817,12 +4780,10 @@ c
       integer
      &  debug_level,i,brickisodof(maxelemface,maxdataformat),
      &  tetisodof(maxelemface,maxdataformat)
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero,one,brickisocoord(maxelemface,maxdataformat)
       data zero, one
-#sgl     &   / 0.0, 1.0 /
-#dbl     &   / 0.0d00, 1.0d00 /
+     &   / 0.0d00, 1.0d00 /
 c
 c           set the isoparametric dof and coordinate value for each
 c           face of a brick or tetrahedron element for either 
@@ -4830,14 +4791,10 @@ c           abaqus (column 1) or warp3d (column 2) input data format
 c
       data brickisodof(1:maxelemface,1) / 1,1,2,3,2,3 /
       data brickisodof(1:maxelemface,2) / 1,1,2,2,3,3 /
-#dbl      data brickisocoord(1:maxelemface,1)
-#dbl     &  /-1.0d0,1.0d0,-1.0d0,-1.0d0,1.0d0,1.0d0/
-#dbl      data brickisocoord(1:maxelemface,2) 
-#dbl     &  /-1.0d0,1.0d0,-1.0d0,1.0d0,-1.0d0,1.0d0/
-#sgl      data brickisocoord(1:maxelemface,1)
-#sgl     &  /-1.0,1.0,-1.0,-1.0,1.0,1.0/
-#sgl      data brickisocoord(1:maxelemface,2)
-#sgl     &  /-1.0,1.0,-1.0,1.0,-1.0,1.0/
+      data brickisocoord(1:maxelemface,1)
+     &  /-1.0d0,1.0d0,-1.0d0,-1.0d0,1.0d0,1.0d0/
+      data brickisocoord(1:maxelemface,2) 
+     &  /-1.0d0,1.0d0,-1.0d0,1.0d0,-1.0d0,1.0d0/
 
       data tetisodof(1:maxelemface,1) / 4,3,1,2,0,0 /
       data tetisodof(1:maxelemface,2) / 4,3,1,2,0,0 /
@@ -4995,8 +4952,7 @@ c
      &  maxelemcoordcol,
      &  logflag,logunit,mflag
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  globalpoint(maxdof),shapefunc(maxnodeperelem),
      &  elemcoord(maxelemcoordrow,maxelemcoordcol)
 
@@ -5008,12 +4964,10 @@ c
       integer
      &  debug_level,i,j
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero
       data zero
-#sgl     & / 0.0 /
-#dbl     & / 0.0d00 /
+     & / 0.0d00 /
       debug_level = 9
 
       if(logflag.ge.debug_level)then
@@ -5106,8 +5060,7 @@ c
       integer
      &  io
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  epsilon
 c
 c           variables:
@@ -5123,12 +5076,10 @@ c           local variables
 c
       integer
      &  i,row,numlist,column,node_id,local_dof
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero,mult
       data zero
-#dbl     & / 0.0d00 /
-#sgl     & / 0.0 /
+     & / 0.0d00 /
       character xyz_letter(3)*1
 c
 c           initialize values
@@ -5235,8 +5186,7 @@ c
       integer
      &  io
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  epsilon
 c
 c           variables:
@@ -5252,12 +5202,10 @@ c           local variables
 c
       integer
      &  i,row,count,numlist,column,count_terms,node_id,local_dof
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, mult
       data zero
-#sgl     &	 / 0.0 /
-#dbl     &	 / 0.0d00 / 
+     &	 / 0.0d00 / 
 	character text*512,word*10,xyz_letter(3)*1
 c
 c           initialize values
@@ -5997,8 +5945,7 @@ c         declare variables
 c
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  a(dim),b(dim),vec(dim)
 c
 c         compute the vector cross product
@@ -6025,19 +5972,16 @@ c
 
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dotprod,a(dim),b(dim)
 c
 c           local variables
 c
       integer i
-#dbl      double precision
-#sgl      real
+      double precision
      &  sum
 c
-#sgl      sum = 0.0
-#dbl      sum = 0.0d00
+      sum = 0.0d00
 
       if(dim.eq.3)then
         sum = a(1)*b(1) + a(2)*b(2) + a(3)*b(3)
@@ -6068,8 +6012,7 @@ c         declare variables
 c
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_getangle,a(dim),b(dim)
 c
 c         a(),b() = vectors
@@ -6078,16 +6021,13 @@ c
 c
 c         local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dot,amag,bmag,x, one
-#sgl       data one / 1.0 /
-#dbl	     data one / 1.0d00 /
+	     data one / 1.0d00 /
 c
 c         declare functions
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dotprod,srt_veclength
 c
 c         compute the dot product and vector magnitude/lengths
@@ -6126,8 +6066,7 @@ c
       implicit none
       integer
      &  dim,normflag
-#dbl      double precision
-#sgl      real
+      double precision
      &  a(dim),b(dim),nhat(dim)
 c
 c         dim=vector dimensions, expecting dim=3 for x,y,z coordinates
@@ -6216,8 +6155,7 @@ c                        element face to the pointc
      &  logflag,logunit,mflag,
      &  localfacenode(maxelemface,maxnodeperface),
      &  elemcon(dimelem,maxnodeperelem)
-#dbl      double precision
-#sgl      real
+      double precision
      &  point(maxdof),nodecoord(dimnode,dimcoord),given_epsilon,
      &  normal_dist
       character*(*) logfile,message
@@ -6232,24 +6170,20 @@ c
      &  cornerid(maxfacecorner),edgeid(maxfacecorner,maxedgecol)
       logical
      &  local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &  edge_vec_1(dim3),edge_vec_2(dim3),normal(dim3),position(dim3),
      &  xvec(dim3),yvec(dim3),dist,epsilon,dx,dy,dz,theta_edge2,
      &  point_angle,angle_epsilon,pi,angle_pt_edge1,angle_pt_edge2,
      &  edge_rad_1,edge_rad_2,corner_dist,zero,four,one,tol,
      &  hundred,one_eighty,sum_norm_dist,dot_edge_1,dot_edge_2,
      &  len_edge_1,len_edge_2
-#dbl       data zero, four, one, tol, hundred, one_eighty
-#dbl     &   / 0.0d00, 4.0d00, 1.0d00, 1.0d-06, 100.0d00, 180.0d00 /
-#sgl       data zero, four, one, tol, hundred, one_eighty
-#sgl     &   / 0.0, 4.0, 1.0, 1.0e-06, 100.0, 180.0 /
+       data zero, four, one, tol, hundred, one_eighty
+     &   / 0.0d00, 4.0d00, 1.0d00, 1.0d-06, 100.0d00, 180.0d00 /
       character checklabel*80
 c
 c           declare functions
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dotprod,srt_dist3d,srt_getangle,srt_veclength
 c
       debug_level = 9
@@ -6619,8 +6553,7 @@ c
 c
 c compute the average normal distance from the element face to the point
 c
-#dbl      normal_dist = sum_norm_dist/DBLE(numcornerperface)
-#sgl      normal_dist = sum_norm_dist/REAL(numcornerperface)
+      normal_dist = sum_norm_dist/DBLE(numcornerperface)
 
       if(local_debug .and. logflag.ge.debug_level)then
         open(unit=logunit,file=logfile,position='append')
@@ -7336,18 +7269,15 @@ c         declare variables
 c
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_veclength,a(dim)
 c
 c         local variables
 c
       integer i
-#dbl      double precision
-#sgl      real
+      double precision
      &  sum, zero
-#sgl  	data zero / 0.0 /
-#dbl  	data zero / 0.0d00 /
+  	data zero / 0.0d00 /
 c
 c         compute the vector length
 c
@@ -7382,21 +7312,18 @@ c           declare variables
 c
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_dist3d,a(dim),b(dim)
 c
 c           local variables
 c
       integer i
-#dbl      double precision
-#sgl      real
+      double precision
      &  sum
 c
 c           initialize values
 c
-#sgl      sum = 0.0
-#dbl      sum = 0.0d00
+      sum = 0.0d00
 c
 c           compute the distance between the points
 c
@@ -7426,11 +7353,9 @@ c         declare variables
 c
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  a(dim), b(dim), mid(dim), two
-#dbl   	 data two / 2.0d00 /
-#sgl    	 data two / 2.0 /
+   	 data two / 2.0d00 /
 c
 c         local variables
 c
@@ -7461,8 +7386,7 @@ c         declare variables
 c
       implicit none
       integer dim
-#dbl      double precision
-#sgl      real
+      double precision
      &  nhat(dim)
 c
 c         nhat = vector to normalize
@@ -7472,16 +7396,13 @@ c
 c         local variables
 c
       integer i
-#dbl      double precision
-#sgl      real
+      double precision
      &  mag,zero
-#dbl      data zero / 0.0d0 /
-#sgl      data zero / 0.0 /
+      data zero / 0.0d0 /
 c
 c         declare functions
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  srt_veclength
 c
 c		normalize the vector,
