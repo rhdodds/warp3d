@@ -16,8 +16,7 @@ c
       subroutine gartemps( rtemp_nodes, belinc, nnode,
      &                     span, felem, rtemps_node_blk, mxvl  )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &      rtemp_nodes(*), rtemps_node_blk(mxvl,*) 
       integer belinc(nnode,*)
       logical local_debug
@@ -64,8 +63,7 @@ c
       subroutine gadtemps( dtemp_nodes, dtemp_elems, belinc, nnode,
      &                     span, felem, dtemps_node_blk, mxvl  )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &      dtemp_nodes(*), dtemp_elems(*), dtemps_node_blk(mxvl,*) 
       integer belinc(nnode,*)
       logical local_debug
@@ -123,8 +121,7 @@ c
 c
 c                    parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &      temp_nodes(*), temp_elems(*), temps_node_blk(mxvl,*),
      &      dtemps_node_blk(mxvl,*) 
       integer belinc(nnode,*)
@@ -132,8 +129,7 @@ c
 c
 c                    local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero
       logical local_debug
       data local_debug, zero / .false., 0.0 / 
