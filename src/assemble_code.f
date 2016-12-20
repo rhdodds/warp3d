@@ -22,7 +22,7 @@ c
      &                                    dof_eqn_map )
       use main_data, only : inverse_incidences
       implicit none
-$add param_def      
+      include 'param_def'  
 c
 c                    parameter declarations
 c
@@ -150,7 +150,7 @@ c
       use main_data, only : repeat_incid, inverse_incidences
 c     
       implicit none
-$add param_def      
+      include 'param_def'      
 c      
       integer :: srow, neqns, previous_snode, num_non_zero_terms            
       integer :: eqn_node_map(*), edest(mxedof,*), iprops(mxelpr,*),
@@ -552,22 +552,19 @@ c
      &                         k_indexes, k_ptrs, iprops, dcp,
      &                         noelem )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       integer ::  eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),
      &            k_indexes(*), iprops(mxelpr,*), dcp(*)
       integer :: neqns, num_threads, noelem
-#dbl      double precision :: k_diag(*), k_coeffs(*)
-#sgl      real :: k_diag(*), k_coeffs(*)
+      double precision :: k_diag(*), k_coeffs(*)
 c
 c                    local declarations
 c
-#dbl      double precision :: zero
-#sgl      real :: zero
-#dbl      double precision, allocatable ::  coeff_row(:,:)
-#sgl      real, allocatable ::  coeff_row(:,:)
+      double precision :: zero
+      double precision, allocatable ::  coeff_row(:,:)
       integer :: i, srow, now_thread
       integer, external :: omp_get_thread_num
       integer, allocatable :: row_start_index(:), edest(:,:,:)
@@ -685,7 +682,7 @@ c
       use main_data,       only : elems_to_blocks, repeat_incid,
      &                            inverse_incidences
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
@@ -694,8 +691,7 @@ c
      &           k_ptrs(*), k_indexes(*), 
      &           iprops(mxelpr,*), dcp(*), 
      &           row_start_index(*), edest(mxedof,*)
-#dbl      double precision  ::
-#sgl      real ::
+      double precision  ::
      & k_diag(*), k_coeffs(*), coeff_row(*)
 c
 c                    local declarations
@@ -703,10 +699,8 @@ c
       integer :: local_scol(mxedof)
       integer :: snode, num_ele_on_snode, j, ele_on_snode, totdof, blk, 
      &           rel_col, start_loc 
-#dbl      double precision :: zero
-#sgl      real :: zero, ekterm
-#dbl      double precision, dimension(:,:), pointer :: emat
-#sgl      real, dimension(:,:), pointer :: emat
+      double precision :: zero
+      double precision, dimension(:,:), pointer :: emat
 c
       logical :: repeated
       data zero / 0.0d0 /
@@ -782,7 +776,7 @@ c
       if( srow .eq. neqns ) return
 c      
       start_loc = row_start_index(srow)-1
-@!DIR$ IVDEP
+!DIR$ IVDEP
       do j = 1, k_ptrs(srow)
          k_coeffs(start_loc+j) = coeff_row(k_indexes(start_loc+j))
          coeff_row(k_indexes(start_loc+j)) = zero
@@ -809,7 +803,7 @@ c
 c      
       do erow = 1, 24
        if( local_scol(erow) .ne. srow ) cycle
-@!DIR$ IVDEP
+!DIR$ IVDEP
        do ecol = 1, 24
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if ( scol .lt. srow ) cycle ! lower triange
@@ -832,7 +826,7 @@ c
 c      
       do erow = 1, 30
        if( local_scol(erow) .ne. srow ) cycle
-@!DIR$ IVDEP
+!DIR$ IVDEP
        do ecol = 1, 30
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if( scol .lt. srow ) cycle
@@ -855,7 +849,7 @@ c
 c      
       do erow = 1, 36
        if( local_scol(erow) .ne. srow ) cycle
-@!DIR$ IVDEP
+!DIR$ IVDEP
        do ecol = 1, 36
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if( scol .lt. srow ) cycle
@@ -876,7 +870,7 @@ c
             
       do erow = 1, 60
        if( local_scol(erow) .ne. srow ) cycle
-@!DIR$ IVDEP
+!DIR$ IVDEP
        do ecol = 1, 60
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
          if( scol .lt. srow ) cycle
@@ -899,7 +893,7 @@ c
 c      
       do erow = 1, totdof
        if( local_scol(erow) .ne. srow ) cycle
-@!DIR$ IVDEP
+!DIR$ IVDEP
         do ecol = 1, totdof
           scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))
           if( scol .lt. srow ) cycle
@@ -939,14 +933,13 @@ c
      &  neqns, num_threads, eqn_node_map, dof_eqn_map, k_ptrs,
      &  k_indexes, iprops, k_coeffs )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       integer :: neqns, num_threads, eqn_node_map(*), dof_eqn_map(*),
      &           k_ptrs(*), k_indexes(*), iprops(mxelpr,*)
-#dbl      double precision :: k_coeffs(*)
-#sgl      real :: k_coeffs(*)
+      double precision :: k_coeffs(*)
 c
 c                    local declarations
 c
@@ -1020,23 +1013,21 @@ c
       use main_data, only: elems_to_blocks, repeat_incid,
      &                     inverse_incidences
       implicit none 
-$add param_def
+      include 'param_def'
 c
 c                 parameter declarations
 c
       integer :: srow, num_k_indexes, previous_snode
       integer :: dof_eqn_map(*), eqn_node_map(*), iprops(mxelpr,*),
      &           edest(mxedof,*), k_indexes(num_k_indexes)
-#dbl      double precision :: k_coeffs(num_k_indexes)
-#sgl      real :: k_coeffs(num_k_indexes)
+      double precision :: k_coeffs(num_k_indexes)
 c
 c                 local declarations
 c
       integer :: snode, num_ele_on_snode, e, ele_on_snode, totdof, blk, 
      &           rel_col, erow, ecol, scol, k, ekrow, bs_start, 
      &           bs_finish, bs_range 
-#dbl      double precision, dimension(:,:), pointer :: emat
-#sgl      real, dimension(:,:), pointer :: emat
+      double precision, dimension(:,:), pointer :: emat
 c!DIR$ ASSUME_ALIGNED k_coeffs:64,emat:64         
 c
 c                 - get structure node number for this equation
@@ -1119,7 +1110,7 @@ c     ========
 c
       subroutine assem_a_row_asym_error
       implicit none
-$add common.main
+      include 'common.main'
 c
       write(out,9000) 
       write(out,9010) erow, ecol, num_k_indexes, scol
@@ -1175,7 +1166,7 @@ c     ****************************************************************
       use main_data,       only :  elems_to_blocks
 c 
       implicit none   
-$add param_def
+      include 'param_def'
 c
       integer :: table(mxedof,*), elem_list(*), list_length,
      &           iprops(mxelpr,*) 
@@ -1191,7 +1182,7 @@ c
        blk      = elems_to_blocks(elem,1)
        rel_elem = elems_to_blocks(elem,2)  
        edest    => edest_blocks(blk)%ptr
-@!DIR$ IVDEP
+!DIR$ IVDEP
        table(1:totdof,i) = edest(1:totdof,rel_elem)
       end do
 c
