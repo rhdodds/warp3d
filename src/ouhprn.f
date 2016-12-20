@@ -18,7 +18,7 @@ c
      &                   num_short_strain, center_output, geonl,
      &                   noheader, out_packet_now )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       character*8 strlbl(*)
       character*(*) hedtyp
       logical long, nodpts, stress, wide, eform, prec,
