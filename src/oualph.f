@@ -15,8 +15,7 @@ c
 c
       subroutine oualph(step,stpitr,iter,alpha)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     alpha        
       logical dummy
 c
