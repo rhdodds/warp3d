@@ -12,12 +12,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine zero_vector( vec, n )
-#dbl      double precision
-#sgl      real
+      double precision
      &  vec(*), zero
       data zero / 0.0d00 /
 c
-@!DIR$ IVDEP
+!DIR$ IVDEP
       vec(1:n) = zero
 c
       return
@@ -37,8 +36,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine vec_ops( veca, vecb, vecc, n, opcode )
-#dbl      double precision
-#sgl      real
+      double precision
      &  veca(*), vecb(*), vecc(*), zero, const
       integer opcode
       data zero / 0.0d0/
@@ -49,42 +47,42 @@ c
 c            opcode 1:   c = a * b
 c
  100  continue
-@!DIR$ IVDEP
+!DIR$ IVDEP
       vecc(1:n) = veca(1:n) * vecb(1:n)
       return
 c
 c            opcode 2:   b = b * a
 c
  200  continue
-@!DIR$ IVDEP
+!DIR$ IVDEP
       vecb(1:n) = vecb(1:n) * veca(1:n)
       return
 c
 c            opcode 3:   c = a / b
 c
  300  continue
-@!DIR$ IVDEP
+!DIR$ IVDEP
       vecc(1:n) = veca(1:n) / vecb(1:n)
       return
 c
 c            opcode v:   c = zero
 c
  400  continue
-@!DIR$ IVDEP
+!DIR$ IVDEP
       vecc(1:n) = zero
       return
 c
 c            opcode v:   a = b
 c
  500  continue
-@!DIR$ IVDEP
+!DIR$ IVDEP
       veca(1:n) = vecb(1:n)
       return
 c
 c            opcode v:   a = a + b
 c
  600  continue
-@!DIR$ IVDEP
+!DIR$ IVDEP
       veca(1:n) = veca(1:n) + vecb(1:n)
       return
 c
@@ -92,7 +90,7 @@ c            opcode v:   a = const * b ; const = vecc(1)
 c
  700  continue
       const = vecc(1)
-@!DIR$ IVDEP
+!DIR$ IVDEP
       veca(1:n) = const * vecb(1:n)
       return
 c
@@ -111,8 +109,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine warp3d_sort_float( n, dvec, index_vec )
-#dbl      double precision
-#sgl      real
+      double precision
      &  dvec(*), a
       integer index_vec(*), b
 c
