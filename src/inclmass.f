@@ -17,7 +17,7 @@ c
       subroutine inclmass
 c 
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       integer :: blk, now_thread 
 c
@@ -66,18 +66,16 @@ c
       use elem_block_data, only: mass_blocks, estiff_blocks
       use main_data, only: asymmetric_assembly
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       integer :: blk
 c
 c             locals. use pointers to simplify indexing within 
 c             innermost loop.
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     nfac, one, mel(mxvl,mxedof)
-#dbl      double precision, dimension(:,:), pointer :: emat, mmat
-#sgl      real, dimension(:,:), pointer :: emat, mmat
+      double precision, dimension(:,:), pointer :: emat, mmat
 
      
       logical :: symmetric_assembly
