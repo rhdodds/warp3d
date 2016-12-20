@@ -18,7 +18,7 @@ c
      &                   nitm, nl, nstrou, fmtyp, noheader )
       implicit integer (a-z)
       logical newhed, noheader
-$add common.main
+      include 'common.main'
       character*8 strlbl(*)
       character*(*) hedtyp
       character*4 loctyp
