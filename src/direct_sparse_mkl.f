@@ -591,7 +591,7 @@ c
       i_old = ncoeff + 1; i_new = ncoeff + neq + 1
 c
       do i = neq, 1, -1
-@!DIR$ IVDEP
+!DIR$ IVDEP
         do j = 1, kpt(i)
           i_new = i_new - 1
           i_old = i_old - 1
