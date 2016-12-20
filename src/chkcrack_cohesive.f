@@ -30,19 +30,17 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c              parameter declarations
 c                
       logical kill_now, debug
-#dbl      double precision
-#sgl      real
+      double precision
      &     values(*)  ! see caller for size
 c
 c              local declarations
 c                
-#dbl      double precision
-#sgl      real
+      double precision
      &     zero, one, half, t1, t2, tn, d1, d2, dn, fpngp, beta,
      &     deff, deff_peak, teff, normalized_teff, teff_peak,
      &     normalized_deff, peak_normal_stress, 
@@ -51,8 +49,7 @@ c
      &     ratio_normal, ratio_shear, dn_half_peak, ds_half_peak,
      &     kill_fract, deff_ratio, deff_gp, deff_peak_gp
       real chk_value
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  dimension(:), pointer :: history, urcs_n, eps_n
       logical beyond_peak, fgm_cohes, option_ppr,
      &        option_exponential, kill_criterion_element,
@@ -483,8 +480,7 @@ c     ****************************************************************
 c      
       subroutine dam_param_cohes_cavit
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     tn_max_over_history, dn_max_at_tn_max
 c
 c              loop over integration pts of this interface element.
@@ -575,12 +571,11 @@ c
       use main_data, only : output_packets, packet_file_no 
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                    declare local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    dummy, eps_plas, eps_crit, sig_mean, sig_mises, eps_plas_tol,
      &    d_eps_plas, max_d_eps_plas, values(20),half
       character * 10  special_char
