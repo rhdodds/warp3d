@@ -70,8 +70,7 @@ c
      &                                       dep_loc, ind_loc, dia_loc,
      &                                       new_loc, new_ind
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, save, dimension (:) :: 
      &          k_coeffs, cof_temp
 c
@@ -131,8 +130,7 @@ c            These 3 vectors have direct analogies with those for the
 c            nodal displacements: u, du, idu.
 c            They will all have size nodof.
 c            
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, save, dimension (:) :: 
      &          total_lagrange_forces,
      &          d_lagrange_forces,
