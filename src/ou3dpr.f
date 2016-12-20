@@ -6,7 +6,7 @@ c *******************************************************************
 c
 c
       subroutine ou3dpr( a,n,ijob,d,z,iz,wk,ier )
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c   purpose             - eigenvalues and (optionally) eigenvectors of
 c                           a real symmetric matrix in symmetric
 c                           storage mode
@@ -63,13 +63,11 @@ c                             matrix a. ijob is set to zero.
 c
 c                                  specifications for arguments
       integer            n,ijob,iz,ier
-#dbl      double precision
-#sgl      real
+      double precision
      &                   a(*),d(*),wk(*),z(iz,*)
 c                                  specifications for local variables
       integer            jer,na,nd,iiz,ibeg,il,kk,lk,i,j,k,l
-#dbl      double precision
-#sgl      real
+      double precision
      &                   anorm,asum,pi,sumz,sumr,an,s,ten,rdelp,zero,
      &                   one,thous
       data               rdelp /0.745058d-08/
@@ -138,8 +136,7 @@ c                                  compute 1 - norm of a
             if (l .ge. i) kk = l
             il = il+kk
    70    continue
-#dbl         anorm = dmax1(anorm,asum)
-#sgl         anorm = amax1(anorm,asum)
+         anorm = dmax1(anorm,asum)
          ibeg = ibeg+i
    75 continue
       if (anorm .eq. zero) anorm = one
@@ -163,8 +160,7 @@ c                                  compute performance index
             ibeg = ibeg+l
    85    continue
          if (sumz .eq. zero) go to 90
-#dbl         pi = dmax1(pi,s/sumz)
-#sgl         pi = amax1(pi,s/sumz)
+         pi = dmax1(pi,s/sumz)
    90 continue
       an = n
       pi = pi/(anorm*ten*an*rdelp)
@@ -186,7 +182,7 @@ c *******************************************************************
 c
 c
       subroutine ouobks( a,n,m1,m2,z,iz )
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c   purpose             - back transformation to form the eigenvectors
 c                           of the original symmetric matrix from the
@@ -212,8 +208,7 @@ c                           specified in the dimension statement in the
 c                           calling program. (input)
 c
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &                   zero
       dimension          a(*),z(iz,*)
       data zero /0.0/
@@ -250,7 +245,7 @@ c *******************************************************************
 c
 c
       subroutine ouhous( a,n,d,e,e2 )
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c   purpose             - reduction of a symmetric matrix to symmetric
 c                           tridiagonal form using a householder
@@ -271,8 +266,7 @@ c                e2     - output array of length n.  e2(i) = e(i)**2.
 c
 c
       dimension          a(*),d(n),e(n),e2(n)
-#dbl      double precision
-#sgl      real
+      double precision
      &                   a,d,e,e2,zero,h,scale,one,scale1,f,g,hh
       data               zero/0.d0/,one/1.d0/
 c                                  first executable statement
@@ -364,7 +358,7 @@ c *******************************************************************
 c
 c
       subroutine ourt2s(d,e,n,z,iz,ier)
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c   purpose             - eigenvalues and (optionally) eigenvectors of
 c                           a symmetric tridiagonal matrix using the
 c                           ql method.
