@@ -17,19 +17,17 @@ c
      &
       use segmental_curves, only : max_seg_points, max_seg_curves
       implicit integer (a-z)
-$add param_def
-$add include_sig_up
+      include 'param_def'
+      include 'include_sig_up'
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  eleifv(nrow_ifv,*), updated_element_volumes(*)
 c
 c                       local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, xi, eta, zeta, element_volumes_for_blk(mxvl)
       logical geonl, bbar, local_debug
       data local_debug, zero / .false., 0.0 /
@@ -189,12 +187,11 @@ c
       use damage_data, only : dam_ptr, max_dam_state, growth_by_kill
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameter declarations
 c
-#sgl      real
-#dbl      double precision
+      double precision
      & updated_element_volumes(*), element_volumes_for_blk(*)
 c
 c                       local variables
