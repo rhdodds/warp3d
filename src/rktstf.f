@@ -16,15 +16,14 @@ c
      &                   ispan, local_work )
       use main_data, only : matprp, lmtprp, asymmetric_assembly
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                 parameter declarations
 c
       integer :: nrow_ek  ! set for symmetric or asymmetric
       integer :: ispan
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   glb_ek_blk(nrow_ek,ispan)
       real    :: props(mxelpr,*)   !  all 3 are same. read-only here
       integer :: iprops(mxelpr,*)
@@ -40,8 +39,7 @@ c
      &           compute_shape, cohes_mirror, dummy_logic,
      &           average, symmetric_assembly
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  xi, eta, zeta, beta_fact, eps_bbar, zero, one, dummy,
      &  temp_ref, d_temp, temp_np1
 c
@@ -227,8 +225,7 @@ c
 c
       integer :: span, nrow_ek
       integer :: i, j
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & local_ek(span,nrow_ek), ek(nrow_ek,span)
 c!DIR$ ASSUME_ALIGNED ek:64, local_ek:64     
 c
@@ -245,45 +242,45 @@ c
       select case ( nrow_ek ) ! careful. type could be integer constant
 c
       case( 300 )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do j = 1, span
-@!DIR$ IVDEP
+!DIR$ IVDEP
         	do i = 1, 300
       	  	ek(i,j) = local_ek(j,i)
       	  end do
         end do
 c
       case( 465 )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do j = 1, span
-@!DIR$ IVDEP
+!DIR$ IVDEP
         	do i = 1, 465
         		ek(i,j) = local_ek(j,i)
       	  end do
         end do
 c
       case( 666 )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do j = 1, span
-@!DIR$ IVDEP
+!DIR$ IVDEP
         	do i = 1, 666
       	  	ek(i,j) = local_ek(j,i)
       	  end do
         end do
 c
       case( 1830 )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do j = 1, span
-@!DIR$ IVDEP
+!DIR$ IVDEP
         	do i = 1, 1830
       	  	ek(i,j) = local_ek(j,i)
       	  end do
         end do
 c
       case default
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do j = 1, span
-@!DIR$ IVDEP
+!DIR$ IVDEP
         	do i = 1, nrow_ek
       	  	ek(i,j) = local_ek(j,i)
       	  end do
@@ -295,7 +292,7 @@ c
 c                  time 5.16 secs
 c      
 c      do i = 1, 1830
-c@!DIR$ LOOP COUNT MAX=###
+c@!DIR$ LOOP COUNT MAX=128
 c      	do j = 1, span
 c      		ek(i,j) = local_ek(j,i)
 c      	end do
@@ -318,8 +315,7 @@ c
       subroutine rktstf_zero_vec( vec, nterms )
       implicit none
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   vec(nterms), zero
       integer  nterms
       data zero / 0.0d00 /
