@@ -16,16 +16,14 @@ c
 c
       subroutine ouinv1( span, str, inv, stress )
       implicit integer (a-z)
-$add param_def
-#dbl      double precision
-#sgl      real
+      include 'param_def'
+      double precision
      &     str(mxvl,*), inv(mxvl,*)
       logical stress
 c
 c                    locally allocated
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     tstr(mxvl,nstr), factor, one, half
       data one, half / 1.0, 0.5 /
 c
