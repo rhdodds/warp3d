@@ -19,7 +19,7 @@ c
       use main_data, only : incid, incmap, inverse_incidences
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug
 c
       if ( debug ) write (*,*) '>>>> in update_node_elecnt '
