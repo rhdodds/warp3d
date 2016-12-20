@@ -18,7 +18,7 @@ c
       subroutine chkcrack( step, iter )
       use damage_data
       implicit integer (a-z) 
-$add common.main
+      include 'common.main'
 c
       logical debug
 c
@@ -89,14 +89,13 @@ c
       use main_data, only : output_packets, packet_file_no
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c           
       parameter (max_local_list=200)
       logical debug, blk_killed, killed_this_time, killed_found,
      &   kill_the_elem, elems_left
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &   dummy_arg, porosity, eps_plas, eps_crit, dummy_arg2,
      &   values(20), local_status(max_local_list,3), orig_poros,
      &   ext_shape, ext_spacing
@@ -433,23 +432,20 @@ c
 c
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c              parameter declarations
 c                
       logical kill_now, debug, ext_gurson
-#dbl      double precision
-#sgl      real
+      double precision
      &     porosity, eps_plas, eps_crit, sig_mean, sig_mises,
      &     ext_shape, ext_spacing
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  dimension(:), pointer :: history, urcs_n, eps_n
 c
 c              local declarations
 c                
-#dbl      double precision
-#sgl      real
+      double precision
      &     zero, one,
      &     third, six, iroot2,
      &     sig_xx, sig_yy, sig_zz, 
@@ -605,11 +601,10 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical debug, local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &          node_coord(3), coord, plane_tol
       integer, dimension(:,:), pointer :: cdest
       data plane_tol, local_debug  / 0.01, .false. /
@@ -707,12 +702,11 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical debug
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &   zero
       data zero /0.0/
       if ( debug ) write(out,*) '>>> in chk_free_nodes <<<'
@@ -770,7 +764,7 @@ c
       subroutine dam_print( step, iter )
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c           check to make sure crack growth is on and printing is
 c           specified
@@ -815,9 +809,8 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
-#sgl      real
-#dbl      double precision
+      include 'common.main'
+      double precision
      &     zero
       data zero / 0.0 /
 
@@ -1012,10 +1005,9 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug, local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &   zero, sum, node_displ(3), dbar_now
       data local_debug, zero, num_face_nodes / .false., 0.0, 4 /
 c
@@ -1041,8 +1033,7 @@ c
         end do
       end if
 c
-#sgl      sum = sum / real(num_face_nodes)
-#dbl      sum = sum / dble(num_face_nodes)
+      sum = sum / dble(num_face_nodes)
       dbar_now = gurson_cell_size + sum
       if ( abs(action) .eq. 1 ) then
        dam_dbar_elems(1,elem_ptr) = dbar_now
@@ -1080,7 +1071,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       chk_killed = .false.
       elem_ptr =  dam_ptr( elem )
@@ -1113,7 +1104,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical status_vec(*), block_killed
 c
