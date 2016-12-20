@@ -26,11 +26,10 @@ c
       use stiffness_data, only : total_lagrange_forces
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: node, pgnum, ndof, elem, dva, lsttyp
-#dbl      double precision :: react_sums(*)
-#sgl      real :: react_sums(*)
+      double precision :: react_sums(*)
       logical :: wide, eform, prec, newel, noheader,
      &           react_totals_only, write_to_packet
       character(len=8) :: doflbl(*)
@@ -40,8 +39,7 @@ c                       local declarations
 c
       integer :: i, dof, sdof, fnsh, nitm, hfmtyp, fmtyp, nl, 
      &           nvalues_out, lnum, cl, strt
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     edva(mxvl,mxndof), nfac, one, zero, force_lag,
      &     trnmte(mxvl,mxedof,mxndof)
       logical :: newhed, trne(mxvl,mxndel), hardcopy
