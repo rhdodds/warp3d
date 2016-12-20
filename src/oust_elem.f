@@ -24,15 +24,13 @@ c
      &        flat_file, stream_file, text_file, compressed,
      &        patran_file
 
-#dbl      double precision
-#sgl      real
+      double precision
      &  elem_values(nrowd,num_vals)
-$add common.main
+      include 'common.main'
 c
 c                       local declarations
 c
-#dbl      character*4 title(80), title1(80)
-#sgl      character*8 title(80), title1(80)
+      character*4 title(80), title1(80)
       character(len=1) dummy_char
       character*80 string, strng1, stepstring*6
       dimension titl(80), titl1(80)
@@ -40,8 +38,7 @@ c
       logical connected
       save fileno, flat_file_number
       external warp3d_get_device_number
-#dbl      double precision :: small_tol, zero
-#sgl      real :: small_tol, zero
+      double precision :: small_tol, zero
       data small_tol, zero / 1.0d-80, 0.0d00 /
 c
       patran_file = oubin .or. ouasc  
@@ -109,9 +106,8 @@ c
       if( patran_file .and. oubin ) then
          do relelem = 1, nrow
              elem = felem + relelem - 1
-#dbl         write(fileno) elem, 8,
-#dbl     &           (sngl(elem_values(relelem,i)),i=1,num_vals)
-#sgl         write(fileno) elem,8,(elem_values(relelem,i),i=1,num_vals)
+         write(fileno) elem, 8,
+     &           (sngl(elem_values(relelem,i)),i=1,num_vals)
          end do
       end if
 c      
