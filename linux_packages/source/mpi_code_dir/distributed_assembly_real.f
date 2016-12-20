@@ -394,7 +394,7 @@ c
             use quicksort
             use vararray_mod
             implicit integer(a-z)
-$add common.main
+      include 'common.main'
             integer :: num_enode_dof
             integer :: num_struct_dof
             integer,allocatable :: scratch(:), edest_vec(:)
@@ -620,7 +620,7 @@ c
             use distributed_stiffness_data
             use local_stiffness_mod
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
             integer :: i, ierr
             real :: wcputime
             external :: wcputime
@@ -686,7 +686,7 @@ c
             use vararray_mod
             use quicksort
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c            
             integer, allocatable :: buffer(:)
             type(vararray) :: storage_array
@@ -848,7 +848,7 @@ c
             use distributed_stiffness_data
             use performance_data
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
             integer :: ierr
             real :: wcputime
@@ -910,7 +910,7 @@ c
             use performance_data
 c
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
             integer :: ierr,s,e,sz
             integer,allocatable :: temp_offset(:),temp_recv_cnts(:)
@@ -1137,7 +1137,7 @@ c
             use elem_block_data, only: estiff_blocks
             use main_data, only : inverse_incidences,elems_to_blocks
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
             integer :: ierr,eqn,node,numele,relcol
             integer :: elem,blk,totdof,erow,srow,scol,k
             integer, allocatable :: edest_vec(:)
@@ -1361,7 +1361,7 @@ c
             use performance_data
             use elem_block_data, only: edest_blocks
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
             integer :: blk,felem,totdof,span
             integer :: ierr,eq,meqn,i
@@ -1457,7 +1457,7 @@ c
             use performance_data
             use quicksort
             implicit integer (a-z)
-$add common.main
+      include 'common.main'
             integer :: i,j,sz,ptr,s,e,k
             integer, allocatable :: temp_cols(:)
             double precision, allocatable :: temp_coefs(:)
@@ -1702,10 +1702,9 @@ c
       subroutine load_vector( p, res, edst_block, dof_eqn_map, nedof,
      &                        span )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
       dimension edst_block(nedof,*), dof_eqn_map(*)
-#dbl      double precision
-#sgl      real
+      double precision
      &   res(*), p(*)
 c
 c                 locally allocated
