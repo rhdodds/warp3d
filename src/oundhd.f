@@ -17,7 +17,7 @@ c
       subroutine oundhd(pgnum,lnum,hedtyp,doflbl,ndof,newhed,fmtyp,
      &                                                       nitm,nl)
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical newhed
       character*8 doflbl(*)
       character*20 hedtyp
