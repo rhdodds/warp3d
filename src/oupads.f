@@ -18,23 +18,20 @@ c
       use elblk_data, only : elestr
       implicit integer (a-z)
 c
-$add param_def
+      include 'param_def'
       dimension belinc(nnode,*), outmap(*)
 c
       type :: node_entry
          integer :: count
-#dbl         double precision, dimension(:), pointer :: node_values
-#sgl         real, dimension(:), pointer :: node_values
+         double precision, dimension(:), pointer :: node_values
       end type node_entry
 c
       type (node_entry), dimension (num_struct_nodes) :: nodal_values
-#dbl         double precision, dimension(:), pointer :: snode_values
-#sgl         real, dimension(:), pointer :: snode_values
+         double precision, dimension(:), pointer :: snode_values
 c
 c                        local declarations
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &   zero
       data zero / 0.0d0 /
 c
@@ -46,7 +43,7 @@ c                       accessed in the processing of the element
 c                       block.
 c
       do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###            
+!DIR$ LOOP COUNT MAX=128            
        do i = 1, span
          snode = belinc(j,i)
          if ( .not. associated(nodal_values(snode)%node_values) ) then
@@ -64,7 +61,7 @@ c
       do k = 1, num_vals
          map = outmap(k)
          do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###            
+!DIR$ LOOP COUNT MAX=128            
           do i = 1, span
             snode = belinc(j,i)
             snode_values => nodal_values(snode)%node_values
