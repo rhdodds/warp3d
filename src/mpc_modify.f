@@ -22,8 +22,7 @@ c
       integer, allocatable, dimension(:) :: abs_ptr, abs_trm
       real  dumr
       double precision  dumd
-#dbl      double precision
-#sgl      real
+      double precision
      &          k_diag
       character*1  dums
       dimension  k_ptrs(*), k_diag(*), dstmap(*), dof_eqn_map(*)
@@ -711,11 +710,10 @@ c
 c
       logical, parameter :: local_debug = .false.
       integer, intrinsic :: size
-@      integer, allocatable, dimension(:) :: eqn_tmp, old_ind
+      integer, allocatable, dimension(:) :: eqn_tmp, old_ind
       real  dumr
       double precision  dumd
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, dimension(:) :: old_cof
       character*1  dums
 c!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32    
@@ -929,8 +927,7 @@ c
       integer, allocatable, dimension (:) :: itmp
       real  :: dumr
       double precision ::  dumd
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, dimension (:) :: dtmp
       character*1 :: dums
       logical, parameter :: local_debug = .false.
@@ -1015,8 +1012,7 @@ c                      parameter declarations
 c
       integer :: neqns, max_len
       integer :: k_ptrs(*), abs_ptr(*)
-#dbl      double precision :: k_diag(*)
-#sgl      real :: k_diag(*)
+      double precision :: k_diag(*)
 
 c
 c                      local declarations
@@ -1312,8 +1308,7 @@ c
       implicit integer (a-z)
       real  dumr, mlt
       double precision  dumd
-#dbl      double precision
-#sgl      real
+      double precision
      &         dep_trm, k_diag, p_vec
       character*1  dums
       dimension  k_diag(*), p_vec(*)
@@ -1408,8 +1403,7 @@ c
       integer, allocatable, dimension (:) :: ind_tmp
       real  dumr
       double precision  dumd
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, dimension (:) :: cof_tmp
       character*1  dums
       logical  last_good
@@ -1552,8 +1546,7 @@ c
       integer, allocatable, dimension(:) :: ind_tmp
       real  dumr
       double precision  dumd
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, dimension(:) :: cof_tmp
       character*1  dums
       logical new_size
@@ -1643,11 +1636,9 @@ c
       implicit integer (a-z)
       real :: dumr, mlt
       double precision :: dumd, zero
-#dbl      double precision
-#sgl      real
+      double precision
      &          x, cof
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &          allocatable, dimension (:) :: lagmlt
       character*1  dums
       dimension  x(*), cstmap(*)
