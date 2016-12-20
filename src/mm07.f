@@ -36,8 +36,7 @@ c
       logical ::
      &   signal_flag, adaptive_possible, cut_step_size_now
 c     
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & mm_props(mxvl,10), e_vec(mxvl), tan_e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), n_power_vec(mxvl), stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
@@ -133,8 +132,7 @@ c                   ---------------
 c     
       integer :: i,j    
       logical :: local_debug
-#dbl      double precision ::
-#sgl      real  ::
+      double precision ::
      & shear_mod, a,b,c, zero, one, two,half,three,onep5,
 c
      & str_epd(6), str_epd_1(6), strdir(6),
@@ -391,8 +389,7 @@ c
        integer :: iout
        logical :: adaptive_possible, cut_step_size_now
 
-#dbl       double precision ::
-#sgl       real ::
+       double precision ::
      &   alpha, rho0, gamma, alat, wb, beta, vm, vh, 
      &   c0, rksi, alamda,
      &   rnl, rna, rgas, temper, bk, shear_mod, pe, p_np1, hcon_n, 
@@ -401,8 +398,7 @@ c
 c                  local variables
 c
        integer :: j
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &    zero, one, two, three, tol, cguess,
      &    delc, ddc, detkk, skk, cnow, thl, tht, dcdskk, dcdep,
      &    dntdeps, res, dskkdc, slope, eps, cl, ct,tol1
@@ -453,8 +449,7 @@ c *******************************************************************
 c
        integer :: iout
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & alpha, rho0, gamma, alat, 
      & wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas, 
      & temper, eps, skk, cnow, thl, tht, dcdskk, dcdep, 
@@ -462,8 +457,7 @@ c
 c
 c                local variables
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & zero, one,two,three,half,fac,
      & aux, rkl, rkt, thl0, cl, ct, rho, epst2, tden,
      & n1,n2,n3,n4,n5,n6,n7,ten, tdenfac,k1,k2,k3
@@ -549,8 +543,7 @@ c
        integer :: iout, j
        logical :: adaptive_possible, cut_step_size_now
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & alpha, rho0, gamma, alat, wb, beta,
      & vm, vh, c0, rksi, alamda, rnl, rna, rgas, temper, bk,
      & shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, etran_np1,
@@ -558,8 +551,7 @@ c
 c
 c                   local variables
 c
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      & tol, zero, one, two, three,
      & epsguess, ddeps, sigmaY, dsdep, ff1, slope,ff2,deleps,
      & delc, ddelc, detkk, dsdc, cnow, thl, tht, dcdskk,tol1, 
@@ -623,15 +615,13 @@ c *******************************************************************
      &    n_power, sigmaY, dsdep, dsdc)
        implicit none
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & hcon, rksi, eps, sigma_0, eps_0, n_power, 
      & sigmaY, dsdep, dsdc
 c
 c                   local variables
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &    zero, one, aux1, aux2
       data zero, one / 0.d00, 1.d00 /
 c
@@ -668,8 +658,7 @@ c
       integer
      &  span, felem, gpn, iter, iout, mxvl, nstrn
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & trial_elas_stress(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
@@ -720,8 +709,7 @@ c     sig-xx, sig-yy, sig-zz, tau-xy, tau-yz, tau-xz
 c   
       integer :: i,jj,kk    
       logical :: local_debug
-#dbl      double precision ::
-#sgl      real  ::
+      double precision ::
      &  zero, one, two,three, quarter, half, onep5,
      &  one_third, two_third,
 c
@@ -760,7 +748,7 @@ c
 c
 c              dmat[] zeroed by warp3d
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
 c
        alpha = mm_props(i,1)
@@ -960,13 +948,11 @@ c
      &  gpn, mxvl, span, iout,i
 c
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & stress(mxvl,*), elestr(mxvl,*), history(mxvl,*),
      & p, two, three, onep5, fac1
 c
-#dbl      data onep5, two, three/1.5d00, 2.d00, 3.d00/
-#sgl      data onep5, two, three/1.5e00, 2.e00, 3.e00/
+      data onep5, two, three/1.5d00, 2.d00, 3.d00/
 c
 c               description of parameters
 c               -------------------------
@@ -1097,13 +1083,12 @@ c
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c      
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
       return
       end
