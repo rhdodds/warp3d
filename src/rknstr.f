@@ -18,17 +18,16 @@ c
       use mm10_defs, only : indexes_common, index_crys_hist 
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
       real    :: props(mxelpr,mxvl)   ! all 3 the same. read only
       logical :: lprops(mxelpr,mxvl)
       integer :: iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    locals
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &      xi, eta, zeta, zero, temp_ref, d_temp, temp_np1
       logical :: geonl, bbar, local_debug, adaptive_flag, adaptive,
      &           segmental, cohesive_elem, linear_displ, 
@@ -329,7 +328,7 @@ c
       end if
 c
       if( local_work%is_cohes_elem ) then  ! all zero if no temps
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
          do i = 1, span
            temp_ref = local_work%temps_ref_node_blk(i,1)
            d_temp   = local_work%dtemps_node_blk(i,1)
@@ -569,7 +568,7 @@ c
      &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_0, nnode )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
        do i = 1, span
          local_work%volume_block_0(i) = local_work%volume_block_0(i)
      &                + local_work%det_j(i,gpn)
@@ -581,7 +580,7 @@ c
      &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_n, nnode )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do i = 1, span
            local_work%volume_block_n(i) = local_work%volume_block_n(i)
      &                + local_work%det_j(i,gpn)
@@ -593,7 +592,7 @@ c
      &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_n1, nnode )
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
         do i = 1, span
           local_work%volume_block_n1(i) = local_work%volume_block_n1(i)
      &              + local_work%det_j(i,gpn)
@@ -651,19 +650,18 @@ c
 c
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local declarations
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &      dumd
 c
 c                  determine if the material stress-strain properties
@@ -720,8 +718,7 @@ c
       logical  temperatures, temps_node_to_process,
      &         temperatures_ref
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dtemps_node_blk(mxvl,*), temps_node_blk(mxvl,*),
      &  temps_ref_node_blk(mxvl,*)
 c
@@ -729,8 +726,7 @@ c                    local
 c
       logical do_average
       integer i, enode
-#dbl      double precision
-#sgl      real
+      double precision
      & sum1(span), sum2(span), sum3(span), avg1, avg2, avg3, zero,
      & fnnodel
        data zero / 0.0d0 /
@@ -760,7 +756,7 @@ c
          sum2(1:span) = zero
          sum3(1:span) = zero
          do enode = 1, nnodel
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
             do i = 1, span
                sum1(i) = sum1(i) + dtemps_node_blk(i,enode)
                sum2(i) = sum2(i) + temps_node_blk(i,enode)
@@ -768,7 +764,7 @@ c
             end do
          end do
          do enode = 1, nnodel
-@!DIR$ LOOP COUNT MAX=###         
+!DIR$ LOOP COUNT MAX=128         
             do i = 1, span
                avg1 = sum1(i) / fnnodel
                avg2 = sum2(i) / fnnodel
@@ -783,13 +779,13 @@ c
       if( average_case .eq. 2) then
          sum1(1:span) = zero
          do enode = 1, nnodel
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
             do i = 1, span
                sum1(i) = sum1(i) + temps_node_blk(i,enode)
             end do
          end do
          do enode = 1, nnodel
-@!DIR$ LOOP COUNT MAX=###         
+!DIR$ LOOP COUNT MAX=128         
             do i = 1, span
                avg1 = sum1(i) / fnnodel
                temps_node_blk(i,enode) = avg1
@@ -821,16 +817,14 @@ c
 c                    parameter declarations
 c
       integer nnode, mxndel, mxvl, num_props, span
-#dbl      double precision
-#sgl      real
+      double precision
      &  enode_mat_props(mxndel,mxvl,num_props)
 c
 c                    local
 c
       integer enode, elem, prop
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & sum(span), avg, zero
 c
       data zero / 0.d0 /
@@ -844,16 +838,16 @@ c                    for each property, redefine the nodal values
 c                    to be the simple average of all the nodal values.
 c
       do prop = 1, num_props
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
          sum(1:span) = zero
          do enode = 1, nnode
-@!DIR$ LOOP COUNT MAX=###
+!DIR$ LOOP COUNT MAX=128
             do elem = 1, span
                sum(elem) = sum(elem) + enode_mat_props(enode,elem,prop)
             end do
          end do
          do enode = 1, nnode
-@!DIR$ LOOP COUNT MAX=###         
+!DIR$ LOOP COUNT MAX=128         
             do elem = 1, span
                avg = sum(elem) / nnode
                enode_mat_props(enode,elem,prop) = avg
@@ -884,17 +878,17 @@ c
       use segmental_curves
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
          local_work%e_vec(i)         = props(7,i)
          local_work%e_vec_n(i)       = props(7,i)
@@ -951,17 +945,17 @@ c
 c
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
          local_work%e_vec(i)       = props(7,i)
          local_work%nu_vec(i)      = props(8,i)
@@ -1003,21 +997,21 @@ c
       use segmental_curves
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
       logical adaptive
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
            local_work%e_vec(i)       = props(7,i)
            local_work%e_vec_n(i)     = props(7,i)
@@ -1065,8 +1059,8 @@ c
 c
       bit_flags = iprops(24,1)
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
         if ( iand(iprops(30,i),1) .eq. 0 )
      &         local_work%nuc_vec(i) = .false.
@@ -1101,14 +1095,14 @@ c
       use main_data, only : matprp, lmtprp
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
@@ -1133,8 +1127,8 @@ c                     59        gamma_u         gp_delta_u
 c                     60 sig_tol
 c                     61-64 <available>
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1204,14 +1198,14 @@ c
       use main_data, only : matprp, lmtprp
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    ::  props(mxelpr,mxvl)
       logical ::  lprops(mxelpr,mxvl)
       integer ::  iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
@@ -1220,8 +1214,8 @@ c
       local_debug = .false.
       matnum = local_work%matnum
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1289,14 +1283,14 @@ c
       use main_data, only : matprp, lmtprp
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
@@ -1304,8 +1298,8 @@ c
 c
       matnum = local_work%matnum
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
 c
            local_work%e_vec(i)       = props(7,i)
@@ -1354,14 +1348,14 @@ c
       use main_data, only : matprp, lmtprp, dmatprp
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
@@ -1369,8 +1363,8 @@ c
 c
       matnum = local_work%matnum
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
         local_work%e_vec(i)       = props(7,i)
         local_work%nu_vec(i)      = props(8,i)
@@ -1427,14 +1421,14 @@ c
      &                              data_offset
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
@@ -1691,14 +1685,14 @@ c
      &                              mc_array
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl)
-$add include_sig_up
+      include 'include_sig_up'
 c
 c                    local
 c
@@ -1920,18 +1914,16 @@ c
       subroutine characteristic_elem_length(
      &       etype, span, nnodel, node_coords, lengths, iout  )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  node_coords(mxvl,*), lengths(*)
 c
 c                     locally defined arrays-variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, one, half, rnlengths, xa, xb,
      &  ya, yb, za, zb, local_sums(mxvl), scale_factor
       logical local_debug, brick, tet, wedge, linear
@@ -1980,8 +1972,8 @@ c
       do j = 1, nlengths
         nodea = node_pairs(j,1)
         nodeb = node_pairs(j,2)
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
         do i = 1, span
           xa = node_coords(i,nodea)
           ya = node_coords(i,nodea+nnodel)
@@ -1997,8 +1989,8 @@ c
       scale_factor = half
       if( linear ) scale_factor = one
 c
-@!DIR$ LOOP COUNT MAX=###
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128
+!DIR$ IVDEP
       do i = 1, span
        lengths(i) = local_sums(i) * rnlengths * scale_factor
       end do
