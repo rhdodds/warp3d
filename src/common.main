@@ -7,7 +7,7 @@ c
 c              code that includes param_def and or common.main
 c              may then use =>  implicit none if desired
 c
-$add param_def
+      include 'param_def'
 c
 c
 c#######################################################################
@@ -167,30 +167,25 @@ c
      &     user_cnstrn_stp_factors, actual_cnstrn_stp_factors
 c
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    u,v,a,du,idu,load,res,ifv, c
 c
       logical temperatures
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &       internal_energy, plastic_work, killed_ele_pls_work,
      &       killed_ele_int_work
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &       dt,nbeta,stplen,aparm,bparm,cparm,eparm,fparm,
      &       emax,fmax,prdmlt, total_mass, ext_work, beta_fact,
      &       total_model_time, eps_bbar
 
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &       tol,sum_ifv,sum_loads
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &       scaling_adapt, scaling_factor
 c
 c
