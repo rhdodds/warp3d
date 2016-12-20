@@ -21,7 +21,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug
       data debug /.false./
 c
@@ -113,7 +113,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug
       data debug /.false./
 c
@@ -203,7 +203,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug
       data debug / .false. /
 c
@@ -279,7 +279,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       write (*,*) '   >>>> printing crack_front_nodes'
 c
