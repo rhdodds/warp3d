@@ -16,7 +16,7 @@ c
       module mm10_defs
 c
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c              includes all key size limits for WARP3D (e.g. mxvl)
 c
 c              Massive list of properties
@@ -115,7 +115,7 @@ c ****************************************************************************
 c
       module crystal_data
             implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c                 Crystal array data structures
 c
             type :: crystal
@@ -1832,7 +1832,7 @@ c
       use crystal_data, only: simple_angles, nangles, srequired,
      &      mc_array
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       integer :: inter_mat, nlines, avail_device
       integer, external :: warp3d_get_device_number
@@ -1915,7 +1915,7 @@ c
      &            data_offset, defined_crystal
       use main_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       integer :: mxcry, nelem, ncry matnum, el, i, iodev, p_matnum
       integer :: avail_device
@@ -2132,7 +2132,7 @@ c
       use crystal_data, only : angle_input, crystal_input,
      &            data_offset, simple_angles, mc_array
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       if (allocated(angle_input)) deallocate(angle_input)
       if (allocated(crystal_input)) deallocate(crystal_input)
@@ -2167,7 +2167,7 @@ c
      &            data_offset, c_array, defined_crystal
       use main_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       integer :: i, j, k, ncrystals, cnum, osn, num, ecount
       real :: e_avg, nu_avg
