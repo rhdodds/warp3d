@@ -16,7 +16,7 @@ c
 c
       subroutine wmpi_init
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c      
       myid = 0
       numprocs = 1
@@ -43,7 +43,7 @@ c
 c
       subroutine wmpi_suspend(option)
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c      
       return
       end
@@ -84,8 +84,7 @@ c
       subroutine wmpi_reduce_vec ( in, size )
       implicit integer (a-z)              
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     in(*)
 c     
 c     
@@ -109,8 +108,7 @@ c
       subroutine wmpi_dotprod ( in )
       implicit integer (a-z)              
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     in 
 c     
 c
@@ -231,9 +229,8 @@ c     ****************************************************************
 c     
       subroutine wmpi_do_uexternaldb
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &     zero, aba_time(2), aba_dtime
       logical local_debug
       data zero / 0.0d00 /
