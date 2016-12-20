@@ -19,7 +19,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical sbflg1, sbflg2
       logical matchs, numd, numi, endcrd, matchs_exact
       dimension scan_order_list(mxlsz), scan_kill_order_list(mxlsz),
@@ -27,8 +27,7 @@ $add common.main
 c
 c             locally allocated arrays
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dumd, zero, ctoa, two, hundred, def_min_load_fact, temp_dble,
      &  d32460, one
       data one, zero, two, hundred, def_min_load_fact,d32460
@@ -433,7 +432,7 @@ c
       call trxlst( scan_order_list, scan_order_list_size, iplist,
      &     icn, elem )
       if( growth_by_kill ) then
-!sun          if ( iand (iprops(30,elem),2).ne.0 ) then
+         if ( iand (iprops(30,elem),2).ne.0 ) then
               num_print_list = num_print_list + 1
          end if
       end if
@@ -535,7 +534,7 @@ c
  665  continue
       call trxlst( scan_kill_order_list, scan_kill_order_length,
      &     iplist, icn, elem )
-!sun      if ( iand (iprops(30,elem),2).ne.0 ) then
+      if ( iand (iprops(30,elem),2).ne.0 ) then
          num_kill_order_list = num_kill_order_list + 1
       endif
       if ( iplist.ne.0 ) goto 665
@@ -1037,14 +1036,13 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             locally allocated arrays
 c
       character *1 dums
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &  dumd
       logical debug
 c
@@ -1119,14 +1117,13 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c             locally allocated arrays
 c
       character *1 dums
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, plane_tol, max_dist, dumd
       data zero /0.0 /
       allocatable tmp_nodes(:)
@@ -1253,7 +1250,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                     parameter declarations
 c
@@ -1263,8 +1260,7 @@ c
 c                     local declarations
 c
       logical crack_node, first_node
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, one, dumd
       real dumr
       character * 1 dums
@@ -1440,12 +1436,11 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                     local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     oneeighty, dumd, pi
       real dumr
       character *1 dums
@@ -1500,7 +1495,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       dimension scan_order_list(*)
       logical debug
 c
@@ -1514,7 +1509,7 @@ c
  570  continue
       call trxlst( scan_order_list, scan_order_list_size, iplist, icn,
      &     elem )
-!sun      if ( iand (iprops(30,elem),2).ne.0 ) then
+      if ( iand (iprops(30,elem),2).ne.0 ) then
          list_entry = list_entry + 1
          dam_print_list(list_entry) = elem
       end if
@@ -1552,7 +1547,7 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       dimension scan_kill_order_list(*)
       logical debug
 c
@@ -1567,7 +1562,7 @@ c
  670  continue
       call trxlst( scan_kill_order_list, scan_kill_order_length,
      &     iplist, icn, elem )
-!sun      if ( iand (iprops(30,elem),2).ne.0 ) then
+      if ( iand (iprops(30,elem),2).ne.0 ) then
          list_entry = list_entry + 1
          kill_order_list(list_entry) = elem
          if ( debug ) write(out,'(" entry:",i3," elem:",i7)')list_entry,
@@ -1608,11 +1603,10 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       dimension scan_master_list(*)
       logical debug
-#dbl      double precision
-#sgl      real
+      double precision
      &  d32460
       data d32460 / 32460.0 /
 c
@@ -1668,7 +1662,7 @@ c
 c
       implicit integer(a-z)
 c
-$add common.main
+      include 'common.main'
 c
       temp = 0
       if (.not. const_front) goto 9999
@@ -1714,10 +1708,9 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug, reached_end
-#dbl      double precision
-#sgl      real
+      double precision
      &  dumd, d32460
       real dumr
       character *1, dums
@@ -1795,10 +1788,9 @@ c
       use node_release_data, only : master_lines
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug, reached_end
-#dbl      double precision
-#sgl      real
+      double precision
      &  dumd, d32460
       real dumr
       character *1, dums
@@ -1855,11 +1847,10 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical debug, reached_end, found_new_node
       dimension shared_elems(2)
-#dbl      double precision
-#sgl      real
+      double precision
      &  dumd
       real dumr
       character *1, dums
@@ -1970,7 +1961,7 @@ c
       subroutine incrack_errmsg( ierrno )
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       character*50 string
 c
       select case( ierrno )
