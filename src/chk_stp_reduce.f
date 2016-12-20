@@ -21,10 +21,9 @@ c
       use damage_data
       implicit integer (a-z)
       logical debug
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     temp_load_fact, mf, mf_nm1, one, zero
       data one, zero /1.0, 0.0/
 c
@@ -124,10 +123,9 @@ c
       use damage_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     temp_load_fact, mf, mf_nm1, one, step_factor, total_factor
       data one /1.0/
       logical debug
@@ -253,11 +251,10 @@ c
       subroutine original_step_size ( mf, mf_nm1, step )
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     mf, mf_nm1, one
       data one / 1.0 /
       logical debug
