@@ -25,8 +25,7 @@ c
      &   killed_list_vec(mxvl)
 c     
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,10), e_vec(mxvl), tan_e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), n_power_vec(mxvl), stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
@@ -104,12 +103,10 @@ c                   ---------------
 c     
       integer i    
       logical local_debug
-#dbl      double precision
-#sgl      real 
+      double precision
      &     shear_mod, c, a, zero, one, two, b, delastic,
      &     half
-#dbl      data zero, one, two, half / 0.0d00, 1.0d00, 2.0d00, 0.5d00 /
-#sgl      data zero, one, two, half / 0.0, 1.0, 2.0, 0.5 /
+      data zero, one, two, half / 0.0d00, 1.0d00, 2.0d00, 0.5d00 /
       data local_debug / .false. /
 c
 c
@@ -222,8 +219,7 @@ c
       logical
      &   first, killed_list_vec(mxvl)
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & weight, mm_props(mxvl,5), e_vec(mxvl), nu_vec(mxvl),
      & trial_elas_stress(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
@@ -304,11 +300,9 @@ c                   ---------------
 c     
       integer i    
       logical debug
-#dbl      double precision
-#sgl      real 
+      double precision
      &     c1, c2, c3, c4, fact, zero, one, two
-#dbl      data zero,one,two / 0.0d00, 1.0d00, 2.0d00 /
-#sgl      data zero,one,two /0.0, 1.0, 2.0/
+      data zero,one,two / 0.0d00, 1.0d00, 2.0d00 /
 c
 
       do i = 1, span
@@ -388,8 +382,7 @@ c
      &  gpn, mxvl, span, iout
 c
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & stress(mxvl,*), elestr(mxvl,*), history(mxvl,*)
 c
 c               description of parameters
@@ -499,13 +492,12 @@ c
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c      
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
       return
       end
