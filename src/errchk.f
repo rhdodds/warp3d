@@ -17,7 +17,7 @@ c
 c
       subroutine errchk( lsn, chkprm, debug1 )
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       logical debug1
 c
       if (lsn .eq. 32) then
@@ -193,18 +193,16 @@ c
       subroutine errchk_2( matnum )
       use main_data, only : matprp, lmtprp
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       real dumr, fgm_mark
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
       logical numnod,numel,fatal,coor,elprop,elinc,constr,
      &        block,is_matl_cohesive, is_umat
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-#dbl      double precision
-#sgl      real
+      double precision
      &   erprmd
       real erprmr
       character *50 erprms
@@ -404,11 +402,10 @@ c
       use main_data, only : crdmap
 c
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
@@ -447,11 +444,10 @@ c
       subroutine errchk_5( debug1 )
       use main_data, only : elstor
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd 
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
@@ -499,12 +495,11 @@ c
       subroutine errchk_6
       use main_data, only : incmap, incid
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       integer, allocatable, dimension (:) :: dup_ele
       real dumr, mlt
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd 
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block,
      &        dupnod_msg
@@ -632,11 +627,10 @@ c
       use main_data, only : trn, trnmat, cnstrn_in, inverse_incidences 
 c
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd, zero, d32460
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
@@ -714,7 +708,7 @@ c     ****************************************************************
 c
       subroutine errchk_8( chkprm, debug1 )
       implicit none    
-$add common.main
+      include 'common.main'
 c
       integer :: i, chkprm, lodnum, step
       logical, external :: scanms 
@@ -777,12 +771,11 @@ c     ****************************************************************
 c
       subroutine errchk_10
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       logical :: found
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
 c
 c                       at least one convergence test must be defined.
@@ -813,12 +806,11 @@ c
       subroutine errchk_18 (debug1)
       use main_data, only : elstor, incmap, incid
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
 c
       real dumr, beta_cohesive
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block,
      &        cohesive
@@ -991,11 +983,10 @@ c
       use damage_data
       implicit integer (a-z)     
 c
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd, zero, tenth 
       data zero, tenth / 0.0, 0.1 /
 c
@@ -1145,11 +1136,10 @@ c
       subroutine errchk_23
       use segmental_curves
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd 
 c
 c
@@ -1189,11 +1179,10 @@ c
       use contact, only : use_contact, maxcontact, contact_shape, 
      &                    num_contact
       implicit integer (a-z)     
-$add param_def
+      include 'param_def'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd, zero
       data zero /0.0/
 c
@@ -1242,7 +1231,7 @@ c
       use main_data, only: matprp, lmtprp, imatprp, dmatprp, smatprp
       use crystal_data, only: c_array
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       integer, intent(in) :: matnum
       integer, dimension(2) :: chksz
       logical :: valid, exists
@@ -1390,7 +1379,7 @@ c
       subroutine chk_crystal(cnum)
       use crystal_data, only: c_array
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       integer, intent(in) :: cnum
 
       if (c_array(cnum)%elastic_type .ne. 3) then
