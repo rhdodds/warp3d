@@ -9,14 +9,12 @@ c
 c
 c              parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & xsi, dsf(*), sf(*)
 c
 c              local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & xsisqr, half, one, two
       data half, one, two / 0.5, 1.0, 2.0 / 
 c                                                     
