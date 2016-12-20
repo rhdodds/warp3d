@@ -18,20 +18,18 @@ c
 c
       use main_data, only : trn, trnmat, inverse_incidences
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical oubin, ouasc,  flat_file, stream_file, 
      &        text_file, compressed 
 c
 c                       local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     edva(mxvl,mxndof), defmax, zero,
      &     trnmte(mxvl,mxedof,mxndof)
       logical trne(mxvl,mxndel)
       data zero
-#sgl     &  / 0.0 /
-#dbl     &  / 0.0d00 /
+     &  / 0.0d00 /
 c
 c                       if it is displacements to be output, then a
 c                       pass must be made over all nodes to determine
