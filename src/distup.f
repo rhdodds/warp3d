@@ -14,8 +14,7 @@ c
 c
 c                     parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &       scoord(*)
       integer coord_map(*)
       logical debug
@@ -23,15 +22,13 @@ c
 c                     local declarations
 c
       allocatable coinc_list(:)
-#dbl      double precision
-#sgl      real
+      double precision
      &  x, y, z, dist, toler, x1, y1, z1, dx, dy, dz,
      &  x2, y2, z2, xp, xm, yp, ym, zp, zm, dumd, zero, box_tol
       real rone, rhalf, dumr
       logical inside_box, user_def_ct, message
       character * 1 dums
-#dbl      data zero, toler / 0.0d0, 0.001d0 /
-#sgl      data zero, toler / 0.0,   0.001   /
+      data zero, toler / 0.0d0, 0.001d0 /
       data rone, rhalf / 1.0, 0.5 /
 c
       if ( debug ) then
