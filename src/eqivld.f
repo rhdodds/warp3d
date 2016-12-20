@@ -32,7 +32,7 @@ c
      &                      temper_nodes_ref, total_user_nodal_forces 
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c
 c      step       - load step number for which loads are required
@@ -68,8 +68,7 @@ c                   saved across restarts. user_routines may
 c                   provide any spatial or temporal varition of
 c                   incremental (nodal) forces and nodal temperatures.
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio, 
      &  step_factor, total_factor, dummy
       logical :: mf_ratio_change, user_mf_ratio_change
@@ -234,14 +233,13 @@ c
      &  tunf, rload, warp_incr_temperatures, crdmap,
      &  user_mf_ratio_change, user_file_name, debug )
       implicit none
-$add common.main
+      include 'common.main'
 c
 c         parameters
 c
       integer :: step, ldcond, crdmap(*)
       logical :: debug, user_mf_ratio_change
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  step_factor, tunf(nodof), rload(nodof),
      &  warp_incr_temperatures(*), initial_temps(*)
       character(len=80) :: user_file_name
@@ -251,13 +249,11 @@ c
       integer :: num_model_nodes, step_np1, kout, node, dloc, i
       character(len=8) :: load_name
       logical :: forces_set, temps_set, process
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & time_n, dtime, f1, f2, f3
       double precision, parameter :: zero = 0.0d0
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &       dimension(:,:), allocatable :: incr_values,
      &                                      node_coords
 c
@@ -378,13 +374,11 @@ c                     the user specified multipler for the step.
 c                     otherwise, mf = 0.0
 c
       integer ldcond, step
-#dbl      double precision
-#sgl      real
+      double precision
      &  mf
 c
       integer i, num_patt
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero
        data zero / 0.0d00 /
 c
@@ -427,15 +421,13 @@ c
 c
       integer now_step, nonlinear_loading, num_loading_conds,
      &        iout, nodof, cstmap(*)
-#dbl      double precision
-#sgl      real
+      double precision
      &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio, cnstrn_in(*)
       real user_cnstrn_stp_factors(*)
       logical debug, mf_ratio_change
 
       integer ldcond, i, exit_point
-#dbl      double precision
-#sgl      real
+      double precision
      &   zero, one, cfnm1, cfn, con_ratio, toler
       logical  non_zero_mf, non_zero_mf_nm1, all_zero_cons,
      &         loading_patterns_exist
@@ -678,8 +670,7 @@ c
       use main_data, only : dtemp_nodes, node_load_defs
       implicit integer (a-z)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  mf, zero
       logical debug, temperatures
 c
@@ -734,8 +725,7 @@ c
       use main_data, only : node_load_defs
       implicit integer (a-z)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  mf, rload(*)
       integer dstmap(*)
       logical debug
@@ -794,15 +784,13 @@ c
       use main_data, only : trn, trnmat, inverse_incidences
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision :: rload(*)
-#sgl      real :: rload(*)
+      double precision :: rload(*)
       logical :: debug
 c
       integer :: node, dptr, ndof, i
-#dbl      double precision ::
-#sgl      real :: 
+      double precision ::
      &  ndlod(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof)
       logical :: loads_found, trne(mxvl,mxndel)
       data zero / 0.0d0 /
@@ -889,9 +877,8 @@ c
      &                       packet_file_no
 c
       implicit integer (a-z)
-$add common.main
-#sgl      real
-#dbl      double precision
+      include 'common.main'
+      double precision
      &     step_factor, total_factor, zero, sum
       character * 12 pattern_names(3)
       real tfacts(3)
