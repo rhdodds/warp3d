@@ -18,13 +18,12 @@ c
       use main_data, only : incmap, incid, packet_file_no
       use elblk_data, only : elestr
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical :: wide, eform, prec, newhed, nodpts, newel,
      &           center_output, noheader, out_packet_now
       character(len=8) :: strlbl(*)
       character(len=*) :: hedtyp
-#dbl      double precision :: small_tol, zero 
-#sgl      real :: small_tol, zero     
+      double precision :: small_tol, zero 
       data small_tol, zero / 1.0d-50, 0.0d00 /
 c
 c                       local declarations
