@@ -21,7 +21,7 @@ c
      &                         patran_convention  )
       use main_data, only : incmap, incid
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c         parameter declarations
 c
@@ -491,7 +491,7 @@ c
       subroutine ouneut( file_name )
       use main_data, only : incmap, incid, cnstrn_in
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c              parameter declarations
 c
@@ -501,8 +501,7 @@ c              local declarations
 c
       character :: sdate_time_tmp*24, title*80, date_str*12, 
      &             time_str*8, tmp_name*1000
-#dbl      double precision
-#sgl      real
+      double precision
      &     initialized_value, con_values(3)
       integer :: con_flag(6), warp_to_pat_20(20), pat_incid(30),
      &           warp_to_wed15(15), inter_tri12_to_wedge15(12)
