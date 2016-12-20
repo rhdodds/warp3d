@@ -4,7 +4,7 @@
 #
 #     Makewarp.bash (third version)
 #
-#     created: mcm June 2011, modified: Dec 2015 RHD
+#     created: mcm June 2011, modified: Dec 2016 RHD
 #
 #     Description:
 #           Bash script to interactively drive compilation of Linux and Mac
@@ -254,7 +254,7 @@ function linux_simple
       fi
 #
 #   Intel Fortran Composer XE system must be installed and be at a
-#   relatively recent version (13.x for now).
+#   relatively recent version 
 #
       hash ifort 2>&- || {
             printf "[ERROR]\n"
@@ -397,16 +397,6 @@ function linux_advanced
 function compile_linux {
 	
 #
-# put date & time for this build into the printed block header located
-# in file main_program.f
-#
-date_string=`date`  
-sed -i -e '/Built on:/c\!win     &     "    **     Built on: ??? ",\' \
-        main_program.f
-sed -i -e "s/???/$date_string/" main_program.f
-
-	
-#
 # Start by going through the packages and installing them if required
 #
       printf "\n"
@@ -439,17 +429,16 @@ sed -i -e "s/???/$date_string/" main_program.f
             printf ">> Making obj_linux_em64t_mpi directory...\n"
       fi
 #
-# Compile the filter program
-#
-      printf ">> Building filter program...\n"
-      $COMPILER -O2 filter_linux_em64t.f -o filter_linux_em64t.exe
-      chmod a+x filter_linux_em64t.exe
-#
 #   prompt the user for the number of concurrent compile processes to use
 #
       printf " \n"
       read -p "Number of concurrent compile processes allowed? (default 1): " JCOMP
       [ -z "$JCOMP" ] && JCOMP=1
+#
+#   touch main program so it will always be re-compiled (will include compile
+#   date & time in warp3d hearder block)
+#
+touch main_program.f  
 #
 #   run the makefile for LInux. we now pass more parameters to the makefile
 #
@@ -492,7 +481,7 @@ exit 1
 fi
 #
 # Intel Fortran Composer XE system must be installed and be at a
-# relatively recent version (15.0 for now).
+# relatively recent version 
 #
 hash ifort 2>&- || {
 printf "[ERROR]\n"
@@ -575,32 +564,6 @@ uninstall_mpi
 uninstall_hypre
 printf " \n"
 #
-# put date & time for this build into the printed block header located
-# in file main_program.f
-#
-date_string=`date`  
-#
-#      sed with some options does not work like Linux.use ex
-#      silent mode with here document.
-#
-ex -s main_program.f <<%%
-/Built on/
-c
-!win     &     "    **     Built on: ??? ",
-.
-wq
-%%
-
-#sed -i -e '/Built on:/c\!win     &     "    **     Built on: ??? ",\' \
-#        main_program.f
-#sed -i -e "s/???/$date_string/" main_program.f
-ex -s main_program.f <<%%
-/???/
-s//$date_string/
-.
-wq
-%%
-
 #
 # setup the directory structure object and executable if required
 #
@@ -613,19 +576,14 @@ mkdir ../obj_mac_os_x
 printf ">> Making obj_mac_os_x directory...\n"
 fi
 #
-# compile the filter program if necessary
-#
-if [ ! -f filter_mac_os_x.exe ]; then
-printf ">> Building filter program...\n"
-$COMPILER -O2 filter_mac_os_x.f -o filter_mac_os_x.exe
-fi
-chmod a+x filter_mac_os_x.exe
-#
 # prompt the user for the number of concurrent compile processes to use
 #
 printf " \n"
 read -p "... Number of concurrent compile processes allowed? (default 1): " JCOMP
 [ -z "$JCOMP" ] && JCOMP=1
+#
+touch main_program.f   # compile date is always current
+#
 #
 # run the makefile for Mac OS X. we now pass more parameters to the makefile
 #
