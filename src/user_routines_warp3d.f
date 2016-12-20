@@ -30,7 +30,7 @@ c           See Section 2.10 of User Manual for more details. The
 c           variables below have 1-to-1 correspondence with 
 c           user input commands.
 c
-$add include_usr_parm
+      include 'include_usr_parm'
       type :: step_convergence_data
         logical :: step_converged  
         logical :: adaptive_used 
