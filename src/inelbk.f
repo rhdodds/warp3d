@@ -16,10 +16,9 @@ c
 c
       subroutine inelbk(sbflg1,sbflg2)
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
-#dbl      double precision dumd
-#sgl      real dumd
+      double precision dumd
       character dums, item*80
       logical sbflg1,sbflg2
       logical integr, first_proc, endcrd, auto_blking, ok,
@@ -261,7 +260,7 @@ c
       subroutine inelbk_simple_blocking( auto_size, auto_domains,
      &                       auto_num_domains, display )
       implicit none
-$add common.main
+      include 'common.main'
       integer :: auto_size, auto_num_domains
       logical :: auto_domains, display
 c
