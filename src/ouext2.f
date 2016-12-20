@@ -13,8 +13,7 @@ c     ****************************************************************
 c
       subroutine ouext2 ( results, nrowd, noval, stress )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     results(nrowd,*) 
       logical stress
 c
