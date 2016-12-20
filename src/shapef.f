@@ -17,8 +17,7 @@ c     ****************************************************************
 c
       subroutine shapef( etype, xi, eta, zeta, n )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi, eta, zeta, n(*)
 c
 c
@@ -156,8 +155,7 @@ c
 c
       subroutine shape1(r,s,t,n)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,
      &     one,half,fourth,eighth
 c
@@ -211,8 +209,7 @@ c
 c
       subroutine shape2( xi, eta, zeta, n )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi,eta,zeta,n(*),xp,ep,zp,xm,em,zm,one,eighth
       data one, eighth /1.0, 0.125/
 c
@@ -257,8 +254,7 @@ c
 c
       subroutine shape3(r,s,t,n)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,spt,smt,
      &     one,fourth,eighth
 c
@@ -305,8 +301,7 @@ c
 c
       subroutine shape4(r,s,t,n)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,spt,smt,rpt,rmt,
      &     one,fourth,eighth
 c
@@ -358,8 +353,7 @@ c
 c
       subroutine shape5(r,s,t,n)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,
      &     one,half,fourth,eighth
 c
@@ -439,23 +433,18 @@ c         values given a Gauss integration point coordinate set.
 c
       subroutine shape6( s2, s3, s4, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &         s2,s3,s4,q(*)
 c
 c        s1 = fourth tetrahedron natural coordinate, used here to keep the
 c             simplicity of the functions below
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     one, two, four, s1
 c
-#dbl      one  = 1.0D0
-#dbl      two  = 2.0D0
-#dbl      four = 4.0D0
-#sgl      one  = 1.0
-#sgl      two  = 2.0
-#sgl      four = 4.0
+      one  = 1.0D0
+      two  = 2.0D0
+      four = 4.0D0
       s1 = one - s2 - s3 - s4
 c
 c        evaluate the shape functions at the current Gauss point,
@@ -494,20 +483,15 @@ c     ****************************************************************
 c
       subroutine shape9( s1, s2, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, q(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &         one, two, four
 c
-#dbl      one  = 1.0D0
-#dbl      two  = 2.0D0
-#dbl      four = 4.0D0
-#sgl      one  = 1.0
-#sgl      two  = 2.0
-#sgl      four = 4.0
+      one  = 1.0D0
+      two  = 2.0D0
+      four = 4.0D0
 c
 c        evaluate the shape functions at the current Gauss point
 c
@@ -540,20 +524,15 @@ c     ****************************************************************
 c
       subroutine shape10( s1, s2, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, q(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &         one, two, four
 c
-#dbl      one  = 1.0D0
-#dbl      two  = 2.0D0
-#dbl      four = 4.0D0
-#sgl      one  = 1.0
-#sgl      two  = 2.0
-#sgl      four = 4.0
+      one  = 1.0D0
+      two  = 2.0D0
+      four = 4.0D0
 c
 c        evaluate the shape functions at the current Gauss point
 c
@@ -586,18 +565,14 @@ c
 c
       subroutine shape11( s1, s2, s3, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &          s1, s2, s3, q(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &          two, four
 c
-#dbl      two  = 2.0D0
-#dbl      four = 4.0D0
-#sgl      two  = 2.0
-#sgl      four = 4.0
+      two  = 2.0D0
+      four = 4.0D0
 c
 c          evaluate the shape functions at the current Gauss point
 c
@@ -630,8 +605,7 @@ c
 c
       subroutine shape12( xi, eta, n )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi,eta,n(*),xp,ep,xm,em,one,fourth
       data one, fourth /1.0, 0.25/
 c
@@ -699,17 +673,14 @@ c         values given a Gauss integration point coordinate set.
 c
       subroutine shape13( s2, s3, s4, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &         s2,s3,s4,q(*)
 c
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     one, s1
 c
-#dbl      one  = 1.0D0
-#sgl      one  = 1.0
+      one  = 1.0D0
       s1 = one - s2 - s3 - s4
 c
 c        evaluate the shape functions at the current Gauss point,
@@ -767,16 +738,13 @@ c                   use s3 = 1 - s1 - s2.
 c
       subroutine shape14( s1, s2, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &          s1, s2, s3, q(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &          one, two, four
 c
-#dbl      one  = 1.0d0
-#sgl      one  = 1.0
+      one  = 1.0d0
 c
       s3 = one - s1 - s2
 c
@@ -838,20 +806,15 @@ c
 
       subroutine shape15( s1, s2, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &          s1, s2, s3, q(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &          one, two, four
 c
-#dbl      one  = 1.0d0
-#dbl      two  = 2.0d0
-#dbl      four = 4.0d0
-#sgl      one  = 1.0
-#sgl      two  = 2.0
-#sgl      four = 4.0
+      one  = 1.0d0
+      two  = 2.0d0
+      four = 4.0d0
 c
       s3 = one - s1 - s2
 c
@@ -891,18 +854,14 @@ c     ****************************************************************
 c
       subroutine shape16( s1, s2, q )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, q(*)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &         one, four
 c
-#dbl      one  = 1.0D0
-#dbl      four = 4.0D0
-#sgl      one  = 1.0
-#sgl      four = 4.0
+      one  = 1.0D0
+      four = 4.0D0
 c
 c        evaluate the shape functions at the current Gauss point
 c
