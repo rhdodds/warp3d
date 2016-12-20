@@ -17,18 +17,16 @@ c
 c           
       subroutine rscmp1( span, f, u )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & f(mxvl,ndim,*), u(mxvl,*)
 c
 c                      locally allocated arrays & constants
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  c(mxvl,nstr), cc(mxvl,nstr), iu(mxvl), iiu(mxvl),
      &  iiiu(mxvl), a1(mxvl), b1(mxvl), c1(mxvl), one
       data one / 1.0 /
