@@ -20,9 +20,8 @@ c
       use damage_data, only : release_type
 c
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &     zero, one
       logical debug
       integer, dimension(:,:), pointer :: edest
