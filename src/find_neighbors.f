@@ -46,11 +46,10 @@ c                   NOTE: we assume 8 nodes per element here!
 c      
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
       character *1 dums
-#sgl      real
-#dbl      double precision
+      double precision
      &     d32460, dumd
       data d32460 / 32460.0/
       dimension node_list(mxconn), adj_node_inc(3,8), 
