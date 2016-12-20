@@ -18,15 +18,14 @@ c
      &                   num_short_strain )
       use elblk_data, only : elestr ! mxvl,mxoupr,mxoupt
       implicit none
-$add param_def
+      include 'param_def'
       integer :: span, elem_type, int_order, num_enode, ngp, 
      &           num_short_stress, num_short_strain
       logical :: do_stresses
 c
 c                       local declarations
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     temstr(mxvl,mxoupr,mxndel), lg(mxgp), zero,
      &     dum_vec(1), rngpts, xi, eta, zeta
       integer :: idumvec(1), num_vals, shift, elnod, tetpt, j, k, i 
@@ -83,7 +82,7 @@ c
 c
       do j = 1, ngp
        do k = 1, num_vals
-@!DIR$ LOOP COUNT MAX=###            
+!DIR$ LOOP COUNT MAX=128            
          do i = 1, span 
             temstr(i,k,1)= temstr(i,k,1) + elestr(i,k,j)
          end do
@@ -184,7 +183,7 @@ c              shape functions.
 c          
          do j = 1, ngp
           do k = 1, num_vals
-@!DIR$ LOOP COUNT MAX=###            
+!DIR$ LOOP COUNT MAX=128            
             do i = 1, span 
              temstr(i,k,elnod) = temstr(i,k,elnod) + 
      &                           elestr(i,k,j)*lg(j)
