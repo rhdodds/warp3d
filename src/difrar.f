@@ -12,16 +12,14 @@ c
 c
 c             parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  scoord(*)
       integer coord_map(*)
       logical  debug, error, bad_domain
 c
 c             local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & sf(3), dsf(3), xsi(3), weight(3),
      & zero, x1, y1, z1, x2, y2, z2, half, dl, gp_loc,
      & dx, dy, dz, qvalue, weight13, weight2, x, y, z
