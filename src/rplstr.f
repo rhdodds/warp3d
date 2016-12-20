@@ -21,8 +21,8 @@ c
       use segmental_curves, only : max_seg_points, max_seg_curves 
       implicit none
 c      
-$add common.main
-$add include_sig_up
+      include 'common.main'
+      include 'include_sig_up'
 c
 c                   parameter declarations
 c
@@ -102,13 +102,12 @@ c
 c           
       subroutine rp_gastr( ml, mg, ngp, nprm, span )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c               parameter declarations
 c
       integer :: ngp, nprm, span
-#dbl      double precision ::
-#sgl      real :: 
+      double precision ::
      & ml(mxvl,nprm,*), mg(nprm,ngp,*)
 c
 c               local declarations
@@ -120,11 +119,11 @@ c               on current hardware, the manual unroll runs
 c               slower
 c
 c      if( ngp .ne. 8 ) then                            
-@!DIR$ LOOP COUNT MAX=27
+!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
          do  j = 1, nprm
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
             do i = 1, span
                ml(i,j,k) = mg(j,k,i)
             end do
@@ -136,7 +135,7 @@ c
 c                number of gauss points = 8, unroll.
 c
 c      do j = 1, nprm
-c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ LOOP COUNT MAX=128  
 c@!DIR$ IVDEP
 c        do i = 1, span
 c            ml(i,j,1) = mg(j,1,i)
@@ -170,13 +169,12 @@ c
 c           
       subroutine rp_scstr( ml, mg, ngp, nprm, span )                       
       implicit none
-$add param_def
+      include 'param_def'
 c
 c               parameter declarations
 c
       integer :: ngp, nprm, span
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     ml(mxvl,nprm,*),mg(nprm,ngp,*)
 c
 c               local declarations
@@ -190,11 +188,11 @@ c               slower
 c
 c
 c      if( ngp .ne. 8 ) then
-@!DIR$ LOOP COUNT MAX=27
+!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
            do j = 1, nprm
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
               do i = 1, span
                  mg(j,k,i) = ml(i,j,k)
               end do
@@ -206,7 +204,7 @@ c
 c                       number of gauss points = 8
 c
 c      do j = 1, nprm
-c@!DIR$ LOOP COUNT MAX=### 
+c@!DIR$ LOOP COUNT MAX=128 
 c@!DIR$ IVDEP
 c        do i = 1, span
 c          mg(j,1,i) = ml(i,j,1)
@@ -244,8 +242,7 @@ c
 c               parameter declarations
 c
       integer :: ngp, hist_size, span
-#dbl      double precision
-#sgl      real
+      double precision
      &      local_history(span,hist_size,ngp),
      &      global_history(hist_size,ngp,span)
 c
@@ -258,11 +255,11 @@ c               on current hardware, the manual unroll runs
 c               slower
 c
 c      if( ngp .ne. 8 ) then
-@!DIR$ LOOP COUNT MAX=27
+!DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
            do j = 1, hist_size
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP 
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP 
               do i = 1, span
                  global_history(j,k,i) = local_history(i,j,k)
               end do
@@ -274,7 +271,7 @@ c
 c                       number of gauss points = 8
 c
 c      do j = 1, hist_size
-c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ LOOP COUNT MAX=128  
 c@!DIR$ IVDEP
 c        do i = 1, span
 c          global_history(j,1,i) = local_history(i,j,1)
