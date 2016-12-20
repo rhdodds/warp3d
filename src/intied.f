@@ -16,7 +16,7 @@ c
       subroutine intied()
 c
       use mod_mpc, only : tied_contact_table
-$add common.main
+      include 'common.main'
       parameter (max_prs=10)
       integer  dumi, npairs, err
       integer, allocatable, dimension (:) :: mstr_lst, slv_lst
@@ -261,7 +261,7 @@ c
 c
       use mod_mpc, only : num_tied_sets, tied_contact_table,
      &                    tied_sets_exist
-$add common.main
+      include 'common.main'
       integer  dumi, err, npairs, mstr_lst(*), slv_lst(*)
       real  dumr, tied_tol
       double precision  dumd
