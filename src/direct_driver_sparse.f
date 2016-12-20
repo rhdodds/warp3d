@@ -24,7 +24,7 @@ c
      &                                   distributed_stiffness_used
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                    parameter declarations
 c
@@ -37,8 +37,7 @@ c                    assembly in sparse format. note those
 c                    saved across solves to reduce work.
 c
       allocatable dof_eqn_map(:), eqn_node_map(:), p_vec(:)
-#dbl      double precision
-#sgl      real
+      double precision
      &    p_vec
       save  dof_eqn_map, neqns, eqn_node_map
 c
@@ -49,8 +48,7 @@ c
       allocatable k_diag(:), k_ptrs(:), u_vec(:), save_k_indexes(:),
      &            save_k_ptrs(:)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     k_diag, u_vec
       save save_k_indexes, save_k_ptrs
 c
@@ -1002,8 +1000,7 @@ c
       implicit none
       integer  neqns, ncoeff, k_ptrs(*), k_indexes(*), dstmap(*),
      &         dof_eqn_map(*), eqn_node_map(*), num_struct_dof, nonode
-#dbl      double precision
-#sgl      real
+      double precision
      &  k_diag(*), p_vec(*), k_coeffs(*)
       logical sparse_stiff_output, sparse_stiff_binary, connected
       character * (*) sparse_stiff_file_name
@@ -1121,14 +1118,13 @@ c
       logical do_binary
       character *(*) file_name
       dimension dof_eqn_map(*), eqn_node_map(*)
-$add common.main
+      include 'common.main'
 c
 c               parameter and local variable declarations
 c
       allocatable ele_info(:)
       real dumr, rzero
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd
       character * 1 dums
       data check_data_key, rzero / 2147483647, 0.0 /
@@ -1140,8 +1136,7 @@ c
          return
       end if
 c
-#dbl      prec_fact = 2
-#sgl      prec_fact = 1
+      prec_fact = 2
       fileno = 11
         open(unit=fileno, file=file_name,
      &       status='old', access='sequential', form='unformatted',
@@ -1246,7 +1241,7 @@ c
       use main_data, only : inverse_incidences, inverse_dof_map
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       data check_data_key / 2147483647 /
 c
       write(fileno) ( inverse_incidences(stnd)%element_count, stnd = 1,
@@ -1287,7 +1282,7 @@ c
       use elem_block_data, only : edest_blocks, estiff_blocks
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       data check_data_key / 2147483647 /
 c
       do blk = 1, nelblk
