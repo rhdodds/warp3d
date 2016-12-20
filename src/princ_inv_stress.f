@@ -16,8 +16,7 @@ c     ****************************************************************
 c
       subroutine princ_inv_stress( results, mxvl, num )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     results(mxvl,*)
         
        do i = 1, num
