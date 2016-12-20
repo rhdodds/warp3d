@@ -33,7 +33,7 @@ c
       use main_data, only: umat_serial
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: step, iter
       logical :: material_cut_step
@@ -46,12 +46,10 @@ c
      &           idummy1(1), idummy2(1)
       integer, external :: omp_get_thread_num
 c
-#sgl      real, allocatable, dimension(:) ::
-#dbl      double precision, allocatable, dimension(:) ::
+      double precision, allocatable, dimension(:) ::
      &  block_energies, block_plastic_work
 c
-#sgl      real ::
-#dbl      double precision ::
+      double precision ::
      & zero, mag, dummy(mxvl,mxedof), start_time, end_time,
      & sum_ifv_threads(max_threads)
 c     
@@ -375,12 +373,11 @@ c
       use damage_data, only : dam_ptr, growth_by_kill
 c
       implicit none
-$add common.main
-$add include_sig_up
+      include 'common.main'
+      include 'include_sig_up'
 c
       integer :: blk, iter, step
-#dbl      double precision
-#sgl      real
+      double precision
      &    block_energy, block_plastic_work
       logical material_cut_step
 c
@@ -392,8 +389,7 @@ c
       logical local_debug, geo_non_flg, bbar_flg, tet_elem, tri_elem,
      &            axisymm_elem, cohesive_elem, used_flg
       data zero, local_debug / 0.0d00, .false. /
-#dbl      double precision :: gp_coords(mxvl,3,mxgp)
-#sgl      real :: gp_coords(mxvl,3,mxgp)
+      double precision :: gp_coords(mxvl,3,mxgp)
 c
       span           = elblks(0,blk)
       felem          = elblks(1,blk)
@@ -676,8 +672,8 @@ c
       use elem_block_data, only: history_blk_list
       implicit none
 
-$add common.main
-$add include_sig_up
+      include 'common.main'
+      include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       double precision :: zero
@@ -951,8 +947,8 @@ c
 c
       subroutine recstr_deallocate( local_work )
       implicit none 
-$add common.main
-$add include_sig_up
+      include 'common.main'
+      include 'include_sig_up'
 c
       integer :: local_mt, error
       logical :: local_debug
@@ -1262,8 +1258,8 @@ c
       use segmental_curves, only : max_seg_points, max_seg_curves
 c
       implicit none
-$add common.main
-$add include_sig_up
+      include 'common.main'
+      include 'include_sig_up'
 c
 c           parameter declarations
 c
@@ -1271,8 +1267,7 @@ c
      &           step, iter, hist_size
       logical :: geonl
       integer :: belinc(nnode,*), bcdst(totdof,*)
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & ce_0(mxvl,*), ce_mid(mxvl,*), ue(mxvl,*), due(mxvl,*),
      & ce_n(mxvl,*), ce_n1(mxvl,*)
 c
@@ -1280,8 +1275,7 @@ c           local declarations
 c
       integer :: elem_type, surf, k, j, i, matl_no
       logical ::local_debug, update, update_coords, middle_surface
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   half, zero, one, mag, mags(3), djcoh(mxvl)
       data local_debug, half, zero, one
      &  / .false., 0.5d00, 0.0d00, 1.0d00 /
@@ -1300,8 +1294,8 @@ c           pull coordinates at t=0 from global input vector.
 c
       k = 1
       do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
          do i = 1, span
             ce_0(i,k)   = c(bcdst(k,i))
             ce_0(i,k+1) = c(bcdst(k+1,i))
@@ -1328,8 +1322,8 @@ c
 c
       if( update_coords ) then
        do  j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
           do i = 1, span
             ce_n(i,j)   = ce_0(i,j) + ue(i,j)
             ce_mid(i,j) = ce_0(i,j) + ue(i,j) + half*due(i,j)
@@ -1348,8 +1342,8 @@ c
 c
       if( .not. update_coords ) then
           do  j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
             do i = 1, span
               ce_n(i,j)   = ce_0(i,j)
               ce_mid(i,j) = ce_0(i,j)
@@ -1401,8 +1395,8 @@ c
       if( fgm_node_values_defined ) then
         do j = 1,  fgm_node_values_cols
           do i = 1, nnode
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP 
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP 
             do k = 1, span
               local_work%enode_mat_props(i,k,j) =
      &                     fgm_node_values(belinc(i,k),j)
@@ -1454,8 +1448,8 @@ c
 c
 c           vectorized mises plasticty model.
 c
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP 
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP 
         do i = 1, span
            matl_no = iprops(38,felem+i-1)
            local_work%tan_e_vec(i) = matprp(4,matl_no)
@@ -1473,8 +1467,8 @@ c
 c           general mises/gurson model.
 c
         if ( local_debug ) write(out,9950)
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do i = 1, span
            matl_no = iprops(38,felem+i-1)
            local_work%tan_e_vec(i) = matprp(4,matl_no)
@@ -1562,13 +1556,12 @@ c
 c
       subroutine recstr_gastr( mlocal, mglobal, ngp, nprm, span )
       implicit none 
-$add param_def
+      include 'param_def'
 c
 c               parameter declarations
 c
       integer :: ngp, nprm, span
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & mlocal(mxvl,nprm,*), mglobal(nprm,ngp,*)
 c
       integer :: k, j, i      
@@ -1581,8 +1574,8 @@ c
       if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, nprm
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
             do  i = 1, span
                mlocal(i,j,k) = mglobal(j,k,i)
             end do
@@ -1594,8 +1587,8 @@ c
 c                number of integration points = 8, unroll.
 c
       do  j = 1, nprm
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do  i = 1, span
             mlocal(i,j,1) = mglobal(j,1,i)
             mlocal(i,j,2) = mglobal(j,2,i)
@@ -1626,7 +1619,7 @@ c
       subroutine allocate_ifv( action  )
       use elem_block_data, only:  einfvec_blocks
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: action
 c
@@ -1724,8 +1717,8 @@ c
       use main_data, only:  nonlocal_analysis
 c
       implicit none
-$add param_def
-$add include_sig_up
+      include 'param_def'
+      include 'include_sig_up'
 c
       integer :: iprops(mxelpr,*)  ! global element props array
 c
@@ -1735,8 +1728,7 @@ c
      &           elem_top, elem_bott, matl_top, ngp_top, ngp_bott,
      &           matl_bott, top_mat_model, bott_mat_model 
       logical :: local_debug
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      &   zero,
      &   top_stress_n_avg(nstrs), bott_stress_n_avg(nstrs),
      &   top_eps_n_avg(nstr), bott_eps_n_avg(nstr),
@@ -1942,7 +1934,7 @@ c
      &              top_model, bott_model )
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: elem_top, elem_bott, top_model, bott_model
 c
@@ -1982,8 +1974,7 @@ c
 c           parameter declarations
 c
       integer :: elem_top, elem_bott, iout, nsize
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  top_local_vals(nsize), bott_local_vals(nsize)
 c
 c           local declarations
@@ -2050,13 +2041,12 @@ c
       use main_data, only: elems_to_blocks
       use elem_block_data, only: urcs_n_blocks, eps_n_blocks
       implicit none
-$add common.main
+      include 'common.main'
 c
 c           global declarations
 c
       integer :: solid_elem, ngp_solid
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &    stress_n(nstrs,mxgp), eps_n(nstr,mxgp)
 c
 c           local declarations
@@ -2128,8 +2118,7 @@ c
      &                                in3dmat, nrow, ncol, nz )
       implicit  none
       integer  :: kindex_to_copy, nrow, ncol, nz, i, j
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  outmat(nrow,ncol), in3dmat(nrow,ncol,nz)
 c!DIR$ ASSUME_ALIGNED in3dmat:64, outmat:64  
 c
@@ -2159,8 +2148,7 @@ c
       subroutine recstr_make_avg( nrows, ncols, matrix, averages )
       implicit  none
       integer :: nrows, ncols, i, j
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  averages(nrows), matrix(nrows,ncols)
 c!DIR$ ASSUME_ALIGNED matrix:64, averages:64      
 c
