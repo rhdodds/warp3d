@@ -16,7 +16,7 @@ c
       subroutine license
       implicit integer (a-z)
 c
-$add common.main
+      include 'common.main'
 c
       write(out,*)
      &"================================================================
