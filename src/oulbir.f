@@ -20,8 +20,7 @@ c
       character*8 doflbl(*)
       character*20 hedtyp
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd
       character dums
 c
