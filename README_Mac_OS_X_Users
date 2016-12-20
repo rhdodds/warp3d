@@ -3,22 +3,21 @@
         Highest Level Read Me for (Mac) OSX  Users File for WARP3D
         --------------------------------------------------------------------
 
-                      Last Update: January 21, 2016
+                      Last Update: December 2016
 
 ==========================================================================
 
 *** Latest NOTES: ***
 
-WARP3D is built for Mac OSX using the Intel Fortran Composer XE 2016 
-compiler suite version ifort (IFORT) 16.0.1 (and concurrent MKL)
+WARP3D is built for Mac OS using the Intel Fortran Composer XE 2017 
+Update 1 compiler suite version ifort and concurrent MKL
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on OSX 10.10.5. The executable should 
-run on all 10.10.x, 10.11.x.
+This distribution was built & verified on Mac OS 10.11.6.
 
 We build the executable using statically-linked MKL libraries and
 compiler options for generic Intel processors. These executables run across
@@ -35,7 +34,7 @@ Quick Start Using the Ready-to-Run Executable
 ---------------------------------------------
 
 1. We recommend that you look thru the README file first for information on
-   downloading and installing WARP3D for OSX in README Section 1.
+   downloading and installing WARP3D for Mac OS in README Section 1.
 
 2. The WARP3D files are all located in the
    directory "warp3d_distribute_###" created by the unzip process
@@ -60,9 +59,9 @@ Quick Start Using the Ready-to-Run Executable
    is initiated from the command line in a shell program.
    On OSX this means the Terminal program which starts a bash shell.
 
-4. The OSX version of WARP3D supports parallel execution in all areas thru
+4. The Mac OS version of WARP3D supports parallel execution in all areas thru
    threads only. At this time, we do not support MPI execution
-   on OSX. The Paradiso solver from the Intel MKL library is included
+   on Mac OS. The Paradiso solver from the Intel MKL library is included
    in WARP3D and provides very high performance in its sparse direct and sparse
    iterative algorithms on multi-processor, multi-core Apple computers.
 
@@ -129,18 +128,18 @@ Quick Start Using the Ready-to-Run Executable
 8. Chapter 7 of the User Manual includes a section on executing
    WARP3D on OSX to make use of multi-cores/processors. Please
    refer to that section for the latest information to execute
-   WARP3D on OSX systems. The first section of Chapter 7
+   WARP3D on Mac OS systems. The first section of Chapter 7
    describes the general concepts of parallel execution implemented
    into WARP3D.
 
-Re-Building the OSX Executable for WARP3D
+Re-Building the Mac OSX Executable for WARP3D
 -----------------------------------------
 
-1. The Intel FORTRAN Composer XE system must be installed on OSX.
+1. The Intel FORTRAN Composer XE system must be installed on Mac OS.
    This software includes the Math Kernel Library (MKL) and the Pardiso solver.
    The "ifort" command must be recognized in a Terminal shell.
 
-   At present, we use Composer XE 2016 which shows version 16.0.1 of ifort.
+   At present, we use Composer XE 2017 Update 1.
    Older versions may also work * BUT * optimization issues may arise. 
    With each release of the compiler, we tweak optimization levels (-O#) 
    in the makefile. We experiment with the key *.f files to obtain 

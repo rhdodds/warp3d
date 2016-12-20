@@ -2,26 +2,21 @@
 
                Highest Level README for Windows Users
 
-                last Update: June 29, 2016
-                             slow command 
-                             cleanup
-                             continued issues with libiomp5md.dll
-                             now using Intel Fortran 2016
+                last Update: December 2016
 
 ==========================================================================
 
 *** NOTES: ***
 
 WARP3D is built for Windows using the Intel Fortran Composer XE 
-Version 16.0.1.
+and MKL Version 17 Update 1 
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on Windows 7 SP!. The executable should 
-run on all W7, W8, w10.
+This distribution was built & verified on Windows 10.
 
 We build the executable using statically-linked MKL libraries and
 compiler options for generic Intel processors.
@@ -30,13 +25,6 @@ If you have the Intel compiler system installed, you likely will gain some
 additional performance by re-compiling. The re-building scripts included in 
 the distribution request compiling for optimal performance on the current 
 hardware (we remove that option to build the executables for distribution).
-
-*** Late Breaking News ***
-
-Verification problem test17 partb on Windows computes a different solution
-than on Linux or OSX. This model tests a simple mesh with tied 
-contact to link tet10 elements. The lInux/OSX solutions are correct. 
-Under investigation.
 
 ==========================================================================
 
@@ -82,7 +70,7 @@ Quick Start Using the Ready-to-Run Executable
    threads only. At this time, we do not support MPI execution
    on Windows.
    
-5. We continue to have issues on some Windows 7 machines with the 
+5. We continue to have issues on some Windows machines with the 
    system dll:  libiomp5md.dll
    We include a current version of this DLL in the run_windows_64
    directory. 
@@ -95,7 +83,7 @@ Quick Start Using the Ready-to-Run Executable
 
 6. To run WARP3D using the built-in Windows software,
    open a standard "command shell" using any technique you know 
-   [on W7, click Start and type the word command in search box. 
+   [on W10, click Start and type the word command in search box. 
    The Command shell is at top of list]. The example below assumes you 
    have installed the WARP3D distribution in the directory c:\warp3d 
    (shortened name from the as distributed name warp3d_distribute_...).
@@ -171,31 +159,16 @@ Re-Building the Windows Executable for WARP3D
 2. To simplify the process of setting up the proper environment and running the
    Intel compiler, on our systems we create a shortcut to a 
    standard Windows command shell on the desktop for convenience. 
-   We make one of these with name Fort2015 (to use the older 2015 Intel Compiler)
-   and Fort2016 use the newest release of the compiler. 
+   We make one of these with name Fortran. 
    
    
-   2A.  For Fort2016, we access Properties of the command shell and set the Target as:
+   2A.  For Fortran 2017, we access Properties of the command shell and set the Target as:
    
-   C:\Windows\System32\cmd.exe /K ""c:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\bin\ifortvars.bat"  intel64"
+      C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\windows\bin\ipsxe-comp-vars.bat" intel64 vs2013"
 
    and set the "Start In" directory as:
 
     c:\warp3d\src
-
-   or where ever you have have WARP3D installed.
-   
-
-   2B.  For Fort2015, we access Properties of the command shell and set the Target as:
-
-   C:\Windows\System32\cmd.exe /K ""c:\Program Files (x86)\Intel\Composer XE\bin\compilervars.bat"  intel64"
-
-   and set the "Start In" directory as:
-
-    c:\warp3d\src
-
-   or where ever you have have WARP3D installed.
-  
 
 3.  Put your UMAT routine and all support routines it calls into the 
     four (4) user_routines....f  files located in the src directory. 
@@ -204,7 +177,7 @@ Re-Building the Windows Executable for WARP3D
     Example UMAT routines used to test the UMAT capability in 
     WARP3D are included in the distributed user_routines....f files.
 
-4. At the usual prompt in the command shell window for Fort2016 or Fort2015, 
+4. At the usual prompt in the command shell window for Fortran, 
    enter the command:
 
    Makewarp.bat
@@ -215,8 +188,8 @@ Re-Building the Windows Executable for WARP3D
    The Makewarp.bat program must be able to locate the Windows 
    program: nmake.exe  (Windows variant of Linux make). It checks this location:
    
-   c:\Program Files (x86)\Microsoft Visual Studio 10.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe
-   
+      c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe"
+
    If your system has nmake.exe in a different location, please change the
    top commands in Makewarp.bat to use the correct location.
    

@@ -3,15 +3,14 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: January 20, 2016
-
+                      Last Update: December 2016
+                      
 *** LATE BREAKING NEWS ***
 
 The ready-to-run executables included in this distribution were built
-on Ubuntu 14.04.03 LTS using Intel Composer XE Fortran  16.0.1 (15.x and 14.x also
-work). For the threads + MPI version, the MPI version is Intel MPI 4.1.3.045.
+on Ubuntu 14.04.04 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 1.
 
-These executables also run on RedHat 7.0. Re-compiling (really re-linking)
+These executables also run on Centos 7. Re-compiling (really re-linking)
 may be needed on earlier versions of RedHat.
 
 
@@ -21,8 +20,7 @@ may be needed on earlier versions of RedHat.
 
 The precompiled versions of WARP3D are built for Linux using the Intel Fortran
 Composer XE 2016 compiler suite and the Intel MPI (Message Passing Interface)
-software system. Version 11 of the MKL library is used
-to insure access to features of the newest processors.
+software system.
 
 The Intel Fortran compiler system is ** NOT ** required on your system to use
 the ready-to-run executable for threads only included in the distribution. 
@@ -56,7 +54,7 @@ A.  Quick Overview
 
 WARP3D has two executables for Linux computers.
 
-Type 1: executable is warp3d.omp  (for nearly all laptop, desktop, server users)
+Type 1: executable is warp3d.omp (for nearly all laptop, desktop, server users)
 
   Parallel execution uses only threads. Most useful for laptops, desktops
   and compute servers offering shared-memory style computing. On
@@ -97,7 +95,7 @@ Type 2: executable is warp3d.mpi_omp
 
   Linear equation solver: hypre (iterative) which runs on the same
   MPI ranks as WARP3D. Each hypre rank uses the same number of threads
-  as ranks in WARP3D. The Pardiso direct and iterative solves may also
+  as ranks in WARP3D. The Pardiso direct and iterative solvers may also
   be used during MPI execution. However, the element stiffness matrices
   are recovered to the root process, assembled and solved there. MPI
   ranks 1, 2, 3, ... are suspended while the Pardiso solver runs.
@@ -122,7 +120,7 @@ B.  Installing the precompiled versions of WARP3D
 
 3.  Extract the tarball (for example, use: tar xvzf warp3d.....tar.gz).
 
-4.  This will create a directory called something like "warp3d-17.7.0".
+4.  This will create a directory called something like "warp3d-17.8.0".
 
 5.  Move this directory (which contains the complete WARP3D package) to the
     desired location on your filesystem. Change access permissions as desired.
@@ -160,17 +158,14 @@ B.  Installing the precompiled versions of WARP3D
      redistributable package defined by Intel.
      
      The MKL libs are backward compatible with the Fortran compiler and
-     hardware processors. E.g. version 15.x of the compiler maybe 
-     used with version 11x3 of MKL, even though 11.x was released with version
-     16 of the compiler.
+     hardware processors.
        
 10. If you plan to use the MPI (hybrid) version, verify that MPI is set up
     properly on your Linux system. In a bash shell, 
     
-       $ mpirun
+       $ mpirun -version
        
-    If installed and available to you, this command just prints how to use it
-    since no options files are provided.       
+    If installed and available to you, this command just prints the version number.       
          
 
 The precompiled versions of WARP3D are now installed.
@@ -383,8 +378,8 @@ To build the hybrid version of WARP3D, this Intel software must be installed:
       (has the Pardiso solver).
 
   2.  Intel's MPI distribution (impi). Our processes work correctly with
-      impi 4.0 update 3 and have been tested on Red Hat Enterprise Linux
-      Server release 7.0 and Ubuntu 14.04 LTS. Other MPI distributions,
+      impi 5.1 and have been tested on Centos 7
+      Ubuntu 14.04 LTS. Other MPI distributions,
       such as the free and open-source OpenMPI may work, but are untested.
 
 Steps:
