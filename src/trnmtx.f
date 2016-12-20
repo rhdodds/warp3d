@@ -20,12 +20,10 @@ c
      &                   bele, nsize )
       use main_data, only: asymmetric_assembly
       implicit integer (a-z)
-$add param_def
-#dbl      double precision
-#sgl      real
+      include 'param_def'
+      double precision
      & mat(nsize,*), trnmte(mxvl,mxedof,*), sums(mxedof,mxndof)
-#dbl        double precision,
-#sgl        real,
+        double precision,
      &      dimension(mxedof,mxedof) :: tmat
       dimension cp(*)
       logical trne(mxvl,*)
