@@ -15,8 +15,7 @@ c     ****************************************************************
 c
       subroutine getgpts( etype, order, gpn, xi, eta, zeta, weight )
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi, eta, zeta, weight
       integer etype, order, gpn
 c
@@ -156,8 +155,7 @@ c
 c
 c
       subroutine quad1( order, gpn, xi, eta, zeta, w )
-#dbl      implicit double precision (a-z)
-#sgl      implicit real (a-z)
+      implicit double precision (a-z)
       integer order, gpn
       logical valid(9)
       data valid / .true., .true., .false., .false., .false.,
@@ -623,11 +621,9 @@ c
 c
       subroutine quad2( order, gpn, xi, eta, zeta, w )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &  xi,eta,zeta,w,l1,w1,l2
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, one, three, four, root33
       data zero, one, three, four, root33
      & / 0.0d0, 1.0d0, 3.0d0, 4.0d0, 0.5773502691896257645d0 /
@@ -757,12 +753,10 @@ c
       subroutine quad6( order, point, s2, s3, s4, weight )
       implicit none
       integer order,point
-#dbl      double precision
-#sgl      real
+      double precision
      &         s2,s3,s4,weight
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &        a,b,w,s1, r, r1, t1, b1, r2, t2, b2, u, v, c,sqrt15
       logical valid
 c
@@ -783,10 +777,8 @@ c
 c             1-point rule, linear function, point at the center of
 c             the tetrahedron
 c
-#dbl        a = 0.25D0
-#dbl        w = 1.0D0
-#sgl        a = 0.25
-#sgl        w = 1.0
+        a = 0.25D0
+        w = 1.0D0
         s1 = a
         s2 = a
         s3 = a
@@ -798,12 +790,9 @@ c
 c             4-point rule, quadratic functions, equal weight for all
 c             points points just inside the tetrahedron corners
 c
-#dbl        a = 0.58541020D0
-#dbl        b = 0.13819660D0
-#dbl        w = 0.25D0
-#sgl        a = 0.58541020
-#sgl        b = 0.13819660
-#sgl        w = 0.25
+        a = 0.58541020D0
+        b = 0.13819660D0
+        w = 0.25D0
         weight = w
 c
         if( point.eq.1 ) then
@@ -835,17 +824,12 @@ c              the tetrahedron, note the negative weight value at point 1
 c              points 2,3,4,5 inside the tetrahedron corners
 c
         if( point.eq.1 ) then
-#dbl            a = 0.25D0
-#dbl            w = -4.0D0/5.0D0
-#sgl            a = 0.25
-#sgl            w = -4.0/5.0
+            a = 0.25D0
+            w = -4.0D0/5.0D0
         else
-#dbl            a = 1.0D0/2.0D0
-#dbl            b = 1.0D0/6.0D0
-#dbl            w = 9.0D0/20.0D0
-#sgl            a = 1.0/2.0
-#sgl            b = 1.0/6.0
-#sgl            w = 9.0/20.0
+            a = 1.0D0/2.0D0
+            b = 1.0D0/6.0D0
+            w = 9.0D0/20.0D0
         end if
 c
         if( point.eq.1 ) then
@@ -892,35 +876,23 @@ c                   - a. h. stroud, 1971, prentice-hall inc.
 c                     pp. 315, section 5-1
 c
 c
-#dbl          sqrt15 = dsqrt(15.0D0)
-#sgl          sqrt15 = sqrt(15.0)
+          sqrt15 = dsqrt(15.0D0)
 c
         if( point .eq. 1) then
-#dbl          r = 0.25D0
-#dbl          a = 16.D0/135.D0
-#sgl          r = 0.25
-#sgl          a = 16.0/135.0
+          r = 0.25D0
+          a = 16.D0/135.D0
         else if( point .ge. 2 .and. point .le. 5 ) then
-#dbl          r1 = (7.0D0 - sqrt15)/34.0D0
-#dbl          t1 = (13.0D0 + 3.D0*sqrt15)/34.0D0
-#dbl          b1 = (2665.0D0 + 14.D0*sqrt15)/37800.0D0
-#sgl          r1 = (7.00 - sqrt15)/34.0
-#sgl          t1 = (13.0 + 3.0*sqrt15)/34.0
-#sgl          b1 = (2665.0 + 14.0*sqrt15)/37800.0
+          r1 = (7.0D0 - sqrt15)/34.0D0
+          t1 = (13.0D0 + 3.D0*sqrt15)/34.0D0
+          b1 = (2665.0D0 + 14.D0*sqrt15)/37800.0D0
         else if( point .ge. 6 .and. point .le. 9) then
-#dbl          r2 = (7.0D0 + sqrt15)/34.0D0
-#dbl          t2 = (13.0D0 - 3.D0*sqrt15)/34.0D0
-#dbl          b2 = (2665.0D0 - 14.D0*sqrt15)/37800.0D0
-#sgl          r2 = (7.00 + sqrt15)/34.0
-#sgl          t2 = (13.0 - 3.0*sqrt15)/34.0
-#sgl          b2 = (2665.0 - 14.0*sqrt15)/37800.0
+          r2 = (7.0D0 + sqrt15)/34.0D0
+          t2 = (13.0D0 - 3.D0*sqrt15)/34.0D0
+          b2 = (2665.0D0 - 14.D0*sqrt15)/37800.0D0
         else if( point .ge. 10 .and. point .le. 15) then
-#dbl          u = (10.0D0 - 2.D0*sqrt15)/40.0D0
-#dbl          v = (10.0D0 + 2.D0*sqrt15)/40.0D0
-#dbl          c = 20.D0/378.0D0
-#sgl          u = (10.0 - 2.0*sqrt15)/40.0
-#sgl          v = (10.0 + 2.0*sqrt15)/40.0
-#sgl          c = 20.0/378.0
+          u = (10.0D0 - 2.D0*sqrt15)/40.0D0
+          v = (10.0D0 + 2.D0*sqrt15)/40.0D0
+          c = 20.D0/378.0D0
         end if
 c
 c
@@ -1071,21 +1043,18 @@ c
       subroutine quad10( order, point, s1, s2, s3, weight )
       implicit none
       integer order,point
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, s3, weight
 c
 c           local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &        w1, w2, zero
       integer p1, p2
       logical flag, debug
 c
       data zero
-#dbl     & / 0.0d0 /
-#sgl     & / 0.0   /
+     & / 0.0d0 /
 c
       flag  = .false.
       debug = .false.
@@ -1275,27 +1244,21 @@ c
       subroutine gauss1d( num, p, s, w )
       implicit none
       integer num,p
-#dbl      double precision
-#sgl      real
+      double precision
      &         s, w
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &         zero, one, two, a1, a2, w1, w2
 c
-#dbl      zero = 0.0D0
-#dbl      one  = 1.0D0
-#dbl      two  = 2.0D0
-#sgl      zero = 0.0
-#sgl      one  = 1.0
-#sgl      two  = 2.0
+      zero = 0.0D0
+      one  = 1.0D0
+      two  = 2.0D0
 c
       if( num.eq.1 ) then
         s = zero
         w = two
       else if( num.eq.2 ) then
-#dbl        a1 = 0.5773502692D0
-#sgl        a1 = 0.5773502692
+        a1 = 0.5773502692D0
         w = one
         if( p.eq.1 ) then
           s = -a1
@@ -1303,12 +1266,9 @@ c
           s = a1
         end if
       else if( num.eq.3 ) then
-#dbl        a1 = 0.7745966692D0
-#dbl        w1 = 0.5555555556D0
-#dbl        w2 = 0.8888888889D0
-#sgl        a1 = 0.7745966692
-#sgl        w1 = 0.5555555556
-#sgl        w2 = 0.8888888889
+        a1 = 0.7745966692D0
+        w1 = 0.5555555556D0
+        w2 = 0.8888888889D0
         if( p.eq.1 ) then
           s = -a1
           w = w1
@@ -1320,14 +1280,10 @@ c
           w = w1
         end if
       else if( num.eq.4 ) then
-#dbl        a1 = 0.8611363116D0
-#dbl        a2 = 0.3399810436D0
-#dbl        w1 = 0.3478548451D0
-#dbl        w2 = 0.6521451549D0
-#sgl        a1 = 0.8611363116
-#sgl        a2 = 0.3399810436
-#sgl        w1 = 0.3478548451
-#sgl        w2 = 0.6521451549
+        a1 = 0.8611363116D0
+        a2 = 0.3399810436D0
+        w1 = 0.3478548451D0
+        w2 = 0.6521451549D0
         if( p.eq.1 ) then
           s = -a1
           w = w1
@@ -1396,8 +1352,7 @@ c
       subroutine quad11( order, point, s1, s2, s3, weight )
       implicit none
       integer order,point
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, s3, weight
 c
 c        Local Variables:
@@ -1408,8 +1363,7 @@ c                   elements use the second choice with the points
 c                   just inside the triangle corners.
 c
       integer subcase
-#dbl      double precision
-#sgl      real
+      double precision
      &        sqrt15,a1,a2,b1,b2,w1,w2,w3
       logical valid(7)
       data valid / .true.,.false.,.true.,.true.,.false.,.true.,.true. /
@@ -1431,10 +1385,8 @@ c
 c
 c         1-point rule, linear function, point at the center of the triangle
 c
-#dbl        a1 = 1.0D0/3.0D0
-#dbl        w1 = 1.0D0
-#sgl        a1 = 1.0/3.0
-#sgl        w1 = 1.0
+        a1 = 1.0D0/3.0D0
+        w1 = 1.0D0
         s1 = a1
         s2 = a1
         s3 = a1
@@ -1445,17 +1397,14 @@ c
 c         3-point rules, quadratic functions, equal weight at all
 c         three points choose one of the two 3-point integration rules
         subcase = 2
-#dbl        w1 = 1.0D0/3.0D0
-#sgl        w1 = 1.0/3.0
+        w1 = 1.0D0/3.0D0
         weight = w1
         if( subcase.eq.1 ) then
 c
 c         3-point midpoint rule, points on the element edge midpoints
 c
-#dbl          a1 = 0.5D0
-#dbl          b1 = 0.0D0
-#sgl          a1 = 0.5
-#sgl          b1 = 0.0
+          a1 = 0.5D0
+          b1 = 0.0D0
 c
           if( point.eq.1 ) then
             s1 = a1
@@ -1474,10 +1423,8 @@ c
 c
 c          3-point rule, points just inside the triangle corners,
 c          note: this is the one to use with axisymmetric triangles
-#dbl          a1 = 1.0D0/6.0D0
-#dbl          b1 = 2.0D0/3.0D0
-#sgl          a1 = 1.0/6.0
-#sgl          b1 = 2.0/3.0
+          a1 = 1.0D0/6.0D0
+          b1 = 2.0D0/3.0D0
 c
           if( point.eq.1 ) then
             s1 = b1
@@ -1501,17 +1448,12 @@ c           for point 1 at the triangle center point 1 at center,
 c           points 2,3,4 just inside triangle corners
 c
         if( point.eq.1 ) then
-#dbl          a1 = 1.0D0/3.0D0
-#dbl          w1 = -27.0D0/48.0D0
-#sgl          a1 = 1.0/3.0
-#sgl          w1 = -27.0/48.0
+          a1 = 1.0D0/3.0D0
+          w1 = -27.0D0/48.0D0
         else
-#dbl          a1 = 0.6D0
-#dbl          b1 = 0.2D0
-#dbl          w2 = 25.0D0/48.0D0
-#sgl          a1 = 0.6
-#sgl          b1 = 0.2
-#sgl          w2 = 25.0/48.0
+          a1 = 0.6D0
+          b1 = 0.2D0
+          w2 = 25.0D0/48.0D0
         end if
 c
         if( point.eq.1 ) then
@@ -1543,19 +1485,13 @@ c         points 1,2,3 just inside the triangle corners
 c         points 4,5,6 just inside the element edge mid points
 c
         if( point.le.3 ) then
-#dbl          a1 = 0.8168475730D0
-#dbl          b1 = 0.0915762135D0
-#dbl          w1 = 0.1099517437D0
-#sgl          a1 = 0.8168475730
-#sgl          b1 = 0.0915762135
-#sgl          w1 = 0.1099517437
+          a1 = 0.8168475730D0
+          b1 = 0.0915762135D0
+          w1 = 0.1099517437D0
         else
-#dbl          a2 = 0.1081030182D0
-#dbl          b2 = 0.4459484909D0
-#dbl          w2 = 0.2233815897D0
-#sgl          a2 = 0.1081030182
-#sgl          b2 = 0.4459484909
-#sgl          w2 = 0.2233815897
+          a2 = 0.1081030182D0
+          b2 = 0.4459484909D0
+          w2 = 0.2233815897D0
         end if
 c
         if( point.eq.1 ) then
@@ -1598,28 +1534,18 @@ c            points 3,4,5 just inside the triangle corners
 c            points 6,7,8 just inside the element edge mid points
 c
         if( point.gt.1 .and. point.le.4 ) then
-#dbl          sqrt15 = dsqrt(15.0D0)
-#dbl          a1 = (9.0D0 + 2.0D0*sqrt15)/21.0D0
-#dbl          b1 = (6.0D0 - sqrt15)/21.0D0
-#dbl          w2 = (155.0D0 - sqrt15)/1200.0D0
-#sgl          sqrt15 = sqrt(15.0)
-#sgl          a1 = (9.0 + 2.0*sqrt15)/21.0
-#sgl          b1 = (6.0 - sqrt15)/21.0
-#sgl          w2 = (155.0 - sqrt15)/1200.0
+          sqrt15 = dsqrt(15.0D0)
+          a1 = (9.0D0 + 2.0D0*sqrt15)/21.0D0
+          b1 = (6.0D0 - sqrt15)/21.0D0
+          w2 = (155.0D0 - sqrt15)/1200.0D0
         else if( point.ge.5 ) then
-#dbl          sqrt15 = dsqrt(15.0D0)
-#dbl          a2 = (9.0D0 - 2.0D0*sqrt15)/21.0D0
-#dbl          b2 = (6.0D0 + sqrt15)/21.0D0
-#dbl          w3 = (31.0D0/120.0D0) - (155.0D0 - sqrt15)/1200.0D0
-#sgl          sqrt15 = sqrt(15.0)
-#sgl          a2 = (9.0 - 2.0*sqrt15)/21.0
-#sgl          b2 = (6.0 + sqrt15)/21.0
-#sgl          w3 = (31.0/120.0) - (155.0 - sqrt15)/1200.0
+          sqrt15 = dsqrt(15.0D0)
+          a2 = (9.0D0 - 2.0D0*sqrt15)/21.0D0
+          b2 = (6.0D0 + sqrt15)/21.0D0
+          w3 = (31.0D0/120.0D0) - (155.0D0 - sqrt15)/1200.0D0
         else
-#dbl          a1 = 1.0D0/3.0D0
-#dbl          w1 = 9.0D0/40.0D0
-#sgl          a1 = 1.0/3.0
-#sgl          w1 = 9.0/40.0
+          a1 = 1.0D0/3.0D0
+          w1 = 9.0D0/40.0D0
         end if
 c
         if( point.eq.1 ) then
@@ -1689,11 +1615,9 @@ c
 c
       subroutine inter_gp( order, gpn, xi, eta, zeta, w )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &  xi,eta,zeta,w,l1,w1
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, one, three, four, root33
       data zero, one, three, four, root33
      & / 0.0d0, 1.0d0, 3.0d0, 4.0d0, 0.5773502691896257645d0 /
@@ -1801,14 +1725,12 @@ c
       subroutine trint6_gp( order, point, s1, s2, zeta, weight )
       implicit none
       integer order, point
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, s3, zeta, weight
 c
 c     Local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  zero, one, half, third, sixth, two_third
 c
       data zero, one, half
@@ -1957,14 +1879,12 @@ c
       subroutine trint12_gp( order, point, s1, s2, zeta, weight )
       implicit none
       integer order,point
-#dbl      double precision
-#sgl      real
+      double precision
      &         s1, s2, s3, zeta, weight
 c
 c        Local Variables:
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & half, zero, one, two, three, four, five, six,
      & sqrt15, a1, a2, b1, b2, w1, w2, w3, pt6, pt2, third
       logical valid(7)
@@ -2232,22 +2152,18 @@ c
 c             dummy variables
 c
       integer order, gpn
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi, eta, zeta, w
 c
 c             local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     op2, p6, zero, one, two, three, four, five, six, seven,
      &     eight, nine
       data op2, p6, zero, one, two, three, four, five, six, seven,
      &     eight, nine
-#dbl     & / 0.2d0, 0.6d0, 0.d0, 1.d0, 2.d0, 3.d0, 4.d0, 5.d0, 6.d0,
-#dbl     &   7.d0, 8.d0, 9.d0 /
-#sgl     & / 0.2,   0.6,   0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,
-#sgl     &   7.0, 8.0,  9.0  /
+     & / 0.2d0, 0.6d0, 0.d0, 1.d0, 2.d0, 3.d0, 4.d0, 5.d0, 6.d0,
+     &   7.d0, 8.d0, 9.d0 /
 c
       if ( order.lt.1 .or. order.gt.4 ) then
          write(*,9000) order
