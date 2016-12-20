@@ -18,8 +18,8 @@ c
       use main_data, only: asymmetric_assembly
       use elem_block_data, only : global_cep_blocks => cep_blocks
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -27,15 +27,13 @@ c
       real props(mxelpr,*)
       integer cp(*), icp(mxutsz,*), iprops(mxelpr,*)
 c      
-#dbl      double precision :: glb_ek_blk(*)
-#sgl      real :: glb_ek_blk(*)
+      double precision :: glb_ek_blk(*)
 c
 c                     locals
 c
       integer :: etype, span, felem, utsz, nnode, totdof, mat_type,
      &           iter, int_order, local_iout, nrow_ek 
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & eps_bbar, weight, rad(mxvl), dummy, factors(mxvl), one
       logical include_qbar, geonl, bbar, first, qbar_flag,
      &        temps_to_process, iscp, symmetric_assembly
@@ -315,8 +313,8 @@ c
       subroutine drive_01_cnst( gpn, iout, local_work )
 c
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -366,8 +364,8 @@ c
       subroutine drive_02_cnst( gpn, iout, local_work )
 c
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -417,8 +415,8 @@ c
       subroutine drive_03_cnst( gpn, iout, local_work )
 c
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -447,8 +445,8 @@ c
       use main_data, only : matprp, lmtprp
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -456,8 +454,7 @@ c
 c      
 c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(6), f
-#sgl      real :: weight, symm_part_cep(6), f
+      double precision :: weight, symm_part_cep(6), f
       logical :: ldebug
       integer :: span, felem, now_blk, ielem, k, i
 c!DIR$ ASSUME_ALIGNED symm_part_cep:64
@@ -475,8 +472,8 @@ c
 c              expand to 3x3 symmetric [D] scaled by gpn
 c              weight factor
 c
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP
       do ielem = 1, span
        f = weight * local_work%det_jac_block(ielem,gpn)
        k = ( 6 * span * (gpn-1) ) + 6 * (ielem-1)
@@ -526,8 +523,8 @@ c
       subroutine drive_05_cnst( gpn, iout, local_work )
 c
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -579,8 +576,8 @@ c
       subroutine drive_06_cnst( gpn, iout, local_work )
 c
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -605,8 +602,8 @@ c
       subroutine drive_07_cnst( gpn, iout, local_work )
 c
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -657,8 +654,8 @@ c
 c
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit none
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
@@ -666,8 +663,7 @@ c
 c      
 c                     local variables
 c
-#dbl      double precision :: weight, symm_part_cep(21), f
-#sgl      real :: weight, symm_part_cep(21), f
+      double precision :: weight, symm_part_cep(21), f
       integer :: span, now_blk, ielem, sloc, k, felem
 c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c      
@@ -683,8 +679,8 @@ c
 c              expand to 6 x 6 symmetric [D] and scale by
 c              integration weight factor
 c
-@!DIR$ LOOP COUNT MAX=### 
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP
       do ielem = 1, span
         sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
         f = weight * local_work%det_jac_block(ielem,gpn)
@@ -748,13 +744,12 @@ c
 c
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       implicit integer (a-z)
-$add param_def
-$add include_tan_ek  ! has local_work definition
+      include 'param_def'
+      include 'include_tan_ek'  ! has local_work definition
 c
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & weight, symm_part_cep(21), factor
       logical local_debug, debug_now
 c!DIR$ ASSUME_ALIGNED symm_part_cep:64
@@ -785,7 +780,7 @@ c                      global cep block is 21 x span x num integration
 c                      points
 c
         start_loc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
-@!DIR$ IVDEP
+!DIR$ IVDEP
         do k = 1, 21
           symm_part_cep(k) = gbl_cep_blocks(now_blk)%vector(start_loc+k)
         end do
@@ -796,7 +791,7 @@ c
         factor = weight * local_work%det_jac_block(ielem,gpn)
         k = 1
         do i = 1, 6
-@!DIR$ IVDEP      
+!DIR$ IVDEP      
          do j = 1, i
            local_work%cep(ielem,i,j) = symm_part_cep(k) * factor
            local_work%cep(ielem,j,i) = symm_part_cep(k) * factor
@@ -841,19 +836,18 @@ c
       use mm10_defs, only : indexes_common, index_crys_hist 
 c      
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                     parameter declarations
 c
-$add include_tan_ek
+      include 'include_tan_ek'
       integer :: gpn, iout
 c
 c                     local variables
 c
       integer :: span, felem, iter, now_blk,
      &           start_loc, k, i, j, eh, sh
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & weight, f, cep(6,6), cep_vec(36), tol
       logical :: local_debug
       equivalence ( cep, cep_vec )
@@ -875,7 +869,7 @@ c
 c                     the consistent [D] for each integration point is
 c                     stored in the 1st 36 positions of history
 c 
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
          f = weight * local_work%det_jac_block(i,gpn)
          cep_vec(1:36) = local_work%elem_hist1(i,sh:eh,gpn)
@@ -887,7 +881,7 @@ c                     [D] linear
 c
       if( local_debug ) then
       tol = 0.01d00
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
          cep_vec(1:36) = local_work%elem_hist1(i,sh:eh,gpn)
          do j = 1, 6
@@ -942,15 +936,14 @@ c
 c
       use main_data, only : matprp, lmtprp
       implicit integer (a-z)
-$add param_def
-$add include_tan_ek
+      include 'param_def'
+      include 'include_tan_ek'
 c
 c                     parameter declarations
 c
 c                     local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & weight
       logical first
 c
@@ -991,8 +984,7 @@ c
 c                       parameter declarations
 c
       integer :: span, mxvl, mxedof, ncol_ek, nstr, totdof
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   b(mxvl,mxedof,6), ek_full(span,ncol_ek), d(mxvl,6,6),
      &   bd(mxvl,mxedof,6), bt(mxvl,6,totdof)
 c
@@ -1005,8 +997,8 @@ c              set trans( [B] )
 c
       do j = 1, totdof
       	do k = 1, 6
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do i = 1, span
           bt(i,k,j)= b(i,j,k)
        end do
@@ -1020,8 +1012,8 @@ c              i: 4->6 and j: 4->6 should be zeroed by
 c              cnst.. routine.
 c
       do j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP 
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP 
        do i = 1, span
            bd(i,j,1) = d(i,1,1) * b(i,j,1)
      &               + d(i,2,1) * b(i,j,2)
@@ -1080,8 +1072,8 @@ c
       do col = 1, totdof
        do row = 1, totdof
        	j = j + 1  
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do i = 1, span
          ek_full(i,j) = ek_full(i,j)
      &         +   bt(i,1,col) * bd(i,row,1) 
@@ -1122,8 +1114,7 @@ c                       parameter declarations
 c
       integer :: span, mxvl, mxedof, utsz, nstr, totdof, mxutsz,
      &           icp(mxutsz,*)
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
 c
@@ -1136,7 +1127,7 @@ c              set trans( [B] )
 c
       do j = 1, totdof
       	do k = 1, 6
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
           bt(1:span,k,j) = b(1:span,j,k)
        end do
       end do
@@ -1148,8 +1139,8 @@ c              i: 4->6 and j: 4->6 should be zeroed by
 c              cnst.. routine.
 c
       do j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
        do i = 1, span
            bd(i,j,1) = d(i,1,1) * b(i,j,1)
      &               + d(i,2,1) * b(i,j,2)
@@ -1203,8 +1194,8 @@ c
       do j = 1, utsz
         row = icp(j,1)
         col = icp(j,2)
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do i = 1, span
          ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
@@ -1237,9 +1228,8 @@ c
       subroutine ctran1( span, cep, qn1, cs, qbar, dj, w, is_umat,
      &                   umat_stress_type, is_crys_pls  )
       implicit integer (a-z)
-$add param_def
-#dbl      double precision ::
-#sgl      real ::
+      include 'param_def'
+      double precision ::
      &     cep(mxvl,nstr,*), qn1(mxvl,nstr,*), tc(mxvl,nstr,nstr),
      &     cs(mxvl,*), half, two, dj(*), w, wf, halfw
       logical :: qbar, is_umat, is_crys_pls
@@ -1277,8 +1267,8 @@ c             use 6 as number of stress components to expose
 c             value to compiler
 c
       do j = 1, 6
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
          do i = 1, span
 c
             tc(i,j,1)= (qn1(i,j,1)*cep(i,1,1)+
@@ -1330,8 +1320,8 @@ c                       perform multiplication of
 c                       [cep*] =  [tc] * transpose([qn1])
 c
       do j = 1, 6
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
          do i = 1, span
 c
             cep(i,j,1)= tc(i,j,1)*qn1(i,1,1)+
@@ -1395,8 +1385,8 @@ c            [cep] is essential for convergence of nearly homogeneous
 c            deformation problems.
 c
       if( qbar ) then
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do i = 1, span
          wf    = dj(i) * w
          halfw = half * wf
@@ -1474,8 +1464,7 @@ c
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),
      &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
       integer icp(mxutsz,*)
@@ -1512,18 +1501,15 @@ c
 c                       parameter declarations
 c
 c      integer :: span, mxvl, mxedof, nstr, totdof
-c#dbl      double precision :: 
-c#sgl      real ::
+c      double precision :: 
 c     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,6,*)
 c      
 c      integer :: i, j, k
 c      
-c#dbl      double precision,
-c#sgl      real,
+c      double precision,
 c     &  allocatable, dimension (:,:) ::
 c     &   local_b, local_bt, local_db, local_btdb
-c#dbl      double precision :: local_d(6,6)
-c#sgl      real :: local_d(6,6)
+c      double precision :: local_d(6,6)
 c
 cc!DIR$ ASSUME_ALIGNED b:64, d:64, ek:64
 cc!DIR$ ASSUME_ALIGNED local_b:64, local_bt:64, local_btdb:64
@@ -1532,7 +1518,7 @@ c
 c      allocate( local_b(6,totdof), local_bt(totdof,6), 
 c     &          local_db(6,totdof), local_btdb(totdof,totdof) )
 c      
-c@!DIR$ LOOP COUNT MAX=###  
+c@!DIR$ LOOP COUNT MAX=128  
 c      do i = 1, span
 c
 c        do k = 1, 6
