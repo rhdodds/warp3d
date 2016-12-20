@@ -18,7 +18,7 @@ c
       use main_data, only: packet_file_no, cohesive_ele_types,
      &                     elems_to_blocks
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical wide, eform, prec, do_stress, noheader, out_packet_now
      &        solid_elem
       integer element_list(num_list_entries)
@@ -27,8 +27,7 @@ c             local declarations
 c
       character*8 strlbl(30), hedtyp*30
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd
       character dums
       logical  bbar_flg, geo_non_flg, long_out_flg,
