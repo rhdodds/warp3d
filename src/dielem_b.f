@@ -94,8 +94,7 @@ c             dummy variables
 c
       integer tag, front_nodes(*), num_front_nodes, domain_type,
      &        front_order, ptno, p0, p1, out, domain_origin, elemno
-#dbl      double precision
-#sgl      real
+      double precision
      & front_coords(3,*), point_x, point_y, point_z, r1, theta,
      & crack_curvature(*)
       logical debug
@@ -104,15 +103,13 @@ c             local variables
 c
       integer i, j
       logical curved_crack
-#dbl      double precision
-#sgl      real
+      double precision
      & zero, len, pi, x1, y1, z1, x2, y2, z2, dist1, dist2, base,
      & height, x_local, y_local, half, one, two, x3, y3, z3, a,
      & toler, zguess
 c
       data zero, half, one, two, pi
-#dbl     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.14159265359d0 /
-#sgl     & / 0.0,   0.5,   1.0,   2.0,   3.14159265359   /
+     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.14159265359d0 /
 c
 c             determine distance r and angle theta to the integration
 c             point from the straight line connecting the two closest
@@ -387,23 +384,20 @@ c
 c             dummy variables
 c
       integer caseno, out
-#dbl      double precision
-#sgl      real
+      double precision
      & zguess, point_x, point_z, base, x_local, crack_curvature(*)
       logical debug
 c
 c             local variables
 c
       integer i
-#dbl      double precision
-#sgl      real
+      double precision
      & zero, half, one, two, three, x, fz, fprimez, z, znext,
      & d1, d2, dist, x_center, z_center, circle_radius, a, b, c, d, e,
      & four
 c
       data zero, half, one, two, three, four
-#dbl     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.0d0, 4.0d0 /
-#sgl     & / 0.0,   0.5,   1.0,   2.0,   3.0,   4.0   /
+     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.0d0, 4.0d0 /
 c
 c             for a circular crack, find center and radius of a
 c             circle defined by three crack-front nodes.
@@ -527,21 +521,18 @@ c
 c             dummy variables
 c
       integer elemno, out
-#dbl      double precision
-#sgl      real
+      double precision
      &     dcijkl_x1(3), sijkl(3), dsijkl_x1(3), e, nu, de_x1,
      &     dnu_x1
 c
 c             local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     zero, one, two
       logical debug
 c
       data zero, one, two
-#dbl     & / 0.d0, 1.d0, 2.d0 /
-#sgl     & / 0.0,  1.0,  2.0 /
+     & / 0.d0, 1.d0, 2.d0 /
 c
 c
 c             calculate three nonzero components of constitutive tensor
@@ -658,8 +649,7 @@ c
 c             dummy variables
 c
       integer elemno, ptno, out
-#dbl      double precision
-#sgl      real
+      double precision
      &     r, t, e_front, nu_front,
      &     dcijkl_x1(3), sijkl(3), dsijkl_x1(3),
      &     aux_stress(9,8), aux_strain(9,8), daux_strain_x1(9,8),
@@ -671,8 +661,7 @@ c
 c             local variables
 c
       integer i, j, p, node, snode, enode
-#dbl      double precision
-#sgl      real
+      double precision
      &     mu_front, ucoeff, t2, tt2, kappa, k(3),
      &     s11, s22, s33, s12, s13, s23,
      &     ds111, ds121, ds131, ds221, ds231, ds331,
@@ -688,10 +677,8 @@ c
 c
       data zero, one, two, three, pi, four, five, six, eight, nine, ten,
      &     eleven, twelve, fourteen
-#dbl     & / 0.d0, 1.d0, 2.d0, 3.d0, 3.14159265359d0, 4.d0, 5.d0, 6.d0,
-#dbl     &   8.d0, 9.d0, 10.d0, 11.d0, 12.d0, 14.d0 /
-#sgl     & / 0.0, 1.0, 2.0, 3.0, 3.1415926, 4.0, 5.0, 6.0, 8.0, 9.0,
-#sgl     &   10.0, 11.0, 12.0, 14.0 /
+     & / 0.d0, 1.d0, 2.d0, 3.d0, 3.14159265359d0, 4.d0, 5.d0, 6.d0,
+     &   8.d0, 9.d0, 10.d0, 11.d0, 12.d0, 14.d0 /
 c
       debug = .false.
 c
@@ -1173,8 +1160,7 @@ c
 c             dummy variables
 c
       integer elemno, ptno, out
-#dbl      double precision
-#sgl      real
+      double precision
      &     r, t, e_front, nu_front,
      &     dcijkl_x1(3), sijkl(3), dsijkl_x1(3),
      &     aux_stress(9,8), aux_strain(9,8), daux_strain_x1(9,8),
@@ -1186,8 +1172,7 @@ c
 c             local variables
 c
       integer i, j, p, node, snode, enode
-#dbl      double precision
-#sgl      real
+      double precision
      &     two_t, four_t, three_t, kappa, f,
      &     s11, s22, s33, s12, s13, s23,
      &     ds111, ds121, ds131, ds221, ds231, ds331,
@@ -1200,8 +1185,7 @@ c
       logical debug
 c
       data zero, one, two, three, pi, four, five
-#dbl     & / 0.d0, 1.d0, 2.d0, 3.d0, 3.14159265359d0, 4.d0, 5.0d0 /
-#sgl     & / 0.0,  1.0,  2.0,  3.0,  3.14159265359,   4.0,  5.0   /
+     & / 0.d0, 1.d0, 2.d0, 3.d0, 3.14159265359d0, 4.d0, 5.0d0 /
 c
       debug = .false.
 c
@@ -1557,8 +1541,7 @@ c
 c             dummy variables
 c
       integer ptno, elemno, out
-#dbl      double precision
-#sgl      real
+      double precision
      &     dqx, dqy, dqz, dux, dvx, dwx, dtx, csig(10,27),
      &     aux_stress(9,8), ceps_gp(9,27), aux_strain(9,8),
      &     dstrain_x1(9), daux_strain_x1(9,8), dcijkl_x1(3),
@@ -1573,13 +1556,11 @@ c
 c             local variables
 c
       integer i, j
-#dbl      double precision
-#sgl      real
+      double precision
      &     temp1, temp2, temp3, temp4, zero, half, two
 c
       data zero, half, two
-#dbl     & / 0.d0, 0.5d0, 2.d0 /
-#sgl     & / 0.0,  0.5,   2.0  /
+     & / 0.d0, 0.5d0, 2.d0 /
 c
 c
         if( debug ) write(out,1000) elemno, ptno
