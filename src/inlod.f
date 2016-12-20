@@ -18,7 +18,7 @@ c
      &                      temp_nodlod, node_load_defs,
      &                      tables
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameter declarations
 c            
@@ -26,8 +26,7 @@ c
 c
 c                       local declarations
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &  forval, mpfact, dumd, body_force(mxndof),
      &  face_force(numfaces,mxndof), press_force(numfaces),
      &  elem_temper, zero,  step_load_factors(mxlc)
@@ -1110,10 +1109,9 @@ c
      &     elem_temper, pist_tabn, pist_set )
       use elem_load_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &  body_force(*), face_force(numfaces,*),
      &  press_force(*), dumd, elem_temper, one
       logical face_inpflg(numfaces,*), body_inpflg(*),
@@ -1208,11 +1206,10 @@ c
      &                                  step_count )
       use main_data, only : step_load_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       dimension step_load_list(*), list_of_steps(*)
-#sgl      real step_load_factors(*)  
-#dbl      double precision step_load_factors(*)  
+      double precision step_load_factors(*)  
       logical local_debug
       data local_debug / .false. /        
 c
@@ -1272,7 +1269,7 @@ c
      &                      next_loddat_col, max_loddat_blks,
      &                      loddat_blocks
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real node_data(*)
 c
       select case ( opcode )
