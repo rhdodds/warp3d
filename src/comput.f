@@ -16,10 +16,9 @@ c
       subroutine compute
       use j_data, only: comput_j, comput_i
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   dumd, zero
       character :: dums
       character*80 :: name
@@ -160,7 +159,7 @@ c
       subroutine compute_output_check_before
       use  main_data, only : cp_matls_present, matprp, imatprp
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       integer :: matnum
       logical :: found_cp
