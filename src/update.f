@@ -30,10 +30,9 @@ c
 c
       implicit integer (a-z)
 c      
-$add common.main
+      include 'common.main'
 
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &    dlf, tlf
 c     
       integer :: blk, felem, span, ngp, hblock_size, eblock_size, 
@@ -187,8 +186,7 @@ c
       subroutine update_copy( a, b, n )
       implicit none
       integer :: n
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &    a(n), b(n)
 c
       a = b
@@ -211,14 +209,12 @@ c
      &                   acceleration )
       implicit none
 c      
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & du(nodof), velocity(nodof),  acceleration(nodof), dt, nbeta
       integer :: nodof
 
       integer :: i
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     bdt, bdt2, exp1, exp2, exp3, exp4, zero, lt1, one, 
      &     two, three, four, veln, acceln
 c
