@@ -6220,7 +6220,7 @@ c
       subroutine mm10_DJGM_GH(local_work,s_type,num_hard,G,H)
       use mm10_defs ! to get definition of cc_props
       implicit none
-$add include_sig_up
+      include 'include_sig_up'
 c
       integer :: s_type, num_hard
       double precision, dimension(num_hard,num_hard) ::  G
