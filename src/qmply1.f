@@ -17,8 +17,7 @@ c
 c
 c                    parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & q(mxvl,nstr,*), m1(mxvl,*), m2(mxvl,*)
 c
 c                      {m2} = [q] * {m1}   (6x1 vectors and 6x6 q]
