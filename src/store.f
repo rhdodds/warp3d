@@ -37,7 +37,7 @@ c
 c
       implicit integer (a-z)
       intrinsic size
-$add common.main
+      include 'common.main'
 c
 c               parameter and local variable declarations
 c
@@ -47,8 +47,7 @@ c
      &        block, nameok, sbflg1, sbflg2, scanms, delfil,
      &        wrt_nod_lod, write_table
       real dumr, rzero, rsum
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd, dzero
       character * 1 dums
       common /erflgs/ numnod, numel, fatal, coor, elprop, elinc,
@@ -259,8 +258,7 @@ c
 c                       write out double precision data
 c                         1) global vectors
 c
-#dbl      prec_fact = 2
-#sgl      prec_fact = 1
+      prec_fact = 2
       call wrtbk( fileno, u, prec_fact*nodof )
       call wrtbk( fileno, c, prec_fact*nodof )
       call wrtbk( fileno, ifv, prec_fact*nodof )
@@ -802,7 +800,7 @@ c
      &                            cep_blocks, cep_blk_list
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       data check_data_key / 2147483647 /
 c
 c
@@ -892,7 +890,7 @@ c
       use main_data, only : inverse_incidences, inverse_dof_map
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       data check_data_key / 2147483647 /
 c
       go to ( 100, 200, 300 ) proc_type
