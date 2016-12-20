@@ -16,7 +16,7 @@ c
 c
       subroutine iodevn(innum,outnum,trc,trctyp)
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical trc
 c
       innum= in
