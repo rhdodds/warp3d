@@ -18,9 +18,8 @@ c
       use elblk_data, only : elestr
       implicit integer (a-z)
       logical stress
-$add param_def
-#dbl      double precision
-#sgl      real 
+      include 'param_def'
+      double precision
      &  elem_results(nrowd,*)
 c
 c                       copy element results into global
