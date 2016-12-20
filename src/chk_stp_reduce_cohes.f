@@ -21,14 +21,13 @@ c
       use elem_extinct_data, only : old_deff, dam_state
       use damage_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical debug
 c
 c           local declarations
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     values(20), two, dumd1, dumd2, dumd3, dumd4, zero,
      &     max_del_deff, new_deff, deff, peak_displ,
      &     new_deff_normalized,  max_del_deff_normalized
@@ -195,8 +194,7 @@ c
 c
 c           local declarations
 c
-#sgl      real
-#dbl      double precision
+      double precision
      &     two, dumd1, dumd2, dumd3, dumd4, max_factor, min_factor,
      &     del_deff(*), max_deff_change, zero, one, point_eight,
      &     ave_del_deff, ratio, perm_load_fact, tfactor, four          
