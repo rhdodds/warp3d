@@ -17,9 +17,8 @@ c
       subroutine inelem(sbflg1,sbflg2)
       use main_data, only: matprp, imatprp
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &   dumd
       real dumr
       character*80 name, dums *1
