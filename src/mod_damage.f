@@ -19,14 +19,12 @@ c
 c                     arrays
 c
       integer, save, allocatable :: dam_ptr(:)
-#dbl       double precision
-#sgl       real
+       double precision
      &   del_poros(mxstp_store), del_deff(mxstp_store)
 c
 c                     scalar double precision/reals
 c
-#dbl       double precision
-#sgl       real
+       double precision
      &   porosity_limit, gurson_cell_size,
      &   crack_plane_coord, release_fraction,
      &   critical_angle, release_height, 
