@@ -31,8 +31,7 @@ c
      &   signal_flag, adaptive_possible, cut_step_size_now,
      &   nonlin_hard, generalized_pl
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & sig_tol,  mm_props(mxvl,6), e_vec_np1(mxvl), e_vec_n(mxvl), 
      & nu_vec_np1(mxvl), nu_vec_n(mxvl),
      & sigyld_gp_vec_np1(mxvl), sigyld_gp_vec_n(mxvl),
@@ -219,16 +218,13 @@ c                       -----------------------
 c
        logical debug, yield(mxvl), prior_linear(mxvl)
        integer i, j, iostat(mxvl), instat(mxvl)
-#dbl      double precision
-#sgl      real 
+      double precision
      &     shear_mod, c, a, zero, one, two, b, delastic,
      &     half, shear_mod_vec(mxvl), alpha_n(mxvl, nstrn), 
      &     trace_eps_np1(mxvl),  yf_vec(mxvl)
-#dbl      data zero, one, two, half / 0.0d00, 1.0d00, 2.0d00, 0.5d00 /
-#sgl      data zero, one, two, half / 0.0, 1.0, 2.0, 0.5 /  
+      data zero, one, two, half / 0.0d00, 1.0d00, 2.0d00, 0.5d00 /
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     type
 c
        if( generalized_pl ) then
@@ -282,8 +278,7 @@ c
       logical
      &   signal_flag, adaptive_possible, cut_step_size_now
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,5), e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
@@ -312,12 +307,10 @@ c                       -----------------------
 c
        logical debug, yield(mxvl), prior_linear(mxvl)
        integer i, j, iostat(mxvl), instat(mxvl)
-#dbl      double precision
-#sgl      real 
+      double precision
      &     shear_mod_vec(mxvl), alpha_n(mxvl, nstrn), 
      &     trace_eps_np1(mxvl),  yf_vec(mxvl), zero
-#dbl      data zero / 0.0d00/
-#sgl      data zero / 0.0 /    
+      data zero / 0.0d00/
 c
 c       write(*,*) 'entering fa code'
 c       write(*,*) (deps(1,j), j=1,6)
@@ -411,8 +404,7 @@ c
       integer
      &   mxvl, span
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,5), sigyld_vec(mxvl),  stress_n(mxvl,*), 
      &  history_n(span,*)
 c
@@ -420,8 +412,7 @@ c                  local parameters
 c                  ----------------
       integer i, iword(2)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  root2third, zero, dword
 c
       equivalence( dword, iword )
@@ -483,16 +474,14 @@ c               ----------------------
       integer span, mxvl, iout, iostat(*), instat(*), iter, step,
      &              gpn, felem 
       logical debug, prior_linear(*), yield(*), signal_flag
-#dbl      double precision
-#sgl      real
+      double precision
      & deps(mxvl, *), history_n(span,*), stress_n(mxvl,*),  yf_vec(*),
      & e_vec(*), shear_mod_vec(*), alpha_n( mxvl, *), nu_vec(*), 
      & trial_elas_stress_np1(mxvl, *), sigyld_vec(*), trace_eps_np1(*)
 c
 c               local parameters 
 c               -----------------
-#dbl      double precision
-#sgl      real
+      double precision
      & dword, deps_mean, de1, de2, de3, de4, de5, de6, trace_deps,
      & e, nu, g, een1, een2, een3, een4, een5, een6, e1, e2, e3, 
      & e4, e5, e6, zero, one, two, three, yld_tol, rtse(6), 
@@ -642,8 +631,7 @@ c                    ----------------------
        integer span, mxvl, iout, gpn, felem, step, iter
        logical yield(*), debug, adaptive_possible, cut_step_size_now,
      &         signal_flag, prior_linear(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & history_n(span,*), history_np1(span,*), mm_props(mxvl,*),
      & sigyld_vec(*), stress_n(mxvl,*),deps(mxvl, *), 
      & stress_np1(mxvl,*), shear_mod_vec(*),
@@ -654,8 +642,7 @@ c                    ----------------
 c
        integer i, j, s, nsubinc, l
        logical local_debug
-#dbl      double precision
-#sgl      real 
+      double precision
      & gamma, Q_bar, b, H_bar,
      & g,sig_tol, k_n, rel_tol, eta, error,a, bb,
      & mean_stress,  one, two, three, root2third,
@@ -876,8 +863,7 @@ c    ----------------------
 c
       integer iout, gpn, felem, step, iter, i, nsubinc
       logical signal_flag, adaptive_possible, cut_step_size_now
-#dbl      double precision
-#sgl      real
+      double precision
      &  devdeps(*), dev_stress_n(*), alpha_n(*), aps_n, g, H_bar,
      &  Q_bar, sigyld, stress_j(*), alpha_j(*), aps_j, lambda, gamma,
      &  sig_t(*), alpha_sm1(*), b, norm_equiv_j
@@ -887,8 +873,7 @@ c    ----------------
 c
       integer s, l,j
       logical local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &  one, equiv_t(6), norm_equiv_t, k_j, two, d, root2third, 
      &  equiv(6), k_np1, H_np1, lg, kappa, beta, ro
 c
@@ -976,8 +961,7 @@ c    ----------------------
 c
       integer iout, gpn, felem, step, i, iter, sub
       logical signal_flag, adaptive_possible, cut_step_size_now
-#dbl      double precision
-#sgl      real
+      double precision
      &    sig_y, alpha_s(*), sig_t(*), equiv(*), aps_n, 
      &    lambda, k_np1,  Q_bar, b, H_bar, lg, gamma, g, H_np1
 c
@@ -993,8 +977,7 @@ c
       logical debug
       integer j, l, max_iter
 
-#dbl      double precision
-#sgl      real
+      double precision
      &    norm_equiv, res, dres, eq_dot_sigt, tol, aps_np1,
      &    dk_np1, dH_np1, zero, one, two, root2third
 c
@@ -1117,8 +1100,7 @@ c    ----------------------
 c
       integer iout
       logical adaptive_possible, cut_step_size_now
-#dbl      double precision
-#sgl      real
+      double precision
      &    sigy, alpha_n(*), sig_t(*), equiv(*), aps_n, tol,
      &    lambda, k_np1,  Q, b, H_bar, lg, gamma, g, H_np1,
      &    aps_np1
@@ -1129,8 +1111,7 @@ c
       logical local_debug
       integer sc_count, sc_max, bs_count, bs_max, nr_count, nr_max
 
-#dbl      double precision
-#sgl      real 
+      double precision
      &    dk_np1, dH_np1,  res_i, res_f, lambda_i, lambda_f, res,
      &    zero, one, two, root2third  
 c
@@ -1264,8 +1245,7 @@ c
 c    parameter declarations
 c    ----------------------
       integer iout
-#dbl      double precision
-#sgl      real
+      double precision
      & lambda, aps_n, sig_t(*), alpha_n(*),  
      & gamma, sigy, H_bar, b, Q_bar, g, lg,
      & k_np1, dk_np1, H_np1, dH_np1, res, aps_np1, equiv(*)
@@ -1273,8 +1253,7 @@ c
 c    local parameters
 c    ----------------
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    zero, one, two, root2third, norm_equiv  
 c
       data zero, one, two, root2third
@@ -1317,8 +1296,7 @@ c
 c
 c    parameter declarations
 c    ----------------------
-#dbl      double precision
-#sgl      real
+      double precision
      & lambda, res, equiv(*), gamma, k_np1, g, H_np1, dk_np1, dH_np1,
      & norm_equiv, eq_dot_sigt, one, two, sig_t(*)
 c
@@ -1367,16 +1345,14 @@ c    ----------------------
 c
       logical prior_linear
       integer iout, felem, gpn, i
-#dbl      double precision
-#sgl      real
+      double precision
      &    g, stress_n(*), alpha_n(*), devdeps(*), eta, k_n
 c
 c    local  parameter declarations
 c    -----------------------------
 c
       logical debug
-#dbl      double precision
-#sgl      real
+      double precision
      &    a, b, c, zero, two, temp, tol
 c
       data zero, two, tol / 0.0, 2.0, 0.00001/
@@ -1495,8 +1471,7 @@ c
       logical
      &   signal_flag, adaptive_possible, cut_step_size_now
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,5), e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
@@ -1571,8 +1546,7 @@ c
       integer
      &  span, felem, gpn, iter, iout, mxvl, nstrn
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,6), e_vec(mxvl), nu_vec(mxvl),
      & sig_trial(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
@@ -1637,8 +1611,7 @@ c                      ----------------
 c
       integer ::i, iword(2), state, l, m , j, t
       logical :: yield(mxvl), debug
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     c1, c2, c3, c4, fact, zero, one, two, dword,
      &     n(6), k, dk, H, dH, kappa, dkappa, beta, dbeta,
      &     ro, zeta, a, b, c, equiv(6), norm_equiv, g, bulk,
@@ -1668,7 +1641,7 @@ c
         return
        end if
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
        do i = 1, span
          dword = history_np1(i,4)
          state = iword(1)
@@ -1676,7 +1649,7 @@ c
          if( state .eq. 1 ) yield(i) = .true.
       end do
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span      
          if( yield(i) ) cycle
          dmat(i,1,4) = zero
@@ -1723,7 +1696,7 @@ c
          dmat(i,3,2)= c4
       end do         
 c        
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span      
        if( .not. yield(i) ) cycle
        fact = 1.0d00
@@ -1897,8 +1870,7 @@ c
       logical
      &   signal_flag, adaptive_possible, cut_step_size_now
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,5), e_vec_np1(mxvl), e_vec_n(mxvl), 
      & nu_vec_np1(mxvl), nu_vec_n(mxvl),
      & sigyld_vec_np1(mxvl), sigyld_vec_n(mxvl),
@@ -1929,8 +1901,7 @@ c                       -----------------------
 c
        logical debug, yield(mxvl), prior_linear(mxvl)
        integer i, j, iostat(mxvl), instat(mxvl)
-#dbl      double precision
-#sgl      real 
+      double precision
      &     g_vec_n(mxvl), g_vec_np1(mxvl), alpha_n(mxvl, nstrn), 
      &     trace_eps_np1(mxvl), zero, one, rse(6), 
      &     hi_n, hi_n1, hk_n, hk_n1, lk, eps_n, htol, 
@@ -2064,8 +2035,7 @@ c
       integer
      &   mxvl, span
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,5), sigyld_vec_n(mxvl),  stress_n(mxvl,*), 
      &  history_n(span,*)
 c
@@ -2073,8 +2043,7 @@ c                  local parameters
 c                  ----------------
       integer i, iword(2)
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  root2third, zero, dword
 c
       equivalence( dword, iword )
@@ -2141,8 +2110,7 @@ c               ----------------------
       integer span, mxvl, iout, iostat(*), instat(*), iter, step,
      &              gpn, felem 
       logical debug, prior_linear(*), yield(*), signal_flag
-#dbl      double precision
-#sgl      real
+      double precision
      & deps(mxvl, *), history_n(span,*), stress_n(mxvl,*), 
      & g_vec_n(*), g_vec_np1(*), alpha_n( mxvl, *), 
      & trial_elas_stress_np1(mxvl, *), sigyld_vec_np1(*), 
@@ -2154,8 +2122,7 @@ c               local parameters
 c               -----------------
       integer iword(2), i, j, l
       logical local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      & dword, deps_mean, de1, de2, de3, de4, de5, de6, trace_deps,
      & een1, een2, een3, een4, een5, een6, e1, e2, e3, e4, e5, e6, 
      & e_n, e_n1, nu_n, nu_n1, g_n, g_n1, hk_n, hk_n1, hi_n1, lk,
@@ -2387,8 +2354,7 @@ c                    ----------------------
        integer span, mxvl, iout, gpn, felem, step, iter
        logical yield(*), debug, adaptive_possible, cut_step_size_now,
      &         signal_flag, prior_linear(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & history_n(span,*), history_np1(span,*), mm_props(mxvl,*),
      & sigyld_vec_np1(*), sigyld_vec_n(*), stress_np1(mxvl,*), 
      & stress_n(mxvl,*), deps(mxvl,*), g_vec_np1(*), g_vec_n(*),
@@ -2401,8 +2367,7 @@ c                    ----------------
 c
        integer i, j, s, nsubinc, mxsubinc, l
        logical local_debug, onestep
-#dbl      double precision
-#sgl      real 
+      double precision
      & delta_n, Hi_n, Hk_n, beta_n, g_n, k0_n, k_n,
      & delta_n1, Hi_n1, Hk_n1, beta_n1, g_n1, k0_n1,
      & g_s, Hi_s, Hk_s, beta_s, delta_s, k0_s,
@@ -2667,8 +2632,7 @@ c     ----------------------
 c     
       integer iout, gpn, felem, step, iter, i, nsubinc
       logical signal_flag, adaptive_possible, cut_step_size_now
-#dbl      double precision
-#sgl      real
+      double precision
      &     devdeps(*), dev_stress_s(*), alpha_s(*), eps_s, 
      &     stress_j(*), alpha_j(*), eps_j, lambda, dHi,
      &     sig_t(*),  norm_equiv_j, g_s, Hi_s, Hk_s, beta_s, delta_s, 
@@ -2679,8 +2643,7 @@ c    ----------------
 c
       integer j, l
       logical local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &     one, equiv_t(6), norm_equiv_t, k_j, two, d, root2third, 
      &     dHk, dk0, dg, dbeta, ddel, lk, mk, zero, tol, dnsubinc, 
      &     alpha_j1(6), Hk_j, Hk_j1, Hi_j, Hi_j1, g_j, g_j1, 
@@ -2874,16 +2837,14 @@ c     ----------------------
 c     
       integer iout, gpn, felem, step, i, iter, sub
       logical signal_flag, adaptive_possible, cut_step_size_now
-#dbl      double precision
-#sgl      real
+      double precision
      &     norm_equiv_t, norm_equiv_j, k_j, g_n1, delta_n1, 
      &     beta_n1, Hk_n1, Hi_n1, dHi, k0_n1, eps_j, lambda
 c     
 c     
 c     local parameters
 c     ----------------
-#dbl      double precision
-#sgl      real
+      double precision
      &     a1, a2, a3, a4, a5, g1, H_n1, f_j, kb_j1, a, b, c, 
      &     zero, half, one, two, temp, l1, l2
 c     
@@ -3019,8 +2980,7 @@ c    ----------------------
 c
       logical adaptive_possible, cut_step_size_now, onestep
       integer iout, felem, gpn, i, step
-#dbl      double precision
-#sgl      real
+      double precision
      &    stress_n(*), alpha_n(*), devdeps(*), eta, k_n, 
      &    g_n, g_n1, g_s, Hi_n, Hi_n1, Hi_s, Hk_n, Hk_n1, Hk_s,
      &    beta_n, beta_n1, beta_s, delta_n, delta_n1, delta_s, 
@@ -3031,8 +2991,7 @@ c    -----------------------------
 c
       logical local_debug
       integer l, loop
-#dbl      double precision
-#sgl      real
+      double precision
      &    zero, half, one, two, tol, stol, eta_low, eta_high,
      &    eta_mid, eta_new, eta_ridder, f_low, f_high, f_mid, f_new, 
      &    sridder, eta_comp, unused, t1, t2, t3, t4, t5, t6, lk,
@@ -3445,8 +3404,7 @@ c    parameter declarations
 c    ----------------------
 c
       integer iout, felem, gpn, i
-#dbl      double precision
-#sgl      real
+      double precision
      &    eta, felas, g_n, g_n1, Hi_n, Hi_n1, Hk_n, Hk_n1, 
      &    k0_n, k0_n1, t1, t2, t3, t4, t5, t6, eps_n
 
@@ -3454,8 +3412,7 @@ c
 c    local  parameter declarations
 c    -----------------------------
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    g_b, Hi_b, Hk_b, k0_b, c1, c2, a1, a2, a3, a4, 
      &    one, four, tol
 c
@@ -3516,8 +3473,7 @@ c
       logical
      &   signal_flag, adaptive_possible, cut_step_size_now
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & mm_props(mxvl,5), e_vec_np1(mxvl), nu_vec_np1(mxvl),
      & sigyld_vec_np1(mxvl), stress_n(mxvl,nstrs), 
      & e_vec_n(mxvl), nu_vec_n(mxvl), sigyld_vec_n(mxvl),
@@ -3604,8 +3560,7 @@ c                   ----------------------
 c
       integer :: span, felem, gpn, iter, iout, mxvl, nstrn
 c     
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & e_vec_np1(mxvl), nu_vec_np1(mxvl), h_gp_np1(mxvl), 
      & beta_gp_np1(mxvl), delta_gp_np1(mxvl), tau(mxvl),
      & sig_trial(mxvl,nstrn), history_n(span,*),
@@ -3681,8 +3636,7 @@ c                      ----------------
 c
       integer :: i, iword(2), state, l, m , j, t
       logical :: yield(mxvl), debug
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     c1, c2, c3, c4, fact, dword,
      &     n(6), equiv(6), norm_equiv_np1, g, bulk,
      &     A_GP, C_GP, mean_n, norm_equiv_n, lambda,
@@ -3698,7 +3652,7 @@ c
 c
        equivalence(dword, iword)
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
        do i = 1, span
          dword = history_np1(i,4)
          state = iword(1)
@@ -3706,7 +3660,7 @@ c
          if( state .eq. 1 ) yield(i) = .true.
        end do
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span      
        if( yield(i) ) cycle
        dmat(i,1,4) = zero
@@ -3754,7 +3708,7 @@ c
        dmat(i,3,2) = c4
       end do          
 c     
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span      
        if( .not. yield(i) ) cycle
        fact     = 1.0d00
@@ -3903,8 +3857,7 @@ c                    parameter declarations
 c                    ----------------------
        integer span, mxvl, instat(*), iout
        logical debug
-#dbl      double precision
-#sgl      real
+      double precision
      & stress_n(mxvl, *), stress_np1(mxvl, *), e_vec(*),
      & nu_vec(*), shear_mod_vec(*), deps(mxvl, *), 
      & history_np1(span, *), trace_eps_np1(*)
@@ -3912,8 +3865,7 @@ c
 c                   local parameter declarations
 c                   ----------------------------
        integer i, iword(2)
-#dbl      double precision
-#sgl      real    
+      double precision
      & sig_mean_np1, one, two, three, half, dword
        equivalence ( dword, iword )
        data one, two, three, half / 1.0, 2.0, 3.0, 0.5 /
@@ -3972,8 +3924,7 @@ c
 c
       logical yield(*)
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      &   stress_n(mxvl,*), stress_np1(mxvl,*), deps(mxvl,*), 
      &   nu_vec(*), e_vec(*), shear_mod_vec(*)
 c
@@ -3981,8 +3932,7 @@ c                       local parameters
 c 
        integer i
 c 
-#dbl      double precision
-#sgl      real
+      double precision
      & zero, deps_plas_bar, dsig(6), deps_plas(6), half, root2, 
      & three, two, factor1, factor2
 c
@@ -4053,8 +4003,7 @@ c
      &  gpn, mxvl, span, iout
 c
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      & stress(mxvl,*), elestr(mxvl,*), history(mxvl,*)
 c
 c               description of parameters
@@ -4095,8 +4044,7 @@ c         columns 9-11 are "c1", "c2", "c3".
 c
        integer i, iword(2)
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &      dword, one, three
 c
        equivalence(dword, iword)
@@ -4191,13 +4139,12 @@ c
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c      
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
       return
       end
