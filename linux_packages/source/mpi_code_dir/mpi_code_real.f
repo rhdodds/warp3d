@@ -5,7 +5,7 @@ c     *                      subroutine wmpi_init                    *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : rhd 1/9/2016 rhd           *
+c     *                   last modified : 12/19/2016 rhd             *
 c     *                                                              *
 c     *     This routine initializes MPI on all processors at the    *
 c     *     beginning of a MPI warp run.  It also creates the        *
@@ -82,7 +82,7 @@ c	      and then send these numbers back to the root process.  These
 c	      will be used to suspend the mpi procs if a threaded
 c	      sparse solver is called.
 c
-#l64      call wmpi_procids
+      call wmpi_procids
 c
 c             if we are the root processor, return to driver, and
 c             continue executing the code as normal, reading input, etc.
@@ -206,9 +206,9 @@ c
 c
          do proc = 1, numprocs - 1
           if( debug ) write (out,*) '>>> root suspend ',proc_pids(proc)
-#l64            ierr = kill (proc_pids(proc), 19)
+          ierr = kill (proc_pids(proc), 19)
           if ( ierr .ne. 0) then
-	       write (out,*) '>>> FATAL ERROR: root unable to suspend',
+            write (out,*) '>>> FATAL ERROR: root unable to suspend',
      &                ' pid ',proc_pids(proc)
                call die_abort
             endif
@@ -221,9 +221,9 @@ c	  if option = 2, awaken the suspended slave mpi processes
 c
          do proc = 1, numprocs - 1
           if( debug )write (out,*) '>>> root reviving ',proc_pids(proc)
-#l64            ierr = kill (proc_pids(proc), 18)
+          ierr = kill (proc_pids(proc), 18)
           if ( ierr .ne. 0) then
-	       write (out,*) '>>> FATAL ERROR: root unable to awaken',
+           write (out,*) '>>> FATAL ERROR: root unable to awaken',
      &                ' pid ',proc_pids(proc)
                call die_abort
             end if
