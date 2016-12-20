@@ -18,9 +18,8 @@ c
       use main_data, only : crdmap
 c
       implicit integer (a-z)
-$add common.main
-#sgl      real
-#dbl      double precision
+      include 'common.main'
+      double precision
      &  x(ndim), xcur, dumd, zero
       real dumr
       character dums
