@@ -23,26 +23,23 @@ c
      &                      inverse_incidences, temper_nodes,
      &                      temper_nodes_ref
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical oubin, ouasc, flat_file, stream_file, text_file,
      &        compressed, patran_file
 c
 c                       local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     edva(mxvl,mxndof), defmax, one, nfac,
      &     trnmte(mxvl,mxedof,mxndof)
-#dbl      character*4 title(80), title1(80)
-#sgl      character*8 title(80), title1(80)
+      character*4 title(80), title1(80)
       real sgl_defmax, sgl_vals(10)
       character*80 string, strng1, stepstring*6
       dimension titl(80), titl1(80)
       logical trne(mxvl,mxndel)
       equivalence (title,titl), (title1,titl1)
       data one
-#sgl     &   / 1.0 /
-#dbl     &   / 1.0d00 /
+     &   / 1.0d00 /
 c
 c                       make file name and open file
 c                       patran:  binary or formatted files or
@@ -237,7 +234,7 @@ c     ****************************************************************
       subroutine ouddpa_flat_header( type, quantity, 
      &                               flat_file_number )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       local declarations
 c
