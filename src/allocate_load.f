@@ -20,7 +20,7 @@ c
       subroutine allocate_temp_load( status )
       use elem_load_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       real zero     !  note:  single precision
       data zero, debug /0.0, .false./
@@ -98,7 +98,7 @@ c
       subroutine allocate_perm_load( status, loadnum )
       use elem_load_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical debug
 c
@@ -186,7 +186,7 @@ c
       subroutine do_perm_allo (status, loadnum, num_loads, fill)
       use elem_load_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       logical debug, fill
       data debug / .false./
@@ -297,14 +297,13 @@ c
      &     eload_data, eload_val, eload_pist, size, thread_number )
       use elem_load_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       dimension eload_data(size,3), thdnum(noelem), 
      &          thread_number(size), eload_pist(size)
       real eload_val(size)
       real zero    !  note: single precision
-#dbl      double precision
-#sgl      real
+      double precision
      &     mx, my, mz, norm
       logical debug
       data zero, debug / 0.0, .false. /
@@ -432,7 +431,7 @@ c     ****************************************************************
 c
       subroutine dump_load(eload_data, eload_val, thread_number, size)
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       real eload_val(size)
       dimension eload_data(size,3), thread_number(size)
@@ -512,7 +511,7 @@ c
       subroutine eloads_rebuild_thread_list( eload_data, size,
      &                                       thread_number )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c      
       dimension eload_data(size,3), thdnum(noelem), thread_number(size)
 c
