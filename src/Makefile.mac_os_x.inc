@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: November 13, 2016
+#   Last modifications: December 19, 2016
 #
 #   Description:
 #
@@ -72,11 +72,13 @@
 #   rhd   6/18/2016 renove f_clmloc, mod_crystals.f dependency
 #   rhd   8/17/2016 added new macro F90TRAP
 #   rhd   8/20/2016 combined mm03p.f & mm03.f into mm03.f for more inlining
+#   rhd  12/19/2016 more macros to generalize building
+#                   removal of filter program and much simplifications
 #
 #
 #
 #    NOTE:   we specify the -xHost Fortran option. the compiler will
-#            generate code for the highest perfromance instruction set of the 
+#            generate code for the highest performance instruction set of the 
 #            CPU on your computer.
 #
 #            Remove this option is you wish the compiler to generate
@@ -98,6 +100,10 @@
 #
 #        Intel F90 (fort) compiler options. see also Makefile.mac_os_x.omp
 #
+OSNAME   := OSX
+BUILDNUM := 3250
+PRE      := fpp
+
 #F90TRAP = -ftrapuv -check uninit
 F90TRAP = 
 #
@@ -116,12 +122,10 @@ F90      = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT)
 LINK90   = $(COMPILER) $(F90OPTS1) $(F90OPTS2) $(OPENMPOPT) 
 LIBS     = -mkl
 #
-#                where is the executable filter program for
-#                the Mac OS X version of WARP3D. Define extension for relocatable
+#                Define extension for relocatable
 #                object code files, macros for the remove command and the
 #                move command.
 #
-FILTER   = ./filter_mac_os_x.exe
 O        = .o
 OD       = $(ODIR)
 RMC      = rm -f
@@ -386,106 +390,70 @@ $(EXE_NAME) : $(OBJ)
 $(OD)/addifv$O : addifv.f param_def \
                    $(OD)/mod_damage$O
 	$(RMC)  $@
-	$(RMC)  filt_addifv.f
-	$(FILTER) < addifv.f > filt_addifv.f
-	$(F90) -O2 -ip  -c filt_addifv.f
-	$(MVC) filt_addifv$O  addifv$O
+	$(F90) -O2 -ip  -c addifv.f
 	$(MVC) addifv$O $@
 
 $(OD)/adapt_check$O : adapt_check.f $(OD)/mod_adaptive_steps$O
 	$(RMC)  $@
-	$(RMC)  filt_adapt_check.f
-	$(FILTER) < adapt_check.f > filt_adapt_check.f
-	$(F90) -O2 -ip  -c filt_adapt_check.f
-	$(MVC) filt_adapt_check$O  adapt_check$O
+	$(F90) -O2 -ip  -c adapt_check.f
 	$(MVC) adapt_check$O $@
 
 $(OD)/addmas$O : addmas.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_addmas.f
-	$(FILTER) < addmas.f > filt_addmas.f
-	$(F90) -O2 -ip  -c filt_addmas.f
-	$(MVC) filt_addmas$O  addmas$O
+	$(F90) -O2 -ip  -c addmas.f
 	$(MVC) addmas$O $@
 
 $(OD)/allocate_damage$O : allocate_damage.f $(OD)/mod_crack_growth$O \
                    common.main param_def \
                    $(OD)/mod_damage$O
 	$(RMC)  $@
-	$(RMC)  filt_allocate_damage.f
-	$(FILTER) < allocate_damage.f > filt_allocate_damage.f
-	$(F90) -O2 -ip  -c filt_allocate_damage.f
-	$(MVC) filt_allocate_damage$O  allocate_damage$O
+	$(F90) -O2 -ip  -c allocate_damage.f
 	$(MVC) allocate_damage$O $@
 
 $(OD)/allocate_load$O : allocate_load.f $(OD)/mod_elem_load$O \
                    common.main param_def
 	$(RMC)  $@
-	$(RMC)  filt_allocate_load.f
-	$(FILTER) < allocate_load.f > filt_allocate_load.f
-	$(F90) -O2 -ip  -c filt_allocate_load.f
-	$(MVC) filt_allocate_load$O  allocate_load$O
+	$(F90) -O2 -ip  -c allocate_load.f
 	$(MVC) allocate_load$O $@
 
 $(OD)/aplacc$O : aplacc.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_aplacc.f
-	$(FILTER) < aplacc.f > filt_aplacc.f
-	$(F90) -O2 -ip  -c filt_aplacc.f
-	$(MVC) filt_aplacc$O  aplacc$O
+	$(F90) -O2 -ip  -c aplacc.f
 	$(MVC) aplacc$O $@
 
 $(OD)/assemble_code$O : assemble_code.f common.main \
                    param_def $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_assemble_code.f
-	$(FILTER) < assemble_code.f > filt_assemble_code.f
-	$(F90) -O3 -ip  -c filt_assemble_code.f
-	$(MVC) filt_assemble_code$O  assemble_code$O
+	$(F90) -O3 -ip  -c assemble_code.f
 	$(MVC) assemble_code$O $@
 #
 #       --- b --
 #
 $(OD)/bdbt$O : bdbt.f
 	$(RMC)  $@
-	$(RMC)  filt_bdbt.f
-	$(FILTER) < bdbt.f > filt_bdbt.f
-	$(F90) -O3 -ip  -c filt_bdbt.f
-	$(MVC) filt_bdbt$O  bdbt$O
+	$(F90) -O3 -ip  -c bdbt.f
 	$(MVC) bdbt$O $@
 
 $(OD)/blcmp1$O : blcmp1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_blcmp1.f
-	$(FILTER) < blcmp1.f > filt_blcmp1.f
-	$(F90) -O3 -ip  -c filt_blcmp1.f
-	$(MVC) filt_blcmp1$O  blcmp1$O
+	$(F90) -O3 -ip  -c blcmp1.f
 	$(MVC) blcmp1$O $@
 
 $(OD)/bmod$O : bmod.f
 	$(RMC)  $@
-	$(RMC)  filt_bmod.f
-	$(FILTER) < bmod.f > filt_bmod.f
-	$(F90) -O3 -ip  -c filt_bmod.f
-	$(MVC) filt_bmod$O  bmod$O
+	$(F90) -O3 -ip  -c bmod.f
 	$(MVC) bmod$O $@
 
 $(OD)/bscmp1$O : bscmp1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_bscmp1.f
-	$(FILTER) < bscmp1.f > filt_bscmp1.f
-	$(F90) -O2 -ip  -c filt_bscmp1.f
-	$(MVC) filt_bscmp1$O  bscmp1$O
+	$(F90) -O2 -ip  -c bscmp1.f
 	$(MVC) bscmp1$O $@
 
 $(OD)/btcmp1$O : btcmp1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_btcmp1.f
-	$(FILTER) < btcmp1.f > filt_btcmp1.f
-	$(F90) -O2 -ip  -c filt_btcmp1.f
-	$(MVC) filt_btcmp1$O  btcmp1$O
+	$(F90) -O2 -ip  -c btcmp1.f
 	$(MVC) btcmp1$O $@
 #
 #       --- c --
@@ -495,20 +463,14 @@ $(OD)/chkcrack$O : chkcrack.f $(OD)/mod_crack_growth$O \
                    param_def $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chkcrack.f
-	$(FILTER) < chkcrack.f > filt_chkcrack.f
-	$(F90) -O2 -ip  -c filt_chkcrack.f
-	$(MVC) filt_chkcrack$O  chkcrack$O
+	$(F90) -O2 -ip  -c chkcrack.f
 	$(MVC) chkcrack$O $@
 
 $(OD)/chkcrack_ctoa$O : chkcrack_ctoa.f $(OD)/mod_crack_growth$O \
                    common.main $(OD)/mod_damage$O \
                    param_def  $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chkcrack_ctoa.f
-	$(FILTER) < chkcrack_ctoa.f > filt_chkcrack_ctoa.f
-	$(F90) -O2 -ip  -c filt_chkcrack_ctoa.f
-	$(MVC) filt_chkcrack_ctoa$O  chkcrack_ctoa$O
+	$(F90) -O2 -ip  -c chkcrack_ctoa.f
 	$(MVC) chkcrack_ctoa$O $@
 
 $(OD)/chkcrack_gurson$O : chkcrack_gurson.f $(OD)/mod_crack_growth$O \
@@ -516,20 +478,14 @@ $(OD)/chkcrack_gurson$O : chkcrack_gurson.f $(OD)/mod_crack_growth$O \
                    param_def $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chkcrack_gurson.f
-	$(FILTER) < chkcrack_gurson.f > filt_chkcrack_gurson.f
-	$(F90) -O2 -ip  -c filt_chkcrack_gurson.f
-	$(MVC) filt_chkcrack_gurson$O  chkcrack_gurson$O
+	$(F90) -O2 -ip  -c chkcrack_gurson.f
 	$(MVC) chkcrack_gurson$O $@
 
 $(OD)/chkcrack_smcs$O : chkcrack_smcs.f $(OD)/mod_crack_growth$O \
                    common.main $(OD)/mod_damage$O \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chkcrack_smcs.f
-	$(FILTER) < chkcrack_smcs.f > filt_chkcrack_smcs.f
-	$(F90) -O2 -ip  -c filt_chkcrack_smcs.f
-	$(MVC) filt_chkcrack_smcs$O  chkcrack_smcs$O
+	$(F90) -O2 -ip  -c chkcrack_smcs.f
 	$(MVC) chkcrack_smcs$O $@
 
 $(OD)/chkcrack_cohesive$O : chkcrack_cohesive.f $(OD)/mod_crack_growth$O \
@@ -537,134 +493,92 @@ $(OD)/chkcrack_cohesive$O : chkcrack_cohesive.f $(OD)/mod_crack_growth$O \
                    param_def $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chkcrack_cohesive.f
-	$(FILTER) < chkcrack_cohesive.f > filt_chkcrack_cohesive.f
-	$(F90) -O2 -ip  -c filt_chkcrack_cohesive.f
-	$(MVC) filt_chkcrack_cohesive$O  chkcrack_cohesive$O
+	$(F90) -O2 -ip  -c chkcrack_cohesive.f
 	$(MVC) chkcrack_cohesive$O $@
 
 $(OD)/chk_stp_reduce$O : chk_stp_reduce.f  \
                    common.main $(OD)/mod_damage$O \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chk_stp_reduce.f
-	$(FILTER) < chk_stp_reduce.f > filt_chk_stp_reduce.f
-	$(F90) -O2 -ip  -c filt_chk_stp_reduce.f
-	$(MVC) filt_chk_stp_reduce$O  chk_stp_reduce$O
+	$(F90) -O2 -ip  -c chk_stp_reduce.f
 	$(MVC) chk_stp_reduce$O $@
 
 $(OD)/chk_stp_reduce_ctoa$O : chk_stp_reduce_ctoa.f $(OD)/mod_crack_growth$O \
                    common.main $(OD)/mod_damage$O \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_chk_stp_reduce_ctoa.f
-	$(FILTER) < chk_stp_reduce_ctoa.f > filt_chk_stp_reduce_ctoa.f
-	$(F90) -O2 -ip  -c filt_chk_stp_reduce_ctoa.f
-	$(MVC) filt_chk_stp_reduce_ctoa$O  chk_stp_reduce_ctoa$O
+	$(F90) -O2 -ip  -c chk_stp_reduce_ctoa.f
 	$(MVC) chk_stp_reduce_ctoa$O $@
 
 $(OD)/chk_stp_reduce_gurson$O : chk_stp_reduce_gurson.f $(OD)/mod_crack_growth$O \
                    common.main $(OD)/mod_damage$O \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_chk_stp_reduce_gurson.f
-	$(FILTER) < chk_stp_reduce_gurson.f > filt_chk_stp_reduce_gurson.f
-	$(F90) -O2 -ip  -c filt_chk_stp_reduce_gurson.f
-	$(MVC) filt_chk_stp_reduce_gurson$O  chk_stp_reduce_gurson$O
+	$(F90) -O2 -ip  -c chk_stp_reduce_gurson.f
 	$(MVC) chk_stp_reduce_gurson$O $@
 
 $(OD)/chk_stp_reduce_smcs$O : chk_stp_reduce_smcs.f $(OD)/mod_crack_growth$O \
                    common.main $(OD)/mod_damage$O \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_chk_stp_reduce_smcs.f
-	$(FILTER) < chk_stp_reduce_smcs.f > filt_chk_stp_reduce_smcs.f
-	$(F90) -O2 -ip  -c filt_chk_stp_reduce_smcs.f
-	$(MVC) filt_chk_stp_reduce_smcs$O  chk_stp_reduce_smcs$O
+	$(F90) -O2 -ip  -c chk_stp_reduce_smcs.f
 	$(MVC) chk_stp_reduce_smcs$O $@
 
 $(OD)/chk_stp_reduce_cohes$O : chk_stp_reduce_cohes.f $(OD)/mod_crack_growth$O \
                    common.main $(OD)/mod_damage$O \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_chk_stp_reduce_cohes.f
-	$(FILTER) < chk_stp_reduce_cohes.f > filt_chk_stp_reduce_cohes.f
-	$(F90) -O2 -ip  -c filt_chk_stp_reduce_cohes.f
-	$(MVC) filt_chk_stp_reduce_cohes$O  chk_stp_reduce_cohes$O
+	$(F90) -O2 -ip  -c chk_stp_reduce_cohes.f
 	$(MVC) chk_stp_reduce_cohes$O $@
 
 $(OD)/cmpmas$O : cmpmas.f $(OD)/mod_eleblocks$O \
                    common.main param_def \
                    $(OD)/mod_main$O $(OD)/mod_mpi_lnpcg$O
 	$(RMC)  $@
-	$(RMC)  filt_cmpmas.f
-	$(FILTER) < cmpmas.f > filt_cmpmas.f
-	$(F90) -O2 -ip  -c filt_cmpmas.f
-	$(MVC) filt_cmpmas$O  cmpmas$O
+	$(F90) -O2 -ip  -c cmpmas.f
 	$(MVC) cmpmas$O $@
 
 $(OD)/cohes_elem$O : cohes_elem.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_cohes_elem.f
-	$(FILTER) < cohes_elem.f > filt_cohes_elem.f
-	$(F90) -O2 -ip  -c filt_cohes_elem.f
-	$(MVC) filt_cohes_elem$O  cohes_elem$O
+	$(F90) -O2 -ip  -c cohes_elem.f
 	$(MVC) cohes_elem$O $@
 
 $(OD)/comput$O : comput.f common.main \
                    param_def $(OD)/mod_jintegral$O
 	$(RMC)  $@
-	$(RMC)  filt_comput.f
-	$(FILTER) < comput.f > filt_comput.f
-	$(F90) -O2 -ip  -c filt_comput.f
-	$(MVC) filt_comput$O  comput$O
+	$(F90) -O2 -ip  -c comput.f
 	$(MVC) comput$O $@
 
 $(OD)/con_dump$O : con_dump.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_mpc$O
 	$(RMC)  $@
-	$(RMC)  filt_con_dump.f
-	$(FILTER) < con_dump.f > filt_con_dump.f
-	$(F90) -O2 -ip  -c filt_con_dump.f
-	$(MVC) filt_con_dump$O  con_dump$O
+	$(F90) -O2 -ip  -c con_dump.f
 	$(MVC) con_dump$O $@
 
 $(OD)/contact$O : contact.f common.main \
                    $(OD)/mod_contact$O param_def \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_contact.f
-	$(FILTER) < contact.f > filt_contact.f
-	$(F90) -O2 -ip  -c filt_contact.f
-	$(MVC) filt_contact$O  contact$O
+	$(F90) -O2 -ip  -c contact.f
 	$(MVC) contact$O $@
 
 $(OD)/cpu_time$O : cpu_time.f  $(OD)/mod_performance$O
 	$(RMC)  $@
-	$(RMC)  filt_cpu_time.f
-	$(FILTER) < cpu_time.f > filt_cpu_time.f
-	$(F90) -O2 -ip  -c filt_cpu_time.f
-	$(MVC) filt_cpu_time$O  cpu_time$O
+	$(F90) -O2 -ip  -c cpu_time.f
 	$(MVC) cpu_time$O $@
 
 $(OD)/cvtest$O : cvtest.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_cvtest.f
-	$(FILTER) < cvtest.f > filt_cvtest.f
-	$(F90) -O2 -ip  -c filt_cvtest.f
-	$(MVC) filt_cvtest$O  cvtest$O
+	$(F90) -O2 -ip  -c cvtest.f
 	$(MVC) cvtest$O $@
 #
 #       --- d --
 #
 $(OD)/derivs$O : derivs.f
 	$(RMC)  $@
-	$(RMC)  filt_derivs.f
-	$(FILTER) < derivs.f > filt_derivs.f
-	$(F90) -O2 -ip  -c filt_derivs.f
-	$(MVC) filt_derivs$O  derivs$O
+	$(F90) -O2 -ip  -c derivs.f
 	$(MVC) derivs$O $@
 
 $(OD)/direct_driver_sparse$O : direct_driver_sparse.f param_def \
@@ -674,89 +588,59 @@ $(OD)/direct_driver_sparse$O : direct_driver_sparse.f param_def \
                    $(OD)/mod_local_stiffness$O $(OD)/distributed_assembly$O \
                    $(OD)/mod_performance$O
 	$(RMC)  $@
-	$(RMC)  filt_direct_driver_sparse.f
-	$(FILTER) < direct_driver_sparse.f > filt_direct_driver_sparse.f
-	$(F90) -O2 -ip  -c filt_direct_driver_sparse.f
-	$(MVC) filt_direct_driver_sparse$O  direct_driver_sparse$O
+	$(F90) -O2 -ip  -c direct_driver_sparse.f
 	$(MVC) direct_driver_sparse$O $@
 
 $(OD)/direct_sparse_mkl$O : direct_sparse_mkl.f
 	$(RMC)  $@
-	$(RMC)  filt_direct_sparse_mkl.f
-	$(FILTER) < direct_sparse_mkl.f > filt_direct_sparse_mkl.f
-	$(F90) -O3 -ip  -c filt_direct_sparse_mkl.f
-	$(MVC) filt_direct_sparse_mkl$O  direct_sparse_mkl$O
+	$(F90) -O3 -ip  -c direct_sparse_mkl.f
 	$(MVC) direct_sparse_mkl$O $@
 
 $(OD)/distributed_assembly$O : distributed_assembly.f \
                                  $(OD)/mod_local_stiffness$O  \
                                  param_def
 	$(RMC)  $@
-	$(RMC)  filt_distributed_assembly.f
-	$(FILTER) < distributed_assembly.f > filt_distributed_assembly.f
-	$(F90) -O3 -ip -c filt_distributed_assembly.f
-	$(MVC) filt_distributed_assembly$O  distributed_assembly$O
+	$(F90) -O3 -ip -c distributed_assembly.f
 	$(MVC) distributed_assembly$O $@
 
 $(OD)/didriv$O : didriv.f common.main  $(OD)/mod_segmental_curves$O \
                    param_def $(OD)/mod_jintegral$O \
                    $(OD)/mod_main$O $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_didriv.f
-	$(FILTER) < didriv.f > filt_didriv.f
-	$(F90) -O1 -c filt_didriv.f
-	$(MVC) filt_didriv$O  didriv$O
+	$(F90) -O1 -c didriv.f
 	$(MVC) didriv$O $@
 
 $(OD)/diexp4$O : diexp4.f param_def \
                    $(OD)/mod_jintegral$O $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_diexp4.f
-	$(FILTER) < diexp4.f > filt_diexp4.f
-	$(F90) -O2 -ip  -c filt_diexp4.f
-	$(MVC) filt_diexp4$O  diexp4$O
+	$(F90) -O2 -ip  -c diexp4.f
 	$(MVC) diexp4$O $@
 
 $(OD)/distup$O : distup.f $(OD)/mod_jintegral$O
 	$(RMC)  $@
-	$(RMC)  filt_distup.f
-	$(FILTER) < distup.f > filt_distup.f
-	$(F90) -O2 -ip  -c filt_distup.f
-	$(MVC) filt_distup$O  distup$O
+	$(F90) -O2 -ip  -c distup.f
 	$(MVC) distup$O $@
 
 $(OD)/difrar$O : difrar.f $(OD)/mod_jintegral$O
 	$(RMC)  $@
-	$(RMC)  filt_difrar.f
-	$(FILTER) < difrar.f > filt_difrar.f
-	$(F90) -O2 -ip  -c filt_difrar.f
-	$(MVC) filt_difrar$O  difrar$O
+	$(F90) -O2 -ip  -c difrar.f
 	$(MVC) difrar$O $@
 
 $(OD)/difrtn$O : difrtn.f
 	$(RMC)  $@
-	$(RMC)  filt_difrtn.f
-	$(FILTER) < difrtn.f > filt_difrtn.f
-	$(F90) -O2 -ip  -c filt_difrtn.f
-	$(MVC) filt_difrtn$O  difrtn$O
+	$(F90) -O2 -ip  -c difrtn.f
 	$(MVC) difrtn$O $@
 
 $(OD)/di1dsf$O : di1dsf.f
 	$(RMC)  $@
-	$(RMC)  filt_di1dsf.f
-	$(FILTER) < di1dsf.f > filt_di1dsf.f
-	$(F90) -O2 -ip  -c filt_di1dsf.f
-	$(MVC) filt_di1dsf$O  di1dsf$O
+	$(F90) -O2 -ip  -c di1dsf.f
 	$(MVC) di1dsf$O $@
 
 $(OD)/dimrot$O : dimrot.f common.main \
                    $(OD)/mod_main$O $(OD)/mod_jintegral$O \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_dimrot.f
-	$(FILTER) < dimrot.f > filt_dimrot.f
-	$(F90) -O2 -ip  -c filt_dimrot.f
-	$(MVC) filt_dimrot$O  dimrot$O
+	$(F90) -O2 -ip  -c dimrot.f
 	$(MVC) dimrot$O $@
 #
 #         note lower opt level
@@ -765,44 +649,29 @@ $(OD)/dicmj$O : dicmj.f param_def \
                    $(OD)/mod_jintegral$O common.main \
                    $(OD)/mod_main$O $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_dicmj.f
-	$(FILTER) < dicmj.f > filt_dicmj.f
-	$(F90) -O0 -ip -c filt_dicmj.f
-	$(MVC) filt_dicmj$O  dicmj$O
+	$(F90) -O0 -ip -c dicmj.f
 	$(MVC) dicmj$O $@
 
 $(OD)/dielem_a$O : dielem_a.f
 	$(RMC)  $@
-	$(RMC)  filt_dielem_a.f
-	$(FILTER) < dielem_a.f > filt_dielem_a.f
-	$(F90) -O2 -ip  -c filt_dielem_a.f
-	$(MVC) filt_dielem_a$O  dielem_a$O
+	$(F90) -O2 -ip  -c dielem_a.f
 	$(MVC) dielem_a$O $@
 
 $(OD)/dielem_b$O : dielem_b.f
 	$(RMC)  $@
-	$(RMC)  filt_dielem_b.f
-	$(FILTER) < dielem_b.f > filt_dielem_b.f
-	$(F90) -O2 -ip  -c filt_dielem_b.f
-	$(MVC) filt_dielem_b$O  dielem_b$O
+	$(F90) -O2 -ip  -c dielem_b.f
 	$(MVC) dielem_b$O $@
 
 $(OD)/dielem_c$O : dielem_c.f
 	$(RMC)  $@
-	$(RMC)  filt_dielem_c.f
-	$(FILTER) < dielem_c.f > filt_dielem_c.f
-	$(F90) -O2 -ip  -c filt_dielem_c.f
-	$(MVC) filt_dielem_c$O  dielem_c$O
+	$(F90) -O2 -ip  -c dielem_c.f
 	$(MVC) dielem_c$O $@
 
 $(OD)/dptstf$O : dptstf.f common.main \
                    param_def  $(OD)/mod_damage$O \
                    $(OD)/mod_crack_growth$O
 	$(RMC)  $@
-	$(RMC)  filt_dptstf.f
-	$(FILTER) < dptstf.f > filt_dptstf.f
-	$(F90) -O2 -ip  -c filt_dptstf.f
-	$(MVC) filt_dptstf$O  dptstf$O
+	$(F90) -O2 -ip  -c dptstf.f
 	$(MVC) dptstf$O $@
 
 $(OD)/drive_eps_sig_internal_forces$O : drive_eps_sig_internal_forces.f \
@@ -811,28 +680,19 @@ $(OD)/drive_eps_sig_internal_forces$O : drive_eps_sig_internal_forces.f \
                    $(OD)/mod_eleblocks$O $(OD)/mod_main$O \
                    $(OD)/mod_segmental_curves$O
 	$(RMC)  $@
-	$(RMC)  filt_drive_eps_sig_internal_forces.f
-	$(FILTER) < drive_eps_sig_internal_forces.f > filt_drive_eps_sig_internal_forces.f
-	$(F90) -O2 -ip  -c filt_drive_eps_sig_internal_forces.f
-	$(MVC) filt_drive_eps_sig_internal_forces$O  drive_eps_sig_internal_forces$O
+	$(F90) -O2 -ip  -c drive_eps_sig_internal_forces.f
 	$(MVC) drive_eps_sig_internal_forces$O $@
 
 $(OD)/dupmas$O : dupmas.f
 	$(RMC)  $@
-	$(RMC)  filt_dupmas.f
-	$(FILTER) < dupmas.f > filt_dupmas.f
-	$(F90) -O2 -ip  -c filt_dupmas.f
-	$(MVC) filt_dupmas$O  dupmas$O
+	$(F90) -O2 -ip  -c dupmas.f
 	$(MVC) dupmas$O $@
 
 $(OD)/dupstr$O : dupstr.f common.main \
                    param_def $(OD)/mod_damage$O \
                    $(OD)/mod_crack_growth$O
 	$(RMC)  $@
-	$(RMC)  filt_dupstr.f
-	$(FILTER) < dupstr.f > filt_dupstr.f
-	$(F90) -O2 -ip  -c filt_dupstr.f
-	$(MVC) filt_dupstr$O  dupstr$O
+	$(F90) -O2 -ip  -c dupstr.f
 	$(MVC) dupstr$O $@
 #
 #       --- e --
@@ -840,72 +700,48 @@ $(OD)/dupstr$O : dupstr.f common.main \
 $(OD)/elem_load_a$O : elem_load_a.f common.main \
                    $(OD)/mod_elem_load$O param_def
 	$(RMC)  $@
-	$(RMC)  filt_elem_load_a.f
-	$(FILTER) < elem_load_a.f > filt_elem_load_a.f
-	$(F90) -O2 -ip  -c filt_elem_load_a.f
-	$(MVC) filt_elem_load_a$O  elem_load_a$O
+	$(F90) -O2 -ip  -c elem_load_a.f
 	$(MVC) elem_load_a$O $@
 
 $(OD)/elem_load_b$O : elem_load_b.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_elem_load_b.f
-	$(FILTER) < elem_load_b.f > filt_elem_load_b.f
-	$(F90) -O2 -ip  -c filt_elem_load_b.f
-	$(MVC) filt_elem_load_b$O  elem_load_b$O
+	$(F90) -O2 -ip  -c elem_load_b.f
 	$(MVC) elem_load_b$O $@
 
 $(OD)/elem_load_c$O : elem_load_c.f  common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_elem_load_c.f
-	$(FILTER) < elem_load_c.f > filt_elem_load_c.f
-	$(F90) -O2 -ip  -c filt_elem_load_c.f
-	$(MVC) filt_elem_load_c$O  elem_load_c$O
+	$(F90) -O2 -ip  -c elem_load_c.f
 	$(MVC) elem_load_c$O $@
 
 $(OD)/elmas1$O : elmas1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_elmas1.f
-	$(FILTER) < elmas1.f > filt_elmas1.f
-	$(F90) -O2 -ip  -c filt_elmas1.f
-	$(MVC) filt_elmas1$O  elmas1$O
+	$(F90) -O2 -ip  -c elmas1.f
 	$(MVC) elmas1$O $@
 
 $(OD)/elprp$O : elprp.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_segmental_curves$O
 	$(RMC)  $@
-	$(RMC)  filt_elprp.f
-	$(FILTER) < elprp.f > filt_elprp.f
-	$(F90) -O2 -ip  -c filt_elprp.f
-	$(MVC) filt_elprp$O  elprp$O
+	$(F90) -O2 -ip  -c elprp.f
 	$(MVC) elprp$O $@
 
 $(OD)/energy$O : energy.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_energy.f
-	$(FILTER) < energy.f > filt_energy.f
-	$(F90) -O2 -ip  -c filt_energy.f
-	$(MVC) filt_energy$O  energy$O
+	$(F90) -O2 -ip  -c energy.f
 	$(MVC) energy$O $@
 
 $(OD)/eqivld$O : eqivld.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_eqivld.f
-	$(FILTER) < eqivld.f > filt_eqivld.f
-	$(F90) -O2 -ip  -c filt_eqivld.f
-	$(MVC) filt_eqivld$O  eqivld$O
+	$(F90) -O2 -ip  -c eqivld.f
 	$(MVC) eqivld$O $@
 
 $(OD)/equiv_strain$O : equiv_strain.f
 	$(RMC)  $@
-	$(RMC)  filt_equiv_strain.f
-	$(FILTER) < equiv_strain.f > filt_equiv_strain.f
-	$(F90) -O2 -ip  -c filt_equiv_strain.f
-	$(MVC) filt_equiv_strain$O  equiv_strain$O
+	$(F90) -O2 -ip  -c equiv_strain.f
 	$(MVC) equiv_strain$O $@
 
 $(OD)/errchk$O : errchk.f param_def common.main \
@@ -913,27 +749,18 @@ $(OD)/errchk$O : errchk.f param_def common.main \
                    $(OD)/mod_contact$O $(OD)/mod_main$O \
                    $(OD)/mod_segmental_curves$O
 	$(RMC)  $@
-	$(RMC)  filt_errchk.f
-	$(FILTER) < errchk.f > filt_errchk.f
-	$(F90) -O2 -ip  -c filt_errchk.f
-	$(MVC) filt_errchk$O  errchk$O
+	$(F90) -O2 -ip  -c errchk.f
 	$(MVC) errchk$O $@
 
 $(OD)/errmsg$O : errmsg.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_errmsg.f
-	$(FILTER) < errmsg.f > filt_errmsg.f
-	$(F90) -O2 -ip  -c filt_errmsg.f
-	$(MVC) filt_errmsg$O  errmsg$O
+	$(F90) -O2 -ip  -c errmsg.f
 	$(MVC) errmsg$O $@
 
 $(OD)/evcmp1$O : evcmp1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_evcmp1.f
-	$(FILTER) < evcmp1.f > filt_evcmp1.f
-	$(F90) -O2 -ip  -c filt_evcmp1.f
-	$(MVC) filt_evcmp1$O  evcmp1$O
+	$(F90) -O2 -ip  -c evcmp1.f
 	$(MVC) evcmp1$O $@
 #
 #       --- f --
@@ -941,106 +768,70 @@ $(OD)/evcmp1$O : evcmp1.f param_def
 $(OD)/find_neighbors$O : find_neighbors.f param_def \
                    common.main $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_find_neighbors.f
-	$(FILTER) < find_neighbors.f > filt_find_neighbors.f
-	$(F90) -O2 -ip  -c filt_find_neighbors.f
-	$(MVC) filt_find_neighbors$O  find_neighbors$O
+	$(F90) -O2 -ip  -c find_neighbors.f
 	$(MVC) find_neighbors$O $@
 #
 #       --- g --
 #
 $(OD)/gastr$O : gastr.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_gastr.f
-	$(FILTER) < gastr.f > filt_gastr.f
-	$(F90) -O3 -ip  -c filt_gastr.f
-	$(MVC) filt_gastr$O  gastr$O
+	$(F90) -O3 -ip  -c gastr.f
 	$(MVC) gastr$O $@
 
 $(OD)/gatemps$O : gatemps.f
 	$(RMC)  $@
-	$(RMC)  filt_gatemps.f
-	$(FILTER) < gatemps.f > filt_gatemps.f
-	$(F90) -O2 -ip  -c filt_gatemps.f
-	$(MVC) filt_gatemps$O  gatemps$O
+	$(F90) -O2 -ip  -c gatemps.f
 	$(MVC) gatemps$O $@
 
 $(OD)/get_edest$O : get_edest.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_get_edest.f
-	$(FILTER) < get_edest.f > filt_get_edest.f
-	$(F90) -O2 -ip  -c filt_get_edest.f
-	$(MVC) filt_get_edest$O  get_edest$O
+	$(F90) -O2 -ip  -c get_edest.f
 	$(MVC) get_edest$O $@
 
 $(OD)/getgpts$O : getgpts.f
 	$(RMC)  $@
-	$(RMC)  filt_getgpts.f
-	$(FILTER) < getgpts.f > filt_getgpts.f
-	$(F90) -O2 -ip  -c filt_getgpts.f
-	$(MVC) filt_getgpts$O  getgpts$O
+	$(F90) -O2 -ip  -c getgpts.f
 	$(MVC) getgpts$O $@
 
 $(OD)/gp_temp_eps$O : gp_temp_eps.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_gp_temp_eps.f
-	$(FILTER) < gp_temp_eps.f > filt_gp_temp_eps.f
-	$(F90) -O2 -ip  -c filt_gp_temp_eps.f
-	$(MVC) filt_gp_temp_eps$O  gp_temp_eps$O
+	$(F90) -O2 -ip  -c gp_temp_eps.f
 	$(MVC) gp_temp_eps$O $@
 
 $(OD)/gpifv1$O : gpifv1.f param_def \
                    include_sig_up $(OD)/mod_segmental_curves$O
 	$(RMC)  $@
-	$(RMC)  filt_gpifv1.f
-	$(FILTER) < gpifv1.f > filt_gpifv1.f
-	$(F90) -O3 -ip  -c filt_gpifv1.f
-	$(MVC) filt_gpifv1$O  gpifv1$O
+	$(F90) -O3 -ip  -c gpifv1.f
 	$(MVC) gpifv1$O $@
 
 $(OD)/gpmas1$O : gpmas1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_gpmas1.f
-	$(FILTER) < gpmas1.f > filt_gpmas1.f
-	$(F90) -O2 -ip  -c filt_gpmas1.f
-	$(MVC) filt_gpmas1$O  gpmas1$O
+	$(F90) -O2 -ip  -c gpmas1.f
 	$(MVC) gpmas1$O $@
 
 $(OD)/gptns1$O : gptns1.f include_tan_ek $(OD)/mod_crystals$O\
                    param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_gptns1.f
-	$(FILTER) < gptns1.f > filt_gptns1.f
-	$(F90) -O3 -ip -c filt_gptns1.f -qopt-report -qopt-report-file=filt_gptns1_opt_report
-	$(MVC) filt_gptns1$O  gptns1$O
+	$(F90) -O3 -ip -c gptns1.f 
 	$(MVC) gptns1$O $@
 
 $(OD)/growth_loads$O : growth_loads.f $(OD)/mod_crack_growth$O \
                    param_def common.main \
                    $(OD)/mod_damage$O $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_growth_loads.f
-	$(FILTER) < growth_loads.f > filt_growth_loads.f
-	$(F90) -O2 -ip  -c filt_growth_loads.f
-	$(MVC) filt_growth_loads$O  growth_loads$O
+	$(F90) -O2 -ip  -c growth_loads.f
 	$(MVC) growth_loads$O $@
 
 $(OD)/gtlsn1$O : gtlsn1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_gtlsn1.f
-	$(FILTER) < gtlsn1.f > filt_gtlsn1.f
-	$(F90) -O3 -ip  -c filt_gtlsn1.f
-	$(MVC) filt_gtlsn1$O  gtlsn1$O
+	$(F90) -O3 -ip  -c gtlsn1.f
 	$(MVC) gtlsn1$O $@
 
 $(OD)/gtmat1$O : gtmat1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_gtmat1.f
-	$(FILTER) < gtmat1.f > filt_gtmat1.f
-	$(F90) -O3 -ip  -c filt_gtmat1.f
-	$(MVC) filt_gtmat1$O  gtmat1$O
+	$(F90) -O3 -ip  -c gtmat1.f
 	$(MVC) gtmat1$O $@
 #
 #       --- h --
@@ -1049,10 +840,7 @@ $(OD)/hypre$O : iterative_sparse_hypre.f  common.main param_def \
                 $(OD)/mod_hypre$O $(OD)/distributed_assembly$O \
                 $(OD)/mod_local_stiffness$O
 	$(RMC) $@
-	$(RMC) filt_iterative_sparse_hypre.f
-	$(FILTER) < iterative_sparse_hypre.f > filt_iterative_sparse_hypre.f
-	$(F90) -O2 -ip -c filt_iterative_sparse_hypre.f
-	$(MVC) filt_iterative_sparse_hypre$O hypre$O
+	$(F90) -O2 -ip -c iterative_sparse_hypre.f -o hypre$O
 	$(MVC) hypre$O $@
 #
 #       --- i --
@@ -1060,121 +848,82 @@ $(OD)/hypre$O : iterative_sparse_hypre.f  common.main param_def \
 $(OD)/inclmass$O : inclmass.f $(OD)/mod_eleblocks$O \
                    common.main param_def
 	$(RMC)  $@
-	$(RMC)  filt_inclmass.f
-	$(FILTER) < inclmass.f > filt_inclmass.f
-	$(F90) -O2 -ip  -c filt_inclmass.f
-	$(MVC) filt_inclmass$O  inclmass$O
+	$(F90) -O2 -ip  -c inclmass.f
 	$(MVC) inclmass$O $@
 
 $(OD)/inalpha$O : inalpha.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_inalpha.f
-	$(FILTER) < inalpha.f > filt_inalpha.f
-	$(F90) -O2 -ip  -c filt_inalpha.f
-	$(MVC) filt_inalpha$O  inalpha$O
+	$(F90) -O2 -ip  -c inalpha.f
 	$(MVC) inalpha$O $@
 
 $(OD)/incomp$O : incomp.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_mpc$O $(OD)/mod_contact$O
 	$(RMC)  $@
-	$(RMC)  filt_incomp.f
-	$(FILTER) < incomp.f > filt_incomp.f
-	$(F90) -O2 -ip  -c filt_incomp.f
-	$(MVC) filt_incomp$O  incomp$O
+	$(F90) -O2 -ip  -c incomp.f
 	$(MVC) incomp$O $@
 
 $(OD)/incon$O : incon.f common.main \
                    param_def $(OD)/mod_damage$O \
                    $(OD)/mod_main$O $(OD)/mod_mpc$O
 	$(RMC)  $@
-	$(RMC)  filt_incon.f
-	$(FILTER) < incon.f > filt_incon.f
-	$(F90) -O1 -ip  -c filt_incon.f
-	$(MVC) filt_incon$O  incon$O
+	$(F90) -O1 -ip  -c incon.f
 	$(MVC) incon$O $@
 
 $(OD)/insurf$O : insurf.f $(OD)/mod_mpc$O \
                    common.main param_def
 	$(RMC)  $@
-	$(RMC)  filt_insurf.f
-	$(FILTER) < insurf.f > filt_insurf.f
-	$(F90) -O2 -ip  -c filt_insurf.f
-	$(MVC) filt_insurf$O  insurf$O
+	$(F90) -O2 -ip  -c insurf.f
 	$(MVC) insurf$O $@
 
 $(OD)/intied$O : intied.f $(OD)/mod_mpc$O \
                    common.main param_def
 	$(RMC)  $@
-	$(RMC)  filt_intied.f
-	$(FILTER) < intied.f > filt_intied.f
-	$(F90) -O2 -ip  -c filt_intied.f
-	$(MVC) filt_intied$O  intied$O
+	$(F90) -O2 -ip  -c intied.f
 	$(MVC) intied$O $@
 
 $(OD)/incontact$O : incontact.f common.main \
                    param_def $(OD)/mod_contact$O
 	$(RMC)  $@
-	$(RMC)  filt_incontact.f
-	$(FILTER) < incontact.f > filt_incontact.f
-	$(F90) -O2 -ip  -c filt_incontact.f
-	$(MVC) filt_incontact$O  incontact$O
+	$(F90) -O2 -ip  -c incontact.f
 	$(MVC) incontact$O $@
 
 $(OD)/incoor$O : incoor.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_incoor.f
-	$(FILTER) < incoor.f > filt_incoor.f
-	$(F90) -O2 -ip  -c filt_incoor.f
-	$(MVC) filt_incoor$O  incoor$O
+	$(F90) -O2 -ip  -c incoor.f
 	$(MVC) incoor$O $@
 
 $(OD)/incrystal$O : incrystal.f param_def common.main \
                     $(OD)/mod_crystals$O $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_incrystal.f
-	$(FILTER) < incrystal.f > filt_incrystal.f
-	$(F90) -O2 -ip  -c filt_incrystal.f
-	$(MVC) filt_incrystal$O  incrystal$O
+	$(F90) -O2 -ip  -c incrystal.f
 	$(MVC) incrystal$O $@
 
 $(OD)/incrack$O : incrack.f $(OD)/mod_crack_growth$O \
                    $(OD)/mod_damage$O common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_incrack.f
-	$(FILTER) < incrack.f > filt_incrack.f
-	$(F90) -O2 -ip  -c filt_incrack.f
-	$(MVC) filt_incrack$O  incrack$O
+	$(F90) -O2 -ip  -c incrack.f
 	$(MVC) incrack$O $@
 
 $(OD)/infgm$O : infgm.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_infgm.f
-	$(FILTER) < infgm.f > filt_infgm.f
-	$(F90) -O2 -ip  -c filt_infgm.f
-	$(MVC) filt_infgm$O  infgm$O
+	$(F90) -O2 -ip  -c infgm.f
 	$(MVC) infgm$O $@
 
 $(OD)/incurv$O : incurv.f param_def \
                    $(OD)/mod_segmental_curves$O
 	$(RMC)  $@
-	$(RMC)  filt_incurv.f
-	$(FILTER) < incurv.f > filt_incurv.f
-	$(F90) -O2 -ip  -c filt_incurv.f
-	$(MVC) filt_incurv$O  incurv$O
+	$(F90) -O2 -ip  -c incurv.f
 	$(MVC) incurv$O $@
 
 $(OD)/indom$O : indom.f common.main \
                    param_def $(OD)/mod_jintegral$O
 	$(RMC)  $@
-	$(RMC)  filt_indom.f
-	$(FILTER) < indom.f > filt_indom.f
-	$(F90) -O2 -ip  -c filt_indom.f
-	$(MVC) filt_indom$O  indom$O
+	$(F90) -O2 -ip  -c indom.f
 	$(MVC) indom$O $@
 
 $(OD)/indypm$O : indypm.f param_def common.main \
@@ -1182,53 +931,35 @@ $(OD)/indypm$O : indypm.f param_def common.main \
                  $(OD)/mod_main$O $(OD)/mod_damage$O \
                  $(OD)/mod_mpc$O  $(OD)/mod_hypre$O
 	$(RMC)  $@
-	$(RMC)  filt_indypm.f
-	$(FILTER) < indypm.f > filt_indypm.f
-	$(F90) -O2 -ip  -c filt_indypm.f
-	$(MVC) filt_indypm$O  indypm$O
+	$(F90) -O2 -ip  -c indypm.f
 	$(MVC) indypm$O $@
 
 $(OD)/inelbk$O : inelbk.f param_def common.main
 	$(RMC)  $@
-	$(RMC)  filt_inelbk.f
-	$(FILTER) < inelbk.f > filt_inelbk.f
-	$(F90) -O2 -ip  -c filt_inelbk.f
-	$(MVC) filt_inelbk$O  inelbk$O
+	$(F90) -O2 -ip  -c inelbk.f
 	$(MVC) inelbk$O $@
 
 $(OD)/inelem$O : inelem.f param_def common.main
 	$(RMC)  $@
-	$(RMC)  filt_inelem.f
-	$(FILTER) < inelem.f > filt_inelem.f
-	$(F90) -O2 -ip  -c filt_inelem.f
-	$(MVC) filt_inelem$O  inelem$O
+	$(F90) -O2 -ip  -c inelem.f
 	$(MVC) inelem$O $@
 
 $(OD)/infile$O : infile.f $(OD)/mod_file_info$O \
                    common.main param_def
 	$(RMC)  $@
-	$(RMC)  filt_infile.f
-	$(FILTER) < infile.f > filt_infile.f
-	$(F90) -O2 -ip  -c filt_infile.f
-	$(MVC) filt_infile$O  infile$O
+	$(F90) -O2 -ip  -c infile.f
 	$(MVC) infile$O $@
 
 $(OD)/inicon$O : inicon.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_inicon.f
-	$(FILTER) < inicon.f > filt_inicon.f
-	$(F90) -O2 -ip  -c filt_inicon.f
-	$(MVC) filt_inicon$O  inicon$O
+	$(F90) -O2 -ip  -c inicon.f
 	$(MVC) inicon$O $@
 
 $(OD)/ininc$O : ininc.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_ininc.f
-	$(FILTER) < ininc.f > filt_ininc.f
-	$(F90) -O2 -ip  -c filt_ininc.f
-	$(MVC) filt_ininc$O  ininc$O
+	$(F90) -O2 -ip  -c ininc.f
 	$(MVC) ininc$O $@
 
 $(OD)/initst$O : initst.f param_def common.main \
@@ -1239,85 +970,58 @@ $(OD)/initst$O : initst.f param_def common.main \
                  $(OD)/mod_segmental_curves$O $(OD)/mod_hypre$O \
                  $(OD)/mod_performance$O
 	$(RMC)  $@
-	$(RMC)  filt_initst.f
-	$(FILTER) < initst.f > filt_initst.f
-	$(F90) -O2 -ip  -c filt_initst.f
-	$(MVC) filt_initst$O  initst$O
+	$(F90) -O2 -ip  -c initst.f
 	$(MVC) initst$O $@
 
 $(OD)/initdm$O : initdm.f $(OD)/mod_jintegral$O
 	$(RMC)  $@
-	$(RMC)  filt_initdm.f
-	$(FILTER) < initdm.f > filt_initdm.f
-	$(F90) -O2 -ip  -c filt_initdm.f
-	$(MVC) filt_initdm$O  initdm$O
+	$(F90) -O2 -ip  -c initdm.f
 	$(MVC) initdm$O $@
 
 $(OD)/inlod$O : inlod.f $(OD)/mod_elem_load$O \
                    common.main param_def \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_inlod.f
-	$(FILTER) < inlod.f > filt_inlod.f
-	$(F90) -O2 -ip  -c filt_inlod.f
-	$(MVC) filt_inlod$O  inlod$O
+	$(F90) -O2 -ip  -c inlod.f
 	$(MVC) inlod$O $@
 
 $(OD)/inmat$O : inmat.f common.main \
                    param_def $(OD)/mod_segmental_curves$O \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_inmat.f
-	$(FILTER) < inmat.f > filt_inmat.f
-	$(F90) -O2 -ip  -c filt_inmat.f
-	$(MVC) filt_inmat$O  inmat$O
+	$(F90) -O2 -ip  -c inmat.f
 	$(MVC) inmat$O $@
 
 $(OD)/innum$O : innum.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_innum.f
-	$(FILTER) < innum.f > filt_innum.f
-	$(F90) -O2 -ip  -c filt_innum.f
-	$(MVC) filt_innum$O  innum$O
+	$(F90) -O2 -ip  -c innum.f
 	$(MVC) innum$O $@
 
 $(OD)/intab$O : intab.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_intab.f
-	$(FILTER) < intab.f > filt_intab.f
-	$(F90) -O2 -ip  -c filt_intab.f
-	$(MVC) filt_intab$O  intab$O
+	$(F90) -O2 -ip  -c intab.f
 	$(MVC) intab$O $@
 
 $(OD)/iodevn$O : iodevn.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_iodevn.f
-	$(FILTER) < iodevn.f > filt_iodevn.f
-	$(F90) -O2 -ip  -c filt_iodevn.f
-	$(MVC) filt_iodevn$O  iodevn$O
+	$(F90) -O2 -ip  -c iodevn.f
 	$(MVC) iodevn$O $@
 #
 #       --- k --
 #
 $(OD)/kg1$O : kg1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_kg1.f
-	$(FILTER) < kg1.f > filt_kg1.f
-	$(F90) -O3 -ip  -c filt_kg1.f
-	$(MVC) filt_kg1$O  kg1$O
+	$(F90) -O3 -ip  -c kg1.f
 	$(MVC) kg1$O $@
 
 $(OD)/kill_element$O : kill_element.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_kill_element.f
-	$(FILTER) < kill_element.f > filt_kill_element.f
-	$(F90) -O2 -ip  -c filt_kill_element.f
-	$(MVC) filt_kill_element$O  kill_element$O
+	$(F90) -O2 -ip  -c kill_element.f
 	$(MVC) kill_element$O $@
 #
 #       --- l --
@@ -1325,20 +1029,14 @@ $(OD)/kill_element$O : kill_element.f common.main \
 $(OD)/license$O : license.f param_def \
                    common.main
 	$(RMC)  $@
-	$(RMC)  filt_license.f
-	$(FILTER) < license.f > filt_license.f
-	$(F90) -O2 -ip  -c filt_license.f
-	$(MVC) filt_license$O  license$O
+	$(F90) -O2 -ip  -c license.f
 	$(MVC) license$O $@
 
 $(OD)/linked_list$O : linked_list.f $(OD)/mod_crack_growth$O \
                    param_def common.main \
                    $(OD)/mod_damage$O
 	$(RMC)  $@
-	$(RMC)  filt_linked_list.f
-	$(FILTER) < linked_list.f > filt_linked_list.f
-	$(F90) -O2 -ip  -c filt_linked_list.f
-	$(MVC) filt_linked_list$O  linked_list$O
+	$(F90) -O2 -ip  -c linked_list.f
 	$(MVC) linked_list$O $@
 
 #
@@ -1349,10 +1047,7 @@ $(OD)/main_program$O : main_program.f param_def common.main $(OD)/mod_main$O \
                  $(OD)/mod_file_info$O \
                  $(OD)/mod_performance$O
 	$(RMC)  $@
-	$(RMC)  filt_main_program.f
-	$(FILTER) < main_program.f > filt_main_program.f
-	$(F90) -O2 -ip  -c filt_main_program.f
-	$(MVC) filt_main_program$O  main_program$O
+	$(F90) -D$(OSNAME) -DBuild=$(BUILDNUM) -fpp -O2 -ip  -c main_program.f
 	$(MVC) main_program$O $@
 
 $(OD)/mem_allocate$O : mem_allocate.f $(OD)/mod_main$O \
@@ -1360,146 +1055,92 @@ $(OD)/mem_allocate$O : mem_allocate.f $(OD)/mod_main$O \
                    common.main param_def \
                    $(OD)/mod_mpi_lnpcg$O
 	$(RMC)  $@
-	$(RMC)  filt_mem_allocate.f
-	$(FILTER) < mem_allocate.f > filt_mem_allocate.f
-	$(F90) -O2 -ip  -c filt_mem_allocate.f
-	$(MVC) filt_mem_allocate$O  mem_allocate$O
+	$(F90) -O2 -ip  -c mem_allocate.f
 	$(MVC) mem_allocate$O $@
 
 $(OD)/mm01$O : mm01.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mm01.f
-	$(FILTER) < mm01.f > filt_mm01.f
-	$(F90) -O3 -ip   -c filt_mm01.f
-	$(MVC) filt_mm01$O  mm01$O
+	$(F90) -O3 -ip   -c mm01.f
 	$(MVC) mm01$O $@
 
 $(OD)/mm02$O : mm02.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mm02.f
-	$(FILTER) < mm02.f > filt_mm02.f
-	$(F90) -O3 -ip  -c filt_mm02.f
-	$(MVC) filt_mm02$O  mm02$O
+	$(F90) -O3 -ip  -c mm02.f
 	$(MVC) mm02$O $@
 
 $(OD)/mm03$O : mm03.f
 	$(RMC)  $@
-	$(RMC)  filt_mm03.f
-	$(FILTER) < mm03.f > filt_mm03.f
-	$(F90) -O3 -ip -c filt_mm03.f
-	$(MVC) filt_mm03$O  mm03$O
+	$(F90) -O3 -ip -c mm03.f
 	$(MVC) mm03$O $@
 
 $(OD)/mm04$O : mm04.f param_def 
 	$(RMC)  $@
-	$(RMC)  filt_mm04.f
-	$(FILTER) < mm04.f > filt_mm04.f
-	$(F90) -O3 -ip -c filt_mm04.f
-	$(MVC) filt_mm04$O  mm04$O
+	$(F90) -O3 -ip -c mm04.f
 	$(MVC) mm04$O $@
 
 $(OD)/mm05$O : mm05.f
 	$(RMC)  $@
-	$(RMC)  filt_mm05.f
-	$(FILTER) < mm05.f > filt_mm05.f
-	$(F90) -O3 -ip  -c filt_mm05.f
-	$(MVC) filt_mm05$O  mm05$O
+	$(F90) -O3 -ip  -c mm05.f
 	$(MVC) mm05$O $@
 
 $(OD)/mm06$O : mm06.f
 	$(RMC)  $@
-	$(RMC)  filt_mm06.f
-	$(FILTER) < mm06.f > filt_mm06.f
-	$(F90) -O3 -ip   -c filt_mm06.f 
-	$(MVC) filt_mm06$O  mm06$O
+	$(F90) -O3 -ip   -c mm06.f 
 	$(MVC) mm06$O $@
 
 $(OD)/mm07$O : mm07.f
 	$(RMC)  $@
-	$(RMC)  filt_mm07.f
-	$(FILTER) < mm07.f > filt_mm07.f
-	$(F90) -O3 -ip  -c filt_mm07.f
-	$(MVC) filt_mm07$O  mm07$O
+	$(F90) -O3 -ip  -c mm07.f
 	$(MVC) mm07$O $@
 
 $(OD)/mm08$O : mm08.f
 	$(RMC)  $@
-	$(RMC)  filt_mm08.f
-	$(FILTER) < mm08.f > filt_mm08.f
-	$(F90) -O3 -ip  -c filt_mm08.f
-	$(MVC) filt_mm08$O  mm08$O
+	$(F90) -O3 -ip  -c mm08.f
 	$(MVC) mm08$O $@
 
 $(OD)/mm09$O : mm09.f
 	$(RMC)  $@
-	$(RMC)  filt_mm09.f
-	$(FILTER) < mm09.f > filt_mm09.f
-	$(F90) -O3 -ip  -c filt_mm09.f
-	$(MVC) filt_mm09$O  mm09$O
+	$(F90) -O3 -ip  -c mm09.f
 	$(MVC) mm09$O $@
 
 $(OD)/mm10_a$O : mm10_a.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_a.f
-	$(FILTER) < mm10_a.f > filt_mm10_a.f
-	$(F90) -O3 -ip  -c filt_mm10_a.f
-	$(MVC) filt_mm10_a$O  mm10_a$O
+	$(F90) -O3 -ip  -c mm10_a.f
 	$(MVC) mm10_a$O $@
 
 $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_b.f 
-	$(FILTER) < mm10_b.f > filt_mm10_b.f
-	$(F90) -O3  -inline-level=1 -ip  -c filt_mm10_b.f
-	$(MVC) filt_mm10_b$O  mm10_b$O
+	$(F90) -O3  -inline-level=1 -ip  -c mm10_b.f
 	$(MVC) mm10_b$O $@
 
 $(OD)/mm10_c$O : mm10_c.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_c.f
-	$(FILTER) < mm10_c.f > filt_mm10_c.f
-	$(F90) -O3 -ip   -c filt_mm10_c.f
-	$(MVC) filt_mm10_c$O  mm10_c$O
+	$(F90) -O3 -ip   -c mm10_c.f
 	$(MVC) mm10_c$O $@
 
 $(OD)/mm10_d$O : mm10_d.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_d.f
-	$(FILTER) < mm10_d.f > filt_mm10_d.f
-	$(F90) -O3 -ip   -c filt_mm10_d.f
-	$(MVC) filt_mm10_d$O  mm10_d$O
+	$(F90) -O3 -ip   -c mm10_d.f
 	$(MVC) mm10_d$O $@
 	
 $(OD)/mm10_e$O : mm10_e.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_e.f
-	$(FILTER) < mm10_e.f > filt_mm10_e.f
-	$(F90) -O3 -ip   -c filt_mm10_e.f
-	$(MVC) filt_mm10_e$O  mm10_e$O
+	$(F90) -O3 -ip   -c mm10_e.f
 	$(MVC) mm10_e$O $@
 
 $(OD)/mm10_f$O : mm10_f.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
-	$(RMC)  filt_mm10_f.f
-	$(FILTER) < mm10_f.f > filt_mm10_f.f
-	$(F90) -O3 -ip -c filt_mm10_f.f
-	$(MVC) filt_mm10_f$O  mm10_f$O
+	$(F90) -O3 -ip -c mm10_f.f
 	$(MVC) mm10_f$O $@
 	
 $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
-	$(RMC)  filt_mm11.f
-	$(FILTER) < mm11.f > filt_mm11.f
-	$(F90) -O2 -ip  -c filt_mm11.f
-	$(MVC) filt_mm11$O  mm11$O
+	$(F90) -O2 -ip  -c mm11.f
 	$(MVC) mm11$O $@
 
 $(OD)/mmnoopt$O : mmnoopt.f $(OD)/mod_crystals$O param_def
 	$(RMC)  $@
-	$(RMC)  filt_mmnoopt.f
-	$(FILTER) < mmnoopt.f > filt_mmnoopt.f
-	$(F90) -O1 -ip  -c filt_mmnoopt.f
-	$(MVC) filt_mmnoopt$O  mmnoopt$O
+	$(F90) -O1 -ip  -c mmnoopt.f
 	$(MVC) mmnoopt$O $@
 
 $(OD)/mnralg$O : mnralg.f param_def common.main \
@@ -1508,19 +1149,13 @@ $(OD)/mnralg$O : mnralg.f param_def common.main \
                  $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
                  $(OD)/mod_hypre$O
 	$(RMC)  $@
-	$(RMC)  filt_mnralg.f
-	$(FILTER) < mnralg.f > filt_mnralg.f
-	$(F90) -O2 -ip  -c filt_mnralg.f
-	$(MVC) filt_mnralg$O  mnralg$O
+	$(F90) -O2 -ip  -c mnralg.f
 	$(MVC) mnralg$O $@
 
 $(OD)/mpc_modify$O : mpc_modify.f $(OD)/mod_stiffness$O \
                    $(OD)/mod_mpc$O
 	$(RMC)  $@
-	$(RMC)  filt_mpc_modify.f
-	$(FILTER) < mpc_modify.f > filt_mpc_modify.f
-	$(F90) -O3 -ip  -c filt_mpc_modify.f
-	$(MVC) filt_mpc_modify$O  mpc_modify$O
+	$(F90) -O3 -ip  -c mpc_modify.f
 	$(MVC) mpc_modify$O $@
 
 $(OD)/mpi_code$O : mpi_code.f param_def common.main $(OD)/mod_damage$O \
@@ -1530,10 +1165,7 @@ $(OD)/mpi_code$O : mpi_code.f param_def common.main $(OD)/mod_damage$O \
                    $(OD)/mod_crack_growth$O $(OD)/mod_jintegral$O \
                    $(OD)/mod_contact$O $(OD)/mod_crystals$O
 	$(RMC)  $@
-	$(RMC)  filt_mpi_code.f
-	$(FILTER) < mpi_code.f > filt_mpi_code.f
-	$(F90) -O2 -ip  -c filt_mpi_code.f
-	$(MVC) filt_mpi_code$O  mpi_code$O
+	$(F90) -O2 -ip  -c mpi_code.f
 	$(MVC) mpi_code$O $@
 
 $(OD)/mpi_handle_slaves$O : mpi_handle_slaves.f $(OD)/mod_damage$O \
@@ -1544,10 +1176,7 @@ $(OD)/mpi_handle_slaves$O : mpi_handle_slaves.f $(OD)/mod_damage$O \
                    common.main param_def \
                    $(OD)/mod_contact$O mpi_code.f
 	$(RMC)  $@
-	$(RMC)  filt_mpi_handle_slaves.f
-	$(FILTER) < mpi_handle_slaves.f > filt_mpi_handle_slaves.f
-	$(F90) -O0 -ip  -c filt_mpi_handle_slaves.f
-	$(MVC) filt_mpi_handle_slaves$O  mpi_handle_slaves$O
+	$(F90) -O0 -ip  -c mpi_handle_slaves.f
 	$(MVC) mpi_handle_slaves$O $@
 
 #
@@ -1555,18 +1184,12 @@ $(OD)/mpi_handle_slaves$O : mpi_handle_slaves.f $(OD)/mod_damage$O \
 #
 $(OD)/name_strip$O : name_strip.f
 	$(RMC)  $@
-	$(RMC)  filt_name_strip.f
-	$(FILTER) < name_strip.f > filt_name_strip.f
-	$(F90) -O2 -ip  -c filt_name_strip.f
-	$(MVC) filt_name_strip$O  name_strip$O
+	$(F90) -O2 -ip  -c name_strip.f
 	$(MVC) name_strip$O $@
 
 $(OD)/ndpts1$O : ndpts1.f
 	$(RMC)  $@
-	$(RMC)  filt_ndpts1.f
-	$(FILTER) < ndpts1.f > filt_ndpts1.f
-	$(F90) -O2 -ip  -c filt_ndpts1.f
-	$(MVC) filt_ndpts1$O  ndpts1$O
+	$(F90) -O2 -ip  -c ndpts1.f
 	$(MVC) ndpts1$O $@
 
 #
@@ -1574,381 +1197,249 @@ $(OD)/ndpts1$O : ndpts1.f
 #
 $(OD)/ou3dpr$O : ou3dpr.f
 	$(RMC)  $@
-	$(RMC)  filt_ou3dpr.f
-	$(FILTER) < ou3dpr.f > filt_ou3dpr.f
-	$(F90) -O2 -ip  -c filt_ou3dpr.f
-	$(MVC) filt_ou3dpr$O  ou3dpr$O
+	$(F90) -O2 -ip  -c ou3dpr.f
 	$(MVC) ou3dpr$O $@
 
 $(OD)/oualph$O : oualph.f
 	$(RMC)  $@
-	$(RMC)  filt_oualph.f
-	$(FILTER) < oualph.f > filt_oualph.f
-	$(F90) -O2 -ip  -c filt_oualph.f
-	$(MVC) filt_oualph$O  oualph$O
+	$(F90) -O2 -ip  -c oualph.f
 	$(MVC) oualph$O $@
 
 $(OD)/ouddpa$O : ouddpa.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_ouddpa.f
-	$(FILTER) < ouddpa.f > filt_ouddpa.f
-	$(F90) -O2 -ip  -c filt_ouddpa.f
-	$(MVC) filt_ouddpa$O  ouddpa$O
+	$(F90) -O2 -ip  -c ouddpa.f
 	$(MVC) ouddpa$O $@
 
 $(OD)/oudriv$O : oudriv.f $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_oudriv.f
-	$(FILTER) < oudriv.f > filt_oudriv.f
-	$(F90) -O2 -ip  -c filt_oudriv.f
-	$(MVC) filt_oudriv$O  oudriv$O
+	$(F90) -O2 -ip  -c oudriv.f
 	$(MVC) oudriv$O $@
 
 $(OD)/oudups$O : oudups.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_eleblocks$O $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_oudups.f
-	$(FILTER) < oudups.f > filt_oudups.f
-	$(F90) -O2 -ip  -c filt_oudups.f
-	$(MVC) filt_oudups$O  oudups$O
+	$(F90) -O2 -ip  -c oudups.f
 	$(MVC) oudups$O $@
 
 $(OD)/oudva$O : oudva.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_oudva.f
-	$(FILTER) < oudva.f > filt_oudva.f
-	$(F90) -O2 -ip  -c filt_oudva.f
-	$(MVC) filt_oudva$O  oudva$O
+	$(F90) -O2 -ip  -c oudva.f
 	$(MVC) oudva$O $@
 
 $(OD)/oueff1$O : oueff1.f
 	$(RMC)  $@
-	$(RMC)  filt_oueff1.f
-	$(FILTER) < oueff1.f > filt_oueff1.f
-	$(F90) -O2 -ip  -c filt_oueff1.f
-	$(MVC) filt_oueff1$O  oueff1$O
+	$(F90) -O2 -ip  -c oueff1.f
 	$(MVC) oueff1$O $@
 
 $(OD)/ouext1$O : ouext1.f $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_ouext1.f
-	$(FILTER) < ouext1.f > filt_ouext1.f
-	$(F90) -O2 -ip  -c filt_ouext1.f
-	$(MVC) filt_ouext1$O  ouext1$O
+	$(F90) -O2 -ip  -c ouext1.f
 	$(MVC) ouext1$O $@
 
 $(OD)/ouext2$O : ouext2.f
 	$(RMC)  $@
-	$(RMC)  filt_ouext2.f
-	$(FILTER) < ouext2.f > filt_ouext2.f
-	$(F90) -O2 -ip  -c filt_ouext2.f
-	$(MVC) filt_ouext2$O  ouext2$O
+	$(F90) -O2 -ip  -c ouext2.f
 	$(MVC) ouext2$O $@
 
 $(OD)/ouflnm$O : ouflnm.f
 	$(RMC)  $@
-	$(RMC)  filt_ouflnm.f
-	$(FILTER) < ouflnm.f > filt_ouflnm.f
-	$(F90) -O2 -ip  -c filt_ouflnm.f
-	$(MVC) filt_ouflnm$O  ouflnm$O
+	$(F90) -O2 -ip  -c ouflnm.f
 	$(MVC) ouflnm$O $@
 
 $(OD)/ougts1$O : ougts1.f param_def \
                    $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_ougts1.f
-	$(FILTER) < ougts1.f > filt_ougts1.f
-	$(F90) -O3 -ip  -c filt_ougts1.f
-	$(MVC) filt_ougts1$O  ougts1$O
+	$(F90) -O3 -ip  -c ougts1.f
 	$(MVC) ougts1$O $@
 
 $(OD)/ouhdva$O : ouhdva.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_ouhdva.f
-	$(FILTER) < ouhdva.f > filt_ouhdva.f
-	$(F90) -O2 -ip  -c filt_ouhdva.f
-	$(MVC) filt_ouhdva$O  ouhdva$O
+	$(F90) -O2 -ip  -c ouhdva.f
 	$(MVC) ouhdva$O $@
 
 $(OD)/ouhel$O : ouhel.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_ouhel.f
-	$(FILTER) < ouhel.f > filt_ouhel.f
-	$(F90) -O2 -ip  -c filt_ouhel.f
-	$(MVC) filt_ouhel$O  ouhel$O
+	$(F90) -O2 -ip  -c ouhel.f
 	$(MVC) ouhel$O $@
 
 $(OD)/ouhnod$O : ouhnod.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_ouhnod.f
-	$(FILTER) < ouhnod.f > filt_ouhnod.f
-	$(F90) -O2 -ip  -c filt_ouhnod.f
-	$(MVC) filt_ouhnod$O  ouhnod$O
+	$(F90) -O2 -ip  -c ouhnod.f
 	$(MVC) ouhnod$O $@
 
 $(OD)/ouhprn$O : ouhprn.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_ouhprn.f
-	$(FILTER) < ouhprn.f > filt_ouhprn.f
-	$(F90) -O2 -ip  -c filt_ouhprn.f
-	$(MVC) filt_ouhprn$O  ouhprn$O
+	$(F90) -O2 -ip  -c ouhprn.f
 	$(MVC) ouhprn$O $@
 
 $(OD)/ouhrks$O : ouhrks.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_ouhrks.f
-	$(FILTER) < ouhrks.f > filt_ouhrks.f
-	$(F90) -O2 -ip  -c filt_ouhrks.f
-	$(MVC) filt_ouhrks$O  ouhrks$O
+	$(F90) -O2 -ip  -c ouhrks.f
 	$(MVC) ouhrks$O $@
 
 $(OD)/ouhstr$O : ouhstr.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_ouhstr.f
-	$(FILTER) < ouhstr.f > filt_ouhstr.f
-	$(F90) -O2 -ip  -c filt_ouhstr.f
-	$(MVC) filt_ouhstr$O  ouhstr$O
+	$(F90) -O2 -ip  -c ouhstr.f
 	$(MVC) ouhstr$O $@
 
 $(OD)/ouinv1$O : ouinv1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_ouinv1.f
-	$(FILTER) < ouinv1.f > filt_ouinv1.f
-	$(F90) -O2 -ip  -c filt_ouinv1.f
-	$(MVC) filt_ouinv1$O  ouinv1$O
+	$(F90) -O2 -ip  -c ouinv1.f
 	$(MVC) ouinv1$O $@
 
 $(OD)/oulbdd$O : oulbdd.f
 	$(RMC)  $@
-	$(RMC)  filt_oulbdd.f
-	$(FILTER) < oulbdd.f > filt_oulbdd.f
-	$(F90) -O2 -ip  -c filt_oulbdd.f
-	$(MVC) filt_oulbdd$O  oulbdd$O
+	$(F90) -O2 -ip  -c oulbdd.f
 	$(MVC) oulbdd$O $@
 
 $(OD)/oulbir$O : oulbir.f
 	$(RMC)  $@
-	$(RMC)  filt_oulbir.f
-	$(FILTER) < oulbir.f > filt_oulbir.f
-	$(F90) -O2 -ip  -c filt_oulbir.f
-	$(MVC) filt_oulbir$O  oulbir$O
+	$(F90) -O2 -ip  -c oulbir.f
 	$(MVC) oulbir$O $@
 
 $(OD)/oulbst$O : oulbst.f
 	$(RMC)  $@
-	$(RMC)  filt_oulbst.f
-	$(FILTER) < oulbst.f > filt_oulbst.f
-	$(F90) -O2 -ip  -c filt_oulbst.f
-	$(MVC) filt_oulbst$O  oulbst$O
+	$(F90) -O2 -ip  -c oulbst.f
 	$(MVC) oulbst$O $@
 
 $(OD)/oulbta$O : oulbta.f
 	$(RMC)  $@
-	$(RMC)  filt_oulbta.f
-	$(FILTER) < oulbta.f > filt_oulbta.f
-	$(F90) -O2 -ip  -c filt_oulbta.f
-	$(MVC) filt_oulbta$O  oulbta$O
+	$(F90) -O2 -ip  -c oulbta.f
 	$(MVC) oulbta$O $@
 
 $(OD)/oulg1$O : oulg1.f
 	$(RMC)  $@
-	$(RMC)  filt_oulg1.f
-	$(FILTER) < oulg1.f > filt_oulg1.f
-	$(F90) -O2 -ip  -c filt_oulg1.f
-	$(MVC) filt_oulg1$O  oulg1$O
+	$(F90) -O2 -ip  -c oulg1.f
 	$(MVC) oulg1$O $@
 
 $(OD)/oulrlh$O : oulrlh.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_oulrlh.f
-	$(FILTER) < oulrlh.f > filt_oulrlh.f
-	$(F90) -O2 -ip  -c filt_oulrlh.f
-	$(MVC) filt_oulrlh$O  oulrlh$O
+	$(F90) -O2 -ip  -c oulrlh.f
 	$(MVC) oulrlh$O $@
 
 $(OD)/oumkcv$O : oumkcv.f param_def \
                    $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_oumkcv.f
-	$(FILTER) < oumkcv.f > filt_oumkcv.f
-	$(F90) -O2 -ip  -c filt_oumkcv.f
-	$(MVC) filt_oumkcv$O  oumkcv$O
+	$(F90) -O2 -ip  -c oumkcv.f
 	$(MVC) oumkcv$O $@
 
 $(OD)/oundhd$O : oundhd.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_oundhd.f
-	$(FILTER) < oundhd.f > filt_oundhd.f
-	$(F90) -O2 -ip  -c filt_oundhd.f
-	$(MVC) filt_oundhd$O  oundhd$O
+	$(F90) -O2 -ip  -c oundhd.f
 	$(MVC) oundhd$O $@
 
 $(OD)/ounds1$O : ounds1.f param_def \
                    $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_ounds1.f
-	$(FILTER) < ounds1.f > filt_ounds1.f
-	$(F90) -O2 -ip  -c filt_ounds1.f
-	$(MVC) filt_ounds1$O  ounds1$O
+	$(F90) -O2 -ip  -c ounds1.f
 	$(MVC) ounds1$O $@
 
 $(OD)/ouneut$O : ouneut.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_ouneut.f
-	$(FILTER) < ouneut.f > filt_ouneut.f
-	$(F90) -O2 -ip  -c filt_ouneut.f
-	$(MVC) filt_ouneut$O  ouneut$O
+	$(F90) -O2 -ip  -c ouneut.f
 	$(MVC) ouneut$O $@
 
 $(OD)/ouocdd$O : ouocdd.f
 	$(RMC)  $@
-	$(RMC)  filt_ouocdd.f
-	$(FILTER) < ouocdd.f > filt_ouocdd.f
-	$(F90) -O2 -ip  -c filt_ouocdd.f
-	$(MVC) filt_ouocdd$O  ouocdd$O
+	$(F90) -O2 -ip  -c ouocdd.f
 	$(MVC) ouocdd$O $@
 
 $(OD)/ouocst$O : ouocst.f
 	$(RMC)  $@
-	$(RMC)  filt_ouocst.f
-	$(FILTER) < ouocst.f > filt_ouocst.f
-	$(F90) -O2 -ip  -c filt_ouocst.f
-	$(MVC) filt_ouocst$O  ouocst$O
+	$(F90) -O2 -ip  -c ouocst.f
 	$(MVC) ouocst$O $@
 
 $(OD)/ouocst_elem$O : ouocst_elem.f
 	$(RMC)  $@
-	$(RMC)  filt_ouocst_elem.f
-	$(FILTER) < ouocst_elem.f > filt_ouocst_elem.f
-	$(F90) -O2 -ip  -c filt_ouocst_elem.f
-	$(MVC) filt_ouocst_elem$O  ouocst_elem$O
+	$(F90) -O2 -ip  -c ouocst_elem.f
 	$(MVC) ouocst_elem$O $@
 
 $(OD)/oupads$O : oupads.f param_def \
                    $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_oupads.f
-	$(FILTER) < oupads.f > filt_oupads.f
-	$(F90) -O2 -ip  -c filt_oupads.f
-	$(MVC) filt_oupads$O  oupads$O
+	$(F90) -O2 -ip  -c oupads.f
 	$(MVC) oupads$O $@
 
 $(OD)/oupele$O : oupele.f param_def \
                    $(OD)/mod_elblk$O
 	$(RMC)  $@
-	$(RMC)  filt_oupele.f
-	$(FILTER) < oupele.f > filt_oupele.f
-	$(F90) -O2 -ip  -c filt_oupele.f
-	$(MVC) filt_oupele$O  oupele$O
+	$(F90) -O2 -ip  -c oupele.f
 	$(MVC) oupele$O $@
 
 $(OD)/ouparm$O : ouparm.f
 	$(RMC)  $@
-	$(RMC)  filt_ouparm.f
-	$(FILTER) < ouparm.f > filt_ouparm.f
-	$(F90) -O2 -ip  -c filt_ouparm.f
-	$(MVC) filt_ouparm$O  ouparm$O
+	$(F90) -O2 -ip  -c ouparm.f
 	$(MVC) ouparm$O $@
 
 $(OD)/oupdva$O : oupdva.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_oupdva.f
-	$(FILTER) < oupdva.f > filt_oupdva.f
-	$(F90) -O2 -ip  -c filt_oupdva.f
-	$(MVC) filt_oupdva$O  oupdva$O
+	$(F90) -O2 -ip  -c oupdva.f
 	$(MVC) oupdva$O $@
 
 $(OD)/oupri1$O : oupri1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_oupri1.f
-	$(FILTER) < oupri1.f > filt_oupri1.f
-	$(F90) -O2 -ip  -c filt_oupri1.f
-	$(MVC) filt_oupri1$O  oupri1$O
+	$(F90) -O2 -ip  -c oupri1.f
 	$(MVC) oupri1$O $@
 
 $(OD)/ouprks$O : ouprks.f
 	$(RMC)  $@
-	$(RMC)  filt_ouprks.f
-	$(FILTER) < ouprks.f > filt_ouprks.f
-	$(F90) -O2 -ip  -c filt_ouprks.f
-	$(MVC) filt_ouprks$O  ouprks$O
+	$(F90) -O2 -ip  -c ouprks.f
 	$(MVC) ouprks$O $@
 
 $(OD)/oupstr_elem$O : oupstr_elem.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_oupstr_elem.f
-	$(FILTER) < oupstr_elem.f > filt_oupstr_elem.f
-	$(F90) -O2 -ip  -c filt_oupstr_elem.f
-	$(MVC) filt_oupstr_elem$O  oupstr_elem$O
+	$(F90) -O2 -ip  -c oupstr_elem.f
 	$(MVC) oupstr_elem$O $@
 
 $(OD)/oupstr_node$O : oupstr_node.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_oupstr_node.f
-	$(FILTER) < oupstr_node.f > filt_oupstr_node.f
-	$(F90) -O2 -ip  -c filt_oupstr_node.f
-	$(MVC) filt_oupstr_node$O  oupstr_node$O
+	$(F90) -O2 -ip  -c oupstr_node.f
 	$(MVC) oupstr_node$O $@
 
 $(OD)/oures$O : oures.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_oures.f
-	$(FILTER) < oures.f > filt_oures.f
-	$(F90) -O2 -ip  -c filt_oures.f
-	$(MVC) filt_oures$O  oures$O
+	$(F90) -O2 -ip  -c oures.f
 	$(MVC) oures$O $@
 
 $(OD)/ourlhd$O : ourlhd.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_ourlhd.f
-	$(FILTER) < ourlhd.f > filt_ourlhd.f
-	$(F90) -O2 -ip  -c filt_ourlhd.f
-	$(MVC) filt_ourlhd$O  ourlhd$O
+	$(F90) -O2 -ip  -c ourlhd.f
 	$(MVC) ourlhd$O $@
 
 $(OD)/ousthd$O : ousthd.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_ousthd.f
-	$(FILTER) < ousthd.f > filt_ousthd.f
-	$(F90) -O2 -ip  -c filt_ousthd.f
-	$(MVC) filt_ousthd$O  ousthd$O
+	$(F90) -O2 -ip  -c ousthd.f
 	$(MVC) ousthd$O $@
 
 $(OD)/oustpa$O : oustpa.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_oustpa.f
-	$(FILTER) < oustpa.f > filt_oustpa.f
-	$(F90) -O2 -ip  -c filt_oustpa.f
-	$(MVC) filt_oustpa$O  oustpa$O
+	$(F90) -O2 -ip  -c oustpa.f
 	$(MVC) oustpa$O $@
 
 $(OD)/oust_elem$O : oust_elem.f param_def common.main \
                    $(OD)/mod_crystals$O
 	$(RMC)  $@
-	$(RMC)  filt_oust_elem.f
-	$(FILTER) < oust_elem.f > filt_oust_elem.f
-	$(F90) -O2 -ip  -c filt_oust_elem.f
-	$(MVC) filt_oust_elem$O  oust_elem$O
+	$(F90) -O2 -ip  -c oust_elem.f
 	$(MVC) oust_elem$O $@
 
 $(OD)/oustates$O : oustates.f common.main \
@@ -1956,46 +1447,31 @@ $(OD)/oustates$O : oustates.f common.main \
                    $(OD)/mod_eleblocks$O $(OD)/mod_elblk$O \
                    $(OD)/mod_crystals$O
 	$(RMC)  $@
-	$(RMC)  filt_oustates.f
-	$(FILTER) < oustates.f > filt_oustates.f
-	$(F90) -O3 -ip  -c filt_oustates.f
-	$(MVC) filt_oustates$O  oustates$O
+	$(F90) -O3 -ip  -c oustates.f
 	$(MVC) oustates$O $@
 
 $(OD)/oustr$O : oustr.f common.main \
                    param_def $(OD)/mod_elblk$O \
                    $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_oustr.f
-	$(FILTER) < oustr.f > filt_oustr.f
-	$(F90) -O2 -ip  -c filt_oustr.f
-	$(MVC) filt_oustr$O  oustr$O
+	$(F90) -O2 -ip  -c oustr.f
 	$(MVC) oustr$O $@
 
 $(OD)/outime$O : outime.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_outime.f
-	$(FILTER) < outime.f > filt_outime.f
-	$(F90) -O2 -ip  -c filt_outime.f
-	$(MVC) filt_outime$O  outime$O
+	$(F90) -O2 -ip  -c outime.f
 	$(MVC) outime$O $@
 
 $(OD)/outfil$O : outfil.f $(OD)/mod_file_info$O \
                    common.main param_def
 	$(RMC)  $@
-	$(RMC)  filt_outfil.f
-	$(FILTER) < outfil.f > filt_outfil.f
-	$(F90) -O2 -ip  -c filt_outfil.f
-	$(MVC) filt_outfil$O  outfil$O
+	$(F90) -O2 -ip  -c outfil.f
 	$(MVC) outfil$O $@
 
 $(OD)/ouyld1$O : ouyld1.f
 	$(RMC)  $@
-	$(RMC)  filt_ouyld1.f
-	$(FILTER) < ouyld1.f > filt_ouyld1.f
-	$(F90) -O2 -ip  -c filt_ouyld1.f
-	$(MVC) filt_ouyld1$O  ouyld1$O
+	$(F90) -O2 -ip  -c ouyld1.f
 	$(MVC) ouyld1$O $@
 #
 #       --- p --
@@ -2003,71 +1479,47 @@ $(OD)/ouyld1$O : ouyld1.f
 $(OD)/packets$O : packets.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_packets.f
-	$(FILTER) < packets.f > filt_packets.f
-	$(F90) -O2 -ip  -c filt_packets.f
-	$(MVC) filt_packets$O  packets$O
+	$(F90) -O2 -ip  -c packets.f
 	$(MVC) packets$O $@
 
 $(OD)/pconvert$O : pconvert.f common.main \
                    param_def $(OD)/mod_main$O \
                           $(OD)/mod_pconvert$O
 	$(RMC)  $@
-	$(RMC)  filt_pconvert.f
-	$(FILTER) < pconvert.f > filt_pconvert.f
-	$(F90) -O2 -ip  -c filt_pconvert.f
-	$(MVC) filt_pconvert$O  pconvert$O
+	$(F90) -O2 -ip  -c pconvert.f
 	$(MVC) pconvert$O $@
 
 $(OD)/princ_inv_strain$O : princ_inv_strain.f
 	$(RMC)  $@
-	$(RMC)  filt_princ_inv_strain.f
-	$(FILTER) < princ_inv_strain.f > filt_princ_inv_strain.f
-	$(F90) -O2 -ip  -c filt_princ_inv_strain.f
-	$(MVC) filt_princ_inv_strain$O  princ_inv_strain$O
+	$(F90) -O2 -ip  -c princ_inv_strain.f
 	$(MVC) princ_inv_strain$O $@
 
 $(OD)/princ_inv_stress$O : princ_inv_stress.f
 	$(RMC)  $@
-	$(RMC)  filt_princ_inv_stress.f
-	$(FILTER) < princ_inv_stress.f > filt_princ_inv_stress.f
-	$(F90) -O2 -ip  -c filt_princ_inv_stress.f
-	$(MVC) filt_princ_inv_stress$O  princ_inv_stress$O
+	$(F90) -O2 -ip  -c princ_inv_stress.f
 	$(MVC) princ_inv_stress$O $@
 
 $(OD)/princ_strain$O : princ_strain.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_princ_strain.f
-	$(FILTER) < princ_strain.f > filt_princ_strain.f
-	$(F90) -O2 -ip  -c filt_princ_strain.f
-	$(MVC) filt_princ_strain$O  princ_strain$O
+	$(F90) -O2 -ip  -c princ_strain.f
 	$(MVC) princ_strain$O $@
 
 $(OD)/princ_stress$O : princ_stress.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_princ_stress.f
-	$(FILTER) < princ_stress.f > filt_princ_stress.f
-	$(F90) -O2 -ip  -c filt_princ_stress.f
-	$(MVC) filt_princ_stress$O  princ_stress$O
+	$(F90) -O2 -ip  -c princ_stress.f
 	$(MVC) princ_stress$O $@
 
 $(OD)/prcsel$O : prcsel.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_prcsel.f
-	$(FILTER) < prcsel.f > filt_prcsel.f
-	$(F90) -O2 -ip  -c filt_prcsel.f
-	$(MVC) filt_prcsel$O  prcsel$O
+	$(F90) -O2 -ip  -c prcsel.f
 	$(MVC) prcsel$O $@
 #
 #       --- q --
 #
 $(OD)/qmply1$O : qmply1.f
 	$(RMC)  $@
-	$(RMC)  filt_qmply1.f
-	$(FILTER) < qmply1.f > filt_qmply1.f
-	$(F90) -O2 -ip  -c filt_qmply1.f
-	$(MVC) filt_qmply1$O  qmply1$O
+	$(F90) -O2 -ip  -c qmply1.f
 	$(MVC) qmply1$O $@
 #
 #       --- r --
@@ -2076,18 +1528,12 @@ $(OD)/read_damage$O : read_damage.f $(OD)/mod_crack_growth$O \
                    $(OD)/mod_damage$O common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_read_damage.f
-	$(FILTER) < read_damage.f > filt_read_damage.f
-	$(F90) -O2 -ip  -c filt_read_damage.f
-	$(MVC) filt_read_damage$O  read_damage$O
+	$(F90) -O2 -ip  -c read_damage.f
 	$(MVC) read_damage$O $@
 
 $(OD)/read_write$O : read_write.f
 	$(RMC)  $@
-	$(RMC)  filt_read_write.f
-	$(FILTER) < read_write.f > filt_read_write.f
-	$(F90) -O2 -ip  -c filt_read_write.f
-	$(MVC) filt_read_write$O  read_write$O
+	$(F90) -O2 -ip  -c read_write.f
 	$(MVC) read_write$O $@
 
 $(OD)/reopen$O : reopen.f param_def common.main $(OD)/mod_eleblocks$O \
@@ -2097,10 +1543,7 @@ $(OD)/reopen$O : reopen.f param_def common.main $(OD)/mod_eleblocks$O \
                  $(OD)/mod_contact$O  \
                  $(OD)/mod_segmental_curves$O $(OD)/mod_crystals$O
 	$(RMC)  $@
-	$(RMC)  filt_reopen.f
-	$(FILTER) < reopen.f > filt_reopen.f
-	$(F90) -O2 -ip  -c filt_reopen.f
-	$(MVC) filt_reopen$O  reopen$O
+	$(F90) -O2 -ip  -c reopen.f
 	$(MVC) reopen$O $@
 
 $(OD)/rknifv$O : rknifv.f common.main \
@@ -2108,151 +1551,100 @@ $(OD)/rknifv$O : rknifv.f common.main \
                    $(OD)/mod_crack_growth$O $(OD)/mod_segmental_curves$O \
                    $(OD)/mod_damage$O
 	$(RMC)  $@
-	$(RMC)  filt_rknifv.f
-	$(FILTER) < rknifv.f > filt_rknifv.f
-	$(F90) -O2 -ip  -c filt_rknifv.f
-	$(MVC) filt_rknifv$O  rknifv$O
+	$(F90) -O2 -ip  -c rknifv.f
 	$(MVC) rknifv$O $@
 
 $(OD)/rknmas$O : rknmas.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_rknmas.f
-	$(FILTER) < rknmas.f > filt_rknmas.f
-	$(F90) -O2 -ip  -c filt_rknmas.f
-	$(MVC) filt_rknmas$O  rknmas$O
+	$(F90) -O2 -ip  -c rknmas.f
 	$(MVC) rknmas$O $@
 
 $(OD)/rknstr$O : rknstr.f param_def \
                    include_sig_up $(OD)/mod_segmental_curves$O \
                    $(OD)/mod_main$O $(OD)/mod_crystals$O
 	$(RMC)  $@
-	$(RMC)  filt_rknstr.f
-	$(FILTER) < rknstr.f > filt_rknstr.f
-	$(F90) -O2 -ip  -c filt_rknstr.f
-	$(MVC) filt_rknstr$O  rknstr$O
+	$(F90) -O2 -ip  -c rknstr.f
 	$(MVC) rknstr$O $@
 
 $(OD)/rktstf$O : rktstf.f param_def include_tan_ek \
                  $(OD)/mod_main$O $(OD)/mod_crystals$O
 	$(RMC)  $@
-	$(RMC)  filt_rktstf.f
-	$(FILTER) < rktstf.f > filt_rktstf.f
-	$(F90) -O3  -ip -c filt_rktstf.f
-	$(MVC) filt_rktstf$O  rktstf$O
+	$(F90) -O3  -ip -c rktstf.f
 	$(MVC) rktstf$O $@
 
 $(OD)/rplstr$O : rplstr.f common.main \
                    param_def include_sig_up \
                    $(OD)/mod_eleblocks$O $(OD)/mod_segmental_curves$O
 	$(RMC)  $@
-	$(RMC)  filt_rplstr.f
-	$(FILTER) < rplstr.f > filt_rplstr.f
-	$(F90) -O3 -ip  -c filt_rplstr.f -qopt-report -qopt-report-file=filt_rplstr_opt_report
-	$(MVC) filt_rplstr$O  rplstr$O
+	$(F90) -O3 -ip  -c rplstr.f 
 	$(MVC) rplstr$O $@
 
 $(OD)/rscmp1$O : rscmp1.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_rscmp1.f
-	$(FILTER) < rscmp1.f > filt_rscmp1.f
-	$(F90) -O2 -ip  -c filt_rscmp1.f
-	$(MVC) filt_rscmp1$O  rscmp1$O
+	$(F90) -O2 -ip  -c rscmp1.f
 	$(MVC) rscmp1$O $@
 
 $(OD)/rstgp1$O : rstgp1.f param_def $(OD)/mod_crystals$O \
                    include_sig_up $(OD)/mod_segmental_curves$O \
                    $(OD)/mod_main$O common.main  $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_rstgp1.f
-	$(FILTER) < rstgp1.f > filt_rstgp1.f
-	$(F90) -O3 -ip  -c filt_rstgp1.f
-	$(MVC) filt_rstgp1$O  rstgp1$O
+	$(F90) -O3 -ip  -c rstgp1.f
 	$(MVC) rstgp1$O $@
 #
 #       --- s --
 #
 $(OD)/scan$O : scan.f $(OD)/mod_file_info$O
 	$(RMC)  $@
-	$(RMC)  filt_scan.f
-	$(FILTER) < scan.f > filt_scan.f
-	$(F90) -O2 -ip  -c filt_scan.f
-	$(MVC) filt_scan$O  scan$O
+	$(F90) -O2 -ip  -c scan.f
 	$(MVC) scan$O $@
 
 $(OD)/scstr$O : scstr.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_scstr.f
-	$(FILTER) < scstr.f > filt_scstr.f
-	$(F90) -O3 -ip  -c filt_scstr.f
-	$(MVC) filt_scstr$O  scstr$O
+	$(F90) -O3 -ip  -c scstr.f
 	$(MVC) scstr$O $@
 
 $(OD)/setelb$O : setelb.f
 	$(RMC)  $@
-	$(RMC)  filt_setelb.f
-	$(FILTER) < setelb.f > filt_setelb.f
-	$(F90) -O2 -ip  -c filt_setelb.f
-	$(MVC) filt_setelb$O  setelb$O
+	$(F90) -O2 -ip  -c setelb.f
 	$(MVC) setelb$O $@
 
 $(OD)/setup$O : setup.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_setup.f
-	$(FILTER) < setup.f > filt_setup.f
-	$(F90) -O2 -ip  -c filt_setup.f
-	$(MVC) filt_setup$O  setup$O
+	$(F90) -O2 -ip  -c setup.f
 	$(MVC) setup$O $@
 
 $(OD)/setup_mat_props$O : setup_mat_props.f param_def \
                    $(OD)/mod_segmental_curves$O common.main
 	$(RMC)  $@
-	$(RMC)  filt_setup_mat_props.f
-	$(FILTER) < setup_mat_props.f > filt_setup_mat_props.f
-	$(F90) -O2 -ip  -c filt_setup_mat_props.f
-	$(MVC) filt_setup_mat_props$O  setup_mat_props$O
+	$(F90) -O2 -ip  -c setup_mat_props.f
 	$(MVC) setup_mat_props$O $@
 
 $(OD)/shapef$O : shapef.f
 	$(RMC)  $@
-	$(RMC)  filt_shapef.f
-	$(FILTER) < shapef.f > filt_shapef.f
-	$(F90) -O2 -ip  -c filt_shapef.f
-	$(MVC) filt_shapef$O  shapef$O
+	$(F90) -O2 -ip  -c shapef.f
 	$(MVC) shapef$O $@
 
 $(OD)/splunj$O : splunj.f
 	$(RMC)  $@
-	$(RMC)  filt_splunj.f
-	$(FILTER) < splunj.f > filt_splunj.f
-	$(F90) -O2 -ip  -c filt_splunj.f
-	$(MVC) filt_splunj$O  splunj$O
+	$(F90) -O2 -ip  -c splunj.f
 	$(MVC) splunj$O $@
 
 $(OD)/star_com$O : star_com.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_star_com.f
-	$(FILTER) < star_com.f > filt_star_com.f
-	$(F90) -O2 -ip  -c filt_star_com.f
-	$(MVC) filt_star_com$O  star_com$O
+	$(F90) -O2 -ip  -c star_com.f
 	$(MVC) star_com$O $@
 
 $(OD)/statistics$O : statistics.f
 	$(RMC)  $@
-	$(RMC)  filt_statistics.f
-	$(FILTER) < statistics.f > filt_statistics.f
-	$(F90) -O2 -ip  -c filt_statistics.f
-	$(MVC) filt_statistics$O  statistics$O
+	$(F90) -O2 -ip  -c statistics.f
 	$(MVC) statistics$O $@
 
 $(OD)/steptime$O : steptime.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_steptime.f
-	$(FILTER) < steptime.f > filt_steptime.f
-	$(F90) -O2 -ip  -c filt_steptime.f
-	$(MVC) filt_steptime$O  steptime$O
+	$(F90) -O2 -ip  -c steptime.f
 	$(MVC) steptime$O $@
 
 $(OD)/store$O : store.f param_def common.main $(OD)/mod_eleblocks$O \
@@ -2263,10 +1655,7 @@ $(OD)/store$O : store.f param_def common.main $(OD)/mod_eleblocks$O \
                    $(OD)/mod_hypre$O \
                    $(OD)/mod_segmental_curves$O $(OD)/mod_mpc$O
 	$(RMC)  $@
-	$(RMC)  filt_store.f
-	$(FILTER) < store.f > filt_store.f
-	$(F90) -O2 -ip  -c filt_store.f
-	$(MVC) filt_store$O  store$O
+	$(F90) -O2 -ip  -c store.f
 	$(MVC) store$O $@
 
 $(OD)/store_ifv$O : store_ifv.f $(OD)/mod_crack_growth$O \
@@ -2274,20 +1663,14 @@ $(OD)/store_ifv$O : store_ifv.f $(OD)/mod_crack_growth$O \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_store_ifv.f
-	$(FILTER) < store_ifv.f > filt_store_ifv.f
-	$(F90) -O2 -ip  -c filt_store_ifv.f
-	$(MVC) filt_store_ifv$O  store_ifv$O
+	$(F90) -O2 -ip  -c store_ifv.f
 	$(MVC) store_ifv$O $@
 
 $(OD)/stpdrv$O : stpdrv.f common.main include_usr_parm \
                    param_def $(OD)/mod_damage$O \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_stpdrv.f
-	$(FILTER) < stpdrv.f > filt_stpdrv.f
-	$(F90) -O2 -ip  -c filt_stpdrv.f
-	$(MVC) filt_stpdrv$O  stpdrv$O
+	$(F90) -O2 -ip  -c stpdrv.f
 	$(MVC) stpdrv$O $@
 #
 #       --- t --
@@ -2298,61 +1681,40 @@ $(OD)/tanstf$O : tanstf.f $(OD)/mod_eleblocks$O $(OD)/mod_segmental_curves$O \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_mpi_lnpcg$O
 	$(RMC)  $@
-	$(RMC)  filt_tanstf.f
-	$(FILTER) < tanstf.f > filt_tanstf.f
-	$(F90) -O3 -ip -c filt_tanstf.f
-	$(MVC) filt_tanstf$O  tanstf$O
+	$(F90) -O3 -ip -c tanstf.f
 	$(MVC) tanstf$O $@
 
 $(OD)/temsto$O : temsto.f common.main \
                    param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_temsto.f
-	$(FILTER) < temsto.f > filt_temsto.f
-	$(F90) -O2 -ip  -c filt_temsto.f
-	$(MVC) filt_temsto$O  temsto$O
+	$(F90) -O2 -ip  -c temsto.f
 	$(MVC) temsto$O $@
 
 $(OD)/thyme$O : thyme.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_thyme.f
-	$(FILTER) < thyme.f > filt_thyme.f
-	$(F90) -O2 -ip  -c filt_thyme.f
-	$(MVC) filt_thyme$O  thyme$O
+	$(F90) -O2 -ip  -c thyme.f
 	$(MVC) thyme$O $@
 
 $(OD)/tied_mesh$O : tied_mesh.f param_def \
                    $(OD)/mod_mpc$O
 	$(RMC)  $@
-	$(RMC)  filt_tied_mesh.f
-	$(FILTER) < tied_mesh.f > filt_tied_mesh.f
-	$(F90) -O1 -ip  -c filt_tied_mesh.f
-	$(MVC) filt_tied_mesh$O  tied_mesh$O
+	$(F90) -O1 -ip  -c tied_mesh.f
 	$(MVC) tied_mesh$O $@
 
 $(OD)/tilde$O : tilde.f
 	$(RMC)  $@
-	$(RMC)  filt_tilde.f
-	$(FILTER) < tilde.f > filt_tilde.f
-	$(F90) -O2 -ip  -c filt_tilde.f
-	$(MVC) filt_tilde$O  tilde$O
+	$(F90) -O2 -ip  -c tilde.f
 	$(MVC) tilde$O $@
 
 $(OD)/trnmtx$O : trnmtx.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_trnmtx.f
-	$(FILTER) < trnmtx.f > filt_trnmtx.f
-	$(F90) -O2 -ip  -c filt_trnmtx.f
-	$(MVC) filt_trnmtx$O  trnmtx$O
+	$(F90) -O2 -ip  -c trnmtx.f
 	$(MVC) trnmtx$O $@
 
 $(OD)/trnvec$O : trnvec.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_trnvec.f
-	$(FILTER) < trnvec.f > filt_trnvec.f
-	$(F90) -O2 -ip  -c filt_trnvec.f
-	$(MVC) filt_trnvec$O  trnvec$O
+	$(F90) -O2 -ip  -c trnvec.f
 	$(MVC) trnvec$O $@
 
 #
@@ -2363,48 +1725,33 @@ $(OD)/update$O : update.f common.main \
                    param_def $(OD)/mod_main$O \
                    $(OD)/mod_eleblocks$O
 	$(RMC)  $@
-	$(RMC)  filt_update.f
-	$(FILTER) < update.f > filt_update.f
-	$(F90) -O2 -ip  -c filt_update.f
-	$(MVC) filt_update$O  update$O
+	$(F90) -O2 -ip  -c update.f
 	$(MVC) update$O $@
 
 $(OD)/update_node_elecnt$O : update_node_elecnt.f $(OD)/mod_crack_growth$O \
                    common.main param_def \
                    $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_update_node_elecnt.f
-	$(FILTER) < update_node_elecnt.f > filt_update_node_elecnt.f
-	$(F90) -O2 -ip  -c filt_update_node_elecnt.f
-	$(MVC) filt_update_node_elecnt$O  update_node_elecnt$O
+	$(F90) -O2 -ip  -c update_node_elecnt.f
 	$(MVC) update_node_elecnt$O $@
 
 $(OD)/user_list$O : user_list.f common.main \
                   param_def $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_user_list.f
-	$(FILTER) < user_list.f > filt_user_list.f
-	$(F90) -O3 -ip  -c filt_user_list.f
-	$(MVC) filt_user_list$O  user_list$O
+	$(F90) -O3 -ip  -c user_list.f
 	$(MVC) user_list$O $@
 
 $(OD)/uppbar$O : uppbar.f common.main \
                    param_def
 	$(RMC)  $@
-	$(RMC)  filt_uppbar.f
-	$(FILTER) < uppbar.f > filt_uppbar.f
-	$(F90) -O2 -ip  -c filt_uppbar.f
-	$(MVC) filt_uppbar$O  uppbar$O
+	$(F90) -O2 -ip  -c uppbar.f
 	$(MVC) uppbar$O $@
 
 $(OD)/upres$O : upres.f common.main \
                    $(OD)/mod_contact$O param_def \
                    $(OD)/mod_mpc$O $(OD)/mod_stiffness$O
 	$(RMC)  $@
-	$(RMC)  filt_upres.f
-	$(FILTER) < upres.f > filt_upres.f
-	$(F90) -O2 -ip  -c filt_upres.f
-	$(MVC) filt_upres$O  upres$O
+	$(F90) -O2 -ip  -c upres.f
 	$(MVC) upres$O $@
 
 #
@@ -2412,37 +1759,25 @@ $(OD)/upres$O : upres.f common.main \
 #
 $(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O 
 	$(RMC)  $@
-	$(RMC)  filt_user_routines_umat.f
-	$(FILTER) < user_routines_umat.f > filt_user_routines_umat.f
-	$(F90) -O3 -ip  -inline-level=1  -c filt_user_routines_umat.f
-	$(MVC) filt_user_routines_umat$O  user_routines_umat$O
+	$(F90) -O3 -ip  -inline-level=1  -c user_routines_umat.f
 	$(MVC) user_routines_umat$O $@
 
 $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
                                      $(OD)/user_routines_module$O 
 	$(RMC)  $@
-	$(RMC)  filt_user_routines_other_Abaqus.f
-	$(FILTER) < user_routines_other_Abaqus.f > filt_user_routines_other_Abaqus.f
-	$(F90) -O3 -ip -heap-arrays -c filt_user_routines_other_Abaqus.f
-	$(MVC) filt_user_routines_other_Abaqus$O  user_routines_other_Abaqus$O
+	$(F90) -O3 -ip -heap-arrays -c user_routines_other_Abaqus.f
 	$(MVC) user_routines_other_Abaqus$O $@
 
 $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
                                $(OD)/user_routines_module$O 
 	$(RMC)  $@
-	$(RMC)  filt_user_routines_warp3d.f
-	$(FILTER) < user_routines_warp3d.f > filt_user_routines_warp3d.f
-	$(F90) -O3 -ip -heap-arrays  -c filt_user_routines_warp3d.f
-	$(MVC) filt_user_routines_warp3d$O  user_routines_warp3d$O
+	$(F90) -O3 -ip -heap-arrays  -c user_routines_warp3d.f
 	$(MVC) user_routines_warp3d$O $@
 
 $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
                                 $(OD)/user_routines_module$O 
 	$(RMC)  $@
-	$(RMC)  filt_user_routines_support.f
-	$(FILTER) < user_routines_support.f > filt_user_routines_support.f
-	$(F90) -O3 -ip -c filt_user_routines_support.f
-	$(MVC) filt_user_routines_support$O  user_routines_support$O
+	$(F90) -O3 -ip -c user_routines_support.f
 	$(MVC) user_routines_support$O $@
 
 #
@@ -2450,18 +1785,12 @@ $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
 #
 $(OD)/vol_avg$O : vol_avg.f
 	$(RMC)  $@
-	$(RMC)  filt_vol_avg.f
-	$(FILTER) < vol_avg.f > filt_vol_avg.f
-	$(F90) -O2 -ip  -c filt_vol_avg.f
-	$(MVC) filt_vol_avg$O  vol_avg$O
+	$(F90) -O2 -ip  -c vol_avg.f
 	$(MVC) vol_avg$O $@
 
 $(OD)/vol_terms$O : vol_terms.f
 	$(RMC)  $@
-	$(RMC)  filt_vol_terms.f
-	$(FILTER) < vol_terms.f > filt_vol_terms.f
-	$(F90) -O3 -ip  -c filt_vol_terms.f
-	$(MVC) filt_vol_terms$O  vol_terms$O
+	$(F90) -O3 -ip  -c vol_terms.f
 	$(MVC) vol_terms$O $@
 #
 #       --- w --
@@ -2470,192 +1799,123 @@ $(OD)/vol_terms$O : vol_terms.f
 #
 $(OD)/yield_function$O : yield_function.f
 	$(RMC)  $@
-	$(RMC)  filt_yield_function.f
-	$(FILTER) < yield_function.f > filt_yield_function.f
-	$(F90) -O2 -ip  -c filt_yield_function.f
-	$(MVC) filt_yield_function$O  yield_function$O
+	$(F90) -O2 -ip  -c yield_function.f
 	$(MVC) yield_function$O $@
 #
 #       --- z --
 #
 $(OD)/zero_vector$O : zero_vector.f
 	$(RMC)  $@
-	$(RMC)  filt_zero_vector.f
-	$(FILTER) < zero_vector.f > filt_zero_vector.f
-	$(F90) -O2 -ip  -c filt_zero_vector.f
-	$(MVC) filt_zero_vector$O  zero_vector$O
+	$(F90) -O2 -ip  -c zero_vector.f
 	$(MVC) zero_vector$O $@
 
 $(OD)/zero_vol$O : zero_vol.f
 	$(RMC)  $@
-	$(RMC)  filt_zero_vol.f
-	$(FILTER) < zero_vol.f > filt_zero_vol.f
-	$(F90) -O2 -ip  -c filt_zero_vol.f
-	$(MVC) filt_zero_vol$O  zero_vol$O
+	$(F90) -O2 -ip  -c zero_vol.f
 	$(MVC) zero_vol$O $@
 #
 #    ------   all module files ----------------
 #
 $(ODIR)/mod_adaptive_steps$O : mod_adaptive_steps.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_adaptive_steps.f
-	$(FILTER) < mod_adaptive_steps.f > filt_mod_adaptive_steps.f
-	$(F90) -O2 -ip  -c filt_mod_adaptive_steps.f
-	$(MVC) filt_mod_adaptive_steps$O  mod_adaptive_steps$O
+	$(F90) -O2 -ip  -c mod_adaptive_steps.f
 	$(MVC) mod_adaptive_steps$O $@
 
 $(ODIR)/mod_contact$O : mod_contact.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_contact.f
-	$(FILTER) < mod_contact.f > filt_mod_contact.f
-	$(F90) -O2 -ip  -c filt_mod_contact.f
-	$(MVC) filt_mod_contact$O  mod_contact$O
+	$(F90) -O2 -ip  -c mod_contact.f
 	$(MVC) mod_contact$O $@
 
 $(ODIR)/mod_crack_growth$O : mod_crack_growth.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_crack_growth.f
-	$(FILTER) < mod_crack_growth.f > filt_mod_crack_growth.f
-	$(F90) -O2 -ip  -c filt_mod_crack_growth.f
-	$(MVC) filt_mod_crack_growth$O  mod_crack_growth$O
+	$(F90) -O2 -ip  -c mod_crack_growth.f
 	$(MVC) mod_crack_growth$O $@
 
 $(ODIR)/mod_crystals$O : mod_crystals.f param_def \
                          common.main $(OD)/mod_main$O
 	$(RMC)  $@
-	$(RMC)  filt_mod_crystals.f
-	$(FILTER) < mod_crystals.f > filt_mod_crystals.f
-	$(F90) -O2 -ip  -c filt_mod_crystals.f
-	$(MVC) filt_mod_crystals$O  mod_crystals$O
+	$(F90) -O2 -ip  -c mod_crystals.f
 	$(MVC) mod_crystals$O $@
 
 $(ODIR)/mod_damage$O : mod_damage.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_damage.f
-	$(FILTER) < mod_damage.f > filt_mod_damage.f
-	$(F90) -O2 -ip  -c filt_mod_damage.f
-	$(MVC) filt_mod_damage$O  mod_damage$O
+	$(F90) -O2 -ip  -c mod_damage.f
 	$(MVC) mod_damage$O $@
 
 $(ODIR)/mod_elblk$O : mod_elblk.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_elblk.f
-	$(FILTER) < mod_elblk.f > filt_mod_elblk.f
-	$(F90) -O2 -ip  -c filt_mod_elblk.f
-	$(MVC) filt_mod_elblk$O  mod_elblk$O
+	$(F90) -O2 -ip  -c mod_elblk.f
 	$(MVC) mod_elblk$O $@
 
 $(ODIR)/mod_eleblocks$O : mod_eleblocks.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_eleblocks.f
-	$(FILTER) < mod_eleblocks.f > filt_mod_eleblocks.f
-	$(F90) -O2 -ip  -c filt_mod_eleblocks.f
-	$(MVC) filt_mod_eleblocks$O  mod_eleblocks$O
+	$(F90) -O2 -ip  -c mod_eleblocks.f
 	$(MVC) mod_eleblocks$O $@
 
 $(ODIR)/mod_elem_load$O : mod_elem_load.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_elem_load.f
-	$(FILTER) < mod_elem_load.f > filt_mod_elem_load.f
-	$(F90) -O2 -ip  -c filt_mod_elem_load.f
-	$(MVC) filt_mod_elem_load$O  mod_elem_load$O
+	$(F90) -O2 -ip  -c mod_elem_load.f
 	$(MVC) mod_elem_load$O $@
 
 $(ODIR)/mod_file_info$O : mod_file_info.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_file_info.f
-	$(FILTER) < mod_file_info.f > filt_mod_file_info.f
-	$(F90) -O2 -ip  -c filt_mod_file_info.f
-	$(MVC) filt_mod_file_info$O  mod_file_info$O
+	$(F90) -O2 -ip  -c mod_file_info.f
 	$(MVC) mod_file_info$O $@
 
 $(ODIR)/mod_hypre$O : mod_hypre.f \
 		                common.main param_def
 	$(RMC) $@
-	$(RMC) filt_mod_hypre.f
-	$(FILTER) < mod_hypre.f > filt_mod_hypre.f
-	$(F90) -O2 -ip -c filt_mod_hypre.f
-	$(MVC) filt_mod_hypre$O mod_hypre$O
+	$(F90) -O2 -ip -c mod_hypre.f
 	$(MVC) mod_hypre$O $@
 
 $(ODIR)/mod_jintegral$O : mod_jintegral.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_jintegral.f
-	$(FILTER) < mod_jintegral.f > filt_mod_jintegral.f
-	$(F90) -O0 -ip  -c filt_mod_jintegral.f
-	$(MVC) filt_mod_jintegral$O  mod_jintegral$O
+	$(F90) -O0 -ip  -c mod_jintegral.f
 	$(MVC) mod_jintegral$O $@
 
 $(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f \
 		                              common.main param_def
 	$(RMC) $@
-	$(RMC) filt_mod_local_stiffness.f
-	$(FILTER) < mod_local_stiffness.f > filt_mod_local_stiffness.f
-	$(F90) -O2 -ip -c filt_mod_local_stiffness.f
-	$(MVC) filt_mod_local_stiffness$O mod_local_stiffness$O
+	$(F90) -O2 -ip -c mod_local_stiffness.f
 	$(MVC) mod_local_stiffness$O $@
 	
 $(ODIR)/mod_main$O : mod_main.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_main.f
-	$(FILTER) < mod_main.f > filt_mod_main.f
-	$(F90) -O2 -ip  -c filt_mod_main.f
-	$(MVC) filt_mod_main$O  mod_main$O
+	$(F90) -O2 -ip  -c mod_main.f
 	$(MVC) mod_main$O $@
 
 $(ODIR)/mod_mpc$O : mod_mpc.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_mpc.f
-	$(FILTER) < mod_mpc.f > filt_mod_mpc.f
-	$(F90) -O2 -ip  -c filt_mod_mpc.f
-	$(MVC) filt_mod_mpc$O  mod_mpc$O
+	$(F90) -O2 -ip  -c mod_mpc.f
 	$(MVC) mod_mpc$O $@
 
 $(ODIR)/mod_mpi_lnpcg$O : mod_mpi_lnpcg.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_mpi_lnpcg.f
-	$(FILTER) < mod_mpi_lnpcg.f > filt_mod_mpi_lnpcg.f
-	$(F90) -O2 -ip  -c filt_mod_mpi_lnpcg.f
-	$(MVC) filt_mod_mpi_lnpcg$O  mod_mpi_lnpcg$O
+	$(F90) -O2 -ip  -c mod_mpi_lnpcg.f
 	$(MVC) mod_mpi_lnpcg$O $@
 
 $(ODIR)/mod_pconvert$O : mod_pconvert.f
 	$(RMC)  $@
-	$(RMC)  filt_mod_pconvert.f
-	$(FILTER) < mod_pconvert.f > filt_mod_pconvert.f
-	$(F90) -O2 -ip  -c filt_mod_pconvert.f
-	$(MVC) filt_mod_pconvert$O  mod_pconvert$O
+	$(F90) -O2 -ip  -c mod_pconvert.f
 	$(MVC) mod_pconvert$O $@
 
 $(ODIR)/mod_performance$O : mod_performance.f
 	$(RMC) $@
-	$(RMC) filt_mod_performance.f
-	$(FILTER) < mod_performance.f > filt_mod_performance.f
-	$(F90) -O2 -ip -c filt_mod_performance.f
-	$(MVC) filt_mod_performance$O mod_performance$O
+	$(F90) -O2 -ip -c mod_performance.f
 	$(MVC) mod_performance$O $@
 
 $(ODIR)/mod_segmental_curves$O : mod_segmental_curves.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_segmental_curves.f
-	$(FILTER) < mod_segmental_curves.f > filt_mod_segmental_curves.f
-	$(F90) -O2 -ip  -c filt_mod_segmental_curves.f
-	$(MVC) filt_mod_segmental_curves$O  mod_segmental_curves$O
+	$(F90) -O2 -ip  -c mod_segmental_curves.f
 	$(MVC) mod_segmental_curves$O $@
 
 $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(RMC)  $@
-	$(RMC)  filt_mod_stiffness.f
-	$(FILTER) < mod_stiffness.f > filt_mod_stiffness.f
-	$(F90) -O2 -ip  -c filt_mod_stiffness.f
-	$(MVC) filt_mod_stiffness$O  mod_stiffness$O
+	$(F90) -O2 -ip  -c mod_stiffness.f
 	$(MVC) mod_stiffness$O $@
 
 $(ODIR)/user_routines_module$O : user_routines_module.f 
 	$(RMC)  $@
-	$(RMC)  filt_user_routines_module.f
-	$(FILTER) < user_routines_module.f > filt_user_routines_module.f
-	$(F90) -O2 -ip  -c filt_user_routines_module.f
-	$(MVC) filt_user_routines_module$O  user_routines_module$O
+	$(F90) -O2 -ip  -c user_routines_module.f
 	$(MVC) user_routines_module$O $@
 
