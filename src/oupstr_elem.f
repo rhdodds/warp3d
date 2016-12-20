@@ -19,7 +19,7 @@ c
       implicit integer (a-z)
       logical :: stress, oubin, ouasc, flat_file,
      &           stream_file, text_file, compressed  
-$add common.main
+      include 'common.main'
 c
 c                       locally allocated. the big one is
 c                       elem_results.
@@ -28,8 +28,7 @@ c
      &            center_output, first_block, last_block, cohesive_elem
 c
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     zero, elem_results, small_tol
       allocatable elem_results(:,:)
       integer :: elem_out_map(mxelmp)
