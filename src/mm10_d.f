@@ -30,7 +30,7 @@ c
      &            data_offset
       use main_data
       implicit none
-$add common.main
+      include 'common.main'
 c
       integer :: i, j, k, ncrystals, cnum, osn, num, ecount, 
      &  total_hist_size, crystal, elnum,
@@ -372,7 +372,7 @@ c
      &                           user_output_opt2, iout  )
       use mm10_defs, only : length_crys_hist, length_comm_hist
       implicit none
-$add param_def
+      include 'param_def'
       integer :: ncrystals, iout, user_output_opt1, user_output_opt2,
      &           info_vector(*)
 c
