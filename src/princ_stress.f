@@ -16,15 +16,13 @@ c     ****************************************************************
 c
       subroutine princ_stress( results, nrowd, num )
       implicit integer (a-z)
-$add param_def
-#dbl      double precision
-#sgl      real
+      include 'param_def'
+      double precision
      &     results(nrowd,*) 
 c
 c                    locally allocated
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  temp_stress(nstr), wk(ndim), ev(nstr), evec(ndim,ndim)
 c
 c
