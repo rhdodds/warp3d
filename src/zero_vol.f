@@ -13,8 +13,7 @@ c     ****************************************************************
 c
       subroutine zero_vol ( vol, volume, span, mxvl )     
       implicit integer ( a-z )
-#dbl      double precision
-#sgl      real
+      double precision
      &  vol(mxvl,8,3), volume(span), zero
       data zero / 0.0d0 /
 c!DIR$ ASSUME_ALIGNED vol:64, volume:64      
