@@ -16,7 +16,7 @@ c
       subroutine insurf()
 c
       use mod_mpc, only : surface_table
-$add common.main
+      include 'common.main'
       parameter (max_ele=mxel/10)
       integer  ele, nelem, face, dumi, errnum, icn, iplist, count, 
      &         len, err
@@ -216,7 +216,7 @@ c
 c
       subroutine insurf_store(nelem, elems, faces, surfid)
       use mod_mpc, only : num_surfaces, surface_table
-$add common.main
+      include 'common.main'
       integer  err, nelem, elems(*), faces(*)
       character*16  surfid
 c
