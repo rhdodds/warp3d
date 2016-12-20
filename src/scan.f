@@ -56,8 +56,7 @@ c
 c         scan
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
       common /scanct/ echar, echo, ilabel, limit, mark, promt,
@@ -79,8 +78,7 @@ c
      &                intblk, intlcc, inttab, intstar
       dimension istate(110)
       integer istate, state, exp, ocol, scanmn
-#dbl      double precision dvalue,flt,f,ten,one,zero,tenth
-#sgl      real flt,f,ten,one,zero,tenth
+      double precision dvalue,flt,f,ten,one,zero,tenth
       data ocol/0/, ndot/0/
       data isig/1/,nsig/1/,int/0/,f/.1/,exp/0/
       data iptlc1/1/, iptlc2/6/
@@ -320,7 +318,7 @@ c            end real
 c
   100 continue
       f = tenth
-#dbl      dvalue = flt
+      dvalue = flt
       value = flt
       isig = 1
       int = 0
@@ -392,8 +390,7 @@ c
 c            continue real
 c
   210 continue
-#sgl      flt = flt + real(idigit(col)*isig)*f
-#dbl      flt = flt + dble(idigit(col)*isig)*f
+      flt = flt + dble(idigit(col)*isig)*f
       f = f * tenth
       go to 40
 c
@@ -513,12 +510,11 @@ c
 c         menuing routine interface
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
       integer point1, point2
-#dbl      double precision dvalue
+      double precision dvalue
 c
 c         dummy routine
 c
@@ -744,11 +740,10 @@ c
       common /scanim/ ncpw, blank, intzer, intnin, intc, intcom, 
      &                intblk, intlcc, inttab, intstar
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanln/ col, jump, nent, pstate, skip, doread,
      1                incol, jstart(80), ibuff(81), jbuff(81),
      2                idigit(81), card(81), isct
@@ -802,11 +797,10 @@ c
 c          advance the scanner now
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       if(next)call scan
       next = .false.
       doscan = .true.
@@ -822,11 +816,10 @@ c
 c         is the current scan entity an end of line
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modeol/9/
 c
       if( mode .eq. modeol ) then
@@ -853,11 +846,10 @@ c
 c        is the current scan entity an end of file
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       logical last
       data modeof/10/
       if(.not.next)go to 10
@@ -882,11 +874,10 @@ c          return the current characters from entity
 c
       dimension text(1)
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       nc = nchar
       nw = nwd
       do 10 i = 1, nw
@@ -904,10 +895,9 @@ c         return the contents of the scanner in a string
 c
       character *(*) cstr
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
-#dbl      double precision dvalue
+      double precision dvalue
       character * 80 string
       equivalence ( string,entity )
 c
@@ -932,11 +922,10 @@ c
 c         is the current scan entity an integer
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modint /1/
 c
       if(.not.next)go to 10
@@ -959,11 +948,10 @@ c
 c         is the current scan entity a label
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modlab/3/
       if(.not.next)go to 10
       call scan
@@ -988,11 +976,10 @@ c
       integer string(*)
       logical scanmc
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
 c
       match = .false.
       if(.not.next)go to 10
@@ -1020,11 +1007,10 @@ c
       integer string(*)
       logical scanmc
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
 c
       match_exact = .false.
       if( .not. next ) go to 10
@@ -1107,11 +1093,10 @@ c
 c         is the current scan entity a name
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modnam/4/
       if(.not.next)go to 10
       call scan
@@ -1132,11 +1117,10 @@ c
 c         do not advance the scanner
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       next = .false.
       noscan = .true.
       return
@@ -1151,11 +1135,10 @@ c
 c         is the current scan entity a number, convert to integer
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modrel/2/
       if(.not.next)go to 10
       call scan
@@ -1175,16 +1158,13 @@ c *                                                                    *
 c **********************************************************************
       logical function numd(double)
 c
-#dblc         is the current scan entity a number, convert to double
-#sglc         is the current scan entity a number
+c         is the current scan entity a number, convert to double
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue, double
-#sgl      real double
+      double precision dvalue, double
       data modrel/2/, modint/1/
 c
       iout = 6
@@ -1194,8 +1174,7 @@ c
       numd = .false.
       if (mode .gt. modrel) go to 20
       if (mode .eq. modint ) double = real(ivalue)
-#dbl      if (mode .ne. modint ) double = dvalue
-#sgl      if (mode .ne. modint ) double = value
+      if (mode .ne. modint ) double = dvalue
       numd = .true.
       next = .true.
    20 continue
@@ -1211,11 +1190,10 @@ c
 c         is the current scan entity a number, convert to real
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modrel/2/, modint/1/
 c
       if(.not.next)go to 10
@@ -1239,11 +1217,10 @@ c
 c         is the scan entity a point
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       integer point1, point2
       data modpt/11/
 c
@@ -1268,11 +1245,10 @@ c
 c         advance the scanner now
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanct/ echar, echo, ilabel, limit, mark, promt,
      1                point, recsiz, init, leof, eol, menu,
      2                autord, commnt, signed, autoct
@@ -1295,11 +1271,10 @@ c
 c         is the current scan entity a real
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modrel/2/
 c
       if(.not.next)go to 10
@@ -1322,11 +1297,10 @@ c
 c         is the current scan entity a seperator
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       integer septyp
       data modsep/6/
 c
@@ -1350,11 +1324,10 @@ c
 c         is the current scan entity a string
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modstr/7/
 c
       isstring = .false.
@@ -1371,11 +1344,10 @@ c
 c         is the current scan entity a string
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       data modstr/7/
 c
       if(.not.next)go to 10
@@ -1397,11 +1369,10 @@ c
 c         advance the scanner before the next test
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       next = .true.
       true = .true.
       return
@@ -1488,11 +1459,10 @@ c                        10 = save iteration increment
 c
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       dimension list(mlist), ifsa(6,6), nstate(6,6)
       integer entity
       logical istart, iovfl
@@ -1686,11 +1656,10 @@ c
 c
       dimension word(1), matchl(1)
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanim/ ncpw, blank, intzer, intnin, intc, intcom, 
      &                intblk, intlcc, inttab, intstar
       integer scnact
@@ -1748,11 +1717,10 @@ c
       dimension matchl(1), ifound(1)
       logical scanmc
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanim/ ncpw, blank, intzer, intnin, intc, intcom, 
      &                intblk, intlcc, inttab, intstar
 c
@@ -1889,11 +1857,10 @@ c
 c         debug - all character output at 4 per word
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanct/ echar, echo, ilabel, limit, mark, promt,
      1                point, recsiz, init, leof, eol, menu,
      2                autord, commnt, signed, autoct
@@ -2092,11 +2059,10 @@ c
 c           pack the scaner result in entity at 4 characters per word
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanln/ col, jump, nent, pstate, skip, doread,
      1                incol, jstart(80), ibuff(81), jbuff(81),
      2                idigit(81), card(81), isct
@@ -2134,11 +2100,10 @@ c
 c         input for scan
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanct/ echar, echo, ilabel, limit, mark, promt,
      1                point, recsiz, init, leof, eol, menu,
      2                autord, commnt, signed, autoct
@@ -2443,11 +2408,10 @@ c
 c          initialze the scanner
 c
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
-#dbl     1                icolmn, ispace, dvalue
-#sgl     1                icolmn
+     1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       logical next
-#dbl      double precision dvalue
+      double precision dvalue
       common /scanct/ echar, echo, ilabel, limit, mark, promt,
      1                point, recsiz, init, leof, eol, menu,
      2                autord, commnt, signed, autoct
