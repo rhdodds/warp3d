@@ -15,8 +15,7 @@ c
 c
       subroutine oulbta(step,stpitr,iter,beta)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     beta        
       logical dummy
 c
