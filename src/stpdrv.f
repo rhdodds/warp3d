@@ -23,7 +23,7 @@ c
       use damage_data, only : growth_by_kill, growth_by_release
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       dimension stplst(*)
 c
 c              declare all locals here - visible in contains
@@ -31,8 +31,7 @@ c
       real dumr
       character dums
       logical mf_ratio_change
-#dbl      double precision
-#sgl      real
+      double precision
      &     mf, mf_nm1, d32460, dumd, load_reduce_fact
       real con_stp_factor
       logical local_debug, msg_flag, stpdrv_error
@@ -415,8 +414,8 @@ c
      &                      divergence_check, diverge_check_strict,
      &                      line_search
       implicit integer (a-z)
-$add common.main
-$add include_usr_parm
+      include 'common.main'
+      include 'include_usr_parm'
       type(solution_parameters) :: usolution_parms
       type(step_definition) :: next_step_loading
 c
