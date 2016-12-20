@@ -14,20 +14,18 @@ c
 c
       subroutine blcmp1( span, b, gama, nxi, neta, nzeta, nnode )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                       parameter declarations
 c 
       integer :: span, nnode      
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  b(mxvl,mxedof,*), gama(mxvl,ndim,*), nxi(*), neta(*), nzeta(*)
 c
 c                       locals
 c      
       integer :: j, i, bpos1, bpos2 
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  btemp(mxvl,mxndel,ndim), zero  ! on stack
       data zero / 0.0d0 /
 c!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
@@ -39,8 +37,8 @@ c                       btemp - j,2 = NY for node j at gpn
 c                       btemp - j,3 = NZ for node j at gpn        
 c                     
       do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
          do i = 1, span
             btemp(i,j,1)= gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)+
      &                    gama(i,1,3)*nzeta(j)   
@@ -60,7 +58,7 @@ c                       compute the linear strain-
 c                       displacement matrices, using btemp.
 c       
 c!      do  j = 1, nnode
-c!@!DIR$ LOOP COUNT MAX=###  
+c!@!DIR$ LOOP COUNT MAX=128  
 c!@!DIR$ IVDEP
 c!         do i = 1, span
 c
@@ -111,13 +109,12 @@ c
 c
       subroutine blcmp_cohes( span, b, rot, shape, etype, nnode )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                       parameter declarations
 c  
       integer :: span, etype, nnode     
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  b(mxvl,mxedof,*), rot(mxvl,ndim,*), shape(*), sh(mxndel)
 c
       integer :: i, j, bpos1, bpos2     
@@ -138,13 +135,13 @@ c           compute B = R*sh
 c
 c      
       if( nnode .eq. 12 ) then
-@!DIR$ IVDEP
+!DIR$ IVDEP
        sh(1:6) = -shape(1:6)
-@!DIR$ IVDEP
+!DIR$ IVDEP
        sh(7:12) = shape(7:12)
        do j = 1, 12
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -167,8 +164,8 @@ c
         sh(1:3) = -shape(1:3)
         sh(4:6) = shape(4:6)
         do j = 1, 6
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -191,8 +188,8 @@ c
         sh(1:4) = -shape(1:4)
         sh(5:8) = shape(5:8)
         do j = 1, 8
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -223,8 +220,8 @@ c
        sh(i) = shape(i)
       end do
       do j=1,nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -261,21 +258,19 @@ c
       subroutine blcmp1_axisymm( span, b, gama, nxi, neta, nzeta,
      &                       shape, ce, radius, etype, nnode )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                       parameter declarations
 c       
       integer :: span, etype, nnode
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      &  b(mxvl,mxedof,*), gama(mxvl,ndim,*), nxi(*), neta(*),
      &  nzeta(*), shape(*), ce(mxvl,*), radius(*)
 c
 c                       locals
 c       
       integer :: i, j, row, col, bpos1, bpos2
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  btemp(mxvl,mxndel,ndim), zero ! on stack
       logical ::  local_debug, axisym
       data zero, local_debug / 0.0d0, .false. /
@@ -299,8 +294,8 @@ c                  axisymmetric elements only the upper left 2x2 of
 c                  the Jacobian matrix is used.
 c
         do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
           do i = 1, span
               btemp(i,j,1) = gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)
               btemp(i,j,2) = gama(i,2,1)*nxi(j)+gama(i,2,2)*neta(j)
@@ -321,8 +316,8 @@ c                       element; the bottom two rows are zeros for no
 c                       yz or zx shear strain.
 c       
         do  j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
            do i = 1, span
 c
               b(i,j,1)=       btemp(i,j,1)
