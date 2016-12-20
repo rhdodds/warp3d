@@ -9,22 +9,20 @@ c
       use main_data
       use j_data
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                     parameter declarations
 c
       integer iout
       dimension  scoord(*), coord_map(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & scoord
       logical debug
 c
 c                     local declarations
 c
       integer node, node_id, caseno
-#dbl      double precision
-#sgl      real
+      double precision
      & nx, ny, nz, one, zero, xcrack(3), tvec(3), length, x, y, z,
      & unode, vnode, wnode
       data zero, one / 0.0d00, 1.0d00 /
