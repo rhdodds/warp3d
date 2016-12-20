@@ -37,13 +37,12 @@ c
       use elem_load_data, only : elem_loads
       implicit integer (a-z)
 c
-$add common.main
+      include 'common.main'
 c
 c
 c                global variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     mult_fact, rload(*)
 c
 c
