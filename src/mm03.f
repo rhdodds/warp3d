@@ -15,12 +15,11 @@ c
       use segmental_curves, only : now_blk_relem
 
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c               parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  deps(mxvl,6), e(*), nu(*), sigma_o(*), f0(*), q1(*), q2(*),
      &  q3(*), stress_n(nstrs,*), stress_n1(nstrs,*),
      &  stress_n1_elas(mxvl,6,*), ym_n(*), nu_at_n(*),
@@ -32,8 +31,7 @@ c
 c
 c               locally allocated arrays for vectorization
 c
-#dbl      double precision 
-#sgl      real
+      double precision 
      &  a(mxvl), b(mxvl), c(mxvl), d(mxvl), shear_mod(mxvl),
      &  term1(mxvl), term2(mxvl), term3(mxvl),
      &  root22, third, zero, one, two, six, onehalf, toler,
@@ -388,9 +386,8 @@ c
 c              compute the value of the gurson yield
 c              function for the state of stress tau.
 c
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &   mm03f, mm03g
       dimension stress(*)
       data     root22 / 0.70710678 /, third / 0.3333333333333 /
@@ -421,9 +418,8 @@ c
 c              compute the value of the Gurson yield
 c              given the scaler parameters
 c
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &  mm03g
       data one, two, onehalf / 1.0, 2.0, 1.5 /
 c
@@ -453,9 +449,8 @@ c
      &                   nuc_f_n, ebarp_new, sbar_new, f_new, h_new,
      &                   iout, debug, segmental,
      &                   power_law, converge, first_time )
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &  n_power, m_power, mpoweri, nuc_s_n, nuc_e_n, nuc_f_n
       logical debug, consth, nucleation, rate_depen,
      &         segmental, power_law, converge, first_time
@@ -573,9 +568,8 @@ c
      &                   nuc_f_n, ebarp_new, sbar_new, f_new, h_new,
      &                   elenum, ptno, iout, debug, segmental,
      &                   power_law, converge, first_time )
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &  n_power, m_power, mpoweri, nuc_s_n, nuc_e_n, nuc_f_n,
      &  sfactors(5)
       integer  elenum, ptno
@@ -882,9 +876,8 @@ c
      &                   m_power, dt, eps_ref, rate_depen, mpoweri, 
      &                   iout, debug, segmental, power_law,
      &                   first_time )
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &   n_power, mpoweri, mm03is, m_power, mm03sc
       logical consth, debug, rate_depen, segmental, power_law,
      &        first_time
@@ -976,9 +969,8 @@ c
 c
       function mm03is( eps_pls, sigma_o, e, power, hprime, iout )
 c
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      & mm03is, n1, n2, n3, n4
       logical local_debug, converge
       data local_debug / .false. /
@@ -1093,9 +1085,8 @@ c
 c
       subroutine mm03ap( a_nuc, a_prime, ebarp, nuc_s_n, nuc_e_n,
      &                   nuc_f_n )
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &   nuc_s_n, nuc_e_n,  nuc_f_n
       data root_2_pi / 2.50663 /
       data half / 0.5 /
@@ -1127,9 +1118,8 @@ c              of the yield function wrt to the state variables.
 c              compute partial derivatives of the 2 residual
 c              functions (r1, e2) wrt dep and deq.
 c
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision
-#sgl      real
+      implicit double precision (a-h,o-z)
+      double precision
      &  mm03g, nuc_s_n, nuc_e_n, nuc_f_n
       logical nucleation, debug
       data onehalf / 1.5 /
@@ -1271,17 +1261,15 @@ c
      &                              sigma_curves, num_seg_points,
      &                              max_seg_points, seg_curves_type,
      &                              curve_rates, sigma_inter_table
-#dbl      implicit double precision (a-h,o-z)
-#dbl      double precision mm03sc
-#sgl      real mm03sc
+      implicit double precision (a-h,o-z)
+      double precision mm03sc
       integer caseh     
 c
 c
 c                      local declarations
 c
       integer first_curve, curve_set_type, pt_high, pt_low
-#dbl      double precision 
-#sgl      real 
+      double precision 
      & stress_values(max_seg_points), mm03lint,
      & curve_high(max_seg_points), curve_low(max_seg_points)
 c
@@ -1452,8 +1440,7 @@ c
 
       function mm03lint( xvalue, n, x, y )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      & xvalue, x(n), y(n), x1, x2, y1, y2, mm03lint
 c
       if ( xvalue .le. x(1) ) then
@@ -1547,18 +1534,16 @@ c
       use main_data, only: elems_to_blocks
 c      
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
 c                       locals
 c
-#dbl      double precision, 
-#sgl      real,
+      double precision, 
      & allocatable :: history_dump(:,:,:), one_elem_states(:)
       integer :: relem, elnum, hist_size, blockno
       logical :: do_a_block
@@ -1644,8 +1629,7 @@ c
 c                       locals
 c
       integer :: ipt   
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      & epspls, state, dword, sigeff, hprime, porosity_f, rate_yield 
        integer :: iword(2)
        equivalence ( dword, iword )
@@ -1926,7 +1910,6 @@ c
 c   double-single precision:
 c   =======================
 c
-c         we use a #dbl or #sgl at beginning of lines which
 c         depend on single/double precision implementations.
 c
 c
@@ -1949,7 +1932,7 @@ c
      &  history1, f1, ap_trial, aq_trial, mxvl, hist_size,
      &  asig_cur_min_val, span )
 c
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c                   parameter declarations
 c  
@@ -1964,8 +1947,7 @@ c
         integer :: iter, abs_element, relem, ipoint, iout
         logical :: allow_cut, segmental, power_law,
      &             rate_depend_segmental, signal_flag, cut_step
-#sgl        real :: dtime, step_scale_fact
-#dbl        double precision :: dtime, step_scale_fact
+        double precision :: dtime, step_scale_fact
       end type
       type (arguments) ::args
 c
@@ -1981,8 +1963,7 @@ c              parallel construct.
 c
 c        ---- start of the shared locals with contains -------
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  e, nu, f0, eps_ref, sigma_o, m_power, n_power, h_fixed,
      &  q1, q2, q3, nuc_s_n, nuc_e_n, nuc_f_n,
      &  stime, ftime, sbar, dmeps(6), ebarp, ebarp_new,
@@ -2016,8 +1997,7 @@ c
 c
 c        ---- end of the shared locals with contains -------
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  root23, ptone, root22, eps_tol, root2
       data root23, ptone, root22, root2 / 0.4714, 0.1, 0.70710678,
      &                                    1.41421356   /
@@ -2233,14 +2213,12 @@ c
       if ( gurson ) then
 c
         if ( ebarp .gt. zero ) then
-#sgl          nsubin    = max( int(one+ptone*equiv_eps/eps_o), 1 )
-#dbl          nsubin    = max( idint(one+ptone*equiv_eps/eps_o), 1 )
+          nsubin    = max( idint(one+ptone*equiv_eps/eps_o), 1 )
         else
           nsubin = 1
         end if
         if ( rate_depen ) nsubin = 1
-#sgl        scale     = one / real(nsubin)
-#dbl        scale     = one / dble(nsubin)
+        scale     = one / dble(nsubin)
         total_dep = zero
         total_deq = zero
         dep_n     = dep_n * scale * step_scale
@@ -2489,8 +2467,7 @@ c
       subroutine mm03s( newsig, isubincr )
 c
       implicit none
-#dbl      double precision
-#sgl      real
+      double precision
      &  newsig(*), mm03f
       integer isubincr
 c
@@ -2502,8 +2479,7 @@ c                   local variables in this routine
 c
       logical   converge
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & toler, phi, gp, gq, gsbar, gf, d11, d12, d21, d22, r1,
      & r2, del_dep, del_deq, eps_compare, chk1, tol_yf
 c
@@ -2709,8 +2685,7 @@ c
 c
 c                   parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    newsig(*)
 c
 c              This routine accesses the variables defined in the
@@ -2719,8 +2694,7 @@ c              feature.
 c
 c                   local variables in this routine
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  newyld_high, newyld_mid, toler, sig_tol, unused, eps_compare,
      &  deplas_low, deplas_high, resid_high,
      &  fl, fh, deplas, deplas_riddr, deplas_mid, resid_mid,
@@ -3008,8 +2982,7 @@ c
 c 
 c                    parameter declarations (and functions called)        
 
-#dbl      double precision
-#sgl      real
+      double precision
      &   mm03is, mm03sc, deplas, sig_bar, resid_now
       integer caseh
       logical first_iter
@@ -3021,8 +2994,7 @@ c              feature.
 c
 c                   local variables in this routine
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & factor
 c
 c              caseh tells the segmental routine to compute (=2) or
@@ -3136,7 +3108,6 @@ c
 c   double-single precision:
 c   =======================
 c
-c         we use a #dbl or #sgl at beginning of lines which
 c         depend on single/double precision implementations.
 c
 c
@@ -3152,13 +3123,12 @@ c
      &                  stress_trial, history, history1, cep,
      &                  span, iout )
       implicit none
-$add param_def
+      include 'param_def'
 c
 c                   parameter declarations
 c 
       integer :: element, gpn, iter, iout, span 
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & stress_trial(mxvl,*), history(span,*),
      & history1(span,*), cep(mxvl,6,6), e(*), nu(*), q1(*), 
      & q2(*), q3(*), nuc_s_n(*), nuc_e_n(*), nuc_f_n(*)
@@ -3166,8 +3136,7 @@ c
 c
 c                   locally defined array, variables
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & dword(mxvl), mpi(mxvl), mpn(mxvl), c1(mxvl), c2(mxvl),
      & c3(mxvl), c4(mxvl), ebarp(mxvl), sbar(mxvl),
      & pn1(mxvl), hprime(mxvl), f(mxvl), dep(mxvl), deq(mxvl),
@@ -3179,8 +3148,7 @@ c
      & qe(mxvl), pe(mxvl), sl(mxvl), n(mxvl,6), a1(mxvl),
      & a2(mxvl), a3(mxvl), a4(mxvl), a5(mxvl), anuc(mxvl),
      & anuc_prime(mxvl) 
-#dbl      double precision::
-#sgl      real ::
+      double precision::
      & twothd, third, half, root32, zero, one, two, three, root_2_pi,
      & term1, term2, temp, b1, b2, d1, d2, d3, d4, h1, h2, h3, h4,
      & h5, h6, h7, h8, beta, ch, sh, pgp, pgq, pgsbar, pgf,
@@ -3248,10 +3216,9 @@ c
       nonlin_point    = 0
       dword(1:span) = history1(1:span,6)
 c
-#dbl      inc_factor = 2
-#sgl      inc_factor = 1
+      inc_factor = 2
       j = 1
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
        state(i) = iword(j)
        if( state(i) .eq. 1 ) then
@@ -3265,7 +3232,7 @@ c              process linear strain points
 c
       cep = zero
 c      
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do  i = 1, span
        if( state(i) .ne. -1 ) cycle
        c1(i)= (e(i)/((one+nu(i))*(one-two*nu(i))))
@@ -3301,7 +3268,7 @@ c              be the contact stress).
 c              a continnum tangent at the contact stress point on the
 c              yield surface is computed.
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         ebarp(i)     = history1(i,1)
@@ -3319,7 +3286,7 @@ c
       end do
 c      
       if( iter .le. 1 ) then 
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
         do i = 1, span
           if( state(i) .ne. 1 ) cycle
             dep(i) = zero
@@ -3346,7 +3313,7 @@ c
      &    stress_trial(i,4), stress_trial(i,5), stress_trial(i,6)
       end if
 c 
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         twog(i)   = two * shear_mod(i)
@@ -3362,7 +3329,7 @@ c            3) process terms of trial elastic stress state at n+1.
 c               get pressure, equivalent stress and yield surface
 c               normal.
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         sm(i)  = ( stress_trial(i,1) + stress_trial(i,2) +
@@ -3400,7 +3367,7 @@ c
 c
 c                  4a)  a1 and a1 from Eq. (4)
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         a1(i) = (deq(i) * q(i) - dep(i) * p(i)) /
@@ -3419,7 +3386,7 @@ c                  4c)  b1 and b2 from Eq. (15). need to evaluate
 c                       A(ebarp) for nucleation and its derivative
 c                       wrt to ebarp.
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         if( nucleation(i) ) then 
@@ -3435,7 +3402,7 @@ c
         end if
       end do
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         b1 = ( one  -  f(i) ) / ( one  +  dep(i) )
@@ -3576,7 +3543,7 @@ c                 7b) [D] (2) Eq. (17) and pg. CT-EF-7
 c                 7c) [D] (4) Eq. (17) and pg. CT-EF-9. exercise the
 c                     symmetry option by default
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
        if( state(i) .ne. 1 ) cycle
        con_1 = twog(i) * ( one - threeg(i) * deq(i) / qe(i) )
@@ -3624,7 +3591,7 @@ c                 7d) [D] (3) Eq. (17) and pg. CT-EF-8. multiply in
 c                     the weight factor and determinant of coord.
 c                     jacobian.
 c
-@!DIR$ LOOP COUNT MAX=###  
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
        if( state(i) .ne. 1 ) cycle 
        con_1 = twog(i) * ( twog(i) * deq(i) / qe(i)  -  mqn(i) )
