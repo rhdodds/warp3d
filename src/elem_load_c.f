@@ -7,16 +7,14 @@ c
 c
        subroutine body_load( element, etype, nnode, body_dir,
      &                       body_intens, ecoord, equiv_loads_bdf )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension  equiv_loads_bdf(*), ecoord(3,*)
       integer element, etype, body_dir
 c
 c                local arrays
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    jacob, jacobi, sixth
 c
       dimension qvec(32), dsf(32,3), jacob(3,3), jacobi(3,3),
@@ -33,8 +31,7 @@ c
       tet_elem = etype .eq. 6 .or. etype .eq. 13
 c
 c
-#dbl      sixth = 1.0D0/6.0D0
-#sgl      sixth = 1.0/6.0
+      sixth = 1.0D0/6.0D0
 c
 c
 c                compute the {q} vector by integrating the
@@ -145,8 +142,7 @@ c
      &                       face_intens, ecoord, equiv_loads_face,
      &                       ldtype, constant_intens )
 c
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension  equiv_loads_face(*), 
      &           ecoord(3,*), 
@@ -164,8 +160,7 @@ c
       integer ptno, fnodes
 c
       data zero, one, local_debug 
-#dbl     & / 0.d0, 1.d0, .false. /
-#sgl     & / 0.0, 1.0, .false. /
+     & / 0.d0, 1.d0, .false. /
 c
 c
 c                check if we've got a tet element. if so,
@@ -301,8 +296,7 @@ c
      &                       nfnode, area)
 c
 c
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension  equiv_loads_face(*), 
      &           ecoord(3,*), 
@@ -316,8 +310,7 @@ c
 c                local arrays
 c
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    jacob, jacobi
 c
       dimension dsf(32,3), jacob(3,3), jacobi(3,3),
@@ -328,8 +321,7 @@ c
       integer ptno, fnodes
 c
       data zero, one, local_debug 
-#dbl     & / 0.d0, 1.d0, .false. /
-#sgl     & / 0.0, 1.0, .false. /
+     & / 0.d0, 1.d0, .false. /
 c
 c
 c               gauss points and weights for 2x2 and 
@@ -337,14 +329,10 @@ c               3x3 integration over the loaded face.
 c
 c
       data gp1, gp2, w1, w2 
-#dbl     &  / 0.57735026918962576450d0,
-#dbl     &    0.77459666924148337703d0,
-#dbl     &    0.55555555555555555555d0,
-#dbl     &    0.88888888888888888888d0 /
-#sgl     &  / 0.57735026918962576450,
-#sgl     &    0.77459666924148337703,
-#sgl     &    0.55555555555555555555,
-#sgl     &    0.88888888888888888888 /
+     &  / 0.57735026918962576450d0,
+     &    0.77459666924148337703d0,
+     &    0.55555555555555555555d0,
+     &    0.88888888888888888888d0 /
 c
 c               get the element nodes on the loaded face and
 c               zero the [q] matrix. 
@@ -428,8 +416,7 @@ c *******************************************************************
      &                       nfnode, area)
 c
 c
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension  equiv_loads_face(*), 
      &           ecoord(3,*), 
@@ -443,8 +430,7 @@ c
 c                local arrays
 c
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    jacob, jacobi, temp_dsf, temp_sf, vec1, vec2
 c
       dimension dsf(32,3), jacob(3,3), jacobi(3,3),
@@ -456,8 +442,7 @@ c
       integer ptno, fnodes
 c
       data zero, one, local_debug 
-#dbl     & / 0.d0, 1.d0, .false. /
-#sgl     & / 0.0, 1.0, .false. /
+     & / 0.d0, 1.d0, .false. /
 c
       ngpts = 0
 c
@@ -535,16 +520,14 @@ c
      &                      vec1, vec2 )
       implicit none
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    dsf(32,*), ecoord(3,*), darea, vec1(*), vec2(*)
 c
       integer fnodes(*), nfnode      
 c
 c                 local variables
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    a1, a2, a3
 c
       integer i, loc    
@@ -556,10 +539,8 @@ c                 the loaded face.
 c
 c
       do i=1,3
-#dbl      vec1(i) = 0.d0
-#dbl      vec2(i) = 0.d0
-#sgl      vec1(i) = 0.0
-#sgl      vec2(i) = 0.0
+      vec1(i) = 0.d0
+      vec2(i) = 0.d0
       end do
 c
       do i=1,nfnode
@@ -600,8 +581,7 @@ c
      &                     dsf, temp_dsf )
       implicit none
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    sf(*), dsf(32,*), temp_dsf(32,*), temp_sf(*)
 c
       integer etype, nfnode, fnodes(*)     
@@ -688,8 +668,7 @@ c
 c
       integer etype, ngpts, order, gp, index
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    fcoor(3,*), 
      &    fweight(*), 
      &    s1, s2, s3, 
@@ -698,8 +677,7 @@ c
       logical etype_tet4, etype_tet10
 c
       data zero, one 
-#dbl     & / 0.d0, 1.d0 /
-#sgl     & / 0.0, 1.0 /
+     & / 0.d0, 1.d0 /
 c
 c
 c               determine whether linear or quadratic tet.
@@ -826,8 +804,7 @@ c *******************************************************************
 c
 c
       subroutine  eqldjb( dsf, coord, nnode, jacob, jacobi, det, ierr )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c
 c              compute the 3 x 3 jacobian, its determinate and
@@ -835,8 +812,7 @@ c              inverse for the 3-d isoparametrics.
 c
 c
       dimension  dsf(32,*), coord(3,*), jacob(3,3), jacobi(3,3)
-#dbl      double precision
-#sgl      real
+      double precision
      &  jacob, jacobi
       logical  debug
       data zero, debug / 0.0, .false. /
@@ -1039,14 +1015,12 @@ c              points on an element face.  order of points
 c              is of no importance to user or integrators.
 c
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   fcoor(3,*), gauss(*)
 c
 c              local variables
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  const(6), value
       integer row1(6),  row2(6), row3(6)
 c
@@ -1101,8 +1075,7 @@ c                 surface at point as the required area.  use
 c                 cross product of two tangential vectors on the face.
 c
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  jacob(3,*), veca(3), vecb(3), darea, a1, a2, a3
       integer   face
 c
@@ -1163,7 +1136,7 @@ c
       use main_data
 c
       implicit none
-$add common.main
+      include 'common.main'
 c
 c     parameter declarations
 c     ----------------------
@@ -1172,16 +1145,14 @@ c
       integer :: elem_nodes(*)
       logical :: tet_elem
 c     
-#dbl      double precision
-#sgl      real
+      double precision
      &     face_intens, ecoord(3,*), p3, gam, m3, u3, fdirc(3)
 
 c
 c     declare local variables 
 c     -----------------------   
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &     jacob(3,3), jacobi(3,3), nrmvec(3), sf(32), dsf(32,3), 
      &     xi, eta, zeta, oecoord(3,mxndel), lvec(3),
      &     dwdt, dv1, dv2, dv3, dwidt, du1, du2, du3, dwi,
@@ -1322,15 +1293,13 @@ c     ----------------------
 c
       integer face
       logical tet_elem
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi, eta, zeta
 c
 c     declare local variables 
 c     -----------------------   
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &     hex_face_cent(3,6), tet_face_cent(3,4)
 c
 c     Set xi, eta, and zeta for hex element face centers
@@ -1378,8 +1347,7 @@ c     parameter declarations
 c     ----------------------
 c
       integer element, etype, nnode, face
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi, eta, zeta, ecoord(3,*), lvec(3)
 c
 c     declare local variables 
@@ -1387,8 +1355,7 @@ c     -----------------------
 c
       integer ierr
       logical bad, debug
-#dbl      double precision
-#sgl      real 
+      double precision
      &     dsf(32,3), jacob(3,3), jacobi(3,3), det
       data debug / .false. /
       if(debug) write(*,*) '>> In hex_face_nvec'
@@ -1431,15 +1398,13 @@ c     ----------------------
 c
       integer element, etype, nnode, face
       logical tet_elem
-#dbl      double precision
-#sgl      real
+      double precision
      &     xi, eta, zeta, ecoord(3,*), nrmvec(3)
 c
 c     declare local variables 
 c     -----------------------   
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &     dsf(32,3), temp_dsf(32,3), sf(32), temp_sf(32), 
      &     darea, mag1, mag2, mag_max, vec1(3), vec2(3), rlen,
      &     fcoor_tri6(3,6), fcoor_tri3(3,3), zero
