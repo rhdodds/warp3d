@@ -18,9 +18,8 @@ c
       subroutine aplacc
 c      implicit integer (a-z)
 c      logical trcacc
-c$add common.main
-c#dbl      double precision
-c#sgl      real
+c      include 'common.main'
+c      double precision
 c     &   zero, one
 c      data zero, one / 0.0, 1.0 /
 cc
