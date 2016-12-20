@@ -19,7 +19,7 @@ c
       subroutine prcsel
       use main_data, only : elstor
       implicit integer (a-z)     
-$add common.main
+      include 'common.main'
 c
 c                       for each element in the structure, store
 c                       element properties in permanent storage.
