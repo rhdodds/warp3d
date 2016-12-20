@@ -19,8 +19,7 @@ c
 c
       subroutine statistics ( stats, col_max, col_heigth, diag_pos, out)
       implicit integer (a-z)  
-#dbl      double precision
-#sgl      real
+      double precision
      &    words, mega_fact, avg_col_hgth, d1024, zero
       data d1024, zero /1024.0, 0.0/
       dimension  col_heigth(*), diag_pos(*)
