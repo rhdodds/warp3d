@@ -14,7 +14,7 @@ c
 c
       subroutine thyme( calc, flag )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real  t1, wcputime
       external wcputime
 c
