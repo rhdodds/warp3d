@@ -3,7 +3,7 @@ c                                                                     *
 c                  subroutine tilde                                   *
 c                                                                     *
 c            written by;  rhd                                         *
-c            updated:  rhd 9/15/2014                                  *
+c            updated:  rhd 12/19/2016 rhd                             *
 c                                                                     *
 c            given a file name, replace ~/ if present with user's     *
 c            home directory (full path name)                          *                                                                     *
@@ -11,6 +11,7 @@ c                                                                     *
 c**********************************************************************
 c 
       subroutine tilde( name_in, name_out, ok )
+      use main_data, only : windows_os
       implicit none
 c
 c              parameter declarations
@@ -21,7 +22,7 @@ c
 c              local declarations
 c
       character (len=1000) :: work_name, home_name
-      character (len=1) :: dums
+      character (len=1) :: dums, file_separator
       integer :: len_out, len_in, last_work_name, last_home_name,
      &           reqd_length, dumi, i
       logical :: debug
@@ -75,10 +76,10 @@ c
         return
       end if
 c      
-      name_out(1:) = home_name(1:last_home_name) //
-!win     &                "/" //
-#win     &                "\" //
-     &               work_name(3:last_work_name)
+      file_separator = "/"
+      if( windows_os ) file_separator = "\"
+      name_out(1:) = home_name(1:last_home_name) // file_separator
+     &                      // work_name(3:last_work_name)
       ok = .true.
       return
 c   
