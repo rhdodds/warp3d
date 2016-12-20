@@ -12,7 +12,7 @@ c
             use main_data, only: asymmetric_assembly
             use mm10_defs
             implicit integer (a-z)
-$add include_sig_up
+      include 'include_sig_up'
             double precision, intent(in) :: uddt(mxvl,nstr)
             double precision, intent(in) :: gp_temps(mxvl),
      &                                      gp_temp_inc(mxvl)
@@ -662,7 +662,7 @@ c
       subroutine mm11_set_sizes_special( matnum, size_data, local_el )
       use main_data, only: imatprp
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       dimension size_data(*)
       integer :: local_el, matnum, ncrystals, nstacks, omatn
 c
@@ -765,13 +765,12 @@ c
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                       parameters
 c
       integer :: nrow_states, itype, num_states
-#dbl      double precision :: elem_states_output(nrow_states,*)
-#sgl      real  :: elem_states_output(nrow_states,*)
+      double precision :: elem_states_output(nrow_states,*)
 c
       return
       end
