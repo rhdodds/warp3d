@@ -97,8 +97,7 @@ c
       integer elemno, etype, nnode, snodes(*), front_nodes(*),
      &        domain_type, domain_origin, num_front_nodes, front_order,
      &        out
-#dbl      double precision
-#sgl      real
+      double precision
      &     feload(3,*), cf_tractions(*), rotate(3,3), dsf(20,3,28),
      &     jacobi(3,3,28), cdispl(3,20), qvals(*), jterm(9),
      &     iterm(8,7), coord(3,*), front_coords(3,*), ym_front_node,
@@ -109,13 +108,11 @@ c
 c             local variables
 c
       integer j, enode, faceno, nfnode, fnodes(20), sfnodes(20), flag
-#dbl      double precision
-#sgl      real
+      double precision
      &     sum_load, eloads(3,20), zero
 c
       data zero
-#dbl     & / 0.d0 /
-#sgl     & / 0.0  /      
+     & / 0.d0 /
 c
       if( debug ) write(out,100) elemno
 c      
@@ -196,7 +193,7 @@ c *******************************************************************
 c
       subroutine dielwf( eqload, etype, nnode, faceno, iout, debug,
      &                   flag, snodes, nfnode, fnodes, sfnodes )
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c             parameter declarations
 c           
@@ -209,8 +206,7 @@ c             local declarations
 c
       integer fnode, enode, face, counter
       logical ldface(6)  
-#dbl      data toler / 1.0d-10 /    
-#sgl      data toler / 1.0e-10 /    
+      data toler / 1.0d-10 /    
 c
 c             by examining the non-zero entries in the equivalent
 c             loads for the element, determine which face has an
@@ -327,7 +323,7 @@ c *******************************************************************
 c
       subroutine dielrl( feload, eloads, cf_tractions, rotate, nnode,
      &                   debug, iout ) 
-#dbl      implicit double precision (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c             rotate equivalent nodal loads from element local
 c             to the crack coordinate system.
@@ -393,8 +389,7 @@ c
 c             dummy variables
 c
       integer etype, nnode, nfnode, fnodes(*), elemno, out
-#dbl      double precision
-#sgl      real
+      double precision
      &     dsf(20,3,28), jacobi(3,3,28), cdispl(3,20), eloads(3,20),
      &     qvals(*), jterm(9)
       logical debug
@@ -402,14 +397,12 @@ c
 c             local variables
 c
       integer ptno, enode, k1, idumvec(1), order_face, ngpts_face
-#dbl      double precision
-#sgl      real
+      double precision
      &     xsi, eta, zeta, weight, dux, dvx, dwx, nx, ny, nz, dieldp,
      &     cderiv(27,3), termu, termv, termw, dum_vec(1), lg(28), zero
 c
       data zero
-#dbl     & / 0.d0 /
-#sgl     & / 0.0  /
+     & / 0.d0 /
 c
 c             set integration order for face integrals for
 c             tractions applied on crack face. we always use
@@ -545,8 +538,7 @@ c
       integer elemno, etype, nnode, nfnode, fnodes(20), sfnodes(20),
      &        domain_type, front_nodes(*), domain_origin,
      &        num_front_nodes, front_order, out
-#dbl      double precision
-#sgl      real
+      double precision
      &     coord(3,*), front_coords(3,*), cf_tractions(*), cdispl(3,20),
      &     eloads(3,20), qvals(*), iterm(8,7), e_front, nu_front,
      &     crack_curvature(*)
@@ -556,8 +548,7 @@ c             local variables
 c
       integer i, j, k, enode, order_face, ngpts_face, ptno, fnode,
      &        idumvec(1), ierr
-#dbl      double precision
-#sgl      real
+      double precision
      &     fnode_coords(3,20), xsi, eta, zeta,
      &     weight, dux, dvx, dwx, nx, ny, nz, cderiv_aux(27,3,7),
      &     termu, termv, termw, dum_vec(1), lg(28), sf(20),
@@ -569,8 +560,7 @@ c
       logical approx, shift
 c
       data zero, half, one, two, three, pi, four
-#dbl     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.0d0, 3.14159265359d0, 4.0d0 /
-#sgl     & / 0.0,   0.5,   1.0,   2.0,   3.0,   3.14159265359,   4.0   /
+     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.0d0, 3.14159265359d0, 4.0d0 /
 c
 c
 c             method 1: when crack-face tractions are known only
@@ -660,8 +650,7 @@ c
          ave_y_coord = ave_y_coord
      &               + (coord(2,enode) - front_coords(2,domain_origin))
       end do
-#dbl         ave_y_coord = ave_y_coord / dble(nnode)
-#sgl         ave_y_coord = ave_y_coord / real(nnode)
+         ave_y_coord = ave_y_coord / dble(nnode)
 c
       if( ave_y_coord .lt. zero ) then
          cf_tractions(1) = - cf_tractions(1)
@@ -1040,8 +1029,7 @@ c
       integer nfnode, fnodes(*), sfnodes(*), elemno, front_nodes(*),
      &        num_front_nodes, domain_type, domain_origin, front_order,
      &        out
-#dbl      double precision
-#sgl      real
+      double precision
      &     fnode_coords(3,*), ave_y_coord, front_coords(3,*),
      &     crack_curvature(*)
 c
@@ -1049,15 +1037,13 @@ c             local variables
 c
       integer i, fnode, node1, node2, sfnode1, sfnode2, pair,
      &        fnode_temp(20), sfnode_temp(20), index
-#dbl      double precision
-#sgl      real
+      double precision
      &     x1_1, x1_2, measure, zero, half, one, two, huge, d1, d1_old,
      &     coord_temp(3,20), node_x, node_y, node_z, r, t, rs(4)
       logical debug
 c
       data zero, half, one, two, huge
-#dbl     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 1.0d10 /
-#sgl     & / 0.0,   0.5,   1.0,   2.0,   1.0e10 /
+     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 1.0d10 /
 c
       debug = .false.
 c
