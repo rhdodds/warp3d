@@ -21,7 +21,7 @@ c
 c
       implicit integer (a-z)
       real  mult
-$add common.main
+      include 'common.main'
 c
 c                       locally allocated
 c
