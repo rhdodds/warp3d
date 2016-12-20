@@ -41,26 +41,23 @@ c
       use main_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                global variables
 c
       dimension eload_data(size,3), thread_number(size), 
      &          eload_pist(size)
       real eload_val(size)
-#dbl      double precision
-#sgl      real
+      double precision
      &     mult_fact, eqloads(*)
 c
 c                local variables
 c      
       logical debug
-#dbl      double precision
-#sgl      real
+      double precision
      &      zero, nrmeq
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      & dimension(:,:), allocatable :: del_eqload
 c
       data debug, zero / .false., 0.0 /
@@ -141,29 +138,26 @@ c
       use main_data
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c     parameter declarations
 c     ----------------------
 c
       integer element, eload_type, eload_dof, eload_pist
       real elval
-#dbl      double precision
-#sgl      real
+      double precision
      &     del_eqload(*), mult_fact
 c
 c     declare local variables 
 c     -----------------------   
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &      ecoord(3,mxndel), zero, body_intens, face_intens,
      &      equiv_loads_ele(mxndel), equiv_loads_face(mxndel,3),
      &      face_intensities(mxndel,3), dummy,
      &      p3, u3, m3, gam, fdirc(3)
 c
-#dbl      double precision,
-#sgl      real,
+      double precision,
      & dimension(:,:), pointer :: eforces
 c
       dimension elem_nodes(mxndel), edest(mxedof)
@@ -432,8 +426,7 @@ c
       subroutine hex_face_nloads( element, etype, nnode, face,
      &                        xload, yload, zload, face_intens,
      &                        ecoord, failed )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension  xload(*), yload(*), zload(*), ecoord(3,*)
       integer element, etype, face
@@ -441,8 +434,7 @@ c
 c
 c                local arrays
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    jacob, jacobi, nrmvec
 c
       dimension dsf(32,3), jacob(3,3), jacobi(3,3),
@@ -552,8 +544,7 @@ c
       implicit none
 c
       integer face
-#dbl      double precision
-#sgl      real
+      double precision
      &  xsi, eta, zeta, pt9
       data pt9 / 0.9 /
 c 
@@ -585,8 +576,7 @@ c
       subroutine tet_face_nloads( element, etype, nnode, face,
      &                        xload, yload, zload, face_intens,
      &                        ecoord, failed )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real  (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension  xload(*), yload(*), zload(*), ecoord(3,*)
       integer element, etype, face
@@ -594,8 +584,7 @@ c
 c
 c                local arrays
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &    nrmvec, mag1, mag2, mag_max, vec1, vec2
 c
       dimension dsf(32,3), temp_dsf(32,3),
@@ -606,8 +595,7 @@ c
       logical local_debug, etype_tet10, etype_tet4
       integer enode, fnodes, i
       data   zero, local_debug, tol 
-#dbl     &  / 0.d0, .false., 1.0d-06 /
-#sgl     &  / 0.0, .false., 1.0e-06 /
+     &  / 0.d0, .false., 1.0d-06 /
 c   
 c   
 c                    use shape function derivatives for triangular
@@ -622,26 +610,17 @@ c                    face that is loaded.
 c
 c  
       data fcoor_tri6 
-#dbl     & / 0.d0,  0.d0,  1.d0,
-#dbl     &   0.5d0, 0.d0,  0.5d0,
-#dbl     &   1.d0,  0.d0,  0.d0,
-#dbl     &   0.5d0, 0.5d0, 0.d0,
-#dbl     &   0.d0,  1.d0,  0.d0,
-#dbl     &   0.d0,  0.5d0, 0.5d0 /
-#sgl     & / 0.0, 0.0, 1.0,
-#sgl     &   0.5, 0.0, 0.5,
-#sgl     &   1.0, 0.0, 0.0,
-#sgl     &   0.5, 0.5, 0.0,
-#sgl     &   0.0, 1.0, 0.0,
-#sgl     &   0.0, 0.5, 0.5 /
+     & / 0.d0,  0.d0,  1.d0,
+     &   0.5d0, 0.d0,  0.5d0,
+     &   1.d0,  0.d0,  0.d0,
+     &   0.5d0, 0.5d0, 0.d0,
+     &   0.d0,  1.d0,  0.d0,
+     &   0.d0,  0.5d0, 0.5d0 /
 c  
       data fcoor_tri3 
-#dbl     & / 0.d0, 0.d0, 1.d0,
-#dbl     &   1.d0, 0.d0, 0.d0,
-#dbl     &   0.d0, 1.d0, 0.d0 /
-#sgl     & / 0.0, 0.0, 1.0,
-#sgl     &   1.0, 0.0, 0.0,
-#sgl     &   0.0, 1.0, 0.0 /
+     & / 0.d0, 0.d0, 1.d0,
+     &   1.d0, 0.d0, 0.d0,
+     &   0.d0, 1.d0, 0.d0 /
 c  
 c
 c                     determine if linear or quadratic tet
@@ -783,8 +762,7 @@ c
       use main_data
 c
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      & zero
 
       data zero / 0.0 /
@@ -812,16 +790,14 @@ c
       subroutine eqnrmvh( face, jacob, nrmvec, bad, debug )
       implicit none
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &  jacob(3,3), nrmvec(3)
       integer face
       logical bad, debug
 c
 c                local arrays
 c
-#dbl      double precision
-#sgl      real 
+      double precision
      &     maga, magb, mag_max, veca(3), vecb(3), rlen,
      &     zero, tol, mag_min
       integer irowa(6), irowb(6), rowa, rowb
@@ -929,15 +905,13 @@ c
 c     parameter declarations
 c     ----------------------
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     p3, u3, m3, gam, fdirc(3), cmptime
 c
 c     declare local variables 
 c     -----------------------   
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &     t0, tf, tn, ti, pn, un, mn, gn, fn(3), 
      &     tn1, pn1, un1, mn1, gn1, fn1(3), one, fac1, fac2, 
      &     mx, my, mz, norm
