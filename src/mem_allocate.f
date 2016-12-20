@@ -19,9 +19,8 @@ c
       use contact, only : contact_cause, maxcontact, contact_force
 c
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &  zero
       data zero / 0.0 /
 c
