@@ -15,14 +15,13 @@ c
       subroutine incurv( sbflg1, sbflg2 )
       use segmental_curves
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                local declarations
 c
       logical matchs, numi, numd, sbflg1, sbflg2, new_line, local_debug,
      &        endcrd, local_gp_model_flag
-#dbl      double precision
-#sgl      real
+      double precision
      &   stress_pt, strain_pt, dumd, ym, zero
       real dumr
       character *1 dums
@@ -248,7 +247,7 @@ c
       subroutine incurv_temperature( gp_model_flag )
       use segmental_curves
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                paramter declarations
 c
@@ -262,8 +261,7 @@ c
      &        gp_beta_u_input, gp_delta_u_input,
      &        local_match_flag
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    dumd, value
       real dumr
       character *1 dums
@@ -460,14 +458,13 @@ c
       subroutine incurv_strain_rate
       use segmental_curves
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                local declarations
 c
       logical matchs, numd, local_debug
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    dumd
       real dumr
       character *1 dums
