@@ -18,7 +18,7 @@ c
       implicit integer (a-z)
       logical ouflg, oubin, ouasc, stress, ounod,
      &        flat_file, stream_file, text_file, compressed 
-$add common.main
+      include 'common.main'
 c
 c                       MPI:
 c                         Results remain distributed onto ranks for.
@@ -91,7 +91,7 @@ c
       subroutine oustr( stress, ouflg, oupat, oubin, ouasc, ounod,
      &                  wide, eform, prec, noheader, out_packet_now )
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       dimension intlst(mxlsz)
       logical ouflg, oupat, oubin, ouasc, ounod, wide, eform, prec,
      &        stress, noheader, out_packet_now
@@ -101,8 +101,7 @@ c
       integer, allocatable ::  element_list(:)
       logical matchs, true, eject_flag, endcrd
       real dumr
-#dbl      double precision
-#sgl      real
+      double precision
      &     dumd
       character dums
 c
@@ -240,7 +239,7 @@ c
      &                       blk_size_hist
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                  allocate a 3-D array block for the element histories
 c                  at n and n+1. find the maximum number of gauss points
