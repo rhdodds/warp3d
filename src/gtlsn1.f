@@ -26,12 +26,11 @@ c
      &                   due, deps, gama, nxi, neta,
      &                   nzeta, vol_block, bbar, eps_bbar, b )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & due(mxvl,*), deps(mxvl,nstr), gama(mxvl,3,3),
      & nxi(*), neta(*), nzeta(*), vol_block(mxvl,8,*), eps_bbar,
      & b(mxvl,mxedof,*)
@@ -62,8 +61,8 @@ c
       bpos2 = 2*nnode 
 c     
       do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
          do i = 1,span
            deps(i,1) = deps(i,1) +  b(i,j,1) * due(i,j) +
      &                              b(i,bpos1+j,1) * due(i,bpos1+j) +
@@ -110,19 +109,17 @@ c
       subroutine gtlsn2( span, nnode, due, dgstrn, dgstrs, rot, shape, 
      &                   etype, gpn, felem, iout )
       implicit integer (a-z)
-$add param_def
+      include 'param_def'
 c
 c                      parameter declarations
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & due(mxvl,*), dgstrn(mxvl,nstr), dgstrs(mxvl,*), rot(mxvl,3,3),
      & shape(*), b(mxvl,mxedof,nstr)
 c
 c                      locals
 c
-#dbl      double precision, parameter :: zero = 0.0d00
-#sgl      real, parameter :: zero = 0.0
+      double precision, parameter :: zero = 0.0d00
       logical :: local_debug
       data local_debug / .false. /
 c!DIR$ ASSUME_ALIGNED due:64, dgstrn:64, dgstrs:64, rot:64
@@ -140,8 +137,8 @@ c
       bpos2 = 2*nnode
 c     
       do j = 1, nnode
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
          do i = 1, span
            dgstrn(i,1)= dgstrn(i,1)+b(i,j,1) * due(i,j) +
      &                              b(i,bpos1+j,1) * due(i,bpos1+j) +
@@ -159,8 +156,8 @@ c                       update the accumulated displacement jumps.
 c                       dgstrs is total "strain" at end of step.
 c                       dgstrn is total "strain" increment over step.
 c       
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
       do i = 1, span
          dgstrs(i,1) = dgstrs(i,1) + dgstrn(i,1)
          dgstrs(i,2) = dgstrs(i,2) + dgstrn(i,2)
