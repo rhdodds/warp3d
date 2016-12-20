@@ -15,8 +15,7 @@ c     ****************************************************************
 c
       subroutine equiv_strain ( results, maxnum, num )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     results(maxnum,*),  root23, onep5
       data root23, onep5 / 0.471404, 1.5 /
 c
