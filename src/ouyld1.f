@@ -14,8 +14,7 @@ c
 c
       subroutine ouyld1( span, gpstr, yf, mxvl )
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     gpstr(mxvl,*), yf(*), iroot2, six
       data iroot2, six / 0.70711, 6.0 /
 c
