@@ -16,8 +16,7 @@ c
       implicit none
 c
       integer :: span, totdof, bedst(totdof,*)
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   mdiag(*), mel(totdof,*)
 c
       integer :: i, j                              
