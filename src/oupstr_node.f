@@ -19,7 +19,7 @@ c
       implicit integer (a-z)
       logical stress, oubin, ouasc, flat_file, 
      &        stream_file, text_file, compressed
-$add common.main
+      include 'common.main'
 c
 c                local declarations
 c
@@ -39,13 +39,11 @@ c                touch then in this domain.
 c
       type :: node_entry
          integer :: count
-#dbl         double precision, dimension(:), pointer :: node_values
-#sgl         real, dimension(:), pointer :: node_values
+         double precision, dimension(:), pointer :: node_values
       end type node_entry
 c
       type (node_entry), dimension (:), pointer :: nodal_values
-#dbl         double precision, dimension(:), pointer :: snode_values
-#sgl         real, dimension(:), pointer :: snode_values
+         double precision, dimension(:), pointer :: snode_values
 c
 c
 c                       create structure size vector of derived types.
