@@ -21,8 +21,7 @@ c
 c
       integer, save ::  adapt_level, adapt_result, adapt_divisions
 c
-#dbl      double precision, save :: 
-#sgl      real, save ::
+      double precision, save :: 
      &   adaptive_stack(adapt_rows,adapt_cols),
      &   adapt_disp_fact,
      &   adapt_load_fact, 
