@@ -21,8 +21,7 @@ c
 c                    parameters
 c
       integer ::  nodof, iout, cstmap(*), dstmap(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & norm_load, nbeta, dt, 
      & pbar(nodof), ifv(nodof), mdiag(nodof), du(nodof), 
      & res(nodof)    
@@ -30,8 +29,7 @@ c
 c                    locals
 c
       integer :: i 
-#dbl      double precision
-#sgl      real
+      double precision
      &  nfac, sum
       double precision, parameter :: zero = 0.0d00,
      &                               one  = 1.0d00
@@ -134,8 +132,7 @@ c              parameters
 c
       integer :: iter, iout, nodof, num_term_loads, cstmap(nodof),
      &           dstmap(nodof) 
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  dt, nbeta, sum_loads, mgload, mdiag(nodof), pbar(nodof),
      &  du(nodof), velocity(nodof), accel(nodof), ifv(nodof),
      &  res(nodof), load(nodof)
@@ -143,8 +140,7 @@ c
 c              locals
 c
       integer :: i, chknode, chkdof
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  nfac, zero, one, two, accel_n1, term_load, nfac1, nfac2,
      &  force_lag, total_external, inertia_contact
       logical :: have_mpc_equations
