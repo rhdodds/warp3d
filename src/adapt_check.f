@@ -20,15 +20,13 @@ c
 c              parameters
 c
       integer :: process_type, step, iout
-#dbl      double precision :: scaling_adapt
-#sgl      real :: scaling_adapt
+      double precision :: scaling_adapt
 c
 c              locals
 c
       integer :: num_subs, i, j
       logical :: local_debug
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & start_scale, end_scale, incr_scale, start, zero, one
 c     
       data zero, one / 0.0d00, 1.0d00 /
