@@ -21,7 +21,7 @@ c
      &                       rot_blk_n1, ddtse, blk_size_gp
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       logical geonl, stress, is_cohesive
 c
 c             local declarations
@@ -106,8 +106,7 @@ c
 c               parameter declarations
 c
       integer ngp, mxhist, mxngp, hist_size, mxvl, span
-#dbl      double precision
-#sgl      real
+      double precision
      & history_local(mxvl,mxhist,mxngp),
      & history_global(hist_size,ngp,span)
 c
