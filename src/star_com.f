@@ -17,9 +17,8 @@ c
 c
       subroutine star_com
       implicit integer (a-z)             
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &  dumd
       real t1, wcputime, dumr
       external wcputime
