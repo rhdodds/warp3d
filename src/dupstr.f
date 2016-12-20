@@ -28,22 +28,20 @@ c
       use damage_data, only : dam_ptr, growth_by_kill
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c           parameter declarations
 c
       dimension bedst(totdof,*), belinc(nnode,*)
       logical trn_e_flags(*),
      &        trn_e_block, trne(mxvl,*), trn(*)
-#dbl      double precision
-#sgl      real
+      double precision
      & trnmte(mxvl,mxedof,*), ue(mxvl,*), due(mxvl,*)
 c
 c           local declarations
 c
       logical local_debug
-#dbl      double precision
-#sgl      real
+      double precision
      &   half, zero
       data local_debug, half, zero / .false., 0.5, 0.0 /
 c
