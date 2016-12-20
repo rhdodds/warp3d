@@ -19,7 +19,8 @@ c
 c
       subroutine oudrive( sbflg1, sbflg2, stname, ltmstp )
       use main_data, only: output_packets, output_states_type_opt1,
-     &                                     output_states_type_opt2
+     &                                     output_states_type_opt2,
+     &                                     windows_os
       implicit integer (a-z)
 c
 c                       parameter declarations
@@ -30,8 +31,7 @@ c
 c                       local declarations
 c
       real :: dumr
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &   dumd
       character :: dums
       logical :: outyp, ouflg, ounod, wide, eform,
@@ -169,11 +169,11 @@ c
             call errmsg2( 84, dum, dums, dumr, dumd )
             compressed = .false.
          end if
-#win        if( compressed ) then
-#win               call errmsg2( 86, dum, dums, dumr, dumd )
-#win               compressed = .false.
-#win        end if
-          cycle
+         if( compressed .and. windows_os ) then
+            call errmsg2( 86, dum, dums, dumr, dumd )
+            compressed = .false.
+         end if
+         cycle
       end if
 c
       if( matchs('packet',4) ) then
@@ -497,7 +497,7 @@ c
       use main_data, only: output_command_file,
      &                     output_step_bitmap_list
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                      locals
 c
