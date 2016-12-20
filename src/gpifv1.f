@@ -18,13 +18,12 @@ c
 c
       use segmental_curves, only : max_seg_points, max_seg_curves
       implicit integer (a-z)
-$add param_def 
-$add include_sig_up
+      include 'param_def' 
+      include 'include_sig_up'
 c
 c                       parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  eleifv(nrow_ifv,*), weight, dj(*), element_volumes(*),
      &  b(mxvl,mxedof,*), urcs_blk_n1(mxvl,*)
 c
@@ -32,8 +31,7 @@ c                       local declarations
 c
       logical geonl, bbar
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   qtn1(mxvl,nstr,nstr), cs_blk_n1(mxvl,nstr),
      &   eps_bbar, w, scalar 
 c!DIR$ ASSUME_ALIGNED eleifv:64, dj:64, element_volumes:64
@@ -53,8 +51,7 @@ c
 c                       if element is triangle, wedge, tet sacle
 c                       weights to correctly integrate B*sigma. 
 c
-#sgl      scalar = 1.0
-#dbl      scalar = 1.0d00
+      scalar = 1.0d00
       if ( local_work%adjust_const_elem  ) then
         call adjust_scalar_weights( type, scalar )
       end if
@@ -74,8 +71,8 @@ c
      &                    local_work%shape(1,gpn), type, nnode )
 c
           do j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
             do i = 1, span
                eleifv(i,j) = eleifv(i,j) +
      &                       b(i,j,1) * urcs_blk_n1(i,1) * w * dj(i) +
@@ -113,8 +110,8 @@ c
      &                 local_work%urcs_blk_n1(1,1,gpn),
      &                 cs_blk_n1 )
           do j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
             do i = 1, span 
                eleifv(i,j) = eleifv(i,j) +
      &                       b(i,j,1)*cs_blk_n1(i,1)*w*dj(i) +
@@ -132,8 +129,8 @@ c                       small displacement formulation. the urcs
 c                       are stresses. no transformation needed.
 c                        
       do j = 1, totdof
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
         do i = 1, span 
            eleifv(i,j) = eleifv(i,j) +
      &                   b(i,j,1)*urcs_blk_n1(i,1)*w*dj(i) +
@@ -150,8 +147,8 @@ c                       update gauss point contribution to volume
 c                       of element.
 c
  9000 continue
-@!DIR$ LOOP COUNT MAX=###  
-@!DIR$ IVDEP
+!DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
       do i = 1, span 
         element_volumes(i) = element_volumes(i)   +   w * dj(i) 
       end do
