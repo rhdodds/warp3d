@@ -15,8 +15,7 @@ c
 c
       subroutine ouparm(aparm,bparm,cparm,eparm,fparm,step,iter)
       implicit integer (a-z)
-#dbl      double precision
-#sgl      real
+      double precision
      &     aparm,bparm,cparm,eparm,fparm                                 
       logical dummy
 c
