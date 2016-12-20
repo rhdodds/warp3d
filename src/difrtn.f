@@ -12,16 +12,14 @@ c
 c
 c               parameter declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      & scoord(*), tvec(*), crack_front_tangent(*)
       dimension coord_map(*), fnodes(*)
       logical tangent_vector_defined
 c
 c               local declarations
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &  dsf(4), sf(4), tvec1(3), tvec2(3),
      &  dx, dy, dz, xsi, zero, one, half       
       logical debug
@@ -172,8 +170,7 @@ c *******************************************************************
 c
 c
       subroutine difrts( dx, dy, dz, tvec, status )
-#dbl      double precision
-#sgl      real
+      double precision
      & dx, dy, dz, tvec(*), length                                
       integer status
 c                   
