@@ -24,8 +24,7 @@ c
 c
 c                     double precision/reals
 c
-#dbl       double precision
-#sgl       real
+       double precision
      & crack_plane_normal(3), crack_front_tangent(3),
      & domain_rot(3,3), domain_min_j, domain_max_j, domain_avg_j,
      & static_min, static_max, static_avg,  front_q_area, front_length,
@@ -56,16 +55,13 @@ c
 c
 c                     real/double
 c
-#dbl       double precision,
-#sgl       real,
+       double precision,
      & allocatable, dimension(:), save :: swd_at_nodes
 c
-#dbl       double precision,
-#sgl       real,
+       double precision,
      & allocatable, dimension(:,:), save :: strain_at_nodes, j_storage,
      &                                      j_from_ks, ks_from_j
-#dbl       double precision,
-#sgl       real,
+       double precision,
      & allocatable, dimension(:,:,:), save :: i_storage
 c
 c                     logicals
