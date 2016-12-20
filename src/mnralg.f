@@ -40,21 +40,18 @@ c
      &                            i_lagrange_forces
 c
       implicit integer (a-z)
-$add common.main
-#dbl      double precision ::
-#sgl      real ::
+      include 'common.main'
+      double precision ::
      &  mf, mf_nm1, dt_original
       logical :: mf_ratio_change
       double precision :: sumrr, sumdd
 c
 c           local variables
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  mgres1, magdu1, zero, one, mgload, ext_tol,
      &  scaling_load, mag
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  allocatable, dimension(:) ::u_n_local
       
 c     
@@ -727,13 +724,11 @@ c
 c
 c              local variables
 c
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      &      s_value, s0_value, r_value, alpha, rho, slack_toler,
      &      alpha_min, s_values(0:30), r_values(0:30), zero, one,
      &      ls_reduce_fraction, alpha_values(30)
-#dbl      double precision, allocatable :: du0(:)
-#sgl      real, allocatable :: du0(:)
+      double precision, allocatable :: du0(:)
      
       logical :: ls_debug, no_line_search, line_search_details
       integer :: ls_ell, i
@@ -905,13 +900,11 @@ c
 c
 c              local variables
 c
-#dbl      double precision :: 
-#sgl      real ::
+      double precision :: 
      &      s_value, s0_value, r_value, alpha, rho, slack_toler,
      &      alpha_min, s_values(0:30), r_values(0:30), zero, one,
      &      ls_reduce_fraction, alpha_values(30)
-#dbl      double precision, allocatable :: du0(:)
-#sgl      real, allocatable :: du0(:)
+      double precision, allocatable :: du0(:)
      
       logical :: ls_debug, no_line_search, line_search_details
       integer :: ls_ell, i, curve_type, bug
@@ -1097,8 +1090,7 @@ c
       
       subroutine mnralg_ls_update_res( alpha, du0 )
       implicit none
-#dbl      double precision :: alpha, du0(*) 
-#sgl      real :: alpha, du0(*)    
+      double precision :: alpha, du0(*) 
 c      
       du(1:nodof) = du0(1:nodof) + alpha*idu(1:nodof)
 c
@@ -1123,8 +1115,7 @@ c
       
       subroutine mnralg_ls_get_s( svalue )
       implicit none     
-#dbl      double precision :: svalue 
-#sgl      real :: svalue 
+      double precision :: svalue 
       integer :: i 
 c      
       svalue = zero
@@ -1248,9 +1239,8 @@ c
      &                            rot_blk_list
 c
       implicit integer (a-z)
-$add common.main
-#dbl      double precision
-#sgl      real
+      include 'common.main'
+      double precision
      &    dummy(1)
 c
 c                      MPI:
@@ -1331,12 +1321,11 @@ c
      &                            urcs_blk_list, nonlocal_flags,
      &                            nonlocal_data_n, nonlocal_data_n1
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c                      lcoal values
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &    dummy(1)
       logical chk
 c
@@ -1431,7 +1420,7 @@ c
 c
       subroutine abort_job
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
       call iodevn( idummy, iout, dummy, 1 )
       write(out,9000)
@@ -1470,8 +1459,7 @@ c          parameters
 c
       integer :: iter, step, solver_flag, iout, nodof 
       logical :: first_solve, use_mpi, show_details
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  du(nodof), idu(nodof)            
 c
 c          locals
@@ -1598,13 +1586,11 @@ c
       use main_data, only : dtemp_nodes, dtemp_elems
       use adaptive_steps, only : adapt_temper_fact ! set in adapt_check
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
-#dbl      double precision
-#sgl      real
+      double precision
      &   mag, zero, f
-#dbl      double precision, dimension (:), save, allocatable ::
-#sgl      real, dimension (:), save, allocatable ::
+      double precision, dimension (:), save, allocatable ::
      & dtemp_nodes_step, dtemp_elems_step
        data zero /0.0d00/
 c
@@ -1708,12 +1694,11 @@ c
       use main_data, only : release_cons_table, dload
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
 c
 c           local variables
 c
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      &  one, factor, reaction, dload_before, zero
       integer :: inode, idof, sdof, n1, n2
 c     
@@ -1802,13 +1787,11 @@ c
 c
       integer :: itpr, lstitr, step, out    
       logical :: cnvflg
-#dbl      double precision ::
-#sgl      real ::
+      double precision ::
      & total_model_time, adapt_load_fact
 c
       character (len=10) :: fraction
-#dbl      double precision,
-#sgl      real,
+      double precision,
      &  parameter :: one = 1.0d00
 c
 c                       newton nonlinear solution algorithm for
