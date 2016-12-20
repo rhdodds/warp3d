@@ -32,11 +32,10 @@ c
      &                                       final_map_type
 c
       implicit integer (a-z)
-$add common.main
+      include 'common.main'
       real dumr
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &  dnum, dumd, zero
       logical sbflg1, sbflg2, linlst, lstflg, matchs, integr, endcrd,
      &        true, numd, numr, string, numi, label, msg_flag,
@@ -1442,10 +1441,9 @@ c
       implicit integer (a-z)
       real value, zero, one
       character dums
-#dbl      double precision
-#sgl      real
+      double precision
      &   dumd
-$add param_def
+      include 'param_def'
       data zero, one / 0.0, 1.0 /
 c
 c
