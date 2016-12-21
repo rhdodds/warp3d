@@ -515,9 +515,7 @@ c
       len1 = eh - sh + 1
       len2 = eh2 - sh2 + 1  
 c      
-c              ** START: add new constitutive models
-c              **        into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type ) ! hardening model
         case( 1 ) ! simple Voche
           call mm10_init_voche( props, work_hist1, work_hist2 )
@@ -534,8 +532,7 @@ c
         case default
          call mm10_unknown_hard_error( props )
       end select
-c      
-c              ** END:  new constitutive model block
+c ****** END: Add new Constitutive Models into this block ******
 c
       history(1,sh:eh)   = work_hist1(1:len1)
       history(1,sh2:eh2) = work_hist2(1:len2) 
@@ -677,8 +674,7 @@ c
       J21(1:len,1:6)   = Jmat(7:6+len,1:6)
       J22(1:len,1:len) = Jmat(7:6+len,7:6+len)
 c
-c              add new constitutive models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type  )
         case( 1 )
           call mm10_ed_voche( props, np1, n, np1%stress, np1%tau_tilde,
@@ -701,13 +697,11 @@ c
         case default
           call mm10_unknown_hard_error( props )
       end select
-c
-c              end new constitutive models into this block 
+c ****** END: Add new Constitutive Models into this block ******
 c
       call mm10_symSWmat( np1%stress, np1%qc, props%nslip, symtqmat )
 c
-c              add new constitutive models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1 ) 
           call mm10_dgdd_voche( props, np1, n, np1%stress,
@@ -730,8 +724,7 @@ c
         case default
           call mm10_unknown_hard_error( props )
       end select
-c
-c              end new constitutive models into this block 
+c ****** END: Add new Constitutive Models into this block ******
 c
       call mm10_a_zero_vec( JA, 36 )
       do i = 1, props%nslip
@@ -843,8 +836,7 @@ c
         call mm10_a_mult_type_3( np1%qc(1,i), RWC, props%qs(1,i) )
       end do
 c
-c              START: add new constitutive models here
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1 ) ! voche
           call mm10_setup_voche(props, np1, n)
@@ -861,8 +853,7 @@ c
         case default ! error
           call mm10_unknown_hard_error( props )
       end select
-c    
-c              END: add new constitutive models here
+c ****** END: Add new Constitutive Models into this block ******
 c
 c
 c              compute quatities related to backstress, gradients, etc.
@@ -1825,6 +1816,107 @@ c
       cc_props%xtol        = inc_props%xtol
       cc_props%xtol1       = inc_props%xtol1
       cc_props%alter_mode  = inc_props%alter_mode
+c      
+      cc_props%cp_001 = inc_props%cp_001
+      cc_props%cp_002 = inc_props%cp_002
+      cc_props%cp_003 = inc_props%cp_003
+      cc_props%cp_004 = inc_props%cp_004
+      cc_props%cp_005 = inc_props%cp_005
+      cc_props%cp_006 = inc_props%cp_006
+      cc_props%cp_007 = inc_props%cp_007
+      cc_props%cp_008 = inc_props%cp_008
+      cc_props%cp_009 = inc_props%cp_009
+      cc_props%cp_010 = inc_props%cp_010
+      cc_props%cp_011 = inc_props%cp_011
+      cc_props%cp_012 = inc_props%cp_012
+      cc_props%cp_013 = inc_props%cp_013
+      cc_props%cp_014 = inc_props%cp_014
+      cc_props%cp_015 = inc_props%cp_015
+      cc_props%cp_016 = inc_props%cp_016
+      cc_props%cp_017 = inc_props%cp_017
+      cc_props%cp_018 = inc_props%cp_018
+      cc_props%cp_019 = inc_props%cp_019
+      cc_props%cp_020 = inc_props%cp_020
+      cc_props%cp_021 = inc_props%cp_021
+      cc_props%cp_022 = inc_props%cp_022
+      cc_props%cp_023 = inc_props%cp_023
+      cc_props%cp_024 = inc_props%cp_024
+      cc_props%cp_025 = inc_props%cp_025
+      cc_props%cp_026 = inc_props%cp_026
+      cc_props%cp_027 = inc_props%cp_027
+      cc_props%cp_028 = inc_props%cp_028
+      cc_props%cp_029 = inc_props%cp_029
+      cc_props%cp_030 = inc_props%cp_030
+      cc_props%cp_031 = inc_props%cp_031
+      cc_props%cp_032 = inc_props%cp_032
+      cc_props%cp_033 = inc_props%cp_033
+      cc_props%cp_034 = inc_props%cp_034
+      cc_props%cp_035 = inc_props%cp_035
+      cc_props%cp_036 = inc_props%cp_036
+      cc_props%cp_037 = inc_props%cp_037
+      cc_props%cp_038 = inc_props%cp_038
+      cc_props%cp_039 = inc_props%cp_039
+      cc_props%cp_040 = inc_props%cp_040
+      cc_props%cp_041 = inc_props%cp_041
+      cc_props%cp_042 = inc_props%cp_042
+      cc_props%cp_043 = inc_props%cp_043
+      cc_props%cp_044 = inc_props%cp_044
+      cc_props%cp_045 = inc_props%cp_045
+      cc_props%cp_046 = inc_props%cp_046
+      cc_props%cp_047 = inc_props%cp_047
+      cc_props%cp_048 = inc_props%cp_048
+      cc_props%cp_049 = inc_props%cp_049
+      cc_props%cp_050 = inc_props%cp_050
+      cc_props%cp_051 = inc_props%cp_051
+      cc_props%cp_052 = inc_props%cp_052
+      cc_props%cp_053 = inc_props%cp_053
+      cc_props%cp_054 = inc_props%cp_054
+      cc_props%cp_055 = inc_props%cp_055
+      cc_props%cp_056 = inc_props%cp_056
+      cc_props%cp_057 = inc_props%cp_057
+      cc_props%cp_058 = inc_props%cp_058
+      cc_props%cp_059 = inc_props%cp_059
+      cc_props%cp_060 = inc_props%cp_060
+      cc_props%cp_061 = inc_props%cp_061
+      cc_props%cp_062 = inc_props%cp_062
+      cc_props%cp_063 = inc_props%cp_063
+      cc_props%cp_064 = inc_props%cp_064
+      cc_props%cp_065 = inc_props%cp_065
+      cc_props%cp_066 = inc_props%cp_066
+      cc_props%cp_067 = inc_props%cp_067
+      cc_props%cp_068 = inc_props%cp_068
+      cc_props%cp_069 = inc_props%cp_069
+      cc_props%cp_070 = inc_props%cp_070
+      cc_props%cp_071 = inc_props%cp_071
+      cc_props%cp_072 = inc_props%cp_072
+      cc_props%cp_073 = inc_props%cp_073
+      cc_props%cp_074 = inc_props%cp_074
+      cc_props%cp_075 = inc_props%cp_075
+      cc_props%cp_076 = inc_props%cp_076
+      cc_props%cp_077 = inc_props%cp_077
+      cc_props%cp_078 = inc_props%cp_078
+      cc_props%cp_079 = inc_props%cp_079
+      cc_props%cp_080 = inc_props%cp_080
+      cc_props%cp_081 = inc_props%cp_081
+      cc_props%cp_082 = inc_props%cp_082
+      cc_props%cp_083 = inc_props%cp_083
+      cc_props%cp_084 = inc_props%cp_084
+      cc_props%cp_085 = inc_props%cp_085
+      cc_props%cp_086 = inc_props%cp_086
+      cc_props%cp_087 = inc_props%cp_087
+      cc_props%cp_088 = inc_props%cp_088
+      cc_props%cp_089 = inc_props%cp_089
+      cc_props%cp_090 = inc_props%cp_090
+      cc_props%cp_091 = inc_props%cp_091
+      cc_props%cp_092 = inc_props%cp_092
+      cc_props%cp_093 = inc_props%cp_093
+      cc_props%cp_094 = inc_props%cp_094
+      cc_props%cp_095 = inc_props%cp_095
+      cc_props%cp_096 = inc_props%cp_096
+      cc_props%cp_097 = inc_props%cp_097
+      cc_props%cp_098 = inc_props%cp_098
+      cc_props%cp_099 = inc_props%cp_099
+      cc_props%cp_100 = inc_props%cp_100
 c      
       cc_props%angle_type       = atype
       cc_props%angle_convention = aconv
@@ -3292,8 +3384,7 @@ c
       double precision, dimension(max_slip_sys) :: dgammadtau
       double precision ::  t1, t2
 c
-c              add new constitutive models into this block
-c
+c ***** START: Add new Constitutive Models into this block *****
       nslip = props%nslip
       select case( props%h_type )
         case( 1 ) ! Voche
@@ -3393,8 +3484,8 @@ c
 c           generalization of CP model implementation for other 
 c           slip rate eqns, requiring other forms of d_gamma/d_tau.
 c           vector dgammadtau should be 1 x n_slip
-c           add new constitutive models into this block
 c
+c ***** START: Add new Constitutive Models into this block *****
         select case( props%h_type  ) 
           case( 1 ) ! Voche
             call mm10_dgdt_voche( props, np1, n, np1%stress,
@@ -3417,6 +3508,7 @@ c
           case default
             call mm10_unknown_hard_error( props )
         end select
+c ****** END: Add new Constitutive Models into this block ******
         n_eff = zero
         do i = 1, nslip
            rs = mm10_rs( props, np1, n, np1%stress, np1%tau_tilde, i )

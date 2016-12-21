@@ -22,6 +22,26 @@ c
      &            tau_a, t_o,  tauHat_v, Go_v,
      &            k_o, tau_y, tau_v, voche_m, u1, u2, u3, u4,
      &            u5, u6, u7, u8, u9, u10, iD_v
+        double precision :: cp_001, cp_002, cp_003, cp_004, cp_005,
+     &                      cp_006, cp_007, cp_008, cp_009, cp_010,
+     &                      cp_011, cp_012, cp_013, cp_014, cp_015,
+     &                      cp_016, cp_017, cp_018, cp_019, cp_020,
+     &                      cp_021, cp_022, cp_023, cp_024, cp_025,
+     &                      cp_026, cp_027, cp_028, cp_029, cp_030,
+     &                      cp_031, cp_032, cp_033, cp_034, cp_035,
+     &                      cp_036, cp_037, cp_038, cp_039, cp_040,
+     &                      cp_041, cp_042, cp_043, cp_044, cp_045,
+     &                      cp_046, cp_047, cp_048, cp_049, cp_050,
+     &                      cp_051, cp_052, cp_053, cp_054, cp_055,
+     &                      cp_056, cp_057, cp_058, cp_059, cp_060,
+     &                      cp_061, cp_062, cp_063, cp_064, cp_065,
+     &                      cp_066, cp_067, cp_068, cp_069, cp_070,
+     &                      cp_071, cp_072, cp_073, cp_074, cp_075,
+     &                      cp_076, cp_077, cp_078, cp_079, cp_080,
+     &                      cp_081, cp_082, cp_083, cp_084, cp_085,
+     &                      cp_086, cp_087, cp_088, cp_089, cp_090,
+     &                      cp_091, cp_092, cp_093, cp_094, cp_095,
+     &                      cp_096, cp_097, cp_098, cp_099, cp_100
             integer :: nslip, h_type, num_hard, s_type, cnum
 c              new variables to control local solvers inside mm10
             logical :: solver, strategy, gpall, alter_mode

@@ -5,7 +5,7 @@ c     *                       module mm10_defs                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 6/13/2016 tjt               *
+c     *                   last modified: 12/20/2016 tjt              *
 c     *                                                              *
 c     *       small module to hold crystal update data structs       *
 c     *       also hold integer indexes into history vector for      *
@@ -27,6 +27,26 @@ c
      &        p_y, q_y, tau_a, tau_hat_v, G_0_v,
      &        k_0, mu_0, D_0, T_0, tau_y, tau_v, voche_m,
      &        u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, iD_v
+        double precision :: cp_001, cp_002, cp_003, cp_004, cp_005,
+     &                      cp_006, cp_007, cp_008, cp_009, cp_010,
+     &                      cp_011, cp_012, cp_013, cp_014, cp_015,
+     &                      cp_016, cp_017, cp_018, cp_019, cp_020,
+     &                      cp_021, cp_022, cp_023, cp_024, cp_025,
+     &                      cp_026, cp_027, cp_028, cp_029, cp_030,
+     &                      cp_031, cp_032, cp_033, cp_034, cp_035,
+     &                      cp_036, cp_037, cp_038, cp_039, cp_040,
+     &                      cp_041, cp_042, cp_043, cp_044, cp_045,
+     &                      cp_046, cp_047, cp_048, cp_049, cp_050,
+     &                      cp_051, cp_052, cp_053, cp_054, cp_055,
+     &                      cp_056, cp_057, cp_058, cp_059, cp_060,
+     &                      cp_061, cp_062, cp_063, cp_064, cp_065,
+     &                      cp_066, cp_067, cp_068, cp_069, cp_070,
+     &                      cp_071, cp_072, cp_073, cp_074, cp_075,
+     &                      cp_076, cp_077, cp_078, cp_079, cp_080,
+     &                      cp_081, cp_082, cp_083, cp_084, cp_085,
+     &                      cp_086, cp_087, cp_088, cp_089, cp_090,
+     &                      cp_091, cp_092, cp_093, cp_094, cp_095,
+     &                      cp_096, cp_097, cp_098, cp_099, cp_100
         double precision :: atol, atol1, rtol, rtol1, xtol, xtol1
         double precision, dimension(3,3) :: g
         double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
@@ -159,7 +179,27 @@ c                             4) ornl
 c                             7) roters
 c                             9) DJGM - Ti-6242
                   integer :: tang_calc, miter, gpp, method
-
+c        General parameters
+        double precision :: cp_001, cp_002, cp_003, cp_004, cp_005,
+     &                      cp_006, cp_007, cp_008, cp_009, cp_010,
+     &                      cp_011, cp_012, cp_013, cp_014, cp_015,
+     &                      cp_016, cp_017, cp_018, cp_019, cp_020,
+     &                      cp_021, cp_022, cp_023, cp_024, cp_025,
+     &                      cp_026, cp_027, cp_028, cp_029, cp_030,
+     &                      cp_031, cp_032, cp_033, cp_034, cp_035,
+     &                      cp_036, cp_037, cp_038, cp_039, cp_040,
+     &                      cp_041, cp_042, cp_043, cp_044, cp_045,
+     &                      cp_046, cp_047, cp_048, cp_049, cp_050,
+     &                      cp_051, cp_052, cp_053, cp_054, cp_055,
+     &                      cp_056, cp_057, cp_058, cp_059, cp_060,
+     &                      cp_061, cp_062, cp_063, cp_064, cp_065,
+     &                      cp_066, cp_067, cp_068, cp_069, cp_070,
+     &                      cp_071, cp_072, cp_073, cp_074, cp_075,
+     &                      cp_076, cp_077, cp_078, cp_079, cp_080,
+     &                      cp_081, cp_082, cp_083, cp_084, cp_085,
+     &                      cp_086, cp_087, cp_088, cp_089, cp_090,
+     &                      cp_091, cp_092, cp_093, cp_094, cp_095,
+     &                      cp_096, cp_097, cp_098, cp_099, cp_100
 c                 Solver flags
                   logical :: solver, strategy, gpall, alter_mode
 c
@@ -231,7 +271,108 @@ c
                   c_array(num)%u4 = 0.0
                   c_array(num)%u5 = 0.0
                   c_array(num)%u6 = 0.0
-
+c
+                  c_array(num)%cp_001 = 0.d0
+                  c_array(num)%cp_002 = 0.d0
+                  c_array(num)%cp_003 = 0.d0
+                  c_array(num)%cp_004 = 0.d0
+                  c_array(num)%cp_005 = 0.d0
+                  c_array(num)%cp_006 = 0.d0
+                  c_array(num)%cp_007 = 0.d0
+                  c_array(num)%cp_008 = 0.d0
+                  c_array(num)%cp_009 = 0.d0
+                  c_array(num)%cp_010 = 0.d0
+                  c_array(num)%cp_011 = 0.d0
+                  c_array(num)%cp_012 = 0.d0
+                  c_array(num)%cp_013 = 0.d0
+                  c_array(num)%cp_014 = 0.d0
+                  c_array(num)%cp_015 = 0.d0
+                  c_array(num)%cp_016 = 0.d0
+                  c_array(num)%cp_017 = 0.d0
+                  c_array(num)%cp_018 = 0.d0
+                  c_array(num)%cp_019 = 0.d0
+                  c_array(num)%cp_020 = 0.d0
+                  c_array(num)%cp_021 = 0.d0
+                  c_array(num)%cp_022 = 0.d0
+                  c_array(num)%cp_023 = 0.d0
+                  c_array(num)%cp_024 = 0.d0
+                  c_array(num)%cp_025 = 0.d0
+                  c_array(num)%cp_026 = 0.d0
+                  c_array(num)%cp_027 = 0.d0
+                  c_array(num)%cp_028 = 0.d0
+                  c_array(num)%cp_029 = 0.d0
+                  c_array(num)%cp_030 = 0.d0
+                  c_array(num)%cp_031 = 0.d0
+                  c_array(num)%cp_032 = 0.d0
+                  c_array(num)%cp_033 = 0.d0
+                  c_array(num)%cp_034 = 0.d0
+                  c_array(num)%cp_035 = 0.d0
+                  c_array(num)%cp_036 = 0.d0
+                  c_array(num)%cp_037 = 0.d0
+                  c_array(num)%cp_038 = 0.d0
+                  c_array(num)%cp_039 = 0.d0
+                  c_array(num)%cp_040 = 0.d0
+                  c_array(num)%cp_041 = 0.d0
+                  c_array(num)%cp_042 = 0.d0
+                  c_array(num)%cp_043 = 0.d0
+                  c_array(num)%cp_044 = 0.d0
+                  c_array(num)%cp_045 = 0.d0
+                  c_array(num)%cp_046 = 0.d0
+                  c_array(num)%cp_047 = 0.d0
+                  c_array(num)%cp_048 = 0.d0
+                  c_array(num)%cp_049 = 0.d0
+                  c_array(num)%cp_050 = 0.d0
+                  c_array(num)%cp_051 = 0.d0
+                  c_array(num)%cp_052 = 0.d0
+                  c_array(num)%cp_053 = 0.d0
+                  c_array(num)%cp_054 = 0.d0
+                  c_array(num)%cp_055 = 0.d0
+                  c_array(num)%cp_056 = 0.d0
+                  c_array(num)%cp_057 = 0.d0
+                  c_array(num)%cp_058 = 0.d0
+                  c_array(num)%cp_059 = 0.d0
+                  c_array(num)%cp_060 = 0.d0
+                  c_array(num)%cp_061 = 0.d0
+                  c_array(num)%cp_062 = 0.d0
+                  c_array(num)%cp_063 = 0.d0
+                  c_array(num)%cp_064 = 0.d0
+                  c_array(num)%cp_065 = 0.d0
+                  c_array(num)%cp_066 = 0.d0
+                  c_array(num)%cp_067 = 0.d0
+                  c_array(num)%cp_068 = 0.d0
+                  c_array(num)%cp_069 = 0.d0
+                  c_array(num)%cp_070 = 0.d0
+                  c_array(num)%cp_071 = 0.d0
+                  c_array(num)%cp_072 = 0.d0
+                  c_array(num)%cp_073 = 0.d0
+                  c_array(num)%cp_074 = 0.d0
+                  c_array(num)%cp_075 = 0.d0
+                  c_array(num)%cp_076 = 0.d0
+                  c_array(num)%cp_077 = 0.d0
+                  c_array(num)%cp_078 = 0.d0
+                  c_array(num)%cp_079 = 0.d0
+                  c_array(num)%cp_080 = 0.d0
+                  c_array(num)%cp_081 = 0.d0
+                  c_array(num)%cp_082 = 0.d0
+                  c_array(num)%cp_083 = 0.d0
+                  c_array(num)%cp_084 = 0.d0
+                  c_array(num)%cp_085 = 0.d0
+                  c_array(num)%cp_086 = 0.d0
+                  c_array(num)%cp_087 = 0.d0
+                  c_array(num)%cp_088 = 0.d0
+                  c_array(num)%cp_089 = 0.d0
+                  c_array(num)%cp_090 = 0.d0
+                  c_array(num)%cp_091 = 0.d0
+                  c_array(num)%cp_092 = 0.d0
+                  c_array(num)%cp_093 = 0.d0
+                  c_array(num)%cp_094 = 0.d0
+                  c_array(num)%cp_095 = 0.d0
+                  c_array(num)%cp_096 = 0.d0
+                  c_array(num)%cp_097 = 0.d0
+                  c_array(num)%cp_098 = 0.d0
+                  c_array(num)%cp_099 = 0.d0
+                  c_array(num)%cp_100 = 0.d0
+c
                   c_array(num)%h_type = 1
                   c_array(num)%num_hard = 1
                   c_array(num)%tang_calc = 0
@@ -1605,6 +1746,7 @@ c
 c   Note: TJT 10/4/16: tang_calc is now specified through user-input
 c                      default value if not specified is 0
 c
+c ***** START: Add new Constitutive Models into this block *****
                   if (c_array(num)%h_type .eq. 1) then !Voche
                           c_array(num)%num_hard = 1
 c                          c_array(num)%tang_calc = 0
@@ -1630,6 +1772,7 @@ c                          c_array(num)%tang_calc = 0
      &    /,10x, 'Aborting...')
       call die_gracefully
                   endif
+c ****** END: Add new Constitutive Models into this block ******
 c
 c                
                   e = c_array(num)%e

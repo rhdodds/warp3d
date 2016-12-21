@@ -77,8 +77,7 @@ c
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
-c              add new Constitutive Models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1 ) ! Voche
            call mm10_h_voche( props, np1, n, stress, tt, h ) 
@@ -98,6 +97,7 @@ c
         case default
            call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
 c              compute time rate of change of hardening parameters, 
 c              store for possible prediction during next time/load step
@@ -140,8 +140,7 @@ c
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
-c              add new Constitutive Models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1, 2, 3, 9 ) ! Voche, MTS, USER, DJGM
           continue
@@ -152,6 +151,7 @@ c
         case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       R2 = tt - h
 c      
@@ -205,8 +205,7 @@ c              slip rate equations, requiring other forms of
 c              d_gamma/d_tau.
 c              vector dgammadtau should be 1 x n_slip
 c
-c              add new constitutive models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
        case( 1 ) ! voche
         call mm10_dgdt_voche( props,np1, n, stress, tt, dgammadtau )
@@ -223,6 +222,7 @@ c
        case default
         call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       do i = 1, props%nslip
        call mm10_b_mult_type_4( work_vec, props%stiffness, np1%ms(1,i),
@@ -300,8 +300,7 @@ c              n_slip x n_hardening, which is the
 c              derivative of slip rate alpha with respect to 
 c              hardening variable beta.
 c
-c              add new constitutive models into this block
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
        case( 1 )  ! voche
         call mm10_dgdh_voche( props,np1, n, stress, tt, dgammadtt )
@@ -318,6 +317,7 @@ c
        case default 
         call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       len = props%num_hard
 c      
@@ -373,8 +373,7 @@ c
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J21:64     
 c
-c              add new Constitutive Models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type ) 
         case( 1 ) ! Voche
           call mm10_estress_voche( props, np1, n, stress, tt, estr )
@@ -394,6 +393,7 @@ c
         case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       J21 = -estr
 c
@@ -434,8 +434,7 @@ c
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J22:64     
 c
-c              add new Constitutive Models into this block
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type ) 
         case( 1 ) ! Voche
           call mm10_ehard_voche( props, np1, n, stress, tt, etau )
@@ -455,6 +454,7 @@ c
         case default
           call mm10b_unknown_hard_error(props)
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       J22 = etau
       return
@@ -486,8 +486,7 @@ c
       double precision, dimension(max_uhard) :: vec1,vec2
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, stress:64, tt:64
 c
-c              add new Constitutive Models into this block
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1, 2, 3 ) ! Voche, MTS, User
          vec1 = zero
@@ -501,6 +500,7 @@ c
         case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       return
 c
@@ -532,8 +532,7 @@ c
       double precision, dimension(max_uhard) :: vec1,vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1,arr2
 c
-c              add new constitutive models into this block
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1, 2, 3 ) ! Voche, MTS, User
           continue
@@ -549,6 +548,7 @@ c
         case default
          call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       return      
 c
@@ -840,8 +840,7 @@ c
       double complex, dimension(props%num_hard) :: tt
       double complex, dimension(max_uhard) :: ivec1, ivec2
 c
-c              add new constitutive models into this block 
-c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
        case( 1, 2, 3 )  ! voche, MTS, User
          continue
@@ -852,6 +851,7 @@ c
        case default
         call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       return
 c
@@ -1145,6 +1145,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
       nslip = props%nslip
 c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1 ) ! Voche
           dbar = zero
@@ -1176,6 +1177,7 @@ c
         case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       return
       end
@@ -1211,6 +1213,7 @@ c!DIR$ ASSUME_ALIGNED tt:64, wbar:64
 
       nslip = props%nslip
 c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1 )  ! voche
           wbar = zero
@@ -1243,6 +1246,7 @@ c                       addition for diffusion
          case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       return
       end subroutine
@@ -1359,6 +1363,7 @@ c
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
         case( 1, 2, 3 ) ! Voche, MTS, User
           continue
@@ -1377,6 +1382,7 @@ c
         case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c      
       return
       end
@@ -1411,6 +1417,7 @@ c
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, w:64
 c
+c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
          case( 1, 2, 3 )  !Voche, MTS, User
            continue
@@ -1431,6 +1438,7 @@ c
         case default
           call mm10b_unknown_hard_error( props )
       end select
+c ****** END: Add new Constitutive Models into this block ******
 c
       return
       end subroutine
