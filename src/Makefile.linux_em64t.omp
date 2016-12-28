@@ -2,23 +2,15 @@
 #                                                               
 #   File: Header.linux_emt64.omp          
 #                                                               
-#   Original Programmer: adam carlyle
+#   Updated:   Dec 2016
 #
 #   Description:
 #     Makefile Header for use with the WARP3D 
-#     This header will make an OpenMP Makefile for Linux Distributions running
-#     on AMD64 or EM64T processors.
+#     This header will make an OpenMP Makefile for Linux 
 #
 #     It sets specific flags required to compile the threaded version of WARP3D,
 #     then calls the part of the Makefile which is the same for both the OpenMP 
 #     and MPI versions of the code. 
-#
-#     Uses Intel 12.1 and higher compiler and the MKL 10.3 and higher
-#     library (included in Intel F-90 compiler suite)
-#     
-#
-#   Revision History: Updated comments. R. Dodds, 7-5-2012
-#                     change to -qopenmp. R. Dodds, 9-15-2016
 #
 # *****************************************************************************
 #
@@ -26,7 +18,6 @@
 HYI = 
 HYL = 
 MPIOPT =
-OPENMPOPT = -qopenmp -reentrancy
 ODIR = ././../obj_linux_em64t
 EXE_NAME = warp3d.omp
 #

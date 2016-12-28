@@ -4,7 +4,7 @@
 #
 #     Makewarp.bash (third version)
 #
-#     created: mcm June 2011, modified: Dec 2016 RHD
+#     modified: Dec 2016 RHD
 #
 #     Description:
 #           Bash script to interactively drive compilation of Linux and Mac
@@ -208,8 +208,7 @@ function linux_main
 function linux_help
 {
 
-      printf "Simple mode will take built-in defaults (which should work for version\n"
-      printf "14.x, 15.x, 16.x of the Intel compilers on Intel Linux systems),\n"
+      printf "Simple mode will take built-in defaultsems),\n"
       printf "and checks to ensure they will work on your system.\n"
       printf "Advanced mode will prompt you for all the configuration variables, but does\n"
       printf "provide default values.\n\n"
@@ -253,8 +252,7 @@ function linux_simple
             HYPQ=no
       fi
 #
-#   Intel Fortran Composer XE system must be installed and be at a
-#   relatively recent version 
+#   Intel Fortran Composer XE system must be installed  
 #
       hash ifort 2>&- || {
             printf "[ERROR]\n"
@@ -267,22 +265,7 @@ function linux_simple
             printf "Quitting...\n\n"
             exit 1
       }
-#
-# Check the version of the Intel fortran compiler
-# Variable minv is the lowest version to allow without warn
-#
-      minv=43.0
-      fv=`ifort -v 2>&1`
-      fv=${fv:7:5}
-      result=`expr $fv \>= $minv`
-      if [ "$result" = "0" ]; then
-            printf "[WARNING]\n"
-            printf "The installed version of the Intel compilers ($fv) is lower\n"
-            printf "than the lowest recommended version ($minv).\n"
-            printf "You may experience problems, and we suggest you upgrade\n"
-            printf "your Intel Fortran compiler to the latest version\n"
-            printf "\n"
-      fi
+
 #
 # Test existence of mpi compiler if required
 #
@@ -297,24 +280,6 @@ function linux_simple
                   exit 1
             }
       fi
-#
-# Test LIBRARY_PATH (this is complicated so I left a stub
-# for writing a message if you do find the correct path.
-#
-#      searchst=$WARP3D_HOME/linux_packages/lib
-#      case $LIBRARY_PATH in
-#            *"$searchst"*)
-#                  ;;
-#            *)
-#                  printf "[ERROR]\n"
-#                  printf "The directory $WARP3D_HOME/linux_packages/lib needs\n"
-#                  printf "to be in your LIBRARY_PATH. Please add that directory.\n"
-#                  printf "See README_Linux_Users for help.\n"
-#                  printf "Quitting...\n"
-#                  printf "\n"
-#                  exit 1
-#                  ;;
-#      esac
 #
 # Test libHYPRE (if we need it)
 #
@@ -353,30 +318,7 @@ function linux_advanced
       read -p ": " OPT
       [ -n "$OPT" ] && COMPILER=$OPT
       printf "\n"
-
-#      if [ "$MPIQ" = "yes" ]; then
-#            printf "Alternate non-multithreaded Fortran compiler\n"
-#            printf "On most systems this will be the same as the regular MPI compiler, \n"
-#            printf "provided in the last prompt\n"
-#            printf "Default: $ALTCOMPILER\n"
-#            read -p ": " OPT
-#            [ -n "$OPT" ] && ALTCOMPILER=$OPT
-#            printf "\n"
-#      fi
-
-#      printf "MKL library directory\n"
-#      printf "Default: $MKLLIB\n"
-#      read -p ": " OPT
-#      [ -n "$OPT" ] && MKLLIB=$OPT
-#      printf "\n"
-
-#      printf "Intel Fortran library directory\n"
-#      printf "Specifically, the location of libiomp5 and libirc.a\n"
-#      printf "Default: $FORLIB\n"
-#      read -p ": " OPT
-#      [ -n "$OPT" ] && FORLIB=$OPT
-#      printf "\n"
-
+#
       if [ $HYPQ = "yes" ]; then
             printf "hypre root directory\n"
             printf "Default: $HYPRE_ROOT\n"
@@ -440,7 +382,7 @@ function compile_linux {
 #
 touch main_program.f  
 #
-#   run the makefile for LInux. we now pass more parameters to the makefile
+#   run the makefile for Linux. we now pass more parameters to the makefile
 #
       printf "... Starting make program for Linux .... \n\n"
       make -j $JCOMP -f $MAKEFILE COMPILER="$COMPILER" HYPRE_ROOT="$HYPRE_ROOT"
@@ -455,15 +397,7 @@ touch main_program.f
 function mac_main
 {
 #
-# Set defaults. The MKLLIB and WARP3DFORLIB may need to be modified if Intel
-# changes their compiler system directory struture again. Intel does not set
-# an environment variable that points to the compiler directory. So we use
-# a kludge to get at it by backup up a level from the MKL directory.
-#
-MKLLIB=$MKLROOT/lib
-WARP3DFORLIB=$MKLROOT/../compiler/lib
-COMPILER=ifort
-MAKEFILE=Makefile.mac_os_x.omp
+MAKEFILE=Makefile.osx
 MKLQ=yes
 MPIQ=no
 HYPQ=no
@@ -480,8 +414,7 @@ printf "This is not a Mac OS X system.\n Quitting...\n\n"
 exit 1
 fi
 #
-# Intel Fortran Composer XE system must be installed and be at a
-# relatively recent version 
+# Intel Fortran Composer XE system must be installed 
 #
 hash ifort 2>&- || {
 printf "[ERROR]\n"
@@ -493,17 +426,6 @@ printf "Quitting...\n\n"
 exit 1
 }
 #
-minv=15.0
-fv=`ifort -v 2>&1`
-fv=${fv:7:5}
-result=`expr $fv \>= $minv`
-if [ "$result" = "0" ]; then
-printf "[ERROR]\n"
-printf "... Your version of the Intel Fortran compiler ($fv) is lower\n"
-printf "... than the lowest recommended version ($minv).\n"
-printf "Quitting...\n\n"
-exit 1
-fi
 #
 # The MKLROOT environment variable must be set. This is normally
 # done by the user's login script or system shell initialization
@@ -554,8 +476,8 @@ function compile_mac
 #
 printf " \n"
 printf ".... This Mac appears configured properly to build WARP3D\n"
-printf ".... Compiling WARP3D for Mac OS X (Mavericks)\n"
-printf ".... Installing WARP3D packages for Mac OS X...\n"
+printf ".... Compiling WARP3D for Mac OS\n"
+printf ".... Installing WARP3D packages for Mac OS..\n"
 #
 # modify source code to install or unistall WARP3D packages for Mac OS X.
 #
@@ -582,13 +504,13 @@ printf " \n"
 read -p "... Number of concurrent compile processes allowed? (default 1): " JCOMP
 [ -z "$JCOMP" ] && JCOMP=1
 #
-touch main_program.f   # compile date is always current
+touch main_program.f   # so thecompile date is always current
 #
 #
-# run the makefile for Mac OS X. we now pass more parameters to the makefile
+# run the makefile for Mac OS
 #
-printf "... Starting make program for Mac OS X.... \n"
-make -j $JCOMP -f $MAKEFILE COMPILER="$COMPILER" MKLLIB="$MKLLIB" FORLIB="$WARP3DFORLIB"
+printf "... Starting make program for Mac OS.... \n"
+make  -j $JCOMP -f Makefile.osx
 }
 
 # ****************************************************************************
@@ -603,7 +525,7 @@ make -j $JCOMP -f $MAKEFILE COMPILER="$COMPILER" MKLLIB="$MKLLIB" FORLIB="$WARP3
 #  names
 #
 printf "\n"
-printf "** Driver shell script to build WARP3D on Linux and Mac OS X **\n"
+printf "** Driver shell script to build WARP3D on Linux and Mac OS **\n"
 #
 if [ -z "$WARP3D_HOME" ]; then
    printf "\n\n[ERROR]\n"
@@ -622,7 +544,7 @@ hypre_dir=$WARP3D_HOME/linux_packages/source/hypre_code_dir
 #
 printf "\nSelect supported platform:\n"
 PS3="Select choice: "
-select opt in 'Linux (64-bit)' 'Mac OS X' 'Windows (7-10)' 'Exit'
+select opt in 'Linux (64-bit)' 'Mac OS' 'Windows (7-10)' 'Exit'
 do
       case $REPLY in
             1 )   printf "\n"
