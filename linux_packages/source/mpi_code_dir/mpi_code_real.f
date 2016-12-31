@@ -22,11 +22,10 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      logical ldum1,ldum2
-      character *1 dums
-      real dumr
-      double precision
-     &     dumd
+      logical :: ldum1, ldum2
+      character(len=1) :: dums
+      real :: dumr
+      double precision :: dumd
 c
 c             initialize MPI, find the total number of processors involved
 c             with this run, and get the id number of the local processor in
@@ -862,7 +861,7 @@ c
       subroutine wmpi_bcast_string ( string, nchars )
       implicit integer (a-z)
       include "mpif.h"
-      character *(*) string
+      character(len=*) :: string
 c
       call MPI_BCAST(string,nchars,MPI_CHARACTER,0,MPI_COMM_WORLD,
      &               ierr)
@@ -2082,15 +2081,14 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      logical sent, access_dof(mxdof), open, assign, debug, fail
-      dimension size_dof_chunks(mxdof), start_dof_chunks(mxdof),
+      logical :: sent, access_dof(mxdof), open, assign, debug, fail
+      dimension  :: size_dof_chunks(mxdof), start_dof_chunks(mxdof),
      &    status(MPI_STATUS_SIZE), blk_ptr(0:max_procs-1)
-      character *5 name, dums
+      character(len=5) :: name, dums
       data sent, debug /.false., .false./
       save sent
-      real dumr
-      double precision
-     &   dumd
+      real :: dumr
+      double precision ::dumd
 c
       if (debug)write (out,'("=> proc ",i3," is doing dist calcs")')myid
 c
@@ -2423,7 +2421,7 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      character *80 line
+      character(len=80) :: line
 c
 c                       local declarations
 c
@@ -2531,7 +2529,7 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      character *80 line
+      character(len=80) :: line
 c
 c                    local declarations
 c
@@ -2748,7 +2746,7 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      character *80 line
+      character(len=80) :: line
 c
 c                    local declarations
 c
@@ -3319,7 +3317,7 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      character *80 line
+      character(len=80) :: line
       integer, allocatable, dimension(:,:) ::  node2proc
       dimension num_private_nodes(0:max_procs-1),
      &     num_own_shared_nodes(0:max_procs-1),
@@ -3687,7 +3685,7 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      character *80 line
+      character(len=80) :: line
       dimension num_private_nodes(0:max_procs-1),
      &     num_own_shared_nodes(0:max_procs-1),
      &     num_shared_nodes(0:max_procs-1),
@@ -3841,7 +3839,7 @@ c
       implicit integer (a-z)
       include "mpif.h"
       include 'common.main'
-      character *80 line
+      character(len=80) :: line
       dimension num_private_nodes(0:max_procs-1),
      &     num_own_shared_nodes(0:max_procs-1),
      &     num_shared_nodes(0:max_procs-1),

@@ -185,7 +185,7 @@ c
  1500    continue
          if(debug)write (out,'("=> Proc",i3,"do fgm setup")') myid
          call di_fgm_setup(dumi,dumi2,dumi3,duml)
-	 goto 9000
+         goto 9000
 c
 c           do = 16: setup nodal ownership data structures for the
 c                    domain decomposition version of lnpcg
