@@ -644,7 +644,7 @@ c    *                                                              *
 c    *          subroutine mm04_cavit_driver                        *
 c    *                                                              *
 c    *            written by : rhd   6/9/2014                       *
-c    *            updated: 4/15/2016 rhd                            *	
+c    *            updated: 4/15/2016 rhd                            *      
 c    *                                                              *
 c    *     drive stress update of cavity cohesive model             *  
 c    *                                                              *
@@ -789,7 +789,7 @@ c    *                                                              *
 c    *          subroutine mm04_cavit_set_props                     *
 c    *                                                              *
 c    *            written by : rhd   4/14/2016 rhd                  *
-c    *            updated: 4/20/2016 kbc                            *	
+c    *            updated: 4/20/2016 kbc                            *      
 c    *                                                              *
 c    *     set up properties for cavity cohesive option based on    *
 c    *     values defined in the user's input file (not an          *
@@ -937,7 +937,7 @@ c    *                                                              *
 c    *          subroutine mm04_cavit_external_props                *
 c    *                                                              *
 c    *            written by : rhd   4/12/2016 rhd                  *
-c    *            updated: 4/20/2016 kbc                            *	
+c    *            updated: 4/20/2016 kbc                            *      
 c    *                                                              *
 c    *     set up properties for cavity cohesive option when        *
 c    *     values for each element are provided in an external file *
@@ -1091,7 +1091,7 @@ c    *                                                              *
 c    *          subroutine mm04_cavity_props_one_elem               *
 c    *                                                              *
 c    *            written by : rhd   4/14/2016 rhd                  *
-c    *            updated: 4/20/2016  kbc                           *	
+c    *            updated: 4/20/2016  kbc                           *      
 c    *                                                              *
 c    *     return the properties for a single cavity cohesive       *
 c    *     element                                                  *
@@ -1684,8 +1684,8 @@ c
 9800  format('>>>> FATAL ERROR. routine mm04_cavit_sig_update.',
      & /,    '                  iterations in mm04_nr_itr did not',
      & /,    '                  converge. ',
-     & /,15x,"element, gpn:                     " i6,i5,
-     & /,15x,"c_0, c_1:                    " 2e14.5,
+     & /,15x,"element, gpn:                     ",i6,i5,
+     & /,15x,"c_0, c_1:                    ",2e14.5,
      & /,15x,"delta_c_dot, dtime:               ",2e14.5,
      & /,15x,"Sigma_0:                          ",e14.5,
      & /,    "                  job terminated.", // )
@@ -2791,17 +2791,17 @@ c                            bug in do while itr = 1.
 c                            for some set up step 1 iter = 1
 c                            floating invalid on fx = 
 c    
-c                            only detected with float trapping set	 
+c                            only detected with float trapping set       
 c
       itr = 0
       dnb = half*dn
-c      	write(iout,*) '.. Gam_n: ', Gam_n
-c      	write(iout,*) '.. dnb: ', dnb
-c      	write(iout,*) '.. dn: ', dn
-c      	write(iout,*) '.. alph: ', alph
-c      	write(iout,*) '.. m: ', m
-c      	write(iout,*) '.. Gam_n: ', Gam_n
-c      	write(iout,*) '.. dGnt: ', dGnt      	
+c            write(iout,*) '.. Gam_n: ', Gam_n
+c            write(iout,*) '.. dnb: ', dnb
+c            write(iout,*) '.. dn: ', dn
+c            write(iout,*) '.. alph: ', alph
+c            write(iout,*) '.. m: ', m
+c            write(iout,*) '.. Gam_n: ', Gam_n
+c            write(iout,*) '.. dGnt: ', dGnt            
       fx = Gam_n*(one-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt      
 c
 c      Newton Raphson method is used to solve a nonlinear equation fx
@@ -2810,14 +2810,14 @@ c      and exists between 0 and dn. The initial guess is set to be
 c      0.5*dn. Please, see Ref. JMPS 57 (6), 891-908 (2009) for more detail.
 c
       do while ((abs(fx) .gt. tol) .and. (itr .lt. 200))
-c      	write(iout,*) '.. itr: ', itr
-c      	write(iout,*) '.. Gam_n: ', Gam_n
-c      	write(iout,*) '.. dnb: ', dnb
-c      	write(iout,*) '.. dn: ', dn
-c      	write(iout,*) '.. alph: ', alph
-c      	write(iout,*) '.. m: ', m
-c      	write(iout,*) '.. Gam_n: ', Gam_n
-c      	write(iout,*) '.. dGnt: ', dGnt      	
+c            write(iout,*) '.. itr: ', itr
+c            write(iout,*) '.. Gam_n: ', Gam_n
+c            write(iout,*) '.. dnb: ', dnb
+c            write(iout,*) '.. dn: ', dn
+c            write(iout,*) '.. alph: ', alph
+c            write(iout,*) '.. m: ', m
+c            write(iout,*) '.. Gam_n: ', Gam_n
+c            write(iout,*) '.. dGnt: ', dGnt            
         fx = Gam_n*(one-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt
         dfx = (-alph*(one-dnb/dn)**(alph-one)*(m/alph+dnb/dn)**m +
      &        m*(one-dnb/dn)**alph*(m/alph+dnb/dn)**(m-one))*Gam_n/dn
@@ -2913,7 +2913,7 @@ c
       double precision, 
      & allocatable :: history_dump(:,:,:), one_elem_states(:)
       integer :: relem, elnum, hist_size, blockno, cohesive_elem
-      logical :: do_a_block, cohesive_type
+      logical :: do_a_block, cohesive_type, local_debug
       double precision :: zero
       data zero / 0.0d00 /
 c      
@@ -2925,7 +2925,7 @@ c
 c              itype < 0 => this is an element number. put state
 c                           values into column 1 of results.
 c 
-      do_block = .true.
+      do_a_block = .true.
       if( itype. gt. 0 ) then
          do_a_block = .true.
          blockno = itype
@@ -4755,7 +4755,7 @@ c
      & /,18x,'job aborted.'//)
  9400 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL cavity',
      & /,18x,
-     & 'incremental time is <= 1.0d-03 : 'e14.6,
+     & 'incremental time is <= 1.0d-03 : ',e14.6,
      & /,18x,'job aborted.'//)
  9405 format(3x,"... GB data file opened: ",a )
  9410 format(3x,"... number of model elements:      ",i10,
