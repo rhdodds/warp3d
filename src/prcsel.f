@@ -20,6 +20,7 @@ c
       use main_data, only : elstor
       implicit integer (a-z)     
       include 'common.main'
+      logical, parameter :: local_debug = .false.
 c
 c                       for each element in the structure, store
 c                       element properties in permanent storage.
