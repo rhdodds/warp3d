@@ -18,8 +18,8 @@ c
       implicit integer (a-z)
       include 'common.main'
       real dumr
-      character*8 dums
-      character*80 filnam, outfle
+      character(len=8) :: dums
+      character(len=80) :: filnam, outfle
       logical ok, nameok
       logical endcrd,label,matchs,string
 c
@@ -66,17 +66,17 @@ c
       else if (string(dum)) then
          call entits (filnam,filchr)
          call tilde(filnam,outfle,nameok)
-	 if (.not.nameok) then 
-	   call errmsg(189,dum,outfle,dumr,dumd)
-	   goto 2110
+       if (.not.nameok) then 
+         call errmsg(189,dum,outfle,dumr,dumd)
+         goto 2110
          endif
       else
          call errmsg(175,dum,dums,dumr,dumd)
-	 goto 2110
+       goto 2110
       endif     
 c
-c			check if file exists, then increase file
-c			number and open file.
+c                  check if file exists, then increase file
+c                  number and open file.
 c
       inquire ( file = outfle, iostat = ierror, exist = ok)
       if (ierror.gt.0) then
