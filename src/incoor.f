@@ -22,7 +22,7 @@ c
       double precision
      &  x(ndim), xcur, dumd, zero
       real dumr
-      character dums
+      character :: dums
       logical laybel, sbflg1, sbflg2, matchs, numd, integr,
      &        endcrd, true, clear_x
       dimension defalt(ndim)
