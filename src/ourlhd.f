@@ -18,9 +18,9 @@ c
       implicit integer (a-z)
       include 'common.main'
       logical newhed
-      character*8 doflbl(*),ldnam
-      character*20 hedtyp
-      character*1 formfeed
+      character(len=8) :: doflbl(*),ldnam
+      character(len=20) :: hedtyp
+      character(len=1) :: formfeed
 c
       formfeed = char(12)
 c
