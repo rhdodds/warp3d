@@ -30,9 +30,9 @@ c
 c
 c                       local declarations
 c
-      character*4 title(80), title1(80)
+      character(len=4) :: title(80), title1(80)
       character(len=1) dummy_char
-      character*80 string, strng1, stepstring*6
+      character(len=80) :: string, strng1, stepstring*6
       dimension titl(80), titl1(80)
       equivalence (title,titl), (title1,titl1)
       logical connected
