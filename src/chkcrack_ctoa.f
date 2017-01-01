@@ -35,7 +35,7 @@ c
      &     d32460, angle, zero, max_angle, two,
      &     local_angles_list(max_local_list), denom_angle
       dimension local_node_list(max_local_list,3) 
-      character *1 star
+      character(len=1) :: star
       data d32460, zero, two, star / 32460.0, 0.0, 2.0, '*'/
       logical first_entry
 c
@@ -111,24 +111,24 @@ c
          if( crkpln_nodes_state(inv_crkpln_nodes(neighbor_node) )
      &        .eq. 0 ) then
             if( first_entry ) then
-               write(out,'(6x,i5,9x,i5,7x,f7.2,a1,11x,f4.1,3x,2h<=)')
+               write(out,"(6x,i5,9x,i5,7x,f7.2,a1,11x,f4.1,3x,'<=')")
      &              node, neighbor_node,
      &              angle, star, angle/(init_crit_ang*two)
                first_entry = .false.
             else
-               write(out,'(20x,i5,7x,f7.2,a1,11x,f4.1,3x,2h<=)')
+               write(out,"(20x,i5,7x,f7.2,a1,11x,f4.1,3x,'<=')")
      &              neighbor_node,
      &              angle, star, angle/(init_crit_ang*two)
             end if
          else
             if( first_entry ) then
-               write(out,'(6x,i5,9x,i5,7x,f7.2,12x,f4.1,3x,2h<=)')
+               write(out,"(6x,i5,9x,i5,7x,f7.2,12x,f4.1,3x,'<=')")
      &              node, neighbor_node,
      &              angle,angle/(critical_angle*two)
                first_entry = .false.
                local_node_list(num_local_list,3) = 1
             else
-               write(out,'(20x,i5,7x,f7.2,12x,f4.1,3x,2h<=)')
+               write(out,"(20x,i5,7x,f7.2,12x,f4.1,3x,'<=')")
      &              neighbor_node,
      &              angle, angle/(critical_angle*two)
                local_node_list(num_local_list,3) = 1
@@ -245,10 +245,10 @@ c
          special_char(1:3) = ' '
          if( use_init ) special_char(1:3) = '(*)'
          if( use_init ) then
-          write(out,'(6x,i5,7x,f7.2,a3,11x,f4.1,3x,2h<=)')
+          write(out,"(6x,i5,7x,f7.2,a3,11x,f4.1,3x,'<=')")
      &        node, angle, special_char, angle/(init_crit_ang*two)
          else
-          write(out,'(6x,i5,7x,f7.2,a3,11x,f4.1,3x,2h<=)')
+          write(out,"(6x,i5,7x,f7.2,a3,11x,f4.1,3x,'<=')")
      &        node, angle, special_char, angle/(critical_angle*two)
          end if 
 c
@@ -329,8 +329,8 @@ c
 c        2) finds new nodes for releaseing and executes release through
 c            two passes of the linked list for the crack front:
 c               Pass 1: compute CTOA, mark node for release if 
-c             		CTOA > critical angle and alter data structures
-c			for the released node
+c                         CTOA > critical angle and alter data structures
+c                  for the released node
 c               Pass 2: update crack front list to reflect newly released 
 c                       nodes
 c
@@ -408,7 +408,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character *1 dums
+      character(len=1) :: dums
       real dumr
       double precision
      &     d32460, dumd
@@ -789,7 +789,7 @@ c
 c
 c                  if the master_lines entry is now zero, then the
 c                  crack has coalesed or grown to a free surface: 
-c 		   exit the release loop.
+c                exit the release loop.
 c
            if( master_lines(num_line,1) .eq. 0 ) exit
 c
@@ -986,7 +986,7 @@ c
 c
       implicit integer (a-z)
       include 'common.main'
-      character *1 dums
+      character(len=1) :: dums
       real dumr
 c
       double precision
@@ -1175,7 +1175,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character *1 dums
+      character(len=1) :: dums
       real dumr
       double precision
      &     d32460, dumd, zero
@@ -1250,7 +1250,7 @@ c
          end if
       end do
 c
-c	     If we are using the constant front algorithm:
+c           If we are using the constant front algorithm:
 c            Since we have removed a node, we need to update the master
 c            line list.  If we removed a node, but didn't add a new
 c            one, then a crack has coalesed, so we zero out the
@@ -1444,7 +1444,7 @@ c
      &     one_eighty, one, four, ctoa_dist_back, dumd
       data zero, one_eighty, one, four / 0.0, 180.0, 1.0, 4.0/
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       logical debug, use_init
 c
       debug = .false.
@@ -1571,7 +1571,7 @@ c
      &     one_eighty, one, four, ctoa_dist_back, dumd
       data zero, one_eighty, one, four / 0.0, 180.0, 1.0, 4.0/
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       logical debug, use_init
 c
       debug = .false.
