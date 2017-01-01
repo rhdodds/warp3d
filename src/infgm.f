@@ -22,7 +22,7 @@ c
      & dumd
       real dumr, young_mod, poisson_ratio, alpha, vol_fract_ductile, 
      &     rho, tan_e, n_power, yld_pt, zero
-      character dums *1
+      character(len=1) :: dums
       logical sbflg1, sbflg2
       logical matchs, matchs_exact, endcrd, true, numr,
      &        prop_flags(fgm_node_values_cols)
@@ -249,7 +249,7 @@ c
       double precision
      &     dumd
       logical prop_flags(*)
-      character dums
+      character :: dums
       dimension intlst(*)               
 c
 c                       for each node in the list, set the
