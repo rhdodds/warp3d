@@ -38,7 +38,7 @@ c
 c               parameter and local variable declarations
 c
       character resnam*8, dbname*100, string*80
-      character *(*) resfil
+      character(len=*) :: resfil
       logical numel, numnod, fatal, coor, elprop, elinc, constr,
      &        block, flexst, sbflg1, sbflg2, scanms, nameok,
      &        read_nod_load, msg_flag, read_table, exist_flag
@@ -46,7 +46,7 @@ c
       external wcputime
       double precision
      &     dumd, dzero
-      character dums
+      character :: dums
       common /erflgs/ numnod, numel, fatal, coor, elprop, elinc,
      &                constr, block
       data dzero / 0.0d00 /
@@ -2307,7 +2307,7 @@ c
  9020 format(/,'... processing blk, felem, span, is_cohes:',
      &    i5, i8, i4, l3 )
  9030 format(5x,'i, elem_cohes, nnodes:',i4,i8,i3)
- 9100 format(5x,'processing blk, span, eletype, nnodes:'i4,i4,i3,i3)
+ 9100 format(5x,'processing blk, span, eletype, nnodes:',i4,i4,i3,i3)
  9110 format(8x,'i, elem, bottom & top elements:',i4,i8,2i9)
  9200 format(5x,'blk: ',i5,' no cohesive-interface elements')
  9300 format(/,'... build nonlocal material data structure ...')
@@ -2343,8 +2343,8 @@ c
      &                      cohesive_ele_types
 c
       implicit none
-      integer iprops(mxelpr,*), mxelpr, elem, bottom_solid, top_solid,
-     &        iout
+      integer :: mxelpr, elem, bottom_solid, top_solid, iout
+      integer iprops(mxelpr,*)
 c
 c          elem = absolute number for a cohesive-interface element
 c
