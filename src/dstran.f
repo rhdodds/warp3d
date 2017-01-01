@@ -23,7 +23,7 @@ c
       real dumr
       double precision
      &     dumd
-      character dums
+      character :: dums
 c
 c
       ndof = iprops(4,inverse_incidences(node)%element_list(1))
