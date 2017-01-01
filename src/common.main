@@ -141,10 +141,10 @@ c
 c======================================================================
 c
       common/intmpi/ myid, numprocs, MPI_VAL, blk_ptr_head,
-     &		     MPI_DOF_LOCAL, num_dof_local, proc_pids,
-     &               douextdb
+     1  MPI_DOF_LOCAL, num_dof_local, proc_pids,
+     2  douextdb
       integer :: myid, numprocs, MPI_VAL, blk_ptr_head,
-     &		     MPI_DOF_LOCAL, num_dof_local, proc_pids, douextdb
+     1    MPI_DOF_LOCAL, num_dof_local, proc_pids, douextdb
 c
       common /logmpi/ root_processor, slave_processor, use_mpi
 c
@@ -204,15 +204,10 @@ c
 c
       logical use_omp
 c
-      character*8 lodnam, lodtyp, elelib, snames, stname,
+      character(len=8) lodnam, lodtyp, elelib, snames, stname,
      &            lsldnm
-      character*24 matnam
+      character(len=24) matnam
 c
-      character*80 solver_scr_dir, sparse_stiff_file_name
+      character(len=80) solver_scr_dir, sparse_stiff_file_name
 c
       equivalence (props,iprops), (props,lprops)
-
-
-
-
-
