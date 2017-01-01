@@ -27,7 +27,7 @@ c
      &  x2, y2, z2, xp, xm, yp, ym, zp, zm, dumd, zero, box_tol
       real rone, rhalf, dumr
       logical inside_box, user_def_ct, message
-      character * 1 dums
+      character(len=1) :: dums
       data zero, toler / 0.0d0, 0.001d0 /
       data rone, rhalf / 1.0, 0.5 /
 c
