@@ -17,12 +17,13 @@ c
       subroutine inelbk(sbflg1,sbflg2)
       implicit integer (a-z)
       include 'common.main'
-      real dumr
-      double precision dumd
-      character dums, item*80
-      logical sbflg1,sbflg2
-      logical integr, first_proc, endcrd, auto_blking, ok,
-     &        display, auto_domains
+      real :: dumr
+      double precision :: dumd
+      character :: dums, item*80
+      logical :: sbflg1,sbflg2
+      logical :: first_proc, auto_blking, ok,
+     &           display, auto_domains
+      logical, external :: matchs, integr, endcrd
       integer, allocatable :: checkblk(:)
       data first_proc /.true./
 c
@@ -466,7 +467,7 @@ c
       if( blk_matnum .ne. matnum ) match = .false.
       if( .not. match ) return
 c
-      if( blk_geonon .ne. geonon ) match = .false.
+      if( blk_geonon .neqv. geonon ) match = .false.
       if( .not. match ) return
 c
       if( blk_intord .ne. intord ) match = .false.
