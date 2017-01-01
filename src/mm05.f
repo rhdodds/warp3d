@@ -1506,9 +1506,10 @@ c
  9000 format( '  step = ', i3, ',  iteration = ', i4,',  felem = ', i3, 
      & /, '  gpn = ', i3,  ',  mxvl = ', i3, ',  hist_size = ', i3,
      & /, '  span = ', i3, ',  nstrs = ', i3, ',  nstrn = ', i3,
-     & /, '  signal_flag = ', l3, '  adapt. = ' l3, '  cut_step = ' l3 )
+     & /, '  signal_flag = ', l3, '  adapt. = ', l3, '  cut_step = ',
+     &    l3 )
  9010 format( '  e_vec, nu_vec = ', 2e12.3,
-     & /,     '  mm_props = ' 5e12.3,
+     & /,     '  mm_props = ', 5e12.3,
      & /,     '  stress @ n   = ',    3e15.6, / , 17x, 3e15.6,
      & /,                                         17x, 3e15.6,
      & /,     '  stress @ n+1 = ',  3e15.6, / , 17x, 3e15.6, 
@@ -3516,7 +3517,8 @@ c
  9000 format( '  step = ', i3, ',  iteration = ', i4,',  felem = ', i3, 
      & /, '  gpn = ', i3,  ',  mxvl = ', i3, ',  hist_size = ', i3,
      & /, '  span = ', i3, ',  nstrs = ', i3, ',  nstrn = ', i3,
-     & /, '  signal_flag = ', l3, '  adapt. = ' l3, '  cut_step = ' l3 )
+     & /, '  signal_flag = ', l3, '  adapt. = ', l3, '  cut_step = ',
+     &    l3 )
  9010 format( '  @n  : e,   nu,     yld_pt  = ', 3e15.6,
      & /,     '        h_u, beta_u, delta_u = ', 3e15.6,
      & /,     '  @n+1: e,   nu,     yld_pt  = ', 3e15.6,
