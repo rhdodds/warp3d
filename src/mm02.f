@@ -552,7 +552,7 @@ c
       double precision, 
      & allocatable :: history_dump(:,:,:), one_elem_states(:)
       integer :: relem, elnum, hist_size, blockno
-      logical :: do_a_block
+      logical :: do_a_block, local_debug 
       double precision :: zero
       data zero / 0.0d00 /
 c      
@@ -564,7 +564,7 @@ c
 c              itype < 0 => this is an element number. put state
 c                           values into column 1 of results.
 c 
-      do_block = .true.
+      do_a_block = .true.
       if( itype. gt. 0 ) then
          do_a_block = .true.
          blockno = itype
