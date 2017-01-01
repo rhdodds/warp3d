@@ -20,7 +20,7 @@ c
       real dumr
       double precision
      &   dumd
-      character dums
+      character :: dums
       logical sbflg1,sbflg2
       logical integr
       dimension intlst(mxlsz)
