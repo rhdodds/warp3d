@@ -878,14 +878,14 @@ c
 c      Variables:
 c
 c       s1,s2,s3 = triangle natural coordinates, vary from 0 to 1,
-c	           example: s1=0 on the triangle side across from
+c                 example: s1=0 on the triangle side across from
 c                  corner 1 (through nodes 2, 5, and 3), s1=0.5 along
 c                  line that bisects the other two sides parallel to the
 c                  far side and through the middle the triangle (through
 c                  nodes 4 and 6), and s1=1 at corner 1.
 c                  These coordinates will be at a given Gauss
 c                  integration point.
-c	Properties of coordinates:  s1 + s2 + s3 = 1
+c      Properties of coordinates:  s1 + s2 + s3 = 1
 c                           use s3 = 1 - s1 - s2 here
 c                           and 0 <= s1,s2,s3 <= 1
 c
@@ -893,9 +893,9 @@ c       Note: pass in all three coordinates even through s3 is dependent
 c             on s1 and s2
 c
 c       qs1(numnode) = shape function derivatives with respect to triangle
-c	               coordinate s1, evaluated at the given Gauss point
+c                     coordinate s1, evaluated at the given Gauss point
 c       qs2(numnode) = shape function derivatives with respect to triangle
-c	               coordinate s2, evaluated at the given Gauss point
+c                     coordinate s2, evaluated at the given Gauss point
 c       (where numnode = 6 for the 6-node triangle element)
 c
       subroutine deriv11( s1, s2, s3, qs1, qs2 )
@@ -1106,10 +1106,10 @@ c
 c      Variables:
 c
 c       s1,s2,s3 = triangle natural coordinates, vary from 0 to 1,
-c	               example: s1 = 0 on the triangle side 2-3
+c                     example: s1 = 0 on the triangle side 2-3
 c                              = 0.5 at nodes 4 and 6
 c                              = 1 at corner 1
-c	    s1 + s2 + s3 = 1. Use s3 = 1 - s1 - s2 as convenient
+c          s1 + s2 + s3 = 1. Use s3 = 1 - s1 - s2 as convenient
 c
 c       Only s1 and s2 are input to this subroutine.
 c
@@ -1195,10 +1195,10 @@ c
 c      Variables:
 c
 c       s1,s2,s3 = triangle natural coordinates, vary from 0 to 1,
-c	               example: s1 = 0 on the triangle side 2-3
+c                     example: s1 = 0 on the triangle side 2-3
 c                              = 0.5 at nodes 4 and 6
 c                              = 1 at corner 1
-c	    s1 + s2 + s3 = 1. Use s3 = 1 - s1 - s2 as convenient
+c          s1 + s2 + s3 = 1. Use s3 = 1 - s1 - s2 as convenient
 c
 c       Only s1 and s2 are input to this subroutine.
 c
