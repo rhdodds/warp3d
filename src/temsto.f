@@ -25,7 +25,7 @@ c
       real dumr
       double precision
      &     dumd
-      character dums
+      character :: dums
       dimension intlst(*)               
 c
 c                       for each element in the list, set the
