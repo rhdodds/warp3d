@@ -19,7 +19,7 @@ c
       double precision
      & k_energy, mdiag(*), total_int_energy, total_pls_energy 
       logical there
-      character *80 dums
+      character(len=80) :: dums
 c 
 c           open the energy file in append mode. compute and
 c           write one record. on step 1, delete the energy file
