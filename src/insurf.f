@@ -23,8 +23,8 @@ c
       integer, allocatable, dimension (:) :: faces, elems
       real     dumr
       double precision  dumd
-      character*16  surfid
-      character*1   dums
+      character(len=16) :: surfid
+      character(len=1) ::   dums
       logical  label, matchs, integr, true, bad_surf,
      &         abaqus_face_flag
       dimension  intlst(mxlsz)
@@ -218,7 +218,7 @@ c
       use mod_mpc, only : num_surfaces, surface_table
       include 'common.main'
       integer  err, nelem, elems(*), faces(*)
-      character*16  surfid
+      character(len=16) :: surfid
 c
       num_surfaces = num_surfaces + 1
       if (num_surfaces .gt. max_surfaces) then
@@ -259,7 +259,7 @@ c
       subroutine check_surfid(surfid)
       use mod_mpc, only : surface_table, num_surfaces
       integer  surf
-      character*16  surfid
+      character(len=16) :: surfid
       nxt_surf: do surf = 1, num_surfaces
          if (surfid .eq. surface_table(surf)%id) then
             call errmsg2(61,dumi,surfid,dumr,dumd)
