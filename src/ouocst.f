@@ -26,10 +26,10 @@ c
 c
 c                       locals
 c
-      character *14 bflnam, fflnam
-      character  *4 strtnm
-      character *30 command
-      character *20, save :: flat_name
+      character(len=14) :: bflnam, fflnam
+      character(len=4) :: strtnm
+      character(len=30) :: command
+      character(len=20), save :: flat_name
       logical  patran_file 
       external warp3d_get_device_number
 !win      external system
