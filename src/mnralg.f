@@ -860,7 +860,7 @@ c
  8920 format(20x,'satisfied search tolerance of: ',f10.3)
  8930 format(7x,
      & '>> begin line search ' )
- 9000 format(3x,'       ... s0 value: ' e14.6)
+ 9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
      &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
      & /,7x,'   using step length 1.0 this iteration')
@@ -1000,7 +1000,7 @@ c
  8920 format(20x,'satisfied search tolerance of: ',f10.3)
  8930 format(//,7x,
      & '>> begin line search ' )
- 9000 format(3x,'       ... s0 value: ' e14.6)
+ 9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
      &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
      & /,7x,'   using step length 1.0 this iteration')
@@ -1849,8 +1849,8 @@ c
 c
       integer :: local_step, local_iter
       common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      real*8 tanstf_comps, sig_eps_comps, assem_comps
-      real *8 start, end
+      double precision tanstf_comps, sig_eps_comps, assem_comps
+      double precision :: start, end
 c
       stiff_update_flg = .true.
       local_step = step   ! just protect values
