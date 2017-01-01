@@ -36,7 +36,8 @@ c
       character :: dums
       logical :: outyp, ouflg, ounod, wide, eform,
      &           oubin, ouasc, oupat, noheader, react_totals_only,
-     &           compressed, ok, found
+     &           compressed, ok, found, stream_file, text_file,
+     &           flat_file
 
       logical, external :: matchs, endcrd, true, label, string, numi
       logical :: stress, prec, out_packet_now, neutral
@@ -503,7 +504,7 @@ c                      locals
 c
       integer :: intlst(mxlsz)
       logical :: matchs, label, string, ok
-      character * 80 bad_input
+      character(len=80) :: bad_input
 c
       output_command_file(1:) = " "
       if( allocated( output_step_bitmap_list ) )
