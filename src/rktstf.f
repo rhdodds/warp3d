@@ -78,11 +78,11 @@ c
       symmetric_assembly = .not. asymmetric_assembly
 c
       if( symmetric_assembly ) then
-      	allocate( local_work%ek_symm(span,nrow_ek) )
-      	local_work%ek_symm = zero
+            allocate( local_work%ek_symm(span,nrow_ek) )
+            local_work%ek_symm = zero
       else
-      	allocate( local_work%ek_full(span,nrow_ek) )
-      	local_work%ek_full = zero
+            allocate( local_work%ek_full(span,nrow_ek) )
+            local_work%ek_full = zero
       end if
 c
 c      if( asymmetric_assembly ) ek = zero
@@ -245,45 +245,45 @@ c
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
 !DIR$ IVDEP
-        	do i = 1, 300
-      	  	ek(i,j) = local_ek(j,i)
-      	  end do
+              do i = 1, 300
+                    ek(i,j) = local_ek(j,i)
+              end do
         end do
 c
       case( 465 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
 !DIR$ IVDEP
-        	do i = 1, 465
-        		ek(i,j) = local_ek(j,i)
-      	  end do
+              do i = 1, 465
+                    ek(i,j) = local_ek(j,i)
+              end do
         end do
 c
       case( 666 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
 !DIR$ IVDEP
-        	do i = 1, 666
-      	  	ek(i,j) = local_ek(j,i)
-      	  end do
+              do i = 1, 666
+                    ek(i,j) = local_ek(j,i)
+              end do
         end do
 c
       case( 1830 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
 !DIR$ IVDEP
-        	do i = 1, 1830
-      	  	ek(i,j) = local_ek(j,i)
-      	  end do
+              do i = 1, 1830
+                    ek(i,j) = local_ek(j,i)
+              end do
         end do
 c
       case default
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
 !DIR$ IVDEP
-        	do i = 1, nrow_ek
-      	  	ek(i,j) = local_ek(j,i)
-      	  end do
+              do i = 1, nrow_ek
+                    ek(i,j) = local_ek(j,i)
+              end do
         end do
       end select
 c
@@ -293,9 +293,9 @@ c                  time 5.16 secs
 c      
 c      do i = 1, 1830
 c@!DIR$ LOOP COUNT MAX=128
-c      	do j = 1, span
-c      		ek(i,j) = local_ek(j,i)
-c      	end do
+c            do j = 1, span
+c                  ek(i,j) = local_ek(j,i)
+c            end do
 c      end do
       
       
@@ -315,9 +315,8 @@ c
       subroutine rktstf_zero_vec( vec, nterms )
       implicit none
 c
-      double precision
-     &   vec(nterms), zero
-      integer  nterms
+      integer :: nterms
+      double precision :: vec(nterms), zero
       data zero / 0.0d00 /
 c!DIR$ ASSUME_ALIGNED vec:64
 c
