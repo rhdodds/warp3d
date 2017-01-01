@@ -32,8 +32,8 @@ c
 c
 c                        local declarations
 c
-      character*8 doflbl(mxndof), dums
-      character*20 hedtyp
+      character :: doflbl(mxndof)*8, dums*1
+      character(len=20) :: hedtyp
       logical newel, write_to_packet
       real dumr
       double precision
