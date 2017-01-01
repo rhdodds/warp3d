@@ -24,8 +24,8 @@ c
       double precision
      &    eres(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof)
       logical newhed, trne(mxvl,mxndel)
-      character*8 doflbl(mxndof)
-      character*20 hedtyp
+      character(len=8) :: doflbl(mxndof)
+      character(len=20) :: hedtyp
       data zero /0.0/
 c
 c                       check that this iteration is to be output.
