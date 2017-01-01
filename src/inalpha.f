@@ -21,7 +21,7 @@ c
      &   dumd
       real dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz,
      &     zero
-      character dums *1
+      character(len=1) :: dums
       logical sbflg1, sbflg2
       logical matchs, matchs_exact, endcrd, true, numr
       dimension intlst(mxlsz)
@@ -229,7 +229,7 @@ c
       real dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
       double precision
      &     dumd
-      character dums
+      character :: dums
       dimension intlst(*)               
 c
 c                       for each element in the list, set the
