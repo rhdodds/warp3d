@@ -15,20 +15,19 @@ c
 c
       subroutine errmsg(errnum,param,sparam,rparam,dparam)
       implicit integer (a-z)
-      character*50 string
-      character*35 strng1
-      character*8 shrtst,shrtst1,shrtst2
-      character*24 lngstr
-      character*21 strng21
-      character*29 strng29
-      character *(*) sparam
+      character(len=50) :: string
+      character(len=35) :: strng1
+      character(len=8) :: shrtst,shrtst1,shrtst2
+      character(len=24) :: lngstr
+      character(len=21) :: strng21
+      character(len=29) :: strng29
+      character(len=*) :: sparam
 c
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision
-     &   erprmd, dparam, hundred
-      real erprmr, rparam
-      logical, save :: mess_61, write_msg_255
-      character *50 erprms
+      double precision :: erprmd, dparam, hundred
+      real :: erprmr, rparam
+      logical, save :: mess_61, write_msg_255, write_msg_321
+      character(len=50) :: erprms
       data hundred /100.0/
       data mess_61, write_msg_255, write_msg_321
      &     / .true., .true., .true. /
@@ -1397,7 +1396,7 @@ c
       call entits( string, strlng )
       write(out,9135)string(1:strlng)      
  9135 format(/1x,'>>>>> warning: a type of output is expected. ',/,
-     & 14x,'scanning: 'a,
+     & 14x,'scanning: ',a,
      & /,14x,'remainder of line flushed...'/)
       go to 9999
 c
@@ -3277,20 +3276,20 @@ c
 c
       subroutine errmsg2( errnum, param, sparam, rparam, dparam )
       implicit integer (a-z)
-      character*50 string
-      character*35 strng1
-      character*8 shrtst,shrtst1,shrtst2
-      character*24 lngstr
-      character*21 strng21
-      character*29 strng29
-      character *(*) sparam
+      character(len=50) :: string
+      character(len=35) :: strng1
+      character(len=8) :: shrtst,shrtst1,shrtst2
+      character(len=24) :: lngstr
+      character(len=21) :: strng21
+      character(len=29) :: strng29
+      character(len=*) :: sparam
 c
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
       double precision
      &   erprmd, dparam, hundred
       real erprmr, rparam
       logical mess_61
-      character *50 erprms
+      character(len=50) :: erprms
       data hundred /100.0/
       data mess_61 / .true. /
 c
@@ -4143,11 +4142,4 @@ c
  9999 continue
       return
       end
-
-
-
-
-
-
-
 
