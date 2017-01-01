@@ -24,7 +24,7 @@ c
       logical, save :: use_contact
 c     
       double precision, save ::
-     &	   cplane_vec (3,2,maxcontact),
+     &         cplane_vec (3,2,maxcontact),
      &     cshape_norm (3,maxcontact),
      &     cshape_pnt (3,maxcontact),
      &     cshape_rate (3,maxcontact),
