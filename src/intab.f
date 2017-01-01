@@ -24,11 +24,11 @@ c
 c
 c                       local declarations
 c
-      double precision
-     &  forval, dumd
-      character name*80, lname*24, stlnam*8, dums*1, curtyp*4
-      logical matchs, endcrd, label, scanms, numi, debug
-      real dumr
+      double precision :: forval, dumd
+      character :: name*80, lname*24, stlnam*8, dums*1, curtyp*4
+      logical, external :: matchs, endcrd, label, scanms, numi
+      logical :: debug, complete
+      real :: dumr
       data debug / .false. /
 c
       if ( debug ) write (*,*) ' >>> inside intab'
