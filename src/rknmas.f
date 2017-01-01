@@ -84,8 +84,8 @@ c              set mass value at other dof v, w for each element node
 c
       call elmas1( span, nnode, emass, volume, mel, totdof )
 c
-c	           		multiply by thickness ratio if not equal to 1
-c	           		this ratio is really only for 2d work
+c                             multiply by thickness ratio if not equal to 1
+c                             this ratio is really only for 2d work
 c
       if( beta_fact .ne. one ) then 
        do j = 1, totdof
