@@ -23,7 +23,7 @@ c
       double precision
      &   dumd
       real dumr
-      character dums
+      character :: dums
       logical fatal,numnod,numel,sbflg1,sbflg2,coor,elprop,elinc,constr
       logical matchs,integr,endcrd,true,block 
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
