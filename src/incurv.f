@@ -20,11 +20,11 @@ c
 c                local declarations
 c
       logical matchs, numi, numd, sbflg1, sbflg2, new_line, local_debug,
-     &        endcrd, local_gp_model_flag
+     &        endcrd, local_gp_model_flag, found_points
       double precision
      &   stress_pt, strain_pt, dumd, ym, zero
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       data zero, local_debug / 0.0, .false. /
 c
       if( sbflg1 ) then
@@ -112,17 +112,17 @@ c
             endif
             seg_curves(num_points,1,num_curve) = strain_pt
             seg_curves(num_points,2,num_curve) = stress_pt 
-	    new_line = .false.
-	    go to 20
+          new_line = .false.
+          go to 20
          else
             call errmsg(219,num_points,dums,dumr,dumd)
-	    go to 10
+          go to 10
          end if
       else
          if( new_line ) then 
-	    go to 9999
+          go to 9999
          else
-	    go to 10
+          go to 10
          end if
       end if
       go to 20
@@ -264,7 +264,7 @@ c
       double precision
      &    dumd, value
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       data local_debug / .false. /
 c
       gp_model_flag = .false.
@@ -467,7 +467,7 @@ c
       double precision
      &    dumd
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       data local_debug / .false. /
 c
 c                get the plastic strain rate for the curve. 
