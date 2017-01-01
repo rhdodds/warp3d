@@ -209,9 +209,9 @@ c
      &                   acceleration )
       implicit none
 c      
+      integer :: nodof
       double precision ::
      & du(nodof), velocity(nodof),  acceleration(nodof), dt, nbeta
-      integer :: nodof
 
       integer :: i
       double precision ::
