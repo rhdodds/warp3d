@@ -103,7 +103,7 @@ c
       real dumr
       double precision
      &     dumd
-      character dums
+      character :: dums
 c
 c                       MPI:
 c                         we need to gather all the stresses or strains
