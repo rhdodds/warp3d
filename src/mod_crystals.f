@@ -1979,7 +1979,7 @@ c
 c
       integer :: inter_mat, nlines, avail_device
       integer, external :: warp3d_get_device_number
-      character (len=24) :: filen
+      character(len=24) :: filen
       double precision :: t1, t2, t3
       real, dimension(max_crystals) :: rand_reals
 c
@@ -2064,7 +2064,7 @@ c
       integer :: avail_device
       integer, external :: warp3d_get_device_number
       logical :: countme, crystalsl, anglesl, open_file, send_mess
-      character (len=24) :: filen
+      character(len=24) :: filen
 c     
 c     Just skip if we don't have a crystal
 c
@@ -2181,7 +2181,7 @@ c
             integer :: n, d, i
             integer, dimension(ncry), intent(out) :: results_cry
 c
-            character (len=24) :: fmat
+            character(len=24) :: fmat
 
 c           Scan the file until we find the first entry which matches el
             do
