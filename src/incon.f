@@ -27,16 +27,16 @@ c
 c                       locals
 c 
       integer :: intlst(mxlsz), lenlst, param, errnum, dummy,
-     &           iplist, icn, node, idof, dof, debug, nsteps, i
+     &           iplist, icn, node, idof, dof, nsteps, i
       integer, save :: count_stored
       logical :: release_flags(3), found_list, bad_list, bad
       logical, external :: match, matchs, endcrd, true, numd, integr,
      &         realn, match_exact
+      logical :: debug
       logical, save :: delete_release_cons
       real ::  dumr
-      double precision
-     &  dumd, zero, d32460, react
-      character dums*1, curtyp *1, dof_names(3)*1
+      double precision :: dumd, zero, d32460, react
+      character :: dums*1, curtyp *1, dof_names(3)*1
       data dof_names / 'u', 'v', 'w' /
       data  d32460, zero /  32460.0d00, 0.0d00 /
 c
@@ -990,7 +990,7 @@ c
      & one, d32460, xmin, xmax, ymin, ymax, zmin, zmax, x, y, z,
      & coordtol(3), plane_coord, ctol, coordvec(3)
       real dumr
-      character * 1 dums
+      character(len=1) :: dums
       logical inpflg(mxndof), verify
       logical matchs, numd, local_debug, endcrd
       data zero, d32460 / 0.0d00, 32460.0 /
@@ -1225,7 +1225,7 @@ c
       integer :: dumi
       real    :: dumr
       double precision ::  dumd
-      character*1  dums
+      character(len=1) :: dums
       logical, external :: matchs, realn, numr, integr, endcrd, true
 c
 c              local storage for translating, checking
@@ -1505,7 +1505,7 @@ c
       integer ::  err, dumi
       real ::     dumr, factor
       double precision :: dumd
-      character *1 dums
+      character(len=1) :: dums
 c      
       num_user_mpc = num_user_mpc + 1
       if( num_user_mpc .gt. max_mpc ) then
