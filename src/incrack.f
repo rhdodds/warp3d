@@ -32,7 +32,7 @@ c
      &  d32460, one
       data one, zero, two, hundred, def_min_load_fact,d32460
      &      / 1.0, 0.0, 2.0, 100.0, .01, 32460.0 /
-      character *1 dums
+      character(len=1) :: dums
       real dumr
       external true
       logical debug, duml, true
@@ -127,9 +127,9 @@ c
          call errmsg ( 201, dum, dums, dumr, min_load_fact )
       else
          min_load_fact = min_load_fact / hundred
-	 if (min_load_fact .le. zero ) then
+       if (min_load_fact .le. zero ) then
             min_load_fact = def_min_load_fact
-	    call errmsg ( 269, dum, dums, dumr, def_min_load_fact )
+          call errmsg ( 269, dum, dums, dumr, def_min_load_fact )
          endif
       endif
       goto 110
@@ -248,14 +248,14 @@ c                make sure its a number
 c
       if ( .not. numd ( porosity_limit ) ) then
          call errmsg( 198, dum, dums, dumr, dumd )
-	 go to 10
+       go to 10
       end if
 c
 c                make sure its more than zero
 c
       if ( porosity_limit .lt. zero ) then
          call errmsg( 199, dum, dums, dumr, dumd )
-	 porosity_limit = zero
+       porosity_limit = zero
       end if
 c
       go to 10
@@ -268,14 +268,14 @@ c                make sure its a number
 c
       if ( .not. numd ( critical_cohes_deff_fract ) ) then
          call errmsg( 329, dum, dums, dumr, dumd )
-	 go to 10
+       go to 10
       end if
 c
 c                make sure its more than 1
 c
       if ( critical_cohes_deff_fract .le. one ) then
          call errmsg( 330, dum, dums, dumr, dumd )
-	 critical_cohes_deff_fract = 5.0
+       critical_cohes_deff_fract = 5.0
       end if
 c
       go to 10
@@ -662,8 +662,8 @@ c          --------------------------------------------------
 c          | angle for CTOA release  -- node release option |
 c          --------------------------------------------------
 c
-c	     also sets the distance back to measure ctoa when
-c	     using constant front growth
+c           also sets the distance back to measure ctoa when
+c           using constant front growth
 c
  1000  continue
 c
@@ -781,8 +781,8 @@ c
       if ( .not. numi( temp_int ) ) then
          call errmsg ( 201, dum, dums, dumr, dumd )
       else
-	 if ( temp_int .le. 0 ) then
-	    call errmsg ( 272, min_steps_for_release, dums, dumr,
+       if ( temp_int .le. 0 ) then
+          call errmsg ( 272, min_steps_for_release, dums, dumr,
      &           dumd)
          else
             min_steps_for_release = temp_int
@@ -800,8 +800,8 @@ c
       if ( .not. numd( temp_dble ) ) then
          call errmsg ( 201, dum, dums, dumr, dumd )
       else
-	 if ( temp_dble .le. 0 ) then
-	    call errmsg ( 275, dum, dums, dumr, dumd)
+       if ( temp_dble .le. 0 ) then
+          call errmsg ( 275, dum, dums, dumr, dumd)
          else
             max_porosity_change = temp_dble
          end if
@@ -818,8 +818,8 @@ c
       if ( .not. numd( temp_dble ) ) then
          call errmsg ( 201, dum, dums, dumr, dumd )
       else
-	 if ( temp_dble .le. 0 ) then
-	    call errmsg ( 276, dum, dums, dumr, dumd)
+       if ( temp_dble .le. 0 ) then
+          call errmsg ( 276, dum, dums, dumr, dumd)
          else
             max_plast_strain_change = temp_dble
          end if
@@ -842,8 +842,8 @@ c
       if ( .not. numd( temp_dble ) ) then
          call errmsg ( 201, dum, dums, dumr, dumd )
       else
-	 if ( temp_dble .le. 0.0 ) then
-	    call errmsg ( 328, dum, dums, dumr, dumd)
+       if ( temp_dble .le. 0.0 ) then
+          call errmsg ( 328, dum, dums, dumr, dumd)
          else
             max_deff_change = temp_dble
          end if
@@ -1040,7 +1040,7 @@ c
 c
 c             locally allocated arrays
 c
-      character *1 dums
+      character(len=1) :: dums
       real dumr
       double precision
      &  dumd
@@ -1052,7 +1052,7 @@ c                if the damage data structures have already been allocated,
 c                then leave
 c
       if ( num_kill_elem .ne. 0 ) then
-	 call errmsg( 215, dum, 'dam_ifv', dumr, dumd )
+       call errmsg( 215, dum, 'dam_ifv', dumr, dumd )
          return
       end if
 c
@@ -1121,7 +1121,7 @@ c
 c
 c             locally allocated arrays
 c
-      character *1 dums
+      character(len=1) :: dums
       real dumr
       double precision
      &  zero, plane_tol, max_dist, dumd
@@ -1263,7 +1263,7 @@ c
       double precision
      &  zero, one, dumd
       real dumr
-      character * 1 dums
+      character(len=1) :: dums
       data zero, one /0.0, 1.0/
 c
 c
@@ -1370,7 +1370,7 @@ c                 need to add it to the crack_front_nodes linked list.
 c
 c                 If we are using const_front growth, then the only
 c                 nodes put into the crack_front_nodes are the
-c	   	  master nodes, one per crack front.
+c                 master nodes, one per crack front.
 c
       write (out,9000)
       first_node = .true.
@@ -1443,7 +1443,7 @@ c
       double precision
      &     oneeighty, dumd, pi
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       data oneeighty, pi /180.0, 3.1415926535897932 /
 c
 c                 the release height is calculated as follows:
@@ -1463,7 +1463,7 @@ c
          else
             release_height = char_length * tan( critical_angle *
      &           release_fraction * (pi/oneeighty) )
-	 end if
+       end if
          write(out,9010) release_height
       else
          call errmsg(256,dum,dums,dumr,dumd)
@@ -1518,9 +1518,9 @@ c
 c
       if ( debug ) then
          write (out,*) '>>>>> dam_print_list:'
-	 do i = 1, num_print_list
-	    write (out,'(2x,i3,1x,i7)') i,dam_print_list(i)
-	 end do
+       do i = 1, num_print_list
+          write (out,'(2x,i3,1x,i7)') i,dam_print_list(i)
+       end do
       end if
 c
       return
@@ -1573,9 +1573,9 @@ c
 c
       if ( debug ) then
          write (out,*) '>>>>> kill_order_list:'
-	 do i = 1, num_kill_order_list
-	    write (out,'(2x,i3,1x,i7)') i,kill_order_list(i)
-	 end do
+       do i = 1, num_kill_order_list
+          write (out,'(2x,i3,1x,i7)') i,kill_order_list(i)
+       end do
       end if
 c
       return
@@ -1635,7 +1635,7 @@ c
          write (out,*) '>>>>> master_nodes:'
          do i = 1, num_crack_fronts
             write (out,'(2x,i3,1x,i7)') i,master_nodes(i)
-	 end do
+       end do
       end if
 c
       return
@@ -1713,7 +1713,7 @@ c
       double precision
      &  dumd, d32460
       real dumr
-      character *1, dums
+      character(len=1) :: dums
       data d32460, debug / 32460.0, .false. /
 c
       if (debug) write (*,*) '>>> in init_ctoa_back'
@@ -1793,7 +1793,7 @@ c
       double precision
      &  dumd, d32460
       real dumr
-      character *1, dums
+      character(len=1) :: dums
       data d32460, debug / 32460.0, .false. /
 c
       if (debug) write (*,*) '>>> in find_master_line'
@@ -1853,7 +1853,7 @@ c
       double precision
      &  dumd
       real dumr
-      character *1, dums
+      character(len=1) :: dums
       data debug / .false. /
 c
       if (debug) then
@@ -1962,7 +1962,7 @@ c
 c
       implicit integer (a-z)
       include 'common.main'
-      character*50 string
+      character(len=50) :: string
 c
       select case( ierrno )
 c
