@@ -28,7 +28,7 @@ c
 c
 c                       local declarations
 c
-      character*4 loctyp
+      character(len=4) :: loctyp
 c
 c                       set up paramters for format of printed output.
 c                       compute number f physical lines of output
