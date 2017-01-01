@@ -22,8 +22,8 @@ c
       integer, allocatable, dimension (:) :: mstr_lst, slv_lst
       real     dumr, tied_tol
       double precision  dumd
-      character*16  setid, mstrid, slvid
-      character*1   dums
+      character(len=16) :: setid, mstrid, slvid
+      character(len=1) :: dums
       logical  label, matchs, numr, true, adj_flag
 c
       allocate (tied_contact_table(max_tied_sets),
@@ -200,8 +200,8 @@ c
       integer  dumi, npairs, mstr_lst(*), slv_lst(*)
       real  dumr
       double precision  dumd
-      character*16  mstrid, slvid
-      character*1   dums
+      character(len=16) :: mstrid, slvid
+      character(len=1) :: dums
       logical  badid
 c
       mstr_lst(npairs) = 0
@@ -265,8 +265,8 @@ c
       integer  dumi, err, npairs, mstr_lst(*), slv_lst(*)
       real  dumr, tied_tol
       double precision  dumd
-      character*16  setid
-      character*1   dums
+      character(len=16) :: setid
+      character(len=1) :: dums
       logical       adj_flag
 c  
       tied_sets_exist  = .true.
@@ -319,8 +319,8 @@ c
       integer  dumi, set
       real  dumr
       double precision  dumd
-      character*16  setid
-      character*1   dums
+      character(len=16) :: setid
+      character(len=1) :: dums
 c
       nxt_set: do set = 1, num_tied_sets
          if (setid .eq. tied_contact_table(set)%id) then
