@@ -56,7 +56,7 @@ c
       type :: node_loading_cond
         integer node_count
         integer how_defined
-        character * 80 user_file_name
+        character(len=80) :: user_file_name
         integer, pointer, dimension(:,:) :: nodal_loads
       end type
       type(node_loading_cond), save, allocatable,
@@ -200,9 +200,9 @@ c
 c
       integer packet_file_no, ascii_packet_file_no
       logical output_packets
-      character * 50 packet_file_name
-      character * 80 ascii_packet_file_name
-      character * 80 batch_mess_fname
+      character(len=50) :: packet_file_name
+      character(len=80) :: ascii_packet_file_name
+      character(len=80) :: batch_mess_fname
 c
 c
 c                 material properties specified at nodes to support
@@ -234,7 +234,7 @@ c
       logical lmtprp(300,500)
       double precision dmatprp(300,500)
       equivalence (matprp,lmtprp)
-      character (len=24), dimension(300,500) :: smatprp
+      character(len=24), dimension(300,500) :: smatprp
 c
 c
 c
@@ -243,8 +243,8 @@ c                 only "piston" input loading supported at present
 c
 c
       type :: table_entry
-       character *24 table_name
-       character *8  table_type
+       character(len=24) :: table_name
+       character(len=8) ::  table_type
        integer num_rows
        integer num_cols
        real, dimension(:,:), allocatable :: table_values_sgl
@@ -261,7 +261,7 @@ c                 usually node numbers or element numbers
 c
 c
       type :: ulist
-        character(len = 24) :: name
+        character(len=24) :: name
         integer :: length_list
         integer, allocatable, dimension(:) :: list
       end type
@@ -304,7 +304,7 @@ c
 c          file name for "output commands file ... after steps <list>'
 c          bit map to store expanded list of steps
 c
-      character * 80 output_command_file
+      character(len=80) :: output_command_file
       integer, save, allocatable, dimension(:) ::
      &         output_step_bitmap_list
 c
