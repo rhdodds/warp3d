@@ -14,7 +14,7 @@ c     ****************************************************************
 c
       module damage_data
 c
-	parameter (mxstp_store = 10)
+      parameter (mxstp_store = 10)
 c
 c                     arrays
 c
