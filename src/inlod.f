@@ -834,7 +834,7 @@ c
          go to 905
       else
          call errmsg(66,dum,dums,dumr,dumd)
-	 call scan
+       call scan
          go to 920
       end if
 c 
@@ -1117,7 +1117,7 @@ c
       logical face_inpflg(numfaces,*), body_inpflg(*),
      &     press_set(*), pist_set(*), debug
       real dumr
-      character *1  dums
+      character(len=1) :: dums
       dimension intlst(*)
       data debug, one / .false., 1.0 /
 c
