@@ -22,13 +22,13 @@ c
       implicit none
       integer logflag,logunit,mflag
       integer, external :: warp3d_get_device_number
-      character*80 logfile,message
+      character(len=80) :: logfile,message
 c
 c           local variables
 c 
       integer i,debug_level
 
-      logflag = 0			! set = 0 for no debugging log file
+      logflag = 0                  ! set = 0 for no debugging log file
       logunit = warp3d_get_device_number()
       logfile = 'echo_mpc_init.log'
       message = '[replace with an error or warning message]'
@@ -271,7 +271,7 @@ c           the log file; set logflag from 1 (minimum debug) to 10
 c           (maximum debug) for debugging information to be written
 c           to the log file
 c
-      logflag = 0			! set = 0 for no debugging log file
+      logflag = 0                  ! set = 0 for no debugging log file
       logunit = warp3d_get_device_number()
       logfile = 'echo_tiednodedebug.log'
       message = '[replace with an error or warning message]'
@@ -358,7 +358,7 @@ c
       if(slave_surface_count.gt.0)then
         maxtiednode = maxnodeperelem*slave_surface_count
       else
-        maxtiednode = numnode		! default array dimension
+        maxtiednode = numnode            ! default array dimension
         mflag = 1
         message = 'warning: zero slave elements counted; setting the'//
      &            ' local array dimension maxtiednode to default'//
@@ -563,7 +563,7 @@ c
       logical
      &  tiednodeadjustflag(maxtiednode)
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           local variables
@@ -849,13 +849,13 @@ c               get the local element face node numbers (the columns
 c               in the connectivity array) for this element face
 c
             select case(meshformat)
-            case(1)	! abaqus
+            case(1)      ! abaqus
               call srt_setlocalfacenodes(localfacenode,maxelemface,
      &               maxnodeperface,numelemface,numnodeperface,
      &               numcornerperface,node_per_elem,elemchoice,
      &               logflag,logunit,logfile,mflag,message)
               if(mflag.ge.2)goto 900
-            case(2)	! warp3d
+            case(2)      ! warp3d
               call srt_setwarp3dlocalfacenodes(localfacenode,
      &               maxelemface,maxnodeperface,numelemface,
      &               numnodeperface,numcornerperface,node_per_elem,
@@ -867,7 +867,7 @@ c
               message = 'error: unexpected meshformat choice;'//
      &                  ' cannot get local element face nodes'//
      &                  ' (tied_nodelist).'
-            end select	! meshformat
+            end select      ! meshformat
             if(mflag.ge.2)goto 900
 c
 c               save the element face nodes on the slave mesh surface
@@ -891,7 +891,7 @@ c
                 if(logflag.ge.1)
      &            call srt_writelogmessage(mflag,message,logfile,
      &                                     logunit)
-              else	! save the node_id to the local nodelist() array
+              else      ! save the node_id to the local nodelist() array
                 numnodelist = numnodelist + 1
                 if(numnodelist.gt.maxnodelist)then
                   mflag = 2
@@ -1043,7 +1043,7 @@ c
       logical
      &  tiednodeadjustflag(maxtiednode)
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           variables:
@@ -1281,7 +1281,7 @@ c
       logical
      &  tiednodeadjustflag(maxtiednode)
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           local variables
@@ -1322,7 +1322,7 @@ c
      &  allocatable, dimension (:) :: gap_dists, gap_toler
       real rword,dumr
       double precision  dumd
-      character*1  dums
+      character(len=1) :: dums
       data zero, one, three
      & / 0.0d00, 1.0d00, 3.0d00 /
       allocatable
@@ -1404,7 +1404,7 @@ c           initialize values
 c
       pi = 4.0d0*atan(1.0d0)
       epsilon = 1.0d-6
-      epsilon_angle = 0.001d0*(pi/180.0d0)	! 0.001 degrees
+      epsilon_angle = 0.001d0*(pi/180.0d0)      ! 0.001 degrees
 c
 c           set the check_iso_coord_flag value:
 c             0=no check or change to the isopoint() values
@@ -1413,9 +1413,9 @@ c             2=set maximum isopoint() values to be within +/- 1.0
 c
       check_iso_coord_flag = 2
       select case(check_iso_coord_flag)
-      case(1)	! check xi,eta,zeta and give a warning
+      case(1)      ! check xi,eta,zeta and give a warning
         iso_error_val = 1.001d0
-      case(2)	! set xi,eta,zeta to have a maximum of +/- 1.0
+      case(2)      ! set xi,eta,zeta to have a maximum of +/- 1.0
         iso_error_val = one
       case default
         iso_error_val = 1.001d0
@@ -1475,9 +1475,9 @@ c           compute the isoparametric element coordinates at the slave
 c           node location
 c
       do nd=1,numtiednode
-        node_id = tiednodeid(nd,1)	! slave node id
-        elem_id = tiednodeid(nd,2)	! assigned master element id
-        face_id = tiednodeid(nd,3)	! assigned master element face
+        node_id = tiednodeid(nd,1)      ! slave node id
+        elem_id = tiednodeid(nd,2)      ! assigned master element id
+        face_id = tiednodeid(nd,3)      ! assigned master element face
 
         if(local_debug .and. logflag.ge.debug_level)then
           open(unit=logunit,file=logfile,position='append')
@@ -1527,13 +1527,13 @@ c           get the local element face node numbers (the columns
 c           in the connectivity array) for this element face
 c
         select case(meshformat)
-        case(1)	! abaqus
+        case(1)      ! abaqus
           call srt_setlocalfacenodes(localfacenode,maxelemface,
      &           maxnodeperface,numelemface,numnodeperface,
      &           numcornerperface,node_per_elem,elemchoice,
      &           logflag,logunit,logfile,mflag,message)
           if(mflag.ge.2)goto 900
-        case(2)	! warp3d
+        case(2)      ! warp3d
           call srt_setwarp3dlocalfacenodes(localfacenode,
      &               maxelemface,maxnodeperface,numelemface,
      &               numnodeperface,numcornerperface,node_per_elem,
@@ -1545,7 +1545,7 @@ c
           message = 'error: unexpected meshformat choice;'//
      &              ' cannot get local element face nodes'//
      &              ' (tied_nodeiso).'
-        end select	! meshformat
+        end select      ! meshformat
         if(mflag.ge.2)goto 900
 c
 c               set the isoparametric dof that is constant on the master
@@ -1564,12 +1564,12 @@ c               at the center of a tetrahedron element face one of the
 c               coordinates is zero and the other three are 1/3
 c
         select case(elemchoice)
-        case(1,2)	! 20 or 8 node brick element
+        case(1,2)      ! 20 or 8 node brick element
           isopoint = zero
           isopoint(constantisodof) = constantisocoord
           twod_flag = .false.
 
-        case(6,13)	! 10 or 4 node tetrahedron
+        case(6,13)      ! 10 or 4 node tetrahedron
           isotetpoint = one/three
           isotetpoint(constantisodof) = zero
           twod_flag = .false.
@@ -1661,7 +1661,7 @@ c               isoparametric coordinates and compute the jacobian
 c               matrix
 c
           select case(elemchoice)
-          case(1,2)	! 20 or 8 node brick element
+          case(1,2)      ! 20 or 8 node brick element
 c
 c               evaluate the element shape functions at the current
 c               isoparametric coordinates and compute the jacobian
@@ -1713,7 +1713,7 @@ c
               goto 900
             end select
 
-          case(6,13)	! 10 or 4 node tetrahedron
+          case(6,13)      ! 10 or 4 node tetrahedron
 c
 c               use the triangular face corners to get orthogonal
 c               tangent vectors on the tetrahedron element face
@@ -1854,7 +1854,7 @@ c
             scale2 = zero
 
             select case(elemchoice)
-            case(1,2)	! 20 or 8 node brick element
+            case(1,2)      ! 20 or 8 node brick element
 c
 c               compute the average projected distance of the vectors
 c               from the master element face center (face point in the
@@ -1875,7 +1875,7 @@ c
               scale1 = scale1/dble(numcornerperface)
               scale2 = scale2/dble(numcornerperface)
 
-            case(6,13)	! 10 or 4 node tetrahedron
+            case(6,13)      ! 10 or 4 node tetrahedron
               scale1 = one
               scale2 = one
             case default
@@ -1930,7 +1930,7 @@ c
           end if
 
           select case(elemchoice)
-          case(1,2)	! 20 or 8 node brick element
+          case(1,2)      ! 20 or 8 node brick element
             select case(constantisodof)
             case(1)
               isopoint(2) = isopoint(2) + delta1
@@ -1949,7 +1949,7 @@ c
               goto 900
             end select
 
-          case(6,13)	! 10 or 4 node tetrahedron
+          case(6,13)      ! 10 or 4 node tetrahedron
             do i=1,maxdof
               vec1(i) = delta1*tangent1(i)
               vec2(i) = delta2*tangent2(i)
@@ -2077,7 +2077,7 @@ c
           if(abs(isopoint(1)).gt.iso_error_val)then
             xi_error_count = xi_error_count + 1
             select case(check_iso_coord_flag)
-            case(1)	! give a warning
+            case(1)      ! give a warning
               mflag = 1
               message = 'warning: the "xi" isoparametric coordinate'//
      &                ' is outside the element; expecting'//
@@ -2095,7 +2095,7 @@ c
                 write(logunit,*)
                 close(unit=logunit)
               end if
-            case(2)	! set the maximum isoparametric value
+            case(2)      ! set the maximum isoparametric value
               if(logflag.ge.1)then
                 open(unit=logunit,file=logfile,position='append')
                 write(logunit,*)
@@ -2117,7 +2117,7 @@ c
           if(abs(isopoint(2)).gt.iso_error_val)then
             eta_error_count = eta_error_count + 1
             select case(check_iso_coord_flag)
-            case(1)	! give a warning
+            case(1)      ! give a warning
               mflag = 1
               message = 'warning: the "eta" isoparametric coordinate'//
      &                ' is outside the element; expecting'//
@@ -2135,7 +2135,7 @@ c
                 write(logunit,*)
                 close(unit=logunit)
               end if
-            case(2)	! set the maximum isoparametric value
+            case(2)      ! set the maximum isoparametric value
               if(logflag.ge.1)then
                 open(unit=logunit,file=logfile,position='append')
                 write(logunit,*)
@@ -2157,7 +2157,7 @@ c
           if(abs(isopoint(3)).gt.iso_error_val)then
             zeta_error_count = zeta_error_count + 1
             select case(check_iso_coord_flag)
-            case(1)	! give a warning
+            case(1)      ! give a warning
               mflag = 1
               message = 'warning: the "zeta" isoparametric coordinate'//
      &                ' is outside the element; expecting'//
@@ -2175,7 +2175,7 @@ c
                 write(logunit,*)
                 close(unit=logunit)
               end if
-            case(2)	! set the maximum isoparametric value
+            case(2)      ! set the maximum isoparametric value
               if(logflag.ge.1)then
                 open(unit=logunit,file=logfile,position='append')
                 write(logunit,*)
@@ -2328,7 +2328,7 @@ c
      &                     'x_original','y_original','z_original',
      &                     'delta'
           do row=1,numtiednode
-            node_id = tiednodeid(row,1)	! slave node id
+            node_id = tiednodeid(row,1)      ! slave node id
             dist_point = srt_dist3d(tiednodeglobalcoord(row,1:dimcoord),
      &                      nodecoord(node_id,1:dimcoord),dimcoord)
 
@@ -2437,7 +2437,7 @@ c
 
       real props(mxelpr,mxel),epsilon_mpc
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           variables:
@@ -2509,7 +2509,7 @@ c
      &  row_sum,epsilon,zero,one,
      &  shapefunc,norm_mult
       real rword
-	data zero, one
+      data zero, one
      &  / 0.0d00, 1.0d00 /
       allocatable
      &  shapefunc(:)
@@ -2518,7 +2518,7 @@ c
 c           variables to sort the mpc node list for testing
 c           when sort_list_flag = true
 c
-      integer, parameter :: maxrow = mxndel	! max 20 nodes per element
+      integer, parameter :: maxrow = mxndel      ! max 20 nodes per element
       integer, parameter :: maxcol = 2
       integer numrow,intarray(maxrow,maxcol)
       logical sort_list_flag,logicallist(maxrow)
@@ -2745,13 +2745,13 @@ c               get the local element face node numbers (the columns
 c               in the connectivity array) for the master element face
 c
             select case(meshformat)
-            case(1)	! abaqus
+            case(1)      ! abaqus
                call srt_setlocalfacenodes(localfacenode,maxelemface,
      &                maxnodeperface,numelemface,numnodeperface,
      &                numcornerperface,node_per_elem,elemchoice,
      &                logflag,logunit,logfile,mflag,message)
                if(mflag.ge.2)goto 900
-            case(2)	! warp3d
+            case(2)      ! warp3d
               call srt_setwarp3dlocalfacenodes(localfacenode,
      &               maxelemface,maxnodeperface,numelemface,
      &               numnodeperface,numcornerperface,node_per_elem,
@@ -2763,7 +2763,7 @@ c
               message = 'error: unexpected meshformat choice;'//
      &              ' cannot get local element face nodes'//
      &              ' (tied_nodecompute).'
-            end select	! meshformat
+            end select      ! meshformat
             if(mflag.ge.2)goto 900
           end if
 c
@@ -2985,7 +2985,7 @@ c
           end do
 
           if(row_sum.gt.zero)then
-            norm_mult = one/row_sum		! normalize multiplier
+            norm_mult = one/row_sum            ! normalize multiplier
             do i=2,numlist
               tied_con_mpc_table(num_tied_con_mpc)%multiplier_list(i) =
      &        tied_con_mpc_table(num_tied_con_mpc)%multiplier_list(i)*
@@ -3167,7 +3167,7 @@ c
         if(warp3d_mpc_export)then
           epsilon = 1.0d-15
           call tied_exportmpc_warp3dformat(epsilon,logunit)
-        end if	! warp3d_mpc_export
+        end if      ! warp3d_mpc_export
 c
 c           write the tied contact mpc equations in abaqus format
 c           to support testing of the tied contact and user defined
@@ -3192,7 +3192,7 @@ c
         if(abaqus_mpc_export)then
           epsilon = 1.0d-5
           call tied_exportmpc_abaqusformat(epsilon,logunit)
-        end if	! abaqus_mpc_export
+        end if      ! abaqus_mpc_export
 
         close(unit=logunit)
       end if
@@ -3280,7 +3280,7 @@ c
       logical
      &  tiednodeadjustflag(maxtiednode)
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           local variables
@@ -3585,13 +3585,13 @@ c               get the local element face node numbers (the columns
 c               in the connectivity array) for this element face
 c
             select case(meshformat)
-            case(1)	! abaqus
+            case(1)      ! abaqus
               call srt_setlocalfacenodes(localfacenode,maxelemface,
      &               maxnodeperface,numelemface,numnodeperface,
      &               numcornerperface,node_per_elem,elemchoice,
      &               logflag,logunit,logfile,mflag,message)
               if(mflag.ge.2)goto 900
-            case(2)	! warp3d
+            case(2)      ! warp3d
               call srt_setwarp3dlocalfacenodes(localfacenode,
      &               maxelemface,maxnodeperface,numelemface,
      &               numnodeperface,numcornerperface,node_per_elem,
@@ -3603,7 +3603,7 @@ c
               message = 'error: unexpected meshformat choice;'//
      &                  ' cannot get local element face nodes'//
      &                  ' (tied_nodeassign).'
-            end select	! meshformat
+            end select      ! meshformat
             if(mflag.ge.2)goto 900
 c
 c               save the master element id and element face id
@@ -3840,7 +3840,7 @@ c
             closest_distance = zero
           end if
 
-          if(.true.)then	! check all master elements
+          if(.true.)then      ! check all master elements
 c
 c               check that the node is within the element face
 c               boundaries
@@ -3865,13 +3865,13 @@ c
             end if
 
             select case(meshformat)
-            case(1)	! abaqus
+            case(1)      ! abaqus
               call srt_setlocalfacenodes(localfacenode,maxelemface,
      &               maxnodeperface,numelemface,numnodeperface,
      &               numcornerperface,node_per_elem,elemchoice,
      &               logflag,logunit,logfile,mflag,message)
               if(mflag.ge.2)goto 900
-            case(2)	! warp3d
+            case(2)      ! warp3d
               call srt_setwarp3dlocalfacenodes(localfacenode,
      &               maxelemface,maxnodeperface,numelemface,
      &               numnodeperface,numcornerperface,node_per_elem,
@@ -3883,7 +3883,7 @@ c
               message = 'error: unexpected meshformat choice;'//
      &                  ' cannot get local element face nodes'//
      &                  ' (tied_nodeassign).'
-            end select	! meshformat
+            end select      ! meshformat
             if(mflag.ge.2)goto 900
 
             call srt_insideelemface(inside_flag,checkstatus,element_id,
@@ -4023,7 +4023,7 @@ c
               close(unit=logunit)
             end if
 
-          end if	! .true.
+          end if      ! .true.
         end do
 c
 c               save the nearest master element as the assigned element
@@ -4169,7 +4169,7 @@ c
       double precision
      &  isotetpoint(maxtetdof),globalpoint(maxdof),
      &  elemcoord(maxnodeperelem,maxisodof)
-      character*(*) logfile,message
+      character(len=*) :: logfile,message
 c
 c           local variables
 c
@@ -4289,7 +4289,7 @@ c           face; use the edge length projection to get the tetrahedron
 c           isoparametric coordinate
 c
       select case(faceid)
-      case(1)	! face 1, corners 1-3-2, s4 = 0.0
+      case(1)      ! face 1, corners 1-3-2, s4 = 0.0
 c
 c           get the projected length along the normal to face edge 1
 c           (corner 1 to 3) for s2; use the cross product of the vector
@@ -4357,7 +4357,7 @@ c
      &              ' face 1 (tied_tetfaceisopoint).'
         end if
 
-      case(2)	! face 2, corners 1-4-2, s3 = 0.0
+      case(2)      ! face 2, corners 1-4-2, s3 = 0.0
 c
 c           get the projected length along the normal to face edge 1
 c           (corner 1 to 2) for s4; use the cross product of the vector
@@ -4425,7 +4425,7 @@ c
      &              ' face 2 (tied_tetfaceisopoint).'
         end if
 
-      case(3)	! face 3, corners 2-3-4, s1 = 0.0
+      case(3)      ! face 3, corners 2-3-4, s1 = 0.0
 c
 c           get the projected length along the normal to face edge 1
 c           (corner 2 to 3) for s4; use the cross product of the face
@@ -4493,7 +4493,7 @@ c
      &              ' face 3 (tied_tetfaceisopoint).'
         end if
 
-      case(4)	! face 4, corners 1-4-3, s2 = 0.0
+      case(4)      ! face 4, corners 1-4-3, s2 = 0.0
 c
 c           get the projected length along the normal to face edge 1
 c           (corner 1 to 4) for s3; use the cross product of the face
@@ -4633,7 +4633,7 @@ c
       double precision
      &  tangent_a(maxdof),tangent_b(maxdof),normal(maxdof),
      &  elemcoord(maxnodeperelem,maxisodof)
-      character*(*) logfile,message
+      character(len=*) :: logfile,message
 c
 c           local variables
 c
@@ -4771,7 +4771,7 @@ c
      &  logflag,logunit,mflag
       double precision
      &  constantisocoord
-      character*(*) logfile,message
+      character(len=*) :: logfile,message
 c
 c           local variables
 c
@@ -4847,7 +4847,7 @@ c
 c           abaqus or warp3d format for the input data
 c
       select case(elemchoice)
-      case(1,2)	! 20 or 8 node brick
+      case(1,2)      ! 20 or 8 node brick
         select case(faceid)
         case(1:6)
           constantisodof = brickisodof(faceid,meshformat)
@@ -4856,12 +4856,12 @@ c
         case default
           mflag = 2
           select case(meshformat)
-          case(1)	! 1=abaqus
+          case(1)      ! 1=abaqus
             message = 'error: unexpected element face id for a'//
      &                ' brick element; cannot set the element face'//
      &                ' constant isoparametric values; abaqus format'//
      &                ' (tied_isoconstdof).'
-          case(2)	! 2=warp3d
+          case(2)      ! 2=warp3d
             message = 'error: unexpected element face id for a'//
      &                ' brick element; cannot set the element face'//
      &                ' constant isoparametric values; warp3d format'//
@@ -4870,7 +4870,7 @@ c
           goto 900
         end select
 
-      case(6,13)	! 10 or 4 node tetrahedron
+      case(6,13)      ! 10 or 4 node tetrahedron
 c
 c           note that for a tetrahedron there are 4 isoparametric 
 c           coordinates, and s1+s2+s3+s4=1 or s1=1-s2-s3-s4, so only
@@ -4886,12 +4886,12 @@ c
         case default
           mflag = 2
           select case(meshformat)
-          case(1)	! 1=abaqus
+          case(1)      ! 1=abaqus
             message = 'error: unexpected element face id for a'//
      &                ' tetrahedron element; cannot set the element'//
      &                ' face constant isoparametric values;'//
      &                ' abaqus input format (tied_isoconstdof).'
-          case(2)	! 2=warp3d
+          case(2)      ! 2=warp3d
             message = 'error: unexpected element face id for a'//
      &                ' tetrahedron element; cannot set the element'//
      &                ' face constant isoparametric values;'//
@@ -4956,7 +4956,7 @@ c
      &  globalpoint(maxdof),shapefunc(maxnodeperelem),
      &  elemcoord(maxelemcoordrow,maxelemcoordcol)
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           local variables
@@ -5205,8 +5205,8 @@ c
       double precision
      &  zero, mult
       data zero
-     &	 / 0.0d00 / 
-	character text*512,word*10,xyz_letter(3)*1
+     &       / 0.0d00 / 
+      character text*512,word*10,xyz_letter(3)*1
 c
 c           initialize values
 c
@@ -5433,7 +5433,7 @@ c
       integer
      &  dimlist,numlist,mflag,logflag,logunit,
      &  nodelist(dimlist)
-      character*(*) message,logfile
+      character(len=*) :: message,logfile
 c
 c         local variables
 c
@@ -5538,13 +5538,13 @@ c
           else if((mergeflag(nd1).eq.0) .and. 
      &    (nodelist(nd1).eq.nodelist(nd2)))then
 c
-c						flag the duplicate integer value in the list
+c                                    flag the duplicate integer value in the list
 c
             count = count + 1
-            mergeflag(nd2) = 1	! merge node j
-            newid(nd2) = nd1		! replace node id
+            mergeflag(nd2) = 1      ! merge node j
+            newid(nd2) = nd1            ! replace node id
 c
-c						found a duplicate node id
+c                                    found a duplicate node id
 c
             if(.false. .and. logflag.ge.10)then
               open(unit=logunit,file=logfile,position='append')
@@ -5581,7 +5581,7 @@ c
         end if
       end do
 c
-      if(logflag.ge.10)then	! log file output
+      if(logflag.ge.10)then      ! log file output
         open(unit=logunit,file=logfile,position='append')
         write(logunit,*)'after comparing the node list:'
         write(logunit,*)'       count =',count
@@ -5602,9 +5602,9 @@ c         to remove the merged nodes shift the nodes lower in the array
 c         up to the empty rows.
 c
       do i=1,numlist
-        if(mergeflag(i).eq.0)then		! skip merged rows
-          nd1 = newid(i)				! old node id of remaining node
-          nd2 = updateid(i)				! shifted/new node id
+        if(mergeflag(i).eq.0)then            ! skip merged rows
+          nd1 = newid(i)                        ! old node id of remaining node
+          nd2 = updateid(i)                        ! shifted/new node id
           if(nd1.ne.nd2)then
             nodelist(nd2) = nodelist(nd1)
           end if
@@ -5705,7 +5705,7 @@ c
      &  nodelogical(dimlist)
       real
      &  nodereal(dimlist)
-      character*(*) message,logfile
+      character(len=*) :: message,logfile
 c
 c         local variables
 c
@@ -5810,13 +5810,13 @@ c
           else if((mergeflag(nd1).eq.0) .and. 
      &    (nodelist(nd1).eq.nodelist(nd2)))then
 c
-c						flag the duplicate integer value in the list
+c                                    flag the duplicate integer value in the list
 c
             count = count + 1
-            mergeflag(nd2) = 1	! merge node j
-            newid(nd2) = nd1		! replace node id
+            mergeflag(nd2) = 1      ! merge node j
+            newid(nd2) = nd1            ! replace node id
 c
-c						found a duplicate node id
+c                                    found a duplicate node id
 c
             if(.false. .and. logflag.ge.10)then
               open(unit=logunit,file=logfile,position='append')
@@ -5853,7 +5853,7 @@ c
         end if
       end do
 c
-      if(logflag.ge.10)then	! log file output
+      if(logflag.ge.10)then      ! log file output
         open(unit=logunit,file=logfile,position='append')
         write(logunit,*)'after comparing the node list:'
         write(logunit,*)'       count =',count
@@ -5874,9 +5874,9 @@ c         to remove the merged nodes shift the nodes lower in the array
 c         up to the empty rows.
 c
       do i=1,numlistnode
-        if(mergeflag(i).eq.0)then		! skip merged rows
-          nd1 = newid(i)				! old node id of remaining node
-          nd2 = updateid(i)			! shifted/new node id
+        if(mergeflag(i).eq.0)then            ! skip merged rows
+          nd1 = newid(i)                        ! old node id of remaining node
+          nd2 = updateid(i)                  ! shifted/new node id
           if(nd1.ne.nd2)then
             nodelist(nd2) = nodelist(nd1)
             nodelogical(nd2) = nodelogical(nd1)
@@ -6023,7 +6023,7 @@ c         local variables
 c
       double precision
      &  dot,amag,bmag,x, one
-	     data one / 1.0d00 /
+           data one / 1.0d00 /
 c
 c         declare functions
 c
@@ -6086,7 +6086,7 @@ c
         nhat(i) = b(i) - a(i)
       end do
 c
-c		normalize the vector to get a unit direction vector
+c            normalize the vector to get a unit direction vector
 c
       if( normflag .gt. 0 )then
         call srt_normalize( nhat, dim )
@@ -6158,7 +6158,7 @@ c                        element face to the pointc
       double precision
      &  point(maxdof),nodecoord(dimnode,dimcoord),given_epsilon,
      &  normal_dist
-      character*(*) logfile,message
+      character(len=*) :: logfile,message
 c
 c           local variables
 c
@@ -6263,7 +6263,7 @@ c
 
       edgeid = 0
       select case(numcornerperface)
-      case(3)	! 3 corners on a triangular face
+      case(3)      ! 3 corners on a triangular face
 c           neighbor corner node for edge 1
         edgeid(1,1) = localfacenode(faceid,2)
         edgeid(2,1) = localfacenode(faceid,3)
@@ -6279,7 +6279,7 @@ c           neighbor corner node for edge 2
      &    ' per element face; check elemchoice and numcornerperface'//
      &    ' (srt_insideelemface).'
         end if
-      case(4)	! 4 corners on a quadrillateral face
+      case(4)      ! 4 corners on a quadrillateral face
 c           neighbor corner node for edge 1
         edgeid(1,1) = localfacenode(faceid,2)
         edgeid(2,1) = localfacenode(faceid,3)
@@ -6628,7 +6628,7 @@ c
      & elemchoice,
      & localfacenode(maxelemface,maxnodeperface),
      & logflag,logunit,mflag
-      character*(*) logfile,message
+      character(len=*) :: logfile,message
 c
 c          variables:
 c
@@ -6722,7 +6722,7 @@ c          choice; check that the values for numelemface and
 c          numnodeperface are correct for the element choice.
 c
       select case(elemchoice)
-      case(1)	! 20-node brick
+      case(1)      ! 20-node brick
         numelemface = 6
         numnodeperface = 8
         numcornerperface = 4
@@ -6745,7 +6745,7 @@ c
      &      ' element local face node numbers'//
      &      ' (srt_setlocalfacenodes).'
         end if
-        if(mflag.ge.2)goto 900	! exit on an error
+        if(mflag.ge.2)goto 900      ! exit on an error
 
         do i=1,numelemface
           do j=1,numnodeperface
@@ -6753,7 +6753,7 @@ c
           end do
         end do
 
-      case(2)	! 8-node brick
+      case(2)      ! 8-node brick
         numelemface = 6
         numnodeperface = 4
         numcornerperface = 4
@@ -6773,7 +6773,7 @@ c
      &      ' for the 8-node brick element; cannot set the'//
      &      ' element local face node numbers (srt_setlocalfacenodes).'
         end if
-        if(mflag.ge.2)goto 900	! exit on an error
+        if(mflag.ge.2)goto 900      ! exit on an error
 
         do i=1,numelemface
           do j=1,numnodeperface
@@ -6781,7 +6781,7 @@ c
           end do
         end do
 
-      case(6)	! 10-node tetrahedron
+      case(6)      ! 10-node tetrahedron
         numelemface = 4
         numnodeperface = 6
         numcornerperface = 3
@@ -6803,7 +6803,7 @@ c
      &      ' for the 10-node tetrahedron element; cannot set the'//
      &      ' element local face node numbers (srt_setlocalfacenodes).'
         end if
-        if(mflag.ge.2)goto 900	! exit on an error
+        if(mflag.ge.2)goto 900      ! exit on an error
 
         do i=1,numelemface
           do j=1,numnodeperface
@@ -6811,7 +6811,7 @@ c
           end do
         end do
 
-      case(13)	! 4-node tetrahedron
+      case(13)      ! 4-node tetrahedron
         numelemface = 4
         numnodeperface = 3
         numcornerperface = 3
@@ -6833,7 +6833,7 @@ c
      &      ' for the 4-node tetrahedron element; cannot set the'//
      &      ' element local face node numbers (srt_setlocalfacenodes).'
         end if
-        if(mflag.ge.2)goto 900	! exit on an error
+        if(mflag.ge.2)goto 900      ! exit on an error
 
         do i=1,numelemface
           do j=1,numnodeperface
@@ -6846,8 +6846,8 @@ c
         message = 'error: unknown element type choice; cannot set'//
      &    ' the element local face node numbers; check the value of'//
      &    ' "elemchoice" (srt_setlocalfacenodes).'
-        goto 900	! exit on an error
-      end select	! elemchoice
+        goto 900      ! exit on an error
+      end select      ! elemchoice
 c
 c jump here on an error
 c
@@ -6900,7 +6900,7 @@ c
      & elemchoice,
      & localfacenode(maxelemface,maxnodeperface),
      & logflag,logunit,mflag
-      character*(*) logfile,message
+      character(len=*) :: logfile,message
 c
 c          variables:
 c
@@ -6981,7 +6981,7 @@ c
       numcornerperface = num_face_corners(elemchoice)
 
       select case(elemchoice)
-      case(1:2)	! 20 and 8 node brick elements
+      case(1:2)      ! 20 and 8 node brick elements
         do face=1,numelemface
           call eqelfn( fnodes, elemchoice, face, nfnode )
 
@@ -6990,12 +6990,12 @@ c
           end do
         end do
 
-      case(6,13)	! 10 and 4 node tetrahedron elements
+      case(6,13)      ! 10 and 4 node tetrahedron elements
         do face=1,numelemface
           call tet_get_nodes( fnodes, elemchoice, face, nfnode )
 
           select case(elemchoice)
-          case(6)	! 10 node tetrahedron
+          case(6)      ! 10 node tetrahedron
 c
 c                   swap fnodes() for corners then mid side nodes;
 c                   need face corners first for some routines
@@ -7016,8 +7016,8 @@ c
         message = 'error: unknown element type choice; cannot set'//
      &    ' the element local face node numbers; check the value of'//
      &    ' "elemchoice" (srt_setwarp3dlocalfacenodes).'
-        goto 900	! exit on an error
-      end select	! elemchoice
+        goto 900      ! exit on an error
+      end select      ! elemchoice
 c
 c jump here on an error
 c
@@ -7081,7 +7081,7 @@ c         value tested moves down column one row after the
 c         minimum (or maximum) value has been found; look for 
 c         the next lowest (or highest) value.
 c
-      if(sort_flag.le.-1)then	! descending order
+      if(sort_flag.le.-1)then      ! descending order
         do j=1,num-1
 c
 c               test each value below "top" of column
@@ -7101,7 +7101,7 @@ c
           end do
         end do
 
-      else	! ascending order
+      else      ! ascending order
         do j=1,num-1
 c
 c               test each value below "top" of column
@@ -7193,7 +7193,7 @@ c         value tested moves down column one row after the
 c         minimum (or maximum) value has been found; look for 
 c         the next lowest (or highest) value.
 c
-      if(sort_flag.le.-1)then	! descending order
+      if(sort_flag.le.-1)then      ! descending order
         do j=1,num-1
 c
 c               test each value below "top" of column
@@ -7223,7 +7223,7 @@ c
           end do
         end do
 
-      else	! ascending order
+      else      ! ascending order
         do j=1,num-1
 c
 c               test each value below "top" of column
@@ -7277,7 +7277,7 @@ c
       integer i
       double precision
      &  sum, zero
-  	data zero / 0.0d00 /
+        data zero / 0.0d00 /
 c
 c         compute the vector length
 c
@@ -7355,7 +7355,7 @@ c
       integer dim
       double precision
      &  a(dim), b(dim), mid(dim), two
-   	 data two / 2.0d00 /
+          data two / 2.0d00 /
 c
 c         local variables
 c
@@ -7405,12 +7405,12 @@ c
       double precision
      &  srt_veclength
 c
-c		normalize the vector,
-c		get the vector magnitude
+c            normalize the vector,
+c            get the vector magnitude
 c
       mag = srt_veclength(nhat,dim)
 c
-c		normalize by the magnitude
+c            normalize by the magnitude
 c
       if(mag.ne.zero)then
         do i=1,dim
@@ -7434,7 +7434,7 @@ c         declare variables
 c
       implicit none
       integer mflag,logunit
-      character*(*) message,logfile
+      character(len=*) :: message,logfile
 c
       open(file=logfile,unit=logunit,position='append')
       write(logunit,*)
@@ -7487,7 +7487,7 @@ c
       logical
      &  tiednodeadjustflag(maxtiednode)
 
-      character*(*)
+      character(len=*) :: 
      &  logfile,message
 c
 c           variables:
@@ -7568,7 +7568,7 @@ c
       remove_count = 0
 c           sort the master node id list by ascending order
 c
-      sort_flag = 1	! 1=ascending order, -1=descending order
+      sort_flag = 1      ! 1=ascending order, -1=descending order
 
       call srt_sortint(masternodelist,max_masternodelist,1,
      &  num_masternodelist,1,sort_flag)
