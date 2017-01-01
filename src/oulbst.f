@@ -15,8 +15,8 @@ c
       subroutine oulbst( do_stress, lbltyp, elem_type, elem,
      &                   strlbl, long, hedtyp, geonl, cohesive_type )
       implicit integer (a-z)
-      character*8 strlbl(*)
-      character*(*) hedtyp
+      character(len=8) :: strlbl(*)
+      character(len=*) :: hedtyp
       logical long, do_stress, geonl
 c
 c                       solids and interface-cohesive are separate
