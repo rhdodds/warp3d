@@ -142,10 +142,10 @@ c
 c 
 c                        entry is at bottom of list. move end pointer up
 c                        one entry and set pointer of previous entry to
-c			 -1
+c                   -1
 c
          crack_front_end = prev_node_ptr
-	 if (crack_front_end .ne. -1) 
+       if (crack_front_end .ne. -1) 
      &          crack_front_nodes(crack_front_end,2) = -1
 c
       else
