@@ -499,7 +499,7 @@ c
       real rzero
 c
       dimension  inttbl(3,7)
-      character * 1 labs(4)
+      character(len=1) :: labs(4)
       logical    consis, linear, quad, cubic, header, bad_domain,
      &           ok, user_def_ct
       data       labs / 'a','b','c','d' /
@@ -1841,7 +1841,7 @@ c
 c             dummy variables
 c
       integer ltmstp, out
-      character*8 stname, lsldnm
+      character(len=8) :: stname, lsldnm
 c
 c             local variables
 c
@@ -2220,7 +2220,7 @@ c
 c             dummy variables
 c
       integer ltmstp
-      character*8 stname, lsldnm
+      character(len=8) :: stname, lsldnm
 c
 c             local variables
 c
