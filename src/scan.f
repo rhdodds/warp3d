@@ -20,7 +20,7 @@ c    along with this program; if not, write to the Free Software
 c    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 c
 c    questions may be addressed to :
-c	Prof. Robert Dodds -- email r-dodds@uiuc.edu
+c      Prof. Robert Dodds -- email r-dodds@uiuc.edu
 c
 c-----------------------------------------------------------------
 c
@@ -627,7 +627,8 @@ c
    10 j=filpt+nfil+1
       if(nfil.eq.0)go to 30
       do 20 k=1,nfil
-   20 files(j-k)=filist(k)
+        files(j-k)=filist(k)
+   20 continue     
       filpt=filpt+nfil
       inunit=files(filpt)
    30 return
@@ -783,8 +784,9 @@ c         change seperator table
 c
       dimension newtab(1)
       common /scantb/ nseptb, nclass, itab(256), iclass(256)
-      do 10 i = 1, nseptb
-   10 itab(i) = newtab(i)
+      do i = 1, nseptb
+        itab(i) = newtab(i)
+      end do
       return
       end
 c **********************************************************************
@@ -880,8 +882,9 @@ c
       double precision dvalue
       nc = nchar
       nw = nwd
-      do 10 i = 1, nw
-   10 text(i) = entity(i)
+      do i = 1, nw
+       text(i) = entity(i)
+      end do 
       return
       end
 c **********************************************************************
@@ -893,12 +896,12 @@ c **********************************************************************
 c
 c         return the contents of the scanner in a string
 c
-      character *(*) cstr
+      character(len=*) :: cstr
       common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,
      1                icolmn, ispace, dvalue
       equivalence (ival(1),value,ivalue)
       double precision dvalue
-      character * 80 string
+      character(len=80) :: string
       equivalence ( string,entity )
 c
 c                       get the hollerith from scan and convert
@@ -906,9 +909,9 @@ c                       to a string.  simply use equivalence of hollerith
 c                       and characters. 
 c
       nc = min0 (len(cstr),nchar) 
-      do 10 i = 1,nc
+      do i = 1,nc
       cstr(i:i) = string(i:i)
-   10 continue
+      end do
 c
       return
       end
@@ -1034,7 +1037,7 @@ c
 c
 c         match a character array against the current scan entity
 c
-      character *(*) cstr, text*80
+      character(len=*) :: cstr, text*80
       integer  string(20)
       logical match
       equivalence ( string, text )
@@ -1063,7 +1066,7 @@ c
 c         exact match a character array against the current
 c         scan entity
 c
-      character *(*) cstr, text*80
+      character(len=*) :: cstr, text*80
       integer  string(20)
       logical match_exact
       equivalence ( string, text )
@@ -1674,7 +1677,8 @@ c
       l = matchl(j)
       if(l.gt.nchar)go to 10
       if(scanmc(word,matchl(j+1),l))go to 20
-   10 j = j+(l+ncpw-1)/ncpw+1
+      j = j+(l+ncpw-1)/ncpw+1
+   10 continue   
       return
    20 loc = i
       if(scnact.lt.1.or.scnact.gt.4)return
@@ -1736,7 +1740,8 @@ c
       l = matchl(j)
       if(l.gt.nchar)go to 20
       if(scanmc(entity(1),matchl(j+1),l))go to 30
-   20 j = j+(l+ncpw-1)/ncpw+1
+      j = j+(l+ncpw-1)/ncpw+1
+  20  continue  
       if(nfound.gt.nmax)ierror = 3
       return
 c
@@ -1961,7 +1966,7 @@ c
       common /scantb/ nseptb, nclass, itab(256), iclass(256)
       common /scanim/ ncpw, blank, intzer, intnin, intc, intcom, 
      &                intblk, intlcc, inttab, intstar
-      character *1 xcard(640), xbuff(640)
+      character(len=1) :: xcard(640), xbuff(640)
       equivalence ( xcard(1), card(1) ), ( xbuff(1), jbuff(1) )
       j = 1
       k = ncpw
@@ -2010,7 +2015,7 @@ c
       logical doread, isct
       integer reclen, errcod, recsiz
       dimension buff(80)
-      character*1 chartab(4)
+      character(len=1) :: chartab(4)
       equivalence (holtab, chartab(1))
 c
 c             create a holerith tab for checking for tabs
@@ -2070,7 +2075,7 @@ c
       logical doread, isct
       common /scanim/ ncpw, blank, intzer, intnin, intc, intcom, 
      &                intblk, intlcc, inttab, intstar
-      character*1 xentit(80), xcard(320)
+      character(len=1) :: xentit(80), xcard(320)
       equivalence ( xentit(1), entity(1) ), ( xcard(1), card(1) )
 c
       nwd = (nchar+ncpw-1)/ncpw
@@ -2122,12 +2127,12 @@ c
      &                intblk, intlcc, inttab, intstar
       logical reread, comlin
       logical matchs
-      character * 1 dums
+      character(len=1) :: dums
 c
       logical comlin2
       
       logical nowopen
-      character * 80 nowname
+      character(len=80) :: nowname
       data inthash / 33 /, intexclam / 35 /
 c
 c         read a record.  do a re-read for blank line.
@@ -2140,7 +2145,9 @@ c
      1                call wrnocr( 3h > , iotrem )
       call scanin( inunit, card, incol, ierr )
       if ( incol .eq. 0 ) go to 10 
-      if ( ierr ) 20, 40, 30
+      if( ierr < 0 ) go to 20
+      if( ierr == 0 ) go to 40
+      if( ierr > 0 ) go to 30
 c
 c         end of file -- pop the file stack
 c
@@ -2298,7 +2305,7 @@ c
       dimension texta(1), textb(1)
       real ja, jb, jc, jd
       integer char1, char2
-      character*1 aa(4), bb(4), cc(4), dd(4)
+      character(len=1) :: aa(4), bb(4), cc(4), dd(4)
       equivalence (aa(1),ja), (bb(1),jb), (cc(1),jc), (dd(1),jd)
       common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,
      &                intblk, intlcc, inttab, intstar
@@ -2314,12 +2321,13 @@ c             case and do the compare.
 c
       ja = texta(i)
       jb = textb(i)      
-      do 10 ii = 1, ncpw
+      do ii = 1, ncpw
       char1 = ichar(aa(ii))
       char2 = ichar(bb(ii))
       if ( char1.ge.97 .and. char1.le.122 ) char1 = char1 - 32
       if ( char2.ge.97 .and. char2.le.122 ) char2 = char2 - 32
       if ( char1 .ne. char2 ) go to 50
+      end do
    10 continue
 c                     
 c             do characters in partial last word
@@ -2353,7 +2361,7 @@ c         in the calling program as type character so that
 c         their lengths and memory alignment are correct.
 c
       implicit integer (a-z)
-      character * (*) texta, textb
+      character(len=*) :: texta, textb
 c
       scanms = .false.
       lena   = len( texta )
