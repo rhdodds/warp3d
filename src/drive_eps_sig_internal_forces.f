@@ -61,8 +61,8 @@ c
       real :: spone
       
       common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      real*8 tanstf_comps, sig_eps_comps, assem_comps
-      real *8 start, end
+      double precision :: tanstf_comps, sig_eps_comps, assem_comps
+      double precision :: start, end
       
       
       data zero, local_debug, spone / 0.0d00, .false., 1.0 /
@@ -299,7 +299,7 @@ c
       if( iter .eq. 0 .and. local_debug ) then
        write(out,*) '... drive sig-eps ifv for iter 0'
        do kkk = 1, min(100,nodof)
-         write(out,fmt="(i8,f15.8)") ( kkk, ifv(kkk) )
+         write(out,fmt="(i8,f15.8)")  kkk, ifv(kkk) 
        end do
       end if
 c
@@ -677,7 +677,7 @@ c
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       double precision :: zero
-	  data zero / 0.0d00 /
+      data zero / 0.0d00 /
 c
       local_mt = local_work%mat_type
 c
@@ -708,10 +708,10 @@ c
 c
       if( local_work%geo_non_flg ) then
         allocate( local_work%fn(mxvl,3,3),
-     &  local_work%fn1(mxvl,3,3),
-     &  local_work%dfn1(mxvl) )
-	    local_work%fn1 = zero
-		local_work%dfn1 = zero
+     &           local_work%fn1(mxvl,3,3),
+     &           local_work%dfn1(mxvl) )
+        local_work%fn1 = zero
+        local_work%dfn1 = zero
       end if
       
       
@@ -742,10 +742,10 @@ c
          write(out,9000) 4
          call die_abort
       end if
-	  local_work%det_j       = zero
-	  local_work%rot_blk_n1  = zero
-	  local_work%urcs_blk_n1 = zero
-	  local_work%urcs_blk_n  = zero
+      local_work%det_j       = zero
+      local_work%rot_blk_n1  = zero
+      local_work%urcs_blk_n1 = zero
+      local_work%urcs_blk_n  = zero
 c
       allocate( local_work%ddtse(mxvl,nstr,mxgp),
      1   local_work%strain_n(mxvl,nstr,mxgp),
@@ -826,7 +826,7 @@ c
          write(out,9000) 11
          call die_abort
       end if
-	  local_work%trne = zero
+      local_work%trne = .false.
 c
       if( local_mt .eq. 10 .or. local_mt .eq. 11 ) then
         allocate( local_work%debug_flag(mxvl),
