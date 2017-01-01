@@ -81,8 +81,7 @@ c
 c
 c                     characters
 c
-      character * 24
-     & domain_id
+      character(len=24) :: domain_id
 c
       end module
 
