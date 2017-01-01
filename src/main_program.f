@@ -22,8 +22,8 @@ c
       include 'common.main'
       real t1, wcputime, dumr
       external wcputime
-      character*8 stcnam, dums, sdate_*24
-      character*80 name, stflnm, rtflnm
+      character :: stcnam*8, dums*8, sdate_*24
+      character(len=80) :: name, stflnm, rtflnm
       character(len=21) :: char_os
       character(len=11) :: compile_date
       character(len=8) :: compile_time
@@ -35,14 +35,14 @@ c
       double precision
      &  erprmd, dumd
       real erprmr
-      character erprms *50 
+      character :: erprms *50 
       real :: wall, real_start, real_end, real_rate
 c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
       logical fatal,coor,numnod,numel,elprop,elinc,constr,block
       integer return_type
       common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      real*8 tanstf_comps, sig_eps_comps, assem_comps
+      double precision tanstf_comps, sig_eps_comps, assem_comps
 c
 c                       MPI: initialize all processors
 c                       and make workers go into the worker handler. if
@@ -1154,9 +1154,8 @@ c
       include 'common.main'
       real t1, wcputime, dumr
       external wcputime
-      character*8 stcnam, dums,
-     &     sdate_*24
-      character*80 name, stflnm, rtflnm
+      character(len=8) :: stcnam, dums, sdate_*24
+      character(len=80) :: name, stflnm, rtflnm
       logical hilcmd,sbflg1,sbflg2
       logical endcrd,label,matchs,debug1,debug2,debug,endfil,
      &        string, matchs_exact
@@ -1165,13 +1164,13 @@ c
       double precision
      &  erprmd, dumd
       real erprmr
-      character erprms *50
+      character :: erprms *50
       real :: wall, real_start, real_end, real_rate
 c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
       logical fatal,coor,numnod,numel,elprop,elinc,constr,block
       common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      real*8 tanstf_comps, sig_eps_comps, assem_comps
+      double precision tanstf_comps, sig_eps_comps, assem_comps
 c
 c                       cleanup some allocs first
 c
