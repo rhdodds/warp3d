@@ -57,9 +57,9 @@ c
            type(list_type), dimension(:), pointer :: shared_owner
            integer, dimension(:), pointer   :: MPI_shared_type
 c
-c	         storage for ordering info for ebe preonditioner
+c               storage for ordering info for ebe preonditioner
 c
-	   integer                          :: num_int_blks
+         integer                          :: num_int_blks
            integer, dimension(:), pointer   :: internal_blks
 c
         end type
@@ -76,7 +76,7 @@ c
 c
         end type
 c
-	type (map_type), dimension(:), allocatable, 
+      type (map_type), dimension(:), allocatable, 
      &            save :: procdof2glob
 c
 c
