@@ -1136,10 +1136,10 @@ c
 c
       return
 c
- 1101 format(/,5x,' >>>> reordering face nodes on element ',i6)
+ 1101 format(/,5x,' >>>> reordering face nodes on element ',i8)
  1111 format(/,10x,'node1, node2:',2(2x,i6),/,10x,'sfnode1, sfnode2:',
      &       2(2x,i6),/,10x,'x1_1, x1_2, d1:',3(2x,e13.6))
- 1121 format(/,10x,'distance, closest pair: ',2x,e13.6,2x,i )
+ 1121 format(/,10x,'distance, closest pair: ',2x,e13.6,2x,i8 )
  1131 format(/,10x,'numbering of reordered nodes:',
      &       /,13x,'node',4x,'snode',8x,'x',14x,'y',14x,'z')
  1141 format(12x,i4,2x,i8,3(2x,e13.6))
