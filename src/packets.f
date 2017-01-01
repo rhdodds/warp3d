@@ -17,7 +17,7 @@ c
       implicit integer (a-z)
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd
       logical found, msg_flag 
@@ -55,7 +55,7 @@ c
       implicit integer (a-z)
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd
       logical connected, msg_flag
