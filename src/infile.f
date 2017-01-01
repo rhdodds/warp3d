@@ -67,8 +67,8 @@ c
          return
       endif     
 c
-c			check if file is there, then increase
-c			file number and open
+c                  check if file is there, then increase
+c                  file number and open
 c
       inquire( file = infil, iostat = ierror, exist = ok )
       if( ierror .gt. 0 ) then
@@ -110,7 +110,7 @@ c
       use file_info
       implicit integer (a-z)             
       include 'common.main'
-      character*80 file_name
+      character(len=80) :: file_name
       logical ok
       integer ierror
 c
@@ -159,7 +159,7 @@ c
       use file_info
       implicit integer (a-z)             
       include 'common.main'
-      character*80 file_name
+      character(len=80) :: file_name
       logical ok, now_open
       integer ierror
 
