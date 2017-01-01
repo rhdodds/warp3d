@@ -248,7 +248,7 @@ c
       integer :: i, next_k_index, previous_node, srow, scol, snode, 
      &           num_scols_used, j, totdof, ele_on_snode, erow, ecol,
      &           num_unique_cols, num_ele_on_snode
-      integer, parameter :: local_debug = .false.
+      logical, parameter :: local_debug = .false.
 c!DIR$ ASSUME_ALIGNED eqn_node_map:32, edest:32, iprops:32
 c!DIR$ ASSUME_ALIGNED dof_eqn_map:32, scol_list:32, k_ptrs:32
 c!DIR$ ASSUME_ALIGNED k_indexes:32      
@@ -1170,7 +1170,7 @@ c
 c
       integer :: table(mxedof,*), elem_list(*), list_length,
      &           iprops(mxelpr,*) 
-      integer, dimension (:,:), contiguous, pointer :: edest
+      integer, dimension (:,:), pointer :: edest
 c
       integer :: i, elem, totdof, blk, rel_elem, dof      
 cc!DIR$ ASSUME_ALIGNED table:32, elem_list:32, iprops:32, edest:32
