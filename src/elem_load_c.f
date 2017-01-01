@@ -222,7 +222,7 @@ c
          if ( sum .eq. zero ) return
       else
          write(*,9910)
-	 call die_gracefully
+       call die_gracefully
          stop
       end if
 c
