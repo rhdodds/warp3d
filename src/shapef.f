@@ -416,7 +416,7 @@ c         s1,s2,s3,s4 = tetrahedron natural coordinates, vary from 0 to 1,
 c                       These coordinates will be at a given Gauss
 c                       integration point.
 c         Note that s1 is not passed in but computed locally.
-c	  Properties of coordinates:  s1 + s2 + s3 + s4 = 1
+c        Properties of coordinates:  s1 + s2 + s3 + s4 = 1
 c         choose s1 as dependent, then s1 = 1 - s2 - s3 - s4
 c                               0 <= s1,s2,s3,s4 <= 1
 c         Note that the Gauss point coordinates s2,s3,s4 must be consistent
@@ -656,7 +656,7 @@ c         s1,s2,s3,s4 = tetrahedron natural coordinates, vary from 0 to 1,
 c                       These coordinates will be at a given Gauss
 c                       integration point.
 c         Note that s1 is not passed in but computed locally.
-c	  Properties of coordinates:  s1 + s2 + s3 + s4 = 1
+c        Properties of coordinates:  s1 + s2 + s3 + s4 = 1
 c         choose s1 as dependent, then s1 = 1 - s2 - s3 - s4
 c                               0 <= s1,s2,s3,s4 <= 1
 c         Note that the Gauss point coordinates s2,s3,s4 must be consistent
