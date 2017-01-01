@@ -379,7 +379,7 @@ c
       solver_out_of_core = .false.
       solver_scr_dir(1:) = './warp3d_ooc_solver'
       solver_memory      = 500
-      solver_mkl_interative = .false.
+      solver_mkl_iterative = .false.
 c
 c     Never used - MM
 c      solver_threads = slv_threads
