@@ -880,7 +880,7 @@ c
       include 'common.main'
       double precision
      &     step_factor, total_factor, zero, sum
-      character * 12 pattern_names(3)
+      character(len=12) pattern_names(3)
       real tfacts(3)
       data zero / 0.0 /
 c
