@@ -19,13 +19,12 @@ c
 c
 c          parameters
 c
+      integer :: nodof, out
       double precision :: 
      &  pbar(nodof), mdiag(nodof), accel(nodof), veloc(nodof),
      &  load(nodof), dload(nodof),
      &  nbeta, dt, adapt_load_fact
 c     
-      integer :: nodof, out
-c
 c          locals
 c
       integer :: i
