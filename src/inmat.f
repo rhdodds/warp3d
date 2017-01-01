@@ -271,8 +271,8 @@ c                      128-- l_t
 c                      129-- alpha_dmg
 c                      130-- nstacks (temp, should calculate from element sz)
 c                      131-- nfail ("")
-c		           132-- macro_sz
-c		           133-- cp_sz
+c                       132-- macro_sz
+c                       133-- cp_sz
 c
 c
 c                      151-200 -- Abaqus compatible UMAT
@@ -1717,6 +1717,8 @@ c
       double precision :: dumd
       character :: dums, lab*24, filen*24
       logical :: reading
+      logical, external :: matchs_exact, isstring, label, numr, numd,
+     &                     matchs, numi, endcrd 
 
 c           See above for a detailed summary of each material option, in
 c           general, handle input for 6,7,9,13,22,25,100-113
@@ -1878,6 +1880,8 @@ c
       double precision :: dumd
       character :: dums, lab*24, filen*24, name*80, mname*24
       logical :: reading, found
+      logical, external :: matchs_exact, isstring, label, numr, numd,
+     &                     matchs, numi, endcrd, scanms
 
 c           See above for a detailed summary of each material option, in
 c           general, handle input for 6,7,13,22,25,100,102,112,115-129
@@ -2074,7 +2078,7 @@ c
       real ::  dumr
       double precision :: dumd
       real root23, onept5, value, twothrds
-      character *1 dums
+      character(len=1) :: dums
       data root23, onept5, twothrds / 0.81649, 1.5, 0.6666667 /
 c
 c                       enter here having seen the properties and
@@ -2519,8 +2523,8 @@ c
       double precision
      &   erprmd, dparam
       real erprmr, rparam
-      character *50 erprms
-      character *(*) errstrng
+      character(len=50) :: erprms
+      character(len=*) :: errstrng
 c
       include 'common.main'
 c
@@ -2626,7 +2630,7 @@ c
       double precision
      &   dumd
       equivalence (lfalse, rfalse), (rtrue, ltrue)
-      character *1 dums
+      character(len=1) :: dums
       data fgm_mark / -99.0 /
 c
 c           enter here having seen the properties and
