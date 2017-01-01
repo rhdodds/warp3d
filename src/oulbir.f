@@ -17,12 +17,12 @@ c
 c
       subroutine oulbir( ir, hedtyp, lbltyp, type, elem, doflbl )
       implicit integer (a-z)
-      character*8 doflbl(*)
-      character*20 hedtyp
+      character(len=8) :: doflbl(*)
+      character(len=20) :: hedtyp
       real dumr
       double precision
      &     dumd
-      character dums
+      character :: dums
 c
 c                       branch on element type.
 c                       
