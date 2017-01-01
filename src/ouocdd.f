@@ -20,11 +20,11 @@ c
      &                   opt, use_mpi, myid, flat_file, stream_file,
      &                   text_file, compressed, flat_file_number )
       implicit integer (a-z)
-      character*14 bflnam, fflnam
-      character*4 strtnm, slist(5)
-      character*3 flat_list(5)
-      character*30 command
-      character*20, save :: flat_name
+      character(len=14) :: bflnam, fflnam
+      character(len=4) :: strtnm, slist(5)
+      character(len=3) :: flat_list(5)
+      character(len=30) :: command
+      character(len=20), save :: flat_name
       logical oubin, ouasc, use_mpi, patran_file, ok, flat_file, 
      &        stream_file, text_file, compressed 
       external warp3d_get_device_number
