@@ -3313,7 +3313,7 @@ c
      &        chk_umat_support, chk, chk2, do_nonlocal,
      &        process_flag
       integer :: map(6)
-      character * 8 :: cmname
+      character(len=8) :: cmname
       data zero, one, big, check_key / 0.0d00, 1.0d00, 1.0d06,
      &      -999999.9d00 /
       data identity /1.0d00, 0.0d00, 0.0d00, 0.0d00, 1.0d00,
