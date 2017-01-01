@@ -12,9 +12,10 @@ c
       use main_data, only : user_lists, crdmap
       implicit integer (a-z)
       include 'common.main'
-      logical debug, string, scanms, matchs, do_display,
-     &        found, match_exact, matchs_exact, true, display_coords
-      character lname*24, name*80
+      logical  :: debug, string, scanms, matchs, do_display,
+     &        found, match_exact, matchs_exact, true, display_coords,
+     &        endcrd
+      character :: lname*24, name*80
 c
 c                 on entry, last scanner test was true (word 
 c                 list). get string id for user-defined list name.
@@ -266,7 +267,7 @@ c
       use main_data, only : user_lists
       implicit integer(a-z)
       include 'common.main'
-      character *80 string
+      character(len=80) :: string
 c
       select case( message )
       case( 1 )
