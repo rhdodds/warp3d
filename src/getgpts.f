@@ -988,14 +988,14 @@ c
               weight = c
         end if
 c
-	end if
+      end if
 c
-	return
+      return
  9000 format('>> FATAL ERROR: invalid integration order for',
      & /,    '                10-node tetrahedron element. order= ',i3,
      & /,    '                (order = 4 is recommended)',
      & /,    '                job terminated.',//)
-	end
+      end
 
 c
 c     ****************************************************************
@@ -1031,7 +1031,7 @@ c
 c         order = specifies the integration order, and is the number of
 c                 Gauss integration points in each direction
 c         order = 1,2,3,4 for the
-c	          number of Gauss points = 1,4 for 2x2,9 for 3x3,16 for 4x4
+c                number of Gauss points = 1,4 for 2x2,9 for 3x3,16 for 4x4
 c         Note: if the value for numGauss does not match a known value,
 c         return all zero values as a default.
 c         point = current integration point, 1 <= point <= numGauss
@@ -1956,7 +1956,7 @@ c
             s2 = a1
             s3 = a1
             weight = w1
-	    case( 3 )
+          case( 3 )
             s1 = a1
             s2 = b1
             s3 = a1
