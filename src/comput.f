@@ -21,8 +21,8 @@ c
       double precision ::
      &   dumd, zero
       character :: dums
-      character*80 :: name
-      character*8 :: ldname
+      character(len=80) :: name
+      character(len=8) :: ldname
       logical :: fatal, numnod, numel, coor, elprop, elinc, constr,
      &           matchs, endcrd, true, label, found, block,
      &           scanms, notes_msg
