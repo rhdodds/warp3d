@@ -19,7 +19,7 @@ c
 c
       subroutine setelb( nlibel, elelib, outmap, mxlbel )
       implicit integer (a-z)
-      character*8 elelib(mxlbel)
+      character(len=8) :: elelib(mxlbel)
       dimension outmap(mxlbel,*)
 c
 c                       element type one: q3disop
