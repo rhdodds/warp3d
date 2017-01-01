@@ -578,7 +578,7 @@ c
       double precision
      &    dummy, eps_plas, eps_crit, sig_mean, sig_mises, eps_plas_tol,
      &    d_eps_plas, max_d_eps_plas, values(20),half
-      character * 10  special_char
+      character(len=10) :: special_char
       logical ldummy, debug, all_killed, beyond_peak, 
      & found_fgm_cohes, found_homog_cohes, found_ppr,
      & found_exponential, option_ppr, option_exponential,
@@ -825,11 +825,11 @@ c
      &      'displacement jumps',
      &  /,1x,'(1) Number of integration points with post-peak state ',
      &         'based on T-normal, D-normal')
- 9004 format(1x,i6,1x,e14.6,x,e14.6,
+ 9004 format(1x,i6,1x,e14.6,1x,e14.6,
      &       e14.6, e14.6, e14.6, e14.6, 1x,a3)
- 9005 format(1x,i6,1x,e14.6,x,e14.6,
+ 9005 format(1x,i6,1x,e14.6,1x,e14.6,
      &       e14.6, e14.6, f11.5, f13.5, 3x,'(',i1,',',i1,')')
- 9008 format(1x,i6,1x,e14.6,x,e14.6,
+ 9008 format(1x,i6,1x,e14.6,1x,e14.6,
      &       e14.6, e14.6, 3x, I1)
  9100 format(//,'>>> FATAL ERROR: dam_print_elem4'
      &        /,'                 job terminated' )
