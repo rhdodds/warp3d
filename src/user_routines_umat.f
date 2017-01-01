@@ -96,7 +96,7 @@ c
       double precision :: time, dtime, temp, dtemp, sse, spd, scd, rpl,
      1                    drpldt, celent, pnewdt                          
      
-      character(len=8) cmname
+      character(len=8) :: cmname
      
 c
 c
@@ -421,12 +421,12 @@ c
       subroutine umat_output( stress, mat_vals, statev, nstatv, time,
      &                        cmname, props, nprops, noel,
      &                        npt, kinc, kout )
-      implicit real*8 (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      character * 8 cmname
+      character(len=8) :: cmname
       double precision
      & stress(6), mat_vals(3), statev(nstatv), props(nprops)
 c
@@ -534,10 +534,10 @@ c     ****************************************************************
      &     temp, dtemp, noel, npt, layer, kspt, kstep, kinc,
      &     cmname, nstatv, statev, numfieldv,
      &     predef, dpred, nvalue, table, kout )
-      implicit real*8(a-h,o-z)
+      implicit double precision (a-h,o-z)
       parameter (nprecd=2)
 c
-      character*80 cmname
+      character(len=80) :: cmname
       dimension hard(3), statev(nstatv), time(*),
      1          predef(numfieldv), dpred(*)
 c
