@@ -32,9 +32,9 @@ c
       double precision
      &     edva(mxvl,mxndof), defmax, one, nfac,
      &     trnmte(mxvl,mxedof,mxndof)
-      character*4 title(80), title1(80)
+      character(len=4) :: title(80), title1(80)
       real sgl_defmax, sgl_vals(10)
-      character*80 string, strng1, stepstring*6
+      character(len=80) :: string, strng1, stepstring*6
       dimension titl(80), titl1(80)
       logical trne(mxvl,mxndel)
       equivalence (title,titl), (title1,titl1)
@@ -239,10 +239,10 @@ c
 c                       local declarations
 c
       integer type, quantity
-      character *15 vector_types(5), tensor_types(2),
+      character(len=15) :: vector_types(5), tensor_types(2),
      &              scalar_types(1) 
-      character *24 sdate_time_tmp
-      
+      character(len=24) :: sdate_time_tmp
+c      
       data vector_types / 'displacements', 'velocities',
      &                    'accelerations', 'reactions',
      &                    'temperatures' / 
