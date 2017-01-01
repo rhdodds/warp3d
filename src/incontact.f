@@ -20,7 +20,7 @@ c
 c
       logical numd, numi, sbflg1, sbflg2, rate, point_set, norm_set,
      &    matchs
-      character *80 name, string, dums *1
+      character :: name*80, string*80, dums*1
       double precision
      &     zero, dot, stiff, fric, point(3,3), mag1, mag2,
      &     tol_val, rate_val(3), depth, dumd, radius, length, 
