@@ -29,7 +29,7 @@ c
 c              declare all locals here - visible in contains
 c
       real dumr
-      character dums
+      character :: dums
       logical mf_ratio_change
       double precision
      &     mf, mf_nm1, d32460, dumd, load_reduce_fact
@@ -157,7 +157,7 @@ c          locals
 c
       logical matchs, sflag_1, sflag_2, here_debug, is_iostat_end,
      &        output_this_step 
-      character * 80 line
+      character(len=80) :: line
       integer read_status, word, bit
 c
 c          check to see if the user has chosen to use the
@@ -350,7 +350,7 @@ c
          if ( cnstrn_in(i) .eq. d32460 ) cnstrn(i) = d32460
       end do
       if( now_step == 1 ) then
-      	 load_reduce_fact = 1.0d0
+             load_reduce_fact = 1.0d0
       else
         call check_for_step_reduction( load_reduce_fact, mf,
      &                                mf_nm1 )
