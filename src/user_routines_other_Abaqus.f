@@ -16,7 +16,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine uexternaldb( lop, lrestart, time, dtime, kstep, kinc )
-      implicit real*8 (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
 c      Recall that Abaqus 'step" is == 1 in WARP3D. Abaqus
 c      "increment" is the WARP3D load (time) step number.
@@ -62,7 +62,7 @@ c            kinc is the WARP3D step number. kinc = 1 is
 c            1st simulation step
 c
 c
-      integer lop, lrestart, kstep, kinc
+      integer :: lop, lrestart, kstep, kinc, termout
       dimension time(2)
 c
       logical debug_local
