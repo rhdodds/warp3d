@@ -152,7 +152,7 @@ c     ****************************************************************
       integer, allocatable, dimension (:,:) :: elemcon
       real  epsilon, dumr, wcputime
       double precision, allocatable, dimension (:,:) :: nodecoord
-      character * 1 dums
+      character(len=1) :: dums
       double precision dumd
       external wcputime
 c
