@@ -28,7 +28,7 @@ c
 c
       logical no_con, con_set(3)
 c
-      character *1 con_label(3), con_string*14
+      character(len=1) :: con_label(3), con_string*14
       dimension con_string(3)
       data con_label(1),con_label(2),con_label(3)  /'u','v','w'/
 c
