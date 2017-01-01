@@ -160,7 +160,7 @@ c
      &  node_coords, forces_set, temps_set, use_linear_k, kout )
       implicit none
 c
-      character * 8 load_name, user_file_name * 80
+      character :: load_name*8, user_file_name*80
       integer  nnode, step_np1, kout
       double precision pattern_values(nnode,4), initial_temps(*),
      &                 node_coords(nnode,3),
