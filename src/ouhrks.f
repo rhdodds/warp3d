@@ -109,16 +109,15 @@ c
 
       implicit integer (a-z)
       include 'common.main'
-      logical do_stresses, center_output, wide, eform, newel,
+      logical :: do_stress, center_output, wide, eform, newel,
      &        prec, noheader, out_packet_now, geo_non_flg
-      character*8 strlbl(30), hedtyp*30
+      character(len=8) :: strlbl(30), hedtyp*30
 c
 c             locals also visible by contains
 c
-      double precision
-     &    zero,  avgs(mxoupr)
-      logical local_debug, exp_model, ppr_model
-      integer kout
+      double precision :: zero,  avgs(mxoupr)
+      logical :: local_debug, exp_model, ppr_model
+      integer :: kout
       data zero / 0.0d00 /
 c
 c             get the element tractions or displacement jumps
