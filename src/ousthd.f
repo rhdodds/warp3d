@@ -19,10 +19,10 @@ c
       implicit integer (a-z)
       logical newhed, noheader
       include 'common.main'
-      character*8 strlbl(*)
-      character*(*) hedtyp
-      character*4 loctyp
-      character*1 formfeed
+      character(len=8) :: strlbl(*)
+      character(len=*) :: hedtyp
+      character(len=4) :: loctyp
+      character(len=1) :: formfeed
 c
       if ( noheader ) then
         newhed = .false.
