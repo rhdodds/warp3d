@@ -28,7 +28,7 @@ c
      &     pen_dist(maxcontact), zero, force, normal(3,maxcontact),
      &     transmat(3,3), dumd
       real dumr
-      character dums*1
+      character(len=1) :: dums
       logical debug, penetrated, allow_trn, referenced, owned
       data debug, zero / .false., 0.0 /
 c
@@ -959,11 +959,11 @@ c
       call normalize (vprime,dist)
 c
 c
-      if ( dist .lt. radius ) then
-	 penetrated = .true.
-	 pen_dist = radius - dist
-	 normal(1:3) = vprime(1:3)
-      endif
+      if( dist .lt. radius ) then
+        penetrated = .true.
+        pen_dist = radius - dist
+        normal(1:3) = vprime(1:3)
+      end if
 c
 c
  9999 continue
