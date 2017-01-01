@@ -48,7 +48,7 @@ c
       implicit integer (a-z)
       include 'common.main'
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       double precision
      &     d32460, dumd
       data d32460 / 32460.0/
