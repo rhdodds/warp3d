@@ -34,8 +34,8 @@ c                       local declarations
 c
       logical patran_file
       real dum2
-      character *4 title(80), title1(80)
-      character* 80 string, strng1, stepstring*6
+      character(len=4) :: title(80), title1(80)
+      character(len=80) :: string, strng1, stepstring*6
       dimension titl(80), titl1(80)
       equivalence (title,titl), (title1,titl1)
       double precision :: small_tol, zero
