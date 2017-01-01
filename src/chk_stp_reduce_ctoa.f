@@ -32,7 +32,7 @@ c
       double precision
      &     d32460, angle, two, new_load_fact, crit_angle, one, mf, 
      &     mf_nm1, zero, dtemp
-      character * 1 dums
+      character(len=1) :: dums
       data d32460, two, one, zero / 32460.0, 2.0, 1.0, 0.0 /
       logical debug
 c
@@ -40,7 +40,7 @@ c          If this step starts a new loading condition, then we do
 c          not have enough information to change the load
 c          step size; return to calling routine.
 c          If there are no more crack plane
-c	   nodes, then return to calling routine.
+c         nodes, then return to calling routine.
 c
       if ( debug ) write (out,*) '>>>>>> in overshoot_control'
       if (mf_nm1 .eq. zero) then
@@ -157,7 +157,7 @@ c
       double precision
      &     d32460, angle, two, new_load_fact, crit_angle, one, mf, 
      &     mf_nm1, zero, dtemp, dtol
-      character * 1 dums
+      character(len=1) :: dums
       data d32460, two, one, zero, dtol / 32460.0, 2.0, 1.0, 0.0, 0.001/
       logical debug, use_init
 c
@@ -303,7 +303,7 @@ c
 c
       double precision
      &     d32460, angle, two, crit_angle, one
-      character * 1 dums
+      character(len=1) :: dums
       real dumr
       data d32460, two, one / 32460.0, 2.0, 1.0 /
       logical debug
@@ -316,7 +316,7 @@ c          check angles.
 c
 c             set pointer to top of list, and the previous node
 c             pointer to null.  If there are no more crack plane
-c	      nodes, then skip rest of routine.
+c            nodes, then skip rest of routine.
 c
       prev_node_ptr = -1
       node_ptr = crack_front_start
@@ -424,7 +424,7 @@ c
 c
       double precision
      &     d32460, angle, two, crit_angle, one, zero
-      character * 1 dums
+      character(len=1) :: dums
       real dumr
       data d32460, two, one, zero / 32460.0, 2.0, 1.0, 0.0 /
       logical debug, use_init
