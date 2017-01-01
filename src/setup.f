@@ -25,7 +25,7 @@ c
       include 'common.main'
       logical fatal, message_flag
       real dumr
-      character dums
+      character :: dums
       double precision
      &     zero, dumd
       integer, allocatable, dimension(:) :: temp_invdst
