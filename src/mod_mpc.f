@@ -143,14 +143,14 @@ c
      &         display_mpcs
 c
       type :: surface
-        character (len=16) :: id
+        character(len=16) :: id
         integer num_elems
         integer, pointer, dimension (:) :: elem_list
         integer, pointer, dimension (:) :: face_list
       end type
 c
       type :: tied_set
-        character (len=16) :: id
+        character(len=16) :: id
         real tolerance
         logical adjust_gap
         integer num_pairs
