@@ -223,8 +223,8 @@ c
 c
 c                solution types (itype):
 c                 1 - first time solution for a matrix:
-c             		      setup ordering method and perform
-c		                   pre-processing steps.
+c                               setup ordering method and perform
+c                               pre-processing steps.
 c                 2 - Solution of above same matrix equations
 c                     with a new set of coefficients but same
 c                     sparsity
@@ -244,7 +244,7 @@ c
         return
       end if
 c
-c		            1.-  Map the input arrays from NASA-VSS
+c                        1.-  Map the input arrays from NASA-VSS
 c                   format to the MKL format.
 c
 c                   if we're solving with the out-of-core option,
@@ -256,7 +256,7 @@ c
      &                  k_pointers, k_indices )
       if ( itype .eq. 2 .and. .not. solver_out_of_core ) go to 1000
 c
-c	            	2.-  Initialization. 
+c                        2.-  Initialization. 
 c
       call thyme( 23, 1 )
       if ( pardiso_mat_defined ) then
@@ -283,7 +283,7 @@ c
       call warp3d_pardiso_mess( 1, out, 
      &        error, mkl_ooc_flag, cpu_stats, iparm )
 c
-c	             3.-  initialize, input  sparsity structure, reorder,
+c                   3.-  initialize, input  sparsity structure, reorder,
 c                   symbolic factorization.
 c
       iparm(1:64) = 0
@@ -329,7 +329,7 @@ c
      &        error, mkl_ooc_flag, cpu_stats, iparm )
       call thyme( 23, 2 )
 c
-c            		4.-  Numeric Factorization:
+c                        4.-  Numeric Factorization:
 c                      -> input numerical values of coeffs
 c                      -> Factor a matrix into L and L transpose
 c                   For iterative, we do possible factoriztion and
@@ -367,8 +367,8 @@ c
      &        error, mkl_ooc_flag, cpu_stats, iparm )
       call thyme( 25, 2 )
 c
-c		            5.-  Solve:
-c		                Forward and backward substitution
+c                        5.-  Solve:
+c                            Forward and backward substitution
 c
       call thyme( 26, 1 )
       iparm(8) = 0 ! max numbers of iterative refinement steps
@@ -552,29 +552,29 @@ c
       double precision :: diag(*), rhs(*), amat(*)
       integer :: neq, ncoeff, kpt(*), kind(*)         
 c
-c	This sub maps arrays needed for the NASA sparse solver to
-c	arrays in the format that the MKL 7 solver needs ( Harwell-Boeing
-c	format)
-c		See format example at the end of this subroutine
+c      This sub maps arrays needed for the NASA sparse solver to
+c      arrays in the format that the MKL 7 solver needs ( Harwell-Boeing
+c      format)
+c            See format example at the end of this subroutine
 c
-c	Definitions:
-c		ncoeff: # of non-zero terms excluding the diagonal
-c		amat  : has the dimension of (neq+ncoeff), however,
-c			the input vector contains the vss format (
-c			i.e. only the ncoeff number of terms); the output
-c			will have all terms filled. Same with indices
-c			array.
+c      Definitions:
+c            ncoeff: # of non-zero terms excluding the diagonal
+c            amat  : has the dimension of (neq+ncoeff), however,
+c                  the input vector contains the vss format (
+c                  i.e. only the ncoeff number of terms); the output
+c                  will have all terms filled. Same with indices
+c                  array.
 c
 c   Note:    It is assumed that the last term in kpt(neq) == 0
 c            is always zero.  Therefore, the second loop will not
 c            be performed when i=neq ( See bellow )
 c
 c
-c	Input(vss Format)   -------->     Output (MKL format)
-c	     Terms Used                        Terms Used
+c      Input(vss Format)   -------->     Output (MKL format)
+c           Terms Used                        Terms Used
 c
-c	       amat(ncoeff)                  k_coeff( ncoeff +neq )
-c	       kind(ncoeff)                  k_indices ( ncoeff + neq )
+c             amat(ncoeff)                  k_coeff( ncoeff +neq )
+c             kind(ncoeff)                  k_indices ( ncoeff + neq )
 c              kpt(neq)                      k_pointers ( neq + 1)
 c
       double precision ::  zero
@@ -645,7 +645,7 @@ c
          call die_gracefully
       end if
 c
-      open(unit=ifileno,dispose='keep',file='pardiso_ooc.cfg',
+      open(unit=ifileno,file='pardiso_ooc.cfg',
      &         status='unknown')
       ii = len_trim( solver_scr_dir )
       write(ifileno,9000) solver_scr_dir(1:ii)
