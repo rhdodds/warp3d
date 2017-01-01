@@ -77,7 +77,7 @@ c
       real dumr
       logical debug, no_print
       integer edest(mxedof)
-      character *1 dums
+      character(len=1) :: dums
       data zero, one / 0.0, 1.0 /
 c
 c          - For Gurson Crack Growth:                                 
@@ -149,8 +149,8 @@ c
 c        
 c            output message about release of element forces
 c 
-	write (out,9300) elem, now_fraction * 100.0
-	no_print = .false.
+      write (out,9300) elem, now_fraction * 100.0
+      no_print = .false.
         rcount   = rcount + 1
 c
         num_dof = iprops(2,elem) * iprops(4,elem)
@@ -218,7 +218,7 @@ c
      &  now_fraction, fraction, new_height, ldincr, zero, one
       logical debug, no_print
       real dumr
-      character *1 dums
+      character(len=1) :: dums
       data zero, one / 0.0, 1.0 /
 c
 c          - For Node Release Crack Growth:                           
@@ -242,13 +242,13 @@ c            traction separation law, then we skip the normal procedure and
 c            release the other crack front nodes based on the release angle
 c            of the master node.
 c
-c	     In this case, all of the crack front nodes that are
-c	     undergoing release are listed in the crack_front_list
-c	     structure.  The first node in each front list in this
-c	     structure is the master node for the front.  First 
-c	     determine its release angle.  Then loop through the
-c	     other crack front nodes, and release them based on the
-c	     master node's release fraction.
+c           In this case, all of the crack front nodes that are
+c           undergoing release are listed in the crack_front_list
+c           structure.  The first node in each front list in this
+c           structure is the master node for the front.  First 
+c           determine its release angle.  Then loop through the
+c           other crack front nodes, and release them based on the
+c           master node's release fraction.
 c
 c
       if ( const_front .and. release_type .eq. 2) then
@@ -262,11 +262,11 @@ c                   if first node is zero, skip this front
 c
             node = crack_front_list(i,1)
             if (node .eq. 0) cycle
-	    node_data_entry = inv_crkpln_nodes(node)
+          node_data_entry = inv_crkpln_nodes(node)
 c
 c                   get release fraction for master node (see
-c		    below for explaination of traction-seperation
-c	            algorithm)
+c                below for explaination of traction-seperation
+c                  algorithm)
 c
             new_height = u(dstmap(node)+crk_pln_normal_idx-1)
             now_fraction = crack_plane_sign*new_height/release_height
@@ -289,18 +289,18 @@ c
 c
 c                  write out information about the releasing force
 c
-	    write (out,9300) node, now_fraction * 100.0
-	    no_print = .false.
+          write (out,9300) node, now_fraction * 100.0
+          no_print = .false.
 c
-c	           for all nodes on the crack front, calculate the
-c	           amount of force to release based on the master
+c                 for all nodes on the crack front, calculate the
+c                 amount of force to release based on the master
 c                  node release angle, and subtract that from the
-c	           total load vector.
+c                 total load vector.
 c         
             do j = 1, num_nodes_thick 
                node = crack_front_list(i,j)
                node_data_entry = inv_crkpln_nodes(node)
-	       if (node .eq. 0) exit
+             if (node .eq. 0) exit
                dof = dstmap(node) + crk_pln_normal_idx - 1
                if ( debug )
      &            write(*,'(" change dof",i6," from load:",e13.6)')
@@ -391,8 +391,8 @@ c
 c    
 c            write out information about the releasing force
 c
-	write (out,9300) node, now_fraction * 100.0
-	no_print = .false.
+      write (out,9300) node, now_fraction * 100.0
+      no_print = .false.
 c
 c            modify incrmental load vector for structure for this
 c            step by the incremental force release for the
