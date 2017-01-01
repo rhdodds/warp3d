@@ -195,17 +195,16 @@ c
       implicit integer (a-z)     
       include 'common.main'
       real dumr, fgm_mark
-      character dums
-      double precision
-     &   dumd
-      logical numnod,numel,fatal,coor,elprop,elinc,constr,
-     &        block,is_matl_cohesive, is_umat
+      character :: dums
+      double precision :: dumd
+      logical :: numnod,numel,fatal,coor,elprop,elinc,constr,
+     &        block, is_matl_cohesive, is_umat, is_matl_cp
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
       double precision
      &   erprmd
       real erprmr
-      character *50 erprms
+      character(len=50) erprms
       data fgm_mark / -99.0 /
 c
       erprms = ' '
@@ -404,7 +403,7 @@ c
       implicit integer (a-z)     
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block
@@ -446,7 +445,7 @@ c
       implicit integer (a-z)     
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd 
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block
@@ -498,7 +497,7 @@ c
       include 'common.main'
       integer, allocatable, dimension (:) :: dup_ele
       real dumr, mlt
-      character dums
+      character :: dums
       double precision
      &   dumd 
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block,
@@ -629,7 +628,7 @@ c
       implicit integer (a-z)     
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd, zero, d32460
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block
@@ -774,7 +773,7 @@ c
       include 'common.main'
       logical :: found
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd
 c
@@ -809,7 +808,7 @@ c
       include 'common.main'
 c
       real dumr, beta_cohesive
-      character dums
+      character :: dums
       double precision
      &   dumd
       logical numnod,numel,fatal,coor,elprop,elinc,constr,block,
@@ -985,7 +984,7 @@ c
 c
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd, zero, tenth 
       data zero, tenth / 0.0, 0.1 /
@@ -1004,7 +1003,7 @@ c
 c
          if( load_size_control_crk_grth ) then
 c
-	    if ( .not. g_stp_cntrl_allocated ) 
+          if ( .not. g_stp_cntrl_allocated ) 
      &             call allocate_damage( 9 )
             if ( crack_growth_type .eq. 1 .and. 
      &             max_porosity_change .eq. zero) then
@@ -1102,7 +1101,7 @@ c
 c
          if( release_type .eq. 2 ) then
 c
-	    if( release_fraction .le. zero ) then 
+          if( release_fraction .le. zero ) then 
                call errmsg( 243, 1, dums, dumr, dumd )
             else if( char_length .le. zero ) then 
                call errmsg( 243, 2, dums, dumr, dumd )
@@ -1138,7 +1137,7 @@ c
       implicit integer (a-z)     
       include 'common.main'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd 
 c
@@ -1181,7 +1180,7 @@ c
       implicit integer (a-z)     
       include 'param_def'
       real dumr
-      character dums
+      character :: dums
       double precision
      &   dumd, zero
       data zero /0.0/
