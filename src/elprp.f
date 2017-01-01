@@ -47,7 +47,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -279,7 +279,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -517,7 +517,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -749,7 +749,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -981,7 +981,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -1214,7 +1214,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -1448,7 +1448,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -1680,7 +1680,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -1911,7 +1911,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -2144,7 +2144,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -2380,7 +2380,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real e, et, h,  dumr
       double precision
      &    zero, one, dumd
@@ -2632,7 +2632,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real  dumr
       double precision
      &    zero, one, dumd
@@ -2917,21 +2917,21 @@ c
 c
 c      if( exponential_type ) then
 c        if ( surf.eq.4HO111 .and. matprp(42,matnum) .ne. zero ) then
-c	 call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
+c       call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
 c         props(23,elem) = zero
 c        end if
 c        if ( surf.eq.4HO333 .and. matprp(42,matnum) .ne. zero ) then
-c	 call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
+c       call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
 c         props(23,elem) = zero
 c        end if
 c      end if
 c
 c      if( ppr_type ) then
 c        if ( surf.eq.4HO111 .and. matprp(42,matnum) .eq. zero ) then
-c	 call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
+c       call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
 c        end if
 c        if ( surf.eq.4HO333 .and. matprp(42,matnum) .eq. zero ) then
-c	 call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
+c       call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
 c        end if
 c      end if
 c
@@ -3003,7 +3003,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
 c
       real e, et, h,  dumr
       double precision
@@ -3236,7 +3236,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real dumr
       double precision
      &    dumd,zero
@@ -3368,21 +3368,21 @@ c
 c
       if( exponential_type ) then
         if ( surf.eq.4HO111 .and. matprp(42,matnum) .ne. zero ) then
-	 call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
+       call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
          props(23,elem) = zero
         end if
         if ( surf.eq.4HO333 .and. matprp(42,matnum) .ne. zero ) then
-	 call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
+       call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
          props(23,elem) = zero
         end if
       end if
 c
       if( ppr_type ) then
         if ( surf.eq.4HO111 .and. matprp(42,matnum) .eq. zero ) then
-	 call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
+       call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
         end if
         if ( surf.eq.4HO333 .and. matprp(42,matnum) .eq. zero ) then
-	 call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
+       call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
         end if
       end if
 c
@@ -3461,7 +3461,7 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      character dums
+      character :: dums
       real dumr
       double precision
      &    dumd,zero
@@ -3600,21 +3600,21 @@ c
 c
       if( exponential_type ) then
         if ( surf.eq.4HO111 .and. matprp(42,matnum) .ne. zero ) then
-	 call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
+       call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
          props(23,elem) = zero
         end if
         if ( surf.eq.4HO333 .and. matprp(42,matnum) .ne. zero ) then
-	 call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
+       call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
          props(23,elem) = zero
         end if
       end if
 c
       if( ppr_type ) then
         if ( surf.eq.4HO111 .and. matprp(42,matnum) .eq. zero ) then
-	 call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
+       call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
         end if
         if ( surf.eq.4HO333 .and. matprp(42,matnum) .eq. zero ) then
-	 call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
+       call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
         end if
       end if
 c
@@ -3688,7 +3688,7 @@ c
 c
 c                 local variables
 c
-      character dums
+      character :: dums
       real dumr
       double precision
      &    dumd
