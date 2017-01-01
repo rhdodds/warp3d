@@ -42,14 +42,14 @@ c
 c               parameter and local variable declarations
 c
       character savnam*8, dbname*100
-      character *(*) savfil
+      character(len=*) :: savfil
       logical numel, numnod, fatal, coor, elprop, elinc, constr,
      &        block, nameok, sbflg1, sbflg2, scanms, delfil,
      &        wrt_nod_lod, write_table
       real dumr, rzero, rsum
       double precision
      &     dumd, dzero
-      character * 1 dums
+      character(len=1) :: dums
       common /erflgs/ numnod, numel, fatal, coor, elprop, elinc,
      &                constr, block
       data check_data_key, rzero, dzero / 2147483647, 0.0, 0.0d00 /
@@ -64,11 +64,11 @@ c
          goto 9999
       endif
 c
-c		               	figure out filename:
-c	               			if savfil unset (no filename),
-c				                 make a filename from the structure name.
-c			               	if savfil set, resolve name.
-c				               if neither are set, error.
+c                                 figure out filename:
+c                                       if savfil unset (no filename),
+c                                         make a filename from the structure name.
+c                                       if savfil set, resolve name.
+c                                       if neither are set, error.
 c
       fileno = 11
       dbname = ' '
@@ -86,7 +86,7 @@ c
         if ( .not.nameok ) dbname = 'default_db'
       end if
 c
-c	               		check file.  if file there, delete it
+c                                 check file.  if file there, delete it
 c
       inquire( file = dbname, exist = delfil )
       if ( delfil ) then
