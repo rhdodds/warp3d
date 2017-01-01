@@ -1273,7 +1273,7 @@ c
 c              begin a new sweep
 c
       do !  rotate iterations to eliminate off diagonals
-c      	
+c            
       swpnum = swpnum + 1
       thold  = ten_thouth ** swpnum
       sqtol  = jactol * jactol
@@ -1494,8 +1494,8 @@ c
 c
          errork(bel) = k(bel,6)*k(bel,6)/(k(bel,3)*k(bel,1))
          if( errork(bel) .gt. sqtol ) then
-         	  cvgtst = .false.
-         	  exit
+                 cvgtst = .false.
+                 exit
          end if
 c
          errork(bel) = k(bel,5)*k(bel,5)/(k(bel,3)*k(bel,2))
