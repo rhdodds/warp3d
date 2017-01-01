@@ -22,7 +22,7 @@ c
      &  dumd
       real t1, wcputime, dumr
       external wcputime
-      character *1 dums
+      character(len=1) :: dums
       logical promsw,echosw,comsw,atrdsw,eolsw,eofsw,menusw,ptsw,
      &     signsw
       logical matchs, debug
