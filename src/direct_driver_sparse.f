@@ -55,7 +55,7 @@ c
 c                    local variables
 c
       integer :: code_vec(mxedof,mxvl), edest(mxedof,mxconn)
-      logical :: new_size, cpu_stats, save_solver
+      logical :: new_size, cpu_stats, save_solver,
      &           hypre_solver, mkl_asymmetric, mkl_symmetric 
       logical, parameter :: local_debug = .false.,
      &                      local_debug2 = .false.
@@ -575,11 +575,11 @@ c                 in the NASA-VSS solver.
 c
 c                 NASA-VSS solver uses:
 c
-c	                 k_ptrs(neqns)
-c	                 k_indexes(ncoeff)
-c	                 k_diag(neqns)
-c	                 k_coeffs(ncoeff)
-c	                 p_vec(neqns)
+c                       k_ptrs(neqns)
+c                       k_indexes(ncoeff)
+c                       k_diag(neqns)
+c                       k_coeffs(ncoeff)
+c                       p_vec(neqns)
 c                  u_vec(neqns)
 c
 c                 The hypre solver needs a non-symmetric CSR
@@ -1003,7 +1003,7 @@ c
       double precision
      &  k_diag(*), p_vec(*), k_coeffs(*)
       logical sparse_stiff_output, sparse_stiff_binary, connected
-      character * (*) sparse_stiff_file_name
+      character(len=*) :: sparse_stiff_file_name
       integer fileno, open_result, iout, i
 c
       sparse_stiff_output = .false.
@@ -1116,7 +1116,7 @@ c
       implicit integer (a-z)
       intrinsic size
       logical do_binary
-      character *(*) file_name
+      character(len=*) :: file_name
       dimension dof_eqn_map(*), eqn_node_map(*)
       include 'common.main'
 c
@@ -1126,7 +1126,7 @@ c
       real dumr, rzero
       double precision
      &     dumd
-      character * 1 dums
+      character(len=1) :: dums
       data check_data_key, rzero / 2147483647, 0.0 /
 c
       if ( .not. do_binary ) then
