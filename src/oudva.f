@@ -29,7 +29,7 @@ c
       real dumr
       double precision
      &     dumd
-      character dums
+      character :: dums
       dimension intlst(mxlsz)
 c
       logical first      
