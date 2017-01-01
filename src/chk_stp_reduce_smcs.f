@@ -28,7 +28,7 @@ c
       double precision
      &     new_plast_strain, two, dum1, dumd2, dumd3, dumd4,
      &     dumd5, dumd6, dumd7
-      character * 1 dums
+      character(len=1) :: dums
       real dumr
       data two / 2.0 /
 c
@@ -52,13 +52,13 @@ c              step size.
 c
          if ( new_plast_strain - old_plast_strain(elem_ptr) .gt.
      &        max_plast_strain_change ) then
-	    if ( not_cut ) then
+          if ( not_cut ) then
                perm_load_fact = perm_load_fact / two
                call errmsg ( 273, dum, dums, dumr, perm_load_fact )
-	       not_cut = .false.
+             not_cut = .false.
             end if
          end if
-	 old_plast_strain(elem_ptr) = new_plast_strain
+       old_plast_strain(elem_ptr) = new_plast_strain
       end do
 c
       if ( debug ) write(out,*) '<<<<< leaving smcs_cut_step'
