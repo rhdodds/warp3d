@@ -19,17 +19,17 @@ c
      &                     elems_to_blocks
       implicit integer (a-z)
       include 'common.main'
-      logical wide, eform, prec, do_stress, noheader, out_packet_now
+      logical wide, eform, prec, do_stress, noheader, out_packet_now,
      &        solid_elem
       integer element_list(num_list_entries)
 c
 c             local declarations
 c
-      character*8 strlbl(30), hedtyp*30
+      character(len=8) :: strlbl(30), hedtyp*30
       real dumr
       double precision
      &     dumd
-      character dums
+      character :: dums
       logical  bbar_flg, geo_non_flg, long_out_flg,
      &         nodpts_flg, center_output, cohesive_elem,
      &         at_intpts, at_enodes, at_center
