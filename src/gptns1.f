@@ -103,7 +103,7 @@ c
            call gptns1_a  ! set up solid elements
       end if
 c
-c		     branch on material type:
+c                 branch on material type:
 c                      1 = simple mises model- linear hardening
 c                          (isotropic or mixed kinematic), has geonl 
 c                          option
@@ -996,7 +996,7 @@ c
 c              set trans( [B] )
 c
       do j = 1, totdof
-      	do k = 1, 6
+            do k = 1, 6
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
         do i = 1, span
@@ -1071,7 +1071,7 @@ c
       j = 0 
       do col = 1, totdof
        do row = 1, totdof
-       	j = j + 1  
+             j = j + 1  
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
         do i = 1, span
@@ -1126,7 +1126,7 @@ c
 c              set trans( [B] )
 c
       do j = 1, totdof
-      	do k = 1, 6
+            do k = 1, 6
 !DIR$ LOOP COUNT MAX=128  
           bt(1:span,k,j) = b(1:span,j,k)
        end do
@@ -1232,7 +1232,7 @@ c
       double precision ::
      &     cep(mxvl,nstr,*), qn1(mxvl,nstr,*), tc(mxvl,nstr,nstr),
      &     cs(mxvl,*), half, two, dj(*), w, wf, halfw
-      logical :: qbar, is_umat, is_crys_pls
+      logical :: qbar, is_umat, is_crys_pls, do_transform
       data half, two / 0.5d00, 2.0d00 /
 c      
 c!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64, cs:64, dj:64
