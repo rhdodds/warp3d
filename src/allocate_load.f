@@ -22,7 +22,8 @@ c
       implicit integer (a-z)
       include 'common.main'
 c
-      real zero     !  note:  single precision
+      logical :: debug
+      real :: zero     !  note:  single precision
       data zero, debug /0.0, .false./
 c
       if ( debug ) write (*,*) ' >>> inside allocate_temp_load'
@@ -351,7 +352,7 @@ c
      &              elem,eload_data(force_entry,2),
      &              eload_val(force_entry)
             elseif (temp_piston(elem,face).ne.0 ) then
-               if (debug)write (*,'("pistn;el,fa:",2i6)'),elem,face
+               if (debug) write (*,'("pistn;el,fa:",2i6)') elem,face
                call eloads_thread_count(count,thdnum(elem),num_threads)
                force_entry = force_entry + 1
                eload_data(force_entry,1) = elem
