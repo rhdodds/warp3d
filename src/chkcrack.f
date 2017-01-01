@@ -728,7 +728,7 @@ c
      &              cnstrn(dstmap(node)+1),cnstrn(dstmap(node)+2) 
             end if
             do j = 1, num_dof
-	       glbal_dof            = dstmap(node) + j-1 
+               glbal_dof            = dstmap(node) + j-1 
                cnstrn(glbal_dof)    = zero
                cnstrn_in(glbal_dof) = zero
                if ( cstmap(glbal_dof) .eq. 0 ) then
@@ -736,7 +736,7 @@ c
                   csttail         = glbal_dof
                end if
             end do
-	    cstmap(csttail) = -1
+            cstmap(csttail) = -1
          end if
       end do
 c
@@ -773,11 +773,11 @@ c
          if ( crack_growth_type .eq. 1 ) then
             call dam_print_elem1( step, iter )
          else if ( crack_growth_type .eq. 2 ) then
-	    if (const_front) then
+           if (const_front) then
                call dam_print_front( step, iter)
-	    else 
+           else 
                call dam_print_node( step, iter )
-	    endif
+           endif
          else if ( crack_growth_type .eq. 3 ) then
             call dam_print_elem3( step, iter )
          else if ( crack_growth_type .eq. 4 ) then
@@ -940,28 +940,28 @@ c
             write (out,*) '> no load size control'
          endif
 c        
-	 if (const_front) then
-	    write (out,*) '> const front is set.'
-	    write (out,*) '  -master nodes:'
-	    do i=1, num_crack_fronts
-	       write (out,'(5x,i7)') master_nodes(i)
-            enddo
-	    write (out,*) '  -crack_front_list:'
-	    do i=1, num_crack_fronts * num_nodes_grwinc
-	       write (out,'(5x,i3,":",40i7)') i, 
+      if (const_front) then
+       write (out,*) '> const front is set.'
+       write (out,*) '  -master nodes:'
+       do i=1, num_crack_fronts
+         write (out,'(5x,i7)') master_nodes(i)
+       enddo
+       write (out,*) '  -crack_front_list:'
+       do i=1, num_crack_fronts * num_nodes_grwinc
+        write (out,'(5x,i3,":",40i7)') i, 
      &             (crack_front_list(i,j),j=1,num_nodes_thick)
-            enddo
+       enddo
 c
-            write (out,*) '> measured CTOA'
-            write (out,'("   -init_ctoa_dist:",e13.6)') init_ctoa_dist
-            write (out,'("   -ctoa_dist:",e13.6)') ctoa_dist
-            write (out,*) '  -num_nodes_back =',num_nodes_back
-            write (out,*) '  -master list (first 20 nodes):'
-            do i=1, num_crack_fronts
-               write (out,'(5x,i7,":",20i6)') i, (master_lines(i,j),
+       write (out,*) '> measured CTOA'
+       write (out,'("   -init_ctoa_dist:",e13.6)') init_ctoa_dist
+       write (out,'("   -ctoa_dist:",e13.6)') ctoa_dist
+       write (out,*) '  -num_nodes_back =',num_nodes_back
+       write (out,*) '  -master list (first 20 nodes):'
+       do i=1, num_crack_fronts
+         write (out,'(5x,i7,":",20i6)') i, (master_lines(i,j),
      &              j = 1, 20)
-            enddo
-         endif
+       enddo
+      endif
 c
          write (out,*)
 c
