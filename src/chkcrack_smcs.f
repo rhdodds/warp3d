@@ -53,7 +53,7 @@ c          parse the order list
 c
       local_count = 0
       do elem_loop = 1, num_print_list
-	 element  = dam_print_list(elem_loop)
+         element  = dam_print_list(elem_loop)
          elem_ptr = dam_ptr(element)
 c
 c             check if element is a killable element and/or if it has
@@ -102,7 +102,7 @@ c
 c
 c
       do elem_loop = 1, num_print_list
-	 element  = dam_print_list(elem_loop)
+         element  = dam_print_list(elem_loop)
          elem_ptr = dam_ptr(element)
 c
 c             check if element is a killable element and/or if it has
