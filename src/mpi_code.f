@@ -84,8 +84,7 @@ c
       subroutine wmpi_reduce_vec ( in, size )
       implicit integer (a-z)              
 c
-      double precision
-     &     in(*)
+      double precision   in(*)
 c     
 c     
       return 
@@ -108,8 +107,7 @@ c
       subroutine wmpi_dotprod ( in )
       implicit integer (a-z)              
 c
-      double precision
-     &     in 
+      double precision    in 
 c     
 c
       return 
@@ -230,8 +228,7 @@ c
       subroutine wmpi_do_uexternaldb
       implicit integer (a-z)
       include 'common.main'
-      double precision
-     &     zero, aba_time(2), aba_dtime
+      double precision ::  zero, aba_time(2), aba_dtime
       logical local_debug
       data zero / 0.0d00 /
 c
@@ -686,7 +683,7 @@ c
 c
       subroutine wmpi_bcast_string ( string, nchars )
       implicit integer (a-z)              
-      character *(*) string
+      character(len=*) :: string
 c
       return 
       end
