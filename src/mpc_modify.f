@@ -24,7 +24,7 @@ c
       double precision  dumd
       double precision
      &          k_diag
-      character*1  dums
+      character(len=1) :: dums
       dimension  k_ptrs(*), k_diag(*), dstmap(*), dof_eqn_map(*)
       logical ldebug
       data ldebug / .false. /
@@ -93,7 +93,7 @@ c
      &                           ind_locations, diag_locations
       implicit none 
       integer :: i, iwhere
-c	  
+c        
       return
       write(*,*) '... checking NaN @ ', iwhere     
       do i = 1, size(k_coeffs)
@@ -128,7 +128,7 @@ c
       implicit integer (a-z)
       real  dumr
       double precision  dumd
-      character*1  dums
+      character(len=1) :: dums
       logical  last_good
       logical, parameter :: local_debug = .false.
       dimension  abs_trm(*), dstmap(*), dof_eqn_map(*)
@@ -300,7 +300,7 @@ c
       integer, allocatable, dimension(:) :: tmp_trms, eqn_tmp
       real  dumr
       double precision  dumd
-      character*1  dums
+      character(len=1) :: dums
       dimension  k_ptrs(*), abs_trm(*)
       intrinsic size
       logical, parameter :: local_debug = .false.
@@ -579,7 +579,7 @@ c
       integer, allocatable, dimension (:) :: temp_loc
       real  dumr
       double precision  dumd
-      character*1  dums
+      character(len=1) :: dums
 c
 c        allocate temp space
 c
@@ -715,7 +715,7 @@ c
       double precision  dumd
       double precision,
      &          allocatable, dimension(:) :: old_cof
-      character*1  dums
+      character(len=1) :: dums
 c!DIR$ ASSUME_ALIGNED k_ptrs:32, abs_ptr:32    
 c
 c        allocate temp storage space, copy old data to temp space
@@ -929,7 +929,7 @@ c
       double precision ::  dumd
       double precision,
      &          allocatable, dimension (:) :: dtmp
-      character*1 :: dums
+      character(len=1) :: dums
       logical, parameter :: local_debug = .false.
 c
 c        this routine is used to resize
@@ -1020,7 +1020,7 @@ c
       integer, allocatable, dimension(:) :: dep_eqn_tmp
       real :: dumr
       double precision ::  dumd
-      character*1  dums
+      character(len=1) :: dums
 c
       integer :: err, mpc, dep, len, dptr, beg, eqn, idx, dep_idx,
      &           ptr, ntrms,trm, ind, dia_idx, ind_idx, ind_ptr,
@@ -1188,7 +1188,7 @@ c
       integer, allocatable, dimension (:) :: temp_loc
       real  dumr
       double precision  dumd
-      character*1  dums
+      character(len=1) :: dums
 c
 c        this routine is used to resize several different vectors
 c        the vectors are referenced through the 'vec_ptr' flag
@@ -1310,7 +1310,7 @@ c
       double precision  dumd
       double precision
      &         dep_trm, k_diag, p_vec
-      character*1  dums
+      character(len=1) :: dums
       dimension  k_diag(*), p_vec(*)
 c!DIR$ ASSUME_ALIGNED k_diag:64, p_vec:64     
       
@@ -1405,7 +1405,7 @@ c
       double precision  dumd
       double precision,
      &          allocatable, dimension (:) :: cof_tmp
-      character*1  dums
+      character(len=1) :: dums
       logical  last_good
       dimension  k_ptrs(*), dstmap(*), dof_eqn_map(*)
 c!DIR$ ASSUME_ALIGNED k_ptrs:32, dstmap:32, dof_eqn_map:32     
@@ -1548,7 +1548,7 @@ c
       double precision  dumd
       double precision,
      &          allocatable, dimension(:) :: cof_tmp
-      character*1  dums
+      character(len=1) :: dums
       logical new_size
       dimension  k_ptrs(*)
 c!DIR$ ASSUME_ALIGNED k_ptrs:32      
@@ -1640,7 +1640,7 @@ c
      &          x, cof
       double precision,
      &          allocatable, dimension (:) :: lagmlt
-      character*1  dums
+      character(len=1) :: dums
       dimension  x(*), cstmap(*)
       data zero / 0.0d00 /
 c!DIR$ ASSUME_ALIGNED x:64
