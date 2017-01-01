@@ -24,7 +24,7 @@ c
      &                      extrap_off_next_step, line_search,
      &                      ls_details, ls_min_step_length,
      &                      ls_max_step_length, ls_rho,
-     &                      ls_slack_tol
+     &                      ls_slack_tol, umat_serial
       use hypre_parameters
       use performance_data
       use distributed_stiffness_data, only : parallel_assembly_allowed,
@@ -33,13 +33,12 @@ c
 c
       implicit integer (a-z)
       include 'common.main'
-      real dumr
-      character dums
-      double precision
-     &  dnum, dumd, zero
-      logical sbflg1, sbflg2, linlst, lstflg, matchs, integr, endcrd,
+      real :: dumr
+      character :: dums
+      double precision ::  dnum, dumd, zero
+      logical :: sbflg1, sbflg2, linlst, lstflg, matchs, integr, endcrd,
      &        true, numd, numr, string, numi, label, msg_flag,
-     &        local_direct_flag, matchs_exact
+     &        local_direct_flag, matchs_exact, match, local_direct
       character (len=50) :: error_string
 c
 c                       locally allocated
@@ -596,7 +595,7 @@ c
       end if
 
       if ( matchs('direct',6)) then
-            solver_mkl_direct = .false.
+            solver_mkl_iterative = .false.
             go to 1150
       end if
 c
@@ -1440,7 +1439,7 @@ c
 c
       implicit integer (a-z)
       real value, zero, one
-      character dums
+      character :: dums
       double precision
      &   dumd
       include 'param_def'
