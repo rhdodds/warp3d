@@ -19,8 +19,8 @@ c
      &                   noheader, out_packet_now )
       implicit integer (a-z)
       include 'common.main'
-      character*8 strlbl(*)
-      character*(*) hedtyp
+      character(len=8) :: strlbl(*)
+      character(len=*) :: hedtyp
       logical long, nodpts, stress, wide, eform, prec,
      &        center_output, geonl, noheader, out_packet_now
 c
