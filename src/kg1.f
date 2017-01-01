@@ -137,7 +137,7 @@ c
          c3  = 2*nnode + enode
 c
          do j = 1, enode
-c         	
+c               
            r1 = j
            k1 = (c1-1)*totdof + r1
 c           
