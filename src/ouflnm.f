@@ -15,8 +15,8 @@ c
       subroutine ouflnm( strtnm, flnam, stepno, use_mpi, myid )
       implicit integer (a-z)
 c      
-      character *4 strtnm
-      character *(*) flnam
+      character(len=4) :: strtnm
+      character(len=*) :: flnam
       logical use_mpi
 c
       step_number = stepno 
