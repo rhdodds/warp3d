@@ -21,9 +21,9 @@ c
       double precision
      &   dumd
       real dumr
-      character*80 name, dums *1
-      character * 8 tname
-      character * 24 mname
+      character :: name*80, dums*1
+      character(len=8) :: tname
+      character(len=24) :: mname
       logical sbflg1,sbflg2,found,defmat,deftyp
       logical matchs,endcrd,true,label, scanms, macrointer
       dimension intlst(mxlsz)
