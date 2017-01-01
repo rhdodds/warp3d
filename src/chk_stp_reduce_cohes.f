@@ -33,7 +33,7 @@ c
      &     new_deff_normalized,  max_del_deff_normalized
       logical not_cut, duml, all_killed, option_exponential,
      &        option_ppr, local_debug
-      character * 1 dums
+      character(len=1) :: dums
       real dumr 
       data two, zero / 2.0, 0.0 /
 c
@@ -199,7 +199,7 @@ c
      &     del_deff(*), max_deff_change, zero, one, point_eight,
      &     ave_del_deff, ratio, perm_load_fact, tfactor, four          
       logical duml, local_debug
-      character * 1 dums
+      character(len=1) :: dums
       real dumr 
       data two, max_factor, min_factor, one, point_eight, zero, four
      &     / 2.0, 1.01, 0.5, 1.0, 0.8, 0.0, 4.0 /
