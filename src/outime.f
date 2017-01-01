@@ -15,7 +15,7 @@ c
       subroutine outime
       implicit integer (a-z)                     
       include 'common.main'              
-      character*30 clctyp
+      character(len=30) :: clctyp
       real t1, wcputime
       external wcputime
 c
