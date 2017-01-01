@@ -324,7 +324,7 @@ c
      &                                   lmean(num_print_list),
      &                                   ext_gurson
       data zero, debug / 0.0, .false. /
-      character *1 mises_char, mean_char
+      character(len=1) :: mises_char, mean_char
 c
 c           check to see if all elements in print list have been killed.
 c           if so, print a message and return
@@ -365,7 +365,7 @@ c
       lmises = .false.
       lmean  = .false.
       do elem_loop = 1, num_print_list
-	 element  = dam_print_list(elem_loop)
+       element  = dam_print_list(elem_loop)
          elem_ptr = dam_ptr(element)
 c
 c             check if element is a killable element and if it has
@@ -396,18 +396,18 @@ c             if the mises stress or mean stress from this step are
 c             lower than the previous step, then put a * by the
 c             value to indicate this state.
 c
-	 if( sig_mises .lt. old_mises(elem_loop) ) then
-	    mises_char = '*'
+       if( sig_mises .lt. old_mises(elem_loop) ) then
+          mises_char = '*'
             lmises(elem_loop)=.true.
          else
-	    mises_char = ' '
+          mises_char = ' '
          end if
 c
-	 if( sig_mean .lt. old_mean(elem_loop) ) then
-	    mean_char = '*'
+       if( sig_mean .lt. old_mean(elem_loop) ) then
+          mean_char = '*'
             lmean(elem_loop)=.true.
          else
-	    mean_char = ' '
+          mean_char = ' '
          end if
 c
 c             if we have porosity greater than the initial porosity,
@@ -453,8 +453,8 @@ c
 c             store mises and mean stresses for this step for comparison
 c             after next step
 c
-	 old_mises(elem_loop) = sig_mises
-	 old_mean(elem_loop)  = sig_mean
+       old_mises(elem_loop) = sig_mises
+       old_mean(elem_loop)  = sig_mean
 c
       end do
 c
@@ -474,7 +474,7 @@ c
 c
 c
       do elem_loop = 1, num_print_list
-	 element  = dam_print_list(elem_loop)
+       element  = dam_print_list(elem_loop)
          elem_ptr = dam_ptr(element)
 c
 c             check if element is a killable element and if it has
