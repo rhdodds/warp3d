@@ -37,7 +37,7 @@ c
       real dumr
       double precision
      &   dumd
-      character dums
+      character :: dums
       logical duml, matchs, endcrd, numd, label, integr
       logical string, packets_requested, all_packets
       integer, dimension(1:max_packet_types,1:2) :: ou_packet_control
@@ -169,7 +169,7 @@ c
       real dumr
       double precision
      &   dumd
-      character dums
+      character :: dums
       logical duml, binary_file_was_open, all_packets
       integer ios,type,num_lines,step,iter,lines_read
       integer output_set,last_step,last_iter
@@ -251,7 +251,7 @@ c
            saved_step = output_set
            last_step = step
            last_iter = iter
-         end if	! step.ne.last_step
+         end if      ! step.ne.last_step
 c
 c                   check to see if the current packet type from the 
 c                   binary packet file should be analyzed.
@@ -443,7 +443,7 @@ c
       real dumr
       double precision
      &   dumd
-      character dums
+      character :: dums
 c
 c         open the text results file
 c
@@ -661,7 +661,7 @@ c
       write(ascii_packet_file_no,9200) 
       return
 c
- 9010 format(6x,i5,7x,f7.4,a3,11x,f4.1,3x,2h<=)
+ 9010 format(6x,i5,7x,f7.4,a3,11x,f4.1,3x,'<=')
  1100 format(
      &  ' >>> CTOA Step Summary for Constant Front:',/,
      &  '        After step: ',i5 )
@@ -696,7 +696,7 @@ c
       integer ios, lines_read, i, node, status, neighbor
       logical connected
       double precision  angle, angle_fract
-      character * 1 marker
+      character(len=1) :: marker
 c
       inquire( unit=ascii_packet_file_no, opened=connected)
       if( .not. connected ) call open_output_file
@@ -729,7 +729,7 @@ c
 c
       write(ascii_packet_file_no,9200) 
       return
- 9010 format(6x,i5,9x,i5,7x,f7.4,a1,11x,f4.1,3x,2h<=)
+ 9010 format(6x,i5,9x,i5,7x,f7.4,a1,11x,f4.1,3x,'<=')
  1100 format(
      & /,' >>> CTOA Step Summary for Non-Constant Front:',
      & /,'        After step: ',i5 )
@@ -1126,7 +1126,7 @@ c
 c
       integer ios, lines_read, elem,i
       double precision cohes(6)
-      character * 3 special_char
+      character(len=3) :: special_char
       logical connected
 c
 c      
@@ -2365,7 +2365,7 @@ CC     &  packet_type,num_lines,step,iter,saved_step
 c
 c Format statements
 c
-c		try to keep the packet header line within 80 characters
+c            try to keep the packet header line within 80 characters
 c
 CC  700 format(/,'packet:',i3,'  num_lines:',i10,'  step:',i8,
 CC     &         '  iter:',i10,'  output_set:',i8)
