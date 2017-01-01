@@ -29,7 +29,7 @@ c
 c
 c                       local declarations
 c 
-      character * 8 cmname
+      character(len=8) :: cmname
       double precision
      &       zero, qn(mxvl,nstr,nstr), small_number, dword, 
      &       umat_props(50),
