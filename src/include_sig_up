@@ -67,7 +67,7 @@ c
        real (h_prec), allocatable :: gama_mid(:,:,:,:)        ! (mxvl,3,3,mxgp)
        real (h_prec), allocatable :: fn(:,:,:)                ! (mxvl,3,3)
        real (h_prec), allocatable :: fn1(:,:,:)               ! (mxvl,3,3)
-       real (h_prec), allocatable :: dfn1(:)	              ! (mxvl)
+       real (h_prec), allocatable :: dfn1(:)                  ! (mxvl)
        real (h_prec), allocatable :: vol_block(:,:,:)         ! (mxvl,8,3) )
        real (h_prec), allocatable :: volume_block(:)          ! (mxvl)
        real (h_prec), allocatable :: volume_block_0(:)        ! (mxvl)
