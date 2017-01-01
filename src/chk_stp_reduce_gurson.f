@@ -32,7 +32,7 @@ c
      &     zero, dumd5, dumd6
       logical not_cut, duml, all_killed, 
      &        no_adaptive_during_force_release
-      character * 1 dums
+      character(len=1) :: dums
       real dumr 
       data two, zero / 2.0, 0.0 /
 c
@@ -151,7 +151,7 @@ c
      &     del_poros(*), max_porosity_change, zero, one, point_eight,
      &     ave_del_poros, ratio, perm_load_fact, tfactor, four          
       logical duml
-      character * 1 dums
+      character(len=1) :: dums
       real dumr 
       data two, max_factor, min_factor, one, point_eight, zero, four
      &     / 2.0, 1.2, 0.8, 1.0, 0.8, 0.0, 4.0 /
@@ -248,7 +248,7 @@ c
      &/,  '             allowed delta-f of:',f7.3,' by more than max',
      &/,  '             ratio factor of:',f5.2,'. Current step size:',
      &                  f7.3,
-     &/,  '             reduced by factor of:',f6.2,' to:'f6.2)
+     &/,  '             reduced by factor of:',f6.2,' to:',f6.2)
 c
  9339 format(
      &/1x,'>>>>> Note: the average delta-f: ',f5.2,' over last 3',
