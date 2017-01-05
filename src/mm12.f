@@ -8,10 +8,12 @@ c
       subroutine mm12( 
      &  step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
-     &  mm_props, e_vec, tan_e_vec, nu_vec, sigyld_vec, 
-     &  n_power_vec, trial_elas_stress_np1, stress_n, stress_np1,
+     &  input_file, model_name,
+     &  stress_n, stress_np1,
      &  deps, history_n, history_np1, killed_list_vec )
+      use iso_c_binding
       implicit none
+      include "neml_interface.f"
 c
 c                   parameter declarations
 c                   ----------------------
@@ -26,11 +28,17 @@ c
 c     
 c     
       double precision
-     & mm_props(mxvl,10), e_vec(mxvl), tan_e_vec(mxvl), nu_vec(mxvl),
-     & sigyld_vec(mxvl), n_power_vec(mxvl), stress_n(mxvl,nstrs), 
+     & stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
-     & trial_elas_stress_np1(mxvl,nstrn), history_n(span,hist_size),
+     & history_n(span,hist_size),
      & history_np1(span,hist_size)
+c
+c
+      character(len=24) :: input_file
+      character(len=24) :: model_name
+      character(len=25,kind=c_char) :: fname
+      character(len=25,kind=c_char) :: mname
+
 c
 c               description of parameters
 c               -------------------------
@@ -53,17 +61,6 @@ c                         no stress-histroy update required
 c (*) cut_step_size_now : set .true. if material model wants immediate
 c                         reduction of global load step size.
 c                         no stress-histroy update required
-c     mm_props          : material parameter values input by user for
-c                         each element in block
-c     e_vec             : Young's modulus for each element in block
-c     tan_e_vec         : constant tangent modulus after yield (may not
-c                         be defined) for each element in block
-c     nu_vec            : Poisson's ratio for each element in block
-c     sigyld_vec        : yield stress for each element in block
-c     n_power_vec       : power-law hardening exponent for each element
-c                         in block (may not be defined)
-c (*) trial_elas_stress_np1 : trial elastic stress vector to be used later by
-c                         consistent tangent routine for model
 c (**)stress_n          : stresses at start of load step (n) for all
 c                         elements in block for this gauss point
 c (*) stress_np1        : stresses at end of load step (n+1) for all
@@ -140,11 +137,11 @@ c                update stresses as just isotropic, linear-elastic
 c
       do i = 1, span
 c
-        c = e_vec(i) / ( ( one + nu_vec(i) ) *
-     &      ( one - two * nu_vec(i) ) )
-        a = c * ( one - nu_vec(i) )
-        b = nu_vec(i) * c
-        shear_mod = e_vec(i) / ( two*(one+nu_vec(i)))
+        c = 1000.0 / ( ( one + 0.3 ) *
+     &      ( one - two * 0.3 ) )
+        a = c * ( one - 0.3 )
+        b = 0.3 * c
+        shear_mod = 1000.0 / ( two*(one+0.3))
 c
         stress_np1(i,1) = stress_n(i,1) + a * deps(i,1) +
      &                    b * deps(i,2) +  b * deps(i,3)
@@ -203,11 +200,9 @@ c *******************************************************************
 c
 c
       subroutine cnst12( 
-     &  span, felem, gpn, first, iter, iout, mxvl, nstrn, 
-     &  weight, e_vec, nu_vec, sigyld_vec, n_power_vec, mm_props, 
-     &  trial_elas_stress, history_n,
-     &  history_np1, stress_np1, dmat, det_jac_block,
-     &  killed_list_vec )
+     &  span, felem, gpn, iter, iout, mxvl, nstrn, 
+     &  weight, history_n,
+     &  history_np1, stress_np1, dmat, det_jac_block)
       implicit none
 c
 c                   parameter declarations
@@ -220,11 +215,9 @@ c
      &   first, killed_list_vec(mxvl)
 c     
       double precision
-     & weight, mm_props(mxvl,5), e_vec(mxvl), nu_vec(mxvl),
-     & trial_elas_stress(mxvl,nstrn), history_n(span,*),
+     & weight, history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
-     & det_jac_block(mxvl), stress_np1(mxvl,nstrn),
-     & sigyld_vec(mxvl), n_power_vec(mxvl)
+     & det_jac_block(mxvl), stress_np1(mxvl,nstrn)
 c
 c
 c
@@ -244,14 +237,6 @@ c     mxvl              : maximum no. elements per block
 c     nstrn             : number of strain-stress components (=6)
 c     span              : number of elements in current block
 c     iout              : write messages to this device number
-c     mm_props          : material parameter values input by user for
-c                         each element in block
-c     e_vec             : Young's modulus for each element in block
-c     nu_vec            : Poisson's ratio for each element in block
-c     sigyld_vec        : yield stress for each element in block
-c     n_power_vec       : power-law hardening exponent
-c (#) trial_elas_stress_np1 : trial elastic stress vector defined by stress
-c                             update routine 
 c     history_n         : history values at start of load step (n) for all
 c                         elements in block for this gauss point
 c     history_np1       : history values at end of load step (n+1) for all
@@ -332,10 +317,10 @@ c
          dmat(i,6,5) = zero
 c
          fact = weight * det_jac_block(i)
-         c1 = (e_vec(i)/((one+nu_vec(i))*(one-two*nu_vec(i))))*fact
-         c2 = (one-nu_vec(i))*c1   
-         c3 = ((one-two*nu_vec(i))/two)*c1
-         c4 = nu_vec(i)*c1
+         c1 = (1000.0/((one+0.3)*(one-two*0.3)))*fact
+         c2 = (one-0.3)*c1   
+         c3 = ((one-two*0.3)/two)*c1
+         c4 = 0.3*c1
 c
          dmat(i,1,1)= c2
          dmat(i,2,2)= c2
@@ -428,10 +413,9 @@ c
        end
 
 
-
 c     ****************************************************************
 c     *                                                              *
-c     *                 subroutine mm12_set_sizes                    *
+c     *                 subroutine mm12_set_sizes_special            *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
@@ -439,6 +423,8 @@ c     *                   last modified: 7/1/12  rhd                 *
 c     *                                                              *
 c     *    called by warp3d for each material model to obtain        *
 c     *    various sizes of data for the model                       *
+c     *                                                              *
+c     *     Used to avoid model call                                 *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -450,6 +436,9 @@ c
 c         1        number of history values per integration 
 c                  point. Abaqus calls these "statev". Values
 c                  double or single precsion based on hardware.
+c
+c                  we require an extra 36 for the tangent 
+c
 c    
 c         2        number of values in the symmetric part of the 
 c                  [D] for each integration point. for solid
@@ -463,10 +452,89 @@ c
 c         4        number of state variables per point to be output
 c                  when user requests this type of results
 c
-      info_vector(1) = 1
+      
+
+
+      info_vector(1) = -1
       info_vector(2) = 21
       info_vector(3) = 0
       info_vector(4) = 0
+c
+      return
+      end
+
+
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm12_set_sizes_special            *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 7/1/12  rhd                 *
+c     *                                                              *
+c     *    called by warp3d for each material model to obtain        *
+c     *    various sizes of data for the model                       *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm12_set_sizes_special( info_vector, input_file,
+     &                  model_name)
+      use iso_c_binding
+      include "neml_interface.f"
+      character(len=24) :: input_file
+      character(len=24) :: model_name
+      character(len=25,kind=c_char) :: fname
+      character(len=25,kind=c_char) :: mname
+      integer :: ier, actual_hist
+      type(c_ptr) :: model
+      dimension info_vector(*)
+c
+c        set infor_data
+c
+c         1        number of history values per integration 
+c                  point. Abaqus calls these "statev". Values
+c                  double or single precsion based on hardware.
+c
+c                  we require an extra 36 for the tangent 
+c
+c    
+c         2        number of values in the symmetric part of the 
+c                  [D] for each integration point. for solid
+c                  elements this is 21, for cohesive elements this 6.
+c
+c         3        = 0, the material model returns "unrotated"
+c                       Cauchy stresses at n+1
+c                  = 1, the material model returns the standard
+c                       Cauchy stresses at n+1
+c
+c         4        number of state variables per point to be output
+c                  when user requests this type of results
+c
+
+c           Setup filenames with NULL terminated strings
+      fname = trim(input_file)//C_NULL_CHAR
+      mname = trim(model_name)//C_NULL_CHAR
+
+c           Get the model
+      model = create_nemlmodel(fname, mname, ier)
+      if (ier .ne. 0) then
+            write(*,*) "Error setting up NEML material model"
+            call die_abort
+      end if
+
+      actual_hist = nstore_nemlmodel(model)
+
+      info_vector(1) = actual_hist + 36
+      info_vector(2) = 21
+      info_vector(3) = 0
+      info_vector(4) = 0
+
+      call destroy_nemlmodel(model, ier)
+      if (ier .ne. 0) then
+            write(*,*) "Error destroying NEML material model"
+            call die_abort
+      end if
 c
       return
       end

@@ -273,6 +273,10 @@ c
           call setup_mm10_rknstr( span, props, lprops, iprops,
      &                            adaptive, local_work )
 c
+        case ( 12 )
+          call setup_mm12_rknstr( span, props, lprops, iprops,
+     &                            adaptive, local_work )
+c
         case default
           write(iout,*) '>>> invalid material model number'
           write(iout,*) '    in rknstr. abort execution'
@@ -1996,6 +2000,55 @@ c
      &            ' Aborting.'/)
       end
 
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine setup_mm12_rknstr               *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified : 01/05/2017 rhd             *
+c     *                                                              *
+c     *     set up material model #12 (NEML call)                    *
+c     *     all we really need is the two strings                    *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine setup_mm12_rknstr( span, props, lprops, iprops,
+     &                              adaptive, local_work )
+      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
+c
+      implicit integer (a-z)
+      include 'param_def'
+c
+c                    parameter declarations
+c
+      real    ::  props(mxelpr,mxvl)
+      logical ::  lprops(mxelpr,mxvl)
+      integer ::  iprops(mxelpr,mxvl)
+      include 'include_sig_up'
+c
+c                    local
+c
+      logical :: adaptive, local_debug
+c
+      local_debug = .false.
+      matnum = local_work%matnum
+c
+c                   The only properties we should need
+      local_work%mm12_input_file = smatprp(140, matnum)
+      local_work%mm12_model_name = smatprp(141, matnum)
+
+c
+c
+c                   determine if material model can call for a
+c                   reduction in the adaptive step size
+c
+      bit_flags = iprops(24,1)
+      local_work%allow_cut = adaptive
+      if ( iand(bit_flags,2) .eq. 0 ) local_work%allow_cut = .false.
+c
+      end
 
 c
 c     ****************************************************************

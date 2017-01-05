@@ -455,6 +455,13 @@ c                small displacement formulation
 c
        call drive_10_update( gpn, props, lprops, iprops,
      &                       local_work, uddt, iout )
+c
+      case ( 12 )
+c
+c                 NEML update
+       call drive_12_update( gpn, props, lprops, iprops,
+     &                       local_work, uddt, iout )
+
 c      
       case default
         write(iout,*) '>>> invalid material model number'
@@ -4668,6 +4675,154 @@ c
 
       end subroutine
 
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_12_update                   *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified : 1/5/2017 rhd               *
+c     *                                                              *
+c     *     drives material model 12: NEML model                     *
+c     *     update stresses and history for all elements in the      *
+c     *     for gauss point gpn                                      *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine drive_12_update( gpn, props, lprops, iprops,
+     &                            local_work, uddt_displ, iout )
+      use segmental_curves, only : max_seg_points
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use main_data, only : extrapolated_du, non_zero_imposed_du
+c
+      implicit none
+      include 'param_def'
+c
+c                      parameter declarations
+c
+      real ::    props(mxelpr,*)   ! all same but read only
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      integer :: gpn, iout
+      double precision ::  uddt_displ(mxvl,nstr)
+      include 'include_sig_up'
+c
+c                       locally defined variables
+c
+      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+     &           iter, now_blk, mat_type, number_points, curve_set,
+     &           hist_size_for_blk, curve_type, elem_type, i
+c
+      double precision ::
+     &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
+     &  zero, gp_alpha,  uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6), weight, dj(128)
+c
+      logical :: geonl, local_debug, temperatures, segmental,
+     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           adaptive_possible, cut_step_size_now
+c
+      data zero / 0.0d0 /
+      local_debug = .false.
+c
+      dtime             = local_work%dt
+      span              = local_work%span
+      felem             = local_work%felem
+      step              = local_work%step
+      iter              = local_work%iter
+      now_blk           = local_work%blk
+      type              = local_work%elem_type
+      order             = local_work%int_order
+      ndof              = local_work%num_enode_dof
+      geonl             = local_work%geo_non_flg
+      nnode             = local_work%num_enodes
+      mat_type          = local_work%mat_type
+      signal_flag       = local_work%signal_flag
+      temperatures      = local_work%temperatures
+      temperatures_ref  = local_work%temperatures_ref
+      hist_size_for_blk = local_work%hist_size_for_blk
+      fgm_enode_props   = local_work%fgm_enode_props
+      adaptive_possible = local_work%allow_cut    
+c
+      if( local_debug ) then
+        write(iout,9000) felem, gpn, span
+        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
+     &                   iter, now_blk, mat_type,
+     &                   temperatures, temperatures_ref,
+     &                   fgm_enode_props, hist_size_for_blk 
+      end if
+c
+c           get increment of temperature at gauss point for elements
+c           in the block, the temperature at end of step and the
+c           reference temperature.
+c
+      call gauss_pt_temps(
+     &        local_work%dtemps_node_blk, gpn, type, span, order,
+     &        nnode, gp_dtemps, local_work%temps_node_blk,
+     &        gp_temps, temperatures, local_work%temps_node_to_process,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        gp_rtemps )
+c
+c            subtract out the thermal strain increment from uddt (the
+c            strain increment for step)
+c
+      uddt_temps = zero
+      if ( temperatures ) then
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    gp_dtemps,
+     &                    gp_temps, gp_rtemps, local_work%alpha_vec )
+      end if
+c
+
+      uddt = uddt_displ + uddt_temps
+      cep  = zero
+c      
+!DIR$ LOOP COUNT MAX=128  
+      do i = 1, span
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+c      
+       cut_step_size_now = .false.
+       call mm12( step, iter, felem, gpn, mxvl,  hist_size_for_blk,
+     &           nstrs, nstr, span, iout,
+     &           signal_flag, adaptive_possible, cut_step_size_now,
+     &           local_work%mm12_input_file,
+     &           local_work%mm12_model_name,
+     &           local_work%urcs_blk_n(1,1,gpn),
+     &           local_work%urcs_blk_n1(1,1,gpn),
+     &           uddt, local_work%elem_hist(1,1,gpn),
+     &           local_work%elem_hist1(1,1,gpn) )
+       local_work%material_cut_step = cut_step_size_now
+       if( cut_step_size_now ) return
+c
+c          save the [D] matrices (lower-triangle)
+c
+
+      if( local_debug ) write(iout,9080)
+c      
+      return
+c
+ 9000 format(1x,'.... debug mm09. felem, gpn, span: ',i7,i3,i3)             
+ 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
+     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
+     &     /,10x,'...temperatures, temperatures_ref: ',
+     &               2l2,
+     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
+     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
+     &    l3,i4 ) 
+ 9610 format(' >> rate iterations to converge: ',i3 )
+ 9020 format(10x,'...fgm properties determined...')             
+ 9030 format(10x,'...temperatures computed at integration point...')             
+ 9040 format(10x,'...temperatures dependent properties computed...')             
+ 9050 format(10x,'...thermal strains computed...') 
+ 9060 format(10x,'...update stresses nonlinear procedure...' )            
+ 9070 format(10x,'...update stresses use linear [D]...' )            
+ 9080 format(10x,'...[D]s saved to global structure...')
+
+
+      end subroutine
+c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -4686,13 +4841,14 @@ c
 c
       subroutine material_model_info( element_no, block_no, info_type,
      &                                 value )
+      use main_data, only: smatprp
       implicit integer (a-z)
       include 'common.main'
 c
 c                      local data
 c
       integer :: info_vector(10)
-      integer :: inter_mat
+      integer :: inter_mat, matnum
       logical :: is_inter_dmg
 c
       is_inter_dmg = .false.
@@ -4746,6 +4902,8 @@ c
       end if
 c
       mat_type = iprops(25,local_element_no)
+      matnum   = iprops(38,local_element_no)
+
 c
 c              See if we're actually a interface-damaged model
 c
@@ -4775,6 +4933,9 @@ c
         call mm09_set_sizes( info_vector )
       case(10 )
         call mm10_set_sizes_special( info_vector, local_element_no )
+      case(12 )
+        call mm12_set_sizes_special( info_vector,
+     &      smatprp(140, matnum), smatprp(141, matnum))
       case default
         write(out,9000) 4
         call die_gracefully

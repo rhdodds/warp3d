@@ -251,6 +251,15 @@ c
                 elestr(i,11,gpn) = urcs_blk_n(i,9,gpn)
               end do
            end do
+c
+      case (12 )
+c
+c                       NEML model
+c
+           do gpn = 1, ngp
+             call oumm12( gpn, mxvl, span, iout, elestr(1,1,gpn),
+     &                    urcs_blk_n(1,1,gpn), elem_hist(1,1,gpn) ) 
+           end do
  
       case default
 c

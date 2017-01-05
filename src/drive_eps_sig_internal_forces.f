@@ -1514,6 +1514,13 @@ c
         if ( local_debug) write(out,9990)
 c
 c
+      case ( 12 )
+c
+c
+        if ( local_debug ) write(out,9999)
+c
+c
+c
       case default
           write(out,*) '>>> invalid material model number'
           write(out,*) '    in dupstr_blocked'
@@ -1538,6 +1545,7 @@ c
  9970 format(12x,'>> gather data for model type 7...' )
  9980 format(12x,'>> gather data for model type 8...' )
  9990 format(12x,'>> gather data for model type 10...' )
+ 9999 format(12x,'>> gather data for model type 12...' )
 c
       end
 c     ****************************************************************

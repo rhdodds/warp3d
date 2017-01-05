@@ -158,6 +158,8 @@ c
         call drive_umat_cnst( gpn, local_iout, local_work )
       case (10 )
         call drive_10_cnst( gpn, local_iout, local_work )
+      case (12 )
+        call drive_12_cnst( gpn, local_iout, local_work )
       case default
           write(local_iout,9500)
           call die_abort
@@ -963,6 +965,44 @@ c     &            local_work%sv, local_work%lv, local_work%tv, iout)
 c
       return
       end
+
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine drive_12_cnst                *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified :  1/5/2017 mcm              *
+c     *                                                              *
+c     *                      NEML                                    *                                                                        *
+c     ****************************************************************
+c
+      subroutine drive_12_cnst( gpn, iout, local_work )
+c
+      implicit none
+      include 'param_def'
+      include 'include_tan_ek'
+c
+c                     parameter declarations
+c
+      integer :: gpn, iout, span, felem, iter
+c
+      span             = local_work%span
+      felem            = local_work%felem
+      iter             = local_work%iter
+c
+       call cnst12( span, felem, gpn, iter, iout, mxvl, nstr,
+     &            local_work%weights(gpn),
+     &            local_work%elem_hist(1,1,gpn),
+     &            local_work%elem_hist1(1,1,gpn),
+     &            local_work%urcs_blk_n1(1,1,gpn),
+     &            local_work%cep(1,1,1),
+     &            local_work%det_jac_block(1,gpn))
+c
+      return
+c
+      end
+
 c
 c     ****************************************************************
 c     *                                                              *

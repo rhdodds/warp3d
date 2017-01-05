@@ -565,7 +565,7 @@ c     ==========================
 c
         continue
 c
-      case( 10, 11 )
+      case( 10, 11, 12 )
 c     ==================
 c
 c           gather history data at n+1. has the [D] matrices

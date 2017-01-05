@@ -1002,6 +1002,9 @@ c
       case ( 11 )
          call mm11_set_sizes( info_vector )
          nstates = info_vector(4)
+      case ( 12 )
+         call mm12_set_sizes( info_vector )
+         nstates = info_vector(4)
       case default
            write(out,9000) warp3d_matl
            call die_abort

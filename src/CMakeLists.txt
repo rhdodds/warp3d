@@ -250,5 +250,6 @@ list(APPEND main
       )
 
 add_executable(${EXE_NAME} ${main})
-target_link_libraries(${EXE_NAME} ${MKL_LIBRARIES} ${MPI_Fortran_LIBRARIES} ${HYPRE_LIBRARIES})
+target_link_libraries(${EXE_NAME} ${NEML_LIBRARIES}
+      ${MKL_LIBRARIES} ${MPI_Fortran_LIBRARIES} ${HYPRE_LIBRARIES})
 

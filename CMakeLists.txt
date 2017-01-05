@@ -24,6 +24,7 @@ endif()
 # Configuration options: MPI and Hypre
 option(USE_MPI "Compile the hybrid MPI/OpenMP version" OFF)
 option(USE_HYPRE "Compile with the Hypre AMG solver" OFF)
+option(USE_NEML "Include the NEML material library" OFF)
 
 if(USE_MPI)
       find_package(MPI REQUIRED)
@@ -44,6 +45,12 @@ if(USE_HYPRE)
       find_package(HYPRE REQUIRED)
       include_directories(${HYPRE_INCLUDE_DIRS})
       add_definitions(-DUSE_HYPRE)
+endif()
+
+if(USE_NEML)
+      set(NEML_LIBRARY_PATH "/home/messner/projects/neml/lib" CACHE STRING "")
+      set(NEML_LIBRARIES "-L${NEML_LIBRARY_PATH} -lneml")
+      add_definitions(-DUSE_NEML)
 endif()
 
 # Force the preprocessor for all fortran files
