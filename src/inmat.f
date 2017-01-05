@@ -1923,6 +1923,45 @@ c
                         call scan()
                         smatprp(141,matnum) = filen
                   end if
+            elseif ( matchs('alphaxy',7) ) then
+                  if( .not. numr(matprp(29,matnum)) ) then
+                     call errmsg(5,dum,'alphaxy',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .true.
+            elseif ( matchs('alphayz',7) ) then
+                  if( .not. numr(matprp(30,matnum)) ) then
+                     call errmsg(5,dum,'alphayz',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .true.
+            elseif ( matchs('alphaxz',7) ) then
+                  if( .not. numr(matprp(31,matnum)) ) then
+                     call errmsg(5,dum,'alphaxz',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .true.
+            elseif ( matchs('alphax',6)  ) then
+                  if( .not. numr(matprp(26,matnum)) ) then
+                     call errmsg(5,dum,'alphax',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .true.
+            elseif ( matchs('alphay',6)  ) then
+                  if( .not. numr(matprp(27,matnum)) ) then
+                     call errmsg(5,dum,'alphay',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .true.
+            elseif ( matchs('alphaz',6)  ) then
+                  if( .not. numr(matprp(28,matnum)) ) then
+                     call errmsg(5,dum,'alphaz',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .true.
+            elseif ( matchs('alpha',5)   ) then
+                  if( .not. numr(matprp(6,matnum)) ) then
+                     call errmsg(5,dum,'alpha',dumr,dumd)
+                  end if
+                  lmtprp(25,matnum) = .false.
+            elseif ( matchs_exact('rho') ) then
+                  if(.not.numr(matprp(7,matnum))) then
+                     call errmsg(5,dum,'rho',dumr,dumd)
+                  end if
             elseif ( endcrd(dum) ) then
                   reading = .false.
                   cycle

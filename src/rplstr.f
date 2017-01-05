@@ -73,9 +73,12 @@ c
       if( iter .gt. 0 .and. geonl ) 
      &      call rp_scstr( local_work%rot_blk_n1, 
      &               rot_n1_blocks(blk)%ptr(1), ngp, 9, span )
-c
+c           
+c           MCM: this needs to change...
       save_history_1 = process_hist .and. iter > 0
-      save_history_2 = mat_type .eq. 10 ! [D] is hidden in history ...
+      save_history_2 = (mat_type .eq. 10) .or. 
+     &                 (mat_type .eq. 11) .or.
+     &                 (mat_type .eq. 12) ! [D] is hidden in history ...
       if( save_history_1  .or.  save_history_2 ) then
         hist_size = history_blk_list(blk)
         call rp_scstr_history( local_work%elem_hist1(1,1,1),

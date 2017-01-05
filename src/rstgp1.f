@@ -225,6 +225,13 @@ c
       call drive_10_update( gpn, props, lprops, iprops,
      &                       local_work, uddt, iout)
 c
+      case ( 12 )
+c
+c           NEML
+c
+      call drive_12_update( gpn, props, lprops, iprops,
+     &                        local_work, uddt, iout)
+c
       case default
         write(iout,*) '>>> invalid material model number'
         write(iout,*) '    in rstgp1'
@@ -496,6 +503,7 @@ c
         if ( local_debug ) write (iout,9500) internal_energy
       end if
 c
+
       return
 c
  9500 format('  Internal energy inside of (rstgp1) = ',e16.6)
@@ -4717,7 +4725,9 @@ c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero, gp_alpha,  uddt_temps(mxvl,nstr),
-     &  uddt(mxvl,nstr), cep(mxvl,6,6), weight, dj(128)
+     &  uddt(mxvl,nstr), cep(mxvl,6,6), weight, dj(128),
+     &  time_n, time_np1, temp_n(mxvl), strain_n(mxvl,nstr),
+     &  strain_np1(mxvl,nstr), temp_n_0(mxvl)
 c
       logical :: geonl, local_debug, temperatures, segmental,
      &           temperatures_ref, fgm_enode_props, signal_flag,
@@ -4745,13 +4755,6 @@ c
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut    
 c
-      if( local_debug ) then
-        write(iout,9000) felem, gpn, span
-        write(iout,9010) dtime, type, order, nnode, ndof, geonl, step, 
-     &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_ref,
-     &                   fgm_enode_props, hist_size_for_blk 
-      end if
 c
 c           get increment of temperature at gauss point for elements
 c           in the block, the temperature at end of step and the
@@ -4778,48 +4781,37 @@ c
       uddt = uddt_displ + uddt_temps
       cep  = zero
 c      
-!DIR$ LOOP COUNT MAX=128  
-      do i = 1, span
-       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
-      end do
-c      
+      time_n            = local_work%time_n
+      time_np1          = time_n + dtime
+      temp_n            = gp_temps(1:span) - gp_dtemps(1:span)
+      temp_n_0          = temp_n(1:span) - gp_rtemps(1:span)
+      
+      ! gp_temps stores temp_np1
+
+      ! I think strain_n stores the mechanical strains at n
+
+      ! uddt is definitely the increment in the mechanical strain
+      strain_np1(1:span,1:6) = local_work%strain_n(1:span,1:6,gpn) +
+     &      uddt(1:span,1:6)
+      
+
        cut_step_size_now = .false.
        call mm12( step, iter, felem, gpn, mxvl,  hist_size_for_blk,
      &           nstrs, nstr, span, iout,
      &           signal_flag, adaptive_possible, cut_step_size_now,
      &           local_work%mm12_input_file,
      &           local_work%mm12_model_name,
+     &           time_n, time_np1,
+     &           temp_n, gp_temps,
+     &           local_work%strain_n(1,1,gpn),
+     &           strain_np1,
      &           local_work%urcs_blk_n(1,1,gpn),
      &           local_work%urcs_blk_n1(1,1,gpn),
-     &           uddt, local_work%elem_hist(1,1,gpn),
+     &           local_work%elem_hist(1,1,gpn),
      &           local_work%elem_hist1(1,1,gpn) )
        local_work%material_cut_step = cut_step_size_now
-       if( cut_step_size_now ) return
-c
-c          save the [D] matrices (lower-triangle)
-c
-
-      if( local_debug ) write(iout,9080)
 c      
       return
-c
- 9000 format(1x,'.... debug mm09. felem, gpn, span: ',i7,i3,i3)             
- 9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
-     &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_ref: ',
-     &               2l2,
-     &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
-     &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
-     &    l3,i4 ) 
- 9610 format(' >> rate iterations to converge: ',i3 )
- 9020 format(10x,'...fgm properties determined...')             
- 9030 format(10x,'...temperatures computed at integration point...')             
- 9040 format(10x,'...temperatures dependent properties computed...')             
- 9050 format(10x,'...thermal strains computed...') 
- 9060 format(10x,'...update stresses nonlinear procedure...' )            
- 9070 format(10x,'...update stresses use linear [D]...' )            
- 9080 format(10x,'...[D]s saved to global structure...')
-
 
       end subroutine
 c

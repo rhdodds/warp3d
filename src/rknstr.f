@@ -152,7 +152,6 @@ c
      &                                  local_work )
         if ( local_work%material_cut_step ) return
       end do
-
 c
 c           For CP model, calculate the gradient of the elastic
 c           rotations at the element level by linear curve fit.

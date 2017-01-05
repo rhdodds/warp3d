@@ -9,8 +9,9 @@ c
      &  step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
      &  input_file, model_name,
-     &  stress_n, stress_np1,
-     &  deps, history_n, history_np1, killed_list_vec )
+     &  time_n, time_np1, temp_n, temp_np1,
+     &  strain_n, strain_np1, stress_n, stress_np1,
+     &  hist_n, hist_np1)
       use iso_c_binding
       implicit none
       include "neml_interface.f"
@@ -30,14 +31,18 @@ c
       double precision
      & stress_n(mxvl,nstrs), 
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
-     & history_n(span,hist_size),
-     & history_np1(span,hist_size)
+     & time_n, time_np1, temp_n(mxvl), temp_np1(mxvl),
+     & strain_n(mxvl,nstrs), strain_np1(mxvl,nstrs),
+     & hist_n(span,hist_size),
+     & hist_np1(span,hist_size)
 c
 c
       character(len=24) :: input_file
       character(len=24) :: model_name
       character(len=25,kind=c_char) :: fname
       character(len=25,kind=c_char) :: mname
+      type(c_ptr) :: model
+
 
 c
 c               description of parameters
@@ -60,24 +65,29 @@ c                         immediate reduction of global load step size.
 c                         no stress-histroy update required
 c (*) cut_step_size_now : set .true. if material model wants immediate
 c                         reduction of global load step size.
-c                         no stress-histroy update required
+c                         no stress-history update required
+c     input_file        : XML file defining models
+c     model_name        : name of model in XML file
+c     time_n            : previous time
+c     time_np1          : next time
+c     temp_n            : previous temperatures
+c     temp_np1          : next temperatures
+c     strain_n          : previous mechanical strains
+c     strain_np1        : next mechanical strains
 c (**)stress_n          : stresses at start of load step (n) for all
 c                         elements in block for this gauss point
 c (*) stress_np1        : stresses at end of load step (n+1) for all
 c                         elements in block for this gauss point
-c     deps              : current estimate of strain increment over the
-c                         load step (minus increment of thermal strain)
-c (**)history_n         : history values at start of load step (n) for all
+c (**)hist_n            : history values at start of load step (n) for all
 c                         elements in block for this gauss point
-c (*) history_np1       : history values at end of load step (n+1) for all
+c (*) hist_np1          : history values at end of load step (n+1) for all
 c                         elements in block for this gauss point
-c     killed_list_vec   : .true. if this element has been previously killed
-c                         by crack growth operations
+
 c     
 c    (*)  values to be updated by this material model
 c    (**) needs to be initialized on step 1
 c     
-c
+c   Input ordering, standard Voigt notation:
 c
 c   strain ordering:
 c     deps-xx, deps-yy, deps-zz, gamma-xy, gamma-yz, gamma-xz
@@ -94,102 +104,135 @@ c     (8) total plastic work density
 c     (9) total plastic strain 
 c
 c
-c
-c                   local variables
-c                   ---------------
-c     
-      integer i    
-      logical local_debug
-      double precision
-     &     shear_mod, c, a, zero, one, two, b, delastic,
-     &     half
-      data zero, one, two, half / 0.0d00, 1.0d00, 2.0d00, 0.5d00 /
-      data local_debug / .false. /
+c   NEML ordering, Mandel notation:
+c     xx yy zz sqrt(2) yz sqrt(2) xz sqrt(2) xy
 c
 c
-      if ( local_debug ) then
-         write(iout,*) '... inside mm12 ...'
-         write(iout,9000) step, iter, felem, gpn, mxvl, hist_size,
-     &                    nstrs, nstrn, span, signal_flag,
-     &                    adaptive_possible, cut_step_size_now
-         do i = 1, span
-          write(iout,9010)  felem+i-1, deps(i,1:6)
-         end do
+c   Also need to:
+c     1) store tangent in the first 36 slots in hist_np1
+c     2) initialize history on step 1
+c     3) transpose the row major tangent
+c
+c   Remember we're doing this on a block
+c
+c     Locals
+      integer :: i, j, k, ier, nhist, nstore
+      double precision :: l_stress_n(6), l_stress_np1(6), l_strain_n(6),
+     &                    l_strain_np1(6), l_tangent(6,6),
+     &                    l_full_tangent(6,6)
+      double precision, allocatable, dimension(:) :: l_hist_n,
+     &                                               l_hist_np1
+      double precision :: l_temp_n, l_temp_np1, l_time_n, l_time_np1
+      double precision :: vm_mult_s(6), vm_mult_e(6)
+      integer :: vm_map(6)
+      
+c     Convert over our strings
+      fname = trim(input_file)//C_NULL_CHAR
+      mname = trim(model_name)//C_NULL_CHAR
+
+c      Get the model
+      model = create_nemlmodel(fname, mname, ier)
+      if (ier .ne. 0) then
+            write(*,*) "Error setting up NEML material model"
+            call die_abort
       end if
-c
-c                initialize stresses on step 1
-c        
-      if ( step .eq. 1 ) then
-        do i = 1, span
-          stress_n(i,1) = zero
-          stress_n(i,2) = zero
-          stress_n(i,3) = zero
-          stress_n(i,4) = zero
-          stress_n(i,5) = zero
-          stress_n(i,6) = zero
-          stress_n(i,7) = zero
-          stress_n(i,8) = zero
-          stress_n(i,9) = zero
-        end do
+
+c     Setup history sizes
+      nhist = nstore_nemlmodel(model)
+      nstore = nhist + 36
+
+      allocate(l_hist_n(nhist))
+      allocate(l_hist_np1(nhist))
+
+c     Setup the Voigt -> Mandel map
+      do i=1,3
+            vm_map(i) = i
+            vm_mult_s(i) = 1.0
+            vm_mult_e(i) = 1.0
+      end do
+      vm_map(4) = 5
+      vm_mult_s(4) = sqrt(2.0)
+      vm_mult_e(4) = sqrt(2.0)/2.0
+
+      vm_map(5) = 6
+      vm_mult_s(5) = sqrt(2.0)
+      vm_mult_e(5) = sqrt(2.0)/2.0
+
+      vm_map(6) = 4
+      vm_mult_s(6) = sqrt(2.0)
+      vm_mult_e(6) = sqrt(2.0)/2.0
+
+c      For each entry in the block
+      do i=1,span
+            ! Read into our local structures
+            l_temp_n   = temp_n(i)
+            l_temp_np1 = temp_np1(i)
+            do j=1,6
+                  l_stress_n(j) = stress_n(i,vm_map(j)) * vm_mult_s(j)
+                  l_strain_n(j) = strain_n(i,vm_map(j)) * vm_mult_e(j)
+                  l_strain_np1(j) = strain_np1(i,vm_map(j)) 
+     &                  * vm_mult_e(j)
+            end do
+
+            l_hist_n = hist_n(i,37:nstore)
+            
+            ! If the first step, initialize history and stress
+            if (step .eq. 1) then
+                  l_stress_n(1:6) = 0.0
+                  call init_store_nemlmodel(model, l_hist_n, ier)
+                  ! Check for error
+                  if (ier .ne. 0) then
+                        write(*,*) "Error setting up NEML history"
+                        call destroy_nemlmodel(model, ier)
+                        deallocate(l_hist_n)
+                        deallocate(l_hist_np1)
+                        call die_abort
+                  end if
+                  
+                  ! Not sure if this is actually necessary
+                  stress_n(i,1:6) = l_stress_n ! zeros
+                  hist_n(i,37:nstore) = l_hist_n
+            end if
+
+            ! Call the update
+            call update_sd_nemlmodel(model, l_strain_np1, l_strain_n,
+     &            l_temp_np1, l_temp_n, time_np1, time_n, l_stress_np1,
+     &            l_stress_n, l_hist_np1, l_hist_n, l_tangent, ier)
+            if (ier .ne. 0) then
+                  write(*,*) "Error updating NEML material"
+                  call destroy_nemlmodel(model, ier)
+                  deallocate(l_hist_n)
+                  deallocate(l_hist_np1)
+                  call die_abort
+            end if
+
+            ! Store the updated quantities
+            do j=1,6
+                  stress_np1(i,vm_map(j)) = l_stress_np1(j) /
+     &                  vm_mult_s(j)
+                  do k=1,6
+                        l_full_tangent(vm_map(j),vm_map(k)) = 
+     &                        l_tangent(j,k) / (vm_mult_e(k) * 
+     &                        vm_mult_s(j))
+                  end do
+            end do
+            l_full_tangent = transpose(l_full_tangent)
+            hist_np1(i,1:36) = reshape(l_full_tangent, (/36/))
+            hist_np1(i,37:nstore) = l_hist_np1
+      end do
+
+
+      ! Deallocate
+      deallocate(l_hist_n)
+      deallocate(l_hist_np1)
+      call destroy_nemlmodel(model, ier)
+      if (ier .ne. 0) then
+            write(*,*) "Error destroying NEML model"
+            call die_abort
       end if
-c
-c                update stresses as just isotropic, linear-elastic
-c
-      do i = 1, span
-c
-        c = 1000.0 / ( ( one + 0.3 ) *
-     &      ( one - two * 0.3 ) )
-        a = c * ( one - 0.3 )
-        b = 0.3 * c
-        shear_mod = 1000.0 / ( two*(one+0.3))
-c
-        stress_np1(i,1) = stress_n(i,1) + a * deps(i,1) +
-     &                    b * deps(i,2) +  b * deps(i,3)
-        stress_np1(i,2) = stress_n(i,2) + a * deps(i,2) +
-     &                    b * deps(i,1) +  b * deps(i,3)
-        stress_np1(i,3) = stress_n(i,3) + a * deps(i,3) +
-     &                    b * deps(i,1) +  b * deps(i,2)
-        stress_np1(i,4) = stress_n(i,4) + shear_mod * deps(i,4)
-        stress_np1(i,5) = stress_n(i,5) + shear_mod * deps(i,5)
-        stress_np1(i,6) = stress_n(i,6) + shear_mod * deps(i,6)
-c
-      end do
-c
-c                update energy densities
-c
-      do i = 1, span
-         delastic =
-     &  half * ( stress_np1(i,1) + stress_n(i,1) ) *  deps(i,1) +
-     &  half * ( stress_np1(i,2) + stress_n(i,2) ) *  deps(i,2) +
-     &  half * ( stress_np1(i,3) + stress_n(i,3) ) *  deps(i,3) +
-     &  half * ( stress_np1(i,4) + stress_n(i,4) ) *  deps(i,4) +
-     &  half * ( stress_np1(i,5) + stress_n(i,5) ) *  deps(i,5) +
-     &  half * ( stress_np1(i,6) + stress_n(i,6) ) *  deps(i,6) 
-        stress_np1(i,7) = stress_n(i,7) +  delastic
-        stress_np1(i,8) = zero
-        stress_np1(i,9) = zero
-      end do
-
-
-      if ( local_debug ) then
-         write(iout,*) '... updated stresses'
-         do i = 1, span
-          write(iout,9020) felem+i-1, stress_np1(i,1:7)
-         end do
-      end if 
-
-      return
-c
- 9000 format(/,10x,'step, iter, felem, gpn:         ',4i8,
-     &       /,10x,'mxvl, hist_size, nstrs:         ',3i8,
-     &       /,10x,'nstrn, span:                    ',2i8,
-     &       /,10x,'signal_flag, adaptive_possible: ',2l3,
-     &       /,10x,'cut_step_size_now:              ',l3,/)
- 9010 format(5x,i5,6f10.6)
- 9020 format(5x,i5,7f10.3)
        
        
-       end
+      end
 
 
 c *******************************************************************
@@ -237,42 +280,21 @@ c     mxvl              : maximum no. elements per block
 c     nstrn             : number of strain-stress components (=6)
 c     span              : number of elements in current block
 c     iout              : write messages to this device number
+c     weight            : integration point weight factor
 c     history_n         : history values at start of load step (n) for all
 c                         elements in block for this gauss point
 c     history_np1       : history values at end of load step (n+1) for all
 c                         elements in block for this gauss point
 c     det_jac_block     : |J| at this gauss point for each element in
 c                         block
-c (!) stress_np1        : current estimate of 6 stress components for
-c                         end of step (see ordering below)
-c     weight            : integration point weight factor
 c (*) dmat              : 6x6 (symmetric) tangent (consistent) for
 c                         this gauss point for each element of block
 c                         (see stress ordering below) 
 c     
 c    (*)  values to be updated by this material model
-c    (!)  for finite strain computations, these are unrotated
-c         Cauchy stresses
-c    (#)  used by constitutive update procedures based on some
-c         for of elastic predictor - return mapping algorithm.
-c         the contents of this array are set by the corresponding
-c         stress update routine for the model. for finite
-c         strain computations, the contents will be unrotated
-c         Cauchy stress terms of some form as set by the stress
-c         update routine.
 c
-c   Finite strain issues:
-c     this constitutive model only sees stresses that have already
-c     been rotation "neutralized" by WARP3D. this routine can
-c     thus operate simply as "small strain" theory. WARP3D will
-c     "rotate" the compute [D] matrices on return for finite strain-
-c     rotation effects. 
 c      
-c   strain ordering:
-c     deps-xx, deps-yy, deps-zz, gamma-xy, gamma-yz, gamma-xz
-c
-c   stress ordering (at n and n+1):
-c     sig-xx, sig-yy, sig-zz, tau-xy, tau-yz, tau-xz
+c     All we need to do is move tangent from history_np1 -> right spots
 c   
 c
 c   Note: warp3d expects all dmat[] values to be multiplied by
@@ -284,68 +306,15 @@ c                   local variables
 c                   ---------------
 c     
       integer i    
-      logical debug
-      double precision
-     &     c1, c2, c3, c4, fact, zero, one, two
-      data zero,one,two / 0.0d00, 1.0d00, 2.0d00 /
 c
-
       do i = 1, span
-         dmat(i,1,4) = zero
-         dmat(i,1,5) = zero
-         dmat(i,1,6) = zero
-         dmat(i,2,4) = zero
-         dmat(i,2,5) = zero
-         dmat(i,2,6) = zero
-         dmat(i,3,4) = zero
-         dmat(i,3,5) = zero
-         dmat(i,3,6) = zero
-         dmat(i,4,1) = zero
-         dmat(i,4,2) = zero
-         dmat(i,4,3) = zero
-         dmat(i,4,5) = zero
-         dmat(i,4,6) = zero
-         dmat(i,5,1) = zero
-         dmat(i,5,2) = zero
-         dmat(i,5,3) = zero
-         dmat(i,5,4) = zero
-         dmat(i,5,6) = zero
-         dmat(i,6,1) = zero
-         dmat(i,6,2) = zero
-         dmat(i,6,3) = zero
-         dmat(i,6,4) = zero
-         dmat(i,6,5) = zero
-c
-         fact = weight * det_jac_block(i)
-         c1 = (1000.0/((one+0.3)*(one-two*0.3)))*fact
-         c2 = (one-0.3)*c1   
-         c3 = ((one-two*0.3)/two)*c1
-         c4 = 0.3*c1
-c
-         dmat(i,1,1)= c2
-         dmat(i,2,2)= c2
-         dmat(i,3,3)= c2
-         dmat(i,4,4)= c3
-         dmat(i,5,5)= c3
-         dmat(i,6,6)= c3
-         dmat(i,1,2)= c4
-         dmat(i,1,3)= c4
-         dmat(i,2,1)= c4
-         dmat(i,3,1)= c4
-         dmat(i,2,3)= c4
-         dmat(i,3,2)= c4
-c
+            dmat(i,1:6,1:6) = reshape(history_np1(i,1:36), (/6,6/)) * 
+     &            weight * det_jac_block(i)
       end do
-c
-      debug = .false.
-      if( debug .and. felem .eq. 1 .and. gpn .eq. 5 ) then
-       write(iout,*) '... stresses at n+1, element 1, gp 5...'
-       write(iout,9100) stress_np1(1,1:6)
-      end if
+
 c
       return
- 9100 format(3x,6f10.3)
-      end
+      end subroutine
 c
 c *******************************************************************
 c *                                                                 *
@@ -453,8 +422,7 @@ c         4        number of state variables per point to be output
 c                  when user requests this type of results
 c
       
-
-
+      
       info_vector(1) = -1
       info_vector(2) = 21
       info_vector(3) = 0
