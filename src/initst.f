@@ -182,7 +182,8 @@ c
       material_model_names(8)(1:) = "umat"     
       material_model_names(9)(1:) = "not_used"     
       material_model_names(10)(1:) = "crystal_plasticity"     
-      material_model_names(11)(1:) = "interface_damage"   
+      material_model_names(11)(1:) = "interface_damage"  
+      material_model_names(12)(1:) = "neml_model"
 c
       cp_matls_present = -1 
 c      
@@ -879,6 +880,8 @@ c
        m = 8
       case( "crystal", "CP", "cp", "crystal_plasticity" )
        m = 10
+      case( "neml", "neml_model" )
+       m = 12
       case default
          write(*,9000) material_model_id
         call die_abort

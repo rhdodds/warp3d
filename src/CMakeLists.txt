@@ -118,6 +118,7 @@ list(APPEND main
       "mm10_e.f"
       "mm10_f.f"
       "mm11.f"
+      "mm12.f"
       "mmnoopt.f"
       "mod_adaptive_steps.f" 
       "mod_contact.f" 

@@ -274,6 +274,8 @@ c                      131-- nfail ("")
 c                       132-- macro_sz
 c                       133-- cp_sz
 c
+c                      140-- STRING NEML XML file
+c                      141-- STRING NEML model name
 c
 c                      151-200 -- Abaqus compatible UMAT
 c                              151 - um_1
@@ -515,6 +517,7 @@ c
          if( matchs_exact( 'um_50') ) go to 1110
          if( matchs_exact('CP')     ) go to 2000
          if( matchs_exact( 'interface_damage')) go to 2100
+         if( matchs_exact('neml')) go to 2200
 c
       if ( matchs(',',1) ) go to 215
 
@@ -1394,6 +1397,18 @@ c
       call inmat_inter( matnum)
       go to 9998
 c
+
+c ***********************************************************************
+c *                                                                     *     
+c *         input to NEML material model                                *
+c *                                                                     *
+c ***********************************************************************
+c
+ 2200 continue
+      matprp(9, matnum) = 12
+      call inmat_neml(matnum)
+      go to 9998
+
  9800 format('>>>> FATAL ERROR: in inmat @',i3,
      &    /, '                  job aborted.'//)
 
@@ -1856,6 +1871,75 @@ c
 
       return
       end subroutine
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine inmat_neml                   *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified : 1/05/17                    *
+c     *                                                              *
+c     *     input properties for using a NEML model                  *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine inmat_neml(matnum)
+      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
+      implicit integer (a-z)
+      include 'common.main'
+      integer, intent(in) :: matnum
+      character :: dums, lab*24, filen*24
+      logical :: reading
+      logical, external :: matchs_exact, isstring, label, numr, numd,
+     &                     matchs, numi, endcrd 
+
+      reading = .true.
+      do while (reading)
+            if ( matchs_exact('input_file')) then
+                  call doscan()
+                  if (.not. isstring()) then
+                        call errmsg(363,dumi,dums,dumr,dumd)
+                  else
+                        filen = ' '
+                        call entits(filen,nc)
+                        if (nc .gt. 24) then
+                              call errmsg(365,dumi,dums,dumr,dumd)
+                        end if
+                        call scan()
+                        smatprp(140,matnum) = filen
+                  end if
+            elseif ( matchs_exact('model_name')) then
+                  call doscan()
+                  if (.not. isstring()) then
+                        call errmsg(363,dumi,dums,dumr,dumd)
+                  else
+                        filen = ' '
+                        call entits(filen,nc)
+                        if (nc .gt. 24) then
+                              call errmsg(365,dumi,dums,dumr,dumd)
+                        end if
+                        call scan()
+                        smatprp(141,matnum) = filen
+                  end if
+            elseif ( endcrd(dum) ) then
+                  reading = .false.
+                  cycle
+            elseif ( matchs(',',1) ) then
+                  call readsc()
+            else
+                  call entits(lab,nc)
+                  call errmsg(355,dumi,lab(1:nc),dumr,dumd)
+                  call scan()
+                  cycle
+                  end if
+            end do      
+      
+      return
+
+      end subroutine
+
 
 c
 c     ****************************************************************
