@@ -2037,7 +2037,14 @@ c
 c                   The only properties we should need
       local_work%mm12_input_file = smatprp(140, matnum)
       local_work%mm12_model_name = smatprp(141, matnum)
-
+      do i = 1, span
+        local_work%alpha_vec(i,1) = props(9,i)
+        local_work%alpha_vec(i,2) = props(13,i)
+        local_work%alpha_vec(i,3) = props(34,i)
+        local_work%alpha_vec(i,4) = props(35,i)
+        local_work%alpha_vec(i,5) = props(36,i)
+        local_work%alpha_vec(i,6) = props(37,i)
+      end do
 c
 c
 c                   determine if material model can call for a

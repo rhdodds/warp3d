@@ -232,13 +232,25 @@ c
       end if
 c
       if( geonl ) then  ! add tans([G]) M [G] to [Ke]
-        call kgstiff( span, cp, icp, local_work%gama_block(1,1,1,gpn),
-     &            local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &            local_work%nzeta(1,gpn), nnode,
-     &            local_work%cs_blk_n1,
-     &            local_work%det_jac_block(1,gpn), 
-     &            weight, local_work%ek_full, local_work%ek_symm,
-     &            local_work%vol_block, bbar, totdof )
+        if (asymmetric_assembly) then
+          call kgstiff( span, cp, icp, local_work%gama_block(1,1,1,gpn),
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn), nnode,
+     &              local_work%cs_blk_n1,
+     &              local_work%det_jac_block(1,gpn), 
+     &              weight, local_work%ek_full, local_work%ek_symm,
+     &              local_work%vol_block, bbar, totdof )
+        else ! Entirely pointless, but local_work%ek_full isn't defined
+             ! in this case so -check complains.  It is technically
+             ! correct (the best kind of correct)
+          call kgstiff( span, cp, icp, local_work%gama_block(1,1,1,gpn),
+     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &              local_work%nzeta(1,gpn), nnode,
+     &              local_work%cs_blk_n1,
+     &              local_work%det_jac_block(1,gpn), 
+     &              weight, 0, local_work%ek_symm,
+     &              local_work%vol_block, bbar, totdof )
+        end if
       end if
 c
       return
