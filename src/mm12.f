@@ -212,8 +212,8 @@ c      For each entry in the block
      &                  vm_mult_s(j)
                   do k=1,6
                         l_full_tangent(vm_map(j),vm_map(k)) = 
-     &                        l_tangent(j,k) / (vm_mult_e(k) * 
-     &                        vm_mult_s(j))
+     &                        l_tangent(j,k)  * vm_mult_e(k) / 
+     &                        vm_mult_s(j)
                   end do
             end do
             l_full_tangent = transpose(l_full_tangent)
