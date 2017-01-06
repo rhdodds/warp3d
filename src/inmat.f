@@ -1886,7 +1886,10 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine inmat_neml(matnum)
-      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
+      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp,
+     &            type_external_models, alloc_external_models, 
+     &            external_models
+      use iso_c_binding
       implicit integer (a-z)
       include 'common.main'
       integer, intent(in) :: matnum
@@ -1973,8 +1976,15 @@ c
                   call scan()
                   cycle
                   end if
-            end do      
-      
+            end do   
+c
+c           Now attempt to setup the model
+c
+            call mm12_setup_model(smatprp(140,matnum),
+     &            smatprp(141,matnum), type_external_models(matnum),
+     &            alloc_external_models(matnum),
+     &            external_models(matnum))
+
       return
 
       end subroutine

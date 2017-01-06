@@ -8,7 +8,7 @@ c
       subroutine mm12( 
      &  step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
-     &  input_file, model_name,
+     &  model_ptr,
      &  time_n, time_np1, temp_n, temp_np1,
      &  strain_n, strain_np1, stress_n, stress_np1,
      &  hist_n, hist_np1)
@@ -37,11 +37,7 @@ c
      & hist_np1(span,hist_size)
 c
 c
-      character(len=24) :: input_file
-      character(len=24) :: model_name
-      character(len=25,kind=c_char) :: fname
-      character(len=25,kind=c_char) :: mname
-      type(c_ptr) :: model
+      type(c_ptr) :: model_ptr
 
 
 c
@@ -66,8 +62,7 @@ c                         no stress-histroy update required
 c (*) cut_step_size_now : set .true. if material model wants immediate
 c                         reduction of global load step size.
 c                         no stress-history update required
-c     input_file        : XML file defining models
-c     model_name        : name of model in XML file
+c     model_ptr         : pointer to external model
 c     time_n            : previous time
 c     time_np1          : next time
 c     temp_n            : previous temperatures
@@ -125,20 +120,9 @@ c     Locals
       double precision :: l_temp_n, l_temp_np1, l_time_n, l_time_np1
       double precision :: vm_mult_s(6), vm_mult_e(6)
       integer :: vm_map(6)
-      
-c     Convert over our strings
-      fname = trim(input_file)//C_NULL_CHAR
-      mname = trim(model_name)//C_NULL_CHAR
-
-c      Get the model
-      model = create_nemlmodel(fname, mname, ier)
-      if (ier .ne. 0) then
-            write(*,*) "Error setting up NEML material model"
-            call die_abort
-      end if
 
 c     Setup history sizes
-      nhist = nstore_nemlmodel(model)
+      nhist = nstore_nemlmodel(model_ptr)
       nstore = nhist + 36
 
       allocate(l_hist_n(nhist))
@@ -179,11 +163,11 @@ c      For each entry in the block
             ! If the first step, initialize history and stress
             if (step .eq. 1) then
                   l_stress_n(1:6) = 0.0
-                  call init_store_nemlmodel(model, l_hist_n, ier)
+                  call init_store_nemlmodel(model_ptr, l_hist_n, ier)
                   ! Check for error
                   if (ier .ne. 0) then
                         write(*,*) "Error setting up NEML history"
-                        call destroy_nemlmodel(model, ier)
+                        call destroy_nemlmodel(model_ptr, ier)
                         deallocate(l_hist_n)
                         deallocate(l_hist_np1)
                         call die_abort
@@ -195,12 +179,13 @@ c      For each entry in the block
             end if
 
             ! Call the update
-            call update_sd_nemlmodel(model, l_strain_np1, l_strain_n,
+            call update_sd_nemlmodel(model_ptr, l_strain_np1, 
+     &            l_strain_n,
      &            l_temp_np1, l_temp_n, time_np1, time_n, l_stress_np1,
      &            l_stress_n, l_hist_np1, l_hist_n, l_tangent, ier)
             if (ier .ne. 0) then
                   write(*,*) "Error updating NEML material"
-                  call destroy_nemlmodel(model, ier)
+                  call destroy_nemlmodel(model_ptr, ier)
                   deallocate(l_hist_n)
                   deallocate(l_hist_np1)
                   call die_abort
@@ -225,12 +210,6 @@ c      For each entry in the block
       ! Deallocate
       deallocate(l_hist_n)
       deallocate(l_hist_np1)
-      call destroy_nemlmodel(model, ier)
-      if (ier .ne. 0) then
-            write(*,*) "Error destroying NEML model"
-            call die_abort
-      end if
-       
        
       end
 
@@ -446,16 +425,11 @@ c     *    various sizes of data for the model                       *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm12_set_sizes_special( info_vector, input_file,
-     &                  model_name)
+      subroutine mm12_set_sizes_special( info_vector, model_ptr)
       use iso_c_binding
       include "neml_interface.f"
-      character(len=24) :: input_file
-      character(len=24) :: model_name
-      character(len=25,kind=c_char) :: fname
-      character(len=25,kind=c_char) :: mname
       integer :: ier, actual_hist
-      type(c_ptr) :: model
+      type(c_ptr) :: model, model_ptr ! Actual compiler error, pad 
       dimension info_vector(*)
 c
 c        set infor_data
@@ -479,30 +453,13 @@ c
 c         4        number of state variables per point to be output
 c                  when user requests this type of results
 c
-
-c           Setup filenames with NULL terminated strings
-      fname = trim(input_file)//C_NULL_CHAR
-      mname = trim(model_name)//C_NULL_CHAR
-
-c           Get the model
-      model = create_nemlmodel(fname, mname, ier)
-      if (ier .ne. 0) then
-            write(*,*) "Error setting up NEML material model"
-            call die_abort
-      end if
-
-      actual_hist = nstore_nemlmodel(model)
+      actual_hist = nstore_nemlmodel(model_ptr)
 
       info_vector(1) = actual_hist + 36
       info_vector(2) = 21
       info_vector(3) = 0
       info_vector(4) = 0
 
-      call destroy_nemlmodel(model, ier)
-      if (ier .ne. 0) then
-            write(*,*) "Error destroying NEML material model"
-            call die_abort
-      end if
 c
       return
       end
@@ -572,3 +529,96 @@ c
       return
       end
 
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm12_setup_model                  *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *               last modified : 1/06/2017 (mcm)                *
+c
+c           Setup an mm12 material model by storing a pointer in
+c           the correct data structure.
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm12_setup_model(input_file, model_name,
+     &            itype, success, ptr)
+            use iso_c_binding
+            implicit none
+            include "neml_interface.f"
+            character(len=24), intent(in) :: input_file
+            character(len=24), intent(in) :: model_name
+
+            integer, intent(out) :: itype
+            logical, intent(out) :: success
+            type(c_ptr), intent(out) :: ptr
+c
+            character(len=25,kind=c_char) :: fname
+            character(len=25,kind=c_char) :: mname
+            integer :: ier
+c
+            ! Trim strings and add null-termination
+            fname = trim(input_file)//C_NULL_CHAR
+            mname = trim(model_name)//C_NULL_CHAR
+            
+            ! Get the model
+            ptr = create_nemlmodel(fname, mname, ier)
+            if (ier .ne. 0) then
+                  write(*,*) "Error setting up NEML material model"
+                  itype = -1
+                  success = .false.
+                  call die_abort
+            end if
+
+            ! Set the information values
+            itype = 0
+            success = .true.
+
+            return
+
+      end subroutine
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm12_cleanup_model                *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *               last modified : 1/06/2017 (mcm)                *
+c
+c           clean up an allocated mm12 model
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm12_cleanup_model(itype, success, ptr)
+            use iso_c_binding
+            implicit none
+            include "neml_interface.f"
+c
+            integer, intent(inout) :: itype
+            logical, intent(inout) :: success
+            type(c_ptr), intent(in) :: ptr
+c
+            integer :: ier
+c
+            if (itype .ne. 0) then
+                  write(*,*) "Invalid external model in mm12!"
+                  call die_abort
+            end if
+c
+            if (.not. success) then
+                  write(*,*) "Model already dealloced in mm12!"
+                  return
+            end if
+c           
+            call destroy_nemlmodel(ptr, ier)
+            if (ier .ne. 0) then
+                  write(*,*) "Error destroying NEML material model"
+                  call die_abort
+            end if
+c
+            success = .false.
+            itype = -1
+c
+      end subroutine

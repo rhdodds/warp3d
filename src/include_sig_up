@@ -193,9 +193,6 @@ c     Added stuff for CP
       integer, allocatable :: angle_type(:)                   ! mxvl
       integer, allocatable :: angle_convention(:)             ! mxvl
       type(crystal_properties), allocatable :: c_props(:,:)   ! mxvl,max_crystals
-      
-      character(len=24) :: mm12_input_file
-      character(len=24) :: mm12_model_name
 c
       end type
 c

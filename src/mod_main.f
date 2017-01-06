@@ -16,6 +16,8 @@ c
 c
       module main_data
 
+      use iso_c_binding
+
       logical :: windows_os, linux_os, osx_os
 c
 c
@@ -339,6 +341,18 @@ c                 options for states results on usual output cmd
 c
       integer :: output_states_type_opt1, output_states_type_opt2
 c
+c
+c           Things for external material models
+c
+c           type = -1: invalid
+c           type =  0: NEML
+c
+c           lengths are mxmat and must be consistent!
+c           currently, mxmat = 500
+c
+      integer, dimension(500) :: type_external_models
+      logical, dimension(500) :: alloc_external_models
+      type(c_ptr), dimension(500) :: external_models
 
       end module     
       

@@ -4702,7 +4702,8 @@ c
      &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du, non_zero_imposed_du,
+     &                  external_models
 c
       implicit none
       include 'param_def'
@@ -4720,7 +4721,8 @@ c                       locally defined variables
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
      &           iter, now_blk, mat_type, number_points, curve_set,
-     &           hist_size_for_blk, curve_type, elem_type, i
+     &           hist_size_for_blk, curve_type, elem_type, i,
+     &           matnum
 c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
@@ -4753,7 +4755,8 @@ c
       temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
-      adaptive_possible = local_work%allow_cut    
+      adaptive_possible = local_work%allow_cut   
+      matnum            = local_work%matnum
 c
 c
 c           get increment of temperature at gauss point for elements
@@ -4799,8 +4802,7 @@ c
        call mm12( step, iter, felem, gpn, mxvl,  hist_size_for_blk,
      &           nstrs, nstr, span, iout,
      &           signal_flag, adaptive_possible, cut_step_size_now,
-     &           local_work%mm12_input_file,
-     &           local_work%mm12_model_name,
+     &           external_models(matnum), 
      &           time_n, time_np1,
      &           temp_n, gp_temps,
      &           local_work%strain_n(1,1,gpn),
@@ -4833,7 +4835,8 @@ c
 c
       subroutine material_model_info( element_no, block_no, info_type,
      &                                 value )
-      use main_data, only: smatprp
+      use main_data, only: smatprp, type_external_models,
+     &      external_models
       implicit integer (a-z)
       include 'common.main'
 c
@@ -4927,7 +4930,7 @@ c
         call mm10_set_sizes_special( info_vector, local_element_no )
       case(12 )
         call mm12_set_sizes_special( info_vector,
-     &      smatprp(140, matnum), smatprp(141, matnum))
+     &            external_models(matnum))
       case default
         write(out,9000) 4
         call die_gracefully

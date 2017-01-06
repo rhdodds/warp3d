@@ -75,7 +75,7 @@ if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
       # Optimized build
       set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -no-inline-factor -ftz -ip -xHOST")
       # Debug build
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -check all,noarg_temp_created")
+      set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -check all,noarg_temp_created -fpe0")
 else()
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -m64")
       # Please note the manual override to the Intel threading library

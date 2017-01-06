@@ -39,7 +39,9 @@ c
      &                      creep_model_used, extrapolate,
      &                      extrap_off_next_step, line_search,
      &                      ls_details, ls_min_step_length, 
-     &                      ls_max_step_length, ls_rho, ls_slack_tol
+     &                      ls_max_step_length, ls_rho, ls_slack_tol,
+     &                      type_external_models, alloc_external_models,
+     &                      external_models
 c
       
       use stiffness_data
@@ -702,6 +704,12 @@ c                       numbers for the "output commands file ...
 c                       steps ..."  bit list is allocated as needed
 c      
       output_command_file(1:) = " "
+c
+c                       initialize external material model arrays
+c                       to represent non-allocated, invalid models
+c
+      type_external_models = -1
+      alloc_external_models = .false.
 c
       return
 c

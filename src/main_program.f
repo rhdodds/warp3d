@@ -1147,7 +1147,8 @@ c
       subroutine warp3d_normal_stop
       
       use file_info
-      use main_data, only : output_packets
+      use main_data, only : output_packets, type_external_models,
+     &      alloc_external_models, external_models
       use performance_data, only : time_assembly, assembly_total,
      &            ntimes_assembly
       implicit integer (a-z)
@@ -1175,6 +1176,25 @@ c
 c                       cleanup some allocs first
 c
       call cleanup_crystal
+c
+c           This should be its own little function...
+c
+      do i = 1, mxmat
+        if (alloc_external_models(i)) then
+          select case(type_external_models(i))
+            case (0)
+              call mm12_cleanup_model(type_external_models(i),
+     &                  alloc_external_models(i),
+     &                  external_models(i))
+
+            case default
+              write(out,*) "Unknown external model type!"
+              call die_abort
+              stop
+          end select
+        end if
+      end do
+
 c
       call outime
       if( time_assembly ) then
