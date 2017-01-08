@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: December 28, 2016
+#   Last modifications: January 5, 2016
 #
 #   Description:
 #
@@ -77,11 +77,13 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 INCLUDES := common.main param_def include_mm10 include_sig_up include_tan_ek \
             include_usr_parm 
 #
-#                Libraries to include at link time.
+#                MKL libraries to include at link time. Needed MPI
+#                library for CPardiso set by invoking makefile.
 #
 LIBMKL =  -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core \
-          -lmkl_intel_thread -lpthread -lm
-LIBS = $(LIBMKL)  $(HYLIB)
+          -lmkl_intel_thread -lpthread -lm  
+#
+LIBS = $(LIBMKL) $(LIBMPI)  $(HYLIB)
 #
 #                all *.o files for linking.  module files are listed 
 #                first for readability. try to keep ordering alphabetic
@@ -147,11 +149,11 @@ OBJ =	 \
 	$(OD)/dielem_a.o	 \
 	$(OD)/dielem_b.o	 \
 	$(OD)/dielem_c.o	 \
-	$(OD)/direct_driver_sparse.o	 \
-	$(OD)/direct_sparse_mkl.o	 \
 	$(OD)/diexp4.o	 \
 	$(OD)/dptstf.o	 \
 	$(OD)/drive_eps_sig_internal_forces.o	 \
+	$(OD)/drive_assemble_solve.o	 \
+	$(OD)/drive_pardiso.o	 \
 	$(OD)/dupmas.o	 \
 	$(OD)/dupstr.o	 \
 	$(OD)/elmas1.o	 \

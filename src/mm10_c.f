@@ -16,17 +16,18 @@ c
      &                        ivec1, ivec2, stress, tt, fail, faili,
      &                        failr, gaspt, dtinc, rjac)
 c
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
-c234567890123456
+c
 c              parameters
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, np0
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
       logical :: fail
@@ -521,7 +522,7 @@ c
      *                  ldr,rwork,lrwork,
      *                  rcdwrk,icdwrk,qrwork,qrwsiz,solve_work,
      *                  outopt,xp,fp,gp,njcnt,nfcnt,iter,termcd)
-
+      use iso_Fortran_env
       use mm10_defs
       integer n,jacflg(5),maxit,njcnt,nfcnt,iter,termcd,method
       integer global,xscalm,ldr,lrwork,qrwsiz
@@ -852,6 +853,7 @@ c     ****************************************************************
 
       subroutine mm10_fjac( solve_work, rjac, ldr, x, n )
 c      
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c      
@@ -910,14 +912,15 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_fvec( solve_work, x, fz, n, j )
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c      
       include 'include_mm10'
       type(mm10_working_data) :: solve_work
 c      
+      integer :: n, j
       double precision, dimension(n) :: x, fz
-      integer :: n,j
 c!DIR$ ASSUME_ALIGNED x:64, fz:64
 c
       if( solve_work%solvfnc == 1 ) then
@@ -956,16 +959,19 @@ c     ****************************************************************
 c
       subroutine mm10_fveci( solve_work, x, fz, n, j )
 c
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
+c      
+      integer :: n, j
+      complex(kind=real64), dimension(n) :: x, fz
+
       include 'include_mm10'
       type(mm10_working_data) :: solve_work
-      double complex, dimension(n) :: x, fz
-      integer :: n,j
 c
       integer :: length
-      double complex, dimension (solve_work%props%num_hard) :: x2i !  was dimension(n-6) :: x2i
+      complex(kind=real64), dimension (solve_work%props%num_hard) :: x2i !  was dimension(n-6) :: x2i
       double precision, dimension(solve_work%props%num_hard) :: zero2 ! was dimension(n-6) :: zero2
 c!DIR$ ASSUME_ALIGNED x:64, fz:64
       if( solve_work%solvfnc == 1 ) then
@@ -1607,7 +1613,7 @@ c                                        0 no error
 c                                       >0 error in nwnstp (singular ...)
 c
 c-----------------------------------------------------------------------
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n,iter, njcnt, ierr,priter
       integer jacflg(5),xscalm,qrwsiz
@@ -1776,7 +1782,7 @@ c            copy lower triangular R to upper triangular
      *                  rcdwrk,icdwrk,qrwork,qrwsiz,epsm,
      *                  solve_work,outopt,xp,fp,gp,njcnt,nfcnt,iter,
      *                  termcd)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n,termcd,njcnt,nfcnt,iter
       integer maxit,jacflg(5),global,xscalm,qrwsiz
@@ -2257,7 +2263,7 @@ c      call mm10_nwsnot(1,ierr,rcond)
 
       subroutine mm10_nwclsh0(n,xc,fcnorm,d,g,stepmx,xtol,scalex,
      *             solve_work,xp,fp,fpnorm,xw,retcd,gcnt,priter,iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer n,retcd,gcnt
       double precision  stepmx,xtol,fcnorm,fpnorm
@@ -2440,7 +2446,7 @@ c                          downward opening parabola ==> leftmost is solution
      *                  delta,qtf,scalex,solve_work,d,xprev,
      *                  ssd,v,wa,fprev,xp,fp,fpnorm,retcd,gcnt,
      *                  priter,iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr, n, retcd, gcnt, priter, iter
       double precision  fcnorm, stepmx, xtol, fpnorm, delta
@@ -2689,7 +2695,7 @@ c        calculate convex combination of ssd and eta*dn with length delta
       subroutine mm10_nwglsh(n,xc,fcnorm,d,g,sigma,stepmx,xtol,scalex,
      *                  solve_work,xp,fp,fpnorm,xw,retcd,gcnt,priter,
      *                      iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer n,retcd,gcnt
       double precision  sigma,stepmx,xtol,fcnorm,fpnorm
@@ -2841,7 +2847,7 @@ c            write(*,*) 'lambda', lambda
      *                  delta,qtf,scalex,solve_work,d,xprev,
      *                  ssd,v,wa,fprev,xp,fp,fpnorm,retcd,gcnt,
      *                  priter,iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr, n, retcd, gcnt, priter, iter
       double precision  fcnorm, stepmx, xtol, fpnorm, delta
@@ -3103,7 +3109,7 @@ c                                        0 no error
 c                                       >0 error in nwnstp (singular ...)
 c
 c-----------------------------------------------------------------------
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n,iter, njcnt, ierr
       integer jacflg(5),xscalm,qrwsiz,priter
@@ -3275,7 +3281,7 @@ c            copy lower triangular Rjac to upper triangular
      *                  rcdwrk,icdwrk,qrwork,qrwsiz,epsm,
      *                  solve_work,outopt,xp,fp,gp,njcnt,nfcnt,iter,
      *                  termcd)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n,termcd,njcnt,nfcnt,iter
       integer maxit,jacflg(5),global,xscalm,qrwsiz
@@ -3547,7 +3553,7 @@ c           update xc, fc, and fcnorm
      *                  delta,qtf,scalex,solve_work,d,xprev,
      *                  ssd,v,wa,fprev,xp,fp,fpnorm,retcd,gcnt,
      *                  priter,iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr, n, retcd, gcnt, priter, iter
       double precision  fcnorm, stepmx, xtol, fpnorm, delta
@@ -3770,7 +3776,7 @@ c        calculate convex combination of ssd and dn with length delta
 
       subroutine mm10_nwpure(n,xc,d,stepmx,scalex,solve_work,
      *                  xp,fp,fpnorm,xw,retcd,gcnt,priter,iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer n,retcd,gcnt
       double precision  stepmx,fpnorm
@@ -3854,7 +3860,7 @@ c     evaluate functions and the objective function at xp
 
       subroutine mm10_nwqlsh(n,xc,fcnorm,d,g,stepmx,xtol,scalex,
      *           solve_work,xp,fp,fpnorm,xw,retcd,gcnt,priter,iter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer n,retcd,gcnt
       double precision  stepmx,xtol,fcnorm,fpnorm
@@ -4275,7 +4281,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_chkjac1(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
      & solve_work,termcd)
-
+      use iso_Fortran_env
       use mm10_defs
       integer lda,n,termcd
       double precision  A(lda,*),xc(*),fc(*)
@@ -4388,7 +4394,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_chkjac2(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
      *                   solve_work,termcd,dsub,dsuper)
-
+      use iso_Fortran_env
       use mm10_defs
       integer lda,n,termcd,dsub,dsuper
       double precision  A(lda,*),xc(*),fc(*)
@@ -4499,7 +4505,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_chkjaci(A,lda,xc,fc,n,epsm,scalex,fz,wa,xw,
      & solve_work,termcd)
-
+      use iso_Fortran_env
       use mm10_defs
       integer lda,n,termcd
       double precision  A(lda,*),xc(*),fc(*)
@@ -4534,9 +4540,9 @@ c-------------------------------------------------------------------------
       integer i,j,errcnt
       double precision  ndigit,p,h,xcj,dinf
       double precision, dimension(n) :: zeroN
-      double complex, dimension(n) :: xwc, fzc
+      complex(kind=real64), dimension(n) :: xwc, fzc
       double precision  tol
-      double complex  mm10_rnudifi
+      complex(kind=real64)  mm10_rnudifi
       integer idamax
 
       integer MAXERR
@@ -4545,7 +4551,7 @@ c-------------------------------------------------------------------------
       double precision Rquart, Rten
       parameter(Rquart=0.25d0, Rten=10.0d0)
 
-      double complex :: i1
+      complex(kind=real64) :: i1
       i1 = (0.d0, 1.d0)
 
       zeroN = 0.d0
@@ -4622,7 +4628,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_chkjac(A,lda,xc,fc,n,epsm,jacflg,scalex,fz,wa,xw,
      *                  solve_work,termcd)
-
+      use iso_Fortran_env
       use mm10_defs
       integer lda,n,termcd,jacflg(5)
       double precision  A(lda,*),xc(*),fc(*)
@@ -4682,6 +4688,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_fdjac0(xc,fc,n,epsm,solve_work,fz,rjac,ldr)
 
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n
       double precision  epsm
@@ -4750,7 +4757,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_fdjac2(xc,fc,n,epsm,solve_work,fz,rjac,ldr,dsub,
      *                  dsuper,w,xstep)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n,dsub,dsuper
       double precision  epsm
@@ -4921,8 +4928,9 @@ c-------------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
       function mm10_rnudifi(x, y)
-      double complex x, y
-      double complex mm10_rnudifi
+      use iso_Fortran_env
+      complex(kind=real64) x, y
+      complex(kind=real64) mm10_rnudifi
 
 c-------------------------------------------------------------------------
 c
@@ -5047,7 +5055,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_nwfjac(x,scalex,f,fq,n,epsm,jacflg,solve_work,
      *                  rjac,ldr,xw,w,xstep,priter)
-
+      use iso_Fortran_env
       use mm10_defs
       integer ldr,n,jacflg(5), priter
       double precision  epsm
@@ -5306,9 +5314,9 @@ c-------------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
       subroutine mm10_vunsci(n,x,sx)
-
+      use iso_Fortran_env
       integer n
-      double complex  x(*)
+      complex(kind=real64)  x(*)
       double precision  sx(*)
 
 c-------------------------------------------------------------------------
@@ -5335,7 +5343,7 @@ c-------------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
       subroutine mm10_nwfvec(x,n,scalex,solve_work,f,fnorm,xw)
-
+      use iso_Fortran_env
       use mm10_defs
       integer n
       double precision  x(*),xw(*),scalex(*),f(*),fnorm
@@ -5601,7 +5609,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
       subroutine mm10_copy_work(solve_work,solve_work1)
-
+      use iso_Fortran_env
       use mm10_defs
       implicit none
       include 'include_mm10'

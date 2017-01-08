@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/17/2016 rhd             *
+c     *                   last modified : 1/6/2016 rhd               *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -31,30 +31,29 @@ c
      &                                       initial_map_type,
      &                                       final_map_type
 c
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
+c
+      logical :: sbflg1, sbflg2
+c
+      integer :: intlst(mxlsz), dum, lenlst, param, i,testyp, nc, idum,
+     &           errnum, trctyp, ncerror 
       real :: dumr
-      character :: dums
-      double precision ::  dnum, dumd, zero
-      logical :: sbflg1, sbflg2, linlst, lstflg, matchs, integr, endcrd,
-     &        true, numd, numr, string, numi, label, msg_flag,
-     &        local_direct_flag, matchs_exact, match, local_direct
+      double precision ::  dnum, dumd
+      double precision, parameter :: zero = 0.0d00
+      logical :: linlst, lstflg, msg_flag, local_direct_flag,
+     &           local_direct
+      logical, external :: matchs, integr, endcrd, true, numd, numr,
+     &                     string, numi, label, matchs_exact, match
+      character(len=1) :: dums
       character (len=50) :: error_string
-c
-c                       locally allocated
-c
-      dimension intlst(mxlsz)
-      data zero /0.0d00/
-c
 c
       msg_flag = .true.
 c
 c                       if sub flag 1 is on, indypm has been re-
 c                       entered and the last command was in error.
 c
-      if( sbflg1 ) then
-         call errmsg(92,dum,dums,dumr,dumd)
-      end if
+      if( sbflg1 ) call errmsg(92,dum,dums,dumr,dumd)
 c
 c                       set flag indicating that the dynamic analysis
 c                       parameters have changed.
@@ -599,7 +598,13 @@ c
             go to 1150
       end if
 c
-      if (matchs('hypre',5) ) solver_flag = 9
+      if( matchs('hypre',5) ) solver_flag = 9
+c
+      if( matchs('cluster',4) ) then
+        solver_flag = 10
+        if( asymmetric_assembly ) solver_flag = 11
+        solver_mkl_iterative = .false.
+      end if      
 c
  1150 continue
       if( solver_flag .eq. 0 ) then

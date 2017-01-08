@@ -1032,6 +1032,7 @@ c
       subroutine mm10_solve_crystal( props, np1, n, cut, iout, fat,
      &                               gp, p_strain_ten_c, 
      &                               iter_0_extrapolate_off )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       use main_data, only: asymmetric_assembly
@@ -1051,7 +1052,7 @@ c
       integer :: nrJmat, ncJmat
       double precision :: vec1(max_uhard), vec2(max_uhard)
       double precision, dimension(max_uhard,max_uhard) :: arr1,arr2
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       double precision, allocatable :: Jmat(:,:)
       logical :: no_load
 
@@ -1201,9 +1202,9 @@ c
       subroutine mm10_invasym( A, n )
       implicit none    
 c      
-      double precision, intent(inout), dimension(n,n) :: A
       integer, intent(in) :: n
-c
+      double precision, intent(inout), dimension(n,n) :: A
+
       integer :: info, lwork
       integer, allocatable :: ipivt(:)
       double precision, allocatable :: work(:)
@@ -1246,7 +1247,7 @@ c
 c
       double precision, dimension(3,3), intent(out) :: r
       double precision :: a, b, c, psi, theta, phi
-!dir$ assume_aligned angles:64, r:64      
+c!DIR$ ASSUME_ALIGNED angles:64, r:64      
 c
       a = angles(1)
       b = angles(2)
@@ -1309,8 +1310,8 @@ c
       subroutine mm10_invsym( A, n )
       implicit none
 c      
-      double precision, intent(inout), dimension(n,n) :: A
       integer, intent(in) :: n
+      double precision, intent(inout), dimension(n,n) :: A
 c
       integer :: i, j, info, lwork
       integer, allocatable :: ipiv(:)
@@ -2569,6 +2570,7 @@ c
      &                             arr2, ivec1, ivec2, fail, gp,
      &                             iter_0_extrapolate_off,
      &                             no_load, Jmat, nrJmat, ncJmat )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -2578,11 +2580,11 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
 c
-      integer :: gp       
-      logical :: fail, iter_0_extrapolate_off, no_load, nrJmat, ncJmat
+      integer :: gp, nrJmat, ncJmat
+      logical :: fail, iter_0_extrapolate_off, no_load
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       double precision :: Jmat(nrJmat,ncJmat)
 c
 c              locals
@@ -2794,6 +2796,7 @@ c
       subroutine mm10_solve( props, np1, n, vec1, vec2, arr1, arr2,
      &                       ivec1, ivec2, stress, tt, fail, faili,
      &                       failr, gp, dtinc, J, nrJ, ncJ )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -2808,7 +2811,7 @@ c
       double precision :: stress(6), tt(props%num_hard), failr(10)
       double precision, dimension(max_uhard) :: vec1,vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       double precision :: J(nrJ,ncJ)
 c
       logical :: fail

@@ -1459,12 +1459,12 @@ c          parameters
 c
       integer :: iter, step, solver_flag, iout, nodof 
       logical :: first_solve, use_mpi, show_details
-      double precision ::
-     &  du(nodof), idu(nodof)            
+      double precision :: du(nodof), idu(nodof)            
 c
 c          locals
 c
-      logical :: hypre, not_hypre, no_extrapolation, new_pre_cond
+      logical :: hypre, not_hypre, no_extrapolation, new_pre_cond,
+     &           cpardiso, pardiso
 c
 c          solve for the change in the displacements for this iteration.
 c          use either the Pardiso threaded solver (direct or iterative)
@@ -1488,16 +1488,28 @@ c          performed a triangulation yet for the load step. first_solve
 c          is just local to this routine.
 c
       hypre      = solver_flag .eq. 9
+      pardiso    = solver_flag .eq. 7  .or.  solver_flag .eq. 8
+      cpardiso   = solver_flag .eq. 10  .or.  solver_flag .eq. 11
       not_hypre = .not. hypre
 c
 c          MPI:
-c            1) hypre - just solve
-c            2) Pardiso - we still allow MPI + Pardiso. Workers
-c               perform element level computations. We bring 
-c               [Ke]s back to root for assembly & solve.
-c               Put MPI procs to sleep while Pardiso runs.
+c            1) hypre -
+c                  just solve using all mpi ranks + threads
+c                  assembly on ranks or root
+c            2) pardiso (threads only) -
+c                   we still allow MPI + usual
+c                   threaded pardiso. Workers
+c                   perform element level computations. We bring 
+c                   [Ke]s back to root for assembly & solve.
+c                   Put MPI workers to sleep while Pardiso runs.
 c
-      if( use_mpi .and. not_hypre ) call wmpi_suspend( 1 )
+c            3) cpardiso -
+c                  just solve using all mpi ranks + threads.
+c                  element [ks]s on ranks. assembly on root.
+c                  cpardiso runs on root and workers and handles
+c                  distribution of equations to ranks.
+c
+      if( use_mpi .and. pardiso ) call wmpi_suspend( 1 )
 c
 c          drive the equation solver. Code to allow changing
 c          solver during a run has been removed.
@@ -1530,12 +1542,13 @@ c
       elseif( iter .eq. 2 .and. no_extrapolation ) then
          new_pre_cond = .true.  ! first tangent K after linear K
       end if
-      call direct_routine_sparse( first_solve, iter, new_pre_cond )  
+c      
+      call drive_assemble_solve( first_solve, iter, new_pre_cond )  
       first_solve = .false.
 c
 c          MPI: wake up worker processes
 c
-      if( use_mpi .and. not_hypre ) call wmpi_suspend( 2 )
+      if( use_mpi .and. pardiso ) call wmpi_suspend( 2 )
 c
 c          check if hypre wants an adaptive step.
 c          We can only deal with this in the main mnralg, so
@@ -1642,7 +1655,6 @@ c
         f = adapt_temper_fact
         dtemp_nodes(1:nonode) = f * dtemp_nodes_step(1:nonode)
         dtemp_elems(1:noelem) = f * dtemp_elems_step(1:noelem)
-c        write(*,*) '.... mnralg_scale_temps. f: ',f
 c
       case( 3 )
 c

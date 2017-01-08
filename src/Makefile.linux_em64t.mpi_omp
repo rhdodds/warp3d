@@ -3,7 +3,7 @@
 #                                                               
 #   File: Header.linux_em64t.mpi            
 #                                                               
-#   Updated: Dec 2016  rhd
+#   Updated: Jan 2017  rhd
 #
 #   Description:
 #     Makefile Header for use with the WARP3D 
@@ -21,6 +21,7 @@ HYROOT = $(HYPRE_ROOT)
 HYLIB = -L$(HYPRE_ROOT)/lib -lHYPRE
 HYINC = -I$(HYPRE_ROOT)/include
 #
+LIBMPI = -lmkl_blacs_intelmpi_lp64
 MPIOPT = -mt_mpi 
 ODIR  = ././../obj_linux_em64t_mpi
 EXE_NAME = warp3d.mpi_omp

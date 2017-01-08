@@ -835,3 +835,20 @@ c
 c     
       return 
       end
+c     ****************************************************************
+c     *                                                              *
+c     *              drive the symmetric CPardiso solution           *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/7/20167 rhd              *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine cpardiso_symmetric( neq, ncoeff, k_diag, rhs,
+     &   solution_vec, eqn_coeffs, k_pointers, k_indices,
+     &   print_cpu_stats, itype, out, myrank )
+      implicit integer (a-z)
+      return
+      end

@@ -104,7 +104,7 @@ c              store for possible prediction during next time/load step
 c
       len = props%num_hard
       R2(1:len) = tt(1:len) - h(1:len)
-      np1%tt_rate(1:len) = ( h(1:len) - n%tau_tilde(1:len) ) / np1.tinc
+      np1%tt_rate(1:len) = ( h(1:len) - n%tau_tilde(1:len) ) / np1%tinc
 c      
       return
       end 
@@ -124,19 +124,20 @@ c     ****************************************************************
 c
       subroutine mm10_formR2i( props, np1, n, ivec1, ivec2, 
      &                         stress, tt, R2 )
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: R2
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: R2
+      complex(kind=real64), dimension(props%num_hard) :: tt
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
 c              locals - automatics
 c
-      double complex, dimension(props%num_hard) :: h
+      complex(kind=real64), dimension(props%num_hard) :: h
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, R2:64
 c
@@ -569,6 +570,7 @@ c     ****************************************************************
 c
       subroutine mm10_formJ11i( props, np1, n, ivec1, ivec2,
      &                          stress, tt, J11)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -578,18 +580,18 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(6,6) :: J11
       double precision, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
       integer :: i, k
       logical :: debug
 c
-      double complex, dimension(6) :: A, Ri
+      complex(kind=real64), dimension(6) :: A, Ri
       double precision :: h, hi, zeroA(6)
-      double complex :: i1
+      complex(kind=real64) :: i1
 c
 c              automatics
 c
-      double complex, dimension(props%num_hard) :: B
+      complex(kind=real64), dimension(props%num_hard) :: B
       double precision, dimension(props%num_hard) :: zeroB
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J11:64     
@@ -634,6 +636,7 @@ c     ****************************************************************
 c
       subroutine mm10_formJ12i( props, np1, n, ivec1, ivec2,
      &                          stress, tt, J12 )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -644,19 +647,19 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(6,props%num_hard) :: J12
       double precision, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1,ivec2
 c
       integer :: i, k
       logical :: debug
 c
-      double complex, dimension(6) :: Ri, A
+      complex(kind=real64), dimension(6) :: Ri, A
       double precision, dimension(6) :: zeroA
       double precision :: h, hi
-      double complex :: i1
+      complex(kind=real64) :: i1
 c
 c              automatics
 c
-      double complex, dimension(props%num_hard) :: B
+      complex(kind=real64), dimension(props%num_hard) :: B
       double precision, dimension(props%num_hard) :: zeroB
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J12:64     
@@ -701,6 +704,7 @@ c     ****************************************************************
 c
       subroutine mm10_formJ21i( props, np1, n, ivec1, ivec2,
      &                          stress, tt, J21 )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -710,17 +714,17 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard,6) :: J21
       double precision, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1,ivec2
       integer :: i, k
       logical :: debug
 c
-      double complex, dimension(6) :: A
+      complex(kind=real64), dimension(6) :: A
       double precision :: h, hi, zeroA(6)
-      double complex :: i1
+      complex(kind=real64) :: i1
 c
 c              automatics
 c
-      double complex, dimension(props%num_hard) :: B, Ri
+      complex(kind=real64), dimension(props%num_hard) :: B, Ri
       double precision, dimension(props%num_hard) :: zeroB
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J21:64     
@@ -764,6 +768,7 @@ c     ****************************************************************
 c
       subroutine mm10_formJ22i( props, np1, n, ivec1, ivec2,
      &                          stress, tt, J22 )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -774,19 +779,19 @@ c
       double precision, 
      &   dimension(props%num_hard,props%num_hard) :: J22
       double precision, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
       integer :: i, k
       logical :: debug
 c
-      double complex, dimension(6) :: A
+      complex(kind=real64), dimension(6) :: A
       double precision :: h, hi, zeroA(6)
-      double complex :: i1
+      complex(kind=real64) :: i1
 c
 c              automatics
 c
       double precision, dimension(props%num_hard) :: zeroB
-      double complex, dimension(props%num_hard) :: Ri, B
+      complex(kind=real64), dimension(props%num_hard) :: Ri, B
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J22:64     
 c
@@ -831,14 +836,15 @@ c     ****************************************************************
 c
       subroutine mm10_formvecsi( props, np1, n, stress, tt, 
      &                           ivec1, ivec2 )
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
 c ***** START: Add new Constitutive Models into this block *****
       select case( props%h_type )
@@ -939,6 +945,7 @@ c     ****************************************************************
 c
       subroutine mm10_formJi( props, np1, n, ivec1, 
      &                        ivec2, stress, tt, J )
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c
@@ -950,7 +957,7 @@ c
       double precision,
      & dimension(6+props%num_hard,6+props%num_hard) :: J
       double precision, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
 c              locals
 c
@@ -1081,22 +1088,23 @@ c     ****************************************************************
 c
       subroutine mm10_formR1i( props, np1, n, ivec1, ivec2,
      &                         stress, tt, R1 )
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n  
-      double complex, dimension(6) :: stress
-      double complex, dimension(6) :: R1
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(6) :: R1
+      complex(kind=real64), dimension(props%num_hard) :: tt
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
-      double complex, dimension(6) :: dbarp, temp
-      double complex, dimension(6,6) :: stiff2
+      complex(kind=real64), dimension(6) :: dbarp, temp
+      complex(kind=real64), dimension(6,6) :: stiff2
       double precision, dimension(6,6) :: zeroff
-      double complex, dimension(3) :: wp
-      double complex, dimension(6) :: symTW
+      complex(kind=real64), dimension(3) :: wp
+      complex(kind=real64), dimension(6) :: symTW
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64, tt:64, R1:64
 c
       call mm10_form_dbarpi( props, np1, n, ivec1, ivec2, 
@@ -1347,19 +1355,20 @@ c     ****************************************************************
 c
       subroutine mm10_form_dbarpi( props, np1, n, ivec1, ivec2,
      &                             stress, tt, dbar)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(6) :: dbar
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(6) :: dbar
+      complex(kind=real64), dimension(props%num_hard) :: tt
+      complex(kind=real64), dimension(max_uhard) :: ivec1,ivec2
 c
       integer :: i
-      double complex :: slipinc
+      complex(kind=real64) :: slipinc
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, dbar:64
 c
@@ -1401,19 +1410,20 @@ c     ****************************************************************
 c
        subroutine mm10_form_wpi( props, np1, n, ivec1, ivec2, 
      &                           stress, tt, w)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(3) :: w
-      double complex, dimension(props%num_hard) :: tt
-      double complex, dimension(max_uhard) :: ivec1,ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(3) :: w
+      complex(kind=real64), dimension(props%num_hard) :: tt
+      complex(kind=real64), dimension(max_uhard) :: ivec1,ivec2
 c
       integer :: i
-      double complex :: slipinc
+      complex(kind=real64) :: slipinc
 c!DIR$ ASSUME_ALIGNED ivec1:64, ivec2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, w:64
 c
@@ -1486,12 +1496,13 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine mm10_symswi(s, w, sw)
+      use iso_Fortran_env
       use mm10_constants
       implicit none
 c      
-      double complex, dimension(6), intent(in) :: s
-      double complex, dimension(3), intent(in) :: w
-      double complex, dimension(6), intent(out) :: sw
+      complex(kind=real64), dimension(6), intent(in) :: s
+      complex(kind=real64), dimension(3), intent(in) :: w
+      complex(kind=real64), dimension(6), intent(out) :: sw
 c!DIR$ ASSUME_ALIGNED S:64, W:64, SW:64     
 c
       sw = zero
@@ -1810,15 +1821,16 @@ c
       end
 c      
       function mm10_rsi( props, np1, n, stress, tt, i )
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       integer :: i
-      double complex :: stress(6), tt
+      complex(kind=real64) :: stress(6), tt
 c
-      double complex :: mm10_rsi
+      complex(kind=real64) :: mm10_rsi
 c!DIR$ ASSUME_ALIGNED stress:64
 c
       mm10_rsi = stress(1)*np1%ms(1,i)
@@ -2404,16 +2416,17 @@ c
 c           Form intermediate vectors for faster calculations
       subroutine mm10_vi_mrr(props, np1, n, stress, tt, 
      &   ivec1, ivec2)
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt, h
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt, h
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
-      double complex :: slipinc
+      complex(kind=real64) :: slipinc
 c
       do alpha = 1,props%nslip
          call mm10_slipinci_mrr(props, np1, n, stress, tt, 
@@ -2622,20 +2635,21 @@ c
 c           Imaginary mrr sliprate function
       subroutine mm10_slipinci_mrr(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt, temp
-      double complex :: h, slipinc, mm10_rsi
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt, temp
+      complex(kind=real64) :: h, slipinc, mm10_rsi
       integer :: alpha, i
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44
-      double complex :: rs,
+      complex(kind=real64) :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
@@ -2714,21 +2728,22 @@ c
 c           Imaginary mrr hardening function
       subroutine mm10_hi_mrr(props, np1, n, ivec1, ivec2, 
      & stress, tt, h)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt, h, temp
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt, h, temp
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
      &  c4, c5, c6, c7, c8, v, Qbulk
-      double complex :: rs,
+      complex(kind=real64) :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
@@ -2823,6 +2838,7 @@ c
 c           Wrapper version, mrr slipinc function
       subroutine mm10_slipinc_mrrW(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -2834,9 +2850,9 @@ c
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
-      double complex, dimension(6) :: stressi
-      double complex, dimension(props%num_hard) :: tti
-      double complex :: slipinci
+      complex(kind=real64), dimension(6) :: stressi
+      complex(kind=real64), dimension(props%num_hard) :: tti
+      complex(kind=real64) :: slipinci
 c
       zerosV = zero
       stressi = dcmplx(stress,zerosV(1:6))
@@ -3214,9 +3230,9 @@ c linear extrapolation past the too-high stress (rs) value
         elseif(dabs(rs).gt.zero) then
         slipexp = dexp (-(Qslip/k/theta)*(one - fract**p_e)**q_e)
      &          * dsign(one,rs)
-        dslipinc = dt * (gamma_0 * slipexp * -(Qslip/k/theta)*q_e*
-     &      (one - fract**p_e)**(q_e-one)
-     &      * -p_e*fract**(p_e-one) * dfract) !(14)
+        dslipinc = dt * (-gamma_0 * slipexp *(Qslip/k/theta)*q_e*
+     &      (one - fract**p_e)**(q_e-one) * 
+     &      (-one)*p_e*fract**(p_e-one) * dfract) !(14)
         else
             dslipinc = zero
         endif
@@ -3331,9 +3347,9 @@ c Evaluate the equation
           slipexp = dexp (-(Qslip/k/theta)*
      &             (one - fract**p_e)**q_e) !(14)
           dslipinc = dt * (dgamma_0 * slipexp * dsign(one,rs)
-     &          + gamma_0 * dsign(one,rs) * slipexp *
-     &          -(Qslip/k/theta)*q_e*(one - fract**p_e)**(q_e-one)
-     &        * -p_e*fract**(p_e-one) * dfract)
+     &          + gamma_0 * dsign(one,rs) * slipexp *(-one)*
+     &          (Qslip/k/theta)*q_e*(one - fract**p_e)**(q_e-one)
+     &        * (-one)*p_e*fract**(p_e-one) * dfract)
           else
               dslipinc = zero
           endif
@@ -3475,16 +3491,17 @@ c
 c           Form intermediate vectors for faster calculations
       subroutine mm10_vi_ornl(props, np1, n, stress, tt, 
      &   ivec1, ivec2)
+      use iso_Fortran_env
       use mm10_defs
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt, h
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt, h
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
-      double complex :: slipinc
+      complex(kind=real64) :: slipinc
 c
       do alpha = 1,props%nslip
          call mm10_slipinci_ornl(props, np1, n, stress, tt, 
@@ -3680,20 +3697,21 @@ c
 c           Imaginary ornl sliprate function
       subroutine mm10_slipinci_ornl(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt, temp
-      double complex :: h, slipinc, mm10_rsi
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt, temp
+      complex(kind=real64) :: h, slipinc, mm10_rsi
       integer :: alpha, i
 c
       double precision :: dt, k, theta, G, b, c1, c2, tau0, 
      &  p_e, q_e, Qslip, v_s, K11, K12, K44
-      double complex :: rs,
+      complex(kind=real64) :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  fM, lamda, G0, rhoM
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -3769,21 +3787,22 @@ c
 c           Imaginary ornl hardening function
       subroutine mm10_hi_ornl(props, np1, n, ivec1, ivec2, 
      & stress, tt, h)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double complex, dimension(6) :: stress
-      double complex, dimension(props%num_hard) :: tt, h, temp
-      double complex, dimension(max_uhard) :: ivec1, ivec2
+      complex(kind=real64), dimension(6) :: stress
+      complex(kind=real64), dimension(props%num_hard) :: tt, h, temp
+      complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
      &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
      &  c4, c5, c6, c7, c8, v, Qbulk
-      double complex :: rs,
+      complex(kind=real64) :: rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
@@ -3868,6 +3887,7 @@ c
 c           Wrapper version, ornl slipinc function
       subroutine mm10_slipinc_ornlW(props, np1, n, stress, tt, 
      &                            alpha, slipinc)
+      use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
@@ -3879,9 +3899,9 @@ c
       double precision :: h, slipinc, mm10_rs
       integer :: alpha
 c
-      double complex, dimension(6) :: stressi
-      double complex, dimension(props%num_hard) :: tti
-      double complex :: slipinci
+      complex(kind=real64), dimension(6) :: stressi
+      complex(kind=real64), dimension(props%num_hard) :: tti
+      complex(kind=real64) :: slipinci
 c
       zerosV = zero
       stressi = dcmplx(stress,zerosV(1:6))
@@ -4245,9 +4265,10 @@ c linear extrapolation past the too-high stress (rs) value
           endif
         slipexp = dexp (-(Qslip/k/theta)*(one - fract**p2)**q_e)
      &          * dsign(one,rs)
-        dslipinc = dt * (gamma_0 * slipexp * -(Qslip/k/theta)*q_e*
+        dslipinc = dt * (gamma_0 * slipexp * 
+     &      (-one)*(Qslip/k/theta)*q_e*
      &      (one - fract**p2)**(q_e-one)
-     &      * -p2*fract**(p2-one) * dfract) !(14)
+     &      * (-one)*p2*fract**(p2-one) * dfract) !(14)
         endif
         
         dgammadtau(alpha) = dslipinc
@@ -4370,8 +4391,8 @@ c Evaluate the equation
      &             (one - fract**p2)**q_e) !(14)
           dslipinc = dt * (dgamma_0 * slipexp * dsign(one,rs)
      &          + gamma_0 * dsign(one,rs) * slipexp *
-     &          -(Qslip/k/theta)*q_e*(one - fract**p2)**(q_e-one)
-     &        * -p2*fract**(p2-one) * dfract)
+     &          (-one)*(Qslip/k/theta)*q_e*(one - fract**p2)**(q_e-one)
+     &        * (-one)*p2*fract**(p2-one) * dfract)
           endif
         
           dgammadtt(alpha,beta) = dslipinc
