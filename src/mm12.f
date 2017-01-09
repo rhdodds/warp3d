@@ -117,7 +117,8 @@ c     Locals
      &                    l_full_tangent(6,6)
       double precision, allocatable, dimension(:) :: l_hist_n,
      &                                               l_hist_np1
-      double precision :: l_temp_n, l_temp_np1, l_time_n, l_time_np1
+      double precision :: l_temp_n, l_temp_np1, l_time_n, l_time_np1,
+     &                        l_u_n, l_u_np1, l_p_n, l_p_np1
       double precision :: vm_mult_s(6), vm_mult_e(6)
       integer :: vm_map(6)
 
@@ -159,6 +160,9 @@ c      For each entry in the block
             end do
 
             l_hist_n = hist_n(i,37:nstore)
+
+            l_u_n = stress_n(i,7)
+            l_p_n = stress_n(i,8)
             
             ! If the first step, initialize history and stress
             if (step .eq. 1) then
@@ -182,7 +186,8 @@ c      For each entry in the block
             call update_sd_nemlmodel(model_ptr, l_strain_np1, 
      &            l_strain_n,
      &            l_temp_np1, l_temp_n, time_np1, time_n, l_stress_np1,
-     &            l_stress_n, l_hist_np1, l_hist_n, l_tangent, ier)
+     &            l_stress_n, l_hist_np1, l_hist_n, l_tangent,
+     &            l_u_np1, l_u_n, l_p_np1, l_p_n, ier)
             if (ier .ne. 0) then
                   write(*,*) "Error updating NEML material"
                   call destroy_nemlmodel(model_ptr, ier)
@@ -204,6 +209,12 @@ c      For each entry in the block
             l_full_tangent = transpose(l_full_tangent)
             hist_np1(i,1:36) = reshape(l_full_tangent, (/36/))
             hist_np1(i,37:nstore) = l_hist_np1
+            stress_np1(i,7) = l_u_np1
+            stress_np1(i,8) = l_p_np1
+
+            ! This is suppose to be the equivalent plastic strain, but
+            ! I refuse to provide an interface for it
+            stress_np1(i,9) = 0.0
       end do
 
 

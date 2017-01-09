@@ -33,7 +33,7 @@
             subroutine update_sd_nemlmodel(model, e_np1, e_n, Temp_np1,
      &                  Temp_n, time_np1, time_n, s_np1, s_n,
      &                  h_np1, h_n,
-     &                  A_np1, ier) bind(C)
+     &                  A_np1, u_np1, u_n, p_np1, p_n, ier) bind(C)
                   use iso_c_binding
                   implicit none
                   type(c_ptr), value :: model
@@ -49,7 +49,8 @@
                   double precision, intent(out), dimension(*) ::
      &                  h_np1
                   double precision, intent(in), value ::
-     &                  Temp_np1, Temp_n, time_np1, time_n
+     &                  Temp_np1, Temp_n, time_np1, time_n, u_n, p_n
+                  double precision, intent(out) :: u_np1, p_np1
                   integer, intent(out) :: ier
 
             end subroutine
