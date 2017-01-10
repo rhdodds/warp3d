@@ -1450,7 +1450,7 @@ c     *                                      future reference        *          
 c     *                       written by : mcm                       *
 c     *                                                              *
 c     *                   last modified : 12/9/13                    *
-c     *        deprecated. retained for possible future reference    * 
+c     *  ===>  deprecated. retained for possible future reference    * 
 c     *                                                              *
 c     *     B * D * B.T for the asymmetric case.  Handles all        *
 c     *     elements, at least for now.                              *
