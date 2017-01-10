@@ -4348,11 +4348,11 @@ c
       
 c     ****************************************************************
 c     *                                                              *
-c     *                 subroutine drive_10_update_b                 *
+c     *   ==> no longer called:  subroutine drive_10_update_b                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/8/2015 rhd              *
+c     *                   last modified : 1/9/2016 rhd               *
 c     *                                                              *
 c     *     support routine for mm10 material driver.                *
 c     *     should be inlined                                        *
@@ -4368,7 +4368,8 @@ c
       double precision, allocatable :: cp_stiff(:,:,:,:), 
      &                                 cp_g_rot(:,:,:,:)
       double precision :: angles(3), totalC(6,6), Cci(6,6), Srot(6,6),
-     &                    Ct(6,6), g(3,3)
+     &                    Ct(6,6), local_rmat(3,3),
+     &                    trans_local_rmat(3,3), trans_Srot(6,6)
       integer, allocatable :: ncrystals(:)
       character :: aconv*5, atype*7
 c      
@@ -4376,7 +4377,8 @@ c
       allocate( cp_g_rot(mxvl,3,3,max_crystals) )
       allocate( ncrystals(mxvl) )
 c      
-      do i = 1, span
+!DIR$ LOOP COUNT MAX=128  
+       do i = 1, span
           ncrystals(i) = imatprp(101,matnum)
           elnum = felem+i-1
           do ci = 1, ncrystals(i)
@@ -4426,21 +4428,25 @@ c
                   call die_gracefully
             end if
             call mm10_rotation_matrix( angles, aconv, atype,
-     &            cp_g_rot(i,1:3,1:3,ci),  iout)
-            end do ! over ncrystals
+     &                                 local_rmat, iout )
+            cp_g_rot(i,1:3,1:3,ci) = local_rmat
+          end do ! over ncrystals
       end do   !   over span
 c 
       cep = zero ! this is local to drive_10_update_b
 c
-      do i = 1, span
+!DIR$ LOOP COUNT MAX=128  
+       do i = 1, span
         tc = 0
         totalC = zero
         do ci = 1, ncrystals(i)
-            g = cp_g_rot(i,1:3,1:3,ci)
+            local_rmat = cp_g_rot(i,1:3,1:3,ci)
+            trans_local_rmat = transpose( local_rmat )
             Ct = cp_stiff(i,1:6,1:6,ci)
             Srot = zero
-            call mm10_RT2RVE( transpose(g), Srot)
-            Cci = matmul( Ct, transpose(Srot) )
+            call mm10_RT2RVE( trans_local_rmat, Srot)
+            trans_Srot = transpose( Srot )
+            Cci = matmul( Ct, trans_Srot )
             Cci = matmul( Srot, Cci )
             totalC = totalC + Cci
             tc = tc + 1
