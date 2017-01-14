@@ -4517,6 +4517,302 @@ c
 c
       return
       end
+
+
+
+
+c     ****************************************************************
+c     *                                                              *
+c     *              drive the unsymmetric CPardiso solution         *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                  last modified : 1/12/20167 rhd              *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine cpardiso_unsymmetric( neq, ncoeff, k_pointers,
+     &            k_indexes, eqn_coeffs, rhs, solution_vec, 
+     &            print_cpu_stats, itype, out, myrank )
+      implicit none
+      include 'mpif.h'
+c
+c                parameter declarations
+c
+      integer :: neq, ncoeff, k_pointers(neq+1), k_indexes(ncoeff),
+     &           itype, out, myrank
+      double precision :: eqn_coeffs(ncoeff), rhs(neq), 
+     &                    solution_vec(neq)
+      logical :: print_cpu_stats
+c
+c                locals for driver
+c
+      logical :: use_iterative, use_direct, time_stats, master, worker,
+     &           debug_worker, debug_master 
+      logical, save :: cpardiso_mat_defined
+      logical, parameter :: debug_master_flag = .false.,
+     &                      debug_worker_flag = .false. 
+      integer, save :: num_calls
+      real, external :: wwalltime
+c
+c                locald for cpardiso
+c
+      integer(kind=8), save ::  pt(64)
+      integer :: maxfct, mnum, phase, nrhs, error, idum, len_iparm, 
+     &           ierror
+      integer, save :: iparm(64), mtype, msglvl
+      double precision :: ddum
+c
+      data num_calls, cpardiso_mat_defined / 0, .false. /
+c
+c
+c       Compressed Sparse Row format (CSR) for unsymmetric equations
+c
+c        neq           --  number of equations     
+c        ncoeff        --  number of non-zero terms 
+c        rhs           --  right-hand side
+c        solution_vec  --  solution vector
+c        eqn_coeffs    --  non-zero values on each row 
+c        k_pointers    --  dimension (n+1). k_pointers(i) points to the 
+c                          first column index of row i in the array
+c                          k_indexes in compressed sparse row format.  
+c                          k_pointers(i) gives the index of the element
+c                          in vector eqn_coeffs that contains the first
+c                          non-zero element from row i of eqn_coeffs. 
+c                          The last element k_pointers(n+1) is taken 
+c                          to be equal to the number of non-zero 
+c                          elements in eqn_coeffs, plus one. 
+c        k_indexes     --  contains column indexes of the sparse 
+c                          matrix. The indices in each row must 
+c                          be sorted in increasing order.
+c
+c              Vectors describing the equations are dummies of length 1
+c              on all workers
+c
+      master        = myrank .eq. 0
+      worker        = myrank > 0
+      debug_master  = master .and. debug_master_flag
+      debug_worker  = worker .and. debug_worker_flag
+      nrhs          = 1
+      maxfct        = 1
+      mnum          = 1
+      len_iparm     = 64      ! CPardiso required
+      use_iterative = .false. ! CPardiso does not support
+      use_direct    = .true.  ! direct option
+c
+      call wmpi_bcast_int( itype ) ! workers need this
+c
+      if( master ) 
+     &  call cpardiso_messages( 12, out, error, print_cpu_stats,
+     &                          iparm, master )
+c      
+c              solution types (itype):
+c                 1 - first time solution for a matrix:
+c                               setup ordering method and perform
+c                               pre-processing steps.
+c                 2 - Solution of above same matrix equations
+c                     with a new set of coefficients but same
+c                     sparsity
+c                 3 - no solution. just release data.
+c     
+      select case( itype )    
+c
+      case( 1 )
+        call cpardiso_unsymmetric_setup
+        call cpardiso_unsymmetric_solve      
+      case( 2 ) 
+        call cpardiso_unsymmetric_solve
+      case( 3 ) ! release all CPardiso data and return
+        if( worker ) return
+        call cpardiso_unsymmetric_release
+      case default ! then die
+         call cpardiso_messages( 8, out, error, print_cpu_stats,
+     &                           iparm, master )
+c         
+      end select
+      return
+c
+      contains
+c     ========
+c
+c     ******************************************************************
+c     *       contains:   cpardiso_symmetric_release                   *
+c     ******************************************************************
+c
+
+      subroutine cpardiso_unsymmetric_release
+      implicit none
+c      
+      if( .not. cpardiso_mat_defined ) then ! job will be aborted
+         call cpardiso_messages( 7, out, error, print_cpu_stats,
+     &                           iparm, master )
+      end if
+c
+      phase = -1 ! release internal memory
+      call cluster_sparse_solver( pt, maxfct, mnum, mtype, 
+     &                phase, neq, ddum, idum, idum, idum, nrhs, iparm, 
+     &                msglvl, ddum, ddum, MPI_COMM_WORLD, error )
+      cpardiso_mat_defined = .false.
+      num_calls = 0
+c      
+      return
+      end  subroutine cpardiso_unsymmetric_release
+c
+c     ******************************************************************
+c     *       contains:   cpardiso_unsymmetric_setup                    *
+c     ******************************************************************
+c
+      subroutine cpardiso_unsymmetric_setup
+      implicit none
+c      
+      if( master ) then
+          if( cpardiso_mat_defined ) then
+             phase = -1 ! release internal memory
+             call cluster_sparse_solver( pt, maxfct, mnum, mtype, 
+     &                phase, neq, ddum, idum, idum, idum, nrhs, iparm, 
+     &                msglvl, ddum, ddum, MPI_COMM_WORLD, error )
+             cpardiso_mat_defined = .false.
+             call cpardiso_messages( 6, out, error, print_cpu_stats,
+     &                               iparm, master )
+          end if
+      end if
+c
+      call thyme( 23, 1 )
+      pt(1:64) = 0 ! CPardiso required input (note I*8)
+c      
+      call cpardiso_unsymmetric_set_iparm( iparm, len_iparm,
+     &         use_iterative, error, msglvl, mtype, out  )
+c
+      call cpardiso_messages( 11, out, error, print_cpu_stats, iparm,
+     &                        master )  
+c      
+c                  input sparsity structure, reorder, symbolic
+c                  factorization. CPardiso sends data to workers.
+c
+      phase = 11 ! reordering and symbolic factorization
+      call cpardiso_messages( 10, out, error, print_cpu_stats, iparm,
+     &                        master )
+      call cluster_sparse_solver( pt, maxfct, mnum, mtype, phase, neq, 
+     &              eqn_coeffs, k_pointers, k_indexes, idum, nrhs,
+     &              iparm, msglvl, ddum, ddum, MPI_COMM_WORLD, error )
+      call cpardiso_messages( 2, out, error, print_cpu_stats, iparm,
+     &                        master) 
+      call thyme( 23, 2 )
+c
+      return
+      end  subroutine cpardiso_unsymmetric_setup
+
+c
+c     ******************************************************************
+c     *       contains:   cpardiso_unsymmetric_solve                   *
+c     ******************************************************************
+c
+
+      subroutine cpardiso_unsymmetric_solve
+      implicit none
+c      
+c              barrier may not be needed
+c
+      num_calls = num_calls + 1
+      call thyme( 25, 1)
+      phase = 22 ! only factorization
+      call cpardiso_messages( 4, out, error, print_cpu_stats, iparm,
+     &                        master )
+      call MPI_BARRIER( MPI_COMM_WORLD, ierror )
+      call cluster_sparse_solver( pt, maxfct, mnum, mtype, phase, neq,
+     &                eqn_coeffs, k_pointers, k_indexes, idum, nrhs,
+     &                iparm, msglvl, ddum, ddum, MPI_COMM_WORLD, error )
+      call cpardiso_messages( 3, out, error, print_cpu_stats, iparm, 
+     &                        master )
+      call thyme( 25, 2 )
+c
+      call thyme( 26, 1)
+      phase = 33   ! forward/backward solve
+      call cluster_sparse_solver( pt, maxfct, mnum, mtype, phase, neq,
+     &                eqn_coeffs, k_pointers, k_indexes, idum, nrhs,
+     &                iparm, msglvl, rhs, solution_vec, MPI_COMM_WORLD,
+     &                error ) 
+      call cpardiso_messages( 5, out, error, print_cpu_stats, iparm, 
+     &                        master )
+      call thyme( 26, 2 )
+c
+      return
+      end  subroutine cpardiso_unsymmetric_solve
+      end  subroutine cpardiso_unsymmetric   
+
+
+c ********************************************************************
+c *                                                                  *
+c *            setup iparm() for CPardiso unsymmetric                *
+c *                                                                  *
+c *                  last updated:  1/12/2016 rhd                    *
+c *                                                                  *
+c ********************************************************************
+c
+      subroutine cpardiso_unsymmetric_set_iparm( iparm, len_iparm, 
+     &    use_iterative, error, msglvl, mtype, iout  )
+      implicit none
+c
+      integer :: len_iparm, iparm(len_iparm), error, msglvl, mtype,
+     &           iout 
+      logical :: use_iterative
+c
+      error  = 0
+      msglvl = 0    !  request no messages from CPardiso
+      mtype  = 1 ! structurally symmetric, values not symmetric
+c
+      iparm(1) = 1 ! we set all iparm values here
+      iparm(2) = 3 ! threaded, non-MPI reordering
+      iparm(3) = 0 ! CPardiso reserved
+      iparm(4) = 0 ! not used by CPardiso on input
+      iparm(5) = 0 ! not used by CPardiso on input
+      iparm(6) = 0 ! rhs NOT overwritten by solution
+      iparm(7) = 0 ! output - actual # iterative refinement steps
+      iparm(8) = 30! lots of iterative refinement steps
+      iparm(9) = 0 ! not used by CPardiso on input
+      iparm(10) = 13 ! perturb the pivot elements with 1E-13
+                     ! default value is 1E-8
+      iparm(11) = 1 ! scaling.
+      iparm(12) = 0 ! not used by CPardiso on input
+      iparm(13) = 1 ! Add some extra permutation for 
+c                     non-symmetric matrices
+      iparm(14) = 0 ! not used by CPardiso on input
+      iparm(15) = 0 ! not used by CPardiso on input
+      iparm(16) = 0 ! not used by CPardiso on input
+      iparm(17) = 0 ! not used by CPardiso on input
+      iparm(18) = -1 ! return: number of nonzeros in the factor LU
+      iparm(19) = -1 ! return: Mflops for LU factorization
+      iparm(20) = -1 ! return: Numbers of CG Iterations 
+      iparm(21) = 0 ! 1x1 pivoting. try = 1 if issues
+      iparm(22) = 0 ! not used by CPardiso on input
+      iparm(23) = 0 ! not used by CPardiso on input
+      iparm(24) = 0 ! not used by CPardiso on input
+      iparm(25) = 0 ! not used by CPardiso on input
+      iparm(26) = 0 ! not used by CPardiso on input
+      iparm(27) = 1 ! CPardiso checks matrix for indexing errors
+c                     set = 0 for production
+      iparm(28) = 0 ! input arrays are double precision
+      iparm(29) = 0 ! not used by CPardiso on input
+      iparm(30) = 0 ! not used by CPardiso on input
+      iparm(31) = 0 ! not used by CPardiso on input
+      iparm(32) = 0 ! not used by CPardiso on input
+      iparm(33) = 0 ! not used by CPardiso on input
+      iparm(34) = 0 ! not used by CPardiso on input
+      iparm(35) = 0 ! input arryas are 1-based (Fortran)
+      iparm(36) = 0 ! not used by CPardiso on input
+      iparm(37) = 0 ! CSR arrya format. we convert to CSR from VSS
+      iparm(38) = 0 ! CPardiso reserved
+      iparm(39) = 0 ! CPardiso reserved
+      iparm(40) = 0 ! only rank 0 get A matrix. workers do not need A.
+c                     solution vector only on rank 0      
+      iparm(41) = 0 ! not used for iparm(40) = 0.
+      iparm(42) = 0 ! not used for iparm(40) = 0.
+c
+      iparm(43:64) = 0 ! CPardiso reserved
+c
+      return
+      end
 c     ****************************************************************
 c     *                                                              *
 c     *              drive the symmetric CPardiso solution           *
@@ -4587,15 +4883,7 @@ c        rhs           --  right-hand side
 c        solution_vec  --  solution vector
 c        eqn_coeffs    --  non-zero values on each row starting with
 c                          diagonal (was off_off_diagonals)
-c        k_pointers    --  dimension (n+1). For i≤n, k_pointers(i) points to the 
-c                          first column index of row i in the array k_indices 
-c                          in compressed sparse row format. That is, 
-c                          k_pointers(i) gives the index of the element in vector 
-c                          eqn_coeffsthat contains the first non-zero element 
-c                          from row i of eqn_coeffs. 
-c                          The last element k_pointers(n+1) is taken to be equal 
-c                          to the number of non-zero lements in eqn_coeffs, 
-c                          plus one. 
+c        k_pointers    --  see diagram example in drive_pardiso.f 
 c        k_indices     --  contains column indices of the sparse 
 c                          matrix. The indices in each row must 
 c                          be sorted in increasing order.
@@ -4635,7 +4923,7 @@ c
         call cpardiso_symmetric_setup
         call cpardiso_symmetric_solve      
       case( 2 ) 
-        if( master ) call map_vss_mkl( neq, ncoeff, k_diag,
+        if( master ) call pardiso_symmetric_map( neq, ncoeff, k_diag,
      &                       rhs, eqn_coeffs, k_pointers, k_indices )
         call cpardiso_symmetric_solve
       case( 3 ) ! release all CPardiso data and return
@@ -4650,6 +4938,11 @@ c
 c
       contains
 c     ========
+c
+c     ******************************************************************
+c     *       contains:   cpardiso_symmetric_release                   *
+c     ******************************************************************
+c
 
       subroutine cpardiso_symmetric_release
       implicit none
@@ -4668,12 +4961,16 @@ c
 c      
       return
       end  subroutine cpardiso_symmetric_release
-
+c
+c     ******************************************************************
+c     *       contains:   cpardiso_symmetric_setup                     *
+c     ******************************************************************
+c
       subroutine cpardiso_symmetric_setup
       implicit none
 c      
       if( master ) then
-          call map_vss_mkl( neq, ncoeff, k_diag,
+          call pardiso_symmetric_map( neq, ncoeff, k_diag,
      &             rhs, eqn_coeffs, k_pointers, k_indices )
           if( cpardiso_mat_defined ) then
              phase = -1 ! release internal memory
@@ -4711,6 +5008,11 @@ c
       return
       end  subroutine cpardiso_symmetric_setup
 
+c
+c     ******************************************************************
+c     *       contains:   cpardiso_symmetric_solve                     *
+c     ******************************************************************
+c
 
       subroutine cpardiso_symmetric_solve
       implicit none
@@ -4910,11 +5212,14 @@ c
         case( 11 )  !  used
           if( print_time_stats ) write(iout,9305) wwalltime(1)
 c
+        case( 12 )  !  used
+          if( print_time_stats ) write(iout,9500) wwalltime(1)
+c
       end select
       return
 c
  2010 format(
-     &  15x,'no. terms in [L] factor:         ', f9.3,' x 10**9' )
+     &  15x,'no. terms in [L][U] factor:      ', f9.3,' x 10**9' )
  2020 format(
      &  15x,'factor + sol op count (GFlop):   ', f9.3)
  2022 format(
@@ -4922,7 +5227,7 @@ c
  2030 format(
      &  15x,'factorization memory (GB):       ', f9.3)
  9184  format(
-     &  15x, 'start cluseter factorization    ')
+     &  15x, 'start cluster factorization    ')
  9300  format(
      &  15x, 'start reorder, symb. factor.  @ ',f10.2 )
  9305  format(
@@ -4935,10 +5240,8 @@ c
      &   15x, 'FATAL ERRROR: CPardiso failed during factorization with', 
      & /,15x, '              error code: ',i5,
      & /,15x  '              Job aborted.')
- 9472  format(
-     &  15x, 'FATAL ERRROR: mkl sparse -iterative- solver' )
  9480  format(
-     &  15x, 'starting cluster direct solve @ ',f10.2 )
+     &  15x, 'start cluster symmetric solve @ ',f10.2 )
  9482  format(
      &  15x, 'reorder-symbolic factor. done @ ',f10.2 )
  9485  format(
@@ -4951,6 +5254,8 @@ c
      &  15x, 'numeric loadpass done         @ ',f10.2 )
  9494  format(
      &  15x, 'factor + solve wall time:       ',f10.2 )
+ 9500  format(
+     &  15x, 'start cluster unsymmet  solve @ ',f10.2 )
 c
       end
 c      

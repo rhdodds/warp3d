@@ -333,7 +333,8 @@ c           Convert format (if root)
             if (local_k%my_rank .eq. 0) then
               call t_start_assembly(start_assembly_step)
               if (assembly_type .le. 2) then
-                call map_vss_mkl( neq, ncoeff, k_diag, rhs,eqn_coeffs,
+                call pardiso_symmetric_map( neq, ncoeff, k_diag,
+     &                            rhs,eqn_coeffs,
      &                            k_pointers, k_indices )
                 call convert_to_full( neq, ncoeff_copy, 
      &                   eqn_coeffs, k_pointers,k_indices)

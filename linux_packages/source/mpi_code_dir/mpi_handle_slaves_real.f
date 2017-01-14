@@ -296,9 +296,14 @@ c
          if(debug) write(out,'("=> Proc",i3,"all j temp stuff")') myid
          call di_node_props_setup (dum1,dum2)
 c
-c           do = 31: available
+c           do = 31: Cpardiso unsymmetric
 c
-      case( 31 )     
+      case( 31 ) 
+         if(debug) write(out,'("=> Proc",i3," cpardiso_unsymmetric")')
+     &           myid
+         call cpardiso_unsymmetric( idummy1, idummy2, ivec_dummy1, 
+     &        ivec_dummy2, dvec_dummy1, dvec_dummy2, dvec_dummy3, 
+     &        ldummy1, idummy3, out, myid )
 c
 c           do = 32:  available
 c
