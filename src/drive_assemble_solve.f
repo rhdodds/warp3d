@@ -9,7 +9,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine drive_assemble_solve( first_solve, now_iteration,
-     &                          suggested_new_precond )
+     &                                 suggested_new_precond )
 c
       use elem_block_data, only : edest_blocks
       use main_data, only : repeat_incid, modified_mpcs,
@@ -44,13 +44,13 @@ c
       integer :: code_vec(mxedof,mxvl), edest(mxedof,mxconn)
       integer, allocatable :: k_ptrs(:)
       integer, allocatable, save :: dof_eqn_map(:), eqn_node_map(:),
-     &                             save_k_indexes(:), save_k_ptrs(:)
+     &                              save_k_indexes(:), save_k_ptrs(:)
 
       logical :: new_size 
       logical, save :: cpu_stats, save_solver
       logical, parameter :: local_debug = .false.,
      &                      local_debug2 = .false.
-
+c
       real, external :: wcputime
       double precision :: start, end
       double precision, parameter :: zero = 0.0d00
@@ -58,20 +58,6 @@ c
 c
       data old_neqns, old_ncoeff, cpu_stats, save_solver
      &     / 0, 0, .true., .false. /
-      
-c
-c                    allocatables used to support stiffness
-c                    assembly in sparse format. note those
-c                    saved across solves to reduce work.
-c
-c
-c                    allocatables used to support sparse
-c                    solver. note those saved across solves
-c                    to reduce work.
-c
-c
-c                    local variables
-c
 c
 c
 c      
@@ -115,7 +101,7 @@ c
         call t_end_assembly( assembly_total, start_assembly_step )
         if( local_debug ) write(*,*) '... drive_assem_solve  @ 3'
 c
-      end if        
+      end if   ! on first_solve   
 c
 c          2.  assemble the equations and rh side here 
 c              ---------------------------------------
@@ -140,7 +126,7 @@ c                - a symmetric/asymmetric assembly on root follwed
 c                  by use of MPI cpardiso direct solver on ranks                
 c
 c             => distributed assembly across MPI ranks followed by 
-c                hypre solve.
+c                hypre or CPardiso solve.
 c
       call t_start_assembly( start_assembly_step )
       ntimes_assembly = ntimes_assembly + 1
@@ -185,11 +171,11 @@ c              p_vec was set above and is the set of residual
 c              nodal forces at n+1. they include MPC effects as
 c              needed for symmetric MKL solvers.
 c
-c      hypre_solver        => solver_flag .eq. 9
-c      pardiso_asymmetric  => solver_flag .eq. 8
-c      pardiso_symmetric   => solver_flag .eq. 7
-c      cpardiso_symmetric  => solver_flag .eq. 10
-c      cpardiso_asymmetric => solver_flag .eq. 11
+c               hypre_solver        => solver_flag .eq. 9
+c               pardiso_asymmetric  => solver_flag .eq. 8
+c               pardiso_symmetric   => solver_flag .eq. 7
+c               cpardiso_symmetric  => solver_flag .eq. 10
+c               cpardiso_asymmetric => solver_flag .eq. 11
 c      
       select case( solver_flag )
 
@@ -230,17 +216,26 @@ c
           write(out,9120); call die_gracefully
         end if
         if( local_debug ) write(*,*) '... drive_assem_solve @ 5e'
-           call wmpi_alert_slaves( 3 )
-           call cpardiso_symmetric( neqns, ncoeff, k_diag, p_vec,
+        call wmpi_alert_slaves( 3 )
+        call cpardiso_symmetric( neqns, ncoeff, k_diag, p_vec,
      &                          u_vec, k_coeffs, k_ptrs, k_indexes,
      &                          cpu_stats, itype, out, myid )
         if( local_debug ) write(*,*) '... drive_assem_solve @ 5f'
 c
       case( 11 ) ! asymmetric cpardiso
-
-
-      case default
-
+c      
+        if( .not. asymmetric_assembly ) then
+             write(out,9125); call die_gracefully
+        end if
+        if( local_debug ) write(*,*) '... drive_assem_solve @ 5g'
+        call wmpi_alert_slaves( 31 )
+        call cpardiso_unsymmetric( neqns, nnz, k_ptrs, k_indexes, 
+     &            k_coeffs,  p_vec, u_vec, cpu_stats, itype, out, 
+     &            myid )
+        if( local_debug ) write(*,*) '... drive_assem_solve @ 5h'
+c
+      case default ! bad solver type
+c
             write(out,9301) solver_flag
             call die_gracefully
 c
@@ -323,8 +318,12 @@ c
      & 1000(/3x,8f12.6) )
  9110 format(1x,'>> FATAL ERROR: Job Aborted.',    
      & /,5x,'asymmetric solver requested for symmetric equations')
+ 9115 format(1x,'>> FATAL ERROR: Job Aborted.',    
+     & /,5x,'asymmetric solver requested for symmetric equations')
  9120 format(1x,'>> FATAL ERROR: Job Aborted.',    
      & /,5x,'symmetric solver requested for asymmetric equations')
+ 9125 format(1x,'>> FATAL ERROR: Job Aborted.',    
+     & /,5x,'asymmetric solver requested w/o asymmetric assembly')
  9301 format(1x,
      &'>> FATAL ERROR: Job Aborted.',
      &5x,' Requested equation solver cannot be used',
@@ -1391,7 +1390,7 @@ c           Basically the plan is to convert to CSR (with existing fn)
 c           and write out in
 c           the format specified above.
 c
-      call map_vss_mkl( n, nnz, diagonal, rhs,values,
+      call pardiso_symmetric_map( n, nnz, diagonal, rhs,values,
      &                   row_ptrs, col_indexes )
       nnz = nnz + n
       open (unit = fileno, file=filename)

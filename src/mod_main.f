@@ -4,7 +4,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 12/19/2016 rhd                  *
+c     *              last modified : 1/12/2017 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -299,7 +299,6 @@ c                 Another solution parameter telling us whether
 c                 or not to use asymmetric assembly
 c
       logical :: asymmetric_assembly
-      logical :: pardiso_first 
 c
 c          file name for "output commands file ... after steps <list>'
 c          bit map to store expanded list of steps

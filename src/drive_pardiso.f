@@ -1,63 +1,108 @@
 c
 c     ****************************************************************
 c     *                                                              *
-c     *  Driver to call the MKL structurally symmetric solver with a *
-c     *  full CSR matrix.  Very similar to direct_sparse_mkl but a   *
-c     *  bit simpler because the matrix is already CSR.              *
+c     *  Driver to call Pardiso (threaded) asymmetric solver with    *
+c     *  full CSR matrix. [K] is structurally symmetric but values   *
+c     *  are not symmetric                                           *
 c     *                                                              *
 c     *  written by: mcm                                             *
-c     *  last modified : 1/5/2016 rhd                                *
+c     *  last modified : 1/12/2016 rhd                                *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine pardiso_unsymmetric( n, nnz, k_ptrs, k_indexes, 
      &            k_coeffs, p_vec, u_vec, cpu_stats, itype, out, 
-     &            use_iterative)
-      use main_data, only: pardiso_first
+     &            use_iterative )
       implicit none
+c
+c                parameter declarations
 c
       integer :: n, nnz, k_ptrs(n+1), k_indexes(nnz), itype, out
       double precision :: k_coeffs(nnz), p_vec(n), u_vec(n)
       logical :: cpu_stats, use_iterative
 c
-c     Local stuff for pardiso
+c                local for pardiso
 c
-      integer :: maxfct, mnum, mtype, perm, nrhs, iparm(64),
-     &      msglvl, error, phase
-      integer, save :: pt(64)
-      logical :: mkl_ooc_flag
-      integer, save :: num_calls
+      integer :: maxfct, mnum, mtype, perm, nrhs, msglvl, error, phase
+      integer, save :: pt(64), iparm(64), num_calls
+      logical :: mkl_ooc_flag, direct_solve
       logical, save :: pardiso_mat_defined
-      data num_calls / 0 /
-      data pardiso_mat_defined / .false. /
-      data mkl_ooc_flag / .false. /
+      data num_calls, pardiso_mat_defined / 0, .false. /
 c
-c     Set pardiso parameters
+c                set driver and Pardiso parameters
 c
       maxfct = 1
-      mnum = 1
-      mtype = 1 ! Structurally symmetric, but not actually symmetric
-      perm = 0 ! Will be dummy
-      nrhs = 1
-      if (pardiso_first) then
-        pt = 0
-        pardiso_first = .false.
-      end if
+      mnum   = 1
+      mtype  = 1 ! structurally symmetric, values not symmetric
+      perm   = 0 ! will be dummy
+      nrhs   = 1
+      msglvl = 0 ! no printed stats from inside Pardiso
+      mkl_ooc_flag = .false. ! not supported for unsymmetric
+      direct_solve = .not. use_iterative
 c
-      iparm = 0
-      iparm(1) = 1 ! Non default...
+c                solution types (itype):
+c                 1 - first time solution for a matrix:
+c                               setup ordering method and perform
+c                               pre-processing steps.
+c                 2 - Solution of above same matrix equations
+c                     with a new set of coefficients but same
+c                     sparsity
+c                 3 - no solution. just release data.
+c
+       select case( itype )
+      case( 1 ) 
+        call pardiso_unsymmetric_setup
+        if( direct_solve )  call pardiso_unsymmetric_direct
+        if( use_iterative ) call pardiso_unsymmetric_iterative
+      case( 2 )
+        if( direct_solve )  call pardiso_unsymmetric_direct
+        if( use_iterative ) call pardiso_unsymmetric_iterative
+      case(3 ) 
+        call pardiso_unsymmetric_release
+      case default  
+        call warp3d_pardiso_mess( 11, out, error, mkl_ooc_flag, 
+     &                            cpu_stats, iparm )
+      end select
+      return
+c
+      contains
+c     ========
+c
+c     ******************************************************************
+c     *       contains:   pardiso_unsymmetric_setup                    *
+c     ******************************************************************
+c
+      subroutine pardiso_unsymmetric_setup
+      implicit none
+c
+c
+c              solve first time during execution or solve equations
+c              with different sparisty      
+c
+      call thyme(23, 1)
+c
+      iparm(1:64) = 0
+      iparm(1) = 1 ! No solver default...
       iparm(2) = 3 ! Parallel fill-in reducing
+      iparm(3) = 0 ! numbers of processors. MKL_NUM_THREADS overrides
       iparm(4) = 0 ! no iterative-direct algorithm
-      if( use_iterative ) iparm(4) = 81 ! Unless we want it
+      if( use_iterative ) iparm(4) = 81 ! Unless we want it less strict
       iparm(5) = 0 ! No user ordering
       iparm(6) = 0 ! Write separate x
+      iparm(7) = 0 ! not in use
       iparm(8) = 30 ! Do a lot of refinement
       iparm(10) = 13 ! Permute with 10E-13
-      iparm(11) = 1 ! Do matching
-      iparm(12) = 0 ! Ax = b
-      iparm(13) = 1 ! Add some extra permutation for non-symmetric matrices
-      iparm(18) = -1 ! output nnz in factorization
-      iparm(19) = -1 ! output MFLOPS
+      iparm(11) = 1 ! scaling.
+      iparm(12) = 0 ! olve standard  equation: Ax = b
+      iparm(13) = 1 ! Add some extra permutation for 
+c                     non-symmetric matrices
+      iparm(14) = 0 ! Output: number of perturbed pivots
+      iparm(15) = 0 ! not in use
+      iparm(16) = 0 ! not in use
+      iparm(17) = 0 ! not in use
+      iparm(18) = -1 ! return: number of nonzeros in the factor LU
+      iparm(19) = -1 ! return: Mflops for LU factorization
+      iparm(20) = -1 ! return: Numbers of CG Iterations 
       iparm(21) = 0 ! Different pivoting not available
       iparm(24) = 1 ! use 2-level parallelism for triangulation
       iparm(25) = 0 ! Parallel backsolve
@@ -67,124 +112,141 @@ c
       iparm(35) = 0 ! Fortran
       iparm(60) = 0 ! Do everything in core for now...
 c
-      msglvl = 0 ! Don't print stuff
+      error  = 0 ! make sure it gets set
+      pt(1:64) = 0 ! init internal solver memory pointer only
+c                    necessary for first call to pardiso.
+c      
+c             if previously sovled a set of equations,release memory.
 c
-      error = 0 ! Make sure it gets set
-c
-c     3 itype possibilities:
-c           1 -- solve a system with a new sparsity
-c           2 -- solve a system with a stored sparsity
-c           3 -- release memory
-c
-      if (itype .eq. 3) then
-        if (.not. pardiso_mat_defined) call warp3d_pardiso_mess(
-     &            7, out, error, mkl_ooc_flag, cpu_stats, iparm)
+      if( pardiso_mat_defined ) then 
         phase = -1
-        call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
+        call pardiso( pt, maxfct, mnum, mtype, phase, n, k_coeffs,
+     &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
+     &       u_vec, error ) 
+        pardiso_mat_defined = .false.
+        call warp3d_pardiso_mess( 6, out, error, mkl_ooc_flag, 
+     &                            cpu_stats, iparm )
+      end if
+      call warp3d_pardiso_mess( 1, out, error, mkl_ooc_flag,
+     &                         cpu_stats, iparm )
+c    
+      phase = 11 ! reordering and symbolic factorization
+      call pardiso( pt, maxfct, mnum, mtype, phase, n, k_coeffs,
+     &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
+     &     u_vec, error )
+      pardiso_mat_defined = .true.
+      call warp3d_pardiso_mess( 2, out, error, mkl_ooc_flag, 
+     &                          cpu_stats, iparm )
+c      
+      call thyme( 23, 2 )
+      return
+c
+      end subroutine pardiso_unsymmetric_setup
+
+
+c     ******************************************************************
+c     *       contains:   pardiso_unsymmetric_release                  *
+c     ******************************************************************
+c
+      subroutine pardiso_unsymmetric_release
+      implicit none
+c      
+      if( num_calls == 0 ) return
+      if( .not. pardiso_mat_defined ) ! job aborted
+     &      call warp3d_pardiso_mess( 7, out, error, mkl_ooc_flag, 
+     &                               cpu_stats, iparm)
+      phase = -1
+      call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &       u_vec, error)
-        pardiso_mat_defined = .false.
-        num_calls = 0
-        return
-      end if
+      pardiso_mat_defined = .false.
+      num_calls = 0
+      return
+c
+      end subroutine pardiso_unsymmetric_release
 
-c     If we are in phase 2 check to make sure we've defined the matrix,
-c     if we did skip ahead to numeric factorization and backsolve
-      if ((itype .eq. 2) .and. pardiso_mat_defined) then
-        goto 1000
-      elseif (itype .eq. 2) then
-        write (*,*) "Need the appropriate error message for no matrix"
-        call die_gracefully
-      end if
+c     ******************************************************************
+c     *       contains:   pardiso_unsymmetric_direct                   *
+c     ******************************************************************
 c
-c     So factorize
+      subroutine pardiso_unsymmetric_direct
+      implicit none
 c
-      call thyme(23, 1)
-c     Need to free memory, as we have a new matrix structure
-      if (pardiso_mat_defined) then
-        phase = -1
-        call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
+c              direct solve: factorization, forward/backward pass
+c
+      num_calls = num_calls + 1
+      call thyme( 25, 1)
+      phase = 22 
+      call warp3d_pardiso_mess( 4, out,  error, mkl_ooc_flag, 
+     &                          cpu_stats, iparm )
+      call pardiso( pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
-     &       u_vec, error) 
-        pardiso_mat_defined = .false.
-        call warp3d_pardiso_mess( 6, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-      end if
-c     No idea what this message says
-      call warp3d_pardiso_mess( 1, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-c     Symbolic factor!
-      phase = 11
+     &       u_vec, error )
+       call warp3d_pardiso_mess( 3, out, error, mkl_ooc_flag, 
+     &                           cpu_stats, iparm )
+      call thyme( 25, 2 )
+c
+c             solve: forward and backward substitution
+c
+      phase = 33
+      call thyme( 26, 1 )
       call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &     u_vec, error)
-      pardiso_mat_defined = .true.
-      call warp3d_pardiso_mess( 2, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-      call thyme( 23, 2 )
-
-c     At this point we have a factorized matrix
- 1000 continue
-c     Now lets factorize and solve.  If we're using the iterative version
-c     this takes 1 call, if not it takes 2 calls
+      call warp3d_pardiso_mess( 5, out, error, mkl_ooc_flag,
+     &                          cpu_stats, iparm )
+      call thyme( 26, 2 )
+c
+      return      
+c
+      end subroutine pardiso_unsymmetric_direct
+c      
+c     ******************************************************************
+c     *       contains:   pardiso_unsymmetric_iterative                *
+c     ******************************************************************
+c
+      subroutine pardiso_unsymmetric_iterative
+      implicit none
+c
+c              direct solve: factorization, forward/backward pass
+c
+c
       num_calls = num_calls + 1
-      call thyme( 25, 1)
-      if (use_iterative) then
-        phase = 23 ! Factorize and solve with iterative refinement
-        call warp3d_pardiso_mess( 9, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
+      call thyme( 25, 1 )
+      phase = 23 ! solve with iterative refinement
+      call warp3d_pardiso_mess( 9, out, error, mkl_ooc_flag, 
+     &                          cpu_stats, iparm )
+      call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &     u_vec, error)
-        call warp3d_pardiso_mess( 8, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call thyme( 25, 2 )
-      else
-        phase = 22 ! Factorize
-        call warp3d_pardiso_mess( 4, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
-     &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
-     &       u_vec, error)
-        call warp3d_pardiso_mess( 3, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call thyme( 25, 2 )
-        phase = 33 ! Actual forward/backsolve
-        call thyme( 26 , 1)
-        call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
-     &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
-     &     u_vec, error)
-        call warp3d_pardiso_mess( 5, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call thyme( 26, 2 )
-      end if
-c
-c     Temp error printing
-c
-      if (error .ne. 0) then
-            write (*,*) "ERROR"
-            write (*,*) error
-            call die_gracefully
-      end if
+      call warp3d_pardiso_mess( 8, out, error, mkl_ooc_flag, 
+     &                          cpu_stats, iparm )
+      call thyme( 25, 2 )
+      return      
 
-      return
+      end subroutine pardiso_unsymmetric_iterative
 
-      end subroutine
+      end subroutine pardiso_unsymmetric
+
+
+
+
+
+
 c
 c     ****************************************************************
 c     *                                                              *
-c     *  Intel MKL Paradiso Sparse Solver Driver: A driver to call   *
-c     *  the serial or parallel sparse (direct) symmetric solver     *
-c     *  routines. The routines are part of the Intel MKL product    *
+c     *  drive Pardiso solver for symmetric equations: direct or     *                                                              *
+c     *  iterative. Pardiso is threads only. CPardiso is MPI +       *
+c     *  threads                                                     *
 c     *                                                              *
-c     *  written by: rhd   modified by: rhd                          *
-c     *  last modified : 1/5/2016 rhd                                *
+c     *      last modified : 1/11/2016 rhd                           *
 c     *                                                              *
 c     ****************************************************************
 c
        subroutine pardiso_symmetric( neq, ncoeff, k_diag, rhs,
      &                        sol_vec, eqn_coeffs, k_pointers,
-     &                        k_indices, cpu_stats, itype, out, 
+     &                        k_indices, print_cpu_stats, itype, out, 
      &                        solver_out_of_core, solver_memory,
      &                        solver_scr_dir, solver_mkl_iterative,
      &                        suggested_new_precond )
@@ -196,8 +258,8 @@ c
       double precision ::  k_diag(*), rhs(*), sol_vec(*), 
      &                     eqn_coeffs(*)
       integer :: k_pointers(*), k_indices(*)
-      logical :: cpu_stats, solver_out_of_core, solver_mkl_iterative,
-     &           suggested_new_precond  
+      logical :: print_cpu_stats, solver_out_of_core, 
+     &           solver_mkl_iterative, suggested_new_precond  
       integer :: itype, out, neq, ncoeff, solver_memory
       character (len=*) ::  solver_scr_dir
 c
@@ -205,21 +267,19 @@ c                locally defined.
 c
       real, external :: wcputime
       character(len=150) solver_directory 
-      logical ::  pardiso_mat_defined, use_iterative
+      logical ::  pardiso_mat_defined, use_iterative, direct_solve
       integer ::  mkl_ooc_flag
       save num_calls, pardiso_mat_defined
 c
 c                local for pardiso
 c
-      external :: pardiso
       integer(kind=8), save :: pt(64)
       integer, save :: handle, iparm(64), msglvl, mtype
-      integer :: maxfct, mnum, phase, nrhs, error,
-     &           idum, num_calls 
+      integer :: maxfct, mnum, phase, nrhs, error, idum, num_calls 
       double precision :: ddum
 c
-      data  nrhs /1/, maxfct /1/, mnum /1/, num_calls / 0 /
-      data  pardiso_mat_defined / .false. /
+      data  nrhs /1/, maxfct /1/, mnum /1/, num_calls / 0 /,
+     &      pardiso_mat_defined / .false. /
 c
 c                solution types (itype):
 c                 1 - first time solution for a matrix:
@@ -231,60 +291,89 @@ c                     sparsity
 c                 3 - no solution. just release data.
 c
       use_iterative = solver_mkl_iterative
-      if ( itype .eq. 3 .and. num_calls .ne. 0 ) then
-        if( .not. pardiso_mat_defined ) 
-     &   call warp3d_pardiso_mess( 7, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+      direct_solve = .not. use_iterative
+
+      select case( itype ) 
+      case( 1 ) 
+        call pardiso_symmetric_setup
+        if( use_iterative ) call pardiso_symmetric_iterative
+        if( direct_solve )  call pardiso_symmetric_direct
+      case( 2 ) 
+        call pardiso_symmetric_map( neq, ncoeff, k_diag, rhs, 
+     &                              eqn_coeffs, k_pointers, k_indices )
+        if( use_iterative ) call pardiso_symmetric_iterative
+        if( direct_solve )  call pardiso_symmetric_direct
+      case( 3 )
+        call pardiso_symmetric_release
+      case default ! then die
+        call warp3d_pardiso_mess( 11, out, error, mkl_ooc_flag, 
+     &                            print_cpu_stats, iparm )
+      end select
+      return
+c
+      contains
+c     ========
+
+c     ******************************************************************
+c     *       contains:   pardiso_symmetric_release                    *
+c     ******************************************************************
+c
+      subroutine pardiso_symmetric_release
+      implicit none
+c      
+      if ( num_calls .eq. 0 ) return
+      if( .not. pardiso_mat_defined ) ! job will be aborted
+     &  call warp3d_pardiso_mess( 7, out, 
+     &        error, mkl_ooc_flag, print_cpu_stats, iparm )
         phase = -1 ! release internal memory
         call pardiso( pt, maxfct, mnum, mtype, phase, neq, ddum, 
      &                idum, idum, idum, nrhs, iparm, msglvl, 
      &                ddum, ddum, error)
         pardiso_mat_defined = .false.
         num_calls = 0
-        return
-      end if
+      return
 c
-c                        1.-  Map the input arrays from NASA-VSS
-c                   format to the MKL format.
+      end subroutine pardiso_symmetric_release
 c
-c                   if we're solving with the out-of-core option,
-c                   the initialization, reordering steps must be
-c                   repeated. for in-core solutions jump to
-c                   factorization for itype = 2
+c     ******************************************************************
+c     *       contains:   pardiso_symmetric_setup                      *
+c     ******************************************************************
 c
-      call map_vss_mkl( neq, ncoeff, k_diag, rhs, eqn_coeffs,
-     &                  k_pointers, k_indices )
-      if ( itype .eq. 2 .and. .not. solver_out_of_core ) go to 1000
+      subroutine pardiso_symmetric_setup
+      implicit none
 c
-c                        2.-  Initialization. 
+c              map vss to csr equation storage
+c
+      call pardiso_symmetric_map( neq, ncoeff, k_diag, rhs, eqn_coeffs,
+     &                            k_pointers, k_indices )
+c
+c             if previously sovled a set of equations,release memory.
 c
       call thyme( 23, 1 )
       if ( pardiso_mat_defined ) then
         phase = -1 ! release internal memory
-        call pardiso( pt, maxfct, mnum, mtype, phase, neq, ddum, 
-     &                idum, idum, idum, nrhs, iparm, msglvl, 
-     &                ddum, ddum, error )
+        call pardiso( pt, maxfct, mnum, mtype, phase, neq, ddum, idum,
+     &                idum, idum, nrhs, iparm, msglvl, ddum, ddum, 
+     &                error )
         pardiso_mat_defined = .false.
-        call warp3d_pardiso_mess( 6, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+        call warp3d_pardiso_mess( 6, out, error, mkl_ooc_flag, 
+     &                           print_cpu_stats, iparm )
       end if
 c
-c              2a.-  create and write the out-of-core configuration
-c                    file if necessary.
+c              create and write the out-of-core configuration
+c              file if necessary.
 c
       mkl_ooc_flag = 0
-      if( .not. use_iterative ) then
-         if( solver_out_of_core ) then
-            mkl_ooc_flag = 1
-            call warp3d_dss_ooc( out, solver_memory, solver_scr_dir )
-         end if 
+      if( direct_solve .and. solver_out_of_core ) then
+        mkl_ooc_flag = 1
+        call warp3d_dss_ooc( out, solver_memory, solver_scr_dir )
       end if 
 c  
-      call warp3d_pardiso_mess( 1, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+      call warp3d_pardiso_mess( 1, out, error, mkl_ooc_flag, 
+     &                          print_cpu_stats, iparm )
 c
-c                   3.-  initialize, input  sparsity structure, reorder,
-c                   symbolic factorization.
+c              initialize, input  sparsity structure, reorder,
+c              symbolic factorization.
 c
       iparm(1:64) = 0
       iparm(1) = 1 ! no solver default
@@ -307,12 +396,12 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(15) = 0 ! not in use
       iparm(16) = 0 ! not in use
       iparm(17) = 0 ! not in use
-      iparm(18) = -1 ! Output: number of nonzeros in the factor LU
-      iparm(19) = -1 ! Output: Mflops for LU factorization
-      iparm(20) = -1 ! Output: Numbers of CG Iterations 
+      iparm(18) = -1 ! return: number of nonzeros in the factor LU
+      iparm(19) = -1 ! return: Mflops for LU factorization
+      iparm(20) = -1 ! return: Numbers of CG Iterations 
       iparm(24) = 1 ! use 2 level factorization
       iparm(25) = 0 ! parallel forward-backward solve
-      iparm(27) = 1 !  check input matrix for errors (=1)
+      iparm(27) = 0 !  check input matrix for errors (=1)
       iparm(60) = mkl_ooc_flag 
       error = 0 ! initialize error flag
       msglvl = 0 ! print statistical information
@@ -325,74 +414,100 @@ c
      &              k_pointers, k_indices, idum, nrhs, iparm, msglvl,
      &              ddum, ddum, error )
       pardiso_mat_defined = .true.
-      call warp3d_pardiso_mess( 2, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+      call warp3d_pardiso_mess( 2, out, error, mkl_ooc_flag, 
+     &                          print_cpu_stats, iparm )
       call thyme( 23, 2 )
 c
-c                        4.-  Numeric Factorization:
-c                      -> input numerical values of coeffs
-c                      -> Factor a matrix into L and L transpose
-c                   For iterative, we do possible factoriztion and
-c                   solve together in one call.
-c                    
-c                   For now, ignore the provided hint about when
-c                   are good times to refactor
+      return
 c
- 1000 continue
-      if( use_iterative ) then
-        num_calls = num_calls + 1; call thyme( 25, 1 )
-        phase = 23 ! iterative solve for displ
-        iparm(4) = 52
+      end subroutine pardiso_symmetric_setup
+c
+c     ******************************************************************
+c     *       contains:   pardiso_symmetric_iterative                  *
+c     ******************************************************************
+c
+      subroutine pardiso_symmetric_iterative
+      implicit none
+c
+c             iterative solution- we do possible factoriztion and
+c             solve together in one call.
+c                    
+c             for now, ignore the provided hint about when
+c             are good times to refactor
+c
+      if( solver_out_of_core ) then ! invalid condition
+        call warp3d_pardiso_mess( 10, out,  error, mkl_ooc_flag, 
+     &                            print_cpu_stats, iparm )
+      end if  
+c
+      num_calls = num_calls + 1
+      call thyme( 25, 1 )
+      phase     = 23 ! iterative solve for displ
+      iparm(4)  = 52
 c        if( suggested_new_precond ) iparm(4) = 0 ! new factorization
-        call warp3d_pardiso_mess( 9, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call pardiso( pt, maxfct, mnum, mtype, phase, neq,
-     &     eqn_coeffs, k_pointers, k_indices, idum, nrhs, iparm, 
-     &     msglvl, rhs, sol_vec, error )
-        call warp3d_pardiso_mess( 8, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
-        call thyme( 25, 2 )
-        return
-      end if
+      call warp3d_pardiso_mess( 9, out,  error, mkl_ooc_flag, 
+     &                         print_cpu_stats, iparm )
+      call pardiso( pt, maxfct, mnum, mtype, phase, neq,
+     &   eqn_coeffs, k_pointers, k_indices, idum, nrhs, iparm, 
+     &   msglvl, rhs, sol_vec, error )
+      call warp3d_pardiso_mess( 8, out, error, mkl_ooc_flag, 
+     &                          print_cpu_stats, iparm )
+      call thyme( 25, 2 )
+      return
+c      
+      end subroutine pardiso_symmetric_iterative
+c
+c     ******************************************************************
+c     *       contains:   pardiso_symmetric_diect                      *
+c     ******************************************************************
+c
+      subroutine pardiso_symmetric_direct
+      implicit none
+c
+c              direct solve: factorization, forward/backward pass
 c
       num_calls = num_calls + 1
       call thyme( 25, 1 )
       phase = 22 ! only factorization
-      call warp3d_pardiso_mess( 4, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+      call warp3d_pardiso_mess( 4, out, error, mkl_ooc_flag, 
+     &                          print_cpu_stats, iparm )
       call pardiso( pt, maxfct, mnum, mtype, phase, neq,
      &              eqn_coeffs, k_pointers, k_indices,
      &              idum, nrhs, iparm, msglvl, ddum, ddum, error )
-      call warp3d_pardiso_mess( 3, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+      call warp3d_pardiso_mess( 3, out, error, mkl_ooc_flag, 
+     &                          print_cpu_stats, iparm )
       call thyme( 25, 2 )
 c
-c                        5.-  Solve:
-c                            Forward and backward substitution
+c             solve: forward and backward substitution
 c
       call thyme( 26, 1 )
       iparm(8) = 0 ! max numbers of iterative refinement steps
-      phase = 33   ! only factorization
+      phase = 33   ! only forward/backward solve
       CALL pardiso( pt, maxfct, mnum, mtype, phase, neq,
      &              eqn_coeffs, k_pointers, k_indices, idum, nrhs, 
      &              iparm, msglvl, rhs, sol_vec, error )
-      call warp3d_pardiso_mess( 5, out, 
-     &        error, mkl_ooc_flag, cpu_stats, iparm )
+      call warp3d_pardiso_mess( 5, out, error, mkl_ooc_flag, 
+     &                          print_cpu_stats, iparm )
       call thyme( 26, 2 )
 c
-      return
-      end
+      return      
+c
+      end subroutine pardiso_symmetric_direct
+c
+      end subroutine pardiso_symmetric
+c
+
 c
 c     ****************************************************************
 c     *                                                              *
-c     *  Messages during equation solving with the Intel MKL pkg.    *
+c     *  Messages during equation solving with Pardiso               *
 c     *                                                              *
-c     *  written by: rh   modified by: rhd  last modified: 5/4/2016  *
+c     *  last modified: 1/12/2016 rhd                                *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine warp3d_pardiso_mess( mess_no, iout, 
-     &               ier, ooc_flag, cpu_stats, iparm )
+      subroutine warp3d_pardiso_mess( mess_no, iout, ier, ooc_flag, 
+     &                                cpu_stats, iparm )
       implicit none
 c
       logical::  cpu_stats
@@ -486,6 +601,18 @@ c
         case( 9 )
           if( cpu_stats ) write(iout,9286)
 c
+        case( 10 )
+           write(iout,9720)
+           call die_gracefully
+c           
+        case( 11 )
+           write(iout,9740)
+           call die_gracefully
+c           
+        case default
+           write(iout,9730)
+           call die_gracefully
+
       end select
       return
 c
@@ -504,7 +631,7 @@ c
  9472  format(
      &  15x, 'FATAL ERRROR: mkl sparse -iterative- solver' )
  9480  format(
-     &  15x, 'mkl solver initializing       @ ',f10.2 )
+     &  15x, 'Pardiso solver initializing   @ ',f10.2 )
  9580  format(
      &  15x, ' -> out-of-memory operation' )
  9482  format(
@@ -532,6 +659,17 @@ c
      & /,     7x,'machine.' )   
  9710  format(7x,'The factorization step has encountered a',
      & /,     7x,'zero pivot.')     
+ 9720  format(
+     &   15x, 'FATAL ERRROR: iterative solver cannot be used with', 
+     & /,15x, '              out-of-core option',
+     & /,15x  '              Job aborted.')
+ 9730  format(
+     &   15x, 'FATAL ERRROR: invalid message condition in',  
+     & /,15x, '              warp3d_pardiso_mess',
+     & /,15x  '              Job aborted.')
+ 9740  format(
+     &   15x, 'FATAL ERRROR: invalid itype in pardiso_symmetric',  
+     & /,15x  '              or pardiso_unsymmetric. Job aborted.')
 c
       end
 
@@ -545,7 +683,8 @@ c     *  written by: rh   modified by: rhd  last modified: 5/4/16    *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine map_vss_mkl( neq, ncoeff, diag, rhs, amat, kpt, kind )
+      subroutine pardiso_symmetric_map( neq, ncoeff, diag, rhs, amat, 
+     &                                  kpt, kind )
 c
       implicit none
 c
@@ -565,12 +704,12 @@ c                  i.e. only the ncoeff number of terms); the output
 c                  will have all terms filled. Same with indices
 c                  array.
 c
-c   Note:    It is assumed that the last term in kpt(neq) == 0
-c            is always zero.  Therefore, the second loop will not
-c            be performed when i=neq ( See bellow )
+c       Note: It is assumed that the last term in kpt(neq) == 0
+c             is always zero.  Therefore, the second loop will not
+c             be performed when i=neq ( See bellow )
 c
 c
-c      Input(vss Format)   -------->     Output (MKL format)
+c      Input(vss Format)   -------->     Output (MKL/CSR format)
 c           Terms Used                        Terms Used
 c
 c             amat(ncoeff)                  k_coeff( ncoeff +neq )

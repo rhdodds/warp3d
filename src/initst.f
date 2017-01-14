@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/22/2016 rhd              *
+c     *                   last modified : 1/12/2016 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -32,8 +32,7 @@ c
      &                      convergence_history, 
      &                      run_user_solution_routine, cp_unloading,
      &                      divergence_check, diverge_check_strict,
-     &                      asymmetric_assembly,
-     &                      pardiso_first, output_command_file,
+     &                      asymmetric_assembly, output_command_file,
      &                      output_step_bitmap_list,
      &                      material_model_names, batch_mess_fname,
      &                      creep_model_used, extrapolate,
@@ -693,8 +692,6 @@ c
 c
 c                       Asymmetric assembly
       asymmetric_assembly = .false.
-
-      pardiso_first = .true.
 c      
 c                       initialize the file name and bit map of step
 c                       numbers for the "output commands file ...
