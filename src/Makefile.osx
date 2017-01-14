@@ -155,8 +155,8 @@ OBJ =	 \
 	$(OD)/dielem_a.o	 \
 	$(OD)/dielem_b.o	 \
 	$(OD)/dielem_c.o	 \
-	$(OD)/direct_driver_sparse.o	 \
-	$(OD)/direct_sparse_mkl.o	 \
+	$(OD)/drive_assemble_solve.o	 \
+	$(OD)/drive_pardiso.o	 \
 	$(OD)/diexp4.o	 \
 	$(OD)/dptstf.o	 \
 	$(OD)/drive_eps_sig_internal_forces.o	 \

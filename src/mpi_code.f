@@ -852,3 +852,20 @@ c
       implicit integer (a-z)
       return
       end
+c     ****************************************************************
+c     *                                                              *
+c     *              drive the unsymmetric CPardiso solution         *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/7/20167 rhd              *
+c     *                                                              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine cpardiso_unsymmetric( neqns, nnz, k_ptrs, k_indexes, 
+     &            k_coeffs,  p_vec, u_vec, cpu_stats, itype, out, 
+     &            myid )
+      implicit integer (a-z)
+      return
+      end
