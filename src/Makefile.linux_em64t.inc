@@ -18,7 +18,7 @@
 #     ODIR, COMPILER, HYINC, HYLIB, MPIOPT, MKLROOT
 #
 OSNAME   := Linux
-BUILDNUM := 3250
+BUILDNUM := 3260
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -42,8 +42,10 @@ MVC      = /bin/mv -f
 FTRAP = 
 INLINE =  -no-inline-factor
 PROFILE =
+OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
+OPT_REPORT = 
 OPENMP =  -qopenmp -reentrancy 
-FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz \
+FCOPTS =  -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(OPT_REPORT) \
          -xHOST -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
          $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
@@ -163,7 +165,6 @@ OBJ =	 \
 	$(OD)/elprp.o	 \
 	$(OD)/energy.o	 \
 	$(OD)/eqivld.o	 \
-	$(OD)/equiv_strain.o	 \
 	$(OD)/errchk.o	 \
 	$(OD)/errmsg.o	 \
 	$(OD)/find_neighbors.o	 \
@@ -233,13 +234,11 @@ OBJ =	 \
 	$(OD)/mpc_modify.o	 \
 	$(OD)/name_strip.o	 \
 	$(OD)/ndpts1.o	 \
-	$(OD)/ou3dpr.o	 \
 	$(OD)/oualph.o	 \
 	$(OD)/ouddpa.o	 \
 	$(OD)/oudriv.o	 \
 	$(OD)/oudups.o	 \
 	$(OD)/oudva.o	 \
-	$(OD)/oueff1.o	 \
 	$(OD)/ouext1.o	 \
 	$(OD)/ouext2.o	 \
 	$(OD)/ouflnm.o	 \
@@ -250,7 +249,6 @@ OBJ =	 \
 	$(OD)/ouhprn.o	 \
 	$(OD)/ouhrks.o	 \
 	$(OD)/ouhstr.o	 \
-	$(OD)/ouinv1.o	 \
 	$(OD)/oulbdd.o	 \
 	$(OD)/oulbir.o	 \
 	$(OD)/oulbst.o	 \
@@ -268,7 +266,6 @@ OBJ =	 \
 	$(OD)/ouparm.o	 \
 	$(OD)/oupdva.o	 \
 	$(OD)/oupele.o	 \
-	$(OD)/oupri1.o	 \
 	$(OD)/ouprks.o	 \
 	$(OD)/oupstr_elem.o	 \
 	$(OD)/oupstr_node.o	 \
@@ -281,13 +278,8 @@ OBJ =	 \
 	$(OD)/outfil.o	 \
 	$(OD)/oustr.o	 \
 	$(OD)/outime.o	 \
-	$(OD)/ouyld1.o	 \
 	$(OD)/packets.o	 \
 	$(OD)/pconvert.o	 \
-	$(OD)/princ_inv_strain.o	 \
-	$(OD)/princ_inv_stress.o	 \
-	$(OD)/princ_strain.o	 \
-	$(OD)/princ_stress.o	 \
 	$(OD)/prcsel.o	 \
 	$(OD)/qmply1.o	 \
 	$(OD)/getgpts.o	 \
@@ -332,7 +324,6 @@ OBJ =	 \
 	$(OD)/user_routines_support.o	 \
 	$(OD)/vol_terms.o	 \
 	$(OD)/vol_avg.o	 \
-	$(OD)/yield_function.o	 \
 	$(OD)/zero_vector.o	 \
 	$(OD)/zero_vol.o	 \
 #
