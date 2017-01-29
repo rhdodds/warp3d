@@ -4,7 +4,7 @@ c     *                      subroutine oudups                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/11/13 rhd                *
+c     *                   last modified : 1/19/2017 rhd              *
 c     *                                                              *
 c     *     gathers data for a block of elements to support          *
 c     *     generation of a patran, packet or hard copy output.      *
@@ -20,14 +20,18 @@ c
       use elblk_data, only : elem_hist, blk_size_hist, urcs_blk_n,
      &                       rot_blk_n1, ddtse, blk_size_gp
 c
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
-      logical geonl, stress, is_cohesive
+c      
+      integer :: span, felem, ngp
+      logical :: geonl, stress, is_cohesive
 c
 c             local declarations
 c
-      logical  local_debug, is_solid
-      data local_debug / .false. /
+      integer :: blk, rel_elem, hist_size, hist_offset, rot_offset,
+     &           eps_offset, sig_offset, mxhist, mxngp  
+      logical :: is_solid
+      logical, parameter ::  local_debug = .false.
 c
       blk         = elems_to_blocks(felem,1)
       rel_elem    = elems_to_blocks(felem,2)
@@ -74,7 +78,7 @@ c             rotation for transforming unrotated cauchy stresses
 c             to cauchy stresses (skip interface-cohesive elements).
 c             if not stresses, gather strain data.
 c
-      if ( geonl .and. is_solid )
+      if( geonl .and. is_solid )
      &   call gastr( rot_blk_n1, rot_n1_blocks(blk)%ptr(rot_offset),
      &                ngp, 9, span )
 c
@@ -114,7 +118,7 @@ c               local declarations
 c
       integer i, j, k
 c
-      if ( ngp .ne. 8 ) then
+      if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, hist_size
             do  i = 1, span
