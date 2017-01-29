@@ -18,28 +18,29 @@ c
      &                      elem_values, nrowd, nrow, first_block,
      &                      felem, last_block, flat_file,
      &                      stream_file, text_file, compressed )
-      implicit integer (a-z)
+      implicit none
 c
-      logical oubin, ouasc, stress, first_block, last_block,
-     &        flat_file, stream_file, text_file, compressed,
-     &        patran_file
-
-      double precision
-     &  elem_values(nrowd,num_vals)
+      integer :: num_vals, nrowd, nrow, felem
+      logical :: oubin, ouasc, stress, first_block, last_block,
+     &           flat_file, stream_file, text_file, compressed
+c
+      double precision :: elem_values(nrowd,num_vals)
       include 'common.main'
 c
 c                       local declarations
 c
+      integer :: data_type, relelem, elem, i, quantity
+      integer, save :: fileno, flat_file_number
+      integer :: titl(80), titl1(80)
+      integer, external ::  warp3d_get_device_number
+      logical ::  connected
+      logical ::  patran_file
+      double precision, parameter :: small_tol = 1.d-80, zero = 0.d0
+ 
       character(len=4) :: title(80), title1(80)
       character(len=1) dummy_char
       character(len=80) :: string, strng1, stepstring*6
-      dimension titl(80), titl1(80)
       equivalence (title,titl), (title1,titl1)
-      logical connected
-      save fileno, flat_file_number
-      external warp3d_get_device_number
-      double precision :: small_tol, zero
-      data small_tol, zero / 1.0d-80, 0.0d00 /
 c
       patran_file = oubin .or. ouasc  
       data_type = 1
@@ -47,11 +48,11 @@ c
 c
 c                       close patran file(s) or flat file
 c
-      if ( last_block ) then
+      if( last_block ) then
         call ouocst_elem( data_type, ltmstp, oubin, ouasc, fileno, 2,
      &                    use_mpi, myid, flat_file,
      &                    stream_file, text_file, compressed,
-     &                    flat_file_number, dummay_char )
+     &                    flat_file_number, dummy_char )
         return
       end if
 c
@@ -71,7 +72,7 @@ c                       Logic here mingles patran and flat file
 c                       writing of element results since not much
 c                       difference.
 c
-      if ( first_block ) then
+      if( first_block ) then
         fileno = warp3d_get_device_number()
         if( fileno .eq. -1 ) then
           write(out,9000)
@@ -106,7 +107,7 @@ c
       if( patran_file .and. oubin ) then
          do relelem = 1, nrow
              elem = felem + relelem - 1
-         write(fileno) elem, 8,
+             write(fileno) elem, 8,
      &           (sngl(elem_values(relelem,i)),i=1,num_vals)
          end do
       end if
@@ -123,9 +124,9 @@ c
          do relelem = 1, nrow
            elem = felem + relelem - 1
            if( use_mpi ) then
-            write(fileno) dble(elem), elem_values(relelem,1:num_vals)
+             write(fileno) elem, elem_values(relelem,1:num_vals)
            else
-            write(fileno) elem_values(relelem,1:num_vals)
+             write(fileno) elem_values(relelem,1:num_vals)
            end if
          end do
       end if
@@ -133,10 +134,15 @@ c
       if( flat_file .and. text_file ) then
          do relelem = 1, nrow
            elem = felem + relelem - 1
+           if( elem .eq. 16 ) then
+              write(*,*) ' .... element 16 results'
+              write(*,*) elem_values(relelem,1:5)
+           end if   
            if( use_mpi ) then
-             write(fileno,9100) elem, elem_values(relelem,1:num_vals)
+             write(fileno,9100) elem, 
+     &                          elem_values(relelem,1:num_vals)
            else
-             write(fileno,9100) elem_values(relelem,1:num_vals)
+             write(fileno,9200) elem_values(relelem,1:num_vals)
            end if
          end do
       end if
@@ -149,7 +155,8 @@ c
  920  format(2i8,/,(6e13.6))
  9000 format('>> WARNING: could not find a unit number to write',
      & /     '            patran or flat file. action skipped...',/)
- 9100 format(30e15.6)
+ 9100 format(i8,30d15.6)
+ 9200 format(30e15.6)
 c 
       contains
 c     ========
@@ -165,6 +172,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine oust_elem_patran_header  
+      implicit none
 c
       string = ' '
       strng1 = ' '
