@@ -4,7 +4,7 @@ c     *                      subroutine outfil                       *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 03/08/94                   *
+c     *                   last modified : 01/20/2017 rhd             *
 c     *                                                              *
 c     *     this subroutine gets and sets the name of a file to      *
 c     *     dump all the output to.                                  *
@@ -15,13 +15,16 @@ c
 c
       subroutine outfil
       use file_info
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
-      real dumr
+c      
+      integer :: dum, filchr, ierror
+      real :: dumr
+      double precision :: dumd
       character(len=8) :: dums
       character(len=80) :: filnam, outfle
-      logical ok, nameok
-      logical endcrd,label,matchs,string
+      logical :: ok, nameok
+      logical, external :: endcrd, label, matchs, string
 c
 c                       if "to terminal" or "to display"
 c                       then set screen as output device
