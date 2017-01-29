@@ -21,7 +21,7 @@ c
       use main_data, only: output_packets, output_states_type_opt1,
      &                                     output_states_type_opt2,
      &                                     windows_os
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameter declarations
 c
@@ -38,10 +38,11 @@ c
      &           oubin, ouasc, oupat, noheader, react_totals_only,
      &           compressed, ok, found, stream_file, text_file,
      &           flat_file
-
+c
       logical, external :: matchs, endcrd, true, label, string, numi
       logical :: stress, prec, out_packet_now, neutral
-      integer :: indev, outdev, idummy, jdummy
+      integer :: indev, outdev, idummy, jdummy, output_states_level,
+     &           dum, osn, ltmstp, itype
 c
       call iodevn( indev, outdev, idummy, jdummy )
 c
@@ -497,13 +498,16 @@ c
       subroutine oudriv_cmds
       use main_data, only: output_command_file,
      &                     output_step_bitmap_list
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
 c
 c                      locals
 c
+      integer :: dummy, char, errnum, maplength, icn, iplist, word,
+     &           bit, nchar, istep, lenlst
       integer :: intlst(mxlsz)
-      logical :: matchs, label, string, ok
+      logical, external :: matchs, label, string
+      logical :: ok
       character(len=80) :: bad_input
 c
       output_command_file(1:) = " "
