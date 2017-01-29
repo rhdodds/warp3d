@@ -4,7 +4,7 @@ c     *                      subroutine ounds1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/3/2016 rhd               *
+c     *                   last modified : 1/27/2017 rhd              *
 c     *                                                              *
 c     *     elestr on entry has element strains or stresses at       *
 c     *     all integration points for all elements in block.        *
@@ -25,18 +25,14 @@ c
 c
 c                       local declarations
 c
-      double precision ::
-     &     temstr(mxvl,mxoupr,mxndel), lg(mxgp), zero,
-     &     dum_vec(1), rngpts, xi, eta, zeta
       integer :: idumvec(1), num_vals, shift, elnod, tetpt, j, k, i 
-      logical :: lagrangian_extrap, tet10, tet4,
-     &           threed_solid_elem,
-     &           hex_elem, wedge_elem, tet_elem,
-     &           twod_elem, quad_elem,
-     &           triangle_elem, axisymm_elem,
-     &           cohesive_elem 
-      data zero /0.0d0/
-c
+      logical :: lagrangian_extrap, tet10, tet4, threed_solid_elem,
+     &           hex_elem, wedge_elem, tet_elem, twod_elem, quad_elem,
+     &           triangle_elem, axisymm_elem, cohesive_elem 
+      double precision :: temstr(mxvl,mxoupr,mxndel), lg(mxgp),
+     &                    dum_vec(1), rngpts, xi, eta, zeta
+      double precision, parameter :: zero = 0.0d0
+c      
 c                       set number of values to define at element nodes.
 c                       determine if hex/tet element and that the order
 c                       of integration allows lagrangian extrapolation
@@ -78,7 +74,7 @@ c              the element nodes. for example, 14 pt integration
 c              rule for hexes, tet4 elements, etc. we use the
 c              average of all integration points at each node.
 c
-      temstr = zero
+      temstr = zero  ! all terms
 c
       do j = 1, ngp
        do k = 1, num_vals
@@ -90,7 +86,7 @@ c
       end do
 c   
       rngpts = ngp
-      elestr = zero
+      elestr = zero ! all terms
 c      
       do j = 1, num_enode
        elestr(1:span,1:num_vals,j) =
