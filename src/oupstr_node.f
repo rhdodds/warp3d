@@ -4,7 +4,7 @@ c     *                      subroutine oupstr_node                  *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/3/2016 rhdd              *
+c     *                   last modified : 1/29/2017 rhd              *
 c     *                                                              *
 c     *     drives output of stress or strain nodal results to       *
 c     *     (1) patran files in either binary or formatted forms or  *
@@ -141,13 +141,13 @@ c
       if( do_average ) then
        do snode = 1, nonode
          count = nodal_values(snode)%count
-           if( count .eq. 0 ) then  ! probably node w/ only cohesive
+         if( count .eq. 0 ) then  ! probably node w/ only cohesive
             allocate( nodal_values(snode)%node_values(mxstmp) )
             nodal_values(snode)%node_values(1:mxstmp) = zero
             nodal_values(snode)%count = 1
             cycle
-           end if
-           rn_count = dble(count)
+         end if
+         rn_count = dble(count)
          snode_values => nodal_values(snode)%node_values
          do j = 1, num_vals
            map = elem_out_map(j)
