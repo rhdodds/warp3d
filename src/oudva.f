@@ -20,19 +20,22 @@ c
      &                  out_packet_now, flat_file, stream_file, 
      &                  text_file, compressed  )
 c  
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
-      logical ouflg, oupat, oubin, ouasc, wide, eform, prec, noheader,
-     &        react_totals_only, matchs, endcrd, true,
-     &        out_packet_now, flat_file, stream_file, 
-     &        text_file, compressed 
-      real dumr
-      double precision
-     &     dumd
-      character :: dums
-      dimension intlst(mxlsz)
 c
-      logical first      
+      integer :: dva      
+      logical :: ouflg, oupat, oubin, ouasc, wide, eform, prec,
+     &           noheader, react_totals_only,
+     &           out_packet_now, flat_file, stream_file, 
+     &           text_file, compressed 
+c
+      integer :: all, lsttyp, idum, lenlst, errnum, param
+      integer :: intlst(mxlsz)
+      real :: dumr
+      double precision :: dumd
+      character(len=1) :: dums
+      logical :: first
+      logical, external :: matchs, endcrd, true      
 c      
       ouflg = .false. ! set .true. if bad outcome
 c
