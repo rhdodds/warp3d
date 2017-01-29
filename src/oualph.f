@@ -4,7 +4,7 @@ c     *                      subroutine oualph                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 03/15/94                   *
+c     *                   last modified : 1/20/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine outputs the value of the step length     *
 c     *     for an iteration of the linear pcg algorithm.            * 
@@ -13,11 +13,14 @@ c     ****************************************************************
 c
 c
 c
-      subroutine oualph(step,stpitr,iter,alpha)
-      implicit integer (a-z)
-      double precision
-     &     alpha        
-      logical dummy
+      subroutine oualph( step, stpitr, iter, alpha )
+      implicit none
+c      
+      integer :: step, stpitr, iter 
+      double precision :: alpha     
+c
+      integer :: in, out
+      logical :: dummy
 c
 c                       set device numbers.
 c
