@@ -4,7 +4,7 @@ c     *                      subroutine ougts1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/6/2015  rhd              *
+c     *                   last modified : 1/27/2017 rhd              *
 c     *                                                              *
 c     *     transfer stresses or strains to simple data structure    *
 c     *     for direct output. Handle transformations for geometric  *
@@ -21,31 +21,35 @@ c
      &                       elem_hist
       use main_data, only : matprp, lmtprp, dmatprp
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
-      logical do_stresses, geonl
-      double precision
-     &       nowtime
+
+      integer :: span, blk, felem, ngp, mat_type, matnum, iout,
+     &           nowstep 
+      logical :: do_stresses, geonl
+      double precision ::  nowtime
 c
 c                       local declarations
 c 
-      character(len=8) :: cmname
-      double precision
-     &       zero, qn(mxvl,nstr,nstr), small_number, dword, 
-     &       umat_props(50),
-     &       time, umat_statev(500), umat_stress(6), mat_vals(3)
-c
-      logical local_debug, do_strains
-      dimension iword(2), info(10)
+      integer :: iword(2)
+      double precision :: dword
       equivalence ( iword, dword )
-      data zero, small_number, local_debug / 0.0, 1.0e-10, .false. /
-      double precision
-     &       root3
-      data root3 / 1.7320508075 /
+c
+      integer :: info(10), gpn, i, ii, nprops, kinc, kout, nstatv, 
+     &           ielem, noel, npt
+      logical :: do_strains
+      logical ,parameter :: local_debug = .false.
+      character(len=8) :: cmname
+      double precision :: qn(mxvl,nstr,nstr),  umat_props(50),
+     &                    time, umat_statev(500), umat_stress(6),
+     &                    mat_vals(3)
+      double precision, parameter :: zero = 0.d0,
+     &                               small_number = 1.0d-10,
+     &                               root3 = dsqrt(3.0d0)
 c
       do_strains = .not. do_stresses
 c
-      if ( do_strains ) then
+      if( do_strains ) then
 c
 c                       do the element strains. for small and large
 c                       strains, the results are available in ddtse.
@@ -78,6 +82,7 @@ c
 c                       small strains
 c
            do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
              do i = 1, span
                elestr(i,1,gpn) = ddtse(i,1,gpn)
                elestr(i,2,gpn) = ddtse(i,2,gpn)
@@ -107,7 +112,8 @@ c                       zero a location for the mises equiv. stress.
 c                       Insert 3 material model specific values thru
 c                       a material model routine.
 c 
-c                       for geometric nonlinear, convert unrotated cauchy stresses
+c                       for geometric nonlinear, convert unrotated
+c                       cauchy stresses
 c                       to cauchy stresses at n+1 using [R,n+1].
 c                       {T} = [qn] * {urcs}.
       do gpn = 1, ngp
@@ -115,10 +121,12 @@ c                       {T} = [qn] * {urcs}.
           call getrm1( span, qn, rot_blk_n1(1,1,gpn), 2 )
           call qmply1( span, mxvl, nstr, qn, urcs_blk_n(1,1,gpn),
      &                 elestr(1,1,gpn) )
+!DIR$ LOOP COUNT MAX=128  
           do ii = 1, span
              elestr(ii,7,gpn) = urcs_blk_n(ii,7,gpn) 
           end do
         else    !  load in small-strain theory stresses
+!DIR$ LOOP COUNT MAX=128  
           do i = 1, span
              elestr(i,1,gpn)  = urcs_blk_n(i,1,gpn)
              elestr(i,2,gpn)  = urcs_blk_n(i,2,gpn)
@@ -130,6 +138,7 @@ c                       {T} = [qn] * {urcs}.
           end do
         end if
 c
+!DIR$ LOOP COUNT MAX=128  
         do i = 1, span
            elestr(i,8,gpn)  = zero
            elestr(i,9,gpn)  = zero
@@ -149,6 +158,7 @@ c
 c                       bilinear mises model
 c
            do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
               do i = 1, span
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)*root3
                 elestr(i,9,gpn)  = urcs_blk_n(i,9,gpn)
@@ -162,6 +172,7 @@ c
 c                       power-law deformation plasticity model
 c
            do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
               do i = 1, span
                 elestr(i,9,gpn) =  urcs_blk_n(i,9,gpn)
                end do
@@ -172,6 +183,7 @@ c
 c                       general mises and gurson-tvergaard model
 c
            do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
               do i = 1, span
                 elestr(i,9,gpn)  = urcs_blk_n(i,9,gpn)
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)
@@ -219,6 +231,7 @@ c
         call umat_set_features( info )
         nstatv = info(1)
         do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
          do ielem = 1, span
            umat_statev(1:nstatv) = elem_hist(ielem,1:nstatv,gpn)
            noel = felem + ielem - 1
@@ -244,6 +257,7 @@ c
       case (10 )
 c      
           do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
               do i = 1, span
                 elestr(i,9,gpn)  = urcs_blk_n(i,7,gpn) -
      &                             urcs_blk_n(i,8,gpn)
@@ -262,6 +276,7 @@ c                 here we set the porosity to be equal to a small number
 c                 so that patran will print the non-gurson elements.
 c
            do gpn = 1, ngp
+!DIR$ LOOP COUNT MAX=128  
               do i = 1, span
                 elestr(i,11,gpn) = small_number
               end do
@@ -294,7 +309,7 @@ c     ****************************************************************
 c
 c
       subroutine ou_get_spatial_from_material( span, spatial_strain,
-     &                          R, material_strain )
+     &                                         R, material_strain )
       implicit none
       include 'param_def'
 c
@@ -311,23 +326,18 @@ c
 c            convert vector strain to strain tensor form, rotate,
 c            convert back to vector
 c      
-      integer span
-      double precision
-     &      R(mxvl,3,3), spatial_strain(mxvl,6), 
-     &      material_strain(mxvl,6)       
+      integer :: span
+      double precision :: R(mxvl,3,3), spatial_strain(mxvl,6), 
+     &                    material_strain(mxvl,6)       
 c
-c            local with work arrays
+c            local work arrays
 c     
-      integer i
-      double precision
-     &   rt(mxvl,3,3), t(mxvl,3,3), d(mxvl,3,3), Deps(mxvl,3,3),
-     &   half, two
+      integer :: i
+      double precision :: rt(mxvl,3,3), t(mxvl,3,3), d(mxvl,3,3), 
+     &                    Deps(mxvl,3,3)
+      double precision, parameter ::  half = 0.5d0, two = 2.0d0
 c      
-      data  two, half / 2.0d00, 0.5d00 /       
-c
-c       write(*,*) ' ouzzz, span: ', span
-c       write(*,*) ' ddtse: ', ddtse(1,1:6)
-c      
+!DIR$ LOOP COUNT MAX=128  
       do i = 1, span
 c        
 c             pull trans (R ) for convenience
