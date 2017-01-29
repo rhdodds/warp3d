@@ -13,8 +13,6 @@ c     *     on stream (binary) file                                  *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine ouddpa( dva, oubin, ouasc, nodmax, defmax, nwidth,
      &                   flat_file, stream_file, text_file, 
      &                   compressed )
@@ -22,24 +20,28 @@ c
       use main_data, only : trn, trnmat, mdiag, pbar, rload,
      &                      inverse_incidences, temper_nodes,
      &                      temper_nodes_ref
-      implicit integer (a-z)
+      implicit none
+c
+      integer :: nodmax, nwidth, dva
       include 'common.main'
-      logical oubin, ouasc, flat_file, stream_file, text_file,
-     &        compressed, patran_file
+      logical :: oubin, ouasc, flat_file, stream_file, text_file,
+     &           compressed
 c
 c                       local declarations
 c
-      double precision
-     &     edva(mxvl,mxndof), defmax, one, nfac,
-     &     trnmte(mxvl,mxedof,mxndof)
-      character(len=4) :: title(80), title1(80)
+      integer :: step_num, bnfile, fmfile, flat_file_number, nod, elem,
+     &           dof, ndof, sdof, i 
+      integer :: titl(80), titl1(80)
+      double precision :: edva(mxvl,mxndof), defmax, nfac,
+     &                    trnmte(mxvl,mxedof,mxndof)
+      double precision, parameter :: one = 1.0d0
       real sgl_defmax, sgl_vals(10)
-      character(len=80) :: string, strng1, stepstring*6
-      dimension titl(80), titl1(80)
+      logical :: patran_file
       logical trne(mxvl,mxndel)
+
+      character(len=4) :: title(80), title1(80)
+      character(len=80) :: string, strng1, stepstring*6
       equivalence (title,titl), (title1,titl1)
-      data one
-     &   / 1.0d00 /
 c
 c                       make file name and open file
 c                       patran:  binary or formatted files or
@@ -161,6 +163,7 @@ c     *                                                              *
 c     ****************************************************************
       
       subroutine ouddpa_patran_header
+      implicit none
 c      
       string = ' '
       strng1 = ' '
@@ -233,14 +236,16 @@ c     ****************************************************************
       
       subroutine ouddpa_flat_header( type, quantity, 
      &                               flat_file_number )
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
+
+      integer :: type, quantity, flat_file_number
 c
 c                       local declarations
 c
-      integer type, quantity
+      integer :: step_num
       character(len=15) :: vector_types(5), tensor_types(2),
-     &              scalar_types(1) 
+     &                     scalar_types(1) 
       character(len=24) :: sdate_time_tmp
 c      
       data vector_types / 'displacements', 'velocities',
