@@ -7,17 +7,19 @@ c     *                                                              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/8/94                    *
+c     *                   last modified : 01/20/2017 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine outime
-      implicit integer (a-z)                     
-      include 'common.main'              
+      implicit none                     
+      include 'common.main'  
+c
+      integer :: calc
       character(len=30) :: clctyp
-      real t1, wcputime
-      external wcputime
+      real :: t1
+      real, external :: wcputime
 c
       write(out,9000)
 c
