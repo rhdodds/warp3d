@@ -4,7 +4,7 @@ c     *                      subroutine ouocst_elem                  *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 12/2/2014 rhd              *
+c     *                   last modified : 1/23/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine opens or closes files for (1) Patran     *
 c     *     binary or formatted output, or (2) flat file with        *
@@ -26,14 +26,14 @@ c
      &           flat_file_number 
       logical :: oubin, ouasc, use_mpi,
      &        flat_file, stream_file, text_file, compressed
-      character (len=*) :: matl_name_id
+      character(len=*) :: matl_name_id
 c   
 c                       locals
 c
-      character (len=80) :: bflnam, fflnam
-      character (len=80), save :: flat_name
-      character (len=4)  :: strtnm
-      character (len=80) :: command
+      character(len=80) :: bflnam, fflnam
+      character(len=80), save :: flat_name
+      character(len=4)  :: strtnm
+      character(len=80) :: command
       integer :: result, now_len
       integer, external :: warp3d_get_device_number
 !win      integer, external  :: system
@@ -91,7 +91,10 @@ c
 c      
       if( flat_file .and. text_file ) then
          flat_name(9:) = '_text'
-         if( use_mpi ) write(flat_name(14:),9010) myid
+         if( use_mpi ) then
+           flat_name(14:14) = "."
+           write(flat_name(15:),9010) myid
+         end if  
          if( data_type .eq. 3 .and. matl_name_id(1:1) .ne. " " ) then
             now_len = len_trim( flat_name )
             flat_name(now_len+1:) = "_" // matl_name_id(1:)
@@ -103,7 +106,10 @@ c
 c
       if( flat_file .and. stream_file ) then
          flat_name(9:) = '_stream'
-         if( use_mpi ) write(flat_name(16:),9010) myid
+         if( use_mpi ) then
+          flat_name(16:16) = "."
+          write(flat_name(17:),9010) myid
+         end if 
          if( data_type .eq. 3 .and. matl_name_id(1:1) .ne. " " ) then
             now_len = len_trim( flat_name )
             flat_name(now_len+1:) = "_" // matl_name_id(1:)
