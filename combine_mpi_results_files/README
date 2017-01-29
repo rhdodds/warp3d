@@ -1,0 +1,72 @@
+
+README for comine_mpi_result_files directory in WARP3D
+======================================================
+
+last update: January 30, 2017 (RHD)
+
+This file describes the process to build the executable
+for the program combine_mpi_results. 
+
+When WARP3D runs parallel using MPI
+with domain decompostion, each process outputs "partial" 
+"flat" results and "Patran" results files for
+element strains/stresses and nodal strains/stresses. 
+Flat element results may also be output for material model
+state variables.
+
+Example: an analysis is performed using 32 MPI ranks (0 -> 31).
+Nodal stress output is requested at load step 43, then
+32 "partial" files of results are created with names
+wnbs00043.0000, wnbs00043.0001, .... wnbs00043.0031
+These are files to be combined for Patran results.
+
+Files with names:  wnbs00043_text.0000, wnbs00043_stream.0000 ...
+are "flat" results files from MPI ranks to be combined.
+
+Before the results can be read into Patran or ParaView (to make a .exo file)
+for post-processing, the 32 files
+must be first "combined" into a single, conventional Patran
+result file named wnbs00043 or a single flat results file
+named wnbs00043_stream or wnbs00043_text.
+
+The "combine_mpi_results" program performs this operation. It requires
+no input from the user; it surveys the directory
+in which it is run looking for partial result files of all types.
+It automatically builds the combined results files as needed.
+
+The program has several variables set near the top that define
+values of current system wide variables used in WARP3D
+(e.g the number of strain and stress values output). These will need
+to be changed if WARP3D internals changes impact these values.
+
+To build the combine_mpi_results program, just run the (Bash) 
+shell script named build_linux64 or build_osx (located in this directory).
+
+Supported platforms are: Linux and Mac OS X --- OSX does not
+run the MPI vesion of WARP3D. The combine program is just
+for convenience if the partial results files are on a Mac.
+
+The executable file is placed into the appropriate warp3d/run_xx 
+directory.
+
+NOTE:
+=====
+
+The combine_mpi_results program can run in parallel to 
+process files for the load steps using OpenMP. 
+To run with parallel, set the environment
+variable for OpenMP to indicate the number of threads (processors)
+the code is allowed to use. For example,
+
+      % setenv OMP_NUM_THREADS 8
+      % ~/warp3d/run_linux_em64t/combine_mpi_results.go
+
+Other tools
+-----------
+
+The compare_....f files are simple programs that
+compare two  binary/stream or formatted/text result files for equality.
+These were developed and used during testing of combine_mpi_result_files
+and may prove useful for other purposes as well. 
+Just compile with ifort or gfortran as needed.
+
