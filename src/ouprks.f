@@ -16,14 +16,19 @@ c
       subroutine ouprks( span, blk, felem, type, order, ngp,
      &                   nnode, geonl,
      &                   do_stresses, mat_type, center_output,
-     &                   num_short_stress, num_short_strain, element )
-            use elblk_data, only : elestr
-
-      implicit integer (a-z)
+     &                   num_short_stress, num_short_strain, 
+     &                   element_output )
+      use elblk_data, only : elestr
+c
+      implicit none
       include 'common.main'
-      logical do_stresses, geonl, center_output, element
-      double precision
-     &   nowtime
+c      
+      integer :: span, blk, felem, type, order, ngp, nnode, mat_type,
+     &           num_short_stress, num_short_strain
+      logical :: do_stresses, geonl, center_output, element_output
+c
+      integer :: matnum, kout, nowstep      
+      double precision :: nowtime
 c
 c
 c                       technically, the output configuration flag 
@@ -56,10 +61,9 @@ c                       Note: mises stress and equivalent strain
 c                       will be replaced with values computed from
 c                       the averaged computavalues later.
 c
-      if( element ) then
-        call oumkcv( span, ngp, do_stresses, num_short_stress + 1,
-     &               num_short_strain + 1 )
-      end if
+      if( element_output ) call oumkcv( span, ngp, do_stresses,
+     &                     num_short_stress + 1, num_short_strain + 1 )
+c      
 c                       if we are generating nodal results, 
 c                       extrapolate gauss point results to element
 c                       nodes. the 6 primary components, energy density,
@@ -74,10 +78,8 @@ c                       averaged components of the stress or strain tensor.
 c                       this will keep extrapolated mises values and 
 c                       equivalent strains from ever becoming negative.
 c
-      if( .not. element ) then
-        call ounds1( span, type, order, nnode, ngp, do_stresses,
-     &               num_short_stress + 1, num_short_strain + 1 )
-      end if
+      if( .not. element_output ) call ounds1( span, type, order, nnode,
+     &   ngp, do_stresses, num_short_stress + 1, num_short_strain + 1 )
 c
       return
       end
