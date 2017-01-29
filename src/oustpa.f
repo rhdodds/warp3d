@@ -4,7 +4,7 @@ c     *                      subroutine oustpa                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/16/2014 (rhd)            *
+c     *                   last modified : 1/30/2017 rhd              *
 c     *                                                              *
 c     *     output stress or strain nodal results to (1) patran file *
 c     *     in either binary or formatted forms, or (2) flat file    *
@@ -32,8 +32,8 @@ c
 c
 c                       local declarations
 c
-      logical patran_file
-      real dum2
+      logical :: patran_file
+      real :: dum2
       character(len=4) :: title(80), title1(80)
       character(len=80) :: string, strng1, stepstring*6
       dimension titl(80), titl1(80)
@@ -102,7 +102,7 @@ c
          write(bnfile) nod, (sngl(snode_values(i)),i=1,num_vals)
            end if
          end do
-      end if  
+      end if  ! patran & oubin
 c
 c                       write to a Patran formatted file
 c
@@ -129,7 +129,7 @@ c
             write(fmfile,920) nod, snode_values(1:num_vals)
           end if
          end do
-      end if
+      end if  ! patran  & ascii
 c      
       if( patran_file ) then  ! close and leave
          call ouocst( stress, stepno, oubin, ouasc, bnfile, fmfile,
@@ -157,11 +157,11 @@ c
            snode_values => nodal_values(nod)%node_values
            where( abs(snode_values) .lt. small_tol )
      &            snode_values = zero
-           if( stream_file) write(flat_file_number) dble(nod), 
-     &               dble(nodal_values(nod)%count),
+           if( stream_file) write(flat_file_number) nod, 
+     &               nodal_values(nod)%count,
      &               snode_values(1:num_vals)
-           if( text_file) write(flat_file_number,9100) dble(nod), 
-     &               dble(nodal_values(nod)%count),
+           if( text_file) write(flat_file_number,9100) nod, 
+     &               nodal_values(nod)%count,
      &               snode_values(1:num_vals)
          end do
        else    !  just threaded or mpi w/ num_procs = 1
@@ -172,7 +172,7 @@ c
      &             snode_values = zero
              if( stream_file) write(flat_file_number)
      &                    snode_values(1:num_vals)
-            if( text_file) write(flat_file_number,9100) 
+            if( text_file) write(flat_file_number,9300) 
      &               snode_values(1:num_vals)
          end do
       end if
@@ -191,10 +191,11 @@ c
  920  format(i8,5(e13.6))
  930  format(2i8)
  940  format(e23.15)
- 9100 format(30e15.6)
+ 9100 format(2i9,30d15.6)
  9200 format(/1x,'>>>>> Fatal Error: routine oustpa.',
      &   /16x,   'should have not reach this point @ 1.',
      &   /16x,   'job terminated' )
+ 9300 format(30e15.6)
 c 
       end
 
