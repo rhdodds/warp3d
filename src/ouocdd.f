@@ -4,7 +4,7 @@ c     *                      subroutine ouocdd                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/13/2014 rhd              *
+c     *                   last modified : 1/21/2017 rhd              *
 c     *                                                              *
 c     *     handle file open/close for Patran and flat file results  *
 c     *     make file name based on load step, results type, etc.    *
@@ -19,15 +19,21 @@ c
       subroutine ouocdd( dva, ltmstp, oubin, ouasc, bnfile, fmfile,
      &                   opt, use_mpi, myid, flat_file, stream_file,
      &                   text_file, compressed, flat_file_number )
-      implicit integer (a-z)
+      implicit none
+c
+      integer :: dva, ltmstp, opt, myid, bnfile, fmfile, 
+     &           flat_file_number
+      logical :: oubin, ouasc, use_mpi, flat_file, 
+     &           stream_file, text_file, compressed 
+c
+      integer :: k, step_number
+      integer, external :: warp3d_get_device_number
+      logical :: patran_file, ok
       character(len=14) :: bflnam, fflnam
-      character(len=4) :: strtnm, slist(5)
-      character(len=3) :: flat_list(5)
+      character(len=4)  :: strtnm, slist(5)
+      character(len=3)  :: flat_list(5)
       character(len=30) :: command
-      character(len=20), save :: flat_name
-      logical oubin, ouasc, use_mpi, patran_file, ok, flat_file, 
-     &        stream_file, text_file, compressed 
-      external warp3d_get_device_number
+      character(len=30), save :: flat_name
 !win      external system       
       
       data slist / 'wn?d','wn?v', 'wn?a', 'wn?r', 'wn?t' /
@@ -100,27 +106,34 @@ c
       end if         
 c
 c                       flat result files. name structure
-c                        wnX + step # + _text   + MPI rank
-c                        wnX + step # + _stream + MPI rank
+c                        wnX + step # + _text   + .MPI rank
+c                        wnX + step # + _stream + .MPI rank
 c                              i5.5                i4.4
 c                        where X is d, v, a, r, t
 c
       flat_file_number = warp3d_get_device_number()
-      flat_name(1:20) = ' '
+      flat_name(1:30) = ' '
       flat_name(1:3)  = flat_list(dva)
       if( step_number .gt. 99999 ) step_number = step_number - 99999
       write(flat_name(4:),9000) step_number
 c      
       if( stream_file ) then
         flat_name(9:) = '_stream'
-        if( use_mpi )  write(flat_name(16:),9100) myid  
+        if( use_mpi ) then
+          flat_name(16:16) = "."
+          write(flat_name(17:),9100) myid  
+        end if    
         open( unit=flat_file_number, file=flat_name, status='unknown',
      &        access='stream', form='unformatted' )
         return  
       end if
+c      
       if( text_file ) then
         flat_name(9:) = '_text'
-        if( use_mpi ) write(flat_name(14:),9100) myid  
+        if( use_mpi ) then
+          flat_name(14:14) = "."
+          write(flat_name(15:),9100) myid  
+        end if  
         open( unit=flat_file_number, file=flat_name, status='unknown',
      &        access='sequential', form='formatted' )
         return
