@@ -4,7 +4,7 @@ c     *                      subroutine ouocst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/13/2014 rhd              *
+c     *                   last modified : 1/21/2017 rhd              *
 c     *                                                              *
 c     *     opens or closes files for (1) patran binary or           *
 c     *     formatted output, or (2) flat text or stream file        *
@@ -18,20 +18,21 @@ c
      &                   fmfile, opt, out, use_mpi, myid, flat_file, 
      &                   stream_file, text_file, compressed,
      &                   flat_file_number )
-      implicit integer (a-z)                                  
+      implicit none                                  
 c
-      
-      logical oubin, ouasc, stress, use_mpi,
-     &       flat_file, stream_file, text_file, compressed
+      integer :: stepno, out, myid, opt
+      logical :: oubin, ouasc, stress, use_mpi,
+     &          flat_file, stream_file, text_file, compressed
 c
 c                       locals
 c
+      integer :: step_number, bnfile, fmfile, flat_file_number
+      integer, external :: warp3d_get_device_number
       character(len=14) :: bflnam, fflnam
       character(len=4) :: strtnm
       character(len=30) :: command
-      character(len=20), save :: flat_name
-      logical  patran_file 
-      external warp3d_get_device_number
+      character(len=30), save :: flat_name
+      logical :: patran_file 
 !win      external system
 c
 c                       branch on whether files are to be opened 
@@ -75,8 +76,8 @@ c
 c
 c                       flat result file. name structure
 c
-c                        wne + step # + _text   + MPI rank
-c                        wns + step # + _stream + MPI rank
+c                        wne + step # + _text   + .MPI rank
+c                        wns + step # + _stream + .MPI rank
 c                              i5.5                i4.4
 c
       flat_file_number = warp3d_get_device_number()
@@ -87,7 +88,10 @@ c
 c      
       if( stream_file ) then
         flat_name(9:) = '_stream'
-        if( use_mpi )  write(flat_name(16:),9100) myid  
+        if( use_mpi )  then
+          flat_name(16:16) = "."
+          write(flat_name(17:),9100) myid 
+         end if  
         open( unit=flat_file_number, file=flat_name, status='unknown',
      &        access='stream', form='unformatted' )
         return  
@@ -95,7 +99,10 @@ c
 c      
       if( text_file ) then
         flat_name(9:) = '_text'
-        if( use_mpi ) write(flat_name(14:),9100) myid  
+        if( use_mpi ) then
+          flat_name(14:14) = "."
+          write(flat_name(15:),9100) myid 
+        end if    
         open( unit=flat_file_number, file=flat_name, status='unknown',
      &        access='sequential', form='formatted' )
         return
