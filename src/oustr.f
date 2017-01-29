@@ -15,9 +15,10 @@ c
       subroutine oustr_pat_flat_file( stress, ouflg, oubin, ouasc, 
      &                           ounod, flat_file, stream_file, 
      &                           text_file, compressed  )
-      implicit integer (a-z)
-      logical ouflg, oubin, ouasc, stress, ounod,
-     &        flat_file, stream_file, text_file, compressed 
+      implicit none
+c      
+      logical :: ouflg, oubin, ouasc, stress, ounod,
+     &           flat_file, stream_file, text_file, compressed 
       include 'common.main'
 c
 c                       MPI:
@@ -79,7 +80,7 @@ c     *                      subroutine oustr                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/3/2014 rhd               *
+c     *                   last modified : 1/19/2017 rhd              *
 c     *                                                              *
 c     *     drive printed output or packet file output of stresses   *
 c     *     or strains according to the lists and options specified  *
@@ -90,20 +91,23 @@ c
 c
       subroutine oustr( stress, ouflg, oupat, oubin, ouasc, ounod,
      &                  wide, eform, prec, noheader, out_packet_now )
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
-      dimension intlst(mxlsz)
-      logical ouflg, oupat, oubin, ouasc, ounod, wide, eform, prec,
-     &        stress, noheader, out_packet_now
+c
+      logical :: ouflg, oupat, oubin, ouasc, ounod, wide, eform, prec,
+     &           stress, noheader, out_packet_now
 c
 c                       local declarations
 c
+      integer :: lenlst, errnum, icn, iplist, num_list_entries,
+     &           bad_list, param, next, i, dummy
+      integer :: intlst(mxlsz)
       integer, allocatable ::  element_list(:)
-      logical matchs, true, eject_flag, endcrd
-      real dumr
-      double precision
-     &     dumd
-      character :: dums
+      logical, external :: matchs, true, endcrd
+      logical :: eject_flag
+      real :: dumr
+      double precision :: dumd
+      character(len=1) :: dums
 c
 c                       MPI:
 c                         we need to gather all the stresses or strains
@@ -132,8 +136,8 @@ c
       eject_flag = .false.
       ouflg = .false.  ! = .true. if parse rules fail
 c
-      if ( matchs('for',3) )      call splunj
-      if ( matchs('elements',4) ) call scan
+      if( matchs('for',3) )      call splunj
+      if( matchs('elements',4) ) call scan
 c
       call trlist( intlst, mxlsz, noelem, lenlst, errnum )
 c
@@ -204,7 +208,7 @@ c                       scanned the intergerlist above.
 c
       eject_flag = .true.
       call noscan   ! don't move on next test function
-      if( .not. endcrd(idum) ) then
+      if( .not. endcrd(dummy) ) then
         call backsp( 1 )
         if( true(dummy) ) call splunj
       end if
@@ -238,8 +242,10 @@ c
       use elblk_data, only : elem_hist, elem_hist1, blk_size_gp,
      &                       blk_size_hist
 c
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
+c
+      integer :: blk      
 c
 c                  allocate a 3-D array block for the element histories
 c                  at n and n+1. find the maximum number of gauss points
@@ -265,7 +271,7 @@ c     *              subroutine oustr_release_block_arrays           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/8/13 rhd                 *
+c     *                   last modified : 1/19/2017 rhd              *
 c     *                                                              *
 c     *     deallocate block type arrays used by lower-level output  *
 c     *     routines                                                 *
@@ -275,7 +281,7 @@ c
       subroutine oustr_release_block_arrays
       use elblk_data, only : elem_hist, elem_hist1
 c
-      implicit integer (a-z)
+      implicit none
 c
 c                  deallocate a 3-D array block for the element histories
 c                  at n and n+1.
