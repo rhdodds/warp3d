@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: December 19, 2016 rhd
+#   Last modifications: January 31, 2017 rhd
 #
 #    Makefile for WARP3D on systems running Windows 7, 8, 10
 #    on x86 Processors (64-bit mode).
@@ -8,56 +8,11 @@
 #    This nmake script is initiated by the the command shell script
 #    Makewarp.bat (which sets the 64-bit mode for use here)
 #
-#    Tested with Intel Visual Fortran Version 15.x and included MKL
+#    Tested with Intel Fortran 17.0.1 and included MKL
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
 #
-#    Updates
-#             Use shared version of openmp library at
-#             ifort 13.1.1.171. Older versions of ifort should work ok
-#             4/18/2013
-#             remove the nasa and vss solvers, the old l-d-u profile solver
-#             5/2/2013
-#             remove EBE solver
-#             7/22/2013 changed driver.f -> main_program.f
-#             8/17/2013 dependencies for umats.f stpdrv.f
-#             8/22/2013 changed umats.f to user_routines.f
-#             6/5/2014  added compiles for material model 11
-#             9/13/2014 use new, simplifed linking of mkl library
-#            12/14/2014 add compile for oustates.f
-#             1/3/2015  add compile mm08
-#             1/24/2015 delete mod_pcg, addstf, oulres
-#             2/6/2015  split user_routines.f into 4 files
-#             4/21/2015 remove newmrk.f upcnld.f
-#             5/12/2015 remove outrac.f
-#             5/13/2015 remove ouconv.f
-#             6/2/2015  remove oultrc.f
-#             8/19/2015 add /heap-arrays for some *.f
-#            10/26/2015 delete stifup.f
-#            11/8/2015  add user_routines_module.f, update dependencies for
-#                       user_routines_...f, reorder some rules 
-#                       for convenience
-#                        add rstgp1 dependency on mod_crystals
-#             11/29/2015 add /QxHOST to compiler options
-#             12/22/2015 replace mm10 with mm10a, b, c
-#                        use /Qb1 on some very long .f files
-#                        to reduce unnecessarily long compile times w/o 
-#                        improving runtime performance
-#             1/4/2016  remove gplns1.f, lnstff.f, rklstf.f, lcnst1.f,
-#                       cnst1.f, cnst2.f, cnst3.f, cnst4.f
-#             1/7/2016  mm10_a.f at -O3 for ifort V16.x causes seg fault.
-#                       isolated the culprit routine into a new mm10_d.f
-#                       and compiled at -O2 which runs fine.
-#             1/28/2016 mm01.f must be compiled at /O3 and limited inlining
-#                       for release 16.0.1 of the compiler.
-#             4/6/2016  add mm10_e.f
-#             5/6/2016  add align64 to some .f
-#             6/7/2016  add mm10_f.f, use -O3 for oustates.f
-#             6/18/2016 remove f_clmloc.f, mod_crystals.f dependencies
-#             8/17/2016 added new macros F90TRAP, INLINEOPT, PROFILEOPT
-#             8/20/2016 combined mm03p.f & mm03.f into mm03.f for more inlining
-#            12/20/2016 more macros to generalize building
 #
 #    NOTE:   we specify the /QxHOST Fortran option. the compiler will
 #            generate code for the highest perfromance instruction 
@@ -184,7 +139,6 @@ OBJ =	 \
 	$(OD)/elprp$O	 \
 	$(OD)/energy$O	 \
 	$(OD)/eqivld$O	 \
-	$(OD)/equiv_strain$O	 \
 	$(OD)/errchk$O	 \
 	$(OD)/errmsg$O	 \
 	$(OD)/find_neighbors$O	 \
@@ -255,13 +209,11 @@ OBJ =	 \
 	$(OD)/mpc_modify$O	 \
 	$(OD)/name_strip$O	 \
 	$(OD)/ndpts1$O	 \
-	$(OD)/ou3dpr$O	 \
 	$(OD)/oualph$O	 \
 	$(OD)/ouddpa$O	 \
 	$(OD)/oudriv$O	 \
 	$(OD)/oudups$O	 \
 	$(OD)/oudva$O	 \
-	$(OD)/oueff1$O	 \
 	$(OD)/ouext1$O	 \
 	$(OD)/ouext2$O	 \
 	$(OD)/ouflnm$O	 \
@@ -272,7 +224,6 @@ OBJ =	 \
 	$(OD)/ouhprn$O	 \
 	$(OD)/ouhrks$O	 \
 	$(OD)/ouhstr$O	 \
-	$(OD)/ouinv1$O	 \
 	$(OD)/oulbdd$O	 \
 	$(OD)/oulbir$O	 \
 	$(OD)/oulbst$O	 \
@@ -290,7 +241,6 @@ OBJ =	 \
 	$(OD)/ouparm$O	 \
 	$(OD)/oupdva$O	 \
 	$(OD)/oupele$O	 \
-	$(OD)/oupri1$O	 \
 	$(OD)/ouprks$O	 \
 	$(OD)/oupstr_elem$O	 \
 	$(OD)/oupstr_node$O	 \
@@ -303,13 +253,8 @@ OBJ =	 \
 	$(OD)/outfil$O	 \
 	$(OD)/oustr$O	 \
 	$(OD)/outime$O	 \
-	$(OD)/ouyld1$O	 \
 	$(OD)/packets$O	 \
 	$(OD)/pconvert$O	 \
-	$(OD)/princ_inv_strain$O	 \
-	$(OD)/princ_inv_stress$O	 \
-	$(OD)/princ_strain$O	 \
-	$(OD)/princ_stress$O	 \
 	$(OD)/prcsel$O	 \
 	$(OD)/qmply1$O	 \
 	$(OD)/getgpts$O	 \
@@ -354,7 +299,6 @@ OBJ =	 \
 	$(OD)/user_routines_support$O	 \
 	$(OD)/vol_terms$O	 \
 	$(OD)/vol_avg$O	 \
-	$(OD)/yield_function$O	 \
 	$(OD)/zero_vector$O	 \
 	$(OD)/zero_vol$O	 \
 #
@@ -663,9 +607,6 @@ $(OD)/eqivld$O : eqivld.f common.main \
 	$(F90) /O3 /Qip  /c eqivld.f
 	$(MVC) eqivld$O $@
 
-$(OD)/equiv_strain$O : equiv_strain.f
-	$(F90) /O3 /Qip  /c equiv_strain.f
-	$(MVC) equiv_strain$O $@
 
 $(OD)/errchk$O : errchk.f param_def common.main \
                    $(OD)/mod_crystals$O $(OD)/mod_damage$O \
@@ -1054,9 +995,6 @@ $(OD)/newmrk$O : newmrk.f common.main \
 #
 #       --- o --
 #
-$(OD)/ou3dpr$O : ou3dpr.f
-	$(F90) /O3 /Qip  /c ou3dpr.f
-	$(MVC) ou3dpr$O $@
 
 $(OD)/oualph$O : oualph.f
 	$(F90) /O3 /Qip  /c oualph.f
@@ -1081,10 +1019,6 @@ $(OD)/oudva$O : oudva.f common.main \
                    param_def
 	$(F90) /O3 /Qip  /c oudva.f
 	$(MVC) oudva$O $@
-
-$(OD)/oueff1$O : oueff1.f
-	$(F90) /O3 /Qip  /c oueff1.f
-	$(MVC) oueff1$O $@
 
 $(OD)/ouext1$O : ouext1.f $(OD)/mod_elblk$O
 	$(F90) /O3 /Qip  /c ouext1.f
@@ -1133,10 +1067,6 @@ $(OD)/ouhstr$O : ouhstr.f common.main \
                    param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c ouhstr.f
 	$(MVC) ouhstr$O $@
-
-$(OD)/ouinv1$O : ouinv1.f param_def
-	$(F90) /O3 /Qip  /c ouinv1.f
-	$(MVC) ouinv1$O $@
 
 $(OD)/oulbdd$O : oulbdd.f
 	$(F90) /O3 /Qip  /c oulbdd.f
@@ -1214,10 +1144,6 @@ $(OD)/oupdva$O : oupdva.f common.main \
 	$(F90) /O3 /Qip  /c oupdva.f
 	$(MVC) oupdva$O $@
 
-$(OD)/oupri1$O : oupri1.f param_def
-	$(F90) /O3 /Qip  /c oupri1.f
-	$(MVC) oupri1$O $@
-
 $(OD)/ouprks$O : ouprks.f
 	$(F90) /O3 /Qip  /c ouprks.f
 	$(MVC) ouprks$O $@
@@ -1280,9 +1206,6 @@ $(OD)/outfil$O : outfil.f $(OD)/mod_file_info$O \
 	$(F90) /O3 /Qip  /c outfil.f
 	$(MVC) outfil$O $@
 
-$(OD)/ouyld1$O : ouyld1.f
-	$(F90) /O3 /Qip  /c ouyld1.f
-	$(MVC) ouyld1$O $@
 #
 #       --- p --
 #
@@ -1296,22 +1219,6 @@ $(OD)/pconvert$O : pconvert.f common.main \
                           $(OD)/mod_pconvert$O
 	$(F90) /O3 /Qip  /c pconvert.f
 	$(MVC) pconvert$O $@
-
-$(OD)/princ_inv_strain$O : princ_inv_strain.f
-	$(F90) /O3 /Qip  /c princ_inv_strain.f
-	$(MVC) princ_inv_strain$O $@
-
-$(OD)/princ_inv_stress$O : princ_inv_stress.f
-	$(F90) /O3 /Qip  /c princ_inv_stress.f
-	$(MVC) princ_inv_stress$O $@
-
-$(OD)/princ_strain$O : princ_strain.f param_def
-	$(F90) /O3 /Qip  /c princ_strain.f
-	$(MVC) princ_strain$O $@
-
-$(OD)/princ_stress$O : princ_stress.f param_def
-	$(F90) /O3 /Qip  /c princ_stress.f
-	$(MVC) princ_stress$O $@
 
 $(OD)/prcsel$O : prcsel.f common.main \
                    param_def $(OD)/mod_main$O
@@ -1555,10 +1462,6 @@ $(OD)/vol_terms$O : vol_terms.f
 #       --- w --
 #
 #       --- y --
-#
-$(OD)/yield_function$O : yield_function.f
-	$(F90) /O3 /Qip  /c yield_function.f
-	$(MVC) yield_function$O $@
 #
 #       --- z --
 #
