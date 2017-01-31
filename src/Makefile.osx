@@ -32,7 +32,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3250
+BUILDNUM := 3260
 #
 ODIR = ././../obj_mac_os_x
 EXE_NAME = warp3d.omp
@@ -44,6 +44,27 @@ O        = .o
 OD       = $(ODIR)
 RMC      = rm -f
 MVC      = mv -f
+#
+#              compiler and linker options
+#
+#              common options other than used here: 
+#                      FTRAP = -ftrapuv -check uninit
+#                     INLINE = -inline-level=0
+#                    PROFILE = -pg for use with gprof, -g for Intel Adviser
+#
+#              ==> we use the simplest linking method for MKL
+#
+COMPILER = ifort
+OPENMP   = -qopenmp -reentrancy -static-intel 
+FTRAP    = 
+OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
+OPT_REPORT = 
+INLINE   =  -no-inline-factor  
+PROFILE  =
+FCOPTS   =  -O3 -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
+            -module $(ODIR) -ftz -xHost  $(FTRAP) $(INLINE) $(OPENMP)
+FOR      = $(COMPILER) $(FCOPTS)
+LINK     = $(COMPILER) $(FCOPTS) -mkl
 #
 #                all system level module files that appear as separate *.f in WARP3D
 #                => does not include the user routine module .f for Abaqus
@@ -71,25 +92,6 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 #
 INCLUDES := common.main param_def include_mm10 include_sig_up include_tan_ek \
 			include_usr_parm 
-#
-#              compiler and linker options
-#
-#              common options other than used here: 
-#                      FTRAP = -ftrapuv -check uninit
-#                     INLINE = -inline-level=0
-#                    PROFILE = -pg for use with gprof, -g for Intel Adviser
-#
-#              we use the simplest linking method for MKL
-#
-COMPILER = ifort
-OPENMP   = -qopenmp -reentrancy -static-intel 
-FTRAP    = 
-INLINE   =  -no-inline-factor  
-PROFILE  =
-FCOPTS   =  -O3 -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
-            -module $(ODIR) -ftz -xHost  $(FTRAP) $(INLINE) $(OPENMP)
-FOR      = $(COMPILER) $(FCOPTS)
-LINK     = $(COMPILER) $(FCOPTS) -mkl
 #
 #                all *.o files for linking.  module files are listed 
 #                first for readability. try to keep ordering alphabetic
@@ -155,11 +157,11 @@ OBJ =	 \
 	$(OD)/dielem_a.o	 \
 	$(OD)/dielem_b.o	 \
 	$(OD)/dielem_c.o	 \
-	$(OD)/drive_assemble_solve.o	 \
-	$(OD)/drive_pardiso.o	 \
 	$(OD)/diexp4.o	 \
 	$(OD)/dptstf.o	 \
 	$(OD)/drive_eps_sig_internal_forces.o	 \
+	$(OD)/drive_assemble_solve.o	 \
+	$(OD)/drive_pardiso.o	 \
 	$(OD)/dupmas.o	 \
 	$(OD)/dupstr.o	 \
 	$(OD)/elmas1.o	 \
@@ -169,7 +171,6 @@ OBJ =	 \
 	$(OD)/elprp.o	 \
 	$(OD)/energy.o	 \
 	$(OD)/eqivld.o	 \
-	$(OD)/equiv_strain.o	 \
 	$(OD)/errchk.o	 \
 	$(OD)/errmsg.o	 \
 	$(OD)/find_neighbors.o	 \
@@ -209,7 +210,7 @@ OBJ =	 \
 	$(OD)/innum.o	 \
 	$(OD)/intab.o	 \
 	$(OD)/iodevn.o	 \
-	$(OD)/iterative_sparse_hypre.o \
+    $(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
 	$(OD)/kill_element.o	 \
 	$(OD)/license.o	 \
@@ -231,21 +232,19 @@ OBJ =	 \
 	$(OD)/mm10_c.o	 \
 	$(OD)/mm10_d.o	 \
 	$(OD)/mm10_e.o	 \
-	$(OD)/mm10_f.o	 \
-	$(OD)/mm11.o	 \
-	$(OD)/mmnoopt.o	 \
+	$(OD)/mm10_f.o   \
+	$(OD)/mm11.o       \
+	$(OD)/mmnoopt.o	\
 	$(OD)/mpi_code.o	 \
 	$(OD)/mpi_handle_slaves.o \
 	$(OD)/mpc_modify.o	 \
 	$(OD)/name_strip.o	 \
 	$(OD)/ndpts1.o	 \
-	$(OD)/ou3dpr.o	 \
 	$(OD)/oualph.o	 \
 	$(OD)/ouddpa.o	 \
 	$(OD)/oudriv.o	 \
 	$(OD)/oudups.o	 \
 	$(OD)/oudva.o	 \
-	$(OD)/oueff1.o	 \
 	$(OD)/ouext1.o	 \
 	$(OD)/ouext2.o	 \
 	$(OD)/ouflnm.o	 \
@@ -256,7 +255,6 @@ OBJ =	 \
 	$(OD)/ouhprn.o	 \
 	$(OD)/ouhrks.o	 \
 	$(OD)/ouhstr.o	 \
-	$(OD)/ouinv1.o	 \
 	$(OD)/oulbdd.o	 \
 	$(OD)/oulbir.o	 \
 	$(OD)/oulbst.o	 \
@@ -274,7 +272,6 @@ OBJ =	 \
 	$(OD)/ouparm.o	 \
 	$(OD)/oupdva.o	 \
 	$(OD)/oupele.o	 \
-	$(OD)/oupri1.o	 \
 	$(OD)/ouprks.o	 \
 	$(OD)/oupstr_elem.o	 \
 	$(OD)/oupstr_node.o	 \
@@ -287,13 +284,8 @@ OBJ =	 \
 	$(OD)/outfil.o	 \
 	$(OD)/oustr.o	 \
 	$(OD)/outime.o	 \
-	$(OD)/ouyld1.o	 \
 	$(OD)/packets.o	 \
 	$(OD)/pconvert.o	 \
-	$(OD)/princ_inv_strain.o	 \
-	$(OD)/princ_inv_stress.o	 \
-	$(OD)/princ_strain.o	 \
-	$(OD)/princ_stress.o	 \
 	$(OD)/prcsel.o	 \
 	$(OD)/qmply1.o	 \
 	$(OD)/getgpts.o	 \
@@ -336,11 +328,10 @@ OBJ =	 \
 	$(OD)/user_routines_other_Abaqus.o \
 	$(OD)/user_routines_warp3d.o	 \
 	$(OD)/user_routines_support.o	 \
-	$(OD)/vol_avg.o	 \
 	$(OD)/vol_terms.o	 \
-	$(OD)/yield_function.o	 \
+	$(OD)/vol_avg.o	 \
 	$(OD)/zero_vector.o	 \
-	$(OD)/zero_vol.o	
+	$(OD)/zero_vol.o	 
 #
 $(EXE_NAME) : $(OBJ)           # target is warp3d executable
 	$(LINK) $(OBJ) -o $@
