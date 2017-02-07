@@ -5,3 +5,6 @@ cmake_install.cmake
 CMakeFiles
 CMakeCache.txt
 run_linux_em64t
+*.pyc
+obj_linux_em64t
+obj_linux_em64t_mpi
