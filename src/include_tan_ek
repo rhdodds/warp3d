@@ -17,7 +17,8 @@ c
        real (h_prec), allocatable :: neta(:,:)                ! mxndel,mxgp
        real (h_prec), allocatable :: nzeta(:,:)               ! mxndel,mxgp
        real (h_prec), allocatable :: gama_block(:,:,:,:)      ! mxvl,3,3,mxgp
-
+      
+       real, allocatable :: bar_stiffness(:)                  ! mxvl
 
        real (h_prec), allocatable :: vol_block(:,:,:)         ! mxvl,8,3
        real (h_prec), allocatable :: volume_block(:)          ! mxvl
@@ -47,7 +48,7 @@ c
        integer, allocatable :: cp(:), icp(:,:) !  mxedof; mxutsz,2
 
        logical, allocatable :: trn_e_flags(:), trne(:,:)  ! mxvl; mxvl,mxndel
-
+c
 c
        integer :: felem, blk, elem_type, int_order, mat_type,
      &            matnum, num_enodes, num_enode_dof, totdof,

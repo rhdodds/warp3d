@@ -5,6 +5,7 @@ c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
 c     *                last modified : 1/23/2015 rhd                 *
+c     *                              : 02/07/17  mcm                 *
 c     *                                                              *
 c     *     this subroutine provides the general allocation/         *
 c     *     deallocation of large arrays during problem solution.    * 
@@ -207,6 +208,21 @@ c
            call die_abort
            stop
          end if 
+
+         if ( allocated( relstor ) ) then
+           deallocate( relstor )
+           write(out,9900)
+           write(out,9930) 9
+         end if
+c
+         allocate( relstor(mxsepr,noelem), stat = alloc_stat )
+         if ( alloc_stat .ne. 0 ) then
+           write(out,9900)
+           write(out,9970)
+           call die_abort
+           stop
+         end if 
+
          return
 c
 c              deallocate the elstor table once not needed.
@@ -218,6 +234,14 @@ c
            write(out,9900)
            write(out,9980) 
          endif
+
+         if ( allocated( relstor ) ) then
+           deallocate( relstor )
+         else
+           write(out,9900)
+           write(out,9980) 
+         endif
+
          return
 c
 c              incmap and incid vector to start reading of input.

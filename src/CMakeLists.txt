@@ -8,6 +8,7 @@ list(APPEND main
       "allocate_damage.f"
       "allocate_load.f"
       "assemble_code.f"
+      "bars.f"
       "bdbt.f"
       "blcmp1.f"
       "bmod.f"

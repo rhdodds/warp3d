@@ -5,6 +5,7 @@ c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 05/25/00                   *
+c     *                                 : 02/07/17 mcm               *
 c     *                                                              *
 c     *     this subroutine sets up the elements in the given in-    *
 c     *     teger list to have their properties placed in global     * 
@@ -17,16 +18,23 @@ c
 c
       subroutine temsto( intlst, lenlst, intord, outloc, strcon, outfmt,
      &                   defmat, deftyp, geonl, matnum, bbar, surf,
-     &                   type, macrointer, minum )
-      use main_data, only : elstor
+     &                   type, macrointer, minum, estiff, emass )
+      use main_data, only : elstor, relstor
       implicit integer (a-z)     
       include 'common.main'
       logical defmat, deftyp, macrointer
       real dumr
       double precision
      &     dumd
+      real :: estiff, emass
       character :: dums
-      dimension intlst(*)               
+      dimension intlst(*)  
+c
+c
+c                       This was originally set to one in inmat, but I
+c                       need it here
+      beta_fact = 1.0
+
 c
 c                       for each element in the list, set the
 c                       element temporary storage array.
@@ -70,6 +78,17 @@ c                       (which will mean "normal material")
       else
             elstor(11,elem) = -1
       end if
+
+c                       store the element stiffness/mass for the linear bars
+c                       also override the material number so it's not
+c                       random
+c
+      relstor(1,elem) = estiff
+      relstor(2,elem) = emass
+      if (type  .eq. 16) then
+            elstor(2,elem) = -1
+      end if
+
 c
 c
 c                       store the integration order. if the order for

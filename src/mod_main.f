@@ -48,6 +48,7 @@ c                start of computations.
 c
 c
       integer, dimension(:,:), save, allocatable ::  elstor
+      real, dimension(:,:), save, allocatable :: relstor
 c
 c
 c                nodal load definitions (flags, dofs, etc.)

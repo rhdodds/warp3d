@@ -4775,6 +4775,8 @@ c
         call mm09_set_sizes( info_vector )
       case(10 )
         call mm10_set_sizes_special( info_vector, local_element_no )
+      case(-1) ! No material model
+        info_vector(2) = 0
       case default
         write(out,9000) 4
         call die_gracefully

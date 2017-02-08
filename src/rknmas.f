@@ -67,6 +67,15 @@ c              an interface element has zero mass and zero volume
 c       
       if( cohesive_elem ) return
 c
+c              short circuit bar elements masses -- they have
+c              zero volume and a easy, fixed mass
+c
+      if ( type .eq. 16) then
+        call bar_mass(span, props, emass, mel, volume, totdof)
+      else
+
+
+c
 c              compute lumped mass terms from diagonals of the
 c              consistent mass for each element of the block.
 c              each dof at an element node has the same lumped
@@ -93,6 +102,8 @@ c
           mel(j,i) = beta_fact * mel(j,i)
         end do
        end do
+      end if
+
       end if
 c
 c              add volumes of elements in this block to total

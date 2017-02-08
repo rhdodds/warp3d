@@ -89,6 +89,7 @@ c
          def_num_int_points = iprops(6,felem)
          span           = elblks(0,blk)
 c
+c
          call mass_getint( elem_type, def_int_order, def_num_int_points,
      &                     int_order, num_int_points, iout)
 c
@@ -283,6 +284,13 @@ c
          case(15)
             int_ord     = def_int_ord
             num_int_pts = def_num_pts
+c
+c        element type is 'l2lbar'
+c
+         case(16)
+            int_ord     = 1
+            num_int_pts = 1
+c
 c
          case default
             write(iout, 1000) 

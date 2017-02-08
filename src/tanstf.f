@@ -197,7 +197,8 @@ c
       local_work%num_int_points = num_int_points
       local_work%span           = span
       local_work%utsz           = utsz
-      local_work%beta_fact      = beta_fact
+      local_work%beta_fact      = beta_fact ! I'm pretty sure this is
+                                            ! a problem...
       local_work%eps_bbar       = eps_bbar
       local_work%dt             = dt
       local_work%time_n         = total_model_time
@@ -560,7 +561,7 @@ c
       select case( mat_type )
 c      ------------------------
 c
-      case( 1,2,3,4,5,6,7,8,9 )  ! nothing to do
+      case( 1,2,3,4,5,6,7,8,9,-1 )  ! nothing to do
 c     ==========================
 c
         continue
@@ -752,6 +753,8 @@ c
            write(out,9000) 1
            call die_abort
       end if
+
+      allocate(local_work%bar_stiffness(mxvl))
 c
       allocate( local_work%vol_block(mxvl,8,3),
      1  local_work%volume_block(mxvl),
@@ -866,6 +869,8 @@ c
            call die_abort
        end if
       if( local_debug ) write(out,*) "..tanstf_deall @ 5"
+
+      deallocate(local_work%bar_stiffness)
 c
       deallocate( local_work%vol_block,
      1  local_work%volume_block,

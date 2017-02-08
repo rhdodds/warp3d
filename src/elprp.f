@@ -19,6 +19,7 @@ c    12       inter_8       8 node quadralateral interface
 c    13       tet_4         4 node tetrahedron
 c    14       trint6        6 node triangular interface
 c    15       trint12      12 node triangular interface
+c    16       lbar2         2 node bar used for penalties
 c
 c
 c         initst routine must be updated when new elements are added
@@ -3664,6 +3665,168 @@ c
 c
       return
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine elprp16                      *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *                   last modified : 02/07/17                   *
+c     *                                                              *
+c     *     this subroutine places the properties of the lbar2 el-   *
+c     *     ement given into global storage.                         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine elprp16( elem, type )
+      use main_data
+      implicit integer (a-z)
+      include 'common.main'
+c
+      character :: dums
+      real e, et, h,  dumr
+      double precision
+     &    zero, one, dumd
+      logical local_debug
+      data zero, one, local_debug
+     &    / 0.0, 1.0, .true. /
+c
+c
+c                       note: data stored in the element properties
+c                       table is all single precision.
+c
+c                       see routine inmat for definition of rows of
+c                       matprp table.
+c
+c                       store data directly tied only to element type.
+c
+      iprops(1,elem)  = type              ! Element type
+      iprops(2,elem)  = 2                 ! Number of nodes
+      iprops(3,elem)  = 6*two16+6         ! I have no #*&^$ idea
+      iprops(4,elem)  = 3                 ! Number of dofs per node
+      iprops(11,elem) = 6                 ! This is only referenced here
+c
+c                       Store the flag/number indicating if this is
+c                       an interface damage material
+      iprops(42,elem) = elstor(11,elem)
+c
+c                       no data concerning the order of integration.
+c
+      iprops(5,elem) = -1
+      iprops(6,elem) = -1
+c
+c                       store data concerning the location of output.
+c                       the default value is gausspts. other options
+c                       are element or element center.
+c
+      outloc = elstor(4,elem)
+      iloc   = 1
+      if ( outloc .eq. 4hNODE ) then
+         iloc = 2
+      else if ( outloc .eq. 4hCENT ) then
+         iloc = 3
+      end if
+      iprops(12,elem) = iloc
+c
+c                       store data concerning the output format for
+c                       output. the default value is short.
+c
+      outfmt= elstor(6,elem)
+c
+      if(outfmt.eq.4HDEFA.OR.OUTFMT.EQ.4HSHRT) then
+         lprops(16,elem)= .false.
+      else
+         lprops(16,elem)= .true.
+      end if
+c
+c                       store data concerning the geometric nonlinearity flag.
+c                       this is always off for these elements
+c
+      lprops(18,elem) = .false.
+c
+c                       store data concerning the bbar flag.
+c                       this is always false
+c
+      lprops(19,elem) = .false.
+C
+C                       STORE DATA CONCERNING MATERIAL PROPERTIES.
+C                       yes, this wastes space, but we maintain
+c                       consistency in that all data for an element
+c                       is here.
+c
+c                       Most of these are dummy values for this element
+c     
+C                       Row            Quantity
+c                       ---            --------
+c                        7           young's modulus
+c                        8           poisson's ratio
+c                        9           thermal expansion coeff.
+c                                    (alpha for isotropic, alphax for
+c                                     anisotropic)
+c                        10          mass density
+c                        13          thermal alphay for anisotropic
+c                        14          kinematic hardening parameter
+c                                      (beta)
+c                        15          h-prime for linear hardening
+c                        17          request for linear material
+c                                    formulation
+c                        20          viscopls m-power
+c                        21          power-law hardening n-power or
+c                                    set number for segmental
+c                                    stress-strain curves
+c                        22          viscoplastic ref strain rate
+c                                    ( the user inputs D which the inverse
+c                                      of eta, here we change D to eta
+c                                      before passing the value to
+c                                      props(22,elem) )
+c                        23          uniaxial yield stress (sig-0)
+c                        24          bit 1:  request for debug of material
+c                                            computations
+c                                    bit 2:  allow material model to
+c                                            cutback adaptive solution
+c                                            due to reversed plasticity
+c                                    bit 3:  set of segmental stress-strain
+c                                            curves specified for element's
+c                                            material
+c                        25          material model type
+c                        26          initial porosity for gurson model
+c                        27          q1 for gurson model
+c                        28          q2 for gurson model
+c                        29          q3 for gurson model
+c                        30          bit 1:  logical nucleation flag for
+c                                            gurson model
+c                                    bit 2:  flag if element is
+c                                            killable
+c                        31          s_n parameter for gurson model
+c                        32          eps_n parameter for gurson model
+c                        33          f_n parameter for gurson model
+c                        34          thermal alphaz for anisotropic
+c                        35          thermal alphaxy for anisotropic
+c                        36          thermal alphayz for anisotropic
+c                        37          thermal alphaxz for anisotropic
+c                        38          material number during input
+c                        .
+c                        .           these are in mysterious use
+c                        .
+c                        43          bar stiffness
+c                        44          bar mass
+c
+c
+c
+      props(43,elem)  =  relstor(1, elem)
+      props(44,elem)  =  relstor(2, elem)
+c
+c           Shutup code I don't have a material model
+c
+      iprops(25,elem) = -1
+      iprops(38,elem) = -1
+
+c
+      return
+      end
+
+
 c
 c     ****************************************************************
 c     *                                                              *

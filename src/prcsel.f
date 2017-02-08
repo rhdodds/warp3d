@@ -6,6 +6,7 @@ c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 08/22/97                   *
 c     *                                 : 12/23/00 sushovan          *
+c     *                                 : 02/07/17 mcm               *
 c     *                                                              *
 c     *     this subroutine sets up all the elements                 *
 c     *     to have their properties placed in global                * 
@@ -36,7 +37,7 @@ c
 c                       branch on element type.
 c
          go to ( 100, 200, 300, 400, 500, 600, 700, 800, 900,
-     &          1000, 1100, 1200, 1300, 1400, 1500 ), type
+     &          1000, 1100, 1200, 1300, 1400, 1500, 1600 ), type
 c
 c                       type 1: q3disop
 c
@@ -126,6 +127,12 @@ c                        type 15: trint12
 c
  1500    continue
          call elprp15( elem, type  )
+         go to 10
+c
+c                        type 16: lbar2
+c
+ 1600    continue
+         call elprp16( elem, type  )
          go to 10
 c
  10   continue
