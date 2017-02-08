@@ -298,7 +298,8 @@ c
      &       zero, zero_check, one, half
 c
       logical :: local_debug, twod, cohesive_elem, threed_elem,
-     &           ldum1, ldum2, ldum3, ldum4, ldum5, ldum6
+     &           ldum1, ldum2, ldum3, ldum4, ldum5, ldum6, 
+     &           ldum7
       data zero, zero_check, one, half, local_debug
      &    / 0.0d0,    1.0d-20, 1.0d0,  0.5d0, .false. /
 c!DIR$ ASSUME_ALIGNED jac:64, dj:64, gama:64, nxi:64,neta:64
@@ -308,7 +309,7 @@ c
 c           set flag for 2-D, 3-D, cohesive element.
 c
       call set_element_type( etype, threed_elem, ldum1, ldum2,
-     &                       ldum3, twod, ldum4, ldum5,
+     &                       ldum3, ldum7, twod, ldum4, ldum5,
      &                       ldum6, cohesive_elem )
 c
 c

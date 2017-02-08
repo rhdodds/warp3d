@@ -723,6 +723,7 @@ c     ****************************************************************
 c
       subroutine set_element_type( element_type, threed_solid_elem,
      &                             hex_elem, wedge_elem, tet_elem,
+     &                             bar_elem,
      &                             twod_elem, quad_elem,
      &                             triangle_elem, axisymm_elem,
      &                             cohesive_elem )
@@ -730,7 +731,7 @@ c
       integer element_type
       logical threed_solid_elem, hex_elem, wedge_elem, tet_elem,
      &        twod_elem, quad_elem, triangle_elem,
-     &        axisymm_elem, cohesive_elem
+     &        axisymm_elem, cohesive_elem, bar_elem
 c
       hex_elem      = element_type .ge. 1
      &                .and. element_type .le. 5
@@ -756,6 +757,8 @@ c
       threed_solid_elem = hex_elem .or. wedge_elem .or. tet_elem
 c
       twod_elem = quad_elem .or. triangle_elem .or. axisymm_elem
+c
+      bar_elem = element_type .eq. 16
 c
       return
       end

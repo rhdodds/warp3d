@@ -62,9 +62,10 @@ c
       do i=1,span
             ! Arg, nowhere do we write down how this is supposed
             ! to get unrolled
+            ! Turns out it's "first columns then rows"
             l = 1
-            do j=1,6    ! col
-                  do k=1,j    ! row
+            do j=1,6    
+                  do k=1,j   
                         ek_symm(i,l) = ek_full(i,k,j)
                         l = l + 1
                   end do
@@ -127,12 +128,12 @@ c
 c
 c           "Real" bars
 c
-
-      double precision :: n(3)
-      double precision :: T(2,6)
-      double precision :: lK(2,2)
-      integer :: i
-
+c
+c      double precision :: n(3)
+c      double precision :: T(2,6)
+c      double precision :: lK(2,2)
+c      integer :: i
+c
 c      n = coords(2,:) - coords(1,:)
 c      n = n / sqrt(dot_product(n,n))
 c      

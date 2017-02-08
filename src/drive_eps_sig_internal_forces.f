@@ -530,7 +530,7 @@ c
 c
 c
 c             bar elements don't need any strain calculations or
-c             similar, so skipt
+c             similar, so skip
 c
       if ( elem_type .eq. 16) then
             local_work%bar_stiffness(1:span) = props(43,

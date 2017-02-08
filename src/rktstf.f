@@ -90,8 +90,6 @@ c
 c     short-circuit all of this for bars
 c
       if (type .eq. 16) then
-         local_work%bar_stiffness(1:span) = props(43,
-     &      felem:felem+span)
          if ( symmetric_assembly ) then
             call bar_stiffness_symm(local_work, local_work%ek_symm,
      &            span, nrow_ek)

@@ -233,6 +233,7 @@ c
         elem_type   = iprops(1,felem)
         mat_type    = iprops(25,felem)
         matnum      = iprops(38,felem)
+        if (mat_type .lt. 0) cycle ! Skip bars for now
         if( loop_debug ) write(out,9070) blk, felem, elem_type, mat_type
         if( mat_type .eq. cp_model_type ) then
            found_cp_matl = .true.

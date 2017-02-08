@@ -26,7 +26,8 @@ c
      &                   due,
      &                   local_cp,
      &                   local_icp, trn, elem_type, surface,
-     &                   cohesive_elem )
+     &                   cohesive_elem,
+     &                   bar_stiffness )
       use elem_extinct_data, only : dam_state
       use damage_data, only : dam_ptr, growth_by_kill
 
@@ -41,7 +42,15 @@ c
       double precision
      & ce(mxvl,*), trnmte(mxvl,mxedof,*), ue(mxvl,*), due(mxvl,*),
      & ce_orig(mxvl,mxecor), djcoh(mxvl), zero
+      real
+     & bar_stiffness(mxvl)
       data zero / 0.0 /
+
+c
+c           bar element stiffness data
+c
+      bar_stiffness(1:span) = props(43,felem:felem+span)
+
 c
 c           transformation matrices are used to define a "local"
 c           coordinate systen for imposition of constraints, e.g.,

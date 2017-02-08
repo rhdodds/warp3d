@@ -307,7 +307,8 @@ c
      &             local_work%cp,
      &             local_work%icp, trn,
      &             elem_type, local_work%surface,
-     &             local_work%is_cohes_elem )
+     &             local_work%is_cohes_elem,
+     &             local_work%bar_stiffness)
 c
       if( local_debug ) write(*,*) '.. calling dptstf_blocks..'
       call dptstf_blocks( blk, span, incid(incmap(felem)), felem,
