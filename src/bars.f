@@ -124,28 +124,50 @@ c
       
       double precision :: coords(2,3), ek(6,6)
       real :: k
+c
+c           "Real" bars
+c
+
       double precision :: n(3)
       double precision :: T(2,6)
       double precision :: lK(2,2)
       integer :: i
 
-      n = coords(2,:) - coords(1,:)
-      n = n / sqrt(dot_product(n,n))
-      
-      T = 0.0
-      T(1,1) = n(1)
-      T(2,2) = n(1)
-      T(1,3) = n(2)
-      T(2,4) = n(2)
-      T(1,5) = n(3)
-      T(2,6) = n(3)
+c      n = coords(2,:) - coords(1,:)
+c      n = n / sqrt(dot_product(n,n))
+c      
+c      T = 0.0
+c      T(1,1) = n(1)
+c      T(2,2) = n(1)
+c      T(1,3) = n(2)
+c      T(2,4) = n(2)
+c      T(1,5) = n(3)
+c      T(2,6) = n(3)
+c
+c      lK(1,1) = k
+c      lK(1,2) = -k
+c      lK(2,1) = -k
+c      lK(2,2) = k
+c      
+c      ek = matmul(transpose(T),matmul(lK,T))
 
-      lK(1,1) = k
-      lK(1,2) = -k
-      lK(2,1) = -k
-      lK(2,2) = k
-      
-      ek = matmul(transpose(T),matmul(lK,T))
+c           "Penalty" bars
+      ek = 0.0
+      ek(1,1) =  k
+      ek(1,2) = -k
+      ek(2,1) = -k
+      ek(2,2) =  k
+
+      ek(3,3) =  k
+      ek(3,4) = -k
+      ek(4,3) = -k
+      ek(4,4) =  k
+
+      ek(5,5) =  k
+      ek(5,6) = -k
+      ek(6,5) = -k
+      ek(6,6) =  k
+
 
       end subroutine
 

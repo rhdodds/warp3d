@@ -3713,8 +3713,8 @@ c                       an interface damage material
 c
 c                       no data concerning the order of integration.
 c
-      iprops(5,elem) = -1
-      iprops(6,elem) = -1
+      iprops(5,elem) = 1
+      iprops(6,elem) = 1
 c
 c                       store data concerning the location of output.
 c                       the default value is gausspts. other options
