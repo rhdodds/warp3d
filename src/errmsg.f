@@ -70,7 +70,7 @@ c
      &       3150,3160,3170,3180,3190,3200,3210,3220,3230,3240,3250,
      &       3260,3270,3280,3290,3300,3310,3320,3330,3340,3350,3360,
      &       3370,3380,3390,3400,3410,3420,3430,3440,3450,3460,3470,
-     &       3480,3490,3500,3510,3520,3530),
+     &       3480,3490,3500,3510,3520,3530,3540,3550),
      &         errnum
 c
 c
@@ -3268,6 +3268,19 @@ c
  9370 format(/1x,'>>>>> error: linear bar element mass must',
      &           'be a real number.' /)
       go to 9999
+c
+ 3540 continue
+      num_error = num_error + 1
+      write(out,9371)
+ 9371 format(/1x,'>>>>> error: must input positive bar stiffness'/)
+      go to 9999
+c
+ 3550 continue
+      num_error = num_error + 1
+      write(out,9372)
+ 9372 format(/1x,'>>>>> error: bar mass must be non-negative'/)
+      go to 9999
+
 c
 c
  9999 return

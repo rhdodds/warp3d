@@ -524,6 +524,19 @@ c
          go to 505
       end if
 c
+c                       make sure the bar stiffness is > 0
+c
+      if ((estiff .le. 0.0) .and. (type .eq. 16)) then
+         call errmsg(354,dum,dums,dumr,dumd)
+         go to 505
+      end if
+c                       make sure bar mass >= 0.0
+      if ((emass .lt. 0.0) .and. (type .eq. 16)) then
+         call errmsg(355,dum,dums,dumr,dumd)
+         go to 505
+      end if
+
+c
 c                       there is a valid list, an element type, a
 c                       valid material, and either input or default
 c                       other properties. place them in temporary

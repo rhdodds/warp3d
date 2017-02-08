@@ -60,17 +60,17 @@ c
       call bar_stiffness_asymm(local_work, ek_full, span, 36)
 
       do i=1,span
-            ! Arg, no where do we write down how this is supposed
+            ! Arg, nowhere do we write down how this is supposed
             ! to get unrolled
             l = 1
-            do j=1,6
-                  do k=j,6
-                        ek_symm(i,l) = ek_full(i,j,k)
+            do j=1,6    ! col
+                  do k=1,j    ! row
+                        ek_symm(i,l) = ek_full(i,k,j)
                         l = l + 1
                   end do
             end do
       end do
-      
+
       deallocate(ek_full)
 
       end subroutine
