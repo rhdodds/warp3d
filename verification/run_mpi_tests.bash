@@ -30,6 +30,16 @@ bash ./run_tests_and_check 2>/dev/null
 cd ..
 }
 
+
+
+function MPI_combine {
+echo -e "\n>>> MPI soluton + combine partial results files"
+echo      "    ==========================================="
+cd hybrid-test-MPI-combine
+bash ./run_tests_and_check 2>/dev/null
+cd ..
+}
+
 #*********************************************************
 #*                                                       *
 #*            Main Program                               *
@@ -70,11 +80,13 @@ printf "\n> Select a problem...\n\n"
 m_testhybrid_short="Hypre solver (Crk growth w/ coheive in  C(T)): Short (2 mins)"
 m_testhybrid_long="Hypre solver (Crk growth w/ coheive in  C(T)): Long (8-10 mins)"
 m_testthreadshybrid="MPI + MKL sparse iterative (Pressure vessel)"
+m_testMPIcombine="MPI solution + test MPI combine partial result files: Short (0.2 min)"
 #
 all="All problems"
 quit="Quit"
 PS3="Enter your choice (<return> to repeat menu): "
-select menu_list in "$all" "$m_testhybrid_short" "$m_testhybrid_long" "$m_testthreadshybrid" "$quit"
+select menu_list in "$all" "$m_testhybrid_short" "$m_testhybrid_long" \
+    "$m_testthreadshybrid" "$m_testMPIcombine" "$quit"
 do
       case $menu_list in
             $all)
@@ -85,6 +97,8 @@ do
                   hybrid-test-long;;
             $m_testthreadshybrid)
                   threads-hybrid-test;;
+            $m_testMPIcombine)
+                  MPI_combine;;
             $quit)
                   break;;
             *) printf "You can enter only 1, .....\n";;
