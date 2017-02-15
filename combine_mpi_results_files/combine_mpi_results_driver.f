@@ -849,13 +849,7 @@ c
         if( found_ele_states ) found_text = .true.
         process = ( combine_stream .and. found_stream ) .or.
      &            ( combine_text .and. found_text )
-
-        write(*,*) '.. check_stream: ', check_stream
-        write(*,*) '.. check_text: ',   check_text
-        write(*,*) '.. found_stream: ', found_stream
-        write(*,*) '.. found_text: ',   found_text
-        write(*,*) '.. process: ', process
-
+c
         if( .not. process ) cycle
 c        
 c              stream or text states result are to be
