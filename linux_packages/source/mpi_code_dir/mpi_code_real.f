@@ -1020,7 +1020,7 @@ c         tell slaves we are about to send them basic data
 c
       call wmpi_alert_slaves ( 2 )
 c
-      write (out,'("=> proc ",i3," is doing basic data transfer")')myid
+c      write (out,'("=> proc ",i3," is doing basic data transfer")')myid
 c
 c         broadcast element properties and element blocking info. These
 c         values are fixed once the analysis starts.
