@@ -4770,6 +4770,14 @@ c
      &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
+c
+c           we need to override the alphas with the current, model
+c           dependent values
+c
+      call mm12_setup_alpha(span, external_models(matnum),
+     &            gp_temps, local_work%alpha_vec)
+
+c
 c            subtract out the thermal strain increment from uddt (the
 c            strain increment for step)
 c

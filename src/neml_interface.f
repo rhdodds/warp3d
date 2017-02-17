@@ -30,6 +30,14 @@
                   integer, intent(out) :: ier
             end subroutine
 
+            function alpha_nemlmodel(model, temperature) bind(C)
+                  use iso_c_binding
+                  implicit none
+                  double precision :: alpha_nemlmodel
+                  type(c_ptr), value :: model
+                  double precision, value :: temperature
+            end function
+
             subroutine update_sd_nemlmodel(model, e_np1, e_n, Temp_np1,
      &                  Temp_n, time_np1, time_n, s_np1, s_n,
      &                  h_np1, h_n,

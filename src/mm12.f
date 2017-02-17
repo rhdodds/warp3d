@@ -633,3 +633,36 @@ c
             itype = -1
 c
       end subroutine
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm12_setup_alpha                  *
+c     *                                                              *
+c     *                       written by : mcm                       *
+c     *                                                              *
+c     *               last modified : 2/12/2017 (mcm)                *
+c
+c           get alpha from the model
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine mm12_setup_alpha(span, model_ptr, gp_temps, alpha_vec)
+            use iso_c_binding
+            implicit none
+            include "neml_interface.f"
+c
+            integer, intent(in) :: span
+            type(c_ptr), intent(in) :: model_ptr
+            double precision, intent(in) :: gp_temps(span)
+            double precision, intent(out) :: alpha_vec(span,6)
+c
+            integer :: i
+            double precision :: alpha
+c
+            do i=1,span
+                  alpha = alpha_nemlmodel(model_ptr, gp_temps(i))
+                  alpha_vec(i,1:3) = alpha
+                  alpha_vec(i,4:6) = 0.0
+            end do
+c
+      end subroutine
