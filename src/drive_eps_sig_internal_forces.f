@@ -324,6 +324,8 @@ c
 c            modify ifv by beta_factor for thickness other than 1.
 c            only used in 2d analysis
 c
+c            this messes up the stupid springs
+c            for now comment
       if( beta_fact .ne. spone ) ifv(1:nodof) =
      &                            beta_fact * ifv(1:nodof)
 c
@@ -527,6 +529,18 @@ c
      &   local_work%ce_n1, local_work%ue, local_work%due, local_work )
 c
 c
+c             bar elements don't need any strain calculations or
+c             similar, so skip
+c
+      if ( elem_type .eq. 16) then
+            local_work%bar_stiffness(1:span) = props(43,
+     &            felem:felem+span)
+            call bar_forces(local_work, einfvec_blocks(blk)%ptr(1,1),
+     &            element_vol_blocks(blk)%ptr(1), span)
+      else
+
+c
+c
 c             compute updated strain increment for specified
 c             displacement increment. update stresses at all
 c             strain points of elements in block.
@@ -572,6 +586,8 @@ c
       call rknifv( einfvec_blocks(blk)%ptr(1,1),
      &             element_vol_blocks(blk)%ptr(1), span, local_work )
       if( local_debug ) write(out,9505) blk, span, felem
+
+      end if ! Bars come back
 c
 c             release all allocated data for block
 c
@@ -802,6 +818,8 @@ c
          call die_abort
         end if
       end if
+
+      allocate(local_work%bar_stiffness(mxvl))
 c
       allocate( local_work%eps_curve(max_seg_points),
      1    local_work%shape(mxndel,mxgp),
@@ -827,6 +845,7 @@ c
          call die_abort
       end if
       local_work%trne = .false.
+
 c
       if( local_mt .eq. 10 .or. local_mt .eq. 11 ) then
         allocate( local_work%debug_flag(mxvl),
@@ -1081,6 +1100,8 @@ c
          call die_abort
         end if
       end if
+
+      deallocate(local_work%bar_stiffness)
 c
       if( local_debug ) write(out,*) "..recstr_dell @ 10"
       deallocate( local_work%eps_curve,
@@ -1512,6 +1533,12 @@ c
 c           CP model
 c
         if ( local_debug) write(out,9990)
+
+      case (-1)
+c
+c           Dummy/no model
+c
+        if ( local_debug) write(out,9991)
 c
 c
       case ( 12 )
@@ -1545,6 +1572,7 @@ c
  9970 format(12x,'>> gather data for model type 7...' )
  9980 format(12x,'>> gather data for model type 8...' )
  9990 format(12x,'>> gather data for model type 10...' )
+ 9991 format(12x,'>> pass on dummy material...' )
  9999 format(12x,'>> gather data for model type 12...' )
 c
       end

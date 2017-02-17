@@ -219,7 +219,7 @@ c
       integer :: elem, incptr, etype, num_enodes, matnum,
      &           pat_etype, node, id, eleblk, span, ispan, felem,
      &           blk_knt_exo, blk_for_exo
-      logical :: hex, tet, wedge,
+      logical :: hex, tet, wedge, bar,
      &           interface_hex,  interface_tri,
      &           interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5
       data warp_to_pat_20 / 5,1,4,8,6,2,3,7,13,12,16,20,14,10,15,
@@ -270,12 +270,12 @@ c
        blk_for_exo =  elem_types_to_exo_blk_map(etype) 
        num_enodes  = iprops(2,felem)
        matnum      = iprops(38,felem) ! not used at present
-       call set_element_type( etype, ldum1, hex, wedge, tet, ldum2,
+       call set_element_type( etype, ldum1, hex, wedge, tet, bar, ldum2,
      &                        ldum3, ldum4, ldum5, interface_elem )
        interface_hex = interface_elem .and. num_enodes .eq. 8
        interface_tri = interface_elem .and. 
      &                 (num_enodes .eq. 6 .or. num_enodes .eq. 12) 
-c   
+c  
        do ispan = 1, span
          elem      = felem + ispan - 1
          pat_incid = 0
@@ -338,6 +338,13 @@ c
                  pat_incid(node) = incid(incptr + node)
                end do
              end if
+         end if
+
+         if ( bar ) then
+            pat_etype = 2
+            do node = 1, num_enodes
+                 pat_incid(node) = incid(incptr + node)
+            end do
          end if
 c
          if( debug ) write(out,5000) elem,
@@ -507,7 +514,8 @@ c
      &           warp_to_wed15(15), inter_tri12_to_wedge15(12)
       logical :: constrained, there, debug, hex, tet, wedge,
      &           interface_hex, connected, got_unit, interface_tri,
-     &           interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5
+     &           interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5,
+     &           bar
       external :: warp3d_get_device_number
 c      
       data warp_to_pat_20 / 5,1,4,8,6,2,3,7,13,12,16,20,14,10,15,
@@ -588,7 +596,8 @@ c
          etype         = iprops(1,elem)
          num_enodes    = iprops(2,elem)
          config        = iprops(38,elem)
-         call set_element_type( etype, ldum1, hex, wedge, tet, ldum2,
+         call set_element_type( etype, ldum1, hex, wedge, tet, bar,
+     &                          ldum2,
      &                          ldum3, ldum4, ldum5, interface_elem )
          interface_hex = interface_elem .and. num_enodes .eq. 8
          interface_tri = interface_elem .and. 

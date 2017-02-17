@@ -34,7 +34,7 @@ c
      &           hex_elem, wedge_elem, tet_elem,
      &           twod_elem, quad_elem,
      &           triangle_elem, axisymm_elem,
-     &           cohesive_elem 
+     &           cohesive_elem, bar_elem
       data zero /0.0d0/
 c
 c                       set number of values to define at element nodes.
@@ -47,6 +47,7 @@ c
 c
       call set_element_type( elem_type, threed_solid_elem,
      &                       hex_elem, wedge_elem, tet_elem,
+     &                       bar_elem,
      &                       twod_elem, quad_elem,
      &                       triangle_elem, axisymm_elem,
      &                       cohesive_elem )

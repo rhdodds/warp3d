@@ -6,6 +6,7 @@ c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 05/25/00 rhd               *
 c     *                                 : 01/02/01 sushovan          *
+c     *                                 : 02/07/17 mcm               *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of     *
 c     *     element type and properties.                             * 
@@ -21,6 +22,7 @@ c
       double precision
      &   dumd
       real dumr
+      real :: estiff, emass
       character :: name*80, dums*1
       character(len=8) :: tname
       character(len=24) :: mname
@@ -161,6 +163,8 @@ c
       bbar  = 4hTRUE
       surf  = 4HDEFA
       defmat= .true.
+      estiff= -1.0
+      emass = 0.0
 c
       if(endcrd(dum)) call readsc
 c
@@ -198,6 +202,8 @@ c
       if(matchs('no_bbar',6)) go to 588
       if(matchs('nobbar',6)) go to 588
       if(matchs('surface',4)) go to 595
+      if(matchs('stiffness',4)) go to 596
+      if(matchs('mass', 3)) go to 597
       if(matchs(',',1)) go to 525
 c
 c                       there is no match with existing properties.
@@ -473,6 +479,34 @@ c
       go to 520
 c
 c
+c **********************************************************************
+c *                                                                    *
+c *             stiffness for linear bars                              *
+c *                                                                    *
+c **********************************************************************
+c
+ 596  continue
+      if( .not. numr(estiff) ) then
+         call errmsg(352,dum,'',dumr,dumd)
+      endif
+      go to 520
+
+c
+c
+c **********************************************************************
+c *                                                                    *
+c *             mass for linear bars                                   *
+c *                                                                    *
+c **********************************************************************
+c
+ 597  continue
+      if( .not. numr(emass) ) then
+         call errmsg(353,dum,'',dumr,dumd)
+      endif
+      go to 520
+
+c
+c
 c
 c **********************************************************************
 c *                                                                    *
@@ -482,12 +516,26 @@ c **********************************************************************
 c
 c   
 c                       make sure that the material for the element
-c                       list has not been omitted from input.
+c                       list has not been omitted from input, except
+c                       for linear bar.
 c
- 590  if( scanms(mname,'nodefalt',8) ) then
+ 590  if( scanms(mname,'nodefalt',8) .and. (type .ne. 16)) then
          call errmsg(31,dum,dums,dumr,dumd)
          go to 505
       end if
+c
+c                       make sure the bar stiffness is > 0
+c
+      if ((estiff .le. 0.0) .and. (type .eq. 16)) then
+         call errmsg(354,dum,dums,dumr,dumd)
+         go to 505
+      end if
+c                       make sure bar mass >= 0.0
+      if ((emass .lt. 0.0) .and. (type .eq. 16)) then
+         call errmsg(355,dum,dums,dumr,dumd)
+         go to 505
+      end if
+
 c
 c                       there is a valid list, an element type, a
 c                       valid material, and either input or default
@@ -496,7 +544,7 @@ c                       element storage.
 c                       
       call temsto(intlst,lenlst,intord,outloc,strcon,outfmt,
      &            defmat,deftyp,geonl,matnum,bbar,surf,type,
-     &            macrointer, minum)
+     &            macrointer, minum, estiff, emass)
 c
 c                       all processed. examine another card for ele-
 c                       ment data.

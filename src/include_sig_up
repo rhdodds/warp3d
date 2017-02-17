@@ -121,6 +121,9 @@ c
        real (h_prec), allocatable :: nuc_s_n_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: nuc_e_n_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: nuc_f_n_vec(:)           ! (mxvl)
+c
+       real, allocatable :: bar_stiffness(:)                  ! (mxvl)
+
 
 c
        real (h_prec), allocatable :: eps_curve(:)             ! (max_seg_points)

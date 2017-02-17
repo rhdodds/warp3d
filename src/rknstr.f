@@ -276,6 +276,9 @@ c
           call setup_mm12_rknstr( span, props, lprops, iprops,
      &                            adaptive, local_work )
 c
+        case ( -1 )
+           ! Do nothing
+
         case default
           write(iout,*) '>>> invalid material model number'
           write(iout,*) '    in rknstr. abort execution'

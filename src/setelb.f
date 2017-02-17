@@ -7,6 +7,7 @@ c     *                                                              *
 c     *                   last modified : 05/05/89                   *
 c     *                   last modified : 07/06/97 rhd               *
 c     *                                 : 12/23/00 sushovan          *
+c     *                                 : 02/07/17 mcm               *
 c     *                                                              *
 c     *                   f-77 code                                  *
 c     *                                                              *
@@ -127,9 +128,16 @@ c
         outmap(15,i) = i
       end do
 c
+c                       element type 16: 'lbar2'
+c
+      elelib(16) = 'lbar2'
+      do i = 1,30
+        outmap(15,i) = i
+      end do
+c
 c                       set the number of elements in the library.
 c                       
-      nlibel = 15
+      nlibel = 16
 c
 c                       initialize the rest of the element library 
 c

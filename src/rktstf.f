@@ -84,6 +84,21 @@ c
             allocate( local_work%ek_full(span,nrow_ek) )
             local_work%ek_full = zero
       end if
+
+c
+c
+c     short-circuit all of this for bars
+c
+      if (type .eq. 16) then
+         if ( symmetric_assembly ) then
+            call bar_stiffness_symm(local_work, local_work%ek_symm,
+     &            span, nrow_ek)
+         else
+            call bar_stiffness_asymm(local_work, local_work%ek_full,
+     &            span, nrow_ek)
+         end if
+      else
+
 c
 c      if( asymmetric_assembly ) ek = zero
 c
@@ -157,6 +172,8 @@ c
         call gptns1( local_work%cp, local_work%icp, gpn, props,
      &               iprops, glb_ek_blk, local_work, nrow_ek )
       end do
+
+      end if ! Bar short circuit comes to here
       
       if( symmetric_assembly ) then
         call rktstf_do_transpose( local_work%ek_symm, glb_ek_blk, 
