@@ -51,7 +51,8 @@ c
      &    solver_out_of_core, show_details, new_analysis_param,
      &    sparse_stiff_output, sparse_stiff_binary, solver_threads,
      &    sparse_research, solver_mkl_iterative, temperatures,
-     &    root_processor, slave_processor, use_mpi, ! end of scalars
+     &    root_processor, slave_processor, worker_processor,
+     &    use_mpi, ! end of scalars
      &    stpchk(mxstep), trace(ntrc), convrg(10)
 c     
       logical :: prnres, halt, linmas, newstf, prlres, zrocon, newtrn,
@@ -62,7 +63,7 @@ c
      &    sparse_stiff_output, sparse_stiff_binary, sparse_research,
      &    solver_mkl_iterative, solver_threads, temperatures,
      &    stpchk, trace, convrg, root_processor, slave_processor, 
-     &     use_mpi
+     &    worker_processor, use_mpi
 c     
       logical :: lprops(mxelpr,mxel) ! only for equivalencing to props
       equivalence ( lprops, props )
