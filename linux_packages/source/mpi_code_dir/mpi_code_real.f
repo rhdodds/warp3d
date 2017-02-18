@@ -5,7 +5,7 @@ c     *                      subroutine wmpi_init                    *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 12/19/2016 rhd             *
+c     *                   last modified : 12/17/2017 rhd             *
 c     *                                                              *
 c     *     This routine initializes MPI on all processors at the    *
 c     *     beginning of a MPI warp run.  It also creates the        *
@@ -19,31 +19,34 @@ c
 c
       subroutine wmpi_init
       use hypre_parameters
-      implicit integer (a-z)
+      implicit none
       include "mpif.h"
       include 'common.main'
+c      
+      integer :: ierr, iallowed, idum
       logical :: ldum1, ldum2
       character(len=1) :: dums
       real :: dumr
       double precision :: dumd
-c
-c             initialize MPI, find the total number of processors involved
-c             with this run, and get the id number of the local processor in
-c             the total processor numbering. Processor 0 will be the root
-c             processor, while all others will be slaves.
+c234567890123456
+c              initialize MPI, find the total number of processors 
+c              for this run, and get the id number of the local 
+c              processor in the total processor numbering. Processor 0
+c              will be the root(manager) processor, while all others
+c              be workers.
 c
       call MPI_INIT_THREAD (MPI_THREAD_FUNNELED, iallowed, ierr)
       if( iallowed .ne. MPI_THREAD_FUNNELED ) then
-        write(*,*) '>>> fatal error on MPI start up.'
-        write(*,*) '    MPI_THREAD_FUNNELED, iallowed:',
+        write(out,*) '>>> fatal error on MPI start up.'
+        write(out,*) '    MPI_THREAD_FUNNELED, iallowed:',
      &                  MPI_THREAD_FUNNELED, iallowed
         call die_abort
       end if
       call MPI_COMM_SIZE(MPI_COMM_WORLD, numprocs, ierr)
       call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr)
-      write (*,'(" >>> numprocs:",i4," myid:", i4)') numprocs, myid
-      if (numprocs .gt. max_procs) then
-         call errmsg (312, dum, dums, dumr, dumd)
+      write (out,'(" >>> numprocs:",i4," myid:", i4)') numprocs, myid
+      if( numprocs .gt. max_procs ) then
+         call errmsg (312, idum, dums, dumr, dumd)
          call MPI_FINALIZE (ierr)
          call die_abort
          stop
@@ -54,49 +57,52 @@ c             MPI_VAL is stored in common.main, while MPI_REAL and
 c             MPI_DOUBLE_PRECISION is in mpif.h.
 c
 c             MPI_TYPE_CONTIGUOUS defines MPI_VAL to be equivalent to
-c             either MPI_REAL or MPI_DOUBLE_PRECISION, while MPI_TYPE_COMMIT
-c             officially registers the datatype with the MPI routines.
+c             either MPI_REAL or MPI_DOUBLE_PRECISION,
+c             while MPI_TYPE_COMMIT officially registers the datatype 
+c             with the MPI routines.
 c
       call MPI_TYPE_CONTIGUOUS(1,MPI_DOUBLE_PRECISION,MPI_VAL,ierr)
       call MPI_TYPE_COMMIT (MPI_VAL,ierr)
 c
-c             set the logical flags root_processor and slave_processor
-c             for simple identification of whether we are the slave
+c             set the logical flags root_processor and worker_processor
+c             for simple identification of whether we are the worker
 c             or the master.
 c
-      if (myid .eq. 0) then
-         root_processor = .true.
-         slave_processor = .false.
+      if( myid .eq. 0 ) then
+         root_processor   = .true.
+         slave_processor  = .false.
+         worker_processor = .false.
       else
-         root_processor = .false.
-         slave_processor = .true.
+         root_processor   = .false.
+         slave_processor  = .true.
+         worker_processor = .true.
       endif
 c
 c             set use_mpi flag to inidcate that this is the MPI version
 c
       use_mpi = .true.
 c
-c	      have all the slave provessors find out their process IDs
-c	      and then send these numbers back to the root process.  These
-c	      will be used to suspend the mpi procs if a threaded
-c	      sparse solver is called.
+c	            have all the slave provessors find out their process IDs
+c	            and then send these numbers back to the root process.
+c             These will be used to suspend the mpi procs if a threaded
+c	            sparse solver is called.
 c
       call wmpi_procids
 c
 c             if we are the root processor, return to driver, and
 c             continue executing the code as normal, reading input, etc.
 c
-      if (root_processor) return
+      if( root_processor ) return
 c
-c             processors executing code past this point are slave
+c             processors executing code past this point are worker
 c             processors. Call initst to initialize variables they
-c             may need, then throw them in the slave handler.  In this
+c             may need, then throw them in the worker handler.  In this
 c             routine they wait for instructions from the root processor
-c             about what job to do. The slave processors never return
-c             from the slave handler; they die when told to do so by
+c             about what job to do. The worker processors never return
+c             from the worker handler; they die when told to do so by
 c             the root processor.
 c
-      call initst(ldum1,ldum2)
+      call initst( ldum1, ldum2 )
 c
       call wmpi_handle_slaves
 c
@@ -109,9 +115,9 @@ c     *                      subroutine wmpi_procids                 *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 1/24/2015 rhd              *
+c     *                   last modified : 2/17/2017 rhd              *
 c     *                                                              *
-c     *     This routine has all the slave processors find their     *
+c     *     This routine has all the worker processors find their    *
 c     *     process ids, then send these Ids back to the root.       *
 c     *     This allows root to suspend the MPI threads if a         *
 c     *     threaded sparse solver is called.                        *
@@ -120,52 +126,43 @@ c     ****************************************************************
 c
 c
       subroutine wmpi_procids
-      use mpi_lnpcg
-      implicit integer (a-z)
+      implicit none
       include "mpif.h"
       include 'common.main'
-      logical debug
-      data debug /.false./
-      integer :: status(MPI_STATUS_SIZE)
+c     
+      integer :: proc, ierr, status(MPI_STATUS_SIZE), procid
+      integer, external :: getpid
+      logical, parameter :: debug = .false.
+ 
 c
 c          if this is the the root processor, then recieve data from each
 c          processor.
 c
-      if ( root_processor ) then
+      if( root_processor ) then
 c
         do proc = 1, numprocs -1
         call MPI_RECV ( proc_pids(proc), 1, MPI_INTEGER,
      &          proc, 1, MPI_COMM_WORLD, status, ierr)
-        enddo
-c
-      if ( debug ) then
-        write (out,*) '>>> Here are proc ids gathered on root:'
-        do proc = 1, numprocs -1
-          write (out,*) '    proc:', proc, ' id:',proc_pids(proc)
         end do
+c
+         if( debug ) then
+           write (out,*) '>>> Here are proc ids gathered on root:'
+           do proc = 1, numprocs -1
+             write (out,*) '    proc:', proc, ' id:',proc_pids(proc)
+           end do
+           procid = getpid ()
+           if( ierr .ne. 0 ) then
+             write (out,*) '>>> FATAL ERROR in getting process id.'
+             call die_abort
+           endif
+         write(out,*) '>> the pid of root is ',procid
+         endif
+c
+      else    ! worker
+c
         procid = getpid ()
-        if ( ierr .ne. 0) then
-          write (out,*) '>>> FATAL ERROR in getting process id.'
-          call die_abort
-        endif
-      write (out,*) '>> the pid of root is ',procid
-      endif
-c
-c
-      else
-c
-c           if this is a slave processor, find proc id and send
-c           to root
-c
-      ierr = 0
-      procid = getpid ()
-      if ( ierr .ne. 0) then
-        write (out,*) '>>> FATAL ERROR in retrieving process id.'
-        call die_abort
-      endif
-c
-      call MPI_SEND (procid, 1, MPI_INTEGER, 0, 1,
-     &        MPI_COMM_WORLD, ierr)
+        call MPI_SEND( procid, 1, MPI_INTEGER, 0, 1, MPI_COMM_WORLD,
+     &                 ierr)
 c
       endif
 c
@@ -179,9 +176,9 @@ c     *                      subroutine wmpi_suspend                 *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 1/24/2015 rhd              *
+c     *                   last modified : 2/17/2017 rhd              *
 c     *                                                              *
-c     *     This routine allows the root to suspend the slave        *
+c     *     This routine allows the root to suspend the worker       *
 c     *     processes when a threaded sparse solver is called.       *
 c     *     Once the solver completes, this routine can also         *
 c     *     restart the mpi processes.                               *
@@ -189,43 +186,46 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_suspend (option)
-      use mpi_lnpcg
-      implicit integer (a-z)
+      subroutine wmpi_suspend( option )
+      implicit none
       include "mpif.h"
       include 'common.main'
-      logical debug, suspended
-      save suspended
-      data debug, suspended /.false., .false. /
 c
-c	  if option = 1, suspend the slave mpi processes using system 'kill'
-c         commands and hardware-specific signal numbers.
+      integer :: option      
+c      
+      integer :: proc, ierr
+      integer, external :: kill
+      logical, parameter :: debug = .false.
+      logical, save :: suspended
+      data suspended /.false./
 c
-      if ( option .eq. 1 ) then
+c	             suspend the slave mpi processes using system 'kill'
+c              commands and hardware-specific signal numbers.
 c
+      if( option .eq. 1 ) then
          do proc = 1, numprocs - 1
           if( debug ) write (out,*) '>>> root suspend ',proc_pids(proc)
           ierr = kill (proc_pids(proc), 19)
-          if ( ierr .ne. 0) then
+          if( ierr .ne. 0 ) then
             write (out,*) '>>> FATAL ERROR: root unable to suspend',
-     &                ' pid ',proc_pids(proc)
-               call die_abort
-            endif
+     &                  ' pid ',proc_pids(proc)
+            call die_abort
+           endif
          end do
          suspended = .true.
 c
-      else if ( option .eq. 2 .and. suspended ) then
+      else if( option .eq. 2 .and. suspended ) then
 c
-c	  if option = 2, awaken the suspended slave mpi processes
+c              awaken the suspended mpi processes
 c
          do proc = 1, numprocs - 1
-          if( debug )write (out,*) '>>> root reviving ',proc_pids(proc)
+          if( debug ) write (out,*) '>>> root reviving ',proc_pids(proc)
           ierr = kill (proc_pids(proc), 18)
-          if ( ierr .ne. 0) then
-           write (out,*) '>>> FATAL ERROR: root unable to awaken',
+          if( ierr .ne. 0 ) then
+           write(out,*) '>>> FATAL ERROR: root unable to awaken',
      &                ' pid ',proc_pids(proc)
                call die_abort
-            end if
+          end if
          end do
          suspended = .false.
       end if
@@ -239,37 +239,40 @@ c     *                      subroutine wmpi_alert_slaves            *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
-c     *     The MPI implementation of warp3d follows a master-slave  *
-c     *     approach for most of the code.  The root processor       *
-c     *     (processor 0) runs warp3d in full, notifying the slave   *
-c     *     processors when they have work to do.                    *
+c     *  The MPI implementation of warp3d follows a manager-worker   *
+c     *  approach for most of the code.  The manager processor       *
+c     *  (processor 0) runs warp3d in full, notifying the worker     *
+c     *  processors when they have work to do.                       *
 c     *                                                              *
-c     *     This routine allows the root processor to contact the    *
-c     *     slave processes and tell them what to do next.           *
+c     *  This routine allows the root processor to contact the       *
+c     *  worker processes and tell them what to do next.             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_alert_slaves ( do_it )
-      implicit integer (a-z)
+      subroutine wmpi_alert_slaves( do_it )
+      implicit none
       include "mpif.h"
       include 'common.main'
-      logical debug
-      data debug / .false. /
+c      
+      integer :: do_it
+c      
+      integer :: ierr
+      logical, parameter :: debug = .false.
 c
-c              for all slave processors, return; slaves are not
-c              allowed to tell other slaves what to do.
+c              return for workers - workers are not
+c              allowed to tell other workers what to do.
 c
-      if ( slave_processor ) return
+      if( worker_processor ) return
 c
-c              do_it is the code used by handle_mpi_slaves to
-c              tell the slaves what to do.
+c              do_it is the code used by handle_mpi_workers to
+c              tell the workers what to do.
 c
-      if(debug)write (out,'("====> Root is sending alert ",i3)')
+      if( debug ) write (out,'("====> Root is sending alert ",i3)')
      &     do_it
-      call MPI_BCAST(do_it,1,MPI_INTEGER,0,MPI_COMM_WORLD, ierr)
+      call MPI_BCAST( do_it, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
 c
       return
       end
@@ -281,7 +284,7 @@ c     *                      subroutine wmpi_reduce_vec              *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/17/2017/05/98                   *
 c     *                                                              *
 c     *     This routine takes processor local vectors which hold    *
 c     *     contributions to a global vector, and sums them on       *
@@ -292,31 +295,23 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_vec ( vec, size )
-      implicit integer (a-z)
+      subroutine wmpi_reduce_vec( vec, size )
+      implicit none
       include "mpif.h"
       include 'common.main'
 c
-      double precision
-     &     vec(*)
+      integer :: size
+      double precision :: vec(size)
 c
-c
-      if ( size .eq. nodof ) then
+      if( size .eq. nodof ) then
          call wmpi_reduce_vec_new ( vec )
       else
          call wmpi_reduce_vec_std ( vec, size )
       endif
 c
-c      call wmpi_reduce_vec_std ( vec, size )
-c      call wmpi_reduce_vec_new ( vec )
-c      call wmpi_reduce_vec_log ( vec, size )
-c
       return
 c
       end
-c
-c
-c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -324,7 +319,7 @@ c     *                      subroutine wmpi_reduce_vec_std          *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *     This routine takes processor local vectors which hold    *
 c     *     contributions to a global vector, and sums them on       *
@@ -335,47 +330,34 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_vec_std ( vec, size )
-      implicit integer (a-z)
+      subroutine wmpi_reduce_vec_std( vec, size )
+      implicit none
       include "mpif.h"
       include 'common.main'
 c
-      allocatable ::  vec_tmp(:)
+      integer :: size
+      double precision :: vec(size)
 c
-      double precision
-     &     vec(*), vec_tmp, zero
-      data zero /0.0/
+      integer :: alloc_stat, ierr
+      double precision, allocatable :: vec_tmp(:)
+      double precision, parameter :: zero = 0.0d00
 c
 c              we cannot reduce into the same vector we are sending, so
 c              allocate a temporary array to hold the data
 c
       allocate ( vec_tmp(size), stat = alloc_stat )
       if ( alloc_stat .ne. 0) then
-         write (out,9000)
+         write(out,9000)
          call die_abort
       endif
 c
-c              copy processor local vector into temporary vector
+c              copy processor local vector into temporary vector, zero
+c              local
 c
-      do i = 1, size
-         vec_tmp(i) = vec(i)
-      enddo
-c
-c              zero out processor local vector
-c
-      do i = 1, size
-         vec(i) = zero
-      enddo
-c
-c              reduce the vector using the MPI_REDUCE command.  This
-c              reduces the result only to the root processor.
-c
-      call MPI_REDUCE (vec_tmp, vec, size,
-     &     MPI_DOUBLE_PRECISION,
-     &    MPI_SUM,0,MPI_COMM_WORLD, ierr)
-c
-c              deallocate temporary vector
-c
+      vec_tmp = vec
+      vec = zero
+      call MPI_REDUCE( vec_tmp, vec, size, MPI_DOUBLE_PRECISION,
+     &                 MPI_SUM, 0, MPI_COMM_WORLD, ierr )
       deallocate ( vec_tmp )
 c
       return
@@ -391,7 +373,7 @@ c     *                      subroutine wmpi_reduce_vec_log          *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *     This routine takes processor local vectors which hold    *
 c     *     contributions to a global vector, and sums them on       *
@@ -400,66 +382,49 @@ c     *     the root processor has a full copy of the vector, as if  *
 c     *     it had calculated the whole vector on its own.           *
 c     *                                                              *
 c     ****************************************************************
-c
-c
-      subroutine wmpi_reduce_vec_log ( vec, size )
-      implicit integer (a-z)
+      subroutine wmpi_reduce_vec_log( vec, size )
+      implicit none
       include "mpif.h"
       include 'common.main'
 c
-      allocatable ::  vec_tmp(:)
+      integer :: size
+      double precision :: vec(size)
 c
-      double precision
-     &     vec(*), vec_tmp, zero
-      data zero /0.0/
+      integer :: alloc_stat, ierr
+      double precision, allocatable ::  vec_tmp(:)
+      double precision, parameter :: zero = 0.0d0
 c
 c              we cannot reduce into the same vector we are sending, so
 c              allocate a temporary array to hold the data
 c
       allocate ( vec_tmp(size), stat = alloc_stat )
-      if ( alloc_stat .ne. 0) then
-         write (out,9000)
+      if( alloc_stat .ne. 0 ) then
+         write(out,9000)
          call die_abort
       endif
 c
-c              copy processor local vector into temporary vector
+      vec_tmp = vec
+      vec = zero
 c
-      do i = 1, size
-         vec_tmp(i) = vec(i)
-      enddo
-c
-c              zero out processor local vector
-c
-      do i = 1, size
-         vec(i) = zero
-      enddo
-c
-c              reduce the vector using the MPI_REDUCE command.  This
-c              reduces the result only to the root processor.
-c
-      call MPI_REDUCE (vec_tmp, vec, size,
-     &     MPI_DOUBLE_PRECISION,
-     &    MPI_SUM,0,MPI_COMM_WORLD, ierr)
-c
-c              deallocate temporary vector
-c
+      call MPI_REDUCE( vec_tmp, vec, size, MPI_DOUBLE_PRECISION,
+     &                 MPI_SUM, 0, MPI_COMM_WORLD, ierr )
       deallocate ( vec_tmp )
 c
       return
  9000 format ('>>>  FATAL ERROR:  could not allocate additional',/,
      &        '>>>       memory in wmpi_reduce_vec.')
-
+c
       end
 c
 c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_reduce_vec_new          *
+c     *                  subroutine wmpi_reduce_vec_new              *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *     This routine takes processor local vectors which hold    *
 c     *     contributions to a global vector, and sums them on       *
@@ -469,48 +434,47 @@ c     *     it had calculated the whole vector on its own.           *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-      subroutine wmpi_reduce_vec_new ( vec )
+      subroutine wmpi_reduce_vec_new( vec )
       use mpi_lnpcg
-      implicit integer (a-z)
+      implicit none
       include "mpif.h"
       include 'common.main'
 c
+      double precision :: vec(*)
 c
-      double precision
-     &     vec(*), vec_tmp(mxdof), zero
-      dimension status (MPI_STATUS_SIZE)
-      data zero /0.0/
+      integer :: status(MPI_STATUS_SIZE), proc, ierr, i, num_dof
+      double precision :: vec_tmp(mxdof)
+      double precision, parameter :: zero = 0.0d00
 c
-c          if this is the the root processor, then recieve data from each
-c          processor.
+c          if this is the the root processor, then recieve data 
+c          from each processor.
 c
-      if ( root_processor ) then
+      if( root_processor ) then
+c        
         do proc = 1, numprocs -1
-         call MPI_RECV ( vec_tmp, procdof2glob(proc)%num_dof,
-     &          MPI_VAL, proc, 1, MPI_COMM_WORLD, status, ierr)
+         call MPI_RECV( vec_tmp, procdof2glob(proc)%num_dof,
+     &                  MPI_VAL, proc, 1, MPI_COMM_WORLD, status, ierr)
             do i = 1, procdof2glob(proc)%num_dof
                vec(procdof2glob(proc)%dof(i)) =
      &             vec(procdof2glob(proc)%dof(i)) + vec_tmp(i)
-            enddo
-        enddo
-      else
+            end do
+        end do
+c        
+      else  ! worker process
 c
-c           if this is a slave processor, send local info to root
-c
-      num_dof = local_nodes%num_local_nodes * mxndof
-         do i = 1, num_dof
+        num_dof = local_nodes%num_local_nodes * mxndof
+        do i = 1, num_dof
             vec_tmp(i) = vec(local_nodes%local2global(i))
-         enddo
-         call MPI_SEND (vec_tmp, num_dof, MPI_VAL, 0, 1,
-     &        MPI_COMM_WORLD, ierr)
+        end do
+        call MPI_SEND( vec_tmp, num_dof, MPI_VAL, 0, 1,
+     &        MPI_COMM_WORLD, ierr )
 c
       endif
 c
       return
  9000 format ('>>>  FATAL ERROR:  could not allocate additional',/,
      &        '>>>       memory in wmpi_reduce_vec.')
-
+c
       end
 c
 c
@@ -521,7 +485,7 @@ c     *                      subroutine wmpi_red_intvec              *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *     This routine takes processor local vectors which hold    *
 c     *     contributions to a global vector, and sums them on       *
@@ -532,53 +496,40 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_red_intvec ( vec, size )
-      implicit integer (a-z)
+      subroutine wmpi_red_intvec( vec, size )
+      implicit none
       include "mpif.h"
       include 'common.main'
 c
+      integer :: size, vec(size)
       integer, allocatable ::  vec_tmp(:)
 c
-      dimension vec(*)
+      integer :: alloc_stat, ierr     
 c
 c              we cannot reduce into the same vector we are sending, so
 c              allocate a temporary array to hold the data
 c
-      allocate ( vec_tmp(size), stat = alloc_stat )
-      if ( alloc_stat .ne. 0) then
+      allocate( vec_tmp(size), stat = alloc_stat )
+      if( alloc_stat .ne. 0 ) then
          write (out,9000)
          call die_abort
       endif
 c
-c              copy processor local vector into temporary vector
-c
-      do i = 1, size
-         vec_tmp(i) = vec(i)
-      enddo
-c
-c              zero out processor local vector
-c
-      do i = 1, size
-         vec(i) = 0
-      enddo
+      vec_tmp = vec
+      vec     = 0
 c
 c              reduce the vector using the MPI_REDUCE command.  This
 c              reduces the result only to the root processor.
 c
-      call MPI_REDUCE (vec_tmp, vec, size,MPI_INTEGER,
-     &     MPI_SUM,0,MPI_COMM_WORLD, ierr)
-c
-c              deallocate temporary vector
-c
-      deallocate ( vec_tmp )
+      call MPI_REDUCE( vec_tmp, vec, size,MPI_INTEGER, MPI_SUM, 0,
+     &                 MPI_COMM_WORLD, ierr )
+      deallocate( vec_tmp )
 c
       return
  9000 format ('>>>  FATAL ERROR:  could not allocate additional',/,
      &        '>>>       memory in wmpi_red_intvec.')
 
       end
-c
-c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -593,11 +544,13 @@ c     ****************************************************************
 c
 c
       subroutine wmpi_wait
-      implicit integer (a-z)
+      implicit none
       include "mpif.h"
       include 'common.main'
 c
-      call MPI_BARRIER (MPI_COMM_WORLD, ierr)
+      integer :: ierr      
+c
+      call MPI_BARRIER( MPI_COMM_WORLD, ierr )
 c
       return
       end
@@ -608,7 +561,7 @@ c     *                      subroutine wmpi_dotprod                 *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/18/2017 rhd             *
 c     *                                                              *
 c     *     This routine drives the reduction via mpi of a           *
 c     *     dot-product distributed among processors. Each           *
@@ -619,23 +572,18 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_dotprod ( scalar )
-      implicit integer (a-z)
+      subroutine wmpi_dotprod( scalar )
+      implicit none
       include "mpif.h"
 c
-      double precision
-     &     scalar, scalar_tmp
-c
+      double precision :: scalar, scalar_tmp, ierr
 c
       scalar_tmp = scalar
-c
-      call MPI_ALLREDUCE (scalar_tmp, scalar, 1,
-     &     MPI_DOUBLE_PRECISION,
-     &    MPI_SUM, MPI_COMM_WORLD, ierr)
+      call MPI_ALLREDUCE( scalar_tmp, scalar, 1, MPI_DOUBLE_PRECISION,
+     &                    MPI_SUM, MPI_COMM_WORLD, ierr )
 c
       return
       end
-c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -643,7 +591,7 @@ c     *                      subroutine wmpi_redint                  *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/18/2017 rhd             *
 c     *                                                              *
 c     *     This routine drives the reduction via mpi of a           *
 c     *     integer which has a contribution on each processor.      *
@@ -652,14 +600,15 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_redint ( scalar )
-      implicit integer (a-z)
+      subroutine wmpi_redint( scalar )
+      implicit none
       include "mpif.h"
 c
+      integer :: scalar_tmp, scalar, ierr
+
       scalar_tmp = scalar
-c
-      call MPI_REDUCE (scalar_tmp, scalar, 1, MPI_INTEGER,
-     &    MPI_SUM, 0, MPI_COMM_WORLD, ierr)
+      call MPI_REDUCE( scalar_tmp, scalar, 1, MPI_INTEGER,
+     &                 MPI_SUM, 0, MPI_COMM_WORLD, ierr )
 c
       return
       end
@@ -671,7 +620,7 @@ c     *                      subroutine wmpi_redlog                  *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/18/2017 rhd             *
 c     *                                                              *
 c     *     This routine drives the reduction via mpi of a           *
 c     *     logical which has a contribution on each processor.      *
@@ -681,16 +630,16 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_redlog ( log_var )
-      implicit integer (a-z)
+      subroutine wmpi_redlog( log_var )
+      implicit none
       include "mpif.h"
 c
-      logical log_var, log_var_tmp
+      integer :: ierr
+      logical :: log_var, log_var_tmp
 c
       log_var_tmp = log_var
-c
-      call MPI_ALLREDUCE (log_var_tmp, log_var, 1, MPI_LOGICAL,
-     &    MPI_LOR, MPI_COMM_WORLD, ierr)
+      call MPI_ALLREDUCE( log_var_tmp, log_var, 1, MPI_LOGICAL,
+     &                    MPI_LOR, MPI_COMM_WORLD, ierr )
 c
       return
       end
@@ -701,19 +650,22 @@ c     *                      subroutine wmpi_bcast_int               *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 03/05/98                   *
+c     *                   last modified : 02/18/2017 rhd             *
 c     *                                                              *
-c     *      Broadcast an integer from root to all the slave         *
+c     *      Broadcast an integer from root to all the worker        *
 c     *      processors.                                             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine wmpi_bcast_int ( int_var )
-      implicit integer (a-z)
+      implicit none
       include "mpif.h"
 c
-      call MPI_BCAST(int_var,1,MPI_INTEGER,0,MPI_COMM_WORLD, ierr)
+      integer :: int_var
+      integer :: ierr
+c      
+      call MPI_BCAST( int_var, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
 c
       return
       end
@@ -809,8 +761,8 @@ c
          deallocate ( temp_vec )
 c
       else
-         call MPI_SEND(real_vec, size, MPI_REAL, 0, 1,
-     &                 MPI_COMM_WORLD, ierr)
+         call MPI_SEND( real_vec, size, MPI_REAL, 0, 1,
+     &                  MPI_COMM_WORLD, ierr)
       end if
 c
       return
@@ -1106,7 +1058,7 @@ c
 c
 c                  if slave, zero out displacements
 c
-      if ( slave_processor ) then
+      if ( worker_processor ) then
          do i = 1, nodof
             u(i) = zero
          end do
@@ -1117,7 +1069,7 @@ c
 c                  incidence data structures, inverse incidence
 c                  dta structures, inverse dof maps
 c
-      if (  slave_processor ) then
+      if (  worker_processor ) then
          call mem_allocate(9)
          call init_maps ( 0, 1 )
          call init_maps ( 0, 2 )
@@ -1144,26 +1096,26 @@ c
       end if
       call MPI_BCAST( element_node_counts, noelem, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr)
-      if ( slave_processor ) call setup_slave( element_node_counts )
+      if ( worker_processor ) call setup_slave( element_node_counts )
       deallocate( element_node_counts )
 c
 c                  functionally graded material properties at
 c                  model nodes
 c
       if ( fgm_node_values_defined ) then
-        if (  slave_processor ) call mem_allocate(20)
+        if (  worker_processor ) call mem_allocate(20)
         call MPI_BCAST(fgm_node_values, nonode*fgm_node_values_cols,
      &                 MPI_REAL,0, MPI_COMM_WORLD, ierr)
       end if
 c
 c                  crdmap
 c
-      if (  slave_processor ) call mem_allocate(14)
+      if (  worker_processor ) call mem_allocate(14)
       call MPI_BCAST(crdmap,nonode,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
 c
 c                  temperature loadings
 c
-      if (  slave_processor ) then
+      if (  worker_processor ) then
          call mem_allocate(1)
          call mem_allocate(2)
          call mem_allocate(16)
@@ -1181,11 +1133,11 @@ c
 c
 c                  elems_to_blocks structure
 c
-      if (  slave_processor ) call init_eblock_map
+      if (  worker_processor ) call init_eblock_map
 c
 c                  allocate space for mdiag
 c
-      if (  slave_processor  ) then
+      if (  worker_processor  ) then
          call mem_allocate ( 12 )
       endif
 c
@@ -1203,7 +1155,7 @@ c                copys of each of these arrays; however, the slave processors
 c                only store the information pertaining to the elements they
 c                own.
 c
-      if ( slave_processor ) then
+      if ( worker_processor ) then
          call cdest_init
          call edest_init
          call history_cep_init( 0, 1 )
@@ -1324,7 +1276,7 @@ c
 c
       do node = 1, nonode
          if ( trn(node) ) then
-            if ( slave_processor ) call allo_trnmat (node,1,dum)
+            if ( worker_processor ) call allo_trnmat (node,1,dum)
             call MPI_BCAST(trnmat(node)%mat,9,MPI_VAL,0,
      &           MPI_COMM_WORLD,ierr)
          endif
@@ -1372,7 +1324,7 @@ c     *                      subroutine wmpi_send_step               *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/27/98                   *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *       send to slave processors the information needed for    *
 c     *       each load step. This includes displacements            *
@@ -1381,26 +1333,24 @@ c     ****************************************************************
 c
 c
       subroutine wmpi_send_step
-      use main_data, only: asymmetric_assembly
+      use main_data, only: asymmetric_assembly, extrapolated_du,
+     &                     non_zero_imposed_du         
       use adaptive_steps, only : adapt_disp_fact, adapt_temper_fact,
      &                           adapt_load_fact
-      implicit integer (a-z)
+      implicit none
       include "mpif.h"
       include 'common.main'
-      double precision
-     &     mag, zero
-      data zero /0.0/
 c
-c                   tell slaves we are about to send them data they
+      integer :: ierr      
+c
+c                   tell workers we are about to send them data they
 c                   need for this newton's iteration.
 c
       call wmpi_alert_slaves ( 12 )
 c
-c         broadcast values from constraint input
-c
 c            constants:
 c
-      call MPI_BCAST(tot_anal_time,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(total_model_time,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(dt,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(scaling_factor,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(adapt_temper_fact,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
@@ -1408,7 +1358,11 @@ c
       call MPI_BCAST(adapt_load_fact,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(asymmetric_assembly,1,MPI_LOGICAL,0,
      &      MPI_COMM_WORLD,ierr)
-c
+      call MPI_BCAST(extrapolated_du,1,MPI_LOGICAL,0,
+     &      MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(non_zero_imposed_du,1,MPI_LOGICAL,0,
+     &      MPI_COMM_WORLD,ierr)
+cc
 c            static arrays:
 c
       call MPI_BCAST(u,nodof,MPI_VAL,0,MPI_COMM_WORLD,ierr)
@@ -1475,7 +1429,7 @@ c
       call MPI_BCAST( eq_node_force_len, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
       if( eq_node_force_len .gt. 0 ) then
-        if( slave_processor ) call mem_allocate( 23 )
+        if( worker_processor ) call mem_allocate( 23 )
         call MPI_BCAST( eq_node_force_indexes, noelem,
      &           MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
         call MPI_BCAST( eq_node_forces, eq_node_force_len,
@@ -1815,12 +1769,12 @@ c
      &               ierr)
       call MPI_BCAST(dam_ptr,noelem,MPI_INTEGER,0,MPI_COMM_WORLD,
      &               ierr)
-      if( slave_processor ) growth_by_kill = .true.
+      if( worker_processor ) growth_by_kill = .true.
 c
 c           if we are one of the MPI slave processors, go allocate
 c           the other crack growth data structures we need
 c
-      if( slave_processor ) call allocate_damage ( 1 )
+      if( worker_processor ) call allocate_damage ( 1 )
 c
       if( debug )
      &   write (out,'("=> proc ",i3," done w/ init grow data")')
@@ -2450,7 +2404,7 @@ c
       start_move_time = MPI_WTIME()
       do blk = 1, nelblk
 c
-         if( slave_processor ) then
+         if( worker_processor ) then
             if( elblks(2,blk) .ne. myid ) cycle
          else
             if( elblks(2,blk) .eq. myid ) cycle
@@ -2610,7 +2564,7 @@ c                   the root processor
 c
       do blk = 1, nelblk
 c
-         if( slave_processor ) then
+         if( worker_processor ) then
             if( elblks(2,blk) .ne. myid ) cycle
          else
             if( elblks(2,blk) .eq. myid ) cycle
@@ -2768,7 +2722,7 @@ c                   strains to the processors which own them.
 c
       do blk = 1, nelblk
 c
-         if ( slave_processor ) then
+         if ( worker_processor ) then
             if (elblks(2,blk).ne.myid) cycle
          else
             if (elblks(2,blk).eq.myid) cycle
@@ -2786,7 +2740,7 @@ c
 c                               element histories
 c
          block_size = span * ngp * history_blk_list(blk)
-         if ( slave_processor ) then
+         if ( worker_processor ) then
             call MPI_RECV(history_blocks(blk)%ptr(1),block_size,
      &           MPI_VAL,0,14,MPI_COMM_WORLD,status,ierr)
             call vec_ops( history1_blocks(blk)%ptr(1),
@@ -2800,7 +2754,7 @@ c
 c                               element [D]s
 c
          block_size = span * ngp * cep_blk_list(blk)
-         if ( slave_processor ) then
+         if ( worker_processor ) then
             call MPI_RECV(cep_blocks(blk)%vector(1),block_size,
      &           MPI_VAL,0,14,MPI_COMM_WORLD,status,ierr)
          else
@@ -2811,7 +2765,7 @@ c
 c                               element stresses
 c
          block_size    = span * ngp * nstrs
-         if ( slave_processor ) then
+         if ( worker_processor ) then
             call MPI_RECV(urcs_n_blocks(blk)%ptr(1),block_size,
      &           MPI_VAL,0,15,MPI_COMM_WORLD,status,ierr)
             call MPI_RECV(urcs_n1_blocks(blk)%ptr(1),block_size,
@@ -2828,7 +2782,7 @@ c                               element integration point rotations
 c
          if ( rot_blk_list(blk) .ne. 0) then
             block_size       = span * ngp * 9
-            if ( slave_processor ) then
+            if ( worker_processor ) then
                if ( allocated(rot_n1_blocks)) then
                   call MPI_RECV(rot_n1_blocks(blk)%ptr(1),block_size,
      &                 MPI_VAL,0,16,MPI_COMM_WORLD,status,
@@ -2845,7 +2799,7 @@ c
 c                               element strains
 c
          block_size = span * ngp * nstr
-         if ( slave_processor ) then
+         if ( worker_processor ) then
             call MPI_RECV(eps_n_blocks(blk)%ptr(1),block_size,
      &           MPI_VAL,0,17,MPI_COMM_WORLD,status,ierr)
          else
@@ -2856,7 +2810,7 @@ c
 c                               element volumes
 c
          block_size = span
-         if ( slave_processor ) then
+         if ( worker_processor ) then
             call MPI_RECV(element_vol_blocks(blk)%ptr(1),block_size,
      &           MPI_VAL,0,17,MPI_COMM_WORLD,status,ierr)
          else
@@ -2874,7 +2828,7 @@ c
       call MPI_BCAST( eq_node_force_len, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
       if( eq_node_force_len .gt. 0 ) then
-        if( slave_processor ) call mem_allocate( 23 )
+        if( worker_processor ) call mem_allocate( 23 )
         call MPI_BCAST( eq_node_force_indexes, noelem,
      &           MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
         call MPI_BCAST( eq_node_forces, eq_node_force_len,
@@ -2929,7 +2883,7 @@ c         broadcast domain dependent information.
 c             1) q-values at nodes
 c             2) element list to process (stored as a bitmap)
 c
-      if ( slave_processor ) then
+      if ( worker_processor ) then
           allocate( q_values(nonode), stat = alloc_stat )
           if ( alloc_stat .ne. 0 ) then
              write(out,9100)
@@ -2972,7 +2926,7 @@ c
      &                ierr )
       call MPI_BCAST( face_loading, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
-      if( slave_processor ) then
+      if( worker_processor ) then
          allocate(expanded_front_nodes(0:max_exp_front,num_front_nodes),
      &        stat = alloc_stat )
          if ( alloc_stat .ne. 0 ) then
@@ -3012,7 +2966,7 @@ c
       call MPI_BCAST( logical_vec, 15, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
 c
-      if ( slave_processor ) then
+      if ( worker_processor ) then
          symmetric_domain     = logical_vec(1)
          q_vals_linear        = logical_vec(2)
          one_point_rule       = logical_vec(3)
