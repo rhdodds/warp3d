@@ -4,7 +4,7 @@ c     *                      subroutine oust_elem                    *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 4/16/2014 (rhd)            *
+c     *                   last modified : 2/10/2017 rhd              *
 c     *                                                              *
 c     *     output element (center) stress or strain results         *
 c     *     to (1) patran file in either binary or formatted forms   *  
@@ -73,6 +73,7 @@ c                       writing of element results since not much
 c                       difference.
 c
       if( first_block ) then
+c        
         fileno = warp3d_get_device_number()
         if( fileno .eq. -1 ) then
           write(out,9000)
@@ -90,6 +91,11 @@ c
           quantity = 1
           if( stress ) quantity = 2
           call ouddpa_flat_header( 3, quantity, fileno )
+        end if
+c
+        if( use_mpi .and. flat_file ) then
+          if( text_file )   write(fileno,*) "  ", num_vals
+          if( stream_file ) write(fileno) num_vals
         end if
 c
       end if ! on first_block test
@@ -134,10 +140,6 @@ c
       if( flat_file .and. text_file ) then
          do relelem = 1, nrow
            elem = felem + relelem - 1
-           if( elem .eq. 16 ) then
-              write(*,*) ' .... element 16 results'
-              write(*,*) elem_values(relelem,1:5)
-           end if   
            if( use_mpi ) then
              write(fileno,9100) elem, 
      &                          elem_values(relelem,1:num_vals)

@@ -152,6 +152,8 @@ c
       end if
 c      
       if( use_mpi .and. numprocs .gt.1 ) then
+         if( stream_file ) write(flat_file_number) num_vals
+         if( text_file ) write(flat_file_number,*) "  ", num_vals
          do nod = 1, nonode
            if ( nodal_values(nod)%count .eq. 0 ) cycle
            snode_values => nodal_values(nod)%node_values

@@ -4,15 +4,13 @@ c     *                      subroutine ouocst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/21/2017 rhd              *
+c     *                   last modified : 2/2/2017 rhd               *
 c     *                                                              *
 c     *     opens or closes files for (1) patran binary or           *
 c     *     formatted output, or (2) flat text or stream file        *
 c     *     for nodal results                                        *
 c     *                                                              *
 c     ****************************************************************
-c
-c
 c
       subroutine ouocst( stress, stepno, oubin, ouasc, bnfile,
      &                   fmfile, opt, out, use_mpi, myid, flat_file, 
