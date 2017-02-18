@@ -1,18 +1,5 @@
 c
-c      last modified:  6/20/2016 rhd
-c
-c               set mxstep to 100000 after removing all
-c               two16 issues in code which prevented mxstep from
-c               exceeding 65535
-c
-c               increased max no blocks
-c               increased max no. steps.
-c               increased max nod and elements on Windows
-c               added nonlocal_shared_state_size
-c               increased material props to 300
-c               added mxcvtests = 10 
-c 
-c               1/30/2016: all platforms use same values now
+c      last modified:  2/17/2017 rhd
 c
       integer mxnod,mxel,mxndel, max_threads,
      &    mxlbel,mxndof,mxgp,nstr,mxstep,mxlc,
@@ -21,16 +8,11 @@ c
      &    mxblsz,mxnmbl,nparam,mxelpr,vclim,
      &    mxmtpr,mxsepr,two16,ndim,max_tables,
      &    mxtim,nstrs,max_procs,mxndpr,max_crystals,max_slip_sys,
-     &    max_uhard
-      integer mxdof, trsz, mxncor, mxcvtests,
-     &  mxecor,mxedof,
-     &  mxtgp, mxndldcm,
-     &  mxtnsz,mxndlm,
-     &  mxutsz, mxnusz, mxoupt,
-     &  max_mpc, max_surfaces, max_tied_sets,
-     &  max_packet_types, max_user_lists,
-     &  nonlocal_shared_state_size
-      integer max_interface_props     
+     &    max_uhard, mxdof, trsz, mxncor, mxcvtests,
+     &    mxecor,mxedof, mxtgp, mxndldcm, mxtnsz,mxndlm,
+     &    mxutsz, mxnusz, mxoupt, max_mpc, max_surfaces, max_tied_sets,
+     &    max_packet_types, max_user_lists,
+     &    nonlocal_shared_state_size, max_interface_props     
 
       parameter (mxnod=2000000,mxel=2500000,mxndel=20,max_threads=128,
      &    mxlbel=15,mxndof=3,mxgp=14,nstr=6,mxstep=100000,mxlc=5000,
@@ -39,7 +21,10 @@ c
      &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=42,vclim=28,
      &    mxmtpr=300,mxsepr=1024,two16=65536,ndim=3,max_tables=20,
      &    mxtim=50,nstrs=9,max_procs=2048,mxndpr=8,max_crystals=1000,
-     &    max_slip_sys=48, max_uhard=48)
+     &    max_slip_sys=48, max_uhard=48, max_surfaces=100,
+     &    max_tied_sets=100, max_packet_types=200, max_user_lists=100,
+     &    mxcvtests=10, nonlocal_shared_state_size=12,
+     &    max_interface_props=80 )
 c
       parameter (mxdof=mxnod*mxndof,
      &  trsz=mxnod*mxndof,mxncor=3*mxnod,
@@ -48,12 +33,7 @@ c
      &  mxtnsz=ndim*ndim,mxndlm=(mxnod/31)+1,
      &  mxutsz=(mxedof*mxedof+mxedof)/2,
      &  mxnusz=(mxndel*mxndel+mxndel)/2,
-     &  max_mpc=mxnod/10, max_surfaces=100,
-     &  max_tied_sets=100, max_packet_types=200, max_user_lists=100,
-     &  mxcvtests=10)
-c
-      parameter (nonlocal_shared_state_size=12)
-      parameter( max_interface_props=80 )
+     &  max_mpc=mxnod/10 )
 c
 c                ****  READ ****
 c
@@ -70,13 +50,12 @@ c
       parameter( mxoupt=mxndel )
 c
 c
-c     Other *critical* notes:
+c                **** Other *critical* notes ****
 c
 c     mxvl=128 is the maximum number of elements allowed in a block.
 c     the filter program value must be set to this same value -- it
 c     translates compiler directive commands marked with @!DIR which
 c     include ### for mxvl
-c
 c
 c     mxblsz is used only to size the length of a message vector.
 c            It has nothing to do with the maximum block sizes.

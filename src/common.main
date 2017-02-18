@@ -1,213 +1,115 @@
 c
-c              *** note here added May 26, 2016 ***
-c
-c              all variables in param_ef and common.main have
+c              all variables in param_def and common.main have
 c              explicit type declarations.
 c
 c              code that includes param_def and or common.main
 c              may then use =>  implicit none if desired
 c
+c              specific ordering of block commons may or may
+c              not improve memory layouts - but the ordering here
+c              seems logical
+c
       include 'param_def'
 c
-c
-c#######################################################################
-c#######################################################################
-c
-c
-      common/dvsoln/ u(mxdof), v(mxdof), a(mxdof), du(mxdof),
-     & idu(mxdof), load(mxdof),
-     & res(mxdof), ifv(mxdof), c(mxncor)
-c
-      common/lsoln/ temperatures
-c=======================================================================
-c
-      common/dsgenr/ dt,nbeta,stplen,aparm,bparm,cparm,eparm,fparm,
-     & emax,fmax,prdmlt,total_mass,ext_work,beta_fact,
-     & total_model_time, eps_bbar
-c
-c
-c#######################################################################
-c#######################################################################
-c
-c
-      common/rmgenr/ props(mxelpr,mxel),
-     & times(mxtim,2),strtm, time_limit,
-     & user_cnstrn_stp_factors(mxstep),
-     & actual_cnstrn_stp_factors(mxstep)
-c
-c
-c#######################################################################
-c#######################################################################
-c
-c
-      common/lvgenr/ stpchk(mxstep), trace(ntrc), convrg(10)
-c
-c=======================================================================
-c
-      common/lsgenr/ prnres,updstf,nostif,halt,lkcomp,
-     & linmas,newstf,tkcomp,newcns,accsol,
-     & zrocon, newtrn,newmas,incflg,ifvcmp,cnldcp,prlres,
-     & input_ok, adaptive_flag, new_constraints, batch_messages,
-     & signal_flag, scalar_blocking, growth_k_flag,
-     & qbar_flag, solver_out_of_core, show_details, new_analysis_param,
-     & sparse_stiff_output, sparse_stiff_binary, solver_threads,
-     & sparse_research, solver_mkl_iterative
-c
-c
-c#######################################################################
-c#######################################################################
-c
-c
-      common/cvgenr/ lodnam(mxlc), lodtyp(mxlc), matnam(mxmat),
-     & elelib(mxlbel), snames(mxstc)
-c
-c=======================================================================
-c
-      common/csgenr/ stname, lsldnm, solver_scr_dir,
-     &               sparse_stiff_file_name
-c
-c
-c#######################################################################
-c#######################################################################
-c
-c
-      common/dconverge/ tol(mxcvtests), sum_ifv, sum_loads
-      common/iconverge/ num_term_ifv, num_term_loads
-      integer :: num_term_ifv, num_term_loads
-c
-c
-c#######################################################################
-c=======================================================================
-c
-      common/enrgy/ internal_energy, plastic_work, killed_ele_pls_work,
-     &              killed_ele_int_work
-c
-c=======================================================================
-c
-c
-      common/ivmaps/ dstmap(mxnod), gpmap(mxtgp),
-     & cstmap(mxdof), cp(mxedof), dcp(mxedof), icp(mxutsz,2)
-      integer :: dstmap, gpmap,cstmap, cp, dcp, icp
-c
-c=======================================================================
-c
-      common/ivlsts/ matlst(mxmat), lodlst(mxlc),
-     & prslst(mxlsz), plrlst(mxlsz)
-      integer :: matlst, lodlst, prslst, plrlst
-c
-c=======================================================================
-c
-      common/ivgenr/ stprng(mxlc,2), state(mxtgp), bits(31)
-      integer :: stprng, state, bits
-c
-c=======================================================================
-c
-      common/immaps/ outmap(mxlbel,mxelmp), elblks(0:3,mxnmbl)
-      integer :: outmap, elblks
-c
-c=======================================================================
-c
-      common/isheds/ mathed, csthed, lodhed
-      integer :: mathed, csthed, lodhed
-c
-c=======================================================================
-c
-      common/istops/ inctop, crdtop
-      integer :: inctop, crdtop
-c
-c=======================================================================
-c
-      common/issizs/ noelem,nonode,nummat,nogp,numcol,
-     & nodof,nlibel,numlod,nprs,nplrs,numstc,nelblk,numgrp,
-     & lgnmcn,mxiter,mniter,lgoump,mxlitr
-      integer :: noelem,nonode,nummat,nogp,numcol,
-     & nodof,nlibel,numlod,nprs,nplrs,numstc,nelblk,numgrp,
-     & lgnmcn,mxiter,mniter,lgoump,mxlitr
-c
-c=======================================================================
-c
-      common/isgenr/ in,out,histep,lowstp,ltmstp,restrt,
-     & num_warn, num_error, num_fatal,
-     & solver_flag, old_solver_flag, solver_memory
-      integer :: in, out, histep, lowstp, ltmstp, restrt,
-     & num_warn, num_error, num_fatal,
-     & solver_flag, old_solver_flag, solver_memory
-     
-c
-c======================================================================
-c
-      common/scaling/ scaling_adapt, scaling_factor
-c
-c======================================================================
-c
-      common/intmpi/ myid, numprocs, MPI_VAL, blk_ptr_head,
-     1  MPI_DOF_LOCAL, num_dof_local, proc_pids,
-     2  douextdb
-      integer :: myid, numprocs, MPI_VAL, blk_ptr_head,
-     1    MPI_DOF_LOCAL, num_dof_local, proc_pids, douextdb
-c
-      common /logmpi/ root_processor, slave_processor, use_mpi
-c
-      common /intomp/ num_threads
-      integer :: num_threads
-c
-c
-c
-c#######################################################################
-c#######################################################################
-c
-c
-      integer :: iprops(mxelpr,mxel)
-      dimension blk_ptr_head(0:max_procs - 1),
-     &     MPI_DOF_LOCAL(0:max_procs-1), num_dof_local(0:max_procs-1),
-     &     proc_pids(1:max_procs-1)
-c
-c
-      real props, times, strtm, time_limit,
-     &     user_cnstrn_stp_factors, actual_cnstrn_stp_factors
-c
-c
-      double precision
-     &    u,v,a,du,idu,load,res,ifv, c
-c
-      logical temperatures
-c
-      double precision
-     &       internal_energy, plastic_work, killed_ele_pls_work,
-     &       killed_ele_int_work
-c
-      double precision
-     &       dt,nbeta,stplen,aparm,bparm,cparm,eparm,fparm,
-     &       emax,fmax,prdmlt, total_mass, ext_work, beta_fact,
-     &       total_model_time, eps_bbar
-
-c
-      double precision
-     &       tol,sum_ifv,sum_loads
-c
-      double precision
-     &       scaling_adapt, scaling_factor
-c
-c
-      logical stpchk, trace, convrg, lprops(mxelpr,mxel)
-c
-      logical prnres,updstf,nostif,halt,lkcomp,linmas,
-     &    newstf,tkcomp,newcns,prlres,accsol,
-     &    zrocon, newtrn,newmas,incflg,ifvcmp,cnldcp,
-     &    input_ok, adaptive_flag, new_constraints, batch_messages,
-     &    signal_flag, scalar_blocking, growth_k_flag, qbar_flag,
+c              --- double precision arrays/vectors ---
+c
+      common/dblearrays/ u(mxdof), v(mxdof), a(mxdof), du(mxdof),
+     &    idu(mxdof), load(mxdof), res(mxdof), ifv(mxdof), c(mxncor),
+     &    tol(mxcvtests)
+c     
+      double precision :: u, v, a, du, idu, load, res, ifv, c, tol
+c
+c              --- double precision scalars ---
+c
+      common/dblesclrs/ dt, nbeta, stplen, aparm, bparm, cparm, eparm,
+     &    fparm, emax, fmax, prdmlt, total_mass, ext_work, beta_fact,
+     &    total_model_time, eps_bbar, sum_ifv, sum_loads, 
+     &    internal_energy, plastic_work, killed_ele_pls_work,
+     &    killed_ele_int_work, scaling_adapt, scaling_factor
+c     
+      double precision :: dt, nbeta, stplen, aparm, bparm, cparm, 
+     &    eparm, fparm, emax, fmax, prdmlt, total_mass, ext_work, 
+     &    beta_fact, total_model_time, eps_bbar, sum_ifv, sum_loads,
+     &    internal_energy, plastic_work, killed_ele_pls_work,
+     &    killed_ele_int_work, scaling_adapt, scaling_factor
+c
+c              --- real arrays/vectors/scalars ---
+c
+      common/realvars/ props(mxelpr,mxel), times(mxtim,2), strtm, 
+     &    time_limit, user_cnstrn_stp_factors(mxstep),
+     &    actual_cnstrn_stp_factors(mxstep)
+c     
+      real :: props, times, strtm, time_limit,
+     &    user_cnstrn_stp_factors, actual_cnstrn_stp_factors
+c
+c              --- logical arrays/vectors/scalars ---
+c
+      common/logs/ prnres, halt, linmas, newstf, zrocon, newtrn, 
+     &    newmas, incflg, ifvcmp, prlres, input_ok, adaptive_flag,
+     &    new_constraints, batch_messages, signal_flag, 
+     &    scalar_blocking, growth_k_flag, qbar_flag, 
+     &    solver_out_of_core, show_details, new_analysis_param,
+     &    sparse_stiff_output, sparse_stiff_binary, solver_threads,
+     &    sparse_research, solver_mkl_iterative, temperatures,
+     &    root_processor, slave_processor, use_mpi, ! end of scalars
+     &    stpchk(mxstep), trace(ntrc), convrg(10)
+c     
+      logical :: prnres, halt, linmas, newstf, prlres, zrocon, newtrn,
+     &    newmas, incflg, ifvcmp, input_ok, adaptive_flag, 
+     &    new_constraints, batch_messages, signal_flag, 
+     &    scalar_blocking, growth_k_flag, qbar_flag,
      &    solver_out_of_core, show_details, new_analysis_param,
      &    sparse_stiff_output, sparse_stiff_binary, sparse_research,
-     &    solver_mkl_iterative, solver_threads
+     &    solver_mkl_iterative, solver_threads, temperatures,
+     &    stpchk, trace, convrg, root_processor, slave_processor, 
+     &     use_mpi
+c     
+      logical :: lprops(mxelpr,mxel) ! only for equivalencing to props
+      equivalence ( lprops, props )
 c
-      logical root_processor, slave_processor, use_mpi
+c              --- integer arrays/vectors/scalars ---
 c
-      logical use_omp
+      common/iarrays/ dstmap(mxnod), gpmap(mxtgp), cstmap(mxdof), 
+     &    cp(mxedof), dcp(mxedof), icp(mxutsz,2), matlst(mxmat),
+     &    lodlst(mxlc), prslst(mxlsz), plrlst(mxlsz), stprng(mxlc,2),
+     &    state(mxtgp), bits(31),  outmap(mxlbel,mxelmp), 
+     &    elblks(0:3,mxnmbl), blk_ptr_head(0:max_procs - 1),
+     &    MPI_DOF_LOCAL(0:max_procs-1), num_dof_local(0:max_procs-1),
+     &    proc_pids(1:max_procs-1)     ! end of arrays
 c
-      character(len=8) lodnam, lodtyp, elelib, snames, stname,
-     &            lsldnm
-      character(len=24) matnam
+      common/iscalars/ noelem, nonode, nummat, nogp, numcol,
+     &    nodof, nlibel, numlod, nprs, nplrs, numstc, nelblk, numgrp,
+     &    lgnmcn, mxiter, mniter, lgoump, mxlitr, num_term_ifv,
+     &    num_term_loads, mathed, csthed,  lodhed, inctop, crdtop,
+     &    in, out, histep, lowstp, ltmstp, restrt, num_warn, num_error, 
+     &    num_fatal, solver_flag, old_solver_flag, solver_memory,
+     &    num_threads,
+     &    myid, numprocs, MPI_VAL, douextdb  
 c
-      character(len=80) solver_scr_dir, sparse_stiff_file_name
+      integer :: dstmap, gpmap,cstmap, cp, dcp, icp, matlst, lodlst,
+     &    prslst, plrlst, stprng, state, bits, outmap, elblks
+      integer ::noelem, nonode, nummat, nogp, numcol, nodof, nlibel,
+     &    numlod, nprs, nplrs, numstc, nelblk, numgrp, lgnmcn, mxiter,
+     &    mniter, lgoump, mxlitr, num_term_ifv, num_term_loads, 
+     &    mathed, csthed, lodhed, inctop, crdtop, in, out, histep, 
+     &    lowstp, ltmstp, restrt, num_warn, num_error, num_fatal,
+     &    solver_flag, old_solver_flag, solver_memory, num_threads,
+     &    myid, numprocs, MPI_VAL, blk_ptr_head,
+     &    MPI_DOF_LOCAL, num_dof_local, proc_pids, douextdb
+c     
+      integer :: iprops(mxelpr,mxel) ! only for equiv with props 
+      equivalence ( iprops, props )
 c
-      equivalence (props,iprops), (props,lprops)
+c              --- character arrays/vectors/scalars ---
+c
+      common/charvars/ lodnam(mxlc), lodtyp(mxlc), matnam(mxmat),
+     &    elelib(mxlbel), snames(mxstc), stname, lsldnm, 
+     &    solver_scr_dir, sparse_stiff_file_name
+c     
+      character(len=8)  :: lodnam, lodtyp, elelib, snames, stname,
+     &    lsldnm
+      character(len=24) :: matnam
+      character(len=80) :: solver_scr_dir, sparse_stiff_file_name
+c
+c              --- end of common.main file ---
+c
