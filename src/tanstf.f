@@ -4,7 +4,7 @@ c     *                      subroutine tanstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 08/16/2016 rhd             *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *     drive computation of all element [K]s. can be symmetric  *
 c     *     (store upper-triangle) or asymmetric (store full [K])    *
@@ -94,11 +94,6 @@ c
          write(out,*) '>> threaded estiff: ', end_estiff - start_estiff
       end if
 c
-c                       set flags indicating that the tangent stiffness
-c                       matrix has been calculated.
-c
-      tkcomp = .true.
-      lkcomp = .false.
       call thyme(2,2)
 c      
       return

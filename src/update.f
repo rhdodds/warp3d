@@ -4,7 +4,7 @@ c     *                      subroutine update                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 04/19/2015 rhd             *
+c     *                   last modified : 2/17/2017 rhd              *
 c     *                                                              *
 c     *     various updates of vectors required after the iterative  *
 c     *     solution procedure for a step has been completed.        *
@@ -66,7 +66,6 @@ c
          load(dof) = mdiag(dof)*a(dof) + ifv(dof)
          dof       = cstmap(dof)
       end do
-      cnldcp = .true.
 c
 c                      update the structural vectors so that states
 c                      at n and n+1 are identical

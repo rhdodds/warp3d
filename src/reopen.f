@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 11/18/2016 rhd             *
+c     *                   last modified : 2/17/2017 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -136,10 +136,10 @@ c                       read in logical and character (scalar)
 c                       variables.
 c
 c
-      read(fileno) prnres,updstf,nostif,halt,lkcomp,
+      read(fileno) prnres,halt,
      &             linmas,ifvcmp,zrocon,growth_k_flag,
-     &             tkcomp,newtrn,lsldnm,accsol,incflg,
-     &             cnldcp,prlres,adaptive_flag,batch_messages,
+     &             newtrn,lsldnm,incflg,
+     &             prlres,adaptive_flag,batch_messages,
      &             signal_flag, scalar_blocking, stname,
      &             qbar_flag, solver_out_of_core, solver_scr_dir,
      &             show_details, temperatures, sparse_stiff_output,
@@ -659,7 +659,6 @@ c
 c                       set structure name and flags.
 c
       newmas = .false.
-      newcns = .false.
       newstf = .false.
 c
 c                       initialize necessary arrays. cdest, edest,

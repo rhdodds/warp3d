@@ -4,8 +4,7 @@ c     *                      subroutine errchk                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/05/91                   *
-c     *                                   08/10/12 MCM               *
+c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
 c     *     this subroutine checks various program variables and     *
 c     *     arrays for errors after the input of data pertaining to  *
@@ -639,7 +638,6 @@ c                       check transformation matrix for each pertinent node.
 c                                        
       constr = .true.
       newtrn = .true.
-      newcns = .true.
       zrocon = .true.  
 c
       do node = 1, nonode
@@ -670,7 +668,6 @@ c
       if ( csthed .eq. -1 ) then
          call errmsg( 82, dum, dums, dumr, dumd )
          constr = .false.
-         newcns = .false.
       else
          dof = csthed
       end if
@@ -680,7 +677,6 @@ c
       if ( cnstrn_in(dof) .eq. d32460 ) then
          call errmsg( 83, dof, dums, dumr, dumd )
          constr = .false.
-         newcns = .false.
       else if ( cnstrn_in(dof) .ne. zero ) then
          zrocon = .false.
       end if

@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/17/2016 rhd             *
+c     *                   last modified : 2/17/2017 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -150,10 +150,10 @@ c                       write out logical and character (scalar)
 c                       variables.
 c
 c
-      write(fileno) prnres,updstf,nostif,halt,lkcomp,
+      write(fileno) prnres,halt,
      &              linmas,ifvcmp,zrocon,growth_k_flag,
-     &              tkcomp,newtrn,lsldnm,accsol,incflg,
-     &              cnldcp,prlres,adaptive_flag,batch_messages,
+     &              newtrn,lsldnm,incflg,
+     &              prlres,adaptive_flag,batch_messages,
      &              signal_flag, scalar_blocking, stname,
      &              qbar_flag, solver_out_of_core, solver_scr_dir,
      &              show_details, temperatures, sparse_stiff_output,

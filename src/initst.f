@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/12/2016 rhd              *
+c     *                   last modified : 2/17/2017 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -307,7 +307,6 @@ c
       trace(5)       =  .false.
       prnres         =  .false.
       prlres         =  .false.
-      updstf         =  .false.
       growth_k_flag  = .false.
       adaptive_flag  = .false.
       qbar_flag      = .true.
@@ -319,14 +318,10 @@ c
       nbeta          =  fourth
       dt             =  one
       total_model_time  =  zero
-      nostif         =  .false.
       linmas         =  .false.
-      lkcomp         =  .false.
-      tkcomp         =  .false.
       newstf         =  .false.
       newmas         =  .false.
       newtrn         =  .false.
-      newcns         =  .false.
       halt           =  .true.
       extrapolate    =  .true.
       extrap_off_next_step  = .false.
@@ -336,10 +331,8 @@ c
       ls_max_step_length = one
       ls_rho         = 0.7d00
       ls_slack_tol   = 0.5d00
-      accsol         =  .false.
       incflg         =  .false.
       ifvcmp         =  .false.
-      cnldcp         =  .false.
       convrg(1:mxcvtests)   =  .false.
       tol(1:mxcvtests)      =  zero
       emax           =  ten_billion
