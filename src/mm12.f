@@ -111,10 +111,11 @@ c
 c   Remember we're doing this on a block
 c
 c     Locals
-      integer :: i, j, k, ier, nhist, nstore
+      integer :: i, j, k, ier, nhist, nstore, ntangent, nextra
       double precision :: l_stress_n(6), l_stress_np1(6), l_strain_n(6),
      &                    l_strain_np1(6), l_tangent(6,6),
-     &                    l_full_tangent(6,6)
+     &                    l_full_tangent(6,6), estrain(6),
+     &                    pstrain(6)
       double precision, allocatable, dimension(:) :: l_hist_n,
      &                                               l_hist_np1
       double precision :: l_temp_n, l_temp_np1, l_time_n, l_time_np1,
@@ -124,7 +125,9 @@ c     Locals
 
 c     Setup history sizes
       nhist = nstore_nemlmodel(model_ptr)
-      nstore = nhist + 36
+      ntangent = 36
+      nextra = 12
+      nstore = nhist + ntangent + nextra
 
       allocate(l_hist_n(nhist))
       allocate(l_hist_np1(nhist))
@@ -195,6 +198,7 @@ c      For each entry in the block
                   deallocate(l_hist_np1)
                   call die_abort
             end if
+            ! Collect a couple of useful strains
 
             ! Store the updated quantities
             do j=1,6
@@ -207,8 +211,15 @@ c      For each entry in the block
                   end do
             end do
             l_full_tangent = transpose(l_full_tangent)
-            hist_np1(i,1:36) = reshape(l_full_tangent, (/36/))
-            hist_np1(i,37:nstore) = l_hist_np1
+            ! Tangent
+            hist_np1(i,1:ntangent) = reshape(l_full_tangent, 
+     &            (/ntangent/))
+            ! Actual history
+            hist_np1(i,ntangent+1:ntangent+1+nhist) = l_hist_np1
+            ! Fake history variables for various strains
+            hist_np1(i,ntangent+nhist+1:ntangent+nhist+6) = 1.0
+            hist_np1(i,ntangent+nhist+6+1:ntangent+nhist+12) = 2.0
+            ! Energy
             stress_np1(i,7) = l_u_np1
             stress_np1(i,8) = l_p_np1
 
@@ -416,7 +427,7 @@ c
       info_vector(1) = -1
       info_vector(2) = 21
       info_vector(3) = 0
-      info_vector(4) = 0
+      info_vector(4) = 12
 c
       return
       end
@@ -449,7 +460,8 @@ c         1        number of history values per integration
 c                  point. Abaqus calls these "statev". Values
 c                  double or single precsion based on hardware.
 c
-c                  we require an extra 36 for the tangent 
+c                  we require an extra 36 for the tangent
+c                  and an extra 12 for the additional stresses
 c
 c    
 c         2        number of values in the symmetric part of the 
@@ -466,16 +478,14 @@ c                  when user requests this type of results
 c
       actual_hist = nstore_nemlmodel(model_ptr)
 
-      info_vector(1) = actual_hist + 36
+      info_vector(1) = actual_hist + 36 + 12
       info_vector(2) = 21
       info_vector(3) = 0
-      info_vector(4) = 0
+      info_vector(4) = 12
 
 c
       return
       end
-c            dummy routines for model not yet supporting 
-c            states output
 c
 c     ****************************************************************
 c     *                                                              *
@@ -502,6 +512,67 @@ c                       parameters
 c
       integer :: nrow_states, itype, num_states
       double precision :: elem_states_output(nrow_states,*)
+c
+c
+c     
+      logical :: do_a_block
+      integer :: blockno, felem, int_points, span, hist_size,
+     &            ntangent, nextra, nhist
+      double precision, allocatable, dimension(:,:,:) :: history_dump
+
+c           build deformation plasticity states values output.
+c
+c              itype > 0 => this is the block number. do all elements
+c                           in the block
+c
+c              itype < 0 => this is an element number. put state
+c                           values into column 1 of results.
+c 
+      do_a_block = .true.
+      if( itype. gt. 0 ) then
+         do_a_block = .true.
+         blockno = itype
+      else
+         do_a_block = .false.
+         elnum = -itype
+         blockno = elems_to_blocks(elnum,1)
+      end if          
+c
+      felem       = elblks(1,blockno)
+      int_points  = iprops(6,felem)
+      span        = elblks(0,blockno)
+      hist_size   = history_blk_list(blockno)
+      ntangent    = 36
+      nextra      = 12
+      nhist       = hist_size - ntangent - nextra
+c
+c           This is the way Bob does it elsewhere
+      allocate(history_dump(hist_size, int_points, span))
+      history_dump = reshape(history_blocks(blockno)%ptr,
+     &            (/hist_size, int_points, span/))
+c
+      if( do_a_block ) then    
+        do relem = 1, span
+           elnum = felem + relem - 1  ! absolute element number
+           elem_states_output(1:6,relem) = 
+     &        sum(history_dump(ntangent+nhist+1:ntangent+nhist+6,
+     &            :, relem), 2) / DBLE(int_points)
+           elem_states_output(7:12,relem) = 
+     &        sum(history_dump(ntangent+nhist+6+1:ntangent+nhist+12,
+     &            :, relem), 2) / DBLE(int_points)
+        end do
+      else
+        relem = elnum + 1 - felem
+           elem_states_output(1:6,1) = 
+     &        sum(history_dump(ntangent+nhist+1:ntangent+nhist+6,
+     &            :, relem), 2) / DBLE(int_points)
+           elem_states_output(7:12,1) = 
+     &        sum(history_dump(ntangent+nhist+6+1:ntangent+nhist+12,
+     &            :, relem), 2) / DBLE(int_points)
+      end if  
+c
+      deallocate(history_dump)
+c
 c
       return
       end
@@ -532,10 +603,24 @@ c                       locals
 c
       integer :: i
 c
-      num_states = 0
+      num_states = 12
+      state_labels(1) = "e-xx"
+      state_labels(2) = "e-yy"
+      state_labels(3) = "e-zz"
+      state_labels(4) = "e-xy"
+      state_labels(5) = "e-yz"
+      state_labels(6) = "e-xz"
+      state_descriptors(1:6) = "Elastic strain"
+c
+      state_labels(7) = "p-xx"
+      state_labels(8) = "p-yy"
+      state_labels(9) = "p-zz"
+      state_labels(10) = "p-xy"
+      state_labels(11) = "p-yz"
+      state_labels(12) = "p-xz"
+      state_descriptors(7:12) = "Inelastic strain"
+c
       num_comment_lines = 0     
-      state_labels(1) = "..."
-      state_descriptors(1) = "...."
 c      
       return
       end

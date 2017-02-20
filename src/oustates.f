@@ -930,6 +930,10 @@ c
         call mm11_states_labels( size_state,
      &      num_states, state_labels, state_descriptors, out,
      &      comment_lines, max_comment_lines, num_comment_lines )
+      case ( 12 )
+        call mm12_states_labels( size_state,
+     &      num_states, state_labels, state_descriptors, out,
+     &      comment_lines, max_comment_lines, num_comment_lines )
       case default
            write(out,9000) warp3d_matl
            call die_abort
@@ -1174,6 +1178,9 @@ c
      &                           output_states_type_opt1,
      &                           output_states_type_opt2,
      &                           nterms_crystal_list, crystal_list  )
+      case ( 12 )
+        call mm12_states_values( blk, elem_states_output,
+     &                           nrow_states, num_states )
       case default
            write(iout,9000) warp3d_matl
            call die_abort
