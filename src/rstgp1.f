@@ -4799,13 +4799,14 @@ c
       temp_n            = gp_temps(1:span) - gp_dtemps(1:span)
       temp_n_0          = temp_n(1:span) - gp_rtemps(1:span)
       
-      ! gp_temps stores temp_np1
-
-      ! I think strain_n stores the mechanical strains at n
-
+      ! Need to get strain_n
+      do i = 1,span
+            strain_n(i,1:6) = local_work%strain_n(i,1:6,gpn) - 
+     &            local_work%alpha_vec_n(i,1:6) * temp_n_0(i)
+      end do
+      
       ! uddt is definitely the increment in the mechanical strain
-      strain_np1(1:span,1:6) = local_work%strain_n(1:span,1:6,gpn) +
-     &      uddt(1:span,1:6)
+      strain_np1(1:span,1:6) = strain_n(1:span,1:6) + uddt(1:span,1:6)
       
 
        cut_step_size_now = .false.
@@ -4815,7 +4816,7 @@ c
      &           external_models(matnum), 
      &           time_n, time_np1,
      &           temp_n, gp_temps,
-     &           local_work%strain_n(1,1,gpn),
+     &           strain_n,
      &           strain_np1,
      &           local_work%urcs_blk_n(1,1,gpn),
      &           local_work%urcs_blk_n1(1,1,gpn),

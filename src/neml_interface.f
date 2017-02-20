@@ -63,5 +63,15 @@
 
             end subroutine
 
+            subroutine elastic_strains_nemlmodel(model, s_np1, Temp_np1,
+     &                        e_np1, ier) bind(C)
+                  use iso_c_binding
+                  implicit none
+                  type(c_ptr), value :: model
+                  double precision, intent(in), dimension(6) :: s_np1
+                  double precision, intent(in), value :: Temp_np1
+                  double precision, intent(out), dimension(6) :: e_np1
+                  integer, intent(out) :: ier
 
+            end subroutine
       end interface

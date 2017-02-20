@@ -199,11 +199,16 @@ c      For each entry in the block
                   call die_abort
             end if
             ! Collect a couple of useful strains
+            call elastic_strains_nemlmodel(model_ptr, l_stress_np1,
+     &            l_temp_np1, estrain, ier)
+            pstrain = l_strain_np1 - estrain
 
             ! Store the updated quantities
             do j=1,6
                   stress_np1(i,vm_map(j)) = l_stress_np1(j) /
      &                  vm_mult_s(j)
+                  estrain(j) = estrain(j) / vm_mult_e(j)
+                  pstrain(j) = pstrain(j) / vm_mult_e(j)
                   do k=1,6
                         l_full_tangent(vm_map(j),vm_map(k)) = 
      &                        l_tangent(j,k)  * vm_mult_e(k) / 
@@ -217,8 +222,8 @@ c      For each entry in the block
             ! Actual history
             hist_np1(i,ntangent+1:ntangent+1+nhist) = l_hist_np1
             ! Fake history variables for various strains
-            hist_np1(i,ntangent+nhist+1:ntangent+nhist+6) = 1.0
-            hist_np1(i,ntangent+nhist+6+1:ntangent+nhist+12) = 2.0
+            hist_np1(i,ntangent+nhist+1:ntangent+nhist+6) = estrain
+            hist_np1(i,ntangent+nhist+6+1:ntangent+nhist+12) = pstrain
             ! Energy
             stress_np1(i,7) = l_u_np1
             stress_np1(i,8) = l_p_np1
