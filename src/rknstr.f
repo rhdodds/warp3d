@@ -2038,14 +2038,17 @@ c
       matnum = local_work%matnum
 c
 c                   The only properties we should need
-      do i = 1, span
-        local_work%alpha_vec(i,1) = props(9,i)
-        local_work%alpha_vec(i,2) = props(13,i)
-        local_work%alpha_vec(i,3) = props(34,i)
-        local_work%alpha_vec(i,4) = props(35,i)
-        local_work%alpha_vec(i,5) = props(36,i)
-        local_work%alpha_vec(i,6) = props(37,i)
-      end do
+c
+c                   Now setup to grab from model
+c
+c      do i = 1, span
+c        local_work%alpha_vec(i,1) = props(9,i)
+c        local_work%alpha_vec(i,2) = props(13,i)
+c        local_work%alpha_vec(i,3) = props(34,i)
+c        local_work%alpha_vec(i,4) = props(35,i)
+c        local_work%alpha_vec(i,5) = props(36,i)
+c        local_work%alpha_vec(i,6) = props(37,i)
+c      end do
 c
 c
 c                   determine if material model can call for a

@@ -4776,6 +4776,8 @@ c           dependent values
 c
       call mm12_setup_alpha(span, external_models(matnum),
      &            gp_temps, local_work%alpha_vec)
+      call mm12_setup_alpha(span, external_models(matnum),
+     &            gp_temps - gp_dtemps, local_work%alpha_vec_n)
 
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -4785,7 +4787,7 @@ c
       if ( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
      &                    gp_dtemps,
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )
+     &                    gp_temps, gp_rtemps, local_work%alpha_vec_n )
       end if
 c
 

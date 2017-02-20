@@ -650,11 +650,12 @@ c
             use iso_c_binding
             implicit none
             include "neml_interface.f"
+            include 'param_def'
 c
             integer, intent(in) :: span
             type(c_ptr), intent(in) :: model_ptr
-            double precision, intent(in) :: gp_temps(span)
-            double precision, intent(out) :: alpha_vec(span,6)
+            double precision, intent(in) :: gp_temps(*)
+            double precision, intent(out) :: alpha_vec(mxvl,6)
 c
             integer :: i
             double precision :: alpha
