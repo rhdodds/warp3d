@@ -46,6 +46,14 @@ if(USE_HYPRE)
       add_definitions(-DUSE_HYPRE)
 endif()
 
+# Patwarp
+option(COMPILE_PATWARP "Compile the MSC/Patran neutral file -> warp3d converter.")
+if (COMPILE_PATWARP)
+      set(PATWARP_NAME "patwarp")
+      find_package(METIS REQUIRED)
+      include_directories(${METIS_INCLUDE_DIRS})
+endif()
+
 # Force the preprocessor for all fortran files
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp")
 
@@ -81,5 +89,7 @@ else()
       set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -ffpe-trap=invalid")
 endif()
 
-
 add_subdirectory(src)
+if (COMPILE_PATWARP)
+      add_subdirectory(patwarp)
+endif()
