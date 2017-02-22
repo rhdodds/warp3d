@@ -122,6 +122,10 @@ c     Locals
      &                        l_u_n, l_u_np1, l_p_n, l_p_np1
       double precision :: vm_mult_s(6), vm_mult_e(6)
       integer :: vm_map(6)
+c
+c           We can adapt
+c
+      adaptive_possible = .True.
 
 c     Setup history sizes
       nhist = nstore_nemlmodel(model_ptr)
@@ -193,10 +197,12 @@ c      For each entry in the block
      &            l_u_np1, l_u_n, l_p_np1, l_p_n, ier)
             if (ier .ne. 0) then
                   write(*,*) "Error updating NEML material"
-                  call destroy_nemlmodel(model_ptr, ier)
+                  !call destroy_nemlmodel(model_ptr, ier)
                   deallocate(l_hist_n)
                   deallocate(l_hist_np1)
-                  call die_abort
+                  !call die_abort
+                  cut_step_size_now = .True.
+                  return
             end if
             ! Collect a couple of useful strains
             call elastic_strains_nemlmodel(model_ptr, l_stress_np1,
