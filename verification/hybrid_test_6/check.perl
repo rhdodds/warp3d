@@ -26,11 +26,36 @@ $partno = 4;
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
 $out_value = $parts[$partno];
 #
+
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
  $message = "\t\t  **** difference in solution"; 
 }  
 #
+
+#
+print "   ... comparison value:       $answer","\n";
+print "   ... value from output file: ", "$out_value$message\n";
+print "\n";
+#
+find_line( 1, " 7471       1    ");
+ $line = <infile>; 
+#
+#    line with stress is current. print value
+#
+@parts = split( / +/, $line);
+
+#
+$answer = "27.066651";
+$partno = 2;
+#
+$parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
+$out_value = $parts[$partno];
+#
+$message = " ";
+if ( $answer ne $parts[$partno] ) {
+ $message = "\t\t  **** difference in solution"; 
+}  
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
 print "\n";
