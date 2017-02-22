@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#**************************************************************
+#*                                                            *
+#*      cleanup_files                                         *
+#*                                                            *
+#**************************************************************
+
+function cleanup_files {
+#
+rm -f  *_out 
+rm -f  *~ >& /dev/null
+rm -f energy  >& /dev/null
+rm -f *_db >& /dev/null
+rm -f wn*  >& /dev/null
+rm -f we*  >& /dev/null
+rm -f step*.rest  >& /dev/null
+rm -f states*  >& /dev/null
+rm -f combiner_output  >& /dev/null
+rm -f temp* >& /dev/null
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      run_and_compare                                       *
+#*                                                            *
+#**************************************************************
+
+function run_and_compare {
+#
+echo "  ... running MPI + combine partial results files ..."
+"$warp3d" $ranks_warp3d $threads_warp3d  < warp3d.inp > woutput
+#
+echo "  ... WARP3D job completed ..."
+#
+echo "  ... Running combine MPI results ..."
+combiner="$WARP3D_HOME/run_linux_em64t/combine_mpi_results.go"
+if [ ! -f "$combiner" ]; then
+      printf "\n>> Expecting to find the MPI combine program executable\n"
+      printf   "   in the run_linux_em64t directory.\n"
+      printf   "   Exiting...\n"
+      exit 1
+fi
+$combiner -nodes 1568 -elements 715 > combiner_output
+ok=`grep Normal combiner_output | wc -l`
+if [ !"$ok" -eq "1" ]; then
+      printf "\n>> MPI combiner program terminated abnormally\n"
+      printf   "   Exiting...\n"
+      exit 1
+fi
+#
+# Check
+#
+perl check_1.perl
+perl check_2.perl
+perl check_3.perl
+perl check_4.perl
+perl check_5.perl
+tail -1 wes00030_text | cut -c1-46 >temp1
+perl check_6.perl
+tail -1 wne00030_text | cut -c1-46 >temp2
+perl check_7.perl
+tail -1 wns00030_text | cut -c1-46 >temp3
+perl check_8.perl
+python read_element_flat_stream_strains.py > temp4
+perl check_9.perl
+python read_element_flat_stream_stresses.py > temp5
+perl check_10.perl
+python read_nodal_flat_stream_stresses.py > temp6
+perl check_11.perl
+python read_element_flat_stream_states.py > temp7
+perl check_12.perl
+cleanup_files
+printf ">>> All done with MPI combine partial results test\n\n"
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      Main program                                          *
+#*                                                            *
+#**************************************************************
+run_and_compare
