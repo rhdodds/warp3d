@@ -1,0 +1,7 @@
+!
+restart from 'restart.db'
+c
+  compute displacements for loading bend step 60
+  *input test_18_get_j
+stop
+
