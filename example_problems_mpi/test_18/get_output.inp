@@ -1,0 +1,13 @@
+
+!  output wide  element stresses 1
+!  output displacements 46
+!  output flat stream displacements
+  output flat text displacements
+!  output flat stream element stresses
+!   output flat text element stresses
+!  output flat stream element states
+
+!    output patran binary displacements stresses strains
+!    output patran binary element  stresses strains
+!    output patran formatted displacements stresses strains
+!    output patran formatted element  stresses strains
