@@ -65,6 +65,7 @@ c
       call wmpi_bcast_log( ouflg )
       call wmpi_bcast_log( oubin )
       call wmpi_bcast_log( ouasc )
+      call wmpi_bcast_log( ounod )
       call wmpi_bcast_log( flat_file )
       call wmpi_bcast_log( stream_file )
       call wmpi_bcast_log( text_file )
