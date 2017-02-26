@@ -13,6 +13,7 @@ c
 c
 c              --- double precision arrays/vectors ---
 c
+!DIR$ ATTRIBUTES ALIGN : 64 :: /dblearrays/
       common/dblearrays/ u(mxdof), v(mxdof), a(mxdof), du(mxdof),
      &    idu(mxdof), load(mxdof), res(mxdof), ifv(mxdof), c(mxncor),
      &    tol(mxcvtests)
@@ -35,15 +36,17 @@ c
 c
 c              --- real arrays/vectors/scalars ---
 c
-      common/realvars/ props(mxelpr,mxel), times(mxtim,2), strtm, 
-     &    time_limit, user_cnstrn_stp_factors(mxstep),
-     &    actual_cnstrn_stp_factors(mxstep)
+!DIR$ ATTRIBUTES ALIGN : 64 :: /realvars/
+      common/realvars/ props(mxelpr,mxel), times(mxtim,2),  
+     &    user_cnstrn_stp_factors(mxstep),
+     &    actual_cnstrn_stp_factors(mxstep), strtm, time_limit
 c     
       real :: props, times, strtm, time_limit,
      &    user_cnstrn_stp_factors, actual_cnstrn_stp_factors
 c
 c              --- logical arrays/vectors/scalars ---
 c
+!DIR$ ATTRIBUTES ALIGN : 64 :: /logs/
       common/logs/ prnres, halt, linmas, newstf, zrocon, newtrn, 
      &    newmas, incflg, ifvcmp, prlres, input_ok, adaptive_flag,
      &    new_constraints, batch_messages, signal_flag, 
@@ -70,6 +73,7 @@ c
 c
 c              --- integer arrays/vectors/scalars ---
 c
+!DIR$ ATTRIBUTES ALIGN : 64 :: /iarrays/
       common/iarrays/ dstmap(mxnod), gpmap(mxtgp), cstmap(mxdof), 
      &    cp(mxedof), dcp(mxedof), icp(mxutsz,2), matlst(mxmat),
      &    lodlst(mxlc), prslst(mxlsz), plrlst(mxlsz), stprng(mxlc,2),
@@ -103,6 +107,7 @@ c
 c
 c              --- character arrays/vectors/scalars ---
 c
+!DIR$ ATTRIBUTES ALIGN : 64 :: /charvars/
       common/charvars/ lodnam(mxlc), lodtyp(mxlc), matnam(mxmat),
      &    elelib(mxlbel), snames(mxstc), stname, lsldnm, 
      &    solver_scr_dir, sparse_stiff_file_name
