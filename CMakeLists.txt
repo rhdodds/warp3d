@@ -82,7 +82,7 @@ if(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpconstant -fixed -72 -traceback")
 
       # Optimized build
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -no-inline-factor -ftz -ip -xHOST")
+      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -g -no-inline-factor -ftz -ip -xHOST")
       # Debug build
       set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -check all,noarg_temp_created -fpe0")
 else()
@@ -92,7 +92,7 @@ else()
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed -liomp5")
       message(WARNING "WARP3D not tested on compilers other than Intel!")
       # Optimized build
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
+      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -g")
       # Debug build
       set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -ffpe-trap=invalid")
 endif()
