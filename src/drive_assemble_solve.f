@@ -374,11 +374,11 @@ c
           call mkl_get_version_string( mkl_string )
           mkl_num_thrds = mkl_get_max_threads()
           if( using_mpi ) then
-             write(out,9300) num_threads, num_ranks, mkl_string(37:44),
-     &                       mkl_string(59:66), wcputime(1)
+             write(out,9300) num_threads, num_ranks, mkl_string(38:45),
+     &                       mkl_string(61:68), wcputime(1)
            else
-             write(out,9400) num_threads, mkl_string(37:44),
-     &                       mkl_string(59:66), wcputime(1)
+             write(out,9400) num_threads, mkl_string(38:45),
+     &                       mkl_string(61:68), wcputime(1)
           end if
       end if    
       if( .not. allocated ( dof_eqn_map ) ) then
