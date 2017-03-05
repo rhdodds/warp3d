@@ -17,11 +17,16 @@
 #
 #
 #
-HYROOT = $(HYPRE_ROOT)
+HYROOT = $(HYPRE_ROOT) 
 HYLIB = -L$(HYPRE_ROOT)/lib -lHYPRE
 HYINC = -I$(HYPRE_ROOT)/include
 #
-LIBMPI = -lmkl_blacs_intelmpi_lp64
+LIBMPI = -lmkl_blacs_intelmpi_lp64 #  required at 17.1, 17.2
+#         Intel MKL is supposed to have this library in the install but it
+#         is not included - Bad !
+#         I have an old version and it is in $WARP3D_HOME/linux_packages/LIB
+#
+#LIBMPI = 
 MPIOPT = -mt_mpi 
 ODIR  = ././../obj_linux_em64t_mpi
 EXE_NAME = warp3d.mpi_omp
