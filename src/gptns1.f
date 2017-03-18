@@ -39,8 +39,6 @@ c
      &        temps_to_process, iscp, symmetric_assembly
       data one  / 1.0d00 /
 c      
-c!DIR$ ASSUME_ALIGNED glb_ek_blk:64, rad:64,factors:64      
-c
 c                       set local versions of the data structure
 c                       scalars. set logical to include/not include the
 c                       so-called qbar modification of the
@@ -457,7 +455,6 @@ c
       double precision :: weight, symm_part_cep(6), f
       logical :: ldebug
       integer :: span, felem, now_blk, ielem, k, i
-c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c    
       ldebug  = .false.
       span    = local_work%span
@@ -663,9 +660,8 @@ c
 c      
 c                     local variables
 c
-      double precision :: weight, symm_part_cep(21), f
+      double precision :: weight, symm_part_cep(mxvl,21), f
       integer :: span, now_blk, ielem, sloc, k, felem
-c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c      
       span    = local_work%span
       weight  = local_work%weights(gpn)
@@ -679,54 +675,75 @@ c
 c              expand to 6 x 6 symmetric [D] and scale by
 c              integration weight factor
 c
+c!DIR$ LOOP COUNT MAX=128 
+c      do ielem = 1, span
+c        sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
+c        f = weight * local_work%det_jac_block(ielem,gpn)
+c!DIR$ IVDEP
+c!DIR$ VECTOR ALIGNED
+c        do k = 1, 21
+c         symm_part_cep(ielem,k) = f *
+c     &        gbl_cep_blocks(now_blk)%vector(sloc+k)
+c        end do
+c      end do 
+       
+      do k = 1, 21
 !DIR$ LOOP COUNT MAX=128 
 !DIR$ IVDEP
-      do ielem = 1, span
+!DIR$ VECTOR ALIGNED
+        do ielem = 1, span
         sloc = ( 21 * span * (gpn-1) ) + 21 * (ielem-1)
         f = weight * local_work%det_jac_block(ielem,gpn)
-        do k = 1, 21
-         symm_part_cep(k) = f * gbl_cep_blocks(now_blk)%vector(sloc+k)
+         symm_part_cep(ielem,k) = f *
+     &        gbl_cep_blocks(now_blk)%vector(sloc+k)
         end do
-        local_work%cep(ielem,1,1) = symm_part_cep(1)
-        local_work%cep(ielem,2,1) = symm_part_cep(2)
-        local_work%cep(ielem,2,2) = symm_part_cep(3)
-        local_work%cep(ielem,3,1) = symm_part_cep(4)
-        local_work%cep(ielem,3,2) = symm_part_cep(5)
-        local_work%cep(ielem,3,3) = symm_part_cep(6)
-        local_work%cep(ielem,4,1) = symm_part_cep(7)
-        local_work%cep(ielem,4,2) = symm_part_cep(8)
-        local_work%cep(ielem,4,3) = symm_part_cep(9)
-        local_work%cep(ielem,4,4) = symm_part_cep(10)
-        local_work%cep(ielem,5,1) = symm_part_cep(11)
-        local_work%cep(ielem,5,2) = symm_part_cep(12)
-        local_work%cep(ielem,5,3) = symm_part_cep(13)
-        local_work%cep(ielem,5,4) = symm_part_cep(14)
-        local_work%cep(ielem,5,5) = symm_part_cep(15)
-        local_work%cep(ielem,6,1) = symm_part_cep(16)
-        local_work%cep(ielem,6,2) = symm_part_cep(17)
-        local_work%cep(ielem,6,3) = symm_part_cep(18)
-        local_work%cep(ielem,6,4) = symm_part_cep(19)
-        local_work%cep(ielem,6,5) = symm_part_cep(20)
-        local_work%cep(ielem,6,6) = symm_part_cep(21)
-        local_work%cep(ielem,1,2) = symm_part_cep(2)
-        local_work%cep(ielem,1,3) = symm_part_cep(4)
-        local_work%cep(ielem,1,4) = symm_part_cep(7)
-        local_work%cep(ielem,1,5) = symm_part_cep(11)
-        local_work%cep(ielem,1,6) = symm_part_cep(16)
-        local_work%cep(ielem,2,3) = symm_part_cep(5)
-        local_work%cep(ielem,2,4) = symm_part_cep(8)
-        local_work%cep(ielem,2,5) = symm_part_cep(12)
-        local_work%cep(ielem,2,6) = symm_part_cep(17)
-        local_work%cep(ielem,3,4) = symm_part_cep(9)
-        local_work%cep(ielem,3,5) = symm_part_cep(13)
-        local_work%cep(ielem,3,6) = symm_part_cep(18)
-        local_work%cep(ielem,4,5) = symm_part_cep(14)
-        local_work%cep(ielem,4,6) = symm_part_cep(19)
-        local_work%cep(ielem,5,6) = symm_part_cep(20)
+      end do  
+
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
+       do ielem = 1, span
+        local_work%cep(ielem,1,1) = symm_part_cep(ielem,1)
+        local_work%cep(ielem,2,1) = symm_part_cep(ielem,2)
+        local_work%cep(ielem,2,2) = symm_part_cep(ielem,3)
+        local_work%cep(ielem,3,1) = symm_part_cep(ielem,4)
+        local_work%cep(ielem,3,2) = symm_part_cep(ielem,5)
+        local_work%cep(ielem,3,3) = symm_part_cep(ielem,6)
+        local_work%cep(ielem,4,1) = symm_part_cep(ielem,7)
+        local_work%cep(ielem,4,2) = symm_part_cep(ielem,8)
+        local_work%cep(ielem,4,3) = symm_part_cep(ielem,9)
+        local_work%cep(ielem,4,4) = symm_part_cep(ielem,10)
+        local_work%cep(ielem,5,1) = symm_part_cep(ielem,11)
+        local_work%cep(ielem,5,2) = symm_part_cep(ielem,12)
+        local_work%cep(ielem,5,3) = symm_part_cep(ielem,13)
+        local_work%cep(ielem,5,4) = symm_part_cep(ielem,14)
+        local_work%cep(ielem,5,5) = symm_part_cep(ielem,15)
+        local_work%cep(ielem,6,1) = symm_part_cep(ielem,16)
+        local_work%cep(ielem,6,2) = symm_part_cep(ielem,17)
+        local_work%cep(ielem,6,3) = symm_part_cep(ielem,18)
+        local_work%cep(ielem,6,4) = symm_part_cep(ielem,19)
+        local_work%cep(ielem,6,5) = symm_part_cep(ielem,20)
+        local_work%cep(ielem,6,6) = symm_part_cep(ielem,21)
+        local_work%cep(ielem,1,2) = symm_part_cep(ielem,2)
+        local_work%cep(ielem,1,3) = symm_part_cep(ielem,4)
+        local_work%cep(ielem,1,4) = symm_part_cep(ielem,7)
+        local_work%cep(ielem,1,5) = symm_part_cep(ielem,11)
+        local_work%cep(ielem,1,6) = symm_part_cep(ielem,16)
+        local_work%cep(ielem,2,3) = symm_part_cep(ielem,5)
+        local_work%cep(ielem,2,4) = symm_part_cep(ielem,8)
+        local_work%cep(ielem,2,5) = symm_part_cep(ielem,12)
+        local_work%cep(ielem,2,6) = symm_part_cep(ielem,17)
+        local_work%cep(ielem,3,4) = symm_part_cep(ielem,9)
+        local_work%cep(ielem,3,5) = symm_part_cep(ielem,13)
+        local_work%cep(ielem,3,6) = symm_part_cep(ielem,18)
+        local_work%cep(ielem,4,5) = symm_part_cep(ielem,14)
+        local_work%cep(ielem,4,6) = symm_part_cep(ielem,19)
+        local_work%cep(ielem,5,6) = symm_part_cep(ielem,20)
       end do
 c
       return
       end       
+            
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine drive_umat_cnst                 *
@@ -752,7 +769,6 @@ c
       double precision
      & weight, symm_part_cep(21), factor
       logical local_debug, debug_now
-c!DIR$ ASSUME_ALIGNED symm_part_cep:64
 c
 c           1. pull a few values from work space for block
 c
@@ -991,7 +1007,6 @@ c
 c                       locals
 c
       integer :: i, j, k, row, col
-c!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_full:64
 c
 c              set trans( [B] )
 c
@@ -999,6 +1014,7 @@ c
             do k = 1, 6
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do i = 1, span
           bt(i,k,j)= b(i,j,k)
        end do
@@ -1013,7 +1029,8 @@ c              cnst.. routine.
 c
       do j = 1, totdof
 !DIR$ LOOP COUNT MAX=128  
-!DIR$ IVDEP 
+!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
        do i = 1, span
            bd(i,j,1) = d(i,1,1) * b(i,j,1)
      &               + d(i,2,1) * b(i,j,2)
@@ -1074,6 +1091,7 @@ c
              j = j + 1  
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do i = 1, span
          ek_full(i,j) = ek_full(i,j)
      &         +   bt(i,1,col) * bd(i,row,1) 
@@ -1121,13 +1139,14 @@ c
 c                       locals
 c
       integer :: i, j, k, row, col
-c!DIR$ ASSUME_ALIGNED b:64, bt:64, bd:64, d:64, ek_symm:64  
 c
 c              set trans( [B] )
 c
       do j = 1, totdof
             do k = 1, 6
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
           bt(1:span,k,j) = b(1:span,j,k)
        end do
       end do
@@ -1141,6 +1160,7 @@ c
       do j = 1, totdof
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
        do i = 1, span
            bd(i,j,1) = d(i,1,1) * b(i,j,1)
      &               + d(i,2,1) * b(i,j,2)
@@ -1196,6 +1216,7 @@ c
         col = icp(j,2)
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do i = 1, span
          ek_symm(i,j) = ek_symm(i,j)
      &         +   bt(i,1,col) * bd(i,row,1)
@@ -1235,8 +1256,6 @@ c
       logical :: qbar, is_umat, is_crys_pls, do_transform
       data half, two / 0.5d00, 2.0d00 /
 c      
-c!DIR$ ASSUME_ALIGNED tc:64, qn1:64, cep:64, cs:64, dj:64
-c
 c             [cep] (mxvl x 6 x 6) relates increments
 c             of unrotated cauchy stress to increments
 c             of the unrotated deformation. transform [cep]
@@ -1269,6 +1288,7 @@ c
       do j = 1, 6
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
          do i = 1, span
 c
             tc(i,j,1)= (qn1(i,j,1)*cep(i,1,1)+
@@ -1322,6 +1342,7 @@ c
       do j = 1, 6
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
          do i = 1, span
 c
             cep(i,j,1)= tc(i,j,1)*qn1(i,1,1)+
@@ -1387,6 +1408,7 @@ c
       if( qbar ) then
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do i = 1, span
          wf    = dj(i) * w
          halfw = half * wf

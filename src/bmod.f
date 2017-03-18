@@ -4,9 +4,7 @@ c     *                      subroutine bmod                         *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 02/15/92                   *
-c     *                                 : 02/08/94 rhd               *
-c     *                                 : 04/08/96 kck               *
+c     *                   last modified : 03/15/2017 rhd             *
 c     *                                                              *
 c     *     modifiy the linear-displacement [b] matrix of            *
 c     *     the l3disop element to implement b-bar.                  *
@@ -16,15 +14,17 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine bmod ( b, vol, span, mxvl, eps_stab, mxedof ) 
-      implicit integer ( a-z )
-      double precision ::
-     &   b(mxvl,mxedof,*), vol(mxvl,8,*), two, third, eps_stab,
-     &   alpha, beta, one,
+      implicit none
+c      
+      integer :: span, mxvl, mxedof
+      double precision :: b(mxvl,mxedof,*), vol(mxvl,8,*), eps_stab
+c      
+      integer :: i
+      double precision :: alpha, beta,
      &   dummy_1, dummy_2, dummy_3, dummy_4,
      &   dummy_5, dummy_6, dummy_7, dummy_8
-      data two, third, one / 2.0d0, 0.3333333333333d0, 1.0d0 /
-c!DIR$ ASSUME_ALIGNED b:64, vol:64  
-      
+      double precision, parameter :: one = 1.0d0, two = 2.0d0,
+     &                               third = 1.0d0/3.0d0 
 c
 c        
 c                  the vol data structure contains volume averaged
@@ -45,7 +45,8 @@ c
         beta  = (one - eps_stab)*third
 c
 !DIR$ LOOP COUNT MAX=128 
-!DIR$ IVDEP 
+!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
         do i = 1, span  
 c
 c                  save value for use in later calculations
@@ -70,7 +71,26 @@ c
         b (i,5,1) = alpha * dummy_5 + beta * vol (i,5, 1)
         b (i,6,1) = alpha * dummy_6 + beta * vol (i,6, 1)
         b (i,7,1) = alpha * dummy_7 + beta * vol (i,7, 1) 
-        b (i,8,1) = alpha * dummy_8 + beta * vol (i,8, 1) 
+        b (i,8,1) = alpha * dummy_8 + beta * vol (i,8, 1)
+c
+c                                                      
+c                 modify second column of b matrix     
+c                                                      
+c        b (i,j,2) =  (vol (i,j,1) - dummy) * third    
+c                                                      
+        b (i,1,2) = beta * ( vol (i,1,1) - dummy_1 )
+        b (i,2,2) = beta * ( vol (i,2,1) - dummy_2 )
+        b (i,3,2) = beta * ( vol (i,3,1) - dummy_3 )
+        b (i,4,2) = beta * ( vol (i,4,1) - dummy_4 )
+        b (i,5,2) = beta * ( vol (i,5,1) - dummy_5 )
+        b (i,6,2) = beta * ( vol (i,6,1) - dummy_6 )
+        b (i,7,2) = beta * ( vol (i,7,1) - dummy_7 )
+        b (i,8,2) = beta * ( vol (i,8,1) - dummy_8 )
+      end do         
+!DIR$ LOOP COUNT MAX=128 
+!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
+      do i = 1, span
 c
 c        b (i,bpos1+j,1) = (vol (i,j, 2) - b (i,bpos1+j,2))
 c     &                      * third 
@@ -98,19 +118,6 @@ c
         b (i,23,1) = beta * ( vol (i,7,3) - b (i,23,3) )
         b (i,24,1) = beta * ( vol (i,8,3) - b (i,24,3) )
                                                        
-c                                                      
-c                 modify second column of b matrix     
-c                                                      
-c        b (i,j,2) =  (vol (i,j,1) - dummy) * third    
-c                                                      
-        b (i,1,2) = beta * ( vol (i,1,1) - dummy_1 )
-        b (i,2,2) = beta * ( vol (i,2,1) - dummy_2 )
-        b (i,3,2) = beta * ( vol (i,3,1) - dummy_3 )
-        b (i,4,2) = beta * ( vol (i,4,1) - dummy_4 )
-        b (i,5,2) = beta * ( vol (i,5,1) - dummy_5 )
-        b (i,6,2) = beta * ( vol (i,6,1) - dummy_6 )
-        b (i,7,2) = beta * ( vol (i,7,1) - dummy_7 )
-        b (i,8,2) = beta * ( vol (i,8,1) - dummy_8 )
 
 c
 c        b (i,bpos1+j,2) = (two * b (i,bpos1+j,2) + vol (i,j,2))
