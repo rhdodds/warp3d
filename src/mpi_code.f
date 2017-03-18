@@ -21,7 +21,7 @@ c
       myid = 0
       numprocs = 1
       root_processor = .true.
-      slave_processor = .false.
+      worker_processor = .false.
       use_mpi = .false.
 c
       return
