@@ -18,6 +18,7 @@ rm -f step*.rest  >& /dev/null
 rm -f states*  >& /dev/null
 rm -f combiner_output  >& /dev/null
 rm -f temp* >& /dev/null
+rm -f wout* >& /dev/null
 #
 }
 
