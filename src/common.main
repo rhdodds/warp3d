@@ -5,18 +5,38 @@ c
 c              code that includes param_def and or common.main
 c              may then use =>  implicit none if desired
 c
-c              specific ordering of block commons may or may
-c              not improve memory layouts - but the ordering here
-c              seems logical
-c
       include 'param_def'
 c
 c              --- double precision arrays/vectors ---
 c
-!DIR$ ATTRIBUTES ALIGN : 64 :: /dblearrays/
-      common/dblearrays/ u(mxdof), v(mxdof), a(mxdof), du(mxdof),
-     &    idu(mxdof), load(mxdof), res(mxdof), ifv(mxdof), c(mxncor),
-     &    tol(mxcvtests)
+c              ifort (as of 17.0.2 for sure) sets starting alignment
+c              as 64 bytes by default. Verified by simple test programs 
+c              wiht optimization reports that show no peel loops and 
+c              aligned access inside loop bodies.
+c
+c              put each vector into a separate common to facilitate
+c              compiler alignment.
+c                              
+c
+      common/dvecs1/ u(mxdof)
+c
+      common/dvecs2/ v(mxdof)
+c
+      common/dvecs3/ a(mxdof)
+c
+      common/dvecs4/ du(mxdof)
+c
+      common/dvecs5/ idu(mxdof)
+c
+      common/dvecs6/ load(mxdof)
+c
+      common/dvecs7/ res(mxdof)
+c
+      common/dvecs8/ ifv(mxdof)
+c
+      common/dvecs9/ c(mxncor) 
+c
+      common/dvecs10/ tol(mxcvtests)
 c     
       double precision :: u, v, a, du, idu, load, res, ifv, c, tol
 c
@@ -36,17 +56,17 @@ c
 c
 c              --- real arrays/vectors/scalars ---
 c
-!DIR$ ATTRIBUTES ALIGN : 64 :: /realvars/
-      common/realvars/ props(mxelpr,mxel), times(mxtim,2),  
-     &    user_cnstrn_stp_factors(mxstep),
-     &    actual_cnstrn_stp_factors(mxstep), strtm, time_limit
+      common/rvecs1/ props(mxelpr,mxel)
+      common/rvecs2/ times(mxtim,2)
+      common/rvecs3/ user_cnstrn_stp_factors(mxstep)
+      common/rvecs4/ actual_cnstrn_stp_factors(mxstep)
+      common/realscalars/ strtm, time_limit
 c     
       real :: props, times, strtm, time_limit,
      &    user_cnstrn_stp_factors, actual_cnstrn_stp_factors
 c
 c              --- logical arrays/vectors/scalars ---
 c
-!DIR$ ATTRIBUTES ALIGN : 64 :: /logs/
       common/logs/ prnres, halt, linmas, newstf, zrocon, newtrn, 
      &    newmas, incflg, ifvcmp, prlres, input_ok, adaptive_flag,
      &    new_constraints, batch_messages, signal_flag, 
@@ -73,7 +93,6 @@ c
 c
 c              --- integer arrays/vectors/scalars ---
 c
-!DIR$ ATTRIBUTES ALIGN : 64 :: /iarrays/
       common/iarrays/ dstmap(mxnod), gpmap(mxtgp), cstmap(mxdof), 
      &    cp(mxedof), dcp(mxedof), icp(mxutsz,2), matlst(mxmat),
      &    lodlst(mxlc), prslst(mxlsz), plrlst(mxlsz), stprng(mxlc,2),
@@ -107,7 +126,6 @@ c
 c
 c              --- character arrays/vectors/scalars ---
 c
-!DIR$ ATTRIBUTES ALIGN : 64 :: /charvars/
       common/charvars/ lodnam(mxlc), lodtyp(mxlc), matnam(mxmat),
      &    elelib(mxlbel), snames(mxstc), stname, lsldnm, 
      &    solver_scr_dir, sparse_stiff_file_name
