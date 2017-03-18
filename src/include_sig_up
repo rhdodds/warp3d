@@ -59,7 +59,7 @@ c
        real (h_prec), allocatable :: trnmte(:,:,:)            ! (mxvl,mxedof,mxndof)
        real (h_prec), allocatable :: det_j(:,:)               ! (mxvl,mxgp)
        real (h_prec), allocatable :: det_j_mid(:,:)           ! (mxvl,mxgp)
-       real (h_prec) :: weights(mxgp)
+       real (h_prec), allocatable :: weights(:)               ! mxgp
        real (h_prec), allocatable :: nxi(:,:)                 ! (mxndel,mxgp)
        real (h_prec), allocatable :: neta(:,:)                ! (mxndel,mxgp)
        real (h_prec), allocatable :: nzeta(:,:)               ! (mxndel,mxgp)
@@ -162,7 +162,7 @@ c
        real (h_prec) :: dt, total_model_time, time_n, beta_fact,
      &   block_energy, eps_bbar, block_plastic_work, step_scale_fact,
      &   alpha_dmg, ls, ll, lt
-       real (h_prec), dimension(3) :: sv, lv, tv
+       real (h_prec), allocatable :: sv(:), lv(:), tv(:)      ! 3 each
 c
        integer :: felem, elem_type, matnum, int_order, mat_type,
      &            num_enodes, num_enode_dof, totdof,

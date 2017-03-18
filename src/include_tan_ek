@@ -42,7 +42,7 @@ c
        real (h_prec), allocatable :: weights(:)  ! mxgp on weights
 c
        real (h_prec) :: beta_fact, eps_bbar, dt, time_n
-       real (h_prec), dimension(3) :: sv, lv, tv
+       real (h_prec), allocatable :: sv(:), lv(:), tv(:)      ! 3 each
 
        integer, allocatable :: cp(:), icp(:,:) !  mxedof; mxutsz,2
 
