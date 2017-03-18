@@ -34,8 +34,6 @@ c
       double precision
      &   qtn1(mxvl,nstr,nstr), cs_blk_n1(mxvl,nstr),
      &   eps_bbar, w, scalar 
-c!DIR$ ASSUME_ALIGNED eleifv:64, dj:64, element_volumes:64
-c!DIR$ ASSUME_ALIGNED b:64, urcs_blk_n1:64, qtn1:64, cs_blk_n1:64
 c
 c
       span            = local_work%span
@@ -73,6 +71,7 @@ c
           do j = 1, totdof
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
             do i = 1, span
                eleifv(i,j) = eleifv(i,j) +
      &                       b(i,j,1) * urcs_blk_n1(i,1) * w * dj(i) +
@@ -112,6 +111,7 @@ c
           do j = 1, totdof
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
             do i = 1, span 
                eleifv(i,j) = eleifv(i,j) +
      &                       b(i,j,1)*cs_blk_n1(i,1)*w*dj(i) +
@@ -131,6 +131,7 @@ c
       do j = 1, totdof
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do i = 1, span 
            eleifv(i,j) = eleifv(i,j) +
      &                   b(i,j,1)*urcs_blk_n1(i,1)*w*dj(i) +
@@ -149,6 +150,7 @@ c
  9000 continue
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
       do i = 1, span 
         element_volumes(i) = element_volumes(i)   +   w * dj(i) 
       end do

@@ -46,7 +46,6 @@ c
       data local_debug, dummy_logic / .false., .true. /
       data zero, one, dummy / 0.d0, 1.d0, 1.d0 /
 c
-c!DIR$ ASSUME_ALIGNED glb_ek_blk:64
 c
       local_iout = local_work%iout
       if( local_debug ) write(local_iout,9100)
@@ -227,7 +226,6 @@ c
       integer :: i, j
       double precision ::
      & local_ek(span,nrow_ek), ek(nrow_ek,span)
-c!DIR$ ASSUME_ALIGNED ek:64, local_ek:64     
 c
 c                 time 4.59 secs, tanstf time 12.64 
 c
@@ -244,7 +242,7 @@ c
       case( 300 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, 300
                     ek(i,j) = local_ek(j,i)
               end do
@@ -253,7 +251,7 @@ c
       case( 465 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, 465
                     ek(i,j) = local_ek(j,i)
               end do
@@ -262,7 +260,7 @@ c
       case( 666 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, 666
                     ek(i,j) = local_ek(j,i)
               end do
@@ -271,7 +269,7 @@ c
       case( 1830 )
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, 1830
                     ek(i,j) = local_ek(j,i)
               end do
@@ -280,7 +278,7 @@ c
       case default
 !DIR$ LOOP COUNT MAX=128
         do j = 1, span
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, nrow_ek
                     ek(i,j) = local_ek(j,i)
               end do
@@ -318,8 +316,8 @@ c
       integer :: nterms
       double precision :: vec(nterms), zero
       data zero / 0.0d00 /
-c!DIR$ ASSUME_ALIGNED vec:64
 c
+!DIR$ VECTOR ALIGNED
       vec = zero
 c
       return

@@ -4,7 +4,7 @@ c     *                      subroutine blcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/21/2016                 *
+c     *                   last modified : 03/15/2017 rhd             *
 c     *                                                              *
 c     *     computes the linear strain-displacement matrices at a    *
 c     *     given gauss point for element block                      *                    
@@ -28,8 +28,6 @@ c
       double precision ::
      &  btemp(mxvl,mxndel,ndim), zero  ! on stack
       data zero / 0.0d0 /
-c!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
-c!DIR$ ASSUME_ALIGNED btemp:64  
 c
 c                       compute building blocks of b. 
 c                       btemp - j,1 = NX for node j at gpn        
@@ -39,6 +37,7 @@ c
       do j = 1, nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
          do i = 1, span
             btemp(i,j,1)= gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)+
      &                    gama(i,1,3)*nzeta(j)   
@@ -77,16 +76,25 @@ c!         end do
 c!      end do
 c
       do j = 1, nnode
+!DIR$ VECTOR ALIGNED
             b(1:span,j,1)=       btemp(1:span,j,1)
+!DIR$ VECTOR ALIGNED
             b(1:span,j,4)=       btemp(1:span,j,2)
+!DIR$ VECTOR ALIGNED
             b(1:span,j,6)=       btemp(1:span,j,3)
 c
+!DIR$ VECTOR ALIGNED
             b(1:span,bpos1+j,2)= btemp(1:span,j,2)
+!DIR$ VECTOR ALIGNED
             b(1:span,bpos1+j,4)= btemp(1:span,j,1)
+!DIR$ VECTOR ALIGNED
             b(1:span,bpos1+j,5)= btemp(1:span,j,3)
 c
+!DIR$ VECTOR ALIGNED
             b(1:span,bpos2+j,3)= btemp(1:span,j,3)
+!DIR$ VECTOR ALIGNED
             b(1:span,bpos2+j,5)= btemp(1:span,j,2)
+!DIR$ VECTOR ALIGNED
             b(1:span,bpos2+j,6)= btemp(1:span,j,1) 
       end do 
       return
@@ -120,7 +128,6 @@ c
       integer :: i, j, bpos1, bpos2     
       double precision :: zero
       data zero  / 0.0d00 /
-c!DIR$ ASSUME_ALIGNED b:64, sh:64, rot:64, shape:64
 c
 c            compute sh = L*N (N -> shape fn. array)
 c       
@@ -142,6 +149,7 @@ c
        do j = 1, 12
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -166,6 +174,7 @@ c
         do j = 1, 6
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -190,6 +199,7 @@ c
         do j = 1, 8
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -222,6 +232,7 @@ c
       do j=1,nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
            do i = 1, span
               b(i,j,1) = sh(j)*rot(i,1,1)
               b(i,j,2) = sh(j)*rot(i,2,1)
@@ -274,8 +285,6 @@ c
      &  btemp(mxvl,mxndel,ndim), zero ! on stack
       logical ::  local_debug, axisym
       data zero, local_debug / 0.0d0, .false. /
-c!DIR$ ASSUME_ALIGNED b:64, gama:64, nxi:64, neta:64, nzeta:64  
-c!DIR$ ASSUME_ALIGNED btemp:64  
 c
 c                  compute building blocks of b for axisymmetric
 c                  elements.

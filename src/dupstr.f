@@ -81,6 +81,7 @@ c            and displacement increments are all zero, just leave.
 c            there is nothing to do.
 c
       do  j = 1, totdof
+!DIR$ VECTOR ALIGNED
          do i = 1, span
             ue(i,j)  = u(bedst(j,i)) 
             due(i,j) = du(bedst(j,i))

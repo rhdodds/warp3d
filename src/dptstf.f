@@ -4,8 +4,7 @@ c     *                      subroutine dptstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 05/25/00 rhd               *
-c     *                                 : 01/04/01 sushovan          *
+c     *                   last modified : 03/16/2017 rhd             *
 c     *                                                              *
 c     *     this subroutine creates a separate copy of all element   *
 c     *     data necessary for the tangent stiffness computation of  *
@@ -66,10 +65,13 @@ c
       trn_e_block         = .false.
       k = 1
       do j = 1, nnode
+!DIR$ VECTOR ALIGNED
          do i = 1, span
             ce(i,k)        = c(bcdst(k,i))
             ce(i,k+1)      = c(bcdst(k+1,i))
             ce(i,k+2)      = c(bcdst(k+2,i))
+         end do
+         do i = 1, span
             trne(i,j)      = trn(belinc(j,i))
             trn_e_flags(i) = trn_e_flags(i) .or. trne(i,j)
             trn_e_block    = trn_e_block .or. trne(i,j)
@@ -106,6 +108,7 @@ c
       if ( .not. geonl ) go to 300
 c
       do  j = 1, totdof
+!DIR$ VECTOR ALIGNED
        do i = 1, span
           ue(i,j)  = u(bedst(j,i))
           due(i,j) = du(bedst(j,i))
@@ -122,6 +125,7 @@ c
       end if
 c
       do j = 1, totdof
+!DIR$ VECTOR ALIGNED
        do i = 1, span
          ce_orig(i,j) = ce(i,j)
          ce(i,j)      = ce(i,j) + ue(i,j) + due(i,j)
@@ -131,6 +135,7 @@ c
 c           set up for the cohesive elements.
 c
       middle_surface = surface .eq. 2
+!DIR$ VECTOR ALIGNED
       djcoh(1:span)  = zero
       if( cohesive_elem ) then
         if( middle_surface ) call chk_cohes_penetrate( span, mxvl,

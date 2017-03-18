@@ -65,6 +65,7 @@ c
               history(i,4,gpn)  = h
            end do
         endif
+!DIR$ VECTOR ALIGNED        
         do i = 1, span 
           history(i,1,gpn)  = zero
           history(i,2,gpn)  = sigma_o(i)
@@ -81,6 +82,7 @@ c
 c               check for null gauss points
 c
       if( debug ) write (iout,*) ' null point calcs'
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         null_point(i) = abs( deps(i,1) ) + abs( deps(i,2) ) +
      &                  abs( deps(i,3) ) + abs( deps(i,4) ) + 
@@ -96,6 +98,7 @@ c               all points are null (no strain increment)
 c
       state    = -1
       iword(1) = state
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         stress_n1(1,i)          = stress_n(1,i)
         stress_n1(2,i)          = stress_n(2,i)
@@ -137,6 +140,7 @@ c
 c               1.  trial elastic stress at n+1. set actual
 c                   stress at n+1 as trial stress. 
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
 c
 c                      elastic strain at n from stresses at n
@@ -209,6 +213,7 @@ c
 c              2.  hydrostatic and mises components of trial
 c                  elastic stress at n+1
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         p_trial(i) = - ( stress_n1(1,i) + stress_n1(2,i) +
      &                   stress_n1(3,i) ) * third
@@ -240,11 +245,13 @@ c                  stress. save in history as well so update
 c                  routine knows about change in curve.
 c
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         flow_stress(i) =  history(i,2,gpn)
       end do
 c
       if ( segmental .and. curve_type .eq. 1 ) then
+!DIR$ VECTOR ALIGNED
           do i = 1, span
             plastic_strain = history(i,1,gpn)
             now_blk_relem = i
@@ -309,6 +316,7 @@ c
 c              6.  for elements that are still linear, compute 
 c                  updated strain energy density.
 c
+!DIR$ VECTOR ALIGNED
       do i= 1, span
         if ( .not. nonlinear_flag(i) ) then
           stress_n1(7,i) = stress_n(7,i) +
@@ -335,6 +343,7 @@ c
 c              7.  set element histories at n+1 to those at n
 c                  those for nonlinear elements will be modified.
 c
+!DIR$ VECTOR ALIGNED
       do i= 1, span
         history1(i,1,gpn)  = history(i,1,gpn)
         history1(i,2,gpn)  = history(i,2,gpn)
@@ -3214,6 +3223,7 @@ c              strain point is currently undergoing plastic loading.
 c
       nonlinear_points = .false.
       nonlin_point    = 0
+!DIR$ VECTOR ALIGNED
       dword(1:span) = history1(1:span,6)
 c
       inc_factor = 2
@@ -3233,6 +3243,7 @@ c
       cep = zero
 c      
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do  i = 1, span
        if( state(i) .ne. -1 ) cycle
        c1(i)= (e(i)/((one+nu(i))*(one-two*nu(i))))
@@ -3269,6 +3280,7 @@ c              a continnum tangent at the contact stress point on the
 c              yield surface is computed.
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         ebarp(i)     = history1(i,1)
@@ -3287,6 +3299,7 @@ c
 c      
       if( iter .le. 1 ) then 
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
         do i = 1, span
           if( state(i) .ne. 1 ) cycle
             dep(i) = zero
@@ -3314,6 +3327,7 @@ c
       end if
 c 
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         twog(i)   = two * shear_mod(i)
@@ -3330,6 +3344,7 @@ c               get pressure, equivalent stress and yield surface
 c               normal.
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         sm(i)  = ( stress_trial(i,1) + stress_trial(i,2) +
@@ -3368,6 +3383,7 @@ c
 c                  4a)  a1 and a1 from Eq. (4)
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         a1(i) = (deq(i) * q(i) - dep(i) * p(i)) /
@@ -3387,6 +3403,7 @@ c                       A(ebarp) for nucleation and its derivative
 c                       wrt to ebarp.
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         if( nucleation(i) ) then 
@@ -3403,6 +3420,7 @@ c
       end do
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( state(i) .ne. 1 ) cycle
         b1 = ( one  -  f(i) ) / ( one  +  dep(i) )
@@ -3544,6 +3562,7 @@ c                 7c) [D] (4) Eq. (17) and pg. CT-EF-9. exercise the
 c                     symmetry option by default
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
        if( state(i) .ne. 1 ) cycle
        con_1 = twog(i) * ( one - threeg(i) * deq(i) / qe(i) )
@@ -3592,6 +3611,7 @@ c                     the weight factor and determinant of coord.
 c                     jacobian.
 c
 !DIR$ LOOP COUNT MAX=128  
+!DIR$ VECTOR ALIGNED
       do i = 1, span
        if( state(i) .ne. 1 ) cycle 
        con_1 = twog(i) * ( twog(i) * deq(i) / qe(i)  -  mqn(i) )

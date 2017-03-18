@@ -38,9 +38,6 @@ c
 c
 c                      locals
 c
-c!DIR$ ASSUME_ALIGNED due:64, deps:64, gama:64, nxi:64, neta:64
-c!DIR$ ASSUME_ALIGNED nzeta:64, vol_block:64, b:64  
-c      
 c                       compute linear strain-displacement
 c                       [B] matrix for this material (gauss) point at
 c                       all elements in the block. modify
@@ -55,6 +52,7 @@ c                       done for all elements in the block for this
 c                       material (gauss) point nuber. take advantage of
 c                       sparsity in [B] during multiply.
 c   
+!DIR$ VECTOR ALIGNED 
       deps = 0.0d00
 c      
       bpos1 = nnode
@@ -63,6 +61,7 @@ c
       do j = 1, nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
          do i = 1,span
            deps(i,1) = deps(i,1) +  b(i,j,1) * due(i,j) +
      &                              b(i,bpos1+j,1) * due(i,bpos1+j) +
@@ -122,8 +121,6 @@ c
       double precision, parameter :: zero = 0.0d00
       logical :: local_debug
       data local_debug / .false. /
-c!DIR$ ASSUME_ALIGNED due:64, dgstrn:64, dgstrs:64, rot:64
-c!DIR$ ASSUME_ALIGNED shape:64, b:64  
 c      
 c         compute linear relative displacement jump
 c         [b] matrix for this gauss point at all elements in 
@@ -131,6 +128,7 @@ c         the block.
 c
       call blcmp_cohes( span, b, rot, shape, etype,  nnode )  
 c   
+!DIR$ VECTOR ALIGNED 
       dgstrn = zero
 c      
       bpos1 = nnode
@@ -139,6 +137,7 @@ c
       do j = 1, nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
          do i = 1, span
            dgstrn(i,1)= dgstrn(i,1)+b(i,j,1) * due(i,j) +
      &                              b(i,bpos1+j,1) * due(i,bpos1+j) +
@@ -158,6 +157,7 @@ c                       dgstrn is total "strain" increment over step.
 c       
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
       do i = 1, span
          dgstrs(i,1) = dgstrs(i,1) + dgstrn(i,1)
          dgstrs(i,2) = dgstrs(i,2) + dgstrn(i,2)

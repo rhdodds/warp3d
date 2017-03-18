@@ -4,23 +4,27 @@ c     *                      subroutine vol_avg                      *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 02/15/92                   *
-c     *                                 : 02/08/94 rhd               *
+c     *                   last modified : 03/16/2017 rhd             *
 c     *                                                              *
 c     *     compute averaged volume terms for bbar                   *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine vol_avg ( vol, volume, span, mxvl )  
-      implicit integer ( a-z )
-      double precision
-     & vol(mxvl,8,*), volume(*), voli, one
-      data one / 1.0d0 /
-c!DIR$ ASSUME_ALIGNED vol:64, volume:64
+      subroutine vol_avg( vol, volume, span, mxvl )  
+      implicit none
+c
+      integer :: span, mxvl      
+      double precision :: vol(mxvl,8,*), volume(*)
+c
+      integer :: i      
+      double precision, parameter :: one = 1.0d0
+      double precision :: voli
+c
 c               refer to extensive comments in vol_terms.f
 c
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
       do i = 1, span 
 c
        voli = one / volume(i)

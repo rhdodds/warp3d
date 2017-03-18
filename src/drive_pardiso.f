@@ -679,7 +679,7 @@ c     *                                                              *
 c     *  map the default vss sparse solver format that warp3d        *
 c     *  assembles into to the MKL sparse solver format              *
 c     *                                                              *
-c     *  written by: rh   modified by: rhd  last modified: 5/4/16    *
+c     *  written by: rh   modified by: rhd  last modified: 3/16/2017 *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -720,7 +720,6 @@ c
       integer, allocatable :: kpt_l(:)
       integer :: i_old, i_new, i, j, nonzt_sum
       data zero / 0.0d0 /
-c!DIR$ ASSUME_ALIGNED diag:64, rhs:64, amat:64  
 c
       allocate( kpt_l(neq+1) )
       kpt_l(1:neq) = kpt(1:neq)
@@ -731,6 +730,7 @@ c
 c
       do i = neq, 1, -1
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do j = 1, kpt(i)
           i_new = i_new - 1
           i_old = i_old - 1

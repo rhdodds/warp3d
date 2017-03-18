@@ -4,7 +4,7 @@ c     *                      subroutine kgstiff                      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified :  6/12/2016 rhd             *
+c     *                   last modified :  3/15/2017 rhd             *
 c     *                                                              *
 c     *     for this element block, this integration point,          *
 c     *     compute gemetric stiffness and add to [Ke]               *
@@ -37,10 +37,6 @@ c
      &    gtg(mxvl,mxnusz), gxi(mxvl,mxndel), 
      &    geta(mxvl,mxndel), gzeta(mxvl,mxndel)
 c
-c!DIR$ ASSUME_ALIGNED gama:64, nxi:64, neta:64, nzeta:64
-c!DIR$ ASSUME_ALIGNED sig:64, dj:64, ek_full:64, ek_symm:64,  vol:64
-c!DIR$ ASSUME_ALIGNED gtg:64, gxi:64, geta:64, gzeta:64
-c
 c              the geometric stiffness, trans([G[) [M] [G] is 
 c              symmetric. calculate building blocks then use separate 
 c              paths to update [Ke] based on its symmetry/asymmetry.
@@ -51,6 +47,7 @@ c
         do j = 1, nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
           do i = 1, span
            gxi(i,j)   = vol(i,j,1)
            geta(i,j)  = vol(i,j,2)
@@ -61,6 +58,7 @@ c
         do j = 1, nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
           do i = 1, span
             gxi(i,j)  =  gama(i,1,1)*nxi(j)+gama(i,1,2)*neta(j)+
      &                   gama(i,1,3)*nzeta(j)
@@ -87,6 +85,7 @@ c
       do j = 1, cp(nnode)+nnode
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
          do i = 1, span
             gtg(i,j)= (gxi(i,icp(j,1))*gxi(i,icp(j,2))*sig(i,1)+
      &                 geta(i,icp(j,1))*geta(i,icp(j,2))*sig(i,2)+
@@ -112,6 +111,7 @@ c
          do j = 1, enode  
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
             do  i = 1, span
                ek_symm(i,cp1+j) = ek_symm(i,cp1+j) + gtg(i,cp1+j)
                ek_symm(i,cp2+j) = ek_symm(i,cp2+j) + gtg(i,cp1+j)
@@ -149,6 +149,7 @@ c
 c                 
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
            do  i = 1, span! col enode, row j
              ek_full(i,k1) = ek_full(i,k1) + gtg(i,cp1+j)
              ek_full(i,k2) = ek_full(i,k2) + gtg(i,cp1+j)
@@ -159,6 +160,7 @@ c
              k = (r1-1)*totdof + c1
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
              do i = 1, span
                ek_full(i,k) = ek_full(i,k) + gtg(i,cp1+j)
              end do  
@@ -168,6 +170,7 @@ c
              k = (r2-1)*totdof + c2
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
              do i = 1, span
                ek_full(i,k) = ek_full(i,k) + gtg(i,cp1+j)
              end do
@@ -177,6 +180,7 @@ c
               k = (r3-1)*totdof + c3
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, span
                 ek_full(i,k) = ek_full(i,k) + gtg(i,cp1+j)
               end do

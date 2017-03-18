@@ -65,8 +65,11 @@ c
      &  call zero_vol( local_work%vol_block, local_work%volume_block,
      &                 span, mxvl )
       if( local_work%compute_f_bar ) then
+!DIR$ VECTOR ALIGNED 
          local_work%volume_block_0(1:span)  = zero
+!DIR$ VECTOR ALIGNED 
          local_work%volume_block_n(1:span)  = zero
+!DIR$ VECTOR ALIGNED 
          local_work%volume_block_n1(1:span) = zero
       end if
 c
@@ -329,6 +332,7 @@ c
 c
       if( local_work%is_cohes_elem ) then  ! all zero if no temps
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
          do i = 1, span
            temp_ref = local_work%temps_ref_node_blk(i,1)
            d_temp   = local_work%dtemps_node_blk(i,1)
@@ -569,6 +573,7 @@ c
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_0, nnode )
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
        do i = 1, span
          local_work%volume_block_0(i) = local_work%volume_block_0(i)
      &                + local_work%det_j(i,gpn)
@@ -581,6 +586,7 @@ c
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_n, nnode )
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
         do i = 1, span
            local_work%volume_block_n(i) = local_work%volume_block_n(i)
      &                + local_work%det_j(i,gpn)
@@ -593,6 +599,7 @@ c
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_n1, nnode )
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
         do i = 1, span
           local_work%volume_block_n1(i) = local_work%volume_block_n1(i)
      &              + local_work%det_j(i,gpn)
@@ -752,11 +759,15 @@ c
       fnnodel = nnodel
 c
       if( average_case .eq. 1) then
+!DIR$ VECTOR ALIGNED 
          sum1(1:span) = zero
+!DIR$ VECTOR ALIGNED 
          sum2(1:span) = zero
+!DIR$ VECTOR ALIGNED 
          sum3(1:span) = zero
          do enode = 1, nnodel
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
             do i = 1, span
                sum1(i) = sum1(i) + dtemps_node_blk(i,enode)
                sum2(i) = sum2(i) + temps_node_blk(i,enode)
@@ -765,6 +776,7 @@ c
          end do
          do enode = 1, nnodel
 !DIR$ LOOP COUNT MAX=128         
+!DIR$ VECTOR ALIGNED 
             do i = 1, span
                avg1 = sum1(i) / fnnodel
                avg2 = sum2(i) / fnnodel
@@ -777,15 +789,18 @@ c
       end if
 c
       if( average_case .eq. 2) then
-         sum1(1:span) = zero
+ !DIR$ VECTOR ALIGNED 
+        sum1(1:span) = zero
          do enode = 1, nnodel
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
             do i = 1, span
                sum1(i) = sum1(i) + temps_node_blk(i,enode)
             end do
          end do
          do enode = 1, nnodel
 !DIR$ LOOP COUNT MAX=128         
+!DIR$ VECTOR ALIGNED 
             do i = 1, span
                avg1 = sum1(i) / fnnodel
                temps_node_blk(i,enode) = avg1
@@ -839,15 +854,18 @@ c                    to be the simple average of all the nodal values.
 c
       do prop = 1, num_props
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
          sum(1:span) = zero
          do enode = 1, nnode
 !DIR$ LOOP COUNT MAX=128
+!DIR$ VECTOR ALIGNED 
             do elem = 1, span
                sum(elem) = sum(elem) + enode_mat_props(enode,elem,prop)
             end do
          end do
          do enode = 1, nnode
 !DIR$ LOOP COUNT MAX=128         
+!DIR$ VECTOR ALIGNED 
             do elem = 1, span
                avg = sum(elem) / nnode
                enode_mat_props(enode,elem,prop) = avg
@@ -1524,6 +1542,7 @@ c                     a = trans[ b ]
 c  
       if( n .eq. 3 ) then
          do i = 1, 3
+!DIR$ VECTOR ALIGNED 
             do j = 1, 3
                a(i,j) = b(j,i)
             end do  
@@ -1532,6 +1551,7 @@ c
       end if
 c      
        do i = 1, 6
+!DIR$ VECTOR ALIGNED 
          do j = 1, 6
             a(i,j) = b(j,i)
          end do  
@@ -1571,6 +1591,7 @@ c
       spreadns(3,3) = ns(3)
 c
       do i = 1, 3
+!DIR$ VECTOR ALIGNED 
         do j = 1, 3
          A(i,j) = spreadbs(i,j) * spreadns(i,j)
          trans_A(j,i) = A(i,j)
@@ -2193,6 +2214,7 @@ c
         nodeb = node_pairs(j,2)
 !DIR$ LOOP COUNT MAX=128
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
         do i = 1, span
           xa = node_coords(i,nodea)
           ya = node_coords(i,nodea+nnodel)
@@ -2210,6 +2232,7 @@ c
 c
 !DIR$ LOOP COUNT MAX=128
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
       do i = 1, span
        lengths(i) = local_sums(i) * rnlengths * scale_factor
       end do

@@ -5,7 +5,7 @@ c     *                      subroutine gastr                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/22/2015 rhd             *
+c     *                   last modified : 03/15/2017 rhd             *
 c     *                                                              *
 c     *     gathers element stresses from the global                 *
 c     *     stress data structure to a block of similar,             *
@@ -15,20 +15,22 @@ c     ****************************************************************
 c
 c           
       subroutine gastr( ml, mg, ngp, nprm, span )
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c               parameter declarations
 c
-      double precision
-     & ml(mxvl,nprm,*), mg(nprm,ngp,*)
-c!DIR$ ASSUME_ALIGNED ml:64, mg:64     
+      integer :: ngp, nprm, span
+      double precision :: ml(mxvl,nprm,*), mg(nprm,ngp,*)
+c
+      integer :: i, j, k      
 c    
-      if ( ngp .ne. 8 ) then                            
+      if( ngp .ne. 8 ) then                            
 !DIR$ LOOP COUNT MAX=27
         do k = 1, ngp
          do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
+!DIR VECTOR ALIGNED
             do  i = 1, span
                ml(i,j,k) = mg(j,k,i)
             end do
@@ -38,8 +40,10 @@ c
       end if
 c
 c                number of gauss points = 8, unroll.
+c
       do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
+!DIR VECTOR ALIGNED
         do  i = 1, span
             ml(i,j,1) = mg(j,1,i)
             ml(i,j,2) = mg(j,2,i)

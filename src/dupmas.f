@@ -22,7 +22,8 @@ c
 c
 c                       gather element coordinates.
 c
-      do j = 1, 3*nnode                              
+      do j = 1, 3*nnode   
+!DIR$ VECTOR ALIGNED                                 
          do i = 1, span
             ce_block(i,j) = c(bcdst(j,i))
          end do
@@ -61,6 +62,7 @@ c                 build a table of values for nodes of elements in the
 c                 block
 c
        do i = 1, nnode
+!DIR$ VECTOR ALIGNED                                 
          do k = 1, span
             rho_block(i,k) = fgm_node_values(belinc(i,k),5)
          end do

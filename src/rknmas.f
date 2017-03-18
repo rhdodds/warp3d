@@ -46,6 +46,7 @@ c              local_work%fgm_flags(i,j) = -99 indicates that
 c              element in block has an fgm material property
 c              requiring interpolation.
 c
+!DIR$ VECTOR ALIGNED
       mel(1:totdof,1:span)= zero
       do i = 1, span 
         volume(i)        = zero
@@ -98,6 +99,7 @@ c
 c              add volumes of elements in this block to total
 c              volume of the model
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
        totvol = totvol + volume(i)
       end do

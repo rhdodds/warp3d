@@ -107,13 +107,11 @@ c
 c               parameter declarations
 c
       integer :: ngp, nprm, span
-      double precision ::
-     & ml(mxvl,nprm,*), mg(nprm,ngp,*)
+      double precision :: ml(mxvl,nprm,*), mg(nprm,ngp,*)
 c
 c               local declarations
 c
       integer :: i, j, k      
-c!DIR$ ASSUME_ALIGNED mg:64, ml:64  
 c    
 c               on current hardware, the manual unroll runs
 c               slower
@@ -124,6 +122,7 @@ c      if( ngp .ne. 8 ) then
          do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
             do i = 1, span
                ml(i,j,k) = mg(j,k,i)
             end do
@@ -180,8 +179,6 @@ c
 c               local declarations
 c
       integer :: i, j, k     
-c!DIR$ ASSUME_ALIGNED mg:64, ml:64  
-c
 c    
 c               on current hardware, the manual unroll runs
 c               slower
@@ -193,6 +190,7 @@ c      if( ngp .ne. 8 ) then
            do j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
               do i = 1, span
                  mg(j,k,i) = ml(i,j,k)
               end do
@@ -249,7 +247,6 @@ c
 c               local declarations
 c
       integer :: i, j, k     
-c!DIR$ ASSUME_ALIGNED global_history:64, local_history:64  
 c    
 c               on current hardware, the manual unroll runs
 c               slower
@@ -260,6 +257,7 @@ c      if( ngp .ne. 8 ) then
            do j = 1, hist_size
 !DIR$ LOOP COUNT MAX=128 
 !DIR$ IVDEP 
+!DIR$ VECTOR ALIGNED
               do i = 1, span
                  global_history(j,k,i) = local_history(i,j,k)
               end do

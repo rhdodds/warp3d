@@ -49,7 +49,9 @@ c
 c
 c                       initiialize ifv's for the block.
 c
+!DIR$ VECTOR ALIGNED
       eleifv(1:span,1:totdof)         = zero
+!DIR$ VECTOR ALIGNED
       element_volumes_for_blk(1:span) = zero
 c
 c                       compute all the shape function derivates, and
@@ -208,6 +210,7 @@ c
      &       '... in update_ele...growth_by_killm felem, span: ',
      &       growth_by_kill, felem, span
       if ( .not. growth_by_kill ) then
+!DIR$ VECTOR ALIGNED
         do i = 1, span
            updated_element_volumes(i) = element_volumes_for_blk(i)
         end do
@@ -245,6 +248,7 @@ c
       end do
 c
 c                       update volume of non-killed elements.
+!DIR$ VECTOR ALIGNED
       do i = 1, span
        if( update_volume(i) )  updated_element_volumes(i) =
      &                         element_volumes_for_blk(i)

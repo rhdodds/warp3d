@@ -4,8 +4,7 @@ c     *                      subroutine vol_terms                    *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 02/15/92                   *
-c     *                                 : 02/08/94 rhd               *
+c     *                   last modified : 03/16/2017 rhd             *
 c     *                                                              *
 c     *          include this gauss point contributions to volume    *
 c     *          terms for bbar at all elements in block             *
@@ -14,13 +13,14 @@ c     ****************************************************************
 c
       subroutine vol_terms ( in_jacob, dj, vol, nxi, neta, nzeta, 
      &                       volume, span, mxvl ) 
-      implicit integer ( a-z )
+      implicit none
 c
-      double precision
-     &  in_jacob(mxvl,3,*), dj(*), vol(mxvl,8,*),
-     &  nxi(*), neta(*), nzeta(*), volume(*), a, b, c, d
-c!DIR$ ASSUME_ALIGNED in_jacob:64, dj:64, vol:64, nxi:64, neta:64
-c!DIR$ ASSUME_ALIGNED nzeta:64
+      integer :: span, mxvl
+      double precision :: in_jacob(mxvl,3,*), dj(*), vol(mxvl,8,*),
+     &  nxi(*), neta(*), nzeta(*), volume(*)
+c
+      integer :: i
+      double precision :: a, b, c, d
 c
 c             compute b-bar terms for the 8-node 3-D
 c             element using the "mean dilatation" scheme.
@@ -48,6 +48,7 @@ c             loop over all elements in the block
 c
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
       do i = 1, span 
 c
 c                       calculate 1st term for all nodes:

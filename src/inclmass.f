@@ -54,7 +54,7 @@ c     *                  subroutine inclmass_blk                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : rhd 1/20/2015              *
+c     *                   last modified : rhd 3/16/2017 rhd         *
 c     *                                                              *
 c     *     process a block for updating element stiffness with      *
 c     *     effective mass for newmark integration                   *
@@ -65,7 +65,7 @@ c
 c 
       use elem_block_data, only: mass_blocks, estiff_blocks
       use main_data, only: asymmetric_assembly
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
 c
       integer :: blk
@@ -73,15 +73,11 @@ c
 c             locals. use pointers to simplify indexing within 
 c             innermost loop.
 c
-      double precision ::
-     &     nfac, one, mel(mxvl,mxedof)
-      double precision, dimension(:,:), pointer :: emat, mmat
-
-     
-      logical :: symmetric_assembly
       integer :: felem, num_enode, totdof, span,i, j, k, l 
-      data one / 1.0d00 /
-c!DIR$ ASSUME_ALIGNED mel:64, mmat:64, emat:64
+      double precision :: nfac, mel(mxvl,mxedof)
+      double precision, parameter :: one = 1.0d0
+      double precision, dimension(:,:), pointer :: emat, mmat
+      logical :: symmetric_assembly
 c
 c             newmark multiplication factor.
 c                       
@@ -107,6 +103,7 @@ c
       do i = 1, num_enode
         k = i + num_enode
         l = i + num_enode + num_enode
+!DIR$ VECTOR ALIGNED        
         do j = 1, span
            mel(j,i) =  mmat(i,j) * nfac
            mel(j,k) =  mmat(i,j) * nfac    
@@ -117,6 +114,7 @@ c
       if( symmetric_assembly ) then
            do i = 1, totdof   
             k = dcp(i)
+!DIR$ VECTOR ALIGNED        
             do j = 1, span   
               emat(k,j) = emat(k,j) + mel(j,i)
             end do
@@ -124,6 +122,7 @@ c
       else  
            do i = 1, totdof  
             k = (i-1)*totdof + i ! location of diagonal
+!DIR$ VECTOR ALIGNED        
             do j = 1, span   
                emat(k,j) = emat(k,j) + mel(j,i)
             end do
