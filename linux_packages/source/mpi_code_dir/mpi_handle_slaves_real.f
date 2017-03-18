@@ -5,7 +5,7 @@ c     *                      subroutine wmpi_handle_slaves           *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : rhd 1/7/2017 rhd           *
+c     *                   last modified : rhd 1/31/2017 rhd          *
 c     *                                                              *
 c     *     The MPI implementation of warp3d follows a master-worker *
 c     *     approach for most of the code.  The root processor       *
@@ -33,7 +33,9 @@ c
       integer :: adum1(max_procs), adum2(max_procs), adum3(max_procs),
      &           adum4(max_procs), num_blks(mxnmbl)
 c     
-      logical :: ldummy1, ldummy2, ldummy3, ldummy4, ldummy5
+      logical :: ldummy1, ldummy2, ldummy3, ldummy4, ldummy5,
+     &           lflag1, lflag2, lflag3, lflag4, lflag5, lflag6,
+     &           lflag7, lflag8, lflag9, lflag10 
       double precision, dimension(1) :: dvec_dummy1, dvec_dummy2,
      &                                  dvec_dummy3, dvec_dummy4,
      &                                  dvec_dummy5
@@ -305,10 +307,12 @@ c
      &        ivec_dummy2, dvec_dummy1, dvec_dummy2, dvec_dummy3, 
      &        ldummy1, idummy3, out, myid )
 c
-c           do = 32:  available
+c           do = 32:  oustates_file
 c
       case( 32 ) 
-         write (out,'("=> Proc",i3," obsolete updpcm")') myid
+         if(debug) write (out,'("=> Proc",i3," oustates_flag")') myid
+         call oustates_files( lflag1, lflag2, lflag3, lflag4,
+     &                        lflag5, lflag6, lflag7, lflag8 ) 
 c
 c           do = 33: available
 c
