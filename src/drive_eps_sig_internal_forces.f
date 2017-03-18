@@ -214,6 +214,7 @@ c             scatter the element internal forces (stored in blocks) into
 c             the global vector (unless we are cutting step)
 c             initialize the global internal force vector.
 c
+!DIR$ VECTOR ALIGNED
       ifv(1:nodof) = zero
       sum_ifv      = zero
       num_term_ifv = 0
@@ -659,7 +660,7 @@ c     *                   subroutine recstr_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  2/20/2016 rhd             *
+c     *                   last modified :  3/15/2017 rhd             *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -710,7 +711,9 @@ c
         allocate( local_work%fn(mxvl,3,3),
      &           local_work%fn1(mxvl,3,3),
      &           local_work%dfn1(mxvl) )
+!DIR$ VECTOR ALIGNED
         local_work%fn1 = zero
+!DIR$ VECTOR ALIGNED
         local_work%dfn1 = zero
       end if
       
@@ -731,6 +734,7 @@ c
          call die_abort
       end if
       
+!DIR$ VECTOR ALIGNED
       local_work%b = zero      
 c
       allocate( local_work%uen1(mxvl,mxedof),
@@ -742,9 +746,13 @@ c
          write(out,9000) 4
          call die_abort
       end if
+!DIR$ VECTOR ALIGNED
       local_work%det_j       = zero
+!DIR$ VECTOR ALIGNED
       local_work%rot_blk_n1  = zero
+!DIR$ VECTOR ALIGNED
       local_work%urcs_blk_n1 = zero
+!DIR$ VECTOR ALIGNED
       local_work%urcs_blk_n  = zero
 c
       allocate( local_work%ddtse(mxvl,nstr,mxgp),
@@ -923,6 +931,19 @@ c
          end if
       end if
 c
+      allocate( local_work%weights(mxgp), stat=error ) 
+      if( error .ne. 0 ) then
+         write(out,9000) 19
+         call die_abort
+      end if      
+c
+      allocate( local_work%sv(3), local_work%lv(3), 
+     &          local_work%tv(3), stat=error ) 
+      if( error .ne. 0 ) then
+         write(out,9000) 20
+         call die_abort
+      end if      
+c
       return
 c
  9000 format('>> FATAL ERROR: recstr_allocate'
@@ -937,7 +958,7 @@ c     *                   subroutine recstr_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  9/30/2015 rhd             *
+c     *                   last modified :  3/15/2017 rhd             *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1215,6 +1236,20 @@ c
            call die_abort
          end if
 c
+      if( local_debug ) write(out,*) "..recstr_dell @ 22"
+      deallocate( local_work%weights, stat=error ) 
+         if( error .ne. 0 ) then
+           write(out,9000) 16
+           call die_abort
+         end if
+c
+      if( local_debug ) write(out,*) "..recstr_dell @ 23"
+      deallocate( local_work%sv, local_work%lv, local_work%tv,
+     &            stat=error ) 
+         if( error .ne. 0 ) then
+           write(out,9000) 17
+           call die_abort
+         end if
       return
 c
  9000 format('>> FATAL ERROR: recstr_deallocate'
@@ -1575,7 +1610,7 @@ c
         do k = 1, ngp
          do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
             do  i = 1, span
                mlocal(i,j,k) = mglobal(j,k,i)
             end do
@@ -1588,7 +1623,7 @@ c                number of integration points = 8, unroll.
 c
       do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
         do  i = 1, span
             mlocal(i,j,1) = mglobal(j,1,i)
             mlocal(i,j,2) = mglobal(j,2,i)

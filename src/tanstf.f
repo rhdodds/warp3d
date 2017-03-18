@@ -604,12 +604,11 @@ c
 c
 c           parameters
 c
-       integer :: span, felem
+      integer :: span, felem
       double precision ::  trnmte(mxvl,mxedof,3)
 c
 c
       integer :: nnode, ndof, totdof, j, k, node, jj
-c!DIR$ ASSUME_ALIGNED trnmte:64
 c
 c           for this block of elements, gather the transformation
 c           matrices (3x3) used to rotate between global and constraint
@@ -671,13 +670,11 @@ c
      & global_hist(hist_size,ngp,span)
 c
       integer :: k, j, i     
-c!DIR$ ASSUME_ALIGNED local_hist:64, global_hist:64
-c
 c      if( ngp .ne. 8 ) then
         do k = 1, ngp
          do  j = 1, hist_size
 !DIR$ LOOP COUNT MAX=128  
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
             do  i = 1, span
                local_hist(i,j,k) = global_hist(j,k,i)
             end do
@@ -713,7 +710,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/10/2016 rhd              *
+c     *                   last modified : 3/15/2017 rhd              *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     element stiffnesses                                      *
@@ -759,6 +756,7 @@ c
            call die_abort
       end if
 c      
+!DIR$ VECTOR ALIGNED 
       local_work%b_block = zero
 c
       allocate( local_work%ue(mxvl,mxedof),
@@ -782,8 +780,11 @@ c
            call die_abort
       end if
 c
+!DIR$ VECTOR ALIGNED 
       local_work%cep = zero
+!DIR$ VECTOR ALIGNED 
       local_work%qn1 = zero
+!DIR$ VECTOR ALIGNED 
       local_work%cs_blk_n1 = zero
 c
       allocate( local_work%weights(mxgp), stat=error )
@@ -816,6 +817,13 @@ c
            write(out,9000) 9
            call die_abort
       end if
+c
+      allocate( local_work%sv(3), local_work%lv(3), 
+     &          local_work%tv(3), stat=error ) 
+      if( error .ne. 0 ) then
+         write(out,9000) 120
+         call die_abort
+      end if      
 c
       return
  9000 format('>> FATAL ERROR: tanstf_allocate'
@@ -940,6 +948,14 @@ c
            call die_abort
       end if
       if( local_debug ) write(out,*) "..tanstf_deall @ 95"
+c      
+      deallocate( local_work%sv, local_work%lv, local_work%tv,
+     &            stat=error ) 
+         if( error .ne. 0 ) then
+           write(out,9000) 14
+           call die_abort
+         end if
+      if( local_debug ) write(out,*) "..tanstf_deall @ 100"
 c
       return
 c
@@ -967,9 +983,8 @@ c
       integer :: n      
       double precision :: vec(n), zero
       data zero / 0.0d00 /
-c!DIR$ ASSUME_ALIGNED vec:64
 c
-!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED 
       vec = zero
 c
       return
