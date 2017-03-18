@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: January 31, 2017 rhd
+#   Last modifications: March 17. 2017 rhd
 #
 #    Makefile for WARP3D on systems running Windows 7, 8, 10
 #    on x86 Processors (64-bit mode).
@@ -8,7 +8,7 @@
 #    This nmake script is initiated by the the command shell script
 #    Makewarp.bat (which sets the 64-bit mode for use here)
 #
-#    Tested with Intel Fortran 17.0.1 and included MKL
+#    Tested with Intel Fortran 17.0.2 and included MKL
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
@@ -31,7 +31,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME = Windows
-BUILDNUM = 3250
+BUILDNUM = 3270
 PRE =  fpp
 #
 ODIR = .\.\..\obj_windows_64

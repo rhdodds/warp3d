@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: December 28, 2016
+#   Last modifications: March 17, 2017
 #
 #   Description:
 #
@@ -32,7 +32,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3260
+BUILDNUM := 3270
 #
 ODIR = ././../obj_mac_os_x
 EXE_NAME = warp3d.omp
