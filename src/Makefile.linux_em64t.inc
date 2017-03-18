@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: January 5, 2016
+#   Last modifications: March 17, 2017
 #
 #   Description:
 #
@@ -18,7 +18,7 @@
 #     ODIR, COMPILER, HYINC, HYLIB, MPIOPT, MKLROOT
 #
 OSNAME   := Linux
-BUILDNUM := 3260
+BUILDNUM := 3270
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -41,15 +41,16 @@ MVC      = /bin/mv -f
 #
 FTRAP = 
 INLINE =  -no-inline-factor
-PROFILE =
-OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
+MEMALIGN = -align array64byte
+PROFILE = 
+OPT_REPORT = -qopt-report-annotate=html -qopt-report=5
 OPT_REPORT = 
 OPENMP =  -qopenmp -reentrancy 
-FCOPTS =  -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(OPT_REPORT) \
+FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz  \
          -xHOST -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
-         $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
+         $(MEMALIGN) $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
-FOR      = $(COMPILER) $(FCOPTS)
+FOR      = $(COMPILER) $(OPT_REPORT) $(FCOPTS)
 LINK     = $(COMPILER) $(FCOPTS)
 #
 #                all system level module files that appear as separate *.f in WARP3D
@@ -204,7 +205,7 @@ OBJ =	 \
 	$(OD)/innum.o	 \
 	$(OD)/intab.o	 \
 	$(OD)/iodevn.o	 \
-    $(OD)/iterative_sparse_hypre.o \
+        $(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
 	$(OD)/kill_element.o	 \
 	$(OD)/license.o	 \
@@ -341,6 +342,7 @@ $(EXE_NAME) : $(OBJ)
 $(OD)/%.o : %.f $(MODS) $(INCLUDES)	 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
+#        $(FOR) -qopt-report-file=$<.html $< -c -o $@
 #
 #
 #       ---  main_program.f gets special ifort options ------
