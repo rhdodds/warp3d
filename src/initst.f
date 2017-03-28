@@ -325,7 +325,7 @@ c
       halt           =  .true.
       extrapolate    =  .true.
       extrap_off_next_step  = .false.
-      line_search    =  .true.
+      line_search    =  .false.
       ls_details     =  .false.
       ls_min_step_length = 0.01d00
       ls_max_step_length = one
