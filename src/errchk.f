@@ -791,7 +791,7 @@ c     *                      subroutine errchk_18                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/20/00                   *
+c     *                   last modified : 03/30/2017 rhd             *
 c     *                                                              *
 c     *    this subroutine checks the blocking input                 *
 c     *    for constistency.                                         *
@@ -812,12 +812,13 @@ c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
       logical geonon, geonon2, bbar, bbar2, debug1, segcur, segcur2,
      &        bad_block, bad_flags(20), cyclic_plasticity
-      dimension node_refs(mxnod)
+      integer, allocatable :: node_refs(:)
 c
 c                       check the element blocking data structure.
 c
       block  = .true.
       spnsum = 0
+      allocate( node_refs(mxnod) )
 c
       do i = 1, nelblk
          if( (elblks(0,i).eq.0).or.(elblks(1,i).eq.0) ) then
