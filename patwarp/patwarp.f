@@ -5,7 +5,7 @@ c *     includes Metis for domain decomposition                              *
 c *                                                                          *
 c ****************************************************************************
 c *                                                                          *
-c *    Modifications  8/1/2014 rhd                                           *
+c *    Modifications  3/30/2017 rhd                                          *
 c *                                                                          *
 c ****************************************************************************
 c
@@ -283,7 +283,7 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 2 (formatted) Neutral File    *',
      &  /,   ' *       (',i7,' nodes - ',i7,' elements)         *',
-     &  /,   ' *            Build Date:  6-11-2016                *',
+     &  /,   ' *            Build Date:  4-2-2017                 *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
      &  /,   ' *  o support for 8, 9, 12, 15, 20-node hexs        *',
@@ -1967,18 +1967,18 @@ c
      &  '   time step 1.0e06 ',/,
      &  '   maximum iterations 5 $  global Newton iterations',/,
      &  '   minimum iterations 1',/,
+     &  '   extrapolate on',/,
+     &  '   line search off',/,
      &  '   divergence check on',/,
      &  '   convergence test norm res tol 0.01',/,
      &  '   nonconvergent solutions stop',/,
      &  '   adaptive on  $ global Newton iterations',/,
-     &  '   linear stiffness for iteration one off',/,
      &  '   batch messages off',/,
      &  '   wall time limit off',/,
      &  '   material messages off',/,
      &  '   bbar stabilization factor 0.0',/,
      &  '   consistent q-matrix on' )
  9300 format('   trace solution on',/,
-     &  '   extrapolate on',/,
      &  '   display tied mesh mpcs off',/,
      &  '   user_routine off',/,'c ',/,'c ',/,
      &  ' compute displacements for loading test step 1',/,
@@ -3674,13 +3674,14 @@ c
       subroutine trnler
       use patwarp_data
       implicit integer (a-z)
-      dimension iblock(numele)
+      integer, allocatable :: iblock(:)
       logical print_to_file, start_blk, parallel_ebe
 c
       data numprocs / 1 /
 c
       if (debug) write (termot,*) '>>>> inside trnler'
       print_file_num = 13
+      allocate( iblock(numele) )
 c
 c
 c                    block_method = 1 => just use simple
@@ -4211,14 +4212,16 @@ c
       subroutine trnlproc_access
       use patwarp_data
       implicit integer (a-z)
-      dimension invinc(0:maxcon,numnod), proc_access(maxprocs),
-     &     access_grps(0:maxcon, maxaccgrps)
+      dimension proc_access(maxprocs), access_grps(0:maxcon,maxaccgrps)
+      integer, allocatable :: invinc(:,:)
       logical new, match_access, grp_match, local_debug
       data local_debug / .false. /
 c
 c           first form the inverse incidence table -- given a node, what
 c           elements are attatched to it
 c
+      allocate( invinc(0:maxcon,numnod) )
+c      
       do i = 0, maxcon
          do j = 1, numnod
             invinc(i,j) = 0
@@ -4378,7 +4381,7 @@ c
       subroutine getgrp
       use patwarp_data
       implicit integer (a-z)
-      dimension grprm(4,mxnmgp)
+      integer, allocatable :: grprm(:,:)
       logical newgrp
 c
 c
@@ -4389,6 +4392,7 @@ c                                2) configuration number
 c
 c
       if (debug) write (termot,*) '>>> in getgrp'
+      allocate( grprm(4,mxnmgp) )
 c
 c
       numgrp = 0
@@ -4482,11 +4486,14 @@ c
       subroutine gtblrb(nel,nnode,maxbsz,grp,iblock)
       use patwarp_data
       implicit integer (a-z)
-      dimension iblock(1),inode(numnod)
+      dimension iblock(1)
+      integer, allocatable :: inode(:)
       logical restart
 c
 c
       if (debug) write (termot,*) '>>>> in gtblrb'
+      allocate( inode(numnod) )
+c      
       do i= 1,numele
          iblock(i)= 0
       enddo
@@ -5433,7 +5440,8 @@ c
       implicit integer (a-z)
       logical   bitchk, local_debug, hex, tet, wedge, valid_etype
       character * 8 ldname
-      integer   pspc(17), pointer, face_map(6), elnewo(numele)
+      integer   pspc(17), pointer, face_map(6)
+      integer, allocatable :: elnewo(:)
       integer   nod_face(20),nod(30),nod1(30),nod2(30),list_tr(20)
       real      rvals
       dimension ivals(5), rvals(5)
@@ -5442,6 +5450,7 @@ c
       data face_map / 6,   5,   3,   4,   1,   2 /
 c
       local_debug = .false.
+      allocate( elnewo(numele) )
 c
 c            elreno(new) ---> old
 c            elnewo(old) ---> new

@@ -1,10 +1,10 @@
 c *                                                                          *
-c *    Modifications  8/1/2014 rhd                                           *
+c *    Modifications  3/30/2017 rhd                                          *
 c *                                                                          *
 c ****************************************************************************
 c ****************************************************************************
 c *                                                                          *
-c *     patran-to-warp input translation system - Windows / Mac OS version   *
+c *     patran-to-warp input translation system - Windows / MacOS version    *
 c *     without Metis domain decomposition software                          *
 c *                                                                          *
 c ****************************************************************************
@@ -244,7 +244,7 @@ c
       go to 3000
 c
 c            finished reading neutral file with normal condition.
-c            ask which is wanted: finite format or warp3d format
+c            ask which is wanted: warp3d format
 c
  2000 continue
       call trnl
@@ -278,11 +278,11 @@ c
      &       ' ****************************************************',
      &  /,   ' *                                                  *',
      &  /,   ' *     PATRAN to WARP3D Neutral File Translator     *',
-     &  /,   ' *               (Mac OS X, Windows)                *',
+     &  /,   ' *               (MacOS, Windows)                   *',
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 2 (formatted) Neutral File    *',
      &  /,   ' *       (',i7,' nodes - ',i7,' elements)         *',
-     &  /,   ' *            Build Date:  6-11-2016                *',
+     &  /,   ' *            Build Date:  4-1-2017                 *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
      &  /,   ' *  o support for 8, 9, 12, 15, 20-node hexs        *',
@@ -1967,18 +1967,18 @@ c
      &  '   time step 1.0e06 ',/,
      &  '   maximum iterations 5 $ global Newton iterations',/,
      &  '   minimum iterations 1',/,
+     &  '   extrapolate on',/,
      &  '   convergence test norm res tol 0.01',/,
+     &  '   line search off',/,
      &  '   divergence check on ',/,
      &  '   nonconvergent solutions stop',/,
      &  '   adaptive on   $ global Newton iterations',/,
-     &  '   linear stiffness for iteration one off',/,
      &  '   batch messages off',/,
      &  '   wall time limit off',/,
      &  '   material messages off',/,
      &  '   bbar stabilization factor 0.0',/,
      &  '   consistent q-matrix on' )
  9300 format('   trace solution on',/,
-     &  '   extrapolate on',/,
      &  '   display tied mesh mpcs off',/,
      &  '   user_routine off',/,'c ',/,'c ',/,
      &  ' compute displacements for loading test step 1',/,
@@ -3443,7 +3443,7 @@ c
          end do
       end if
       return
-      end
+      end 
 c
 c ************************************************************************
 c *                                                                      *
@@ -3481,13 +3481,14 @@ c
       subroutine trnler
       use patwarp_data
       implicit integer (a-z)
-      dimension iblock(numele)
+      integer, allocatable ::  iblock(:) !prevent stack overflow
       logical print_to_file, start_blk, parallel_ebe
 c
       data numprocs / 1 /
 c
       if (debug) write (termot,*) '>>>> inside trnler'
       print_file_num = 13
+      allocate( iblock(numele) )
 c
 c                    block_method = 1 => just use simple
 c                                        WARP3D built-in automatic
@@ -3871,7 +3872,7 @@ c
       subroutine getgrp
       use patwarp_data
       implicit integer (a-z)
-      dimension grprm(4,mxnmgp)
+      integer, allocatable :: grprm(:,:)
       logical newgrp
 c
 c
@@ -3882,6 +3883,7 @@ c                                2) configuration number
 c
 c
       if (debug) write (termot,*) '>>> in getgrp'
+      allocate( grprm(4,mxnmgp) ) 
 
 c
 c                    check over all elements
@@ -3960,7 +3962,7 @@ c     *                      subroutine gtblrb                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *            modified by ag : 02/15/94                         *
+c     *            modified by ag : 03/30/2017                       *
 c     *                                                              *
 c     *     this subroutine sets a vector of block numbers for each  *
 c     *     element in a grouping of similar elements. elements in a *
@@ -3973,11 +3975,14 @@ c
       subroutine gtblrb(nel,nnode,maxbsz,grp,iblock)
       use patwarp_data
       implicit integer (a-z)
-      dimension iblock(1),inode(numnod)
+      dimension iblock(1)
+      integer, allocatable :: inode(:)
       logical restart
 c
 c
       if (debug) write (termot,*) '>>>> in gtblrb'
+      allocate( inode(numnod) )
+c      
       do i= 1,numele
          iblock(i)= 0
       end do
@@ -4931,7 +4936,8 @@ c
       implicit integer (a-z)
       logical   bitchk, local_debug, hex, tet, wedge, valid_etype
       character * 8 ldname
-      integer   pspc(17), pointer, face_map(6), elnewo(numele)
+      integer   pspc(17), pointer, face_map(6)
+      integer, allocatable :: elnewo(:)
       integer   nod_face(20),nod(30),nod1(30),nod2(30),list_tr(20)
       real      rvals
       dimension ivals(5), rvals(5)
@@ -4940,6 +4946,7 @@ c
       data face_map / 6,   5,   3,   4,   1,   2 /
 c
       local_debug = .false.
+      allocate( elnewo(numele) )
 c
 c            elreno(new) ---> old
 c            elnewo(old) ---> new
