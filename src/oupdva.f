@@ -4,7 +4,7 @@ c     *                      subroutine oupdva                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *               last modified : 4/10/2014 (rhd)                *
+c     *               last modified : 4/1/2017 rhd                   *
 c     *                                                              *
 c     *     write nodal displacements, velocities, accelerations,    *
 c     *     reactions, or temperatures                               *
@@ -17,24 +17,28 @@ c
      &                   text_file, compressed  )
 c
       use main_data, only : trn, trnmat, inverse_incidences
-      implicit integer (a-z)
+      implicit none
+c
+      integer :: dva
+      logical :: oubin, ouasc, flat_file, stream_file, 
+     &           text_file, compressed 
       include 'common.main'
-      logical oubin, ouasc,  flat_file, stream_file, 
-     &        text_file, compressed 
 c
 c                       local declarations
 c
-      double precision
-     &     edva(mxvl,mxndof), defmax, zero,
-     &     trnmte(mxvl,mxedof,mxndof)
-      logical trne(mxvl,mxndel)
-      data zero
-     &  / 0.0d00 /
+      integer :: nodmax, nod, elem, ndof, dof, i, nwidth
+      double precision, allocatable :: edva(:,:), trnmte(:,:,:)
+      double precision :: defmax
+      double precision, parameter :: zero = 0.0d0
+      logical, allocatable :: trne(:,:)
 c
 c                       if it is displacements to be output, then a
 c                       pass must be made over all nodes to determine
 c                       the maximum absolute displacement and the
 c                       node at which it occurs.
+c
+      allocate( edva(mxvl,mxndof), trnmte(mxvl,mxedof,mxndof) )
+      allocate( trne(mxvl,mxndel) )
 c
       nodmax = 0
       defmax = zero

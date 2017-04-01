@@ -4,7 +4,7 @@ c     *                      subroutine ouddpa                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/16/2014 (rhd)            *
+c     *                   last modified : 4/11/2017 (rhd)            *
 c     *                                                              *
 c     *     write nodal displacements, velocities, accelerations,    *
 c     *     reactions, temperatures to (1) patran file in            *
@@ -14,30 +14,30 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine ouddpa( dva, oubin, ouasc, nodmax, defmax, nwidth,
-     &                   flat_file, stream_file, text_file, 
-     &                   compressed )
+     &                 flat_file, stream_file, text_file, compressed )
 c
       use main_data, only : trn, trnmat, mdiag, pbar, rload,
      &                      inverse_incidences, temper_nodes,
      &                      temper_nodes_ref
       implicit none
 c
-      integer :: nodmax, nwidth, dva
-      include 'common.main'
+      integer :: dva, nodmax, nwidth
       logical :: oubin, ouasc, flat_file, stream_file, text_file,
      &           compressed
+      double precision :: defmax
+      include 'common.main'
 c
 c                       local declarations
 c
       integer :: step_num, bnfile, fmfile, flat_file_number, nod, elem,
      &           dof, ndof, sdof, i 
       integer :: titl(80), titl1(80)
-      double precision :: edva(mxvl,mxndof), defmax, nfac,
-     &                    trnmte(mxvl,mxedof,mxndof)
+      double precision, allocatable :: edva(:,:), trnmte(:,:,:)
+      double precision :: nfac
       double precision, parameter :: one = 1.0d0
-      real sgl_defmax, sgl_vals(10)
+      real :: sgl_defmax, sgl_vals(10)
       logical :: patran_file
-      logical trne(mxvl,mxndel)
+      logical, allocatable :: trne(:,:)
 
       character(len=4) :: title(80), title1(80)
       character(len=80) :: string, strng1, stepstring*6
@@ -54,6 +54,9 @@ c                       for mpi, all nodal results have been collected
 c                       to rank 0 -- only 1 patran or flat file
 c                       is needed.
 c
+      allocate( trne(mxvl,mxndel), edva(mxvl,mxndof), ! keep off stack
+     &          trnmte(mxvl,mxedof,mxndof) )
+c     
       step_num = ltmstp
       call ouocdd( dva, step_num, oubin, ouasc, bnfile, fmfile, 1,
      &             .false., myid, flat_file, stream_file, text_file, 
