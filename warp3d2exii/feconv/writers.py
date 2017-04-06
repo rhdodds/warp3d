@@ -312,7 +312,7 @@ class ExodusIIWriter(Writer):
     if self.large_file:
       self.ncdf = sio.netcdf_file(self.filename, mode='w',version=2)
     else:
-      self.ncdf = sio.netcdf_file(self.filename, mode='w', version=1)
+      self.ncdf = sio.netcdf_file(self.filename, mode='w', version=2) # Sigh
     self.opened = True
 
   def close(self):
