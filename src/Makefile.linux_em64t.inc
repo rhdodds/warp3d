@@ -46,8 +46,10 @@ PROFILE =
 OPT_REPORT = -qopt-report-annotate=html -qopt-report=5
 OPT_REPORT = 
 OPENMP =  -qopenmp -reentrancy 
+MACHINE_TYPE = -xHOST
+#MACHINE_TYPE = 
 FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz  \
-         -xHOST -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
+         $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
          $(MEMALIGN) $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
 FOR      = $(COMPILER) $(OPT_REPORT) $(FCOPTS)
