@@ -44,7 +44,7 @@ c
 *input from 'coordinates'
 c
 elements
-  1-17318  type l3disop  nonlinear material steel,
+  1-17318  type l3disop  nonlinear material steel, $ can run nonlinear
            order 2x2x2 bbar center_output short
 c
 *input from 'incid_and_blocking'
@@ -53,7 +53,7 @@ c
 c
  loading test
   nonlinear
-    step 1-20 constraints 1.0
+    step 1-160 constraints 1.0
 c
 c    solution parameters
 c
@@ -70,7 +70,15 @@ c
    adaptive on
    bbar stabilization factor 0.0
 c
-  compute displacements for loading test for step 10
+ list "react_nodes"  19174 19175 19176  19172  19166,  
+   19158  19148   19136  19122   18932  18572   18162  17702,  
+   17192  16632  
+ output commands use file "get_output.inp" steps all
+c
+c       with small displa, can run to step 160
+c
+  compute displacements for loading test for step 20
+  output patran formatted displacements
   *input from 'domain_define'
 c
 stop
