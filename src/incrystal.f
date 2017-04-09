@@ -4,7 +4,7 @@ c     *                      subroutine incrystal                    *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 12/20/2016 rhd             *
+c     *                   last modified : 4/9/2017   rhd             *
 C     *                                                              *
 C     *     input properties of crystals into the crystal library    *
 c     *                                                              *
@@ -106,6 +106,10 @@ c
              if( lab(1:nc) .eq. 'true') then
                    c_array(cnum)%alter_mode = .true.
              elseif( lab(1:nc) .eq. 'false') then
+                   c_array(cnum)%alter_mode = .false.
+             elseif( lab(1:nc) .eq. 'on') then
+                   c_array(cnum)%alter_mode = .true.
+             elseif( lab(1:nc) .eq. 'off') then
                    c_array(cnum)%alter_mode = .false.
              else
                    call errmsg(364,dumi,dums,dumr,dumd)
