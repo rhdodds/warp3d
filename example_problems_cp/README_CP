@@ -1,4 +1,4 @@
-Last Updated: August 10, 2015
+Last Updated: APril 11, 2017
 
 This directory contains several example input files demonstrating various
 features of the crystal plasticity (CP) model.
@@ -38,3 +38,6 @@ features of the crystal plasticity (CP) model.
    model, including restarts of unhomogenized models where the angles are input
    from a separate flat file.
    Results files are generated for post-processing with ParaView.
+   
+   ** The CP model does not function with MPI in the current release **
+   ====================================================================
