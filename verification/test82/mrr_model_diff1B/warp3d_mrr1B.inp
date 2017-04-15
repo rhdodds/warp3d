@@ -1,39 +1,38 @@
-c
-c MRR CP model
-c
+!
+! MRR CP model
+!
  structure voided_blk
-c 
-c 
+! 
+! 
  crystal 1
       properties slip_type bcc elastic_type cubic,
-      e 5.435370779399344e7 nu 0.362079149438866,
-      mu 1.7e7 mu_0 -2.550674963333333e7, 
-      theta_0 1.0e12,
-      tau_hat_y 1.0e-29 tau_hat_v 0.33 tau_a 2.4e-22,
-      g_0_v 3.0e-22 q_v 1.0 p_v 1.0 q_y 1.0 p_y 1.0,
-      g_0_y 1.0e10 b 2.863e-10 boltz 1.3806e-26,
-      D_0 0.0 T_0 204.0 harden_n 20,
-      u_1 0.18 u_2 5.0 u_3 5.0,
-      u_4 0.0022904 u_5 15.0 u_6 1431.5,
       hardening roters,
+      e 5.4353e7 nu 0.3621,
+      mu 1.7e7 mu_pl 2.5506e7, 
+      rho_0 1.0e12,
+      c7 1.0e-29 c8 0.33 Q_b 2.4e-22,
+      Q_s 3.0e-22 q_e 1.0 p_e 1.0,
+      v_0 1.0e10 b 2.863e-10 boltz 1.3806e-26,
+      c1 0.18 c2 5.0 c3 5.0,
+      c4 0.0022904 c5 15.0 c6 1431.5,
       solver tr method 3 miter 40 rtol 1.0e-9 rtol1 1.0e-9,
       xtol 1.0e-8 tang_calc 1
 !
 ! material definition
 !
- material titanium_djgm
+ material al_roters
       properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
       n_crystals 1 angle_type degrees, 
       crystal_input single crystal_type 1,
       orientation_input file filename 'block_angles.inp',
       debug off tolerance 1.0E-10
-c 
+! 
  number of nodes 342 elements 208
-c
+!
  elements
-  1-208 type l3disop  nonlinear material titanium_djgm,
+  1-208 type l3disop  nonlinear material al_roters,
               order 2x2x2 bbar center_output short
-c
+!
  coordinates
 *echo off
       1  0.000000000E+00  0.000000000E+00  0.000000000E+00
@@ -379,7 +378,7 @@ c
     341  0.833333313E+00  0.100000000E+01  0.100000000E+01
     342  0.100000000E+01  0.100000000E+01  0.100000000E+01
 *echo on
-c 
+! 
  incidences 
 *echo off
        1       1       2       9       8      50      51      58      57
@@ -591,12 +590,12 @@ c
      207     284     285     292     291     333     334     341     340
      208     285     286     293     292     334     335     342     341
 *echo on
-c 
-c
+! 
+!
  blocking automatic size = 20
-c 
+! 
 *echo on
-c
+!
  loading unit_biaxial  
   element loads
          6 face 5 pressure -1.000
@@ -671,23 +670,23 @@ c
        207 face 2 pressure  0.500
        208 face 5 pressure -1.000
        208 face 2 pressure  0.500
-c 
+! 
  constraints
     plane x=0 symmetry
     plane y=0 symmetry
     plane z=0 symmetry
-c
+!
  loading test
   nonlinear
     step 1-3 unit_biaxial 200.0e1
     step 4-6 unit_biaxial 30.0e1
-c
+!
 initial conditions
   temperatures
      1-342 temperature 300
-c
+!
 ! output model flat patran convention text file "block_model"
-c 
+! 
  nonlinear analysis parameters
    solution technique asymmetric direct
    time step 1.0e06 
@@ -707,10 +706,10 @@ c
    display tied mesh mpcs off
    user_routine off
 
-c 
+! 
 ! output commands use file "block_get_output.inp" steps 6
  compute displacements for loading test step 6
  output displacements 321
  output stresses 64
-c
+!
 stop
