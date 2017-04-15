@@ -1,58 +1,56 @@
-c
-c DJGM CP model
-c
+!
+! DJGM CP model
+!
  structure voided_blk
-c 
-c 
+! 
+! 
  crystal 1
       properties slip_type hcp18 elastic_type ti6242,
-      mu_0 1.3281250e+5,
-      D_0 1.5937500e+5,
-      T_0 7.6562500e+4,
-      e 6.7187500e+4,
-      nu 2.8125000e+4,
-      voche_m 3.9843750e+4,
-      theta_0 -1.0000000e+00,
-      k_0 -1.0000000e+02,
-      u_1 -5.0000000e+01,
-      u_2 -1.0382500e+02,
-      u_3 -3.1147500e+02,
-      u_4 1.2000000e-01,
-      u_5 1.2000000e-01,
-      u_6 1.2000000e-01,
-      u_7 4.2000000e+01,
-      u_8 4.2000000e+01,
-      u_9 4.2000000e+01,
-      u_10 3.0000000e-01,
-      p_y 2.9000000e-01,
-      p_v 2.9000000e-01,
-      q_y 1.4000000e-01,
-      q_v 1.5000000e-01,
-      boltz 1.5000000e-01,
-      b 2.0000000e-01,
-      tau_a 2.0000000e-01,
-      tau_hat_v 2.0000000e-01,
-      g_0_y 3.7500000e+01,
-      eps_dot_0_y 3.0000000e+01,
-      g_0_v 9.0000000e+01,
-      hardening djgm xtol 1.0e-4,
-      solver tr method 3 miter 40
+      hardening djgm,
+      C11 1.3281250e+5,
+      C33 1.5937500e+5,
+      C12 7.6562500e+4,
+      C13 6.7187500e+4,
+      C44 2.8125000e+4,
+      C55 3.9843750e+4,
+      h0_1 -5.0000000e+01,
+      h0_4 -1.0382500e+02,
+      h0_7 -3.1147500e+02,
+      gam_1 1.2000000e-01,
+      gam_4 1.2000000e-01,
+      gam_7 1.2000000e-01,
+      gt_1 4.2000000e+01,
+      gt_4 4.2000000e+01,
+      gt_7 4.2000000e+01,
+      r_1 3.0000000e-01,
+      r_4 2.9000000e-01,
+      r_7 2.9000000e-01,
+      n_1 1.4000000e-01,
+      n_4 1.5000000e-01,
+      n_7 1.5000000e-01,
+      m_1 2.0000000e-01,
+      m_4 2.0000000e-01,
+      m_7 2.0000000e-01,
+      g0_1 3.7500000e+01,
+      g0_4 3.0000000e+01,
+      g0_7 9.0000000e+01,
+      solver tr method 3 miter 40  xtol 1.0e-4
 !
 ! material definition
 !
- material titanium_djgm
+ material titanium
       properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
       n_crystals 1 angle_type degrees, 
       crystal_input single crystal_type 1,
       orientation_input file filename 'block_angles.inp',
       debug off tolerance 1.0E-10
-c 
+! 
  number of nodes 342 elements 208
-c
+!
  elements
-  1-208 type l3disop  nonlinear material titanium_djgm,
+  1-208 type l3disop  nonlinear material titanium,
               order 2x2x2 bbar center_output short
-c
+!
  coordinates
 *echo off
       1  0.000000000E+00  0.000000000E+00  0.000000000E+00
@@ -398,7 +396,7 @@ c
     341  0.833333313E+00  0.100000000E+01  0.100000000E+01
     342  0.100000000E+01  0.100000000E+01  0.100000000E+01
 *echo on
-c 
+! 
  incidences 
 *echo off
        1       1       2       9       8      50      51      58      57
@@ -610,11 +608,11 @@ c
      207     284     285     292     291     333     334     341     340
      208     285     286     293     292     334     335     342     341
 *echo on
-c 
+! 
  blocking automatic size = 10
-c 
+! 
 *echo on
-c
+!
  loading unit_biaxial  
   element loads
          6 face 5 pressure -1.000
@@ -689,23 +687,23 @@ c
        207 face 2 pressure  0.500
        208 face 5 pressure -1.000
        208 face 2 pressure  0.500
-c 
+! 
  constraints
     plane x=0 symmetry
     plane y=0 symmetry
     plane z=0 symmetry
-c
+!
  loading test
   nonlinear
     step 1-4 unit_biaxial 500.0e-3
     step 5 6 unit_biaxial 60.0e-3
-c
+!
 initial conditions
   temperatures
      1-342 temperature 300
-c
+!
 ! output model flat patran convention text file "block_model"
-c 
+! 
  nonlinear analysis parameters
    solution technique asymmetric direct
    time step 1.0e06 
@@ -724,10 +722,10 @@ c
    extrapolate on
    display tied mesh mpcs off
    user_routine off
-c 
+! 
 ! output commands use file "block_get_output.inp" steps 6
  compute displacements for loading test step 6
  output displacements 321
  output stresses 64
-c
+!
 stop
