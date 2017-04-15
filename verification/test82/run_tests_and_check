@@ -47,8 +47,8 @@ cleanup_files
 cd ..
 
 echo " "
-echo "  ... running test_82: CP w/ MTS multi-crystal option..."
-cd mts_model_multiple_crystals
+echo "  ... running test_82: CP w/ MTS multi-orientation option..."
+cd mts_model_multi
 "$warp3d_exe" $num_threads  < warp3d_mts_multi.inp > woutput
 perl check.perl
 cleanup_files
