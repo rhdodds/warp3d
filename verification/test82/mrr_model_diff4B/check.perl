@@ -14,7 +14,7 @@ print "   ... output file opened ...\n";
 find_line( 1, "       64       1    " );
 @parts = split( / +/, $line);
 #
-$answer = "5417.643690";
+$answer = "5417.628275";
 $partno = 3;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
