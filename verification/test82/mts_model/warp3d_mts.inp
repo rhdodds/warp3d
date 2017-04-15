@@ -1,8 +1,8 @@
-c
-c
+!
+!
  structure voided_blk
-c 
-c 
+! 
+! 
  crystal 1
       properties slip_type fcc elastic_type isotropic,
       e 78811.2 nu 0.33 hardening mts,
@@ -24,13 +24,13 @@ c
       crystal_input single crystal_type 1,
       orientation_input file filename 'mts_angles.inp',
       debug off tolerance 1.0E-10
-c 
+! 
  number of nodes 342 elements 208
-c
+!
  elements
   1-208 type l3disop  nonlinear material steel_mts,
               order 2x2x2 bbar center_output short
-c
+!
  coordinates
 *echo off
       1  0.000000000E+00  0.000000000E+00  0.000000000E+00
@@ -376,7 +376,7 @@ c
     341  0.833333313E+00  0.100000000E+01  0.100000000E+01
     342  0.100000000E+01  0.100000000E+01  0.100000000E+01
 *echo on
-c 
+! 
  incidences 
 *echo off
        1       1       2       9       8      50      51      58      57
@@ -588,12 +588,12 @@ c
      207     284     285     292     291     333     334     341     340
      208     285     286     293     292     334     335     342     341
 *echo on
-c 
-c
+! 
+!
  blocking automatic size = 20
-c 
+! 
 *echo on
-c
+!
  loading unit_biaxial  
   element loads
          6 face 5 pressure -1.000
@@ -668,23 +668,23 @@ c
        207 face 2 pressure  0.500
        208 face 5 pressure -1.000
        208 face 2 pressure  0.500
-c 
+! 
  constraints
     plane x=0 symmetry
     plane y=0 symmetry
     plane z=0 symmetry
-c
+!
  loading test
   nonlinear
     step 1-4 unit_biaxial 50.0
     step 5 6 unit_biaxial 15.0
-c
+!
 initial conditions
   temperatures
      1-342 temperature 300
-c
+!
 ! output model flat patran convention text file "block_model"
-c 
+! 
  nonlinear analysis parameters
    solution technique asymmetric direct
    time step 1.0e06 
@@ -703,12 +703,12 @@ c
    extrapolate on
    display tied mesh mpcs off
    user_routine off
-c 
-c 
+! 
+! 
 ! output commands use file "block_get_output.inp" steps 6
  compute displacements for loading test step 6
  output displacements 321
  output stresses 64
 !
-c
+!
 stop
