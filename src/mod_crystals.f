@@ -155,7 +155,8 @@ c                 Material parameters
      &                                voche_m !  yes it is spelled wrong
                   double precision :: u1, u2, u3, u4, u5, u6,
      &                                u7, u8, u9, u10
-
+                  double precision :: C11, C12, C13, C33, C44, C55
+c
                   double precision :: atol, atol1, rtol, rtol1,
      &                                xtol, xtol1
                   integer :: st_it(3)
@@ -166,9 +167,12 @@ c                             3) single
 c                             6) fcc roters order
 c                             7) bcc 12
 c                             8) bcc 48
+c                             9) hcp 6
+c                             10) hcp 18
                   integer :: elastic_type
 c                             1) isotropic
 c                             2) cubic
+c                             3) ti6242
                   integer :: nslip
                   integer :: num_hard
                   integer :: h_type
@@ -241,6 +245,12 @@ c
                   c_array(num)%e = 69000.
                   c_array(num)%nu = 0.33
                   c_array(num)%mu = 69000./2./1.33
+                  c_array(num)%C11 = 1.3281250d5
+                  c_array(num)%C12 = 7.6562500d4
+                  c_array(num)%C13 = 6.7187500d4
+                  c_array(num)%C33 = 1.5937500d5
+                  c_array(num)%C44 = 2.8125000d4
+                  c_array(num)%C55 = 3.9843750d4
                   c_array(num)%harden_n = 20
                   c_array(num)%tau_a = 0
                   c_array(num)%tau_hat_y = -1.0
@@ -1863,13 +1873,13 @@ c                       Generate (one time) the inverse of the flexibility
                   c_array(num)%elast_stiff = c_array(num)%elast_flex
                   call mm10_invsym(c_array(num)%elast_stiff,6)
                   else
-                        C11 = c_array(num)%mu_o
-                        C13 = c_array(num)%e
-                        C44 = c_array(num)%nu
-                        C55 = c_array(num)%voche_m
+                        C11 = c_array(num)%C11
+                        C13 = c_array(num)%C13
+                        C44 = c_array(num)%C44
+                        C55 = c_array(num)%C55
 
-                        C33 = c_array(num)%D_o
-                        C12 = c_array(num)%t_o
+                        C33 = c_array(num)%C33
+                        C12 = c_array(num)%C12
                         C22 = C11
                         C23 = C13
                         C66 = C55               

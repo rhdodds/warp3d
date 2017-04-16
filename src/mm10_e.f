@@ -6210,7 +6210,7 @@ c     *                   subroutine mm10_DJGM_GH                    *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 6/10/2016 tjt               *
+c     *                   last modified: 4/14/2017 tjt               *
 c     *                                                              *
 c     *   drive slection/filling of parameter matrices G & H         *
 c     *                                                              *
@@ -6228,8 +6228,6 @@ c
       double precision :: one
 c
       one = 1.d0
-c
-      if( (local_work%c_props(1,1)%k_o+100.d0) .lt. 1d-12 ) then
 c
         if( s_type .eq. 9 ) then ! HCP6
 c       Parameters
@@ -6279,20 +6277,6 @@ c     q matrix
            write(*,*) 'routine mm10_DJGM_GH. terminate job'
            call die_gracefully
         endif
-c
-      else
-c
-        if( s_type .eq. 9 ) then ! HCP6
-           call mm10_DJGM_GHhcp6( G,H )
-        elseif( s_type .eq. 10 ) then ! HCP18
-           call mm10_DJGM_GHhcp18( G,H )
-        else ! calculate manually
-           write(*,*) 'cannot use manual interaction G,H matrices'
-           write(*,*) 'routine mm10_DJGM_GH. terminate job'
-           call die_gracefully
-        endif
-c
-      endif ! user input
 c
       return
       end subroutine

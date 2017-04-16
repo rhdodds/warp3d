@@ -2287,69 +2287,16 @@ c
       double precision :: tau_tilde(props%num_hard)
       double precision, dimension(max_uhard) :: uhist
 c
-      if( (props%k_0+100.d0) .lt. 1d-12 ) then
-c
-        if( props%s_type .eq. 9 ) then
-            if( props%theta_0 .gt. 100.d0*1.0d6 ) then
-                tau_tilde(1:props%num_hard) = props%theta_0 ! user initialized
-            else
+      if( props%s_type .eq. 9 ) then
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
-            end if
-        elseif( props%s_type .eq. 10 ) then
-            if( props%theta_0 .gt. 100.d0*1.0d6 ) then
-                tau_tilde(1:props%num_hard) = props%theta_0 ! user initialized
-            else
+      elseif( props%s_type .eq. 10 ) then
                 tau_tilde(1:3) = props%G_0_y ! Initial g_0 (MPa)
                 tau_tilde(4:6) = props%eps_dot_0_y
                 tau_tilde(7:18) = props%G_0_v
-            end if
-        else
-          write(props%out,101) props%s_type
-          call die_gracefully
-        end if
-c
       else
-c
-        if( props%s_type .eq. 9 ) then
-            if( props%theta_0 .gt. 100.d0*1.0d6 ) then
-                tau_tilde(1:props%num_hard) = props%theta_0 ! user initialized
-            else
-                tau_tilde(1) = 300.0e6 ! Initial g_0 (MPa)
-                tau_tilde(2) = 300.0e6
-                tau_tilde(3) = 300.0e6
-                tau_tilde(4) = 240.0e6
-                tau_tilde(5) = 240.0e6
-                tau_tilde(6) = 240.0e6
-            end if
-        elseif( props%s_type .eq. 10 ) then
-            if( props%theta_0 .gt. 100.d0*1.0d6 ) then
-                tau_tilde(1:props%num_hard) = props%theta_0 ! user initialized
-            else
-                tau_tilde(1) = 300.0e6 ! Initial g_0 (MPa)
-                tau_tilde(2) = 300.0e6
-                tau_tilde(3) = 300.0e6
-                tau_tilde(4) = 240.0e6
-                tau_tilde(5) = 240.0e6
-                tau_tilde(6) = 240.0e6
-                tau_tilde(7) = 900.0e6
-                tau_tilde(8) = 900.0e6
-                tau_tilde(9) = 900.0e6
-                tau_tilde(10) = 900.0e6
-                tau_tilde(11) = 900.0e6
-                tau_tilde(12) = 900.0e6
-                tau_tilde(13) = 900.0e6
-                tau_tilde(14) = 900.0e6
-                tau_tilde(15) = 900.0e6
-                tau_tilde(16) = 900.0e6
-                tau_tilde(17) = 900.0e6
-                tau_tilde(18) = 900.0e6
-            end if
-        else
           write(props%out,101) props%s_type
           call die_gracefully
-        endif
-c
       end if
 c
       return

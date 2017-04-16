@@ -1366,7 +1366,7 @@ c     *                      subroutine chk_crystal                  *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 3/21/12                    *
+c     *                   last modified : 4/12/2017 rhd              *
 c     *                                                              *
 c     *   checks a crystal definition for errors                     *
 c     *                                                              *
@@ -1378,28 +1378,37 @@ c
       include 'common.main'
       integer, intent(in) :: cnum
 
-      if (c_array(cnum)%elastic_type .ne. 3) then
-c           special values allowed for ti6242
+      if (c_array(cnum)%elastic_type .ne. 3) then ! ti6242
 
-      if (c_array(cnum)%nu .ge. 0.5) then
-            write(out,9002) cnum
+        if (c_array(cnum)%C11 .le. 0.0) then
+            write(out,9001) cnum, 'C11'
             go to 1001
-      end if
+        end if
 
-      if (c_array(cnum)%e .le. 0.0) then
-            write(out,9001) cnum, 'e'
+        if (c_array(cnum)%C12 .le. 0.0) then
+            write(out,9001) cnum, 'C12'
             go to 1001
-      end if
+        end if
 
-      if (c_array(cnum)%nu .le. 0.0) then
-            write(out,9001) cnum, 'nu'
+        if (c_array(cnum)%C13 .le. 0.0) then
+            write(out,9001) cnum, 'C13'
             go to 1001
-      end if
+        end if
 
-      if (c_array(cnum)%mu .le. 0.0) then
-            write(out,9001) cnum, 'mu'
+        if (c_array(cnum)%C33 .le. 0.0) then
+            write(out,9001) cnum, 'C33'
             go to 1001
-      end if
+        end if
+
+        if (c_array(cnum)%C44 .le. 0.0) then
+            write(out,9001) cnum, 'C44'
+            go to 1001
+        end if
+
+        if (c_array(cnum)%C55 .le. 0.0) then
+            write(out,9001) cnum, 'C55'
+            go to 1001
+        end if
 
       end if ! elasticity = ti6242
 

@@ -2470,18 +2470,6 @@ c Load some material parameters
         Qslip = props%G_0_v
         v_attack = props%G_0_y
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.zero) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = third*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -2569,18 +2557,6 @@ c Load some material parameters
         v = 0.3d0 !props%nu
         dt = np1%tinc
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.zero) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = third*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -2668,18 +2644,6 @@ c Load some material parameters
         Qslip = props%G_0_v
         v_attack = props%G_0_y
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.zero) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2.d0-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2.d0-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = one/three*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -2772,18 +2736,6 @@ c Load some material parameters
         v = 0.3d0 !props%nu
         dt = np1%tinc
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = one/three*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -2914,18 +2866,6 @@ c        call mm10_dgdt_mrr(props, np1, n, stress,
 c     &         tt, dslip)
         dslip(1:props%num_hard) = arr1(1:props%num_hard,1)
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.zero) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = one/third*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -3035,18 +2975,6 @@ c Load some material parameters
         v = 0.3d0 !props%nu
         dt = np1%tinc
 c       
-c Compute the shear modulus using Roter's function
-        if(G.lt.zero) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = one/third*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -3178,18 +3106,6 @@ c Load some material parameters
         Qslip = props%G_0_v
         v_attack = props%G_0_y
 c        
-c Compute the shear modulus using Roter's function
-        if(G.lt.zero) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = 1.d0/3.d0*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)
@@ -3282,17 +3198,6 @@ c Load some material parameters
         v_attack = props%G_0_y
 c        
 c Compute the shear modulus using Roter's function
-        if(G.lt.0.d0) then
-        G = -G
-        else
-        K11=123.323d0+6.7008d-8*theta**3
-     &     -1.1342d-4*theta**2-7.8788d-3*theta
-        K12=70.6512d0+4.4105d-8*theta**3
-     &     -7.5498d-5*theta**2-3.9992d-3*theta
-        K44=31.2071d0+7.0477d-9*theta**3
-     &     -1.2136d-5*theta**2-8.3274d-3*theta
-        G = one/three*(K11-K12+K44)*1d9
-        endif
 c Load the interaction matrices for parallel and forest dislocs
 c        [Gmat,Hmat] = mm10_mrr_GH(props);
       ! call mm10_mrr_GH(props,Gmat,Hmat)

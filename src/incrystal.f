@@ -4,7 +4,7 @@ c     *                      subroutine incrystal                    *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 4/9/2017   rhd             *
+c     *                   last modified : 4/14/2017 rhd              *
 C     *                                                              *
 C     *     input properties of crystals into the crystal library    *
 c     *                                                              *
@@ -114,6 +114,9 @@ c
              else
                    call errmsg(364,dumi,dums,dumr,dumd)
              end if
+c
+c elastic parameters
+c
        elseif(  matchs_exact('e') ) then
              if( .not. numd(c_array(cnum)%e) ) then
                    call errmsg(5,dumi,'e',dumr,dumd)
@@ -126,6 +129,33 @@ c
              if( .not. numd(c_array(cnum)%mu) ) then
                    call errmsg(5,dumi,'mu',dumr,dumd)
              end if
+       elseif(  matchs_exact('C11') ) then
+             if( .not. numd(c_array(cnum)%C11) ) then
+                   call errmsg(5,dumi,'C11',dumr,dumd)
+             end if
+       elseif(  matchs_exact('C12') ) then
+             if( .not. numd(c_array(cnum)%C12) ) then
+                   call errmsg(5,dumi,'C12',dumr,dumd)
+             end if
+       elseif(  matchs_exact('C13') ) then
+             if( .not. numd(c_array(cnum)%C13) ) then
+                   call errmsg(5,dumi,'C13',dumr,dumd)
+             end if
+       elseif(  matchs_exact('C33') ) then
+             if( .not. numd(c_array(cnum)%C33) ) then
+                   call errmsg(5,dumi,'C33',dumr,dumd)
+             end if
+       elseif(  matchs_exact('C44') ) then
+             if( .not. numd(c_array(cnum)%C44) ) then
+                   call errmsg(5,dumi,'C44',dumr,dumd)
+             end if
+       elseif(  matchs_exact('C55') ) then
+             if( .not. numd(c_array(cnum)%C55) ) then
+                   call errmsg(5,dumi,'C55',dumr,dumd)
+             end if
+c
+c plastic parameters
+c
        elseif(  matchs_exact('harden_n') ) then
           if( .not. numd(c_array(cnum)%harden_n) ) then
                 call errmsg(5,dumi,'harden_n',dumr,dumd)
@@ -187,6 +217,10 @@ c
                 call errmsg(5,dumi,'T_0',dumr,dumd)
           end if
        elseif(  matchs_exact('mu_0') ) then
+          if( .not. numd(c_array(cnum)%mu_o) ) then
+                call errmsg(5,dumi,'mu_0',dumr,dumd)
+          end if
+       elseif(  matchs_exact('mu_pl') ) then ! synonym for roters
           if( .not. numd(c_array(cnum)%mu_o) ) then
                 call errmsg(5,dumi,'mu_0',dumr,dumd)
           end if
@@ -286,6 +320,155 @@ c
                    call errmsg(364,dumi,dums,dumr,dumd)
                 end if
           end if
+c
+c synonyms for MRR model
+c
+       elseif(  matchs_exact('Q_s') ) then
+          if( .not. numd(c_array(cnum)%g_o_v) ) then
+                call errmsg(5,dumi,'Q_s',dumr,dumd)
+          end if
+       elseif(  matchs_exact('Q_b') ) then
+          if( .not. numd(c_array(cnum)%tau_a) ) then
+                call errmsg(5,dumi,'Q_b',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c1') ) then
+          if( .not. numd(c_array(cnum)%u1) ) then
+                call errmsg(5,dumi,'c1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c2') ) then
+          if( .not. numd(c_array(cnum)%u2) ) then
+                call errmsg(5,dumi,'c2',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c3') ) then
+          if( .not. numd(c_array(cnum)%u3) ) then
+                call errmsg(5,dumi,'c3',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c4') ) then
+          if( .not. numd(c_array(cnum)%u4) ) then
+                call errmsg(5,dumi,'c4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c5') ) then
+          if( .not. numd(c_array(cnum)%u5) ) then
+                call errmsg(5,dumi,'c5',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c6') ) then
+          if( .not. numd(c_array(cnum)%u6) ) then
+                call errmsg(5,dumi,'c6',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c7') ) then
+          if( .not. numd(c_array(cnum)%tau_hat_y) ) then
+                call errmsg(5,dumi,'c7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('c8') ) then
+          if( .not. numd(c_array(cnum)%tau_hat_v) ) then
+                call errmsg(5,dumi,'c8',dumr,dumd)
+          end if
+       elseif(  matchs_exact('v_0') ) then
+          if( .not. numd(c_array(cnum)%g_o_y) ) then
+                call errmsg(5,dumi,'v_0',dumr,dumd)
+          end if
+       elseif(  matchs_exact('p_e') ) then
+          if( .not. numd(c_array(cnum)%p_v) ) then
+                call errmsg(5,dumi,'p_e',dumr,dumd)
+          end if
+       elseif(  matchs_exact('q_e') ) then
+          if( .not. numd(c_array(cnum)%q_v) ) then
+                call errmsg(5,dumi,'q_e',dumr,dumd)
+          end if
+       elseif(  matchs_exact('rho_0') ) then
+          if( .not. numd(c_array(cnum)%theta_o) ) then
+                call errmsg(5,dumi,'rho_0',dumr,dumd)
+          end if
+c
+c DJGM synonyms
+c
+       elseif(  matchs_exact('g0_1') ) then
+          if( .not. numd(c_array(cnum)%g_o_y) ) then
+                call errmsg(5,dumi,'g0_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('g0_4') ) then
+          if( .not. numd(c_array(cnum)%eps_dot_o_y) ) then
+                call errmsg(5,dumi,'g0_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('g0_7') ) then
+          if( .not. numd(c_array(cnum)%g_o_v) ) then
+                call errmsg(5,dumi,'g0_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('m_1') ) then
+          if( .not. numd(c_array(cnum)%b) ) then
+                call errmsg(5,dumi,'m_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('m_4') ) then
+          if( .not. numd(c_array(cnum)%tau_a) ) then
+                call errmsg(5,dumi,'m_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('m_7') ) then
+          if( .not. numd(c_array(cnum)%tau_hat_v) ) then
+                call errmsg(5,dumi,'m_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('r_1') ) then
+          if( .not. numd(c_array(cnum)%u10) ) then
+                call errmsg(5,dumi,'r_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('r_4') ) then
+          if( .not. numd(c_array(cnum)%p_y) ) then
+                call errmsg(5,dumi,'r_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('r_7') ) then
+          if( .not. numd(c_array(cnum)%p_v) ) then
+                call errmsg(5,dumi,'r_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('n_1') ) then
+          if( .not. numd(c_array(cnum)%q_y) ) then
+                call errmsg(5,dumi,'n_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('n_4') ) then
+          if( .not. numd(c_array(cnum)%q_v) ) then
+                call errmsg(5,dumi,'n_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('n_7') ) then
+          if( .not. numd(c_array(cnum)%boltz) ) then
+                call errmsg(5,dumi,'n_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('h0_1') ) then
+          if( .not. numd(c_array(cnum)%u1) ) then
+                call errmsg(5,dumi,'h0_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('h0_4') ) then
+          if( .not. numd(c_array(cnum)%u2) ) then
+                call errmsg(5,dumi,'h0_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('h0_7') ) then
+          if( .not. numd(c_array(cnum)%u3) ) then
+                call errmsg(5,dumi,'h0_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gam_1') ) then
+          if( .not. numd(c_array(cnum)%u4) ) then
+                call errmsg(5,dumi,'gam_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gam_4') ) then
+          if( .not. numd(c_array(cnum)%u5) ) then
+                call errmsg(5,dumi,'gam_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gam_7') ) then
+          if( .not. numd(c_array(cnum)%u6) ) then
+                call errmsg(5,dumi,'gam_7',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gt_1') ) then
+          if( .not. numd(c_array(cnum)%u7) ) then
+                call errmsg(5,dumi,'gt_1',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gt_4') ) then
+          if( .not. numd(c_array(cnum)%u8) ) then
+                call errmsg(5,dumi,'gt_4',dumr,dumd)
+          end if
+       elseif(  matchs_exact('gt_7') ) then
+          if( .not. numd(c_array(cnum)%u9) ) then
+                call errmsg(5,dumi,'gt_7',dumr,dumd)
+          end if
+c
+c user parameters
+c
        elseif(  matchs_exact('cp_001') ) then
           if( .not. numd(c_array(cnum)%cp_001) ) then
                 call errmsg(5,dumi,'cp_001',dumr,dumd)
@@ -686,6 +869,9 @@ c
           if( .not. numd(c_array(cnum)%cp_100) ) then
                 call errmsg(5,dumi,'cp_100',dumr,dumd)
           end if
+c
+c solver parameters
+c
        elseif(  matchs_exact('atol') ) then
           if( .not. numd(c_array(cnum)%atol) ) then
                 call errmsg(5,dumi,'atol',dumr,dumd)
@@ -714,25 +900,9 @@ c
           if( .not. numi(c_array(cnum)%miter) ) then
                 call errmsg(5,dumi,'miter',dumr,dumd)
           end if
-       elseif(  matchs_exact('gpp') ) then
-          if( .not. numi(c_array(cnum)%gpp) ) then
-                call errmsg(5,dumi,'gpp',dumr,dumd)
-          end if
        elseif(  matchs_exact('method') ) then
           if( .not. numi(c_array(cnum)%method) ) then
                 call errmsg(5,dumi,'method',dumr,dumd)
-          end if
-       elseif(  matchs_exact('dstep') ) then
-          if( .not. numi(c_array(cnum)%st_it(1) )) then
-                call errmsg(5,dumi,'dstep',dumr,dumd)
-          end if
-       elseif(  matchs_exact('diter') ) then
-          if( .not. numi(c_array(cnum)%st_it(2) )) then
-                call errmsg(5,dumi,'diter',dumr,dumd)
-          end if
-       elseif(  matchs_exact('delem') ) then
-          if( .not. numi(c_array(cnum)%st_it(3) )) then
-                call errmsg(5,dumi,'delem',dumr,dumd)
           end if
        elseif(  matchs_exact('tang_calc') ) then
           if( .not. numi(c_array(cnum)%tang_calc) ) then
@@ -770,6 +940,21 @@ c
                    call errmsg(364,dumi,dums,dumr,dumd)
                 end if
           end if
+c
+c debug flags
+c
+       elseif(  matchs_exact('dstep') ) then
+          if( .not. numi(c_array(cnum)%st_it(1) )) then
+                call errmsg(5,dumi,'dstep',dumr,dumd)
+          end if
+       elseif(  matchs_exact('diter') ) then
+          if( .not. numi(c_array(cnum)%st_it(2) )) then
+                call errmsg(5,dumi,'diter',dumr,dumd)
+          end if
+       elseif(  matchs_exact('delem') ) then
+          if( .not. numi(c_array(cnum)%st_it(3) )) then
+                call errmsg(5,dumi,'delem',dumr,dumd)
+          end if
        elseif(  matchs_exact('gpall') ) then
           if( .not. label(dumi) ) then
                 call errmsg(5,dumi,'gpall',dumr,dumd)
@@ -783,6 +968,10 @@ c
                 else
                    call errmsg(364,dumi,dums,dumr,dumd)
                 end if
+          end if
+       elseif(  matchs_exact('gpp') ) then
+          if( .not. numi(c_array(cnum)%gpp) ) then
+                call errmsg(5,dumi,'gpp',dumr,dumd)
           end if
        elseif(  endcrd(dumi) ) then
              reading = .false.
