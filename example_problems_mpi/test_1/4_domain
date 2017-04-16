@@ -171,6 +171,6 @@ c
    output patran formatted displacements stresses strains
    output patran formatted element  stresses strains
 c
-save cantilever
+c save cantilever
 c
 stop

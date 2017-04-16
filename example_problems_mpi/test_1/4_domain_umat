@@ -151,7 +151,7 @@ c
 c
 c
   nonlinear analysis parameters
-   solution technique sparse
+   solution technique sparse $ Pardiso. assemble solver on rank 0
 c   solution technique hypre
    hypre tolerance 1.0e-6
    maximum iterations 5
@@ -179,6 +179,6 @@ c
    output patran formatted displacements stresses strains
    output patran formatted element  stresses strains
 c
-save cantilever
+c save cantilever
 c
 stop

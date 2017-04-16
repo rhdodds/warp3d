@@ -143,23 +143,22 @@ c
     step 3-7  unit 0.2
 c
 c
+*echo on
   nonlinear analysis parameters
-   solution technique hypre
+   solution technique direct cluster
    hypre tolerance 1.0e-6
    maximum iterations 5
    minimum iterations 1
    convergence test norm res tol 0.05 maximum residual tol 0.5
    time step  1.0e10
    trace solution on
-   linear stiffness iteration one off
    adaptive solution on
    batch messages off
    bbar stabilization factor 0.0
    extrapolate off
-*echo on
 c
 c
-   compute displacements for loading end_shear step 1-7
+   compute displacements for loading end_shear step 7
    output displacements 50
    output reactions  1-54
    output wide eformat stresses 10 12

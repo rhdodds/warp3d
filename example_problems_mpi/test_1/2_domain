@@ -82,7 +82,6 @@ coordinates
     52     .100000e+02     .100000e+01     .000000e+00
     53     .100000e+02     .100000e+01    -.500000e+00
     54     .100000e+02     .100000e+01    -.100000e+01
-dump
 c
 c
 incidences
@@ -147,7 +146,7 @@ c
 c
 c
   nonlinear analysis parameters
-   solution technique hypre
+   solution technique direct cluster
    hypre tolerance 1.0e-6
    maximum iterations 5
    minimum iterations 1
@@ -162,7 +161,7 @@ c
 *echo on
 c
 c
-   compute displacements for loading end_shear step 1-7
+   compute displacements for loading end_shear step 7
    output displacements 50
    output reactions  1-54
    output wide eformat stresses 10 12
@@ -174,6 +173,6 @@ c
    output patran formatted displacements stresses strains
    output patran formatted element  stresses strains
 c
-save cantilever
+c save cantilever
 c
 stop
