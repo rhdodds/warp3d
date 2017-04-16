@@ -2,8 +2,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- cyclic plasticity model            * 
 c *                                                                 *
-c *        mm05.f  -- last modified z5/29/09 by kbc                 *    
-c *                   more comments added 8/28/09 by rhd            *  
+c *        mm05.f  -- last modified 3/26/2017 rhd                   *    
 c *                                                                 *
 c *******************************************************************
 c
@@ -18,18 +17,19 @@ c
      &  sigyld_nl_vec_np1, sigyld_nl_vec_n, qu_nl_np1, qu_nl_n, 
      &  bu_nl_np1, bu_nl_n, hu_nl_np1, hu_nl_n, gu_nl_np1, gu_nl_n,
      &  trial_elas_stress_np1, stress_n, stress_np1,
-     &  deps, history_n, history_np1 )
+     &  deps, history_n, history_np1, do_nonlocal, nonlocal_state, 
+     &  maxnonlocal )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
       integer
      &  step, iter, felem, gpn, mxvl, hist_size, span,
-     &  iout, nstrs, nstrn
+     &  iout, nstrs, nstrn, maxnonlocal
 c
       logical
      &   signal_flag, adaptive_possible, cut_step_size_now,
-     &   nonlin_hard, generalized_pl
+     &   nonlin_hard, generalized_pl, do_nonlocal
 c     
       double precision
      & sig_tol,  mm_props(mxvl,6), e_vec_np1(mxvl), e_vec_n(mxvl), 
@@ -43,7 +43,8 @@ c
      & hu_nl_np1(mxvl), hu_nl_n(mxvl), gu_nl_np1(mxvl), gu_nl_n(mxvl),
      & trial_elas_stress_np1(mxvl,nstrn), 
      & stress_n(mxvl,nstrs), stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
-     & history_n(span,hist_size), history_np1(span,hist_size)
+     & history_n(span,hist_size), history_np1(span,hist_size),
+     & nonlocal_state(mxvl,maxnonlocal)
 c
 c               description of parameters
 c               -------------------------
@@ -216,18 +217,19 @@ c
 c                       declare local variables 
 c                       -----------------------   
 c
-       logical debug, yield(mxvl), prior_linear(mxvl)
-       integer i, j, iostat(mxvl), instat(mxvl)
-      double precision
-     &     shear_mod, c, a, zero, one, two, b, delastic,
-     &     half, shear_mod_vec(mxvl), alpha_n(mxvl, nstrn), 
-     &     trace_eps_np1(mxvl),  yf_vec(mxvl)
-      data zero, one, two, half / 0.0d00, 1.0d00, 2.0d00, 0.5d00 /
+      logical :: debug, yield(mxvl), prior_linear(mxvl)
+      integer :: i, j, iostat(mxvl), instat(mxvl)
+      double precision :: shear_mod, c, a, b, delastic,
+     &     shear_mod_vec(mxvl), alpha_n(mxvl,nstrn), 
+     &     trace_eps_np1(mxvl), yf_vec(mxvl), mises_equiv_stress,
+     &     mises_eqiv_eps_pls
+      double precision, parameter :: zero = 0.0d0, one = 1.0d0,
+     &     two = 2.0d0, half = 0.5d0, root32 = dsqrt(3.0d0/2.0d0),
+     &     root23 = dsqrt(2.0d0/3.0d0) 
 c
-      double precision
-     &     type
+      double precision :: type ! see set from mm_props
 c
-       if( generalized_pl ) then
+      if( generalized_pl ) then
           call mm05_gp(
      &      step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &      iout, signal_flag, adaptive_possible, cut_step_size_now,
@@ -236,16 +238,33 @@ c
      &      beta_gp_np1, beta_gp_n, delta_gp_np1, delta_gp_n, tau,
      &      trial_elas_stress_np1, stress_n, stress_np1,
      &      deps, history_n, history_np1 )
-       end if
+      end if
 c
-       if ( nonlin_hard ) then
+      if ( nonlin_hard ) then
           call mm05_fa(
      &      step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &      iout, signal_flag, adaptive_possible, cut_step_size_now,
      &      mm_props, e_vec_np1, nu_vec_np1, sigyld_nl_vec_np1,
      &      trial_elas_stress_np1, stress_n, stress_np1,
      &      deps, history_n, history_np1 )
-       end if 
+      end if  
+c       
+c                       if needed, set nonlocal state variables for 
+c                       use by cohesive material model
+c    (2) k(e_bar_p)  (size of yield surface). mises equiv stress 
+c                     is sqrt(3/2) * k
+c     (3) e_bar_p     (accumulated plastic strain). tensorial 
+c                     definition. mises equivalent
+c                     uniaxial strain = sqrt(2/3)*e_bar_p
+
+c
+       if( .not. do_nonlocal ) return
+       do i = 1, span
+        mises_equiv_stress = root32 * history_np1(i,2)
+        mises_eqiv_eps_pls = root23 * history_np1(i,3)
+        nonlocal_state(i,1) = mises_equiv_stress
+        nonlocal_state(i,2) = mises_eqiv_eps_pls
+       end do
 c
        return
 c

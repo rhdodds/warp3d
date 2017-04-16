@@ -2294,7 +2294,7 @@ c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/31/2015 rhd             *
+c     *                   last modified : 3/26/2017 rhd              *
 c     *                                                              *
 c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
@@ -2307,7 +2307,8 @@ c
      &                            local_work, uddt_displ, iout )
       use main_data, only : matprp, lmtprp
       use segmental_curves, only : max_seg_points
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks,
+     &                            nonlocal_flags, nonlocal_data_n1
       use main_data, only : extrapolated_du, non_zero_imposed_du 
 c
       implicit none
@@ -2467,6 +2468,8 @@ c            with props at n+1.
           local_work%material_cut_step = .true.
           return
        end if
+       if( local_work%block_has_nonlocal_solids ) 
+     &           call drive_05_update_nonlocal
        call cnst5( span, felem, gpn, iter, iout, mxvl, nstr,
      &            local_work%e_vec, local_work%nu_vec,
      &            local_work%mm05_props,
@@ -2668,10 +2671,69 @@ c
      &           local_work%urcs_blk_n1(1,1,gpn),
      &           uddt,
      &           local_work%elem_hist(1,1,gpn),
-     &           local_work%elem_hist1(1,1,gpn) )
+     &           local_work%elem_hist1(1,1,gpn),
+     &           local_work%block_has_nonlocal_solids,
+     &           local_work%nonlocal_state_blk(1,1),
+     &           nonlocal_shared_state_size ) ! value in param_def
 c
       return
       end subroutine drive_05_update_c     
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_05_update_nonlocal          *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/26/2017 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_05_update_nonlocal
+      implicit none
+c
+      integer :: i, n, elem_num  
+      double precision :: real_npts  
+      
+      n = nonlocal_shared_state_size ! for convenience from param_def
+      if( local_debug ) write(iout,9010) n      
+c
+      if( gpn .eq. 1 ) then  ! zero global values for elements
+!DIR$ LOOP COUNT MAX=128  
+        do i = 1, span
+          elem_num = felem + i - 1
+          if( nonlocal_flags(elem_num) ) 
+     &         nonlocal_data_n1(elem_num)%state_values(1:n) = zero
+        end do
+      end if
+c      
+!DIR$ LOOP COUNT MAX=128  
+      do i = 1, span ! add in this gpn nonlocal values
+       elem_num = felem + i - 1
+       if( nonlocal_flags(elem_num) )   
+     &       nonlocal_data_n1(elem_num)%state_values(1:n) = 
+     &       nonlocal_data_n1(elem_num)%state_values(1:n) +
+     &       local_work%nonlocal_state_blk(i,1:n) 
+      end do
+c
+      if( gpn .eq. local_work%num_int_points ) then
+         real_npts = dble( local_work%num_int_points )
+!DIR$ LOOP COUNT MAX=128  
+         do i = 1, span
+          elem_num = felem + i - 1
+          if( nonlocal_flags(elem_num) )  then
+            nonlocal_data_n1(elem_num)%state_values(1:n) = 
+     &      nonlocal_data_n1(elem_num)%state_values(1:n) / real_npts
+          end if     
+         end do  
+      end if   
+c      
+      return   
+c      
+ 9010 format(/,'      processing nonlocal values. # values: ',i2 )      
+c      
+      end subroutine drive_05_update_nonlocal     
+      
+      
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_05_update_a                 *
@@ -2735,7 +2797,7 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 12/21/2015 rhd             *
 c     *                                                              *
-c     *     support routine for mm01 material driver.                *
+c     *     support routine for mm05 material driver.                *
 c     *     should be inlined                                        *
 c     *                                                              *
 c     ****************************************************************
