@@ -2,14 +2,14 @@
 
                Highest Level README for Windows Users
 
-                last Update: December 2016
+                last Update: April 20, 2017
 
 ==========================================================================
 
 *** NOTES: ***
 
 WARP3D is built for Windows using the Intel Fortran Composer XE 
-and MKL Version 17 Update 1 
+and MKL Version 17 Update 2 
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
@@ -55,7 +55,7 @@ Quick Start Using the Ready-to-Run Executable
 
 2. The WARP3D distribution includes a ready-to-run executable
    (64-bit) located in the run_windows_64 subdirectory.
-   This executable has been created and tested on Windows 7 SP1
+   This executable has been created and tested on Windows 10
    updated thru the date posted at top of document.
 
 3. WARP3D does not have a graphical user interface (GUI). The program
@@ -164,8 +164,9 @@ Re-Building the Windows Executable for WARP3D
    
    2A.  For Fortran 2017, we access Properties of the command shell and set the Target as:
    
-      C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\windows\bin\ipsxe-comp-vars.bat" intel64 vs2013"
-
+   C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\
+         windows\bin\ipsxe-comp-vars.bat" intel64 vs2013"
+ 
    and set the "Start In" directory as:
 
     c:\warp3d\src
@@ -187,8 +188,8 @@ Re-Building the Windows Executable for WARP3D
    
    The Makewarp.bat program must be able to locate the Windows 
    program: nmake.exe  (Windows variant of Linux make). It checks this location:
-   
-      c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe"
+  
+  c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe 
 
    If your system has nmake.exe in a different location, please change the
    top commands in Makewarp.bat to use the correct location.

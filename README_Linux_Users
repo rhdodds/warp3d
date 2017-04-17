@@ -3,15 +3,17 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: December 2016
+                      Last Update: April 20, 2017
                       
 *** LATE BREAKING NEWS ***
 
 The ready-to-run executables included in this distribution were built
-on Ubuntu 14.04.04 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 1.
+on Ubuntu 14.04.5 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 2.
 
-These executables also run on Centos 7. Re-compiling (really re-linking)
-may be needed on earlier versions of RedHat.
+These executables also run on RedHat/Centos 7.3. 
+
+Re-compiling (really re-linking) may be needed on other distributions of
+Linux (issues usually center of versions of gcc and OS runtime libraries).
 
 
 =========================================================================
@@ -19,7 +21,7 @@ may be needed on earlier versions of RedHat.
 *** NOTES: ***
 
 The precompiled versions of WARP3D are built for Linux using the Intel Fortran
-Composer XE 2016 compiler suite and the Intel MPI (Message Passing Interface)
+Composer XE 2017 compiler suite and the Intel MPI (Message Passing Interface)
 software system.
 
 The Intel Fortran compiler system is ** NOT ** required on your system to use
@@ -89,16 +91,16 @@ Type 2: executable is warp3d.mpi_omp
   blocks in a domain, and local vector parallel at the inner loop level
   within blocks.
 
-  Most often (1) the number of domains will be set to the number of hardware
-  processors, (2) the number of threads is set to the number of cores per
-  processor.
+  Most often:
+    (1) the number of domains will be set to the number compute nodes
+        in the cluster,
+    (2) the number of threads is set to the number of cores on a 
+        compute node.
 
-  Linear equation solver: hypre (iterative) which runs on the same
-  MPI ranks as WARP3D. Each hypre rank uses the same number of threads
-  as ranks in WARP3D. The Pardiso direct and iterative solvers may also
-  be used during MPI execution. However, the element stiffness matrices
-  are recovered to the root process, assembled and solved there. MPI
-  ranks 1, 2, 3, ... are suspended while the Pardiso solver runs.
+  Linear equation solvers: CPardiso (sparse direct) and 
+  hypre (iterative) which run on the same
+  MPI ranks as WARP3D. Each CPardiso and  hypre rank uses the same 
+  number of threads as ranks in WARP3D.
 
   The Intel MPI runtime system must installed on your computer.
   (No Intel Fortran compiler required).
@@ -212,7 +214,7 @@ C.  Quickstart: Precompiled Type-1 threads-only version
     Similarly, output may be redirected to a file using the ">" operator, e.g.
     $warp3d_exe < test_18a > output_test_18a.
 
-    All of the above commands  are more conveniently placed into a shell
+    All of the above commands are more conveniently placed into a shell
     script for execution at the command line. The file
     warp3d_script_linux_openmp in the WARP3D directory provides a starting
     point for any further customizations.
@@ -237,7 +239,7 @@ C.  Quickstart: Precompiled Type-1 threads-only version
 
 -----------------------------------------------------------------------------
 
-D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
+D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition)
     --------------------------------------------------------------------------
 
 1.  We recommend you look through the README files.
@@ -249,14 +251,14 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
     starting execution, set the following:
 
     a) The number of MPI ranks for WARP3D = number of defined
-       domains for the model. The hypre equation solver uses the
-       same number of MPI ranks.
+       domains for the model. The CPardiso and hypre equation solvers
+       use the same number of MPI ranks.
 
-    b) The number of threads per rank for WARP3D. Hypre uses the
+    b) The number of threads per rank for WARP3D. CPardiso & Hypre use the
        same number of threads/rank.
 
-4.  Example. This model uses 4 domains (MPI ranks=4) with 2 threads
-    (real cores) per rank.
+4.  Example for checking. This model uses 4 domains
+    (MPI ranks=4) with 2 threads (real cores) per rank.
 
 
     cd $WARP3D_HOME/example_problems_for_READMEs
@@ -268,9 +270,16 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition & hypre)
     export MPI_TYPE_MAX=4096
     export I_MPI_PIN_DOMAIN=omp
     export I_MPI_PIN_HOST=1
-    export I_MPI_FABRICS=shm:tcp
+    export I_MPI_FABRICS=shm:tcp  <<<---- see Note
     mpirun -np $NUM_WARP3D_RANKS $WARP3D_HOME/run_linux_em64t/warp3d.mpi_omp
 
+    Note: the setup commands above assume all MPI ranks run on 1 compute node
+    and thus use shared memory for MPI communication with TCP as a fall back.
+    
+    Local operational procedures for your cluster will describe how to modify the
+    setup commands for the local installation, especially for running
+    across a large number of compute nodes.
+       
     The first line sets a short path to run the correct WARP3D
     executable.
 
@@ -378,8 +387,8 @@ To build the hybrid version of WARP3D, this Intel software must be installed:
       (has the Pardiso solver).
 
   2.  Intel's MPI distribution (impi). Our processes work correctly with
-      impi 5.1 and have been tested on Centos 7
-      Ubuntu 14.04 LTS. Other MPI distributions,
+      impi 5.1 and have been tested on RedHat/Centos 7.3
+      Ubuntu 14.04.5 LTS. Other MPI distributions,
       such as the free and open-source OpenMPI may work, but are untested.
 
 Steps:
