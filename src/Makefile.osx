@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: March 17, 2017
+#   Last modifications: April 19, 2017
 #
 #   Description:
 #
@@ -61,8 +61,10 @@ OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
 OPT_REPORT = 
 INLINE   =  -no-inline-factor  
 PROFILE  =
+HOST     =  -xHOST #  -xHOST or leave blank for general processor compatibility
+MEMALIGN =  -align array64byte 
 FCOPTS   =  -O3 -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
-            -module $(ODIR) -ftz -xHost  $(FTRAP) $(INLINE) $(OPENMP)
+            -module $(ODIR) -ftz  $(HOST)  $(FTRAP) $(INLINE) $(OPENMP) $(MEMALIGN)
 FOR      = $(COMPILER) $(FCOPTS)
 LINK     = $(COMPILER) $(FCOPTS) -mkl
 #
