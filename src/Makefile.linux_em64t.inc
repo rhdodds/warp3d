@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: March 17, 2017
+#   Last modifications: April 19, 2017
 #
 #   Description:
 #
@@ -39,15 +39,15 @@ MVC      = /bin/mv -f
 #                     INLINE = -inline-level=0
 #                    PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
+#              see notes on MACHINE_TYPE and MEMALIGN
 FTRAP = 
 INLINE =  -no-inline-factor
-MEMALIGN = -align array64byte
 PROFILE = 
 OPT_REPORT = -qopt-report-annotate=html -qopt-report=5
 OPT_REPORT = 
 OPENMP =  -qopenmp -reentrancy 
-MACHINE_TYPE = -xHOST
-#MACHINE_TYPE = 
+MACHINE_TYPE = -xHOST # change to blank for most processor compatibility
+MEMALIGN = -align array64byte # change to blank unless -xHOST is used
 FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz  \
          $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
          $(MEMALIGN) $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
