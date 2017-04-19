@@ -212,6 +212,10 @@ c
           if( .not. numd(c_array(cnum)%eps_dot_o_y) ) then
                 call errmsg(5,dumi,'eps_dot_0_y',dumr,dumd)
           end if
+       elseif(  matchs_exact('gamma_bar') ) then ! synonym for eps_dot_0_y
+          if( .not. numd(c_array(cnum)%eps_dot_o_y) ) then
+                call errmsg(5,dumi,'gamma_bar',dumr,dumd)
+          end if
        elseif(  matchs_exact('T_0') ) then
           if( .not. numd(c_array(cnum)%t_o) ) then
                 call errmsg(5,dumi,'T_0',dumr,dumd)
