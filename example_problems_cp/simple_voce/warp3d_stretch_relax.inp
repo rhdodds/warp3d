@@ -1,0 +1,243 @@
+!
+!   WARP3D input file
+!
+!   This input by Robert Dodds (4/18/2017)
+!
+!   Unit cube 1 x 1 x 1 of 27 solid elements
+!   Units: MPa, mm, h (time)
+!   Laoding:
+!
+!     1) increasing uniform axial extension (zz) over 5 hrs
+!        in 10 time steps to generate axial stress ~530 MPa
+!
+!     2) hold extension constant to let stresses relax over time
+!        to 80 hours w/ increasing time step sizes
+!
+!    Symmetry on planes X=Y=Z=0. 
+!    Interior nodes of the cube have no imposed constraints.
+!
+!    All integration points of all elements should have 
+!    the same solution.
+!
+!    The builtin "creep" material model in WARP3D is assigned these
+!    properties:
+!
+!      E = 200,000 MPa 
+!      n = 5  nu = 0.285
+!      creep coefficient: B = 4.0e-18
+!
+!
+!    The CP model uses Voce hardening with the alter_mode on so we
+!    can have constant multiplier in the power-law hardening on 
+!    each slip system. 
+!
+!    A few trials were made to select material parameter to give 
+!    a reasonable match to solution from the builtin creep model.
+!    See PDF with graph.
+!
+!      -  Crystal E, nu, n same as builtin
+!      -  want to make tau_w change as small as possible w/o blowing
+!         up numerics in solution
+!         theta_0 = 0.01, voce_m = 1 tau_v = 5000 works fine
+!           theta_0 cannot be made  exactly 0 and voce_m exactly
+!           zero w/o numerics blowing up
+!      -  tuned tau_y and gamma_bar to give solution that reasonably
+!         matches the builtin creep model.
+!      -  stress relaxation has good sensitivity with tau_y as expected
+!         since it is raised to n power.
+!
+!      - to make CP solution approximate isotropic creep behavior,
+!        use 25 (random) crystal orientations at each integration point,
+!        and use bcc48 slip systems.
+!
+!
+!     NOTE:
+!     =====
+!
+!      During the fixed extension period, WARP3D would see there are
+!      no imposed, non-zero constraints or temperature changes.
+!      WARP3D is not aware of the time dependent creep strains that 
+!      occur inside the creep umat. 
+!
+!      With no apparent loading on the structure for constant
+!      hold time steps, WARP3D simply skips all computations and
+!      proceeds to the next step.
+!
+!      As a temporary fix, the axial extension during constant
+!      hold time steps is increased by an infinitesimal amount
+!      that forces WARP3D to proceed with computations as usual.
+!      
+!
+!
+ structure cube
+!
+ material builtin_creep
+   properties creep e 200000 nu 0.3 n_power 5.0 B 4.0e-18
+! 
+ crystal 1
+      properties slip_type bcc48 elastic_type isotropic,
+      hardening voce,
+      e 200000 nu 0.3 harden_n 5,48
+      alter_mode on,
+      theta_0 0.01 voce_m 1.0 tau_v 5000 tau_y 205.0,
+      gamma_bar 4.0e-05
+!
+ material voce_creep
+      properties cp  rho 0.0 angle_convention kocks,
+      n_crystals 25 angle_type degrees,
+      crystal_input single crystal_type 1,
+      orientation_input file filename 'angles.inp',
+      debug off tolerance 1.0E-10
+!      
+ number nodes 64 elements 27
+!
+ elements
+   1-27 type l3disop linear,
+!   material builtin_creep,   $ uncomment/comment for desired material
+    material voce_creep,
+          order 2x2x2 bbar short center
+!
+ coordinates
+*echo off    
+      1  0.000000000E+00  0.000000000E+00  0.000000000E+00
+      2  0.333333343E+00  0.000000000E+00  0.000000000E+00
+      3  0.666666687E+00  0.000000000E+00  0.000000000E+00
+      4  0.100000000E+01  0.000000000E+00  0.000000000E+00
+      5  0.000000000E+00  0.333333343E+00  0.000000000E+00
+      6  0.333333343E+00  0.333333343E+00  0.000000000E+00
+      7  0.666666687E+00  0.333333343E+00  0.000000000E+00
+      8  0.100000000E+01  0.333333343E+00  0.000000000E+00
+      9  0.000000000E+00  0.666666687E+00  0.000000000E+00
+     10  0.333333343E+00  0.666666687E+00  0.000000000E+00
+     11  0.666666687E+00  0.666666687E+00  0.000000000E+00
+     12  0.100000000E+01  0.666666687E+00  0.000000000E+00
+     13  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     14  0.333333343E+00  0.100000000E+01  0.000000000E+00
+     15  0.666666687E+00  0.100000000E+01  0.000000000E+00
+     16  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     17  0.000000000E+00  0.000000000E+00  0.333333343E+00
+     18  0.333333343E+00  0.000000000E+00  0.333333343E+00
+     19  0.666666687E+00  0.000000000E+00  0.333333343E+00
+     20  0.100000000E+01  0.000000000E+00  0.333333343E+00
+     21  0.000000000E+00  0.333333343E+00  0.333333343E+00
+     22  0.333333343E+00  0.333333343E+00  0.333333343E+00
+     23  0.666666687E+00  0.333333343E+00  0.333333343E+00
+     24  0.100000000E+01  0.333333343E+00  0.333333343E+00
+     25  0.000000000E+00  0.666666687E+00  0.333333343E+00
+     26  0.333333343E+00  0.666666687E+00  0.333333343E+00
+     27  0.666666687E+00  0.666666687E+00  0.333333343E+00
+     28  0.100000000E+01  0.666666687E+00  0.333333343E+00
+     29  0.000000000E+00  0.100000000E+01  0.333333343E+00
+     30  0.333333343E+00  0.100000000E+01  0.333333343E+00
+     31  0.666666687E+00  0.100000000E+01  0.333333343E+00
+     32  0.100000000E+01  0.100000000E+01  0.333333343E+00
+     33  0.000000000E+00  0.000000000E+00  0.666666687E+00
+     34  0.333333343E+00  0.000000000E+00  0.666666687E+00
+     35  0.666666687E+00  0.000000000E+00  0.666666687E+00
+     36  0.100000000E+01  0.000000000E+00  0.666666687E+00
+     37  0.000000000E+00  0.333333343E+00  0.666666687E+00
+     38  0.333333343E+00  0.333333343E+00  0.666666687E+00
+     39  0.666666687E+00  0.333333343E+00  0.666666687E+00
+     40  0.100000000E+01  0.333333343E+00  0.666666687E+00
+     41  0.000000000E+00  0.666666687E+00  0.666666687E+00
+     42  0.333333343E+00  0.666666687E+00  0.666666687E+00
+     43  0.666666687E+00  0.666666687E+00  0.666666687E+00
+     44  0.100000000E+01  0.666666687E+00  0.666666687E+00
+     45  0.000000000E+00  0.100000000E+01  0.666666687E+00
+     46  0.333333343E+00  0.100000000E+01  0.666666687E+00
+     47  0.666666687E+00  0.100000000E+01  0.666666687E+00
+     48  0.100000000E+01  0.100000000E+01  0.666666687E+00
+     49  0.000000000E+00  0.000000000E+00  0.100000000E+01
+     50  0.333333343E+00  0.000000000E+00  0.100000000E+01
+     51  0.666666687E+00  0.000000000E+00  0.100000000E+01
+     52  0.100000000E+01  0.000000000E+00  0.100000000E+01
+     53  0.000000000E+00  0.333333343E+00  0.100000000E+01
+     54  0.333333343E+00  0.333333343E+00  0.100000000E+01
+     55  0.666666687E+00  0.333333343E+00  0.100000000E+01
+     56  0.100000000E+01  0.333333343E+00  0.100000000E+01
+     57  0.000000000E+00  0.666666687E+00  0.100000000E+01
+     58  0.333333343E+00  0.666666687E+00  0.100000000E+01
+     59  0.666666687E+00  0.666666687E+00  0.100000000E+01
+     60  0.100000000E+01  0.666666687E+00  0.100000000E+01
+     61  0.000000000E+00  0.100000000E+01  0.100000000E+01
+     62  0.333333343E+00  0.100000000E+01  0.100000000E+01
+     63  0.666666687E+00  0.100000000E+01  0.100000000E+01
+     64  0.100000000E+01  0.100000000E+01  0.100000000E+01
+*echo on
+ incidences
+*echo off
+       1       1       2       6       5      17      18      22      21
+       2       2       3       7       6      18      19      23      22
+       3       3       4       8       7      19      20      24      23
+       4       5       6      10       9      21      22      26      25
+       5       6       7      11      10      22      23      27      26
+       6       7       8      12      11      23      24      28      27
+       7       9      10      14      13      25      26      30      29
+       8      10      11      15      14      26      27      31      30
+       9      11      12      16      15      27      28      32      31
+      10      17      18      22      21      33      34      38      37
+      11      18      19      23      22      34      35      39      38
+      12      19      20      24      23      35      36      40      39
+      13      21      22      26      25      37      38      42      41
+      14      22      23      27      26      38      39      43      42
+      15      23      24      28      27      39      40      44      43
+      16      25      26      30      29      41      42      46      45
+      17      26      27      31      30      42      43      47      46
+      18      27      28      32      31      43      44      48      47
+      19      33      34      38      37      49      50      54      53
+      20      34      35      39      38      50      51      55      54
+      21      35      36      40      39      51      52      56      55
+      22      37      38      42      41      53      54      58      57
+      23      38      39      43      42      54      55      59      58
+      24      39      40      44      43      55      56      60      59
+      25      41      42      46      45      57      58      62      61
+      26      42      43      47      46      58      59      63      62
+      27      43      44      48      47      59      60      64      63
+*echo on
+!
+ blocking automatic size = 4
+!
+ constraints
+   plane x=0 symmetry
+   plane y=0 symmetry
+   plane z=0 symmetry 
+   plane z=1.0 w 1.0  $ 1 mm. see scaling in step definitions
+!
+ loading unit_end $ for potential use in a traction load -> hold analysis
+   element loads
+     19-27 face 2 traction tz 1
+!
+loading creep
+    nonlinear
+    step 1-10 constraints 0.0003
+    step 11-100 constraints 1.0e-15 $ very small increase to trick WARP3D
+!    
+nonlinear analysis parameters
+   time step 0.5 $ hours
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 2
+   convergence test norm residual 0.01
+   trace solution on
+   adaptive solution off
+   batch messages off
+   bbar stabilization factor 0.0
+   extrapolate off
+!   
+output commands use file "output_cmds.inp" steps all
+!   
+compute displacements for loading creep step  10
+
+nonlinear analysis parameters
+   time step 0.1
+compute displacements for loading creep step  30
+nonlinear analysis parameters
+   time step 0.5
+compute displacements for loading creep step  40
+nonlinear analysis parameters
+   time step 1.0
+compute displacements for loading creep step  50
+nonlinear analysis parameters
+   time step 2
+compute displacements for loading creep step  80
+stop
