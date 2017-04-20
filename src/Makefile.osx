@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: April 19, 2017
+#   Last modifications: April 20, 2017
 #
 #   Description:
 #
@@ -17,22 +17,30 @@
 #     must be installed.
 #
 #
-#    Notes  
+#     Notes  
 #
-#       1.   we specify the -xHost Fortran option. the compiler will
-#            generate code for the highest performance instruction set of the 
-#            CPU on your computer.
+#       1. We specify the -xHost  -align array64byte ifort options. 
 #
-#            Remove this option is you wish the compiler to generate
-#            instructions for the broadest range (old !) Intel
-#            processors
+#       2. The compiler will generate code for the highest level 
+#          instruction set available in your processor(s).
+#
+#       3. WARP3D code ** requires ** that your processor support the
+#          AVX instruction set as a minimum. 
+#
+#          These processors became available in early 2011 and include:
+#             2nd Generation Intel® Core™ i7 Processors
+#             2nd Generation Intel® Core™ i5 Processors
+#             2nd Generation Intel® Core™ i3 Processors
+#             Intel® Xeon® Processor E5 Family
+#             Intel® Xeon® Processor E3 Family
+#             + all newer processors
 #
 #
 # ***********************************************************************
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3270
+BUILDNUM := 3300
 #
 ODIR = ././../obj_mac_os_x
 EXE_NAME = warp3d.omp
@@ -45,14 +53,12 @@ OD       = $(ODIR)
 RMC      = rm -f
 MVC      = mv -f
 #
-#              compiler and linker options
-#
-#              common options other than used here: 
+#              Common options other than used here: 
 #                      FTRAP = -ftrapuv -check uninit
 #                     INLINE = -inline-level=0
 #                    PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
-#              ==> we use the simplest linking method for MKL
+#              ==> we use the simplest (static) linking method for MKL
 #
 COMPILER = ifort
 OPENMP   = -qopenmp -reentrancy -static-intel 
@@ -61,10 +67,12 @@ OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
 OPT_REPORT = 
 INLINE   =  -no-inline-factor  
 PROFILE  =
-HOST     =  -xHOST #  -xHOST or leave blank for general processor compatibility
-MEMALIGN =  -align array64byte 
+MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte  
+DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
+MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
+#
 FCOPTS   =  -O3 -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
-            -module $(ODIR) -ftz  $(HOST)  $(FTRAP) $(INLINE) $(OPENMP) $(MEMALIGN)
+            -module $(ODIR) -ftz  $(MACHINE_TYPE)  $(FTRAP) $(INLINE) $(OPENMP)
 FOR      = $(COMPILER) $(FCOPTS)
 LINK     = $(COMPILER) $(FCOPTS) -mkl
 #
