@@ -4,10 +4,18 @@ cls
 ::
 :: ****************************************************************************
 ::
-::                             Makewarp.windows.cmd
+::                             Makewarp.bat  cmd
 ::
 ::   A command prompt batch file to build WARP3D on Windows.
-::   Uses the windows nMake utility and the Makefile.windows.nmake makefile.
+::   Uses the windows nmake utility and the Makefile.windows.nmake makefile.
+::
+::   nmake compiles only 1 .f at a time. the alternate build method is in
+::   file Makewarp_jom.bat. It uses the free "jom" program as a replacement
+::   for nmake. Support for concurrent compiles is available. Greatly speeds
+::   up the time to re-compile WARP3D.
+::   See comments in Makefile_jom.bat to obtain jom.
+::
+::   the same *.nmake file is used with the namek and jom programs.
 ::
 ::   This script builds a 64-bit version of WARP3D.
 ::   It must be executed from within a command shell that has environment
