@@ -1,12 +1,13 @@
 #
 #
-#   Last modifications: March 17. 2017 rhd
+#   Last modifications: April 20, 2017 rhd
 #
-#    Makefile for WARP3D on systems running Windows 7, 8, 10
+#    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
 #
 #    This nmake script is initiated by the the command shell script
-#    Makewarp.bat (which sets the 64-bit mode for use here)
+#    Makewarp.bat or Makewarp_jom.bat (which sets the 64-bit
+#    mode for use here)
 #
 #    Tested with Intel Fortran 17.0.2 and included MKL
 #
@@ -14,15 +15,24 @@
 #    Windows machines w/o the Intel compiler suite.
 #
 #
-#    NOTE:   we specify the /QxHOST Fortran option. the compiler will
-#            generate code for the highest perfromance instruction 
-#            set of the CPU on your computer.
+#    1. We specify the -xHost  -align array64byte ifort options. 
 #
-#            Remove this option is you wish the compiler to generate
-#            instructions for the broadest range (older) Intel
-#            processors
+#       -> alternatively you can build with the 
+#          MINIMUM_MACHINE_TYPE option indicated below
 #
-#    Use macro on the command line to setup for 64-bit build
+#    2. The compiler will generate code for the highest level 
+#       instruction set available in your processor(s).
+#
+#    3. WARP3D code ** requires ** that your processor support the
+#       AVX instruction set ==>> as a minimum. 
+#
+#       These processors became available in early 2011 and include:
+#          2nd Generation Intel® Core™ i7 Processors
+#          2nd Generation Intel® Core™ i5 Processors
+#          2nd Generation Intel® Core™ i3 Processors
+#          Intel® Xeon® Processor E5 Family
+#          Intel® Xeon® Processor E3 Family
+#          + all newer processors
 #
 !IF DEFINED(ARCH64)
 XXX = abc
@@ -30,40 +40,41 @@ XXX = abc
 !ERROR *** ARCH64 not defined. makefile processing stopped ****
 !ENDIF
 #
-OSNAME = Windows
-BUILDNUM = 3270
-PRE =  fpp
+OSNAME   = Windows
+BUILDNUM = 3300
+PRE      = fpp
 #
-ODIR = .\.\..\obj_windows_64
-F90OPTS5 =  /Qopenmp  /F400000000
-LIBS = /Qmkl 
+ODIR   = .\.\..\obj_windows_64
 EXEDIR = .\..\run_windows_64
 #
-#
 EXE_NAME = warp3d.exe
-MKLIB = $(ODIR)
+MKLIB    = $(ODIR)
 #
-#F90TRAP = /ftrapuv /check uninit
-F90TRAP =
-INLINEOPT = /Qinline-factor-
-#INLINEOPT =  /Ob0   # no inlining
-PROFILEOPT =
-#PROFILEOPT = /pg  # for use with gprof
-#PROFILEOPT = /g   # for use with Intel Adviser
+F90TRAP    = /ftrapuv /check uninit
+F90TRAP    =
+INLINEOPT  = /Qinline-factor-
+#INLINEOPT = /Ob0   # no inlining
 #
-F90OPTS1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
-F90OPTS2 = /Qunroll /Qftz /nologo /MP /heap-arrays
-F90OPTS3 = /traceback  /Qip /Qmkl:parallel /QxHOST
-F90OPTS4 = /threads /reentrancy $(INLINEOPT) $(PROFILEOPT)
-F90 = ifort $(F90OPTS1) $(F90OPTS2) $(F90OPTS3) $(F90OPTS4) $(F90OPTS5)
-LINK90 = $(F90) /F400000000
+PARALLEL   = /Qmkl:parallel /threads /reentrancy /Qopenmp 
+STACKSIZE  = /F400000000
+#
+MINIMUM_MACHINE_TYPE = /QaxAVX /align:array64byte
+DEFAULT_MACHINE_TYPE = /QxHOST /align:array64byte
+MACHINE_TYPE         = $(MINIMUM_MACHINE_TYPE)
+#
+F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
+F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback  
+F3 = $(INLINEOPT) $(MACHINE_TYPE) $(PARALLEL) $(STACKSIZE) 
+#
+F90 = ifort $(F1) $(F2) $(F3) 
+LINK90 = $(F90) 
+#
 O = .obj
 OD = $(ODIR)
 RMC = del /q
 MVC = move /y
 #
-#                Program will insert all object files for warp3d. All
-#                module files are listed first.
+#                list module files first for clarity
 #
 OBJ =	 \
 	$(OD)/mod_adaptive_steps$O	 \
@@ -304,7 +315,7 @@ OBJ =	 \
 #
 
 $(EXE_NAME) : $(OBJ)
-	$(LINK90) /Od  $(OBJ) $(LOPT) $(LIBS) /o $@
+	$(LINK90) /Od  $(OBJ) $(LOPT) /o $@
 	$(MVC) $@ $(EXEDIR)\$@
 #
 $(OD)/addifv$O : addifv.f param_def \
