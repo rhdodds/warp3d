@@ -10,14 +10,31 @@
 Late breaking news:  
 ==================   
 
-The ready-to-run executables are build using Intel Fortran 17.0.2 with
-options that allow the executable to run on a wide-range of
-Intel 64 bit processors.
+The ready-to-run executables are built using Intel Fortran/MKL 17.0.2 
+with options that allow the executable to run on a wide-range of
+Intel 64 bit processors dating from 2011.
+
+Our ready-to-run executables now require that your processor(s) 
+support the AVX (vector) instruction set as a minimum. 
+WARP3D will not run on older processors.
+
+Processors with AVX support became available in early 2011 and include:
+
+  2nd Generation Intel® Core™ i7 Processors
+  2nd Generation Intel® Core™ i5 Processors
+  2nd Generation Intel® Core™ i3 Processors
+  Intel® Xeon® Processor E5 Family
+  Intel® Xeon® Processor E3 Family
+  
+  + all newer processors
+
+In future releases of WARP3d we plan to require processors with
+AVX2 instruction support.
 
 The best performance - especially on the newest processors -
-can be obtained only by re-compiling. The performance gains are
-most noticed for the very largest simulations dominated by performance
-of the Intel MKL library.   
+can be obtained only by re-compiling. If your processor
+supports the AVX2 instruction set, there will be a boost in performance 
+across the entire code from the increased vector lenth of AVX2.  
 
 Re-building scripts in the distribution instruct the compiler to optimize 
 for the hardware on which the compilation is executed.             

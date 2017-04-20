@@ -15,6 +15,9 @@ These executables also run on RedHat/Centos 7.3.
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).
 
+See notes at top of README for processor levels supported in this release
+and going forward.
+
 
 =========================================================================
 

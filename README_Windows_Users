@@ -9,7 +9,7 @@
 *** NOTES: ***
 
 WARP3D is built for Windows using the Intel Fortran Composer XE 
-and MKL Version 17 Update 2 
+and MKL Version 17 Update 2. 
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
@@ -18,13 +18,10 @@ and re-build the executable.
 
 This distribution was built & verified on Windows 10.
 
-We build the executable using statically-linked MKL libraries and
-compiler options for generic Intel processors.
+We build the executable using statically-linked MKL libraries.
 
-If you have the Intel compiler system installed, you likely will gain some 
-additional performance by re-compiling. The re-building scripts included in 
-the distribution request compiling for optimal performance on the current 
-hardware (we remove that option to build the executables for distribution).
+See notes at top of README for processor levels supported in this release
+and going forward.
 
 ==========================================================================
 

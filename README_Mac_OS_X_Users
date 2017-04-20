@@ -10,7 +10,7 @@
 *** Latest NOTES: ***
 
 WARP3D is built for MacOS using the Intel Fortran Composer XE 2017 
-Update 2 compiler suite version ifort and concurrent MKL
+Update 2 compiler suite version ifort and concurrent MKL.
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
@@ -19,14 +19,12 @@ and re-build the executable.
 
 This distribution was built & verified on MacOS 10.11.6.
 
-We build the executable using statically-linked MKL libraries and
-compiler options for generic Intel processors. These executables run across
-all Macs (laptops, iMacs, MacPros).
+We build the executable using statically-linked MKL libraries.
+These executables run across all Macs dating from 2011
+(laptops, iMacs, MacPros).
 
-If you have the Intel compiler system installed, you likely will gain some 
-additional performance by re-compiling. The re-building scripts included in 
-the distribution request compiling for optimal performance on the current 
-hardware (we remove that option to build the executables for distribution).
+See notes at top of README for processor levels supported in this release
+and going forward.
 
 ============================================================================
 
