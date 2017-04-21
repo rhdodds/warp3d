@@ -10,8 +10,8 @@ fi
 
 cd $WARP3D_HOME
 
-file_1="http://www.dropbox.com/s/rvkfjlh4gs6dfub/warp_external_libs.tar.gz"
-file_2="http://www.dropbox.com/s/y5z0s6qzsdqdtd8/pat2exII_external_libs.tar.gz"
+
+file_1="https://www.dropbox.com/s/l3d5zgris9wr2dq/warp_external_libs.tar.gz"
 
 #wget http://warp3d.googlecode.com/files/warp_external_libs.tar.gz $file_1
 wget --no-check-certificate -O warp_external_libs.tar.gz $file_1
