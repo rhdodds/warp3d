@@ -34,7 +34,7 @@ c
      &    eta_b, Sigma_0, D, a_0, b_0, V_0, N_I, F_N,     
      &    n_pow, N_max, psi_angle_radians, psi_angle_degrees, hpsi,
      &    compression_mult, Sthr, beta_nuc, v2dot_term2, user_n_pow,
-     &    beta_vol
+     &    beta_vol, const_linear_stiff
         logical :: degrade_shear, VVNT, modify_q, include_nucleation,
      &             include_cavity_growth, compute_solid_local  
       end type
@@ -56,7 +56,8 @@ c
      &                      F_N,
      &                      N_max,
      &                      nuc_stress_exponent,
-     &                      compression_multiplier
+     &                      compression_multiplier,
+     &                      const_linear_stiffness
         logical ::  degrade_shear_viscosity, 
      &              use_VNNT,
      &              modify_q,
@@ -257,6 +258,7 @@ c                   5 -- Tn traction normal to GB
 c                   6 -- traction shear stiffness
 c                   7 -- tractions normal stiffness
 c                   8 -- critical state value. 0.0 or 1.0. not yet used.
+c                   8 -- v1_dot/v2_dot for now
 c                   9 -- maximum normal traction (Tn) experienced over 
 c                        loading history (not normalized)
 c                  10 -- opening displacement value (delta_c)
@@ -752,7 +754,7 @@ c
      &                     trac_n1(i,3)*reladis(i,3) )
         trac_n1(i,9)   = zero 
 c
-        history1(i,8) = zero ! reserved for a damage parameter
+c kbc        history1(i,8) = zero ! reserved for a damage parameter
 c        
         tn_n1          = trac_n1(i,3)
         dn_n1          = reladis(i,3)
@@ -880,6 +882,7 @@ c
           bcp(i)%user_n_pow = intfprps(1,49)
           bcp(i)%N_max = intfprps(1,50) * bcp(i)%N_I
           bcp(i)%compression_mult = intfprps(1,22)
+          bcp(i)%const_linear_stiff = intfprps(1,40)        ! kbc
           bcp(i)%beta_nuc = two
           bcp(i)%beta_vol = ( bcp(i)%n_pow - one) * ( bcp(i)%n_pow + 
      &                    0.4319d00 ) / bcp(i)%n_pow**2
@@ -900,7 +903,8 @@ c
      &     bcp(1)%F_N,   
      &     bcp(1)%n_pow, bcp(1)%N_max, 
      &     bcp(1)%beta_nuc, 
-     &     bcp(1)%compression_mult
+     &     bcp(1)%compression_mult,
+     &     bcp(1)%const_linear_stiff   
       end if
    
       return
@@ -920,7 +924,8 @@ c
      &  /,5x,"n_pow:          ",f5.1,
      &  /,5x,"N_max:          ",e14.5,
      &  /,5x,"beta_nuc:       ",e14.5, 
-     &  /,5x,"comp. factor:   ",f5.1 )
+     &  /,5x,"comp. factor:   ",f5.1,
+     &  /,5x,"lin stiff:      ",e14.5 )
 c  
 c 
  9100 format(/,'>>>> FATAL ERROR: in mm04 (cohesive cavity)',
@@ -1028,6 +1033,8 @@ c
         bcp(i)%N_max = gb_properties(gb_no)%n_max* bcp(i)%N_I
         bcp(i)%compression_mult = 
      &            gb_properties(gb_no)%compression_multiplier
+        bcp(i)%const_linear_stiff = 
+     &            gb_properties(gb_no)%const_linear_stiffness    
         bcp(i)%beta_nuc = gb_properties(gb_no)%nuc_stress_exponent
         bcp(i)%beta_vol    = (bcp(i)%n_pow - one) * ( bcp(i)%n_pow +
      &                    0.4319d00 ) / bcp(i)%n_pow**2
@@ -1054,7 +1061,8 @@ c
      &                    bcp(i)%psi_angle_radians, bcp(i)%hpsi, 
      &                    bcp(i)%V_0, bcp(i)%N_I, bcp(i)%F_N,   
      &                    bcp(i)%n_pow, bcp(i)%N_max, bcp(i)%beta_nuc,
-     &                    bcp(i)%compression_mult
+     &                    bcp(i)%compression_mult,
+     &                    bcp(i)%const_linear_stiff    
          write(iout,*) " "
       end do   
 c   
@@ -1082,8 +1090,8 @@ c
      &  /,5x,"n_pow:          ",f5.1,
      &  /,5x,"N_max:          ",e14.5,
      &  /,5x,"beta_nuc:           ",e14.5,
-     &  /,5x,"comp. factor:   ",f5.1 )
-   
+     &  /,5x,"comp. factor:   ",f5.1,
+     &  /,5x,"lin stiff:      ",e14.5 )   
       end 
 c
 c    ****************************************************************
@@ -1138,6 +1146,7 @@ c
       props%n_pow                 = bcp(elem_in_blk)%n_pow
       props%N_max                 = bcp(elem_in_blk)%N_max
       props%compression_mult      = bcp(elem_in_blk)%compression_mult 
+      props%const_linear_stiff    = bcp(elem_in_blk)%const_linear_stiff      
       props%beta_nuc              = bcp(elem_in_blk)%beta_nuc
       props%beta_vol              = bcp(elem_in_blk)%beta_vol      
       props%v2dot_term2           = bcp(elem_in_blk)%v2dot_term2  
@@ -1206,7 +1215,8 @@ c
      & q_factor, Lnr, S, pm, delta_T, T_new, v1_dot, V_new, a_new,
      & N_new, b_new, N_dot, stiff_normal, stiff_shear,
      & max_ab_ratio, stiff_linear, mark, trial_T_new, LNR_toler,
-     & tshear_1, tshear_2, f_sd, ab_ratio, ab_sd_ratio
+     & tshear_1, tshear_2, f_sd, ab_ratio, ab_sd_ratio, v_toler,
+     & min_c1
 c
       equivalence ( iword, dword )     
 c
@@ -1222,10 +1232,10 @@ c
 c
       data zero, one, three, third, two, half, four,
      &  six, onept5, toler, pi, max_ab_ratio, mark, LNR_toler, 
-     &  ab_sd_ratio
+     &  ab_sd_ratio, v_toler, min_c1
      & / 0.0d0, 1.0d0, 3.0d0, 0.3333333333333333d0, 2.0d0, 0.5d0,
      &   4.0d0, 6.0d0, 1.5d00, 1.0d-10, 3.14159265d0, 0.9999d00,
-     &   1.0d40, 1.0d-06, 0.5d0 /
+     &   1.0d40, 1.0d-06, 0.5d0, 1.0d-20, 1.0d-10 /
 c
 c      
       debug_newton = .false.
@@ -1255,7 +1265,7 @@ c
 c
 c              set options for nucleation model
 c
-      small_new_cavities    = .false. ! true = new cavities have size a0
+      small_new_cavities    = .true. ! true = new cavities have size a0
       cavities_nucleated_t0 = .false. ! false = no growth until nuc 
 c                                       threshold met
 c
@@ -1434,6 +1444,12 @@ c
       if( compute_solid_local ) history1(i,5) = Tn_solid 
       history1(i,6) = stiff_shear
       history1(i,7) = stiff_normal
+      if( abs(v1_dot) .gt. v_toler) then
+        history1(i,8) = v2_dot/v1_dot
+c        history1(i,8) = v1_dot*1.0d10
+      else
+        history1(i,8) = zero   
+      endif
       iword(1) = new_state; iword(2) = 0
       history1(i,13) = dword
       history1(i,11) = props%a_0 / props%b_0 ! for output 
@@ -1543,11 +1559,14 @@ c    *                              3/10/2015 kbc (VVNT, qmod)      *
 c    *                              7/21/2-15 rhd (error check for  *
 c    *                                a < a_0 )                     *
 c    *                              4/20/2016 kbc (nucleation)      *
+c    *                             12/15/2016 kbc (nuc with T_solid)*
 c    *                                                              *
 c    ****************************************************************
 c
       subroutine mm04_cavit_std_update
       implicit none
+      double precision ::
+     & a_new_temp, T_new_nuc 
       double precision, parameter ::
      & local_tol_a_0 = 0.90d0
 c
@@ -1559,8 +1578,9 @@ c
       if( VVNT ) call mm04_cavit_dV_L_or_H
 c
       call mm04_cavit_c1
+c      if(c_1 < min_c1) c_1 = min_c1
       call mm04_cavit_c0
-      
+c      
 c             step 2: update normal traction T. simple linear solve            
 c                     store updated normal traction and normal
 c                     direction stiffness.      
@@ -1568,7 +1588,15 @@ c
       delta_c_dot = delrlds(i,3) / dtime 
       T_new = ( delta_c_dot - c_0 ) / c_1  
       stiff_normal = one / (dtime*c_1 )   
-c             
+c  
+c   Use the tractions from the adjacent elements for nucleation
+c   instead of the cavitation model updated traction.  This prevents
+c   nucleation starting too early and too strongly (T_new can
+c   be numerically unstable, especially during early loading)
+c  
+      call mm04_compute_solid_local( i ) 
+      T_new_nuc = min(Tn_solid, T_new)
+c                         
 c
 c             step 3: update remaining internal state variables and
 c                     update the history vector (see top of mm04)
@@ -1586,16 +1614,17 @@ c
       nucleation_active = .false.
       if( include_nucleation) then
         S   = zero
-        if( T_new .gt. zero ) then
-            S = c_strain * ( T_new / props%Sigma_0 )**props%beta_nuc
+        if( T_new_nuc .gt. zero ) then
+            S = c_strain * ( T_new_nuc / props%Sigma_0 )**props%beta_nuc
         end if  
         nucleation_active = ((S .gt. props%Sthr .and. 
      &                    N_n .lt. props%N_max ) .and. 
      &                    a_n / b_n .lt. max_ab_ratio ) 
       endif   
-      if( nucleation_active) then     
+      if( nucleation_active) then   
+c      write(iout,*) "nucleating: ", S, props%Sthr  
         N_dot = props%F_N * d_strain*
-     &                     (T_new/props%Sigma_0)**props%beta_nuc
+     &                     (T_new_nuc/props%Sigma_0)**props%beta_nuc
         N_new = N_n  +  N_dot * dtime
         if( N_new > props%N_max) N_new = props%N_max
         b_new = one/sqrt(pi*N_new)
@@ -1608,16 +1637,18 @@ c
      &            ( four * pi * a_n**2 * props%hpsi )  
         endif      
 c     grow cavities if nucleation has occurred (or not included)            
-      elseif( cavities_nucleated_t0 .or. N_new .gt. props%N_I) then
+      elseif( cavities_nucleated_t0 .or. N_n .gt. props%N_I) then
         N_new = N_n
         b_new = b_n
         a_new = a_n + dtime*(v1_dot + v2_dot) / 
      &          ( four * pi * a_n**2 * props%hpsi )
       else  ! cavities not yet nucleated
-        N_new = N_n
-        b_new = b_n 
-        a_new = a_n        
-      endif   
+        switch_to_linear = .true.
+        return
+c        N_new = N_n
+c        b_new = b_n 
+c        a_new = a_n        
+      endif     
 c   
       if( debug_span_loop ) then
            write(iout,9210) delta_c_dot, ratio_1
@@ -1638,7 +1669,8 @@ c
         write(iout,9310) reladis(i,3), delrlds(i,3),
      &                   opening, closing, neutral, penetrated    
         write(iout,9315) c_0, c_1, delta_c_dot, T_new, a_n  
-        write(iout,9320) v1_dot, v2_dot, V_new, a_new
+        write(iout,9320) v1_dot, v2_dot, V_new, a_new, b_new
+        write(iout,9321) T_new_nuc, nucleation_active
         write(iout,9330)
         return
       end if     
@@ -1648,9 +1680,22 @@ c                     on a_new. the stress/state variable updating
 c                     with finite load/time increments would otherwise
 c                     allow a_new to exceed b_new.
 c
-      if( a_new / b_new .gt. max_ab_ratio ) then
-        a_new = max_ab_ratio * b_new 
-      end if  
+      if( (a_new / b_new) .gt. max_ab_ratio ) then
+c        write(iout,*) "max a/b flag"
+c        write(iout, 9600) a_new, b_new, max_ab_ratio, T_new
+        a_new_temp = max_ab_ratio * b_new  
+        if (a_new_temp < props%a_0) then    
+            ! limit b rather than a      
+            b_new = a_new/max_ab_ratio
+        else
+            a_new = a_new_temp   
+        endif 
+c next 3 lines are new
+c        call mm04_cavit_linear_stiff
+c        stiff_normal = stiff_linear*1.0d-12
+c        T_new = stiff_normal * reladis(i,3)  
+c        write(iout,9600) stiff_normal, reladis(i,3), T_new, a_new    
+      end if   
 c
       new_state    = 1
 c      
@@ -1678,8 +1723,10 @@ c
      &    /,15x,'opening, closing, neutral, penetrated: ',4l2)
 9315  format(15x,'c_0, c_1: ',2e14.5, 
      &    /,15x,'delta_c_dot, T_new, a_n: ',3e14.5)
-9320  format(15x, "v1_dot, v2_dot, V_new, a_new:     ",4e14.5)
+9320  format(15x, "v1_dot, v2_dot, V_new, a_new, b_new:     ",5e14.5)
+9321  format(15x, "T_new_nuc, Active nucleation?:     ",1e14.5, l1)
 9330  format(15x, "switch to linear stiffness path")
+9600  format(4e14.5)
 
 9800  format('>>>> FATAL ERROR. routine mm04_cavit_sig_update.',
      & /,    '                  iterations in mm04_nr_itr did not',
@@ -1818,8 +1865,9 @@ c              f_bar_i = 0.25, f_bar_j = 0.49
 c
 c              these new values accelerate deformations by reducing
 c              the normal traction at larger (a/b)**2
-c     
-      q_min   = 0.001d0
+c   
+      q_min   = 1.0d-09  
+c      q_min   = 0.001d0
       f_bar_i = 0.25d0 ! stanrdard values before Kristine's nuc model 0.15d0
       f_bar_j = 0.49d0 !   "                 "
 c      f_bar_i = 0.15d0 ! Kristine's recommendaed values. may 5, 2016
@@ -1897,7 +1945,7 @@ c                     Geissen equations for vdot are used, then
 c                     v2_dot must be computed here before computing c_0
 c
       if( VVNT ) then
-          c_0 = v2_dot * pi * b_n**2 
+          c_0 = v2_dot /( pi * b_n**2 )
           return
       endif     
 c
@@ -1918,7 +1966,7 @@ c
         end if
       end if
 c      
-      c_0 = v2_dot * pi * b_n**2  
+      c_0 = v2_dot /( pi * b_n**2  )
 c
       return
       end subroutine mm04_cavit_c0  
@@ -1937,24 +1985,35 @@ c    ****************************************************************
 c    *                                                              *
 c    *          subroutines: mm04_cavit_linear-stiff                *
 c    *                                                              *
-c    *             last modified:  3/20/2015 kbc                    *
+c    *             last modified:  2/03/2017 kbc                    *
 c    *                                                              *
 c    ****************************************************************
 c
 c
       subroutine mm04_cavit_linear_stiff
       implicit none
-c          
-      f_0 = (props%a_0 / props%b_0)**2
-      q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
-      stiff_linear =  props%b_0**2 * q / ( four * props%D * dtime )
+      double precision :: c_1_init
+c    
+      stiff_linear = props%const_linear_stiff  
+c      
+c     props%const_linear_stiffness is a user input parameter
+c     a negative input value is treated as a flag to use the
+c     linear stiffness computed based on the nonlinear cavitation
+c     stiffness evaluated for a_0 and b_0
+c
+      if  (stiff_linear < zero) then
+        f_0 = (props%a_0 / props%b_0)**2
+        q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
+        c_1_init = four * props%D /( props%b_0 * props%b_0 * q)
+c        if ( c_1_init < min_c1 ) c_1_init = min_c1
+        stiff_linear = one / (dtime*c_1_init)  
+      end if  
       if( debug_span_loop ) then
-        write(iout,*) "..... a_0, b_0, f_0, q: ",props%a_0,
-     &        props%b_0, f_0, q
-         write(iout,*) "..... K-linear: " , stiff_linear
+        write(iout,9000) props%a_0, props%b_0, f_0, q, stiff_linear
       end if
 c      
       return
+9000  format(15x, "a0, b0, f0, q, K_linear:  ",5e14.5)
       end  subroutine mm04_cavit_linear_stiff      
       
       end subroutine mm04_cavit_sig_update  ! note .......
@@ -2873,7 +2932,7 @@ c
       info_vector(1) = 15
       info_vector(2) = 6
       info_vector(3) = 0
-      info_vector(4) = 10
+      info_vector(4) = 11
 c
       return
       end
@@ -2900,7 +2959,7 @@ c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c      
-      implicit integer (a-z)
+      implicit none
       include 'common.main'
 c
 c                       parameters
@@ -2912,8 +2971,10 @@ c                       locals
 c
       double precision, 
      & allocatable :: history_dump(:,:,:), one_elem_states(:)
-      integer :: relem, elnum, hist_size, blockno, cohesive_elem
-      logical :: do_a_block, cohesive_type, local_debug
+      integer :: relem, elnum, hist_size, blockno, cohesive_elem,
+     &           cohesive_type
+      integer :: elem_type, felem, mat_type, int_points, span
+      logical :: do_a_block, do_block, local_debug
       double precision :: zero
       data zero / 0.0d00 /
 c      
@@ -3011,7 +3072,8 @@ c
       integer :: ipt   
       double precision :: 
      & N_ratio, a_ratio, b_ratio, V_ratio, lambda_4, a_b_ratio,
-     & a_bar, b_bar, a_L_ratio, T_n, T_nmax, T_shear, T_shr_max
+     & a_bar, b_bar, a_L_ratio, T_n, T_nmax, T_shear, T_shr_max,
+     & vdot_ratio
 c
       N_ratio   = zero
       a_ratio   = zero
@@ -3023,6 +3085,7 @@ c
       T_nmax    = zero
       T_shear   = zero
       T_shr_max = zero
+      vdot_ratio   = zero
 c       
       do ipt = 1, int_points
         a_bar     = history_dump(2,ipt,relem)
@@ -3038,6 +3101,7 @@ c
         T_nmax    = T_nmax +  history_dump(9,ipt,relem)
         T_shear   = T_shear +  history_dump(14,ipt,relem)
         T_shr_max = T_shr_max +  history_dump(15,ipt,relem)
+        vdot_ratio   = v_ratio + history_dump(8,ipt,relem)
       end do
 c
       one_elem_states(1)  = N_ratio / dble(int_points)            
@@ -3049,7 +3113,8 @@ c
       one_elem_states(7)  = T_n / dble(int_points)            
       one_elem_states(8)  = T_nmax / dble(int_points)            
       one_elem_states(9)  = T_shear/ dble(int_points)            
-      one_elem_states(10) = T_shr_max / dble(int_points)            
+      one_elem_states(10) = T_shr_max / dble(int_points) 
+      one_elem_states(11) = vdot_ratio / dble(int_points)                     
 c
       return     
 c
@@ -3083,7 +3148,7 @@ c
       integer :: i
       logical, save :: do_print = .false.
 c
-      num_states = 10  
+      num_states = 11  
       num_comment_lines  = 0   
       state_labels(1)  = "N / N_I"
       state_labels(2)  = "a / a_0"
@@ -3095,6 +3160,7 @@ c
       state_labels(8)  = "Tn (max)"
       state_labels(9)  = "Tshear"
       state_labels(10) = "Ts (max)"
+      state_labels(11) = "v2_dot/v1_dot"      
 c      
       state_descriptors(1)  = "Normalized cavity density"
       state_descriptors(2)  = "Normalized cavity radius"
@@ -3106,9 +3172,10 @@ c
       state_descriptors(8)  = "Max normal traction over history"
       state_descriptors(9)  = "Shear traction"
       state_descriptors(10) = "Max shear traction over history"
+      state_descriptors(11) = "Ratio of creep/diffusion vdot"      
 c
       if( do_print ) then
-        do i = 1, 10 
+        do i = 1, 11 
           write(out,9010) i, state_labels(i), state_descriptors(i)
         end do
         do_print = .false.   
@@ -4363,11 +4430,13 @@ c
       integer :: i, abs_elem
       logical :: here_debug, debug_set_props
       double precision ::
-     & three, one, half, four, stiff_shear, stiff_normal, f_0, q  
+     & three, one, half, four, zero, stiff_shear, stiff_normal, f_0, q,
+     & c_1_init, min_c1         
 c
       type( props_for_cavit), dimension(:) :: bcp(mxvl)
 c
-      data one, three, half, four / 1.0d0, 3.0d0, 0.5d0, 4.0d0 /   
+      data one, three, half, four, zero, min_c1 
+     &    / 1.0d0, 3.0d0, 0.5d0, 4.0d0, 0.0d0, 1.0d-10/  
 c
 c            get properties for the cavity cohesive material.
 c            use derivatives evaluated for zero stress and zero
@@ -4382,9 +4451,21 @@ c
 !DIR$ LOOP COUNT MAX=128
 !DIR$ IVDEP      
       do i = 1, span
+        stiff_normal = bcp(i)%const_linear_stiff 
+c      
+c     props%const_linear_stiffness is a user input parameter
+c     a negative input value is treated as a flag to use the
+c     linear stiffness computed based on the nonlinear cavitation
+c     stiffness evaluated for a_0 and b_0
+c
+      if  (stiff_normal < zero) then
          f_0 = (bcp(i)%a_0 / bcp(i)%b_0)**2
          q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
-         stiff_normal = bcp(i)%b_0**2 * q / ( four * bcp(i)%D * dtime )
+         c_1_init = four * bcp(i)%D /( bcp(i)%b_0 * bcp(i)%b_0 * q)
+c        if ( c_1_init < min_c1 ) c_1_init = min_c1
+        stiff_normal = one / (dtime*c_1_init)  
+      end if  
+c
          stiff_shear  = bcp(i)%eta_b / dtime
 c     
          cep(i,1,1) = stiff_shear 
@@ -4399,7 +4480,11 @@ c
          abs_elem = felem + i - 1
          f_0 = (bcp(i)%a_0 / bcp(i)%b_0)**2
          q   = log(one/f_0) - half * (three-f_0) * (one-f_0)
-         stiff_normal = bcp(i)%b_0**2 * q / ( four * bcp(i)%D * dtime )
+         c_1_init = four * bcp(i)%D /( bcp(i)%b_0 * bcp(i)%b_0 * q)
+         if ( c_1_init < min_c1 ) c_1_init = min_c1
+         stiff_normal = one / (dtime*c_1_init) 
+c         stiff_normal = bcp(i)%b_0**2 * q / ( four * bcp(i)%D * dtime )
+         stiff_shear  = bcp(i)%eta_b / dtime
          stiff_shear  = bcp(i)%eta_b / dtime
          write(iout,*) "    element: ", abs_elem
          write(iout,*) "... a_0: ", bcp(i)%a_0 
@@ -4423,6 +4508,7 @@ c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 4/16/2016 rhd              *
+c     *                   last modified : 2/2/2017 kbc               *
 c     *                                                              *
 c     *    called by wmpi_do_uexternaldb on both threads only        *
 c     *    and threads+mpi.  wmpi_do_uexternaldb located in          *
@@ -4492,7 +4578,7 @@ c
       double precision :: zero, 
      &                    a_0, b_0, eta_b, diffusion,
      &                    n_power, psi_angle, sigma_0, f_n, n_max, 
-     &                    nuc_stress_power, comp_mult
+     &                    nuc_stress_power, comp_mult, lin_stiff
 c        
       logical :: process_now, debug_local, ok, ok1, ok2, ok3,
      &           messages, logs(10)
@@ -4662,7 +4748,8 @@ c                   (15) F_N
 c                   (16) N_max
 c                   (17) nucleation stress exponent
 c                   (18) compression multiplier
-c                   (19) a single * to mark end of GB data for sanity
+c                   (19) linear stiffness
+c                   (20) a single * to mark end of GB data for sanity
 c                        checks
 c           
 c
@@ -4671,7 +4758,7 @@ c
         read(diskin,*,iostat=read_flg) gb_num, logs(1:6),
      &       a_0, b_0, eta_b, diffusion, n_power, psi_angle,
      &       sigma_0, f_n, n_max, nuc_stress_power,
-     &       comp_mult, asterik
+     &       comp_mult, lin_stiff, asterik
         nowline = nowline + 1
         if( read_flg .ne. 0 ) then
            write(kout,9310) read_flg, nowline
@@ -4702,6 +4789,7 @@ c
         gb_properties(igb)%n_max                  = n_max
         gb_properties(igb)%nuc_stress_exponent    = nuc_stress_power
         gb_properties(igb)%compression_multiplier = comp_mult
+        gb_properties(igb)%const_linear_stiffness = lin_stiff       
       end do ! over GBs
 c      
 c              8.   for sanity check, we require the next non-comment

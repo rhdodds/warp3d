@@ -2967,7 +2967,8 @@ c      if( local_debug ) write(iout,*) '  @ 2'
       if ( matchs_exact('sigma_star')       ) go to 950
       if ( matchs_exact('lambda_7')         ) go to 960
       if ( matchs_exact('eta_b')            ) go to 965
-      if ( matchs_exact(' r_i')              ) go to 970 ! see note 
+!      if ( matchs_exact(' r_i')              ) go to 970 ! see note 
+      if ( matchs_exact('linear_stiff')       ) go to 970 ! kbc     
       if ( matchs_exact('sigma_0')          ) go to 975
       if ( matchs_exact('t_c')              ) go to 980
       if ( matchs_exact('d')                ) go to 985
@@ -3033,7 +3034,7 @@ c
              write(iout,9216) matprp(cavit_loc+8)
              write(iout,9218) matprp(cavit_loc+9)
              write(iout,9220) matprp(cavit_loc+10)
-c             write(iout,9222) matprp(cavit_loc+11)
+             write(iout,9222) matprp(cavit_loc+11)
              write(iout,9224) matprp(cavit_loc+12)
              write(iout,9226) matprp(cavit_loc+13)
              write(iout,9228) matprp(cavit_loc+14)
@@ -3335,6 +3336,7 @@ c
          call errmsg(5,dum,'compression_multiplier',dumr,dumd)
       end if
       go to 210
+      
 c
 c **********************************************************************
 c *                                                                    *
@@ -3471,10 +3473,9 @@ c
          call errmsg(5,dum,'eta_b',dumr,dumd)
       end if
       go to 210
- 970  continue ! available for re-use. R_I not allowed on
-c                 input 
+ 970  continue ! kbc
       if( .not. numr(matprp(cavit_loc+11)) ) then
-         call errmsg(5,dum,'r_i',dumr,dumd)
+         call errmsg(5,dum,'k_lin_const',dumr,dumd)
       end if
       go to 210
  975  continue
@@ -3580,7 +3581,7 @@ c
  9216 format(2x,'sigma_star:   ',f15.6)
  9218 format(2x,'lambda_7:     ',f15.6)
  9220 format(2x,'eta_b:        ',f15.6)
- 9222 format(2x,'r_i:          ',f15.6)
+ 9222 format(2x,'k_lin_const:  ',f15.6)
  9224 format(2x,'sigma_0:      ',f15.6)
  9226 format(2x,'t_c:          ',f15.6)
  9228 format(2x,'d:            ',f15.6)
