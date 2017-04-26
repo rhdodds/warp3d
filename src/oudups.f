@@ -4,7 +4,7 @@ c     *                      subroutine oudups                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/19/2017 rhd              *
+c     *                   last modified : 4/26/2017 rhd              *
 c     *                                                              *
 c     *     gathers data for a block of elements to support          *
 c     *     generation of a patran, packet or hard copy output.      *
@@ -79,15 +79,15 @@ c             to cauchy stresses (skip interface-cohesive elements).
 c             if not stresses, gather strain data.
 c
       if( geonl .and. is_solid )
-     &   call gastr( rot_blk_n1, rot_n1_blocks(blk)%ptr(rot_offset),
-     &                ngp, 9, span )
+     &   call tanstf_gastr( rot_blk_n1, 
+     &      rot_n1_blocks(blk)%ptr(rot_offset), ngp, 9, span )
 c
       if( stress ) then
-        call gastr( urcs_blk_n, urcs_n_blocks(blk)%ptr(sig_offset),
-     &              ngp, nstrs, span )
+        call tanstf_gastr( urcs_blk_n, 
+     &         urcs_n_blocks(blk)%ptr(sig_offset), ngp, nstrs, span )
       else
-        call gastr( ddtse, eps_n_blocks(blk)%ptr(eps_offset), ngp,
-     &              nstr, span )
+        call tanstf_gastr( ddtse, eps_n_blocks(blk)%ptr(eps_offset),
+     &         ngp, nstr, span )
       end if
 c
       return

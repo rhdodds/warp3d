@@ -491,7 +491,7 @@ c     *                  subroutine dptstf_blocks                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/10/2016 rhd              *
+c     *                   last modified : 4/26/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine creates a separate copy of element       *
 c     *     data necessary for the tangent stiffness computation of  *
@@ -540,15 +540,14 @@ c                 o The local block is sized (span,hist_size,ngp).
 c                This makes it possible to pass a 2-D array slice for
 c                all elements of the block for a single gauss point.
 c
-      if( geonl )  call gastr( local_work%rot_blk_n1,
-     &                         rot_n1_blocks(blk)%ptr(1),
-     &                         ngp, 9, span )
+      if( geonl )  call tanstf_gastr( local_work%rot_blk_n1,
+     &                rot_n1_blocks(blk)%ptr(1), ngp, 9, span )
 c
       hist_size = history_blk_list(blk)
       local_work%hist_size_for_blk = hist_size
 c
-      call gastr( local_work%urcs_blk_n1, urcs_n1_blocks(blk)%ptr(1),
-     &            ngp, nstrs, span )
+      call tanstf_gastr( local_work%urcs_blk_n1,
+     &        urcs_n1_blocks(blk)%ptr(1), ngp, nstrs, span )
 c
 c
 c
@@ -986,6 +985,65 @@ c
 c
 !DIR$ VECTOR ALIGNED 
       vec = zero
+c
+      return
+      end
+
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine tanstf_gastr                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 04/26/2017 rhd             *
+c     *                                                              *
+c     *     gathers element stresses from the global                 *
+c     *     stress data structure to a block of similar,             *
+c     *     elements for all gauss points.                           *
+c     *                                                              *
+c     ****************************************************************
+c
+c           
+      subroutine tanstf_gastr( ml, mg, ngp, nprm, span )
+      implicit none
+      include 'param_def'
+c
+c               parameter declarations
+c
+      integer :: ngp, nprm, span
+      double precision :: ml(mxvl,nprm,*), mg(nprm,ngp,*)
+c
+      integer :: i, j, k      
+c    
+      if( ngp .ne. 8 ) then                            
+        do k = 1, ngp
+         do  j = 1, nprm
+!DIR$ LOOP COUNT MAX=128  
+!DIR VECTOR ALIGNED
+            do  i = 1, span
+               ml(i,j,k) = mg(j,k,i)
+            end do
+         end do
+        end do
+        return
+      end if
+c
+c                number of gauss points = 8, unroll.
+c
+      do  j = 1, nprm
+!DIR$ LOOP COUNT MAX=128  
+!DIR VECTOR ALIGNED
+        do  i = 1, span
+            ml(i,j,1) = mg(j,1,i)
+            ml(i,j,2) = mg(j,2,i)
+            ml(i,j,3) = mg(j,3,i)
+            ml(i,j,4) = mg(j,4,i)
+            ml(i,j,5) = mg(j,5,i)
+            ml(i,j,6) = mg(j,6,i)
+            ml(i,j,7) = mg(j,7,i)
+            ml(i,j,8) = mg(j,8,i)
+        end do
+      end do
 c
       return
       end
