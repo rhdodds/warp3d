@@ -4,7 +4,7 @@ c     *                      subroutine blcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 03/15/2017 rhd             *
+c     *                   last modified : 04/26/2017 rhd             *
 c     *                                                              *
 c     *     computes the linear strain-displacement matrices at a    *
 c     *     given gauss point for element block                      *                    
@@ -25,9 +25,9 @@ c
 c                       locals
 c      
       integer :: j, i, bpos1, bpos2 
-      double precision ::
-     &  btemp(mxvl,mxndel,ndim), zero  ! on stack
-      data zero / 0.0d0 /
+      double precision, allocatable :: btemp(:,:,:) 
+c
+      allocate( btemp(mxvl,mxndel,ndim) )
 c
 c                       compute building blocks of b. 
 c                       btemp - j,1 = NX for node j at gpn        
@@ -56,25 +56,6 @@ c
 c                       compute the linear strain-
 c                       displacement matrices, using btemp.
 c       
-c!      do  j = 1, nnode
-c!@!DIR$ LOOP COUNT MAX=128  
-c!@!DIR$ IVDEP
-c!         do i = 1, span
-c
-c!            b(i,j,1)=       btemp(i,j,1)
-c!            b(i,j,4)=       btemp(i,j,2)
-c!            b(i,j,6)=       btemp(i,j,3)
-c!c
-c!            b(i,bpos1+j,2)= btemp(i,j,2)
-c!            b(i,bpos1+j,4)= btemp(i,j,1)
-c!            b(i,bpos1+j,5)= btemp(i,j,3)
-c!c
-c!            b(i,bpos2+j,3)= btemp(i,j,3)
-c!            b(i,bpos2+j,5)= btemp(i,j,2)
-c!            b(i,bpos2+j,6)= btemp(i,j,1) 
-c!         end do
-c!      end do
-c
       do j = 1, nnode
 !DIR$ VECTOR ALIGNED
             b(1:span,j,1)=       btemp(1:span,j,1)
