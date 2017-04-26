@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/17/2017 rhd              *
+c     *                   last modified : 4/26/2017 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -362,12 +362,16 @@ c    *      7 = Intel MKL Pardiso symmetric (Win, Mac, Linux)             *
 c    *      8 = Intel MKL Pardiso asymmetric (Win, Mac, Linux)            *
 c    *      9 = hypre iterative solver w/ various preconditioners (LLNL)  *
 c    *          (Linux only)                                              *
+c    *     10 = Cluster Pardiso - symmetric. Linux only                   *
+c    *          (Linux only)                                              *
+c    *     11 = Cluster Pardiso - asymmetric. Linux only                  *
 c    *                                                                    *
 c    **********************************************************************
 c
 c
       old_solver_flag = -2
       solver_flag = 7
+      if( use_mpi ) solver_flag = 10
       solver_out_of_core = .false.
       solver_scr_dir(1:) = './warp3d_ooc_solver'
       solver_memory      = 500
