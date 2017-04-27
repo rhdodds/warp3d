@@ -1265,7 +1265,7 @@ c
 c
 c              set options for nucleation model
 c
-      small_new_cavities    = .true. ! true = new cavities have size a0
+      small_new_cavities    = .false. ! true = new cavities have size a0
       cavities_nucleated_t0 = .false. ! false = no growth until nuc 
 c                                       threshold met
 c
@@ -1361,6 +1361,7 @@ c
       stiff_normal = mark ! for error checking
       T_new        = mark ! for error checking
       new_state    = -1   ! saved in history for possible future use
+      switch_to_linear = .false. ! kbc 4/25/17
 c      
       select case( current_state )
       case( 1 ) 
@@ -1386,10 +1387,10 @@ c
       case( 6 ) 
           new_state = 7
           call mm04_cavit_std_update 
-          if( switch_to_linear ) then
-            call mm04_cavit_update_linear
-            new_state = 10
-          end if
+c           if( switch_to_linear ) then
+c            call mm04_cavit_update_linear
+c            new_state = 10
+c          end if
       case( 7 ) 
           new_state = 8
           call  mm04_cavit_update_linear
@@ -1407,6 +1408,7 @@ c
          write(iout,*) '*** fatal error mm04 cavit @ 1'
          call die_abort
       end select
+      if( switch_to_linear ) call mm04_cavit_update_linear !kbc 4/25/17
 c
 c             step 4: verify completion of update with a result.
 c                     update stress table and history
@@ -1595,7 +1597,8 @@ c   nucleation starting too early and too strongly (T_new can
 c   be numerically unstable, especially during early loading)
 c  
       call mm04_compute_solid_local( i ) 
-      T_new_nuc = min(Tn_solid, T_new)
+      T_new_nuc = Tn_solid
+c     T_new_nuc = min(Tn_solid, T_new)
 c                         
 c
 c             step 3: update remaining internal state variables and
@@ -1606,7 +1609,8 @@ c                     if we find that a_n < a_0 (within small tol),
 c                     the stress updating/solution process is in
 c                     an inconsistent state.
 c 
-      V1_dot = four * pi * props%D * T_new / q_factor
+      V1_dot = four * pi * props%D * T_new_nuc / q_factor
+c      V1_dot = four * pi * props%D * T_new / q_factor
       V_new  = V_n + dtime * (v1_dot + v2_dot)
 c
 c     determine if cavities are actively nucleating
@@ -1638,6 +1642,7 @@ c      write(iout,*) "nucleating: ", S, props%Sthr
         endif      
 c     grow cavities if nucleation has occurred (or not included)            
       elseif( cavities_nucleated_t0 .or. N_n .gt. props%N_I) then
+c      write(iout,*) "growing cavities"
         N_new = N_n
         b_new = b_n
         a_new = a_n + dtime*(v1_dot + v2_dot) / 
@@ -1663,6 +1668,7 @@ c
       switch_to_linear = .false.
       if( a_new .lt. props%a_0 ) then
         switch_to_linear = .true.
+        return ! kbc
         if( a_new .gt. local_tol_a_0 * props%a_0 ) return
         write(iout,9290) 
         write(iout,9300) felem+i-1, gpn
@@ -1682,7 +1688,8 @@ c                     allow a_new to exceed b_new.
 c
       if( (a_new / b_new) .gt. max_ab_ratio ) then
 c        write(iout,*) "max a/b flag"
-c        write(iout, 9600) a_new, b_new, max_ab_ratio, T_new
+c        write(iout,9300) felem+i-1, gpn       
+c        write(iout, 9600) a_new, b_new, a_new/b_new, T_new, T_new_nuc
         a_new_temp = max_ab_ratio * b_new  
         if (a_new_temp < props%a_0) then    
             ! limit b rather than a      
