@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/19/2016 rhd             *
+c     *                   last modified : 4/27/2017  rhd             *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -20,35 +20,30 @@ c
      &            ntimes_assembly
       implicit integer (a-z)
       include 'common.main'
-      real t1, wcputime, dumr
+      real :: t1, wcputime, dumr
       external wcputime
       character :: stcnam*8, dums*8, sdate_*24
       character(len=80) :: name, stflnm, rtflnm
       character(len=21) :: char_os
       character(len=11) :: compile_date
       character(len=8) :: compile_time
-      logical hilcmd,sbflg1,sbflg2, os_ok
-      logical endcrd,label,matchs,debug1,debug2,debug,endfil,
+      logical :: hilcmd,sbflg1,sbflg2, os_ok
+      logical :: endcrd,label,matchs,debug1,debug2,debug,endfil,
      &        string, matchs_exact
 c
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision
-     &  erprmd, dumd
-      real erprmr
+      double precision :: erprmd, dumd
+      real :: erprmr
       character :: erprms *50 
-      real :: wall, real_start, real_end, real_rate
 c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
-      logical fatal,coor,numnod,numel,elprop,elinc,constr,block
-      integer return_type
-      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      double precision tanstf_comps, sig_eps_comps, assem_comps
+      logical ::fatal,coor,numnod,numel,elprop,elinc,constr,block
+      integer :: return_type
 c
 c                       MPI: initialize all processors
 c                       and make workers go into the worker handler. if
 c                       else   wmpi_init is a dummy routine.
 c
-      tanstf_comps = 0.0d0; sig_eps_comps=0.0d0; assem_comps=0.0d0
       call wmpi_init
 c
 c                       initialize the load step timing and debug
@@ -1136,7 +1131,7 @@ c     *                      subroutine warp3d_normal_stop           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/20/2103                 *
+c     *                   last modified : 4/27/2017 rhd              *
 c     *                                                              *
 c     *     execute a normal shutdown with messages, etc.            *
 c     *                                                              *
@@ -1165,12 +1160,9 @@ c
      &  erprmd, dumd
       real erprmr
       character :: erprms *50
-      real :: wall, real_start, real_end, real_rate
 c
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
       logical fatal,coor,numnod,numel,elprop,elinc,constr,block
-      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      double precision tanstf_comps, sig_eps_comps, assem_comps
 c
 c                       cleanup some allocs first
 c
@@ -1188,11 +1180,6 @@ c
       write(out,*)
       t1 = wcputime ( 1 )
       write(out,'(">> total job wall time (secs): ", f12.2)') t1
-      
-c      write(out,*) " "
-c      write(out,*) "..... tanstf time: ", tanstf_comps
-c      write(out,*) "..... sig_eps_comps time: ", sig_eps_comps
-c      write(out,*) "..... assem time: ",assem_comps      
 c
 c                      close input and output files
 c
