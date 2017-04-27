@@ -4737,6 +4737,12 @@ c
 c
       data zero / 0.0d0 /
       local_debug = .false.
+
+#ifndef USE_NEML
+      write(*, *) "This version of WARP3D not compiled with NEML!"
+      call die_abort
+#endif
+
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -4757,6 +4763,7 @@ c
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut   
       matnum            = local_work%matnum
+
 c
 c
 c           get increment of temperature at gauss point for elements

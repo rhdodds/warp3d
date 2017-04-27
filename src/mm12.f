@@ -1,3 +1,5 @@
+#ifdef USE_NEML
+
 c *******************************************************************
 c *                                                                 *
 c *        material model # 9 -- <available>                        *  
@@ -763,3 +765,96 @@ c
             end do
 c
       end subroutine
+
+c Dummy declarations
+
+#else
+
+      subroutine mm12( 
+     &  step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
+     &  iout, signal_flag, adaptive_possible, cut_step_size_now,
+     &  model_ptr,
+     &  time_n, time_np1, temp_n, temp_np1,
+     &  strain_n, strain_np1, stress_n, stress_np1,
+     &  hist_n, hist_np1)
+            
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine cnst12( 
+     &  span, felem, gpn, iter, iout, mxvl, nstrn, 
+     &  weight, history_n,
+     &  history_np1, stress_np1, dmat, det_jac_block)
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+       end subroutine
+
+      subroutine mm12_setup_model(input_file, model_name,
+     &            itype, success, ptr)
+
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine mm12_cleanup_model(itype, success, ptr)
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine oumm12( gpn, mxvl, span, iout, elestr,
+     &                   stress, history )
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine mm12_set_sizes( info_vector )
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine mm12_states_labels( size_state,
+     &      num_states, state_labels, state_descriptors, out,
+     &      comment_lines, max_comment_lines, num_comment_lines )
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine mm12_states_values( itype, elem_states_output,
+     &                                 nrow_states, num_states  )
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine mm12_setup_alpha(span, model_ptr, gp_temps, alpha_vec)
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+      subroutine mm12_set_sizes_special( info_vector )
+
+            write(*,*) "This version of WARP3D not compiled with NEML!"
+            call die_abort
+
+      end subroutine
+
+#endif
+
+

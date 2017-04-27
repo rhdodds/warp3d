@@ -2036,6 +2036,11 @@ c
 c
       local_debug = .false.
       matnum = local_work%matnum
+#ifndef USE_NEML
+      write(*,*) "This version of WARP3D not compiled with NEML!"
+      call die_abort
+#endif
+
 c
 c                   The only properties we should need
 c
