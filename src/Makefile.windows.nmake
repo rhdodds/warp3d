@@ -41,7 +41,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 3300
+BUILDNUM = 3310
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows_64
@@ -153,7 +153,6 @@ OBJ =	 \
 	$(OD)/errchk$O	 \
 	$(OD)/errmsg$O	 \
 	$(OD)/find_neighbors$O	 \
-	$(OD)/gastr$O	 \
 	$(OD)/gatemps$O	 \
 	$(OD)/get_edest$O	 \
 	$(OD)/growth_loads$O	 \

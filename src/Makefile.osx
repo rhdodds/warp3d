@@ -40,7 +40,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3300
+BUILDNUM := 3310
 #
 ODIR = ././../obj_mac_os_x
 EXE_NAME = warp3d.omp
@@ -184,7 +184,6 @@ OBJ =	 \
 	$(OD)/errchk.o	 \
 	$(OD)/errmsg.o	 \
 	$(OD)/find_neighbors.o	 \
-	$(OD)/gastr.o	 \
 	$(OD)/gatemps.o	 \
 	$(OD)/get_edest.o	 \
 	$(OD)/growth_loads.o	 \

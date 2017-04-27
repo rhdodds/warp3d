@@ -3,22 +3,41 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: April 19, 2017
+#   Last modifications: April 27, 2017
 #
 #   Description:
 #
 #     Common parts of makefile for building WARP3D on Linux
-#     This file used to build the OpenMP and MPI + OpenMP versions when
+#     This file is used to build the OpenMP and MPI + OpenMP versions when
 #     invoked by one of the two drivers (Makefile.linux_em64t.omp or
 #     Makefile.linux_em64t.mpi_omp)
 #
-#     Variables set on entry bythe pre makefiles: Makefile.linux_em64t.omp
+#     Variables set on entry by the pre makefiles: Makefile.linux_em64t.omp
 #     and Makefile.linux_em64t.mpi
 #
 #     ODIR, COMPILER, HYINC, HYLIB, MPIOPT, MKLROOT
 #
+#     Notes  
+#
+#       1. We specify the -xHost  -align array64byte ifort options. 
+#
+#       2. The compiler will generate code for the highest level 
+#          instruction set available in your processor(s).
+#
+#       3. WARP3D code ** requires ** that your processor support the
+#          AVX instruction set as a minimum. 
+#
+#          These processors became available in early 2011 and include:
+#             2nd Generation Intel® Core™ i7 Processors
+#             2nd Generation Intel® Core™ i5 Processors
+#             2nd Generation Intel® Core™ i3 Processors
+#             Intel® Xeon® Processor E5 Family
+#             Intel® Xeon® Processor E3 Family
+#             + all newer processors
+#
+#
 OSNAME   := Linux
-BUILDNUM := 3270
+BUILDNUM := 3310
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -32,25 +51,25 @@ OD       = $(ODIR)
 RMC      = /bin/rm -f
 MVC      = /bin/mv -f
 #
-#              compiler and linker options
-#
 #              common options other than used here: 
 #                      FTRAP = -ftrapuv -check uninit
 #                     INLINE = -inline-level=0
 #                    PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
-#              see notes on MACHINE_TYPE and MEMALIGN
-FTRAP = 
-INLINE =  -no-inline-factor
-PROFILE = 
-OPT_REPORT = -qopt-report-annotate=html -qopt-report=5
+FTRAP      = 
+INLINE     = -no-inline-factor
+PROFILE    = 
+OPT_REPORT = -qopt-report-annotate=text -qopt-report=5
 OPT_REPORT = 
-OPENMP =  -qopenmp -reentrancy 
-MACHINE_TYPE = -xHOST # change to blank for most processor compatibility
-MEMALIGN = -align array64byte # change to blank unless -xHOST is used
+OPENMP     = -qopenmp -reentrancy 
+#
+MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte  
+DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
+MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE)
+#
 FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz  \
          $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
-         $(MEMALIGN) $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
+         $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
 FOR      = $(COMPILER) $(OPT_REPORT) $(FCOPTS)
 LINK     = $(COMPILER) $(FCOPTS)
@@ -171,7 +190,6 @@ OBJ =	 \
 	$(OD)/errchk.o	 \
 	$(OD)/errmsg.o	 \
 	$(OD)/find_neighbors.o	 \
-	$(OD)/gastr.o	 \
 	$(OD)/gatemps.o	 \
 	$(OD)/get_edest.o	 \
 	$(OD)/growth_loads.o	 \
