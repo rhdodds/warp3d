@@ -2081,6 +2081,10 @@ c
       nelem = 0
       do el=1,noelem
             matnum = elstor(2,el)
+c                 Dummy  material
+            if (matnum .le. 0) then
+                  cycle
+            end if
             mattype = matprp(9,matnum)
             if (mattype .eq. 10) then
                   countme = (imatprp(104,matnum) .eq. 2) .or.
