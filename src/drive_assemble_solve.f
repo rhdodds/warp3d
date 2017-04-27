@@ -31,9 +31,6 @@ c
       integer :: now_iteration
       logical :: first_solve, suggested_new_precond
 c
-      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      double precision :: tanstf_comps, sig_eps_comps, assem_comps
-c
 c                    locals
 c
       integer :: i, k, error_code, nnz, mkl_threads, num_enode_dof,
@@ -52,21 +49,12 @@ c
      &                      local_debug2 = .false.
 c
       real, external :: wcputime
-      double precision :: start, end
       double precision, parameter :: zero = 0.0d00
       double precision, allocatable :: p_vec(:), k_diag(:), u_vec(:)
 c
       data old_neqns, old_ncoeff, cpu_stats, save_solver
      &     / 0, 0, .true., .false. /
 c
-c
-c      
-c!DIR$ ASSUME_ALIGNED dof_eqn_map:32
-c!DIR$ ASSUME_ALIGNED u_vec:64
-c
-c    
-      call cpu_time( start ) 
-      
       if( local_debug ) write(*,*) '... drive_assem_solve ... @ 1'
       if( .not. show_details ) cpu_stats = .false.
 c
@@ -154,10 +142,6 @@ c
 c
       if( local_debug ) write(*,*) '... drive_assem_solve @ 4'
       call t_end_assembly( assembly_total, start_assembly_step )
-      
-      call cpu_time( end )
-      assem_comps = assem_comps + (end-start)
-      
 c
 c
 c          3.  solve the equations

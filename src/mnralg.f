@@ -41,8 +41,7 @@ c
 c
       implicit integer (a-z)
       include 'common.main'
-      double precision ::
-     &  mf, mf_nm1, dt_original
+      double precision :: mf, mf_nm1, dt_original
       logical :: mf_ratio_change
       double precision :: sumrr, sumdd
 c
@@ -51,9 +50,7 @@ c
       double precision ::
      &  mgres1, magdu1, zero, one, mgload, ext_tol,
      &  scaling_load, mag
-      double precision,
-     &  allocatable, dimension(:) ::u_n_local
-      
+      double precision, allocatable, dimension(:) ::u_n_local
 c     
       logical :: dynamic, material_cut_step, emit_extrap_msg,
      & emit_forced_linear_k_for_step, ls_request_adaptive,
@@ -1860,18 +1857,12 @@ c
       logical :: stiff_update_flg, show_details
 c
       integer :: local_step, local_iter
-      common /bobtiming/ tanstf_comps, sig_eps_comps, assem_comps
-      double precision tanstf_comps, sig_eps_comps, assem_comps
-      double precision :: start, end
 c
       stiff_update_flg = .true.
       local_step = step   ! just protect values
       local_iter = iter
       if ( show_details ) write(out,9110) step, iter
-      call cpu_time( start )
       call tanstf( .false., local_step, local_iter )
-      call cpu_time( end )
-      tanstf_comps = tanstf_comps + (end-start)
       return
 c
  9110 format(7x,
