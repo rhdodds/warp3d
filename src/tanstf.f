@@ -1019,7 +1019,7 @@ c
         do k = 1, ngp
          do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
-!DIR VECTOR ALIGNED
+!DIR$ VECTOR ALIGNED
             do  i = 1, span
                ml(i,j,k) = mg(j,k,i)
             end do
@@ -1032,7 +1032,7 @@ c                number of gauss points = 8, unroll.
 c
       do  j = 1, nprm
 !DIR$ LOOP COUNT MAX=128  
-!DIR VECTOR ALIGNED
+!DIR$ VECTOR ALIGNED
         do  i = 1, span
             ml(i,j,1) = mg(j,1,i)
             ml(i,j,2) = mg(j,2,i)

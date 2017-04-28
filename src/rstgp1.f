@@ -862,7 +862,7 @@ c              for each element in block, update stresses by
 c              [D-elastic] * uddt. uddt contains thermal increment +
 c              increment from imposed nodal displacements
 c
-!DIR$ vector aligned
+!DIR$ VECTOR ALIGNED
       stress_np1 = stress_n
 c      
       do k = 1, 6
