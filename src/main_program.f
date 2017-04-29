@@ -16,8 +16,7 @@ c
       use file_info
       use main_data, only : output_packets, windows_os, osx_os, 
      &                      linux_os
-      use performance_data, only : time_assembly, assembly_total,
-     &            ntimes_assembly
+      use performance_data
       implicit integer (a-z)
       include 'common.main'
       real :: t1, wcputime, dumr
@@ -44,6 +43,7 @@ c                       MPI: initialize all processors
 c                       and make workers go into the worker handler. if
 c                       else   wmpi_init is a dummy routine.
 c
+      call t_init_performance
       call wmpi_init
 c
 c                       initialize the load step timing and debug
@@ -1142,18 +1142,20 @@ c
       subroutine warp3d_normal_stop
       
       use file_info
-      use main_data, only : output_packets
+      use main_data, only : output_packets 
       use performance_data, only : time_assembly, assembly_total,
-     &            ntimes_assembly
+     &            ntimes_assembly,  t_performance_eoj,
+     &            t_performance_eoj_pardiso
       implicit integer (a-z)
       include 'common.main'
-      real t1, wcputime, dumr
+      real t1, wcputime, dumr, warptime, pardiso_time
       external wcputime
       character(len=8) :: stcnam, dums, sdate_*24
       character(len=80) :: name, stflnm, rtflnm
-      logical hilcmd,sbflg1,sbflg2
+      logical hilcmd, sbflg1, sbflg2
       logical endcrd,label,matchs,debug1,debug2,debug,endfil,
      &        string, matchs_exact
+      logical, parameter :: output_1_thread_cpu_times = .false.
 c
       common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
       double precision
@@ -1180,6 +1182,16 @@ c
       write(out,*)
       t1 = wcputime ( 1 )
       write(out,'(">> total job wall time (secs): ", f12.2)') t1
+c      
+      if( output_1_thread_cpu_times ) then 
+        call t_performance_eoj( warptime )
+        write(out,*) ' '
+        call t_performance_eoj_pardiso( pardiso_time )
+        write(out,*) ' '
+        write(out,*) '... warp3d cpu time:  ', warptime
+        write(out,*) '... Pardiso cpu time: ', pardiso_time
+        write(out,*) '... warp3d - Pardiso: ', warptime - pardiso_time
+      end if
 c
 c                      close input and output files
 c
