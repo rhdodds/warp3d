@@ -3,14 +3,14 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: April 20, 2017
+                      Last Update: April 28, 2017
                       
 *** LATE BREAKING NEWS ***
 
 The ready-to-run executables included in this distribution were built
 on Ubuntu 14.04.5 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 2.
 
-These executables also run on RedHat/Centos 7.3. 
+These executables also run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS
 
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).

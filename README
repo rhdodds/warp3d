@@ -3,7 +3,7 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: April 20, 2017
+                   Last Update: April 28, 2017
                    
                    Version 17.8.0 on all Platforms
                    
@@ -252,7 +252,7 @@ running WARP3D.
   OpenMP threaded version, the Intel MPI system must be installed.
   
   The included executables are built on Ubuntu 14.04.5 LTS.
-  There are verified to run on RedHat/Centos 7.3.
+  There are verified to run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS
 
   run_mac_os_x  (a directory)
   ===========================
