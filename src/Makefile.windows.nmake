@@ -60,7 +60,7 @@ STACKSIZE  = /F400000000
 #
 MINIMUM_MACHINE_TYPE = /QaxAVX /align:array64byte
 DEFAULT_MACHINE_TYPE = /QxHOST /align:array64byte
-MACHINE_TYPE         = $(MINIMUM_MACHINE_TYPE)
+MACHINE_TYPE         = $(DEFAULT_MACHINE_TYPE)
 #
 F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
 F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback  
