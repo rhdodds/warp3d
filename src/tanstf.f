@@ -709,7 +709,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/15/2017 rhd              *
+c     *                   last modified : 5/2/2017 rhd               *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     element stiffnesses                                      *
@@ -745,11 +745,10 @@ c
       end if
 c
       allocate( local_work%vol_block(mxvl,8,3),
-     1  local_work%volume_block(mxvl),
-     2  local_work%jac_block(mxvl,3,3),
-     3  local_work%b_block(mxvl,mxedof,nstr),
-     4  local_work%bt_block(mxvl,nstr,mxedof),
-     5  local_work%bd_block(mxvl,mxedof,nstr), stat=error )
+     &  local_work%volume_block(mxvl),
+     &  local_work%jac_block(mxvl,3,3),
+     &  local_work%b_block(mxvl,mxedof,nstr),
+     &  local_work%bd_block(mxvl,mxedof,nstr), stat=error )
       if( error .ne. 0 ) then
            write(out,9000) 2
            call die_abort
@@ -836,7 +835,7 @@ c     *                   subroutine tanstf_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/10/2016 rhd              *
+c     *                   last modified : 5/2/2017 rhd               *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -870,11 +869,10 @@ c
       if( local_debug ) write(out,*) "..tanstf_deall @ 5"
 c
       deallocate( local_work%vol_block,
-     1  local_work%volume_block,
-     2  local_work%jac_block,
-     3  local_work%b_block,
-     4  local_work%bt_block,
-     5  local_work%bd_block, stat=error )
+     &  local_work%volume_block,
+     &  local_work%jac_block,
+     &  local_work%b_block,
+     &  local_work%bd_block, stat=error )
        if( error .ne. 0 ) then
            write(out,9000) 2
            call die_abort

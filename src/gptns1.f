@@ -217,12 +217,12 @@ c
 c
       if( asymmetric_assembly ) then
         call bdbt_asym( span, local_work%b_block, 
-     &                local_work%bt_block, local_work%bd_block, 
+     &                local_work%bd_block, 
      &                local_work%cep, local_work%ek_full, mxvl,
      &                mxedof, totdof*totdof, totdof )
       else   ! symmetric assembly
          call bdbtgen( span, icp, local_work%b_block,
-     &                 local_work%bt_block, local_work%bd_block,
+     &                 local_work%bd_block,
      &                 local_work%cep, local_work%ek_symm, mxvl, 
      &                 mxedof, utsz, nstr, totdof, mxutsz )
       end if
@@ -986,14 +986,14 @@ c     *                  subroutine bdbt_asym                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                last modified : 9/22/2016 rhd                 *
+c     *                last modified : 5/1/2017 rhd                  *
 c     *                                                              *
 c     *     trans(B) * D * B for the asymmetric case.  Handles all   *
 c     *     element types                                            *
 c     *                                                              *
 c     ****************************************************************
 c    
-      subroutine bdbt_asym( span, b, bt, bd, d, ek_full, mxvl, mxedof, 
+      subroutine bdbt_asym( span, b, bd, d, ek_full, mxvl, mxedof, 
      &                      ncol_ek, totdof )
       implicit none
 c
@@ -1002,24 +1002,11 @@ c
       integer :: span, mxvl, mxedof, ncol_ek, nstr, totdof
       double precision ::
      &   b(mxvl,mxedof,6), ek_full(span,ncol_ek), d(mxvl,6,6),
-     &   bd(mxvl,mxedof,6), bt(mxvl,6,totdof)
+     &   bd(mxvl,mxedof,6)
 c
 c                       locals
 c
       integer :: i, j, k, row, col
-c
-c              set trans( [B] )
-c
-      do j = 1, totdof
-            do k = 1, 6
-!DIR$ LOOP COUNT MAX=128  
-!DIR$ IVDEP
-!DIR$ VECTOR ALIGNED
-        do i = 1, span
-          bt(i,k,j)= b(i,j,k)
-       end do
-      end do
-      end do
 c
 c              perform multiplication of [D]*[B-mat]. 
 c              assumes full [D] and [B]full matrix. 
@@ -1091,15 +1078,14 @@ c
              j = j + 1  
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
-!DIR$ VECTOR ALIGNED
         do i = 1, span
          ek_full(i,j) = ek_full(i,j)
-     &         +   bt(i,1,col) * bd(i,row,1) 
-     &         +   bt(i,2,col) * bd(i,row,2)
-     &         +   bt(i,3,col) * bd(i,row,3)
-     &         +   bt(i,4,col) * bd(i,row,4)
-     &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)
+     &         +   b(i,col,1) * bd(i,row,1) 
+     &         +   b(i,col,2) * bd(i,row,2)
+     &         +   b(i,col,3) * bd(i,row,3)
+     &         +   b(i,col,4) * bd(i,row,4)
+     &         +   b(i,col,5) * bd(i,row,5)
+     &         +   b(i,col,6) * bd(i,row,6)
         end do
        end do 
       end do
@@ -1113,7 +1099,7 @@ c     *               subroutine bdbtgen   (symmetric only)          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/22/2016 rhd              *
+c     *                   last modified : 5/1/2017 rhd               *
 c     *                                                              *
 c     *     this subroutine performs the multiplication of the       *
 c     *     transpose of the strain-displacement matrix by the       *
@@ -1124,7 +1110,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine bdbtgen( span, icp, b, bt, bd, d, ek_symm,
+      subroutine bdbtgen( span, icp, b, bd, d, ek_symm,
      &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )
       implicit none
 c
@@ -1134,22 +1120,11 @@ c
      &           icp(mxutsz,*)
       double precision ::
      &   b(mxvl,mxedof,*), ek_symm(span,utsz), d(mxvl,nstr,*),
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)
+     &   bd(mxvl,mxedof,*)
 c
 c                       locals
 c
       integer :: i, j, k, row, col
-c
-c              set trans( [B] )
-c
-      do j = 1, totdof
-            do k = 1, 6
-!DIR$ LOOP COUNT MAX=128  
-!DIR$ IVDEP
-!DIR$ VECTOR ALIGNED
-          bt(1:span,k,j) = b(1:span,j,k)
-       end do
-      end do
 c
 c              perform multiplication of [D]*[B-mat]. 
 c              assumes full [D] and [B]full matrix. 
@@ -1160,7 +1135,6 @@ c
       do j = 1, totdof
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
-!DIR$ VECTOR ALIGNED
        do i = 1, span
            bd(i,j,1) = d(i,1,1) * b(i,j,1)
      &               + d(i,2,1) * b(i,j,2)
@@ -1216,15 +1190,14 @@ c
         col = icp(j,2)
 !DIR$ LOOP COUNT MAX=128  
 !DIR$ IVDEP
-!DIR$ VECTOR ALIGNED
         do i = 1, span
          ek_symm(i,j) = ek_symm(i,j)
-     &         +   bt(i,1,col) * bd(i,row,1)
-     &         +   bt(i,2,col) * bd(i,row,2)
-     &         +   bt(i,3,col) * bd(i,row,3)
-     &         +   bt(i,4,col) * bd(i,row,4)
-     &         +   bt(i,5,col) * bd(i,row,5)
-     &         +   bt(i,6,col) * bd(i,row,6)
+     &         +   b(i,col,1) * bd(i,row,1)
+     &         +   b(i,col,2) * bd(i,row,2)
+     &         +   b(i,col,3) * bd(i,row,3)
+     &         +   b(i,col,4) * bd(i,row,4)
+     &         +   b(i,col,5) * bd(i,row,5)
+     &         +   b(i,col,6) * bd(i,row,6)
         end do
       end do
 c

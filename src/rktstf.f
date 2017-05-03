@@ -4,7 +4,7 @@ c     *                      subroutine rktstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/8/2016 rhd               *
+c     *                   last modified : 5/2/2017 rhd               *
 c     *                                                              *
 c     *     drive computation of tangent stiffness matrices for a    *
 c     *     block of similar elements.                               *
@@ -150,7 +150,6 @@ c
       nlength = mxvl * mxedof * nstr 
       call rktstf_zero_vec( local_work%b_block,  nlength )
       call rktstf_zero_vec( local_work%bd_block, nlength )
-      call rktstf_zero_vec( local_work%bt_block, nlength )
 c
       do gpn = 1, ngp
         call gptns1( local_work%cp, local_work%icp, gpn, props,
