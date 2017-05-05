@@ -69,21 +69,30 @@ Quick Start Using the Ready-to-Run Executable
    
 5. We continue to have issues on some Windows machines with the 
    system dll:  libiomp5md.dll
+   depending on what other software is installed on the machine.
    We include a current version of this DLL in the run_windows_64
-   directory. 
+   directory with the save_libiomp5md.dll as a precaution.
         
    In some instances, we see that WARP3D fails to start properly 
    with a Windows pop-up window saying: The Application Failed to 
-   Start Properly ...
+   Start Properly ... or that the libiomp5md.dll is missing.
         
-   Renaming libiomp5md.dll to save_libiomp5md.dll fixes the problem.
+   On a *new* install of Windows 10, the first execution of WARP3D
+   will fail with the message libiomp5md.dll not found.
+   
+   Renaming save_libiomp5md.dll to libiomp5md.dll fixes the problem.
 
 6. To run WARP3D using the built-in Windows software,
    open a standard "command shell" using any technique you know 
    [on W10, click Start and type the word command in search box. 
-   The Command shell is at top of list]. The example below assumes you 
-   have installed the WARP3D distribution in the directory c:\warp3d 
+   The Command shell is at top of list]. 
+   
+    ** The example below assumes you have installed the
+    ** WARP3D distribution in the directory c:\warp3d
+       
    (shortened name from the as distributed name warp3d_distribute_...).
+   Modify as needed to the location you installed WARP3D.
+   
    The example here changes to the example problems directory 
    and starts execution to run test_18 (crack growth in a SEB specimen 
    using Gurson cell elements).
