@@ -5,7 +5,7 @@ c     *                      subroutine inelbk                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 2/27/2017 rhd              *
+c     *                   last modified : 5/12/2017 rhd              *
 c     *                                                              *
 c     *     input of element blocking information. computations for  *
 c     *     element blocking and optionally domains if requested     *
@@ -207,6 +207,7 @@ c
 c      
       if( matchs( 'automatic',4) ) then
          auto_blking = .true.
+         if( use_mpi ) auto_domains = .true.
       else
           write(out,9040)  ! unknown blocking option
           return
@@ -228,10 +229,10 @@ c
         end if
       end if
 c
-      if( matchs('domains',4) ) then
-        auto_domains = .true.
-        if( matchs('automatic',4) ) call splunj
-      end if
+c              scan optional words to maintain compatibility
+c
+      if( matchs('domains',4) ) call splunj
+      if( matchs('automatic',4) ) call splunj
 c
       if( matchs('display',4) ) then
         display = .true.
