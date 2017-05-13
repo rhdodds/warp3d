@@ -30,8 +30,14 @@ function install_mpi
 #    copy true MPI versions of MPI code to current
 #    directory for parallel execution using MPI.
 
-     mpi_match=`cmp ./mpi_code.f $mpi_dir/mpi_code_real.f | wc -l`
-     if [ ! $mpi_match = "0" ]; then
+     mpi_match1=`cmp ./mpi_code.f $mpi_dir/mpi_code_real.f | wc -l`
+     mpi_match2=`cmp ./mpi_handle_slaves.f $mpi_dir/mpi_handle_slaves_real.f | wc -l`    
+#     
+     if [ ! $mpi_match1 = "0"  ]; then
+        cd $mpi_dir
+        ./install_mpi
+        cd $WARP3D_HOME/src
+     elif [ ! $mpi_match2 = "0"  ]; then
         cd $mpi_dir
         ./install_mpi
         cd $WARP3D_HOME/src
