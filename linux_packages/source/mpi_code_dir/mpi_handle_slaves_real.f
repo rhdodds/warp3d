@@ -5,7 +5,7 @@ c     *                      subroutine wmpi_handle_slaves           *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : rhd 1/31/2017 rhd          *
+c     *                   last modified : rhd 5/12/2017 rhd          *
 c     *                                                              *
 c     *     The MPI implementation of warp3d follows a master-worker *
 c     *     approach for most of the code.  The root processor       *
@@ -298,7 +298,7 @@ c
          if(debug) write(out,'("=> Proc",i3,"all j temp stuff")') myid
          call di_node_props_setup (dum1,dum2)
 c
-c           do = 31: Cpardiso unsymmetric
+c           do = 31: CPardiso unsymmetric
 c
       case( 31 ) 
          if(debug) write(out,'("=> Proc",i3," cpardiso_unsymmetric")')
@@ -414,7 +414,14 @@ c
          if (debug) write(out,'("=> Proc", i3,"send simple")') myid
          call wmpi_send_simple_angles
 c
-      case default
+c           do = 53: checks before callin stpdrv in routine compute
+
+      case( 53 ) 
+         if( debug ) write(out,'("=> Proc",i3,
+     &       " checks before stpdrv for compute command")') myid
+         call wmpi_compute_set_history_locs
+c          
+       case default
          write(out,9000)
          call die_abort
       end select

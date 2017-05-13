@@ -4,7 +4,7 @@ c     *                                                              *
 c     *                      subroutine wmpi_init                    *
 c     *                                                              *
 c     *                       written by : asg                       *
-c     *                                                              *
+c     *                                                             *
 c     *                   last modified : 12/17/2017 rhd             *
 c     *                                                              *
 c     *     This routine initializes MPI on all processors at the    *
@@ -973,6 +973,8 @@ c
      &                           edest_blk_list, cdest_blk_list
       use segmental_curves
       use contact, only : use_contact
+      use mm10_defs, only : one_crystal_hist_size, common_hist_size
+      
 c
       implicit none
       include "mpif.h"
@@ -1015,10 +1017,15 @@ c
      &               ierr)
       call MPI_BCAST(asymmetric_assembly,1,MPI_LOGICAL,0,
      &      MPI_COMM_WORLD, ierr)
+     
       if( nonlocal_analysis .and. myid .eq. 0 ) then
          write(out,9100)
          call die_abort
       end if
+      call MPI_BCAST( one_crystal_hist_size, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( common_hist_size, 1, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
 c
 c             static arrays:
 c
@@ -3016,52 +3023,51 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_send_simple_angles      *
+c     *              subroutine wmpi_send_simple_angles              *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 3/12/14                    *
+c     *                   last modified : 4/26/2017 rhd              *
 c     *                                                              *
 c     *           Send the simple angle properties, if required      *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_send_simple_angles
-            use crystal_data, only: srequired, simple_angles, nangles,
-     &            mc_array
-            implicit integer(a-z)
-            include 'mpif.h'
+      use crystal_data, only: srequired, simple_angles, nangles,
+     &                        mc_array
+      implicit none
+      include 'mpif.h'
       include 'common.main'
+      integer :: ierr
 c     
-            if (myid .eq. 0) then
-                  call wmpi_alert_slaves(49)
-            end if
-
-            call MPI_Bcast(srequired, 1, MPI_LOGICAL, 0,
-     &            MPI_COMM_WORLD, ierr)
-
-            if (srequired) then
-              call MPI_Bcast(nangles, 1, MPI_INTEGER, 0,
-     &            MPI_COMM_WORLD, ierr)
-              if (myid .ne. 0) then
-                if (.not. allocated(simple_angles)) then
-                  allocate(simple_angles(nangles,3))
-                end if
-                if (.not. allocated(mc_array)) then
-                  allocate(mc_array(noelem,max_crystals))
-                end if
-              end if
-
-              call MPI_Bcast(simple_angles, 3*nangles, 
-     &            MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
-              call MPI_Bcast(mc_array, noelem*max_crystals,
-     &            MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-
-            end if
-
-            return
-
-       end subroutine
+c              get the workers synced to this point
+c
+      if( root_processor ) call wmpi_alert_slaves(52)
+c
+      call MPI_Bcast( srequired, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
+     &                ierr )
+c
+      if( .not. srequired ) return
+c
+      call MPI_Bcast( nangles, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
+     &                ierr )
+c
+      if( worker_processor ) then
+        if( .not. allocated(simple_angles) ) 
+     &             allocate(simple_angles(nangles,3))
+        if( .not. allocated(mc_array) )
+     &             allocate(mc_array(noelem,max_crystals))
+      end if
+c
+      call MPI_Bcast( simple_angles, 3*nangles, MPI_DOUBLE_PRECISION,
+     &                0, MPI_COMM_WORLD, ierr )
+      call MPI_Bcast( mc_array, noelem*max_crystals, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
+c
+      return
+c
+      end subroutine
 
 c
 c     ****************************************************************
@@ -3070,148 +3076,235 @@ c     *                      subroutine wmpi_send_crystals           *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 8/16/12                    *
+c     *                   last modified : 5/12/2017 rhd              *
 c     *                                                              *
 c     *           Send all the crystal properties to the workers     *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_send_crystals
-            use crystal_data, only: c_array, angle_input,
-     &            crystal_input, data_offset, print_crystal
-            implicit integer(a-z)
-            include 'mpif.h'
+      use crystal_data, only: c_array, angle_input,
+     &                        crystal_input, data_offset, print_crystal
+      implicit none
+      include 'mpif.h'
       include 'common.main'
-            integer :: nelem, mxcry, ierr
-            integer, parameter :: count_struct=5
-            integer :: blocklens(0:4), indices(0:4), otypes(0:4)
-            integer :: size_int, size_dp, size_log, ntype
+      integer, parameter :: count_struct=9
+      integer ::  nelem, mxcry, ierr, i, blocklens(0:8), indices(0:8),
+     &            otypes(0:8), size_int, size_dp, size_log, ntype
+      logical, parameter :: local_debug = .false.
 c
-            if (myid .eq. 0) then
-                  call wmpi_alert_slaves(49)
+      if( myid .eq. 0 ) then
+          call wmpi_alert_slaves( 49 )
+          nelem = size(crystal_input,1) ! num rows
+          mxcry = size(crystal_input,2) ! num cols
+      end if
 
-                  nelem = size(crystal_input,1)
-                  mxcry = size(crystal_input,2)
-            end if
+      call MPI_Bcast( nelem, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr)
+      call MPI_Bcast( mxcry, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr)
+      call MPI_Bcast( noelem, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr)
 
-            call MPI_Bcast(nelem, 1, MPI_INTEGER, 0,
-     &            MPI_COMM_WORLD, ierr)
-            call MPI_Bcast(mxcry, 1, MPI_INTEGER, 0,
-     &            MPI_COMM_WORLD, ierr)
-            call MPI_Bcast(noelem, 1, MPI_INTEGER, 0,
-     &            MPI_COMM_WORLD, ierr)
-
-            if (nelem .eq. 0 ) go to 100
+      if( nelem > 0 ) then
 c
-            if (myid .ne. 0) then
-              if (.not. allocated(data_offset)) then
-                allocate(data_offset(noelem))
-              end if
-              if (.not. allocated(angle_input)) then
-                allocate(angle_input(nelem,mxcry,3))
-              end if
-              if (.not. allocated(crystal_input)) then
-                allocate(crystal_input(nelem,mxcry))
-              end if
-            end if
-c           Now get the data out there
-c           First the easy ones
-            call MPI_Bcast(data_offset,noelem,MPI_INTEGER,0,
-     &            MPI_COMM_WORLD, ierr)
-            call MPI_Bcast(angle_input,nelem*mxcry*3,
-     &            MPI_DOUBLE_PRECISION,0, MPI_COMM_WORLD,ierr)
-            call MPI_Bcast(crystal_input,nelem*mxcry,
-     &            MPI_INTEGER,0, MPI_COMM_WORLD, ierr)
+        if( worker_processor ) then
+          if( .not. allocated(data_offset) ) 
+     &          allocate( data_offset(noelem) )
+          if( .not. allocated(angle_input) )
+     &          allocate( angle_input(nelem,mxcry,3) )
+          if( .not. allocated(crystal_input) ) 
+     &          allocate( crystal_input(nelem,mxcry) )
+        end if
+        call MPI_Bcast( data_offset, noelem, MPI_INTEGER, 0,
+     &                  MPI_COMM_WORLD, ierr )
+        call MPI_Bcast( angle_input, nelem*mxcry*3,
+     &                  MPI_DOUBLE_PRECISION, 0, 
+     &                  MPI_COMM_WORLD, ierr )
+        call MPI_Bcast( crystal_input, nelem*mxcry,
+     &                  MPI_INTEGER, 0, MPI_COMM_WORLD, ierr ) 
 c
-100         continue
-c           Now the struct
-c           3 integers
-c           25 double precisions
-c           2 dp 6x6
-c           2 dp 12x3
-c           2 logical
-c           = 5 blocks
+      end if
 c
-            call MPI_Type_extent(MPI_INTEGER,size_int,ierr)
-            call MPI_Type_extent(MPI_DOUBLE_PRECISION,size_dp,ierr)
-            call MPI_Type_extent(MPI_LOGICAL,size_log,ierr)
-c           Set up all the wonderful structs
-            otypes(0) = MPI_INTEGER
-            otypes(1) = MPI_DOUBLE_PRECISION
-            otypes(2) = MPI_DOUBLE_PRECISION
-            otypes(3) = MPI_DOUBLE_PRECISION
-            otypes(4) = MPI_LOGICAL
+      call MPI_Type_extent( MPI_INTEGER, size_int, ierr )
+      call MPI_Type_extent( MPI_DOUBLE_PRECISION, size_dp, ierr )
+      call MPI_Type_extent( MPI_LOGICAL, size_log, ierr )
+c 
+      otypes(0) = MPI_DOUBLE_PRECISION
+      otypes(1) = MPI_DOUBLE_PRECISION
+      otypes(2) = MPI_DOUBLE_PRECISION
+      otypes(3) = MPI_DOUBLE_PRECISION
+      otypes(4) = MPI_DOUBLE_PRECISION
+      otypes(5) = MPI_DOUBLE_PRECISION
+      otypes(6) = MPI_INTEGER
+      otypes(7) = MPI_DOUBLE_PRECISION
+      otypes(8) = MPI_LOGICAL
 c
-            blocklens(0) = 3
-            blocklens(1) = 25
-            blocklens(2) = 2*6*6
-            blocklens(3) = 2*12*3
-            blocklens(4) = 2
+      blocklens(0) = 2*6*6
+      blocklens(1) = 2*max_slip_sys*3
+      blocklens(2) = 27
+      blocklens(3) = 10
+      blocklens(4) = 6
+      blocklens(5) = 6
+      blocklens(6) = 12
+      blocklens(7) = 100
+      blocklens(8) = 5
 c
-            indices(0) = 0
-            indices(1) = 3*size_int
-            indices(2) = indices(1) + 25*size_dp
-            indices(3) = indices(2) + 2*6*6*size_dp
-            indices(4) = indices(3) + 2*12*3*size_dp
+      indices(0) = 0
+      indices(1) = 2*6*6*size_dp
+      indices(2) = indices(1) + 2*max_slip_sys*3*size_dp
+      indices(3) = indices(2) + 27*size_dp
+      indices(4) = indices(3) + 10*size_dp
+      indices(5) = indices(4) + 6*size_dp
+      indices(6) = indices(5) + 6*size_dp
+      indices(7) = indices(6) + 12*size_int
+      indices(8) = indices(7) + 100*size_dp
 c
-            call MPI_Type_struct(count_struct, blocklens, indices,
-     &            otypes, ntype, ierr)
-            call MPI_Type_commit(ntype, ierr)
+      call MPI_Type_struct( count_struct,  blocklens,  indices,
+     &                      otypes,  ntype,  ierr )
+      call MPI_Type_commit( ntype,  ierr )
+      call MPI_Barrier( MPI_COMM_WORLD,  ierr )
 c
-c           Actually transmit
-            call MPI_Bcast(c_array, max_crystals, ntype,
-     &            0, MPI_COMM_WORLD,ierr)
-
-
-            call MPI_Type_free(ntype,ierr)
-
-
-c            call MPI_Barrier(MPI_COMM_WORLD,ierr)
-c            do i=0,3
-c            if (i .eq. myid) then
-c            write (*,*) "..............................."
-c            write (*,*) myid
-c            write (*,*)
-c            call print_crystal(1)
-c            write (*,*)
-c            end if
-c            call MPI_Barrier(MPI_COMM_WORLD,ierr)
-c            end do
-c            call MPI_Barrier(MPI_COMM_WORLD,ierr)
-c            call die_gracefully
-
+      if( local_debug ) then      
+       do i=0,3
+         if (i .eq. myid) then
+           write (*,*) "..............................."
+           write (*,*) myid
+           write (*,*)
+           call print_crystal(1)
+           write (*,*)
+         end if
+         call MPI_Barrier(MPI_COMM_WORLD,ierr)
+       end do
+      end if       
+c
+      if( local_debug ) 
+     &       write(*,*) '...   transmitting c_array...',myid
+c     
+       call MPI_Bcast( c_array, max_crystals, ntype,
+     &                 0, MPI_COMM_WORLD, ierr )
+c     
+      if( local_debug ) 
+     &  write(*,*) '...   done transmitting c_array...',myid
+      call MPI_Type_free( ntype, ierr )
+      call MPI_Barrier( MPI_COMM_WORLD, ierr )
+c       
+      if( local_debug ) then
+           do i=0,3
+           if (i .eq. myid) then
+           write (*,*) "..............................."
+           write (*,*) myid
+           write (*,*)
+           call print_crystal(1)
+           write (*,*)
+           end if
+           call MPI_Barrier(MPI_COMM_WORLD,ierr)
+           end do
+          call MPI_Barrier(MPI_COMM_WORLD,ierr)
+          write(*,*) '......   at die gracefully debug'
+          call die_gracefully
+      end if
+c
+      return
+c
       end subroutine
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_dealloc_crystals        *
+c     *               subroutine wmpi_dealloc_crystals               *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 8/16/12                    *
+c     *                   last modified : 4/26/2017 rhd              *
 c     *                                                              *
-c     *           Dealloc crystal data structures                    *
+c     *                Dealloc crystal data structures               *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_dealloc_crystals
-            use crystal_data, only: c_array, angle_input,
-     &            crystal_input, data_offset, mc_array,
-     &            simple_angles
-            implicit integer (a-z)
-            include 'mpif.h'
+      use crystal_data, only: c_array, angle_input, crystal_input, 
+     &                        data_offset, mc_array, simple_angles
+      implicit none
+      include 'mpif.h'
       include 'common.main'
 c
-            if (myid .eq. 0) then
-             call wmpi_alert_slaves(50)
-            else
-             if (allocated(angle_input)) deallocate(angle_input)
-             if (allocated(crystal_input)) deallocate(crystal_input)
-             if (allocated(data_offset)) deallocate(data_offset)
-             if (allocated(simple_angles)) deallocate(simple_angles)
-             if (allocated(mc_array)) deallocate(mc_array)
-            end if
-
+      if( root_processor ) then
+         call wmpi_alert_slaves( 50 )
+      else
+         if( allocated(angle_input) )   deallocate( angle_input )
+         if( allocated(crystal_input) ) deallocate( crystal_input )
+         if( allocated(data_offset) )   deallocate( data_offset )
+         if( allocated(simple_angles) ) deallocate( simple_angles )
+         if( allocated(mc_array) )      deallocate( mc_array )
+      end if
+      return
+c
+      end subroutine
+c
+c     ****************************************************************
+c     *                                                              *
+c     *            subroutine wmpi_compute_set_history_locs          *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified : 5/12/2017 tjt, rhd         *
+c     *                                                              *
+c     *           Send CP history sizing data to workers             *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine wmpi_compute_set_history_locs
+      use mm10_defs, only : indexes_common, index_crys_hist,
+     &                      num_common_indexes, num_crystal_terms,
+     &                      length_crys_hist, one_crystal_hist_size,
+     &                      common_hist_size, length_comm_hist
+c
+      implicit none
+      include 'mpif.h'
+      include 'common.main'
+      integer :: ierr, k
+      logical :: local_debug
+c
+      local_debug = .false.
+c     
+c              get the workers synced to this point
+c
+      if( root_processor ) call wmpi_alert_slaves( 53 )
+c      
+      call MPI_Bcast( num_common_indexes, 1, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_Bcast( num_crystal_terms, 1, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_Bcast( common_hist_size, 1, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_Bcast( one_crystal_hist_size, 1, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
+c
+      if( worker_processor ) then
+c
+        if( .not. allocated( indexes_common ) )
+     &     allocate( indexes_common(num_common_indexes,2) )
+        if( .not. allocated( index_crys_hist ) )
+     &     allocate( index_crys_hist(max_crystals,
+     &               num_crystal_terms,2) )
+        if( .not. allocated( length_comm_hist ) )
+     &     allocate( length_comm_hist(num_common_indexes) )
+        if( .not. allocated( length_crys_hist ) )
+     &     allocate( length_crys_hist(num_crystal_terms) )
+      end if
+c
+      call MPI_Bcast( indexes_common, num_common_indexes*2, 
+     &                MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
+      k = max_crystals*num_crystal_terms*2
+      call MPI_Bcast( index_crys_hist, k, MPI_INTEGER, 0, 
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_Bcast( length_comm_hist, num_common_indexes,
+     &                MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
+      call MPI_Bcast( length_crys_hist, num_crystal_terms,
+     &                MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
+c
+      return
+c
       end subroutine
 c
 c     ****************************************************************

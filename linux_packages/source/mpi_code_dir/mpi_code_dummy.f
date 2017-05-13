@@ -734,12 +734,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_send_real_new(vector,length)
-            implicit none
-c                 Dummy
-            real :: vector(*)
-            integer :: length
+      implicit none
+      real :: vector(*)
+      integer :: length
 c
-            return
+      return
       end subroutine
 c
 c
@@ -772,7 +771,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_send_crystals
-            implicit none
+      implicit none
+      return
       end subroutine
 c
 c     ****************************************************************
@@ -788,7 +788,24 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine wmpi_dealloc_crystals
-            implicit none
+      implicit none
+      return
+      end subroutine
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                wmpi_compute_set_history_locs                 *
+c     *                                                              *
+c     *                       written by : tjt                       *
+c     *                                                              *
+c     *                   last modified : 5/12/2017 tjt              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine  wmpi_compute_set_history_locs
+      implicit none
+      return
       end subroutine
 c
 c     ****************************************************************
