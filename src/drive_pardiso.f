@@ -6,13 +6,16 @@ c     *  full CSR matrix. [K] is structurally symmetric but values   *
 c     *  are not symmetric                                           *
 c     *                                                              *
 c     *  written by: mcm                                             *
-c     *  last modified : 1/12/2016 rhd                                *
+c     *  last modified : 5/13/2017 rhd                               *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine pardiso_unsymmetric( n, nnz, k_ptrs, k_indexes, 
      &            k_coeffs, p_vec, u_vec, cpu_stats, itype, out, 
      &            use_iterative )
+      use performance_data, only : t_performance_start_pardiso,
+     &                             t_performance_end_pardiso
+c
       implicit none
 c
 c                parameter declarations
@@ -49,20 +52,25 @@ c                     with a new set of coefficients but same
 c                     sparsity
 c                 3 - no solution. just release data.
 c
-       select case( itype )
-      case( 1 ) 
+      call t_performance_start_pardiso
+c      
+      select case( itype )
+       case( 1 ) 
         call pardiso_unsymmetric_setup
         if( direct_solve )  call pardiso_unsymmetric_direct
         if( use_iterative ) call pardiso_unsymmetric_iterative
-      case( 2 )
+       case( 2 )
         if( direct_solve )  call pardiso_unsymmetric_direct
         if( use_iterative ) call pardiso_unsymmetric_iterative
-      case(3 ) 
+       case(3 ) 
         call pardiso_unsymmetric_release
-      case default  
+       case default  
         call warp3d_pardiso_mess( 11, out, error, mkl_ooc_flag, 
      &                            cpu_stats, iparm )
       end select
+c
+      call t_performance_end_pardiso
+c      
       return
 c
       contains
@@ -240,7 +248,7 @@ c     *  drive Pardiso solver for symmetric equations: direct or     *          
 c     *  iterative. Pardiso is threads only. CPardiso is MPI +       *
 c     *  threads                                                     *
 c     *                                                              *
-c     *      last modified : 1/11/2016 rhd                           *
+c     *      last modified : 5/13/2017 rhd                           *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -251,6 +259,8 @@ c
      &                        solver_scr_dir, solver_mkl_iterative,
      &                        suggested_new_precond )
 c
+      use performance_data, only : t_performance_start_pardiso,
+     &                             t_performance_end_pardiso
       implicit none      
 c
 c                parameter declarations
@@ -290,6 +300,7 @@ c                     with a new set of coefficients but same
 c                     sparsity
 c                 3 - no solution. just release data.
 c
+      call t_performance_start_pardiso
       use_iterative = solver_mkl_iterative
       direct_solve = .not. use_iterative
 
@@ -309,6 +320,7 @@ c
         call warp3d_pardiso_mess( 11, out, error, mkl_ooc_flag, 
      &                            print_cpu_stats, iparm )
       end select
+      call t_performance_end_pardiso      
       return
 c
       contains
