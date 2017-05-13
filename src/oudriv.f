@@ -14,6 +14,8 @@ c     *     also handle the output commands file ...                 *
 c     *                     output patran neutral  ...               *
 c     *                     output model ...                         *
 c     *                                                              *
+c     *     this routine executes on root only                       *
+c     *                                                              *
 c     ****************************************************************
 c
 c
@@ -78,7 +80,7 @@ c                       i.e., output command just after restart
 c                       w/o running thru lots of code that
 c                       initizalizes variables.
 
-      call compute_output_check_before
+      call compute_checks
 c
 c                       set defaults for regular output options
 c
