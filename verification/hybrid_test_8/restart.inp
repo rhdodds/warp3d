@@ -1,0 +1,6 @@
+ restart from file "restart.db" 
+ compute displacements for loading test step 6
+ output displacements 321
+ output stresses 64
+!
+stop
