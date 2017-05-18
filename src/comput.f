@@ -4,13 +4,13 @@ c     *                      subroutine compute                      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/22/2016                  *
+c     *                   last modified : 5/12/2017 rhd              *
 c     *                                                              *
-c     *     this subroutine supervises the computation of the quan-  *
-c     *     tities requested by the user.                            * 
+c     *     scan the compute command, make some checks and call      *
+c     *     various driver routines                                  * 
+c     *     -> this code runs only on root process                   *
 c     *                                                              *
 c     ****************************************************************
-c
 c
 c
       subroutine compute
@@ -133,22 +133,27 @@ c
 c
 c                       the list of time steps is a valid one. compute
 c                       the displacements for the steps specified.
+c                       run cehcks/setups that cannot be done until
+c                       now - most often for just 1st time step or
+c                       first step in a restart.
 c  
       notes_msg = .false.
-      call compute_output_check_before
+      call compute_checks
       call stpdrv( intlst, lenlst, ldnum)
       return
 c
  9999 continue
-      call scan_flushline; return
+      call scan_flushline
+      return
+c      
       end
 c     ****************************************************************
 c     *                                                              *
-c     *        subroutine compute_check__output_before               *
+c     *                   subroutine compute_checks                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 5/22/2016                  *
+c     *                   last modified : 5/12/2017 rhd              *
 c     *                                                              *
 c     *   perform additional, generally one-time set ups that must   *
 c     *   done after input processed but not before every step or    * 
@@ -156,7 +161,7 @@ c     *   output (e.g. just restarted)                               *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine compute_output_check_before
+      subroutine compute_checks
       use  main_data, only : cp_matls_present, matprp, imatprp
       implicit integer (a-z)
       include 'common.main'
@@ -173,21 +178,25 @@ c                               =  0 we checked and no CP materials
 c                               =  1 we check. there are CP materials
 c                                  and we need to call CP setup
 c                                  routine if not already done.
+c                               for MPI, workers need sizes from root
+c                
       if( cp_matls_present == -1 ) then
-       found_cp = .false.
-       do matnum = 1, nummat  ! nummat in common.main
-        if(  matprp(9,matnum) /= 10 ) cycle
-        found_cp = .true.
-        exit
-       end do
-       cp_matls_present = 0
-       if( found_cp ) then
-         cp_matls_present = 1 
-         call mm10_set_history_locs
-       end if
+         found_cp = .false.
+         do matnum = 1, nummat  ! nummat in common.main
+           if(  matprp(9,matnum) /= 10 ) cycle
+           found_cp = .true.
+           exit
+         end do
+         cp_matls_present = 0
+         if( found_cp ) then
+            cp_matls_present = 1 
+            call mm10_set_history_locs
+            call wmpi_compute_set_history_locs
+         end if
       end if       
 c
-c              add more setups here ...
+c              add more setups here ... may need to add another
+c              wmpi_... routine as well
 c
       return
       end
