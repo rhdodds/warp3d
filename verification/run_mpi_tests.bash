@@ -63,6 +63,13 @@ cd hybrid_test_7
 bash ./run_tests_and_check 2>/dev/null
 cd ..
 }
+function test8 {
+echo -e "\n>>> CP MTS model with restart (Taylor approximation)"
+echo      "    ==============================================="
+cd hybrid_test_8
+bash ./run_tests_and_check 2>/dev/null
+cd ..
+}
 
 
 #*********************************************************
@@ -121,12 +128,14 @@ m_test4="Test MPI combine partial result files: Short (0.2 min)"
 m_test5="Cluster Pardiso asymmetric - pressure vessel: (1-2 mins)"
 m_test6="Cluster Pardiso symmetric - pressure vessel: (1-2 mins)"
 m_test7="Cluster Pardiso - crack growth with cells, restart, J-values: (1-2 mins)"
+m_test8="CP model with MTS (restart, Taylor approximation)"
 #
 all="All problems"
 quit="Quit"
 PS3="Enter your choice (<return> to repeat menu): "
 select menu_list in "$all" "$m_test1" "$m_test2" \
-    "$m_test3" "$m_test4" "$m_test5"  "$m_test6" "$m_test7"  "$quit"
+    "$m_test3" "$m_test4" "$m_test5"  "$m_test6" "$m_test7"  \
+    "$m_test8" "$quit"
 do
       case $menu_list in
             $all)
@@ -145,6 +154,8 @@ do
                   test6;;
             $m_test7)
                   test7;;
+            $m_test8)
+                  test8;;
             $quit)
                   break;;
             *) printf "You can enter only 1, .....\n";;
