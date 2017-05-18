@@ -3,7 +3,7 @@ c     *                      suboutine errmsg                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/20/2016 rhd              *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine prints assorted error messages in re-    *
 c     *     ponse to calls from all over the program. virtually all  *
@@ -13,7 +13,7 @@ c     ****************************************************************
 c
 c
 c
-      subroutine errmsg(errnum,param,sparam,rparam,dparam)
+      subroutine errmsg( errnum, param, sparam, rparam, dparam )
       implicit integer (a-z)
       character(len=50) :: string
       character(len=35) :: strng1
@@ -23,11 +23,9 @@ c
       character(len=29) :: strng29
       character(len=*) :: sparam
 c
-      common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision :: erprmd, dparam, hundred
-      real :: erprmr, rparam
+      double precision :: dparam, hundred
+      real :: rparam
       logical, save :: mess_61, write_msg_255, write_msg_321
-      character(len=50) :: erprms
       data hundred /100.0/
       data mess_61, write_msg_255, write_msg_321
      &     / .true., .true., .true. /
@@ -2461,12 +2459,6 @@ c
       goto 9999
 c
  2570 continue
-      num_fatal = num_fatal + 1
-      lngstr = matnam(param)
-      write(out,9275) lngstr, sparam, erprms
- 9275 format(/1x,'>>>>> Fatal error in material ',a24,':',/
-     &          '          ',a7,' must be ',a50,/)
-      input_ok = .false.
       goto 9999
 c
  2580 continue
@@ -3275,23 +3267,23 @@ c
 c
 c
       subroutine errmsg2( errnum, param, sparam, rparam, dparam )
-      implicit integer (a-z)
+      implicit none
+c      
+      integer :: errnum, param
+      real :: rparam
+      double precision :: dparam
+      character(len=*) :: sparam
+c      
+      integer :: strlng
       character(len=50) :: string
       character(len=35) :: strng1
       character(len=8) :: shrtst,shrtst1,shrtst2
       character(len=24) :: lngstr
       character(len=21) :: strng21
       character(len=29) :: strng29
-      character(len=*) :: sparam
 c
-      common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision
-     &   erprmd, dparam, hundred
-      real erprmr, rparam
-      logical mess_61
-      character(len=50) :: erprms
-      data hundred /100.0/
-      data mess_61 / .true. /
+      double precision, parameter :: hundred = 100.0d0
+      logical, parameter :: mess_61 = .true.
 c
       include 'common.main'
 c
@@ -4143,3 +4135,35 @@ c
       return
       end
 
+
+
+c     ****************************************************************
+c     *                      subroutine errmsg4                      *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 05/18/2017 rhd             *
+c     *                                                              *
+c     *          specific error message routine for material input   *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine errmsg4( matnum, sparam, mess, num_fatal, out, matnam,
+     &                    input_ok )
+      implicit none
+c
+      integer :: matnum, out, num_fatal
+      logical :: input_ok
+      character(len=*) :: sparam, matnam(*)
+      character(len=50) :: mess
+      character(len=24) :: lngstr
+c
+      num_fatal = num_fatal + 1
+      lngstr = matnam(matnum)
+      write(out,9275) lngstr, sparam, mess
+ 9275 format(/1x,'>>>>> Fatal error in material ',a24,':',/
+     &          '          ',a7,' must be ',a50,/)
+      input_ok = .false.
+      return
+      end
+      

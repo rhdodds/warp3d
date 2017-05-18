@@ -2510,7 +2510,7 @@ c     *                  subroutine inmat_err_mess                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/6/09                     *
+c     *                   last modified : 5/16/2017                  *
 c     *                                                              *
 c     *     output various error messages during scan and checks     *
 c     *     of material property values                              *
@@ -2518,13 +2518,12 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine inmat_err_message( ierrno, errstrng, nchars )
-      implicit integer (a-z)
-      common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision
-     &   erprmd, dparam
-      real erprmr, rparam
-      character(len=50) :: erprms
+      implicit none
+c      
+      integer :: ierrno, nchars
       character(len=*) :: errstrng
+c
+      character(len=50) :: erprms
 c
       include 'common.main'
 c

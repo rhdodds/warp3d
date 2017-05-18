@@ -179,7 +179,7 @@ c     *                      subroutine errchk_2                     *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 11/07/95                   *
+c     *                   last modified : 5/18/2017                  *
 c     *                                                              *
 c     *    this subroutine checks the values input for the           *
 c     *    material definitions.  If any are incorrect, WARP3D       *
@@ -191,23 +191,21 @@ c
 c
       subroutine errchk_2( matnum )
       use main_data, only : matprp, lmtprp
-      implicit integer (a-z)     
+      implicit none
+c           
       include 'common.main'
-      real dumr, fgm_mark
+c
+      integer :: dum, matnum      
+      real :: dumr
+      real, parameter :: fgm_mark = -99.0
       character :: dums
       double precision :: dumd
-      logical :: numnod,numel,fatal,coor,elprop,elinc,constr,
-     &        block, is_matl_cohesive, is_umat, is_matl_cp
+      logical :: numnod, numel, fatal,coor, elprop, elinc, constr,
+     &           block, is_matl_cohesive, is_umat, is_matl_cp
       common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
-      common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision
-     &   erprmd
-      real erprmr
       character(len=50) erprms
-      data fgm_mark / -99.0 /
 c
       erprms = ' '
-
 c
 c          this is an older but still used routine. It does a quick check on
 c          come key property values for material models for solid elements.
@@ -215,42 +213,31 @@ c          it does not check correctly for cohesive materials or CP.
 c          just return.
 c
       is_matl_cohesive = ( matprp(9,matnum) .eq. 4.0 )
-      is_matl_cp = ( matprp(9,matnum) .eq. 10.0 )
-      if (is_matl_cp) call chk_cp(matnum)
+      is_matl_cp       = ( matprp(9,matnum) .eq. 10.0 )
+      if( is_matl_cp ) call chk_cp(matnum)
       if( is_matl_cohesive .or. is_matl_cp ) return
 c
 c           check E
 c
-      if ( matprp(1,matnum) .ne. fgm_mark ) then
-        if ( matprp(1,matnum) .le. 0.0 ) then
+      if( matprp(1,matnum) .ne. fgm_mark ) then
+        if( matprp(1,matnum) .le. 0.0 ) then
            erprms = 'greater than zero.'
-           call errmsg ( 257, matnum, 'e', dumr, dumd )
+           call errmsg4( matnum, 'e', erprms, 
+     &                   num_fatal, out, matnam, input_ok )
         end if
       end if 
 c
 c           check nu
 c
-      if ( matprp(2,matnum) .ne. fgm_mark ) then
-        if ( matprp(2,matnum) .lt. -1.0 .or. 
+      if( matprp(2,matnum) .ne. fgm_mark ) then
+        if( matprp(2,matnum) .lt. -1.0 .or. 
      &       matprp(2,matnum) .gt. 0.5 ) then
              erprms = 'between -1 and .5.'
-              call errmsg ( 257, matnum, 'nu', dumr, dumd )
+             call errmsg4( matnum, 'nu', erprms, 
+     &                     num_fatal, out, matnam, input_ok )
         end if
       end if
 c
-c           if not linear elastic and not segmental stress strain curve, 
-c           check yield strength
-c           --> removed RHD, 9/6/12
-c
-c      if ( .not. lmtprp(8,matnum) .and. .not. lmtprp(24,matnum) 
-c     &     .and. matprp(5,matnum) .le. 0.0 .and.
-c     &     .not. lmtprp(43,matnum) ) then
-c         if (  matprp(5,matnum) .ne. fgm_mark ) then
-c           erprms = 'greater than zero.'
-c           call errmsg ( 257, matnum, 'yld_pt', dumr, dumd )
-c         end if 
-c      end if
-c          
 c           check tan_e and n_power bases on which material model we are
 c           using. if model is type:
 c
@@ -260,124 +247,136 @@ c              3 -- gurson/mises.  either one -- check both. If
 c                    stress strain curve is given, skip the check.
 c
 c
-      if ( matprp(9,matnum) .eq. 1 ) then
+      if( matprp(9,matnum) .eq. 1 ) then
 c
-         if ( .not.lmtprp(8,matnum) .and. 
+         if( .not.lmtprp(8,matnum) .and. 
      &        matprp(4,matnum) .lt. 0.0 ) then
-            if (  matprp(4,matnum) .ne. fgm_mark ) then
+            if(  matprp(4,matnum) .ne. fgm_mark ) then
                erprms = 'greater or equal to zero.'
-               call errmsg ( 257, matnum, 'tan_e', dumr, dumd )
+               call errmsg4( matnum, 'tan_e', erprms, 
+     &                   num_fatal, out, matnam, input_ok )
             end if
          end if
 c
-      else if ( matprp(9,matnum) .eq. 2 ) then
+      else if( matprp(9,matnum) .eq. 2 ) then
 c     
-         if ( matprp(11,matnum) .le. 0.0 ) then
-            if (  matprp(11,matnum) .ne. fgm_mark ) then
+         if( matprp(11,matnum) .le. 0.0 ) then
+            if(  matprp(11,matnum) .ne. fgm_mark ) then
               erprms = 'greater than zero.'
-              call errmsg ( 257, matnum, 'n_power', dumr, dumd )
+           call errmsg4( matnum, 'n_power', erprms, 
+     &                   num_fatal, out, matnam, input_ok )
             end if
          end if
 c     
-      else if ( matprp(9,matnum) .eq. 3 .and. 
-     &        .not. lmtprp(24,matnum) ) then
+      else if( matprp(9,matnum) .eq. 3 .and. 
+     &          .not. lmtprp(24,matnum) ) then
 c     
-         if ( matprp(11,matnum) .le. 0.0 .and. 
+         if( matprp(11,matnum) .le. 0.0 .and. 
      &        matprp(4,matnum) .lt. 0.0 ) then
-            if (  matprp(4,matnum) .ne. fgm_mark )
+            if( matprp(4,matnum) .ne. fgm_mark )
      &        call errmsg ( 258, dum, dums, dumr, dumd)
          end if
 c     
-      end if
+      endif
 c
 c           check beta 
 c
-      if ( matprp(3,matnum).lt.0.0 .or. matprp(3,matnum).gt.1.0) then
-         erprms = 'between 0.0 and 1.0.'
-         call errmsg ( 257, matnum, 'beta', dumr, dumd )
+      if( matprp(3,matnum).lt.0.0 .or. matprp(3,matnum).gt.1.0) then
+           erprms = 'between 0.0 and 1.0.'
+           call errmsg4( matnum, 'beta', erprms, 
+     &                   num_fatal, out, matnam, input_ok )
       endif
 c
 c           check rho
 c
-      if ( matprp(7,matnum) .ne. fgm_mark ) then
-        if ( matprp(7,matnum) .lt. 0.0 ) then
+      if( matprp(7,matnum) .ne. fgm_mark ) then
+        if( matprp(7,matnum) .lt. 0.0 ) then
            erprms = 'greater or equal to zero.'
-           call errmsg ( 257, matnum, 'rho', dumr, dumd )
+           call errmsg4( matnum, 'rho', erprms, 
+     &                   num_fatal, out, matnam, input_ok )
         end if
       end if
 c
 c           check m_power
 c
-      if ( matprp(10,matnum) .lt. 0.0 ) then
+      if( matprp(10,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'm_power', dumr, dumd )
+         call errmsg4( matnum, 'm_power', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check ref_eps
 c
-      if ( matprp(12,matnum) .lt. 0.0 ) then
+      if( matprp(12,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'ref_eps', dumr, dumd )
+         call errmsg4( matnum, 'ref_eps', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check f_0
 c
-      if ( matprp(14,matnum) .lt. 0.0 ) then
+      if( matprp(14,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'f_0', dumr, dumd )
+         call errmsg4( matnum, 'f_0', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check q1
 c
-      if ( matprp(15,matnum) .lt. 0.0 ) then
+      if( matprp(15,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'q1', dumr, dumd )
+         call errmsg4( matnum, 'q1', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check q2
 c
-      if ( matprp(16,matnum) .lt. 0.0 ) then
+      if( matprp(16,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'q2', dumr, dumd )
+         call errmsg4( matnum, 'q2', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check q3
 c
-      if ( matprp(17,matnum) .lt. 0.0 ) then
+      if( matprp(17,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'q3', dumr, dumd )
+         call errmsg4( matnum, 'q3', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check s_n
 c
-      if ( matprp(19,matnum) .lt. 0.0 ) then
+      if( matprp(19,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 's_n', dumr, dumd )
+         call errmsg4( matnum, 's_n', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check e_n
 c
-      if ( matprp(20,matnum) .lt. 0.0 ) then
+      if( matprp(20,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'e_n', dumr, dumd )
+         call errmsg4( matnum, 'e_n', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check f_n
 c
-      if ( matprp(21,matnum) .lt. 0.0 ) then
+      if( matprp(21,matnum) .lt. 0.0 ) then
          erprms = 'greater or equal to zero.'
-         call errmsg ( 257, matnum, 'f_n', dumr, dumd )
+         call errmsg4( matnum, 'f_n', erprms, 
+     &                 num_fatal, out, matnam, input_ok )
       end if
 c
 c           check for conflicting sets of thermal expansion
 c           properties. we do not allow both isotropic and
 c           anisotropic thermal properties to be specified.
 c
-      if ( lmtprp(25,matnum) ) then
-         if ( matprp(6,matnum) .ne. 0.0 )
+      if( lmtprp(25,matnum) ) then
+        if( matprp(6,matnum) .ne. 0.0 )
      &       call errmsg ( 274, matnum, 'f_n', dumr, dumd )
       end if
-c
 c
       return
       end
