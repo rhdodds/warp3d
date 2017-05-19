@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/27/2017  rhd             *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -17,27 +17,24 @@ c
       use main_data, only : output_packets, windows_os, osx_os, 
      &                      linux_os
       use performance_data
-      implicit integer (a-z)
+      use erflgs
+      implicit none
+c      
       include 'common.main'
-      real :: t1, wcputime, dumr
-      external wcputime
+c      
+      integer :: return_type, nsn, lsn, idummy, nc, param, path,
+     &           build_number, olddof, chkprm    
+      real :: t1, dumr
+      real, external :: wcputime
       character :: stcnam*8, dums*8, sdate_*24
       character(len=80) :: name, stflnm, rtflnm
       character(len=21) :: char_os
       character(len=11) :: compile_date
       character(len=8) :: compile_time
-      logical :: hilcmd,sbflg1,sbflg2, os_ok
-      logical :: endcrd,label,matchs,debug1,debug2,debug,endfil,
-     &        string, matchs_exact
-c
-      common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision :: erprmd, dumd
-      real :: erprmr
-      character :: erprms *50 
-c
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
-      logical ::fatal,coor,numnod,numel,elprop,elinc,constr,block
-      integer :: return_type
+      logical :: hilcmd, sbflg1, sbflg2, os_ok
+      logical :: endcrd, label, matchs, debug1, debug2, debug, endfil,
+     &           string, matchs_exact
+      double precision :: dumd
 c
 c                       MPI: initialize all processors
 c                       and make workers go into the worker handler. if
@@ -52,7 +49,7 @@ c
       debug2   = .false.
       call setstarttime
       t1 = wcputime ( 0 )
-      call steptime ( dummy, 1 )
+      call steptime ( idummy, 1 )
 c
 c                       initialize scan and variables necessary
 c                       for program execution
@@ -347,7 +344,7 @@ c
       end if
 
 c
-      if( endfil(dum) ) goto 30
+      if( endfil(idummy) ) goto 30
 c
 c                       if a high level command is encountered,
 c                       first check to see if the previous sub-
@@ -383,9 +380,9 @@ c                       if a high level command is not
 c                       encountered, print an error message
 c                       and scan another line in search for one
 c
-      if (endcrd(dum)) goto 10
+      if (endcrd(idummy)) goto 10
 c
-      call errmsg(1,dum,dums,dumr,dumd)
+      call errmsg(1,idummy,dums,dumr,dumd)
       go to 10
 c
 c                       reached an end on input file. decrease
@@ -395,12 +392,12 @@ c
       close (inlun(filcnt))
       filcnt=filcnt-1
       if (filcnt.eq.0) then
-         call errmsg(204,dum,dums,dumr,dumd)
+         call errmsg(204,idummy,dums,dumr,dumd)
          goto 9999
       end if
       call setin(inlun(filcnt))
       in = inlun(filcnt)
-      call errmsg(179,dum,dums,dumr, dumd)
+      call errmsg(179,idummy,dums,dumr, dumd)
       go to 10
 c
 c                       structure command. the name of the structure
@@ -409,13 +406,13 @@ c                       the default being blank.
 c
  100  continue
       if(matchs('name',4)) call splunj
-      if(label(dummy)) then
+      if(label(idummy)) then
          name= ' '
          call entits(name,nc)
          if(nc.gt.8) nc=8
          stname(1:nc)= name(1:nc)
       else
-         call errmsg(44,dum,dums,dumr,dumd)
+         call errmsg(44,idummy,dums,dumr,dumd)
       end if
       go to 10
 c
@@ -438,8 +435,8 @@ c                       high level command. fatal = .true. ind-
 c                       icates that a fatal error has been made
 c                       and execution will be halted.
 c
-      if(endcrd(dum)) then
-         call errmsg(22,dum,dums,dumr,dumd)
+      if(endcrd(idummy)) then
+         call errmsg(22,idummy,dums,dumr,dumd)
       else
          call innum(sbflg1,sbflg2)
          if(fatal) go to 9999
@@ -463,7 +460,7 @@ c
          call errmsg(11,param,dums,dumr,dumd)
          go to 10
       else if(coor) then
-         call errmsg(113,dum,dums,dumr,dumd)
+         call errmsg(113,idummy,dums,dumr,dumd)
          go to 10
       else
          call incoor(sbflg1,sbflg2)
@@ -487,7 +484,7 @@ c
          call errmsg(11,param,dums,dumr,dumd)
          go to 10
       else if(elprop) then
-         call errmsg(108,dum,dums,dumr,dumd)
+         call errmsg(108,idummy,dums,dumr,dumd)
          go to 10
       else
          call inelem(sbflg1,sbflg2)
@@ -510,7 +507,7 @@ c
          call errmsg(11,param,dums,dumr,dumd)
          go to 10
       else if(elinc) then
-         call errmsg(112,dum,dums,dumr,dumd)
+         call errmsg(112,idummy,dums,dumr,dumd)
          go to 10
       else
          call ininc(sbflg1,sbflg2)
@@ -596,7 +593,7 @@ c
             call indypm(sbflg1,sbflg2)
             go to 20
          end if
-         call errmsg(91,dum,dums,dumr,dumd)
+         call errmsg(91,idummy,dums,dumr,dumd)
          go to 10
       end if
 c
@@ -635,7 +632,7 @@ c                       for this condition and allow the request
 c                       only if it exists.
 c
       if (.not.input_ok) then
-         call errmsg(183,dum,dums,dumr,dumd)
+         call errmsg(183,idummy,dums,dumr,dumd)
          goto 9999
       endif
       if(.not.coor.or..not.elprop.or..not.elinc.or..not.block) then
@@ -692,7 +689,7 @@ c                       Check for to make sure binary packet output is
 c                       turned on.
 c
       if( .not. output_packets ) then
-         call errmsg2(67, dum, dums, dumr, dumd)
+         call errmsg2(67, idummy, dums, dumr, dumd)
          go to 10
       end if
 
@@ -710,7 +707,7 @@ c
       stcnam = " "
       stflnm(1:) = 'namenone'
       stcnam = stname
-      if( endcrd(dummy) ) then
+      if( endcrd(idummy) ) then
         call store( stcnam, stflnm, sbflg1, sbflg2 )
         go to 10
       end if
@@ -719,7 +716,7 @@ c
       stcnam(1:) = ' '
       stflnm(1:) = ' '
       if( matchs_exact('file') ) call splunj
-      if ( endcrd(dummy) ) then
+      if ( endcrd(idummy) ) then
         stflnm(1:)= 'namenone'
         stcnam = stname
         call store( stcnam, stflnm, sbflg1, sbflg2 )
@@ -727,13 +724,13 @@ c
       end if
       stcnam(1:) = ' '
       stflnm(1:) = ' '
-      if( label(dummy) ) then
+      if( label(idummy) ) then
            stflnm(1:) = ' '
            call entits( stflnm, nc )
            call store( stcnam, stflnm, sbflg1, sbflg2 )
          go to 10
       end if
-      if( string(dummy) ) then
+      if( string(idummy) ) then
            stflnm(1:) = ' '
            call entits( stflnm, nc )
            call store( stcnam, stflnm, sbflg1, sbflg2 )
@@ -753,13 +750,13 @@ c
  1600 continue
       stcnam = " "
       rtflnm = " "
-      if ( endcrd(dummy) ) then
+      if ( endcrd(idummy) ) then
        write(out,9300)
        go to 10
       end if
       stcnam = ' '
       if( matchs('structure',9) ) then
-        if( label(dummy) ) then
+        if( label(idummy) ) then
           name = ' '
           call entits( name,nc )
           if( nc .gt. 8 ) nc = 8
@@ -773,10 +770,10 @@ c
 c
       if( matchs_exact('from') ) call splunj
       if( matchs_exact('file') ) call splunj
-      if( label(dummy) ) then
+      if( label(idummy) ) then
           rtflnm = ' '
           call entits( rtflnm, nc )
-      else if( string(dummy) ) then
+      else if( string(idummy) ) then
           rtflnm = ' '
           call entits( rtflnm, nc )
       end if
@@ -802,7 +799,7 @@ c
          call errmsg(11,param,dums,dumr,dumd)
          go to 10
       else if(block) then
-         call errmsg(154,dum,dums,dumr,dumd)
+         call errmsg(154,idummy,dums,dumr,dumd)
          go to 10
       else
          call inelbk(sbflg1,sbflg2)
@@ -1013,7 +1010,7 @@ c
      &     '    **                                             ',
      &     '                  **',/,
      &     '    **     ',a21,'      -rel-    Release: ',
-     &     ' 17.8.0      **',/,
+     &     ' 17.8.1      **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
@@ -1053,7 +1050,7 @@ c     *                      subroutine error_count                  *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 05/29/2016 rhd             *
+c     *                   last modified : 05/17/2017 rhd             *
 c     *                                                              *
 c     *     write the summary of # of errors, warnings, and fatal    *
 c     *     errors encountered during the run.                       *
@@ -1062,40 +1059,42 @@ c     ****************************************************************
 c
 c
       subroutine error_count( outdev, clear )
-      implicit integer (a-z)
+      implicit none
+c      
       include 'common.main'
-      logical already_called, clear
-      data already_called / .false. /
-      save already_called
 c
+      integer :: outdev
+      logical :: clear
+c            
+      logical, save ::  already_called = .false.
+c      
 c            clear specifies if the message counts are to be cleared.
 c            already_called is how we tell if we are outputing on the
 c            first step or not.
 c
-c            if we jill execution, make sure to also write the
+c            if we kill execution, make sure to also write the
 c            terminate message to stdout [ variable out in common.main]
 c
-     &  already_called
       if( .not. already_called ) then
-       if( num_warn.gt.0 .or. num_error.gt.0 .or.
-     &      num_fatal.gt.0 ) then
+       if( num_warn > 0 .or. num_error > 0 .or.
+     &      num_fatal > 0 ) then
             write(outdev,9000) num_warn, num_error, num_fatal
        end if
        if( clear ) already_called = .true.
-       if( .not. clear .and. num_fatal .gt. 0 .or.
-     &       num_error .gt. 0 ) then
+       if( .not. clear .and. num_fatal > 0 .or.
+     &       num_error > 0 ) then
          write(outdev,9200)
          call die_abort
        end if
       else  !  already called
-       if( num_warn.gt.0 .or. num_error.gt.0 .or.
-     &      num_fatal.gt.0 ) then
+       if( num_warn > 0 .or. num_error > 0 .or.
+     &      num_fatal > 0 ) then
            write(outdev,9100) num_warn, num_error, num_fatal
            if( outdev .ne. out ) write (out,9100) num_warn, 
      &                            num_error, num_fatal
        end if
-       if( .not. clear .and. num_fatal .gt. 0 .or.
-     &       num_error .gt. 0 ) then
+       if( .not. clear .and. num_fatal > 0 .or.
+     &       num_error > 0 ) then
          write(outdev,9200)
          if( outdev .ne. out ) write(out,9200)
          call die_abort
@@ -1140,31 +1139,27 @@ c
 c
 
       subroutine warp3d_normal_stop
-      
+c      
       use file_info
       use main_data, only : output_packets 
       use performance_data, only : time_assembly, assembly_total,
      &            ntimes_assembly,  t_performance_eoj,
      &            t_performance_eoj_pardiso
-      implicit integer (a-z)
+      use erflgs
+      implicit none
+      
       include 'common.main'
-      real t1, wcputime, dumr, warptime, pardiso_time
-      external wcputime
+c
+      integer :: i
+      real :: t1, dumr, warptime, pardiso_time
+      real, external :: wcputime
       character(len=8) :: stcnam, dums, sdate_*24
       character(len=80) :: name, stflnm, rtflnm
-      logical hilcmd, sbflg1, sbflg2
-      logical endcrd,label,matchs,debug1,debug2,debug,endfil,
-     &        string, matchs_exact
+      logical :: hilcmd, sbflg1, sbflg2
+      logical :: endcrd, label, matchs, debug1, debug2, debug, endfil,
+     &           string, matchs_exact
       logical, parameter :: output_1_thread_cpu_times = .false.
 c
-      common/errprm/ erprmd(10),erprmr(10),erprmi(10),erprms
-      double precision
-     &  erprmd, dumd
-      real erprmr
-      character :: erprms *50
-c
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
-      logical fatal,coor,numnod,numel,elprop,elinc,constr,block
 c
 c                       cleanup some allocs first
 c

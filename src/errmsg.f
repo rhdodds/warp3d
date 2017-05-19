@@ -25,6 +25,7 @@ c
 c
       double precision :: dparam, hundred
       real :: rparam
+      integer, save :: high_lvl_count = 0
       logical, save :: mess_61, write_msg_255, write_msg_321
       data hundred /100.0/
       data mess_61, write_msg_255, write_msg_321
@@ -74,7 +75,16 @@ c
 c
  10   continue
       num_error = num_error + 1
+      high_lvl_count = high_lvl_count + 1
+      if( high_lvl_count == 20 ) then
+        write(out,8999)
+        go to 9999
+      end if
+      if( high_lvl_count > 20 ) go to 9999
       write(out,9000)
+ 8999 format(/1x,'>>>>> no further messages about high level command',
+     &     /14x,'will be displayed.'/)
+
  9000 format(/1x,'>>>>> error: a high level command is expected. ',
      &       'continue'/14x,'scanning until one is encountered.'/)
       go to 9999

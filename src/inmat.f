@@ -4,7 +4,7 @@ c     *                      subroutine inmat                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/3/2016 rhd               *
+c     *                   last modified : 5/18/2017 rhd              *
 C     *                                                              *
 C     *     input of properties of the materials in the material     *
 c     *     library for the current problem.                         *
@@ -16,24 +16,27 @@ c
       subroutine inmat( sbflg1, sbflg2, matnum )
       use main_data, only : matprp, lmtprp, imatprp, dmatprp,
      &  smatprp, nonlocal_analysis, umat_used, creep_model_used
-      implicit integer (a-z)
+      use erflgs
+c      
+      implicit none
+      logical :: sbflg1, sbflg2
+      integer :: matnum
+c      
       include 'common.main'
-      logical sbflg1, sbflg2
 c
 c                       local declarations
 c
-      character name*80, mname*24, dums*10
-      logical fatal, coor, numnod, numel, elprop, elinc, constr, block,
-     &  matchs, numr, endcrd, true, label, scanms, numd,
-     &  matchs_exact, local_debug
-c
-      common /erflgs/ numnod, numel, fatal, coor, elprop, elinc,
-     &                constr, block
-      real dumr, fgm_mark
-      double precision
-     &   dumd, one
-      data one, fgm_mark / 1.0, -99.0 /
-      data local_debug / .false. /
+      integer :: dum, nc, matn, open, param, openxt, premat,
+     &           curve_set_no, yl_prop, yl_start, um_prop,
+     &           um_start, status
+      character :: name*80, mname*24, dums*10
+      logical :: matchs, numr, endcrd, true, label, scanms, numd,
+     &           matchs_exact
+      logical, parameter :: local_debug = .false.
+      real ::  dumr
+      real, parameter :: fgm_mark = -99.0
+      double precision :: dumd
+      double precision, parameter :: one=1.0d0
 c
 c
       if( sbflg1 ) go to 205

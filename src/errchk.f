@@ -191,6 +191,7 @@ c
 c
       subroutine errchk_2( matnum )
       use main_data, only : matprp, lmtprp
+      use erflgs
       implicit none
 c           
       include 'common.main'
@@ -200,9 +201,7 @@ c
       real, parameter :: fgm_mark = -99.0
       character :: dums
       double precision :: dumd
-      logical :: numnod, numel, fatal,coor, elprop, elinc, constr,
-     &           block, is_matl_cohesive, is_umat, is_matl_cp
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
+      logical :: is_matl_cohesive, is_umat, is_matl_cp
       character(len=50) erprms
 c
       erprms = ' '
@@ -386,7 +385,7 @@ c     *                      subroutine errchk_4                     *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 10/09/95                   *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *    this subroutine checks the coordinates for constistency.  *
 c     *                                                              *
@@ -397,28 +396,27 @@ c
       subroutine errchk_4( debug1 )
 c
       use main_data, only : crdmap
+      use erflgs
 c
-      implicit integer (a-z)     
+      implicit none    
       include 'common.main'
-      real dumr
-      character :: dums
-      double precision
-     &   dumd
-      logical numnod,numel,fatal,coor,elprop,elinc,constr,block
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
+      integer :: i
+      real :: dumr
+      character :: dums*1
+      double precision :: dumd
       logical debug1
 c
 c                       check to make sure that all structural
 c                       nodes have been given coordinates.
 c           
-      if ( debug1 ) write (out,*) '  checking all nodes (errchk) '            
+      if( debug1 ) write (out,*) '  checking all nodes (errchk) '            
       coor = .true.
       do i = 1, nonode
-         if ( crdmap(i).eq.0 ) then
+         if( crdmap(i) == 0 ) then
             coor = .false.     
             call errmsg( 15, i, dums, dumr, dumd )
          end if
-      enddo
+      end do
 c     
       return
       end
@@ -429,7 +427,7 @@ c     *                      subroutine errchk_5                     *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 10/09/95                   *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine checks the element description for       *
 c     *     consistency.                                             *
@@ -440,38 +438,38 @@ c
 c
       subroutine errchk_5( debug1 )
       use main_data, only : elstor
-      implicit integer (a-z)     
+      use erflgs
+c      
+      implicit none     
       include 'common.main'
-      real dumr
-      character :: dums
-      double precision
-     &   dumd 
-      logical numnod,numel,fatal,coor,elprop,elinc,constr,block
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
-      logical debug1
+      integer :: i
+      real :: dumr
+      character :: dums*1
+      double precision :: dumd 
+      logical :: debug1
 c
 c
 c                       check to make sure that all elements have
 c                       been given the necessary properties and its
 c                       stress/strain vectors have been initialized.
 c                
-      if ( debug1 ) write (out,*) '  checking all elements (errchk) ' 
+      if( debug1 ) write (out,*) '  checking all elements (errchk) ' 
       elprop = .true.
-      do i = 1,noelem
-         if(elstor(1,i).eq.0) then
-            elprop= .false.
+      do i = 1, noelem
+         if( elstor(1,i) == 0 ) then
+            elprop = .false.
             call errmsg(34,i,dums,dumr,dumd)
          end if
-      enddo
+      end do
 c
 c                       data for all elements has been temporarily 
 c                       stored. store this information permanently.
 c      
-      if ( debug1 ) write(out,*)'    calling prcsel from errchk ',elprop
+      if( debug1 ) write(out,*)'    calling prcsel from errchk ',elprop
 c
-      if ( elprop ) call prcsel
+      if( elprop ) call prcsel
 c
-      if ( debug1 ) write(out,*)'     returned from prcsel '
+      if( debug1 ) write(out,*)'     returned from prcsel '
 c
       return
       end
@@ -481,7 +479,7 @@ c     *                      subroutine errchk_6                     *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 10/09/95                   *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine checks the incidences for consistency    *
 c     *                                                              *
@@ -491,17 +489,19 @@ c
 c
       subroutine errchk_6
       use main_data, only : incmap, incid
-      implicit integer (a-z)     
+      use erflgs
+c      
+      implicit none     
       include 'common.main'
+c
+      integer :: dup_cnt, i, j, kk, incptr, nnode, curinc, num, rem,
+     &           err, dumi    
       integer, allocatable, dimension (:) :: dup_ele
-      real dumr, mlt
-      character :: dums
-      double precision
-     &   dumd 
-      logical numnod,numel,fatal,coor,elprop,elinc,constr,block,
-     &        dupnod_msg
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
-      dimension inc(mxndel) 
+      integer :: inc(mxndel)
+      real :: dumr, mlt
+      character :: dums*1
+      double precision :: dumd 
+      logical :: dupnod_msg
 c           
 c                       check the element incidences and the mapping
 c                       vector for errors for every element.
@@ -622,16 +622,16 @@ c
       subroutine errchk_7
 c
       use main_data, only : trn, trnmat, cnstrn_in, inverse_incidences 
+      use erflgs
 c
-      implicit integer (a-z)     
+      implicit none     
       include 'common.main'
-      real dumr
-      character :: dums
-      double precision
-     &   dumd, zero, d32460
-      logical numnod,numel,fatal,coor,elprop,elinc,constr,block
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
-      data zero, d32460 / 0.0, 32460.0 /
+c      
+      integer :: node, ndof, col, row, dum, dof
+      real :: dumr
+      character :: dums*1
+      double precision :: dumd
+      double precision, parameter :: zero=0.d0, d32460=32460.0d0
 c
 c                       check transformation matrix for each pertinent node.
 c                                        
@@ -790,7 +790,7 @@ c     *                      subroutine errchk_18                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/30/2017 rhd             *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *    this subroutine checks the blocking input                 *
 c     *    for constistency.                                         *
@@ -799,19 +799,22 @@ c     ****************************************************************
 c
       subroutine errchk_18 (debug1)
       use main_data, only : elstor, incmap, incid
-      implicit integer (a-z)     
+      use erflgs
+c      
+      implicit none    
       include 'common.main'
 c
-      real dumr, beta_cohesive
-      character :: dums
-      double precision
-     &   dumd
-      logical numnod,numel,fatal,coor,elprop,elinc,constr,block,
-     &        cohesive
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
+      integer :: spnsum, i, k, num_bad_flags_used, blk_no, elem_loop,
+     &           element,  matmodel, eletype, intord, intnum, matnum,
+     &           matmodel2, eletype2, intord2, intnum2, curset, 
+     &           curset2, dum, node_loop, num_nodes, node, matnum2
+      integer, allocatable :: node_refs(:)
+      real :: dumr, beta_cohesive
+      character :: dums*1
+      double precision :: dumd
+      logical :: cohesive
       logical geonon, geonon2, bbar, bbar2, debug1, segcur, segcur2,
      &        bad_block, bad_flags(20), cyclic_plasticity
-      integer, allocatable :: node_refs(:)
 c
 c                       check the element blocking data structure.
 c

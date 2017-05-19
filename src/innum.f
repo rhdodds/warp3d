@@ -4,7 +4,7 @@ c     *                      subroutine innum                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/20/98                    *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of the *
 c     *     parameters which indicate the size of the current prob-  * 
@@ -18,15 +18,18 @@ c
 c
       subroutine innum( sbflg1, sbflg2 )
       use main_data, only : elstor, incmap, crdmap
-      implicit integer (a-z)
+      use erflgs
+c      
+      implicit none
       include 'common.main'
-      double precision
-     &   dumd
-      real dumr
-      character :: dums
-      logical fatal,numnod,numel,sbflg1,sbflg2,coor,elprop,elinc,constr
-      logical matchs,integr,endcrd,true,block 
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
+c
+      logical ::  sbflg1, sbflg2
+c
+      integer :: i, dum, param
+      double precision :: dumd
+      real :: dumr
+      character :: dums*1
+      logical :: matchs, integr, endcrd, true
 c
 c                       branch on whether nodes or elements are
 c                       to be input.

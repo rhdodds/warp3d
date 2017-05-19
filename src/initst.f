@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/26/2017 rhd              *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -40,7 +40,6 @@ c
      &                      ls_details, ls_min_step_length, 
      &                      ls_max_step_length, ls_rho, ls_slack_tol
 c
-      
       use stiffness_data
       use file_info
       use contact
@@ -50,25 +49,25 @@ c
       use distributed_stiffness_data, only: parallel_assembly_allowed,
      &                                      initial_map_type,
      &                                      final_map_type
-
+c
       use crystal_data, only: c_array, cry_multiplier, defined_crystal,
      &                        nangles, srequired
 c
-      implicit integer (a-z)
+      use erflgs     
+c
+      implicit none
       include 'common.main'
-      logical promsw,echosw,comsw,atrdsw,eolsw,eofsw,menusw,ptsw,signsw
-      logical numel,numnod,sbflg1,sbflg2,fatal,coor,elprop,elinc,constr
-      logical block
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block
-      real rzero
-      double precision
-     &  zero, one, fourth, ten_billion,
-     &  hundredth, twentyth, thousandth
-      integer(4) :: env_length
-      character(80) :: env_val
-      data zero, one, fourth, ten_billion, rzero,
-     &     hundredth, twentyth, thousandth  / 0.0, 1.0, 0.25,
-     &     1.0e+10, 0.0, 0.01, 0.05, 0.001 /
+c      
+      integer :: nblank, reclen, endchr, lword, rword, i, strtop, 
+     &           strstp, rottop, env_length
+      integer, external :: omp_get_max_threads
+      logical :: promsw, echosw, comsw, atrdsw, eolsw, eofsw, menusw,
+     &           ptsw, signsw, sbflg1, sbflg2
+      double precision, parameter :: zero = 0.0d0, one=1.0d0,
+     &            fourth=0.25d0, ten_billion=1.0e10,
+     &            hundredth=0.01d0, twentyth=0.05d0,
+     &            thousandth=0.001d0
+      character(len=80) :: env_val
 c
 c                       initialize the file input and output parameters
 c

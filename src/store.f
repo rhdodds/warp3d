@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/17/2017 rhd              *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -34,25 +34,32 @@ c
      &      initial_map_type, final_map_type
       use mm10_defs, only : 
      & one_crystal_hist_size, common_hist_size
+      use erflgs
 c
-      implicit integer (a-z)
-      intrinsic size
+      implicit none
+
       include 'common.main'
 c
-c               parameter and local variable declarations
+c               parameters
 c
-      character savnam*8, dbname*100
+      logical :: sbflg1, sbflg2 
+      character :: savnam*8
       character(len=*) :: savfil
-      logical numel, numnod, fatal, coor, elprop, elinc, constr,
-     &        block, nameok, sbflg1, sbflg2, scanms, delfil,
-     &        wrt_nod_lod, write_table
-      real dumr, rzero, rsum
-      double precision
-     &     dumd, dzero
+c
+c               locals
+c
+      integer :: dum, fileno, last, prec_fact, node,
+     &           i,  how_defined, node_count, num_patterns, mpc,
+     &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize,
+     &           maplength
+      integer, parameter :: check_data_key=2147483647
+      character :: dbname*100
+      logical :: nameok, scanms, delfil, wrt_nod_lod, write_table
+      real :: dumr, rsum
+      real, parameter :: rzero = 0.0
+      double precision :: dumd 
+      double precision, parameter :: dzero=0.0d0
       character(len=1) :: dums
-      common /erflgs/ numnod, numel, fatal, coor, elprop, elinc,
-     &                constr, block
-      data check_data_key, rzero, dzero / 2147483647, 0.0, 0.0d00 /
 c
 c                       at least one load step must have been computed
 c                       before a restart file is created.  if no load
@@ -117,7 +124,7 @@ c                       we write a record containing a 'check' variable
 c                       to catch any inconsistencies between the save
 c                       here and reopen
 c
-c                       write out sizes and error flags
+c                       write error flags
 c
       write(fileno) numnod,numel,fatal,coor,elprop,elinc,constr,block
 c
@@ -936,6 +943,7 @@ c
       integer, intent(in) :: fileno
 c
       integer :: nelem, mxcry
+      intrinsic size 
 c
       write(fileno) defined_crystal
 c

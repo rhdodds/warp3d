@@ -4,7 +4,7 @@ c     *                      subroutine compute                      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/12/2017 rhd              *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *     scan the compute command, make some checks and call      *
 c     *     various driver routines                                  * 
@@ -15,20 +15,22 @@ c
 c
       subroutine compute
       use j_data, only: comput_j, comput_i
-      implicit integer (a-z)
+      use erflgs
+c      
+      implicit none
+c      
       include 'common.main'
-      real dumr
-      double precision ::
-     &   dumd, zero
-      character :: dums
+c
+      integer :: intlst(mxlsz), dum, param, dummy, nc, lodn, ldnum,
+     &           lenlst, errnum
+      real :: dumr
+      double precision :: dumd
+      double precision, parameter :: zero = 0.0d0
+      character :: dums*1
       character(len=80) :: name
       character(len=8) :: ldname
-      logical :: fatal, numnod, numel, coor, elprop, elinc, constr,
-     &           matchs, endcrd, true, label, found, block,
-     &           scanms, notes_msg
-      dimension :: intlst(mxlsz)
-      common/erflgs/ numnod,numel,fatal,coor,elprop,elinc,constr,block 
-      data zero /0.0d00/, notes_msg / .true. /
+      logical :: matchs, endcrd, true, label, found, scanms
+      logical, save :: notes_msg = .true.
 c
 c                       branch on the type of computation to be
 c                       performed.

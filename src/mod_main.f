@@ -1,5 +1,25 @@
 c     ****************************************************************
 c     *                                                              *
+c     *                    f-90 module erflgs                        *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *              last modified : 5/18/2017 rhd                   *
+c     *                                                              *
+c     *     this small module replaces the old common /erflgs/       *
+c     *                                                              *
+c     ****************************************************************
+c
+      module erflgs
+      
+      logical :: numnod, numel, fatal, coor, elprop, elinc, 
+     &           constr, block      
+c
+      end module erflgs
+
+c
+c     ****************************************************************
+c     *                                                              *
 c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
@@ -11,8 +31,6 @@ c     *     used in warp3d solutions. also other variables as we     *
 c     *     gradually reduce dependence on common.main               *
 c     *                                                              *
 c     ****************************************************************
-c
-c
 c
       module main_data
 

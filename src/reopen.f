@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 2/17/2017 rhd              *
+c     *                   last modified : 5/18/2017 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -32,24 +32,30 @@ c
      &      initial_map_type, final_map_type
       use mm10_defs, only : 
      & one_crystal_hist_size, common_hist_size
-      implicit integer (a-z)
+      use erflgs
+c
+      implicit none
       include 'common.main'
 c
-c               parameter and local variable declarations
+c               parameters
 c
-      character resnam*8, dbname*100, string*80
+      logical :: sbflg1, sbflg2
+      character :: resnam*8
       character(len=*) :: resfil
-      logical numel, numnod, fatal, coor, elprop, elinc, constr,
-     &        block, flexst, sbflg1, sbflg2, scanms, nameok,
-     &        read_nod_load, msg_flag, read_table, exist_flag
-      real dumr, restart_time, wcputime
-      external wcputime
-      double precision
-     &     dumd, dzero
-      character :: dums
-      common /erflgs/ numnod, numel, fatal, coor, elprop, elinc,
-     &                constr, block
-      data dzero / 0.0d00 /
+c
+c               locals
+c
+      integer :: dum, last, prec_fact, node, i, node_count, eload_size,
+     &           num_patterns, err, dumi, mpc, ntrm, fileno, 
+     &           how_defined, itab, num_rows, num_cols, ilist,
+     &           ulen, nsize, maplength
+      character ::  dbname*100, string*80, dums*1
+      logical :: flexst, scanms, nameok,
+     &          read_nod_load, msg_flag, read_table, exist_flag
+      real :: dumr, restart_time
+      real, external :: wcputime
+      double precision :: dumd
+      double precision, parameter :: dzero=0.0d0
 c
       msg_flag = .true.
 c
@@ -102,7 +108,7 @@ c                       variable to catch any inconsistencies
 c                       between the previous save and the reopen here
 c
 c
-c                       read in sizes and error flags
+c                       read error flags
 c
 c
       read(fileno) numnod,numel,fatal,coor,elprop,elinc,constr,block
