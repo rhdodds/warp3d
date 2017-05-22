@@ -4,8 +4,7 @@ c     *              f-90 module segmental_curves                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                    last modified : 10/18/2009 RHD            *
-c     *                              (fix bug in threadprivate)      *
+c     *                    last modified : 5/20/2017 rhd             *
 c     *                                                              *
 c     *     define the variables and data structures to support      *
 c     *     segmental stress-strain curves                           *
@@ -30,7 +29,13 @@ c          been verified. they are shared read-only across threads
 c
 c                     double precision/reals
 c
-       double precision
+!dir$ attributes align: 64 :: seg_curves, seg_curves_min_stress,
+     & seg_curves_value, seg_curves_ym, seg_curves_nu,
+     & seg_curves_alpha, seg_curves_gp_sigma_0,
+     & seg_curves_gp_h_u,seg_curves_gp_beta_u,
+     & seg_curves_gp_delta_u
+c  
+       double precision ::
      & seg_curves(max_seg_points,2,max_seg_curves),
      & seg_curves_min_stress(max_seg_curves),
      & seg_curves_value(max_seg_curves),
@@ -44,7 +49,10 @@ c
 c
 c                     integers
 c
-      integer
+!dir$ attributes align: 64 :: num_seg_points, seg_curves_type,
+     &   seg_curve_table
+c     
+       integer ::
      &   num_seg_points(max_seg_curves), 
      &   seg_curves_type(max_seg_curves),
      &   max_current_pts,
@@ -53,7 +61,7 @@ c
 c
 c                     logicals
 c
-      logical
+      logical ::
      &  seg_curve_def(max_seg_curves)
 c
 c          These variable below are used during problem
@@ -69,19 +77,19 @@ c          module. We use the threadprivate declaration so
 c          each thread gets their own copy. This works even for
 c          allocated arrays
 c
-       double precision,
-     &  dimension (:), allocatable :: sigma_curve_min_values,
+       double precision, dimension (:), allocatable :: 
+     &  sigma_curve_min_values,
      &  curve_temps, curve_e_values, curve_nu_values,
      &  curve_alpha_values, curve_rates,
      &  curve_gp_sig_0_values, curve_gp_h_u_values,
      &  curve_gp_beta_u_values, curve_gp_delta_u_values
-       double precision,
-     &   dimension(max_seg_points) ::
+     
+!dir$ attributes align: 64 :: curve_plseps_values
+        double precision, dimension(max_seg_points) ::
      &   curve_plseps_values
 c
-       double precision,
-     &  dimension (:,:), allocatable :: sigma_curves,
-     &                                  sigma_inter_table
+       double precision, dimension (:,:), allocatable ::
+     &    sigma_curves, sigma_inter_table
 c
       integer :: active_curve_set=0, now_blk_relem=0
       data  curve_plseps_values(1:max_seg_points)/max_seg_points*0.0/
