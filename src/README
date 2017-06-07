@@ -1,7 +1,7 @@
 
 
                      README for WARP3D /src Directory
-                        (Updated December 2016)
+                        (Updated June 2017)
 
 
 ==========================================================================
@@ -27,13 +27,15 @@ directory.
 
 2. MAXIMUM SIZE OF MODELS
 
+
+June 2017 -> removed fixed upper limit on number of nodes
 The single file containing parameter definitions for the maximum size
 models analyzed is "param_def". Only this file is changed to increase
 or decrease the maximum problem size. Simply set:
 
- mxnod=####, mxel=####
+ mxel=####
 
-"mxnod" to max number of nodes and "mxel" to the max number of elements
+"mxel" to the max number of elements
 and run the "Makewarp.bash" script to re-compile. Likewise, the maximum "block"
 size for the data structure used throughout WARP3D
 is "mxvl" (usually 64 or 128).
