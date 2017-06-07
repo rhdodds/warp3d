@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/18/2017 rhd              *
+c     *                   last modified : 6/6/2017 rhd               *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -13,14 +13,13 @@ c
 c
 c
       program warp3d
+      use global_data !  replacement for common.main
       use file_info
       use main_data, only : output_packets, windows_os, osx_os, 
      &                      linux_os
       use performance_data
       use erflgs
       implicit none
-c      
-      include 'common.main'
 c      
       integer :: return_type, nsn, lsn, idummy, nc, param, path,
      &           build_number, olddof, chkprm    
@@ -95,7 +94,7 @@ c
       if( osx_os )     char_os = 'OSX 64-bit'
 
       write (*,9000) char_os, build_number, compile_date,
-     &               compile_time, sdate_ , mxnod, mxel
+     &               compile_time, sdate_ , mxel
 c
 c                       read a high level command
 c
@@ -1010,7 +1009,7 @@ c
      &     '    **                                             ',
      &     '                  **',/,
      &     '    **     ',a21,'      -rel-    Release: ',
-     &     ' 17.8.1      **',/,
+     &     ' 17.8.2      **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
@@ -1027,8 +1026,8 @@ c
      &     ' Display Text      **',/,
      &     '    **                                             ',
      &     '                  **',/,
-     &     '    **     Limits (nodes, elements): ',2i10,
-     &     '            **',/,
+     &     '    **     Limits (nodes, elements): none,',i10,
+     &     '                 **',/,
      &     '    **                                             ',
      &     '                  **',/,
      &     '    ***********************************************',
@@ -1059,9 +1058,8 @@ c     ****************************************************************
 c
 c
       subroutine error_count( outdev, clear )
+      use global_data
       implicit none
-c      
-      include 'common.main'
 c
       integer :: outdev
       logical :: clear
@@ -1140,6 +1138,7 @@ c
 
       subroutine warp3d_normal_stop
 c      
+      use global_data 
       use file_info
       use main_data, only : output_packets 
       use performance_data, only : time_assembly, assembly_total,
@@ -1147,8 +1146,6 @@ c
      &            t_performance_eoj_pardiso
       use erflgs
       implicit none
-      
-      include 'common.main'
 c
       integer :: i
       real :: t1, dumr, warptime, pardiso_time
