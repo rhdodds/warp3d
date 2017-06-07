@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: April 20, 2017
+#   Last modifications: May 22, 2017
 #
 #   Description:
 #
@@ -98,9 +98,10 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 			$(OD)/mod_pconvert.o \
 			$(OD)/mod_performance.o \
 			$(OD)/mod_segmental_curves.o \
-			$(OD)/mod_stiffness.o
+			$(OD)/mod_stiffness.o \
+			$(OD)/distributed_assembly.o  # contain a module definition 
 #
-INCLUDES := common.main param_def include_mm10 include_sig_up include_tan_ek \
+INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
 			include_usr_parm 
 #
 #                all *.o files for linking.  module files are listed 
@@ -351,7 +352,7 @@ $(EXE_NAME) : $(OBJ)           # target is warp3d executable
 #            ===============================
 #
 #            => for simplicity we assume all the *.f depend on all
-#               modules, includes, common.main, param_def
+#               modules, includes, param_def
 #
 $(OD)/%.o : %.f $(MODS) $(INCLUDES)	 
 	$(RMC)  $@
@@ -412,7 +413,7 @@ $(ODIR)/mod_crack_growth$O : mod_crack_growth.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_crystals$O : mod_crystals.f param_def common.main $(OD)/mod_main$O
+$(ODIR)/mod_crystals$O : mod_crystals.f param_def  $(OD)/mod_main$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -436,7 +437,7 @@ $(ODIR)/mod_file_info$O : mod_file_info.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_hypre$O : mod_hypre.f common.main param_def
+$(ODIR)/mod_hypre$O : mod_hypre.f  param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -444,7 +445,7 @@ $(ODIR)/mod_jintegral$O : mod_jintegral.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f  common.main param_def
+$(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f   param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 	
