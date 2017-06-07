@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: April 27, 2017
+#   Last modifications: May 23, 2017
 #
 #   Description:
 #
@@ -58,7 +58,7 @@ MVC      = /bin/mv -f
 #
 FTRAP      = 
 INLINE     = -no-inline-factor
-PROFILE    = 
+PROFILE    = -g
 OPT_REPORT = -qopt-report-annotate=text -qopt-report=5
 OPT_REPORT = 
 OPENMP     = -qopenmp -reentrancy 
@@ -98,7 +98,7 @@ MODS     := $(OD)/mod_adaptive_steps.o \
             $(OD)/mod_segmental_curves.o \
             $(OD)/mod_stiffness.o
 #
-INCLUDES := common.main param_def include_mm10 include_sig_up include_tan_ek \
+INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
             include_usr_parm 
 #
 #                MKL libraries to include at link time. Needed MPI
@@ -357,7 +357,7 @@ $(EXE_NAME) : $(OBJ)
 #            ===============================
 #
 #            => for simplicity we assume all the *.f depend on all
-#               modules, includes, common.main, param_def
+#               modules, includes, param_def
 #
 $(OD)/%.o : %.f $(MODS) $(INCLUDES)	 
 	$(RMC)  $@
@@ -419,7 +419,7 @@ $(ODIR)/mod_crack_growth$O : mod_crack_growth.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_crystals$O : mod_crystals.f param_def common.main $(OD)/mod_main$O
+$(ODIR)/mod_crystals$O : mod_crystals.f param_def $(OD)/mod_main$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -443,7 +443,7 @@ $(ODIR)/mod_file_info$O : mod_file_info.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_hypre$O : mod_hypre.f common.main param_def
+$(ODIR)/mod_hypre$O : mod_hypre.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -451,7 +451,7 @@ $(ODIR)/mod_jintegral$O : mod_jintegral.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f  common.main param_def
+$(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 	
