@@ -1,0 +1,704 @@
+c 
+c     Crack front domain calculations
+c          number of cracks =   1
+c        number of contours =   6
+c 
+c     J-integral evaluations
+c              crack number =   1
+c     number of crack nodes =  97
+c 
+domain J1  $ phi =   0.0000
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  tangent vector  tx  0.000000 ty -1.000000 tz  0.000000
+  front nodes      51   5263    154    q3disop verify
+  q-values automatic rings    1-  6
+  function type a
+  print totals
+  compute domain integral
+domain J3  $ phi =   0.0655
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes      51   5263    154   5240    153    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J5  $ phi =   0.1309
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     154   5240    153   5206     52    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J7  $ phi =   0.1963
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     153   5206     52   5863    388    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J9  $ phi =   0.2618
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      52   5863    388   5843    387    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J11  $ phi =   0.3272
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     388   5843    387   5809     53    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J13  $ phi =   0.3927
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     387   5809     53   6361    570    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J15  $ phi =   0.4582
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      53   6361    570   6341    569    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J17  $ phi =   0.5236
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     570   6341    569   6307     54    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J19  $ phi =   0.5890
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     569   6307     54   6859    752    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J21  $ phi =   0.6545
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      54   6859    752   6839    751    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J23  $ phi =   0.7199
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     752   6839    751   6805     55    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J25  $ phi =   0.7854
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     751   6805     55   7357    934    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J27  $ phi =   0.8509
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      55   7357    934   7337    933    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J29  $ phi =   0.9163
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     934   7337    933   7303     56    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J31  $ phi =   0.9817
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     933   7303     56   7855   1116    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J33  $ phi =   1.0472
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      56   7855   1116   7835   1115    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J35  $ phi =   1.1126
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1116   7835   1115   7801     57    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J37  $ phi =   1.1781
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1115   7801     57   8353   1298    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J39  $ phi =   1.2436
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes      57   8353   1298   8333   1297    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J41  $ phi =   1.3090
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1298   8333   1297   8299     58    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J43  $ phi =   1.3744
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes    1297   8299     58   8851   1480    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J45  $ phi =   1.4399
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes      58   8851   1480   8831   1479    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J47  $ phi =   1.5053
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes    1480   8831   1479   8797     59    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J49  $ phi =   1.5708
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1479   8797     59  25592  18541    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J51  $ phi =   1.6363
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      59  25592  18541  25615  18542    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J53  $ phi =   1.7016
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18541  25615  18542  25635  17132    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J55  $ phi =   1.7671
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18542  25635  17132  25103  18361    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J57  $ phi =   1.8326
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17132  25103  18361  25137  18362    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J59  $ phi =   1.8980
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18361  25137  18362  25157  17131    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J61  $ phi =   1.9635
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   18362  25157  17131  24605  18179    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J63  $ phi =   2.0290
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17131  24605  18179  24639  18180    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J65  $ phi =   2.0943
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   18179  24639  18180  24659  17130    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J67  $ phi =   2.1598
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18180  24659  17130  24107  17997    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J69  $ phi =   2.2253
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17130  24107  17997  24141  17998    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J71  $ phi =   2.2907
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17997  24141  17998  24161  17129    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J73  $ phi =   2.3562
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17998  24161  17129  23609  17815    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J75  $ phi =   2.4217
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17129  23609  17815  23643  17816    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J77  $ phi =   2.4870
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17815  23643  17816  23663  17128    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J79  $ phi =   2.5525
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17816  23663  17128  23111  17633    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J81  $ phi =   2.6180
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17128  23111  17633  23145  17634    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J83  $ phi =   2.6834
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17633  23145  17634  23165  17127    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J85  $ phi =   2.7489
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17634  23165  17127  22613  17451    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J87  $ phi =   2.8144
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17127  22613  17451  22647  17452    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J89  $ phi =   2.8797
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17451  22647  17452  22667  17126    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J91  $ phi =   2.9452
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17452  22667  17126  22010  17217    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J93  $ phi =   3.0107
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17126  22010  17217  22044  17218    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J95  $ phi =   3.0761
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17217  22044  17218  22067  17125    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute domain integral
+domain J97  $ phi =   3.1416
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  tangent vector  tx  0.000000 ty  1.000000 tz  0.000000
+  front nodes   17218  22067  17125    q3disop verify
+  q-values automatic rings    1-  6
+  function type c
+  print totals
+  compute domain integral
+c 
+c     Interaction integral evaluations
+c              crack number =   1
+c     number of crack nodes =  97
+c 
+domain T1  $ phi =   0.0000
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  tangent vector  tx  0.000000 ty -1.000000 tz  0.000000
+  front nodes      51   5263    154    q3disop verify
+  q-values automatic rings    1-  6
+  function type a
+  print totals
+  compute interaction integral
+domain T3  $ phi =   0.0655
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes      51   5263    154   5240    153    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T5  $ phi =   0.1309
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     154   5240    153   5206     52    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T7  $ phi =   0.1963
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     153   5206     52   5863    388    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T9  $ phi =   0.2618
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      52   5863    388   5843    387    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T11  $ phi =   0.3272
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     388   5843    387   5809     53    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T13  $ phi =   0.3927
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     387   5809     53   6361    570    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T15  $ phi =   0.4582
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      53   6361    570   6341    569    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T17  $ phi =   0.5236
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     570   6341    569   6307     54    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T19  $ phi =   0.5890
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     569   6307     54   6859    752    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T21  $ phi =   0.6545
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      54   6859    752   6839    751    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T23  $ phi =   0.7199
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     752   6839    751   6805     55    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T25  $ phi =   0.7854
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes     751   6805     55   7357    934    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T27  $ phi =   0.8509
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      55   7357    934   7337    933    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T29  $ phi =   0.9163
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     934   7337    933   7303     56    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T31  $ phi =   0.9817
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes     933   7303     56   7855   1116    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T33  $ phi =   1.0472
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      56   7855   1116   7835   1115    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T35  $ phi =   1.1126
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1116   7835   1115   7801     57    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T37  $ phi =   1.1781
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1115   7801     57   8353   1298    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T39  $ phi =   1.2436
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes      57   8353   1298   8333   1297    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T41  $ phi =   1.3090
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1298   8333   1297   8299     58    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T43  $ phi =   1.3744
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes    1297   8299     58   8851   1480    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T45  $ phi =   1.4399
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes      58   8851   1480   8831   1479    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T47  $ phi =   1.5053
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes    1480   8831   1479   8797     59    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T49  $ phi =   1.5708
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes    1479   8797     59  25592  18541    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T51  $ phi =   1.6363
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes      59  25592  18541  25615  18542    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T53  $ phi =   1.7016
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18541  25615  18542  25635  17132    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T55  $ phi =   1.7671
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18542  25635  17132  25103  18361    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T57  $ phi =   1.8326
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17132  25103  18361  25137  18362    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T59  $ phi =   1.8980
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18361  25137  18362  25157  17131    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T61  $ phi =   1.9635
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   18362  25157  17131  24605  18179    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T63  $ phi =   2.0290
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17131  24605  18179  24639  18180    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T65  $ phi =   2.0943
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   18179  24639  18180  24659  17130    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T67  $ phi =   2.1598
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   18180  24659  17130  24107  17997    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T69  $ phi =   2.2253
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17130  24107  17997  24141  17998    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T71  $ phi =   2.2907
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17997  24141  17998  24161  17129    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T73  $ phi =   2.3562
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17998  24161  17129  23609  17815    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T75  $ phi =   2.4217
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17129  23609  17815  23643  17816    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T77  $ phi =   2.4870
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17815  23643  17816  23663  17128    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T79  $ phi =   2.5525
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17816  23663  17128  23111  17633    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T81  $ phi =   2.6180
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17128  23111  17633  23145  17634    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T83  $ phi =   2.6834
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17633  23145  17634  23165  17127    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T85  $ phi =   2.7489
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17634  23165  17127  22613  17451    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T87  $ phi =   2.8144
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17127  22613  17451  22647  17452    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T89  $ phi =   2.8797
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17451  22647  17452  22667  17126    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T91  $ phi =   2.9452
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17452  22667  17126  22010  17217    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T93  $ phi =   3.0107
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  front nodes   17126  22010  17217  22044  17218    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T95  $ phi =   3.0761
+  normal plane  nx  0.500000 ny  0.000000 nz  0.866025
+  front nodes   17217  22044  17218  22067  17125    q3disop verify
+  q-values automatic rings    1-  6
+  function type b
+  print totals
+  compute interaction integral
+domain T97  $ phi =   3.1416
+  normal plane  nx  0.500000 ny -0.000000 nz  0.866025
+  tangent vector  tx  0.000000 ty  1.000000 tz  0.000000
+  front nodes   17218  22067  17125    q3disop verify
+  q-values automatic rings    1-  6
+  function type c
+  print totals
+  compute interaction integral

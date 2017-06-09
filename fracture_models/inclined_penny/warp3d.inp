@@ -1,0 +1,54 @@
+!
+!  linear elatic analysis of an inclined, embedded penny crack
+!  in an infinite body
+!
+!  crack radius: 1.0 in.
+!  rotation of crack plate about global Z-axis: -30 degrees
+!
+!  use both J-integral and domain integral computations
+!  computes KI, KII, KII and T-stress around crack front
+!
+  structure inclined_penny
+!  
+  number of nodes 91885 elements  21168
+
+  material elastic
+     properties mises e 30000. nu 0.3 yld_pt 1.0e10
+  elements
+    1- 21168 type q3disop  linear  material elastic,
+       order 2x2x2 center_output   short     
+!
+*echo off
+*input "coordinates.inp"
+*input "incidences.inp"
+*input "constraints.inp"
+*input "loads.inp"
+*echo on
+ blocking automatic
+!
+ loading test
+   nonlinear
+    step 1 traction_z 1.0
+!
+ nonlinear analysis parameters
+  solution technique direct sparse
+  maximum iterations 1
+  minimum iterations 1
+  nonconvergent solutions stop
+  convergence test norm residual tolerance 0.0300
+  time step 1.0000000E+06
+  batch messages on
+  cpu time limit off
+  extrapolate off
+  show details on
+  material messages off
+! 
+! output patran neutral
+  output model flat patran convention text file "penny_model_flat"
+! 
+  compute displacements for loading test step 1
+  output flat text displacements
+  output flat text element stresses
+!
+*input "domains.inp"
+  stop

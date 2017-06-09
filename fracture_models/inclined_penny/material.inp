@@ -1,0 +1,15 @@
+c  
+c          MATERIAL DATA
+c  
+material mat1
+c   Elastic Material
+     properties               mises,
+                   e   3.000000E+04       nu   3.000000E-01,
+              yld_pt   3.000000E+09  n_power   1.000000E+00,
+                 rho   1.000000E+00    alpha   0.000000E+00 
+c  
+c          ELEMENT TYPES
+c  
+elements
+           1- 21168 type q3disop    linear     material mat1,
+                   order 2x2x2      center_output   short     
