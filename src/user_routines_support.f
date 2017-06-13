@@ -1,7 +1,7 @@
 c                                                                               
 c           user_routines_support.f   Distribution version                      
 c                                                                               
-c           Updated:  110/7/2015 rhd                                            
+c           Updated:  6/13/2017 rhd                                            
 c                                                                               
                                                                                 
 c     ****************************************************************          
@@ -18,8 +18,8 @@ c     ****************************************************************
 c                                                                               
       integer function warp3d_get_device_number()                               
       implicit none                                                             
-      integer iunit                                                             
-      logical connected                                                         
+      integer :: iunit                                                             
+      logical :: connected                                                         
 c                                                                               
 c        1.  find an available device number, open the neutral                  
 c            file                                                               
@@ -77,15 +77,14 @@ c
 c                                                                               
 c                      parameter declarations                                   
 c                                                                               
-      double precision                                                          
-     &  in_vec(6), drot(3,3), out_vec(6)                                        
-      integer type, nrow, ncol                                                  
+      double precision :: in_vec(6), drot(3,3), out_vec(6)                                        
+      integer :: type, nrow, ncol                                                  
 c                                                                               
 c                     locally defined arrays-variables                          
 c                                                                               
-      double precision                                                          
-     &  factor, one, half, two, a(3,3), t(3,3), c(3,3)                          
-      logical local_debug                                                       
+      double precision :: factor, one, half, two, a(3,3), t(3,3), 
+     &                    c(3,3)                          
+      logical :: local_debug                                                       
       data one, half, two, local_debug / 1.0d00, 0.5d00,                        
      &                                       2.0d00, .true. /                   
 c                                                                               
@@ -169,14 +168,12 @@ c
 c                                                                               
 c                      parameter declarations                                   
 c                                                                               
-      double precision                                                          
-     &  sig(*), sinv1, sinv2                                                    
-      integer ndi, nshr                                                         
+      double precision :: sig(*), sinv1, sinv2                                                    
+      integer :: ndi, nshr                                                         
 c                                                                               
 c                     locally defined arrays-variables                          
 c                                                                               
-      double precision                                                          
-     &  sig_dev(6), t1, t2, one_third, two, oneptfive                           
+      double precision :: sig_dev(6), t1, t2, one_third, two, oneptfive                           
       data one_third, two, oneptfive                                            
      &    /  0.3333333333333333d00, 2.0d00, 1.5d00 /                            
 c                                                                               
@@ -210,14 +207,13 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine sprinc( s, ps, lstr, ndi, nshr )                               
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     s(*), ps(*)                                                          
+      implicit none  
+      integer :: lstr, ndi, nshr, ier                                                 
+      double precision :: s(*), ps(*)                                                          
 c                                                                               
 c                    locally allocated                                          
 c                                                                               
-      double precision                                                          
-     &  temp(6), wk(3), evec(3,3), half, one, factor                            
+      double precision :: temp(6), wk(3), evec(3,3), half, one, factor                            
 c                                                                               
       data  half, one                                                           
      &   / 0.5d00, 1.0d00 /                                                     
@@ -253,17 +249,15 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine sprind( s, ps, an, lstr, ndi, nshr )                           
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     s(*), ps(*), an(3,3)                                                 
+      implicit none
+      integer :: lstr, ndi, nshr, ier                                                    
+      double precision :: s(*), ps(*), an(3,3)                                                 
 c                                                                               
 c                    locally allocated                                          
 c                                                                               
-      double precision                                                          
-     &  temp(6), wk(3), half, one, factor                                       
+      double precision :: temp(6), wk(3), half, one, factor                                       
 c                                                                               
-      data  half, one                                                           
-     &   / 0.5d00, 1.0d00 /                                                     
+      data  half, one  / 0.5d00, 1.0d00 /                                                     
 c                                                                               
 c        calculate the principal strains or stresses and eigenvectors           
 c        for UMAT support.                                                      
@@ -290,7 +284,7 @@ c     *                 subroutine getnumcpus                        *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 7/26/12                    *          
+c     *                   last modified : 6/13/2017                  *          
 c     *                                                              *          
 c     *     return the number of ranks during MPI execution          *          
 c     *                                                              *          
@@ -298,10 +292,11 @@ c     ****************************************************************
 c                                                                               
       subroutine getnumcpus( nranks )                                           
       use global_data ! old common.main
-      implicit integer (a-z)                                                    
+      implicit none
+      integer :: nranks                                                   
 c                                                                               
       nranks = 1                                                                
-      if( use_mpi ) nranks = numrpocs                                           
+      if( use_mpi ) nranks = numprocs                                           
       return                                                                    
       end                                                                       
                                                                                 
@@ -311,7 +306,7 @@ c     *                     subroutine getrank                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 7/26/12                    *          
+c     *                   last modified : 6/13/2017                  *          
 c     *                                                              *          
 c     *     return the MPI rank number for this process              *          
 c     *                                                              *          
@@ -319,7 +314,8 @@ c     ****************************************************************
 c                                                                               
       subroutine getrank( thisrank )                                            
       use global_data ! old common.main
-      implicit integer (a-z)                                                    
+      implicit none
+      integer :: thisrank                                                   
 c                                                                               
       thisrank = 0                                                              
       if( use_mpi ) thisrank = myid                                             
@@ -332,7 +328,7 @@ c     *                     subroutine getmodelsizes                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 11/7/2015                  *          
+c     *                   last modified : 6/13/2017                  *          
 c     *                                                              *          
 c     *     return number of nodes and elements                      *          
 c     *                                                              *          
@@ -340,7 +336,8 @@ c     ****************************************************************
 c                                                                               
       subroutine getmodelsizes( num_model_nodes, num_model_elements )           
       use global_data ! old common.main
-      implicit integer (a-z)                                                    
+      implicit none
+      integer :: num_model_nodes, num_model_elements                                                    
 c                                                                               
       num_model_nodes    = nonode                                               
       num_model_elements = noelem                                               

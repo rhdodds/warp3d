@@ -1,7 +1,7 @@
 c                                                                               
 c           user_routines_other_abaqus.f   Distribution version                 
 c                                                                               
-c           Updated:  2/6/2015                                                  
+c           Updated:  6/13/2017 rhd                                                  
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
