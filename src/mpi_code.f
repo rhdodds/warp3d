@@ -88,6 +88,27 @@ c
 c                                                                               
       return                                                                    
       end                                                                       
+c     ****************************************************************          
+c     *                                                              *          
+c     *                  subroutine wmpi_reduce_vec_std              *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 6/17/2017 rhd              *          
+c     *                                                              *          
+c     *         Dummy routine for serial version of warp3d.          *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine wmpi_reduce_vec_std ( in, size )                                   
+      implicit integer (a-z)                                                    
+c                                                                               
+      double precision   in(*)                                                  
+c                                                                               
+c                                                                               
+      return                                                                    
+      end                                                                       
 c                                                                               
 c                                                                               
 c     ****************************************************************          
