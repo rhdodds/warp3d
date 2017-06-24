@@ -303,7 +303,9 @@ c
       call t_performance_start_pardiso                                          
       use_iterative = solver_mkl_iterative                                      
       direct_solve = .not. use_iterative                                        
-                                                                                
+                  
+      write(*,*) '...   inside  pardiso_symmetric'
+      write(*,*) '           itype, neq, ncoeff: ',itype, neq, ncoeff                                                          
       select case( itype )                                                      
       case( 1 )                                                                 
         call pardiso_symmetric_setup                                            
@@ -357,7 +359,9 @@ c
 c              map vss to csr equation storage                                  
 c                                                                               
       call pardiso_symmetric_map( neq, ncoeff, k_diag, rhs, eqn_coeffs,         
-     &                            k_pointers, k_indices )                       
+     &                            k_pointers, k_indices )      
+      write(*,*)   '   ....inside pardiso_symmetric_setup'
+      write(*,*)   '          neq, ncoeff: ', neq, ncoeff             
 c                                                                               
 c             if previously sovled a set of equations,release memory.           
 c                                                                               
@@ -540,7 +544,7 @@ c
          if( ier .ne. 0 ) then                                                  
            write(iout,9470)                                                     
            write(iout,*) '       >> @ phase 11, ier: ',ier                      
-           call die_gracefully                                                  
+           call die_abort                                                  
          end if                                                                 
          if( cpu_stats )  then                                                  
            write(iout,9482) wcputime(1)                                         
@@ -559,7 +563,7 @@ c
             write(iout,*) '       >> @ phase 22, ier: ',ier                     
             if( ier .eq. -2 ) write(iout,9700)                                  
             if( ier .eq. -4 ) write(iout,9710)                                  
-            call die_gracefully                                                 
+            call die_abort                                                 
          end if                                                                 
          if( cpu_stats ) then                                                   
            write(iout,9490) wcputime(1)                                         
@@ -578,7 +582,7 @@ c
          if( ier .ne. 0 ) then                                                  
            write(iout,9470)                                                     
            write(iout,*) '       >> @ phase 33, ier: ',ier                      
-           call die_gracefully                                                  
+           call die_abort                                                  
          end if                                                                 
          if( cpu_stats ) write(iout,9492) wcputime(1)                           
 c                                                                               
@@ -587,21 +591,21 @@ c
            write(iout,9470)                                                     
            write(iout,*) '       >>  phase -1, ier: ',ier                       
            write(iout,*) '       >>  releasing solver data'                     
-           call die_gracefully                                                  
+           call die_abort                                                  
          end if                                                                 
 c                                                                               
         case( 7 )                                                               
            write(iout,9470)                                                     
            write(iout,*) '  >>  inconsistency @ 1'                              
            write(iout,*) '  >>  releasing solver data'                          
-           call die_gracefully                                                  
+           call die_abort                                                  
 c                                                                               
         case( 8 )                                                               
          if( ier .ne. 0 ) then                                                  
            write(iout,9472)                                                     
            write(iout,*) '       >>  phase 52, ier: ',ier                       
            write(iout,*) '       >>  iterative solve'                           
-           call die_gracefully                                                  
+           call die_abort                                                  
          end if                                                                 
          if( cpu_stats ) then                                                   
            write(iout,9600) iparm(20)                                           
@@ -615,15 +619,15 @@ c
 c                                                                               
         case( 10 )                                                              
            write(iout,9720)                                                     
-           call die_gracefully                                                  
+           call die_abort                                                  
 c                                                                               
         case( 11 )                                                              
            write(iout,9740)                                                     
-           call die_gracefully                                                  
+           call die_abort                                                  
 c                                                                               
         case default                                                            
            write(iout,9730)                                                     
-           call die_gracefully                                                  
+           call die_abort                                                  
                                                                                 
       end select                                                                
       return                                                                    
