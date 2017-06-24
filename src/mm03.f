@@ -79,7 +79,9 @@ c
         end do                                                                  
       end if                                                                    
 c                                                                               
-c               check for null gauss points                                     
+c               check for null gauss points. set last n1 values zero
+c               to prevent susequent uninitialzed variable computations
+c               should stress update fail (eg, Gurson does not converge)                                    
 c                                                                               
       if( debug ) write (iout,*) ' null point calcs'                            
 !DIR$ VECTOR ALIGNED                                                            
@@ -87,7 +89,10 @@ c
         null_point(i) = abs( deps(i,1) ) + abs( deps(i,2) ) +                   
      &                  abs( deps(i,3) ) + abs( deps(i,4) ) +                   
      &                  abs( deps(i,5) ) + abs( deps(i,6) )                     
-     &                  .le. toler * chk_yld_eps                                
+     &                  .le. toler * chk_yld_eps   
+      stress_n1(7,i) = zero
+      stress_n1(8,i) = zero
+      stress_n1(9,i) = zero                             
       end do                                                                    
 c                                                                               
       do i = 1, span                                                            
