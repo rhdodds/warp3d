@@ -1,10 +1,9 @@
-c     ****************************************************************          
 c     *                                                              *          
 c     *                drive_eps_sig_internal_forces                 *          
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 4/5/2016 rhd               *          
+c     *                   last modified : 6/17/2017 rhd              *          
 c     *                                                              *          
 c     *      recovers all the strains, stresses                      *          
 c     *      and internal forces (integral B-transpose * sigma)      *          
@@ -28,8 +27,8 @@ c
      &                                          material_cut_step )             
       use global_data ! old common.main
 c                                                                               
-      use elem_block_data,   only :  einfvec_blocks, edest_blocks               
-      use elem_extinct_data, only :  dam_blk_killed, dam_ifv, dam_state         
+      use elem_block_data,   only : einfvec_blocks, edest_blocks               
+      use elem_extinct_data, only : dam_blk_killed, dam_ifv, dam_state         
       use damage_data, only : growth_by_kill                                    
       use main_data, only: umat_serial                                          
 c                                                                               
@@ -46,20 +45,18 @@ c
      &           idummy1(1), idummy2(1)                                         
       integer, external :: omp_get_thread_num                                   
 c                                                                               
-      double precision, allocatable, dimension(:) ::                            
-     &  block_energies, block_plastic_work                                      
-c                                                                               
-      double precision ::                                                       
-     & zero, mag, dummy(mxvl,mxedof), start_time, end_time,                     
-     & sum_ifv_threads(max_threads)                                             
-c                                                                               
+      double precision, allocatable :: block_energies(:), 
+     &                                 block_plastic_work(:)    
+      double precision :: mag, start_time, 
+     &                    end_time, sum_ifv_threads(max_threads)                                                         
+      double precision, parameter :: zero = 0.0d0                                                                            
       double precision, external :: omp_get_wtime                               
       logical, allocatable, dimension(:)  :: step_cut_flags,                    
      &    blks_reqd_serial                                                      
 c                                                                               
-      logical :: local_debug, umat_matl                                         
-      real :: spone                                                             
-      data zero, local_debug, spone / 0.0d00, .false., 1.0 /                    
+      logical :: umat_matl        
+      logical, parameter :: local_debug = .false.                                 
+      real, parameter :: spone = 1.0                                                             
 c                                                                               
 c             MPI:                                                              
 c               alert workers we are in the strain-                             
@@ -200,17 +197,17 @@ c               all processors are aware of it.  Also reduce back the
 c               (scalar) internal energy to the root procaessor.                
 c                                                                               
       call wmpi_redlog( material_cut_step )                                     
-      call wmpi_reduce_vec( internal_energy, 1 )                                
-      call wmpi_reduce_vec( plastic_work, 1 )                                   
+      call wmpi_reduce_vec_std( internal_energy, 1 )                                
+      call wmpi_reduce_vec_std( plastic_work, 1 )                                   
 c                                                                               
 c             scatter the element internal forces (stored in blocks) into       
 c             the global vector (unless we are cutting step)                    
 c             initialize the global internal force vector.                      
 c                                                                               
 !DIR$ VECTOR ALIGNED                                                            
-      ifv(1:nodof) = zero                                                       
-      sum_ifv      = zero                                                       
-      num_term_ifv = 0                                                          
+      ifv(1:nodof) = zero    ! for this rank                                                   
+      sum_ifv      = zero    ! for this rank                                                   
+      num_term_ifv = 0       ! for this rank                                                   
       if( material_cut_step ) then                                              
         call allocate_ifv( 2 )                                                  
         return                                                                  
@@ -226,9 +223,12 @@ c
 c             timing studies show that use of ATOMIC UPDATE in                  
 c             addifv is 10 x faster than allocating an ifv vector per           
 c             thread, then gathering vectors. even then, this whole             
-c             gather process is quite fast                                      
-c                                                                               
-                                                                                
+c             gather process is quite fast    
+c
+c             we use local vectors to store sums, counts for each thread
+c             to elminate atomic update on those variable (may still be
+c             faster to use atomic).                                  
+c
       sum_ifv_threads(1:num_threads) = zero                                     
       num_term_ifv_threads(1:num_threads) = 0                                   
 c                                                                               
@@ -237,11 +237,6 @@ c
 c                                                                               
 c$OMP PARALLEL DO PRIVATE( blk, now_thread, felem, num_enodes,                  
 c$OMP&                     num_enode_dof, totdof, span )                        
-c$OMP&            SHARED( nelblk, elblks, myid, growth_by_kill,                 
-c$OMP&                    dam_blk_killed, edest_blocks, ifv,                    
-c$OMP&                    iprops, sum_ifv_threads, out,                         
-c$OMP&                    num_term_ifv_threads, einfvec_blocks, dam_ifv,        
-c$OMP&                    dam_state, idummy1, idummy2 )                         
 c                                                                               
       do blk = 1, nelblk                                                        
          if( elblks(2,blk) .ne. myid ) cycle                                    
@@ -259,14 +254,14 @@ c
            call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,               
      &                ifv(1),                                                   
      &                iprops, felem, sum_ifv_threads(now_thread),               
-     &                num_term_ifv_threads(now_thread),                         
+     &                num_term_ifv_threads(now_thread),                           
      &                einfvec_blocks(blk)%ptr(1,1), dam_ifv,                    
      &                dam_state, out )                                          
          else                                                                   
            call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,               
      &                ifv(1),                                                   
      &                iprops, felem, sum_ifv_threads(now_thread),               
-     &                num_term_ifv_threads(now_thread),                         
+     &                num_term_ifv_threads(now_thread),                          
      &                einfvec_blocks(blk)%ptr(1,1), idummy1,                    
      &                idummy2, out )                                            
          end if                                                                 
@@ -279,15 +274,17 @@ c
          end_time = omp_get_wtime()                                             
          write(out,*) '>> atomic scatter ifv: ', end_time - start_time          
       end if                                                                    
+c
 c                                                                               
 c             reduction of scalars sum_ifv and                                  
-c             num_term_ifv into unique system level vector.                     
+c             num_term_ifv for all threads used to process blocks on
+c             this rank.                     
 c                                                                               
       do j = 1, num_threads                                                     
         sum_ifv      = sum_ifv + sum_ifv_threads(j)                             
         num_term_ifv = num_term_ifv + num_term_ifv_threads(j)                   
       end do                                                                    
-c                                                                               
+
       if( local_debug ) write (out,*) myid,':>>>>>> local sum_ifv is:',         
      &                              sum_ifv                                     
       if( iter .eq. 0 .and. local_debug ) then                                  
@@ -298,13 +295,13 @@ c
       end if                                                                    
 c                                                                               
 c            MPI:                                                               
-c              sum the slave processor contributions to the ifv terms,          
+c              sum the worker contributions to the ifv terms,          
 c              the number of ifv terms, and the whole ifv vector back           
 c              on the root processor.                                           
 c                                                                               
-      call wmpi_reduce_vec( sum_ifv, 1 )                                        
+      call wmpi_reduce_vec_std( sum_ifv, 1 )                                        
       call wmpi_redint( num_term_ifv )                                          
-      call wmpi_reduce_vec( ifv, nodof )                                        
+      call wmpi_reduce_vec_std( ifv(1), nodof )                                        
 c                                                                               
 c            deallocate space for blocks of element internal force              
 c            vectors.                                                           
@@ -696,12 +693,28 @@ c
       if( error .ne. 0 ) then                                                   
          write(out,9000) 2                                                      
          call die_abort                                                         
-      end if                                                                    
+      end if 
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%det_j = zero                                                   
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%det_j_mid = zero                                                   
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%gama = zero                                                   
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%gama_mid = zero  
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%neta = zero                                                   
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%nxi = zero                                                   
+!DIR$ VECTOR ALIGNED                                                            
+       local_work%nzeta = zero                                                   
 c                                                                               
       if( local_work%geo_non_flg ) then                                         
         allocate( local_work%fn(mxvl,3,3),                                      
      &           local_work%fn1(mxvl,3,3),                                      
      &           local_work%dfn1(mxvl) )                                        
+!DIR$ VECTOR ALIGNED                                                            
+        local_work%fn  = zero                                                   
 !DIR$ VECTOR ALIGNED                                                            
         local_work%fn1 = zero                                                   
 !DIR$ VECTOR ALIGNED                                                            
