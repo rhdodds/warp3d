@@ -79,15 +79,22 @@ c
         call t_start_assembly( start_assembly_step ) ! timing                   
         if( .not. parallel_assembly_used ) then                                 
           call ds_setup_sparsity_local( iresult, use_mpi, numprocs )            
-          if( iresult .eq. 1 ) return ! no equations to solve                   
+          if( iresult .eq. 1 ) then ! no equations to solve
+             idu(1:nodof) = zero
+             return    
+          end if                   
         end if                                                                  
         if( local_debug ) write(*,*) '... drive_assem_solve  @ 2'               
         if( parallel_assembly_used ) then                                       
           call ds_setup_sparsity_distributed( iresult )                         
-          if( iresult .eq. 0 ) return ! no equations to solve                   
+          if( iresult .eq. 0 ) then  ! no equations to solve 
+             idu(1:nodof) = zero
+             return    
+          end if                   
         end if                                                                  
         call t_end_assembly( assembly_total, start_assembly_step )              
-        if( local_debug ) write(*,*) '... drive_assem_solve  @ 3'               
+        if( local_debug ) write(*,*) '... drive_assem_solve  @ 3' 
+                      
 c                                                                               
       end if   ! on first_solve                                                 
 c                                                                               
@@ -338,13 +345,14 @@ c
       logical :: using_mpi                                                      
 c
 c                    locals                                                     
-c                                                                               
+c        
+      integer :: i, j, k, l                                                                       
       integer, allocatable :: start_kindex_locs(:), edest(:,:,:), 
      &                        scol_flags(:,:), scol_lists(:,:)                                           
       character(len=200) mkl_string                                             
       integer :: mkl_num_thrds, next_space, count_previous, count_now,
      &           nrow_lists, safety_factor                                      
-      integer, external :: mkl_get_max_threads                                  
+      integer, external :: mkl_get_max_threads      
 c                                                                               
 c              1. generate equation numbers for all unconstrained               
 c                 nodal dof. dof_eqn_map(i) gives equation                      
@@ -378,8 +386,8 @@ c
       if( cpu_stats .and. show_details ) write(out,9409) wcputime(1)            
 c                                                                               
       ireturn = 1                                                               
-      if( neqns .le. 0 ) return                                                 
-c                                                                               
+      if( neqns .le. 0 ) return     
+c      
 c              2. decide if this set of equations has a different               
 c                 sparsity from the previous time we came thru here.            
 c                 right now, this is based on the actual number                 
@@ -409,7 +417,6 @@ c                 "assembled" stiffness.
 c
 c                 we also get the number of non-zero terms on each row
 c                 to right of diagonal ( start_kindex_locs )                                   
-c                                                                               
 c        
       safety_factor = 10    
       allocate( start_kindex_locs(neqns) )
@@ -434,7 +441,7 @@ c
           write(out,9410) wcputime(1)                                           
           write(out,9411) neqns                                                 
           write(out,9412) num_terms                                             
-      end if                                                                    
+      end if   
 c                                                                               
 c              4. build sparsity of equilibrium equations                       
 c                 as defined by the k_indexes, k_ptrs                           
@@ -467,7 +474,7 @@ c
               write(out,9210)                                                        
               call die_gracefully                                                    
           end if         
-      end select    
+      end select  
 c                                                                             
       if( cpu_stats .and. show_details ) write(out,9419) wcputime(1)            
       if( allocated( save_k_indexes ) ) deallocate( save_k_indexes )            
@@ -479,18 +486,17 @@ c
 c                                                                               
       call build_col_sparse_symm( 
      &      neqns, num_threads, eqn_node_map, dof_eqn_map,                            
-     &      save_k_indexes, save_k_ptrs,                       
-     &      start_kindex_locs, edest, scol_lists, nrow_lists )                                     
+     &      save_k_indexes, save_k_ ptrs,                       
+     &      start_kindex_locs, edest, scol_lists, nrow_lists )
 c                                                                               
       deallocate( start_kindex_locs, scol_flags, edest, scol_lists )           
                                                      
       if( cpu_stats .and. show_details ) write(out,9420) wcputime(1)            
       call thyme( 22, 2 )                                                       
-c                                                                               
+c                            
       ireturn = 3                                                               
       return                                                                    
-                                                                                
-                                                                                
+c                                                                                
  9210 format('>> FATAL ERROR: computations of dense storage data',              
      & /,    '                failed in equation solver.',                      
      & /,    '                inconsistencies in number of non-zero',           
@@ -608,9 +614,8 @@ c
       implicit none                                                             
 c                                                                               
       logical :: hypre_solver, rebuild_mpcs                                     
-      double precision :: px, py, pz                                            
-                                                                                
-                                                                                
+      double precision :: px, py, pz   
+c      
 c              1. sparsity of equilibrium equations already defined on          
 c                 this or previous solution. neqns = 0 means all dof in         
 c                 model are constrained. just leave.                            
@@ -721,12 +726,13 @@ c             3b. assemble symmetric  equilibrium equations
 c                 in sparse format using a row-by-row algorithm                 
 c                 rather than a conventional element-by-element.                
 c                 rows are assembled in parallel.                               
-c                                                                               
+c        
         k_coeffs = zero                                                         
         call assem_by_row( neqns, num_threads, eqn_node_map,                    
      &                     dof_eqn_map, k_diag, k_coeffs,                       
      &                     k_indexes, k_ptrs, iprops,                           
-     &                     dcp, noelem )                                        
+     &                     dcp, noelem )    
+c
       end if ! for asymmetric/symmetric assembly                                
 c                                                                               
       if( cpu_stats .and. show_details ) write(out,9470) wcputime(1)            
@@ -854,9 +860,11 @@ c
      &                            dof_eqn_map, eqn_node_map )                   
       end if                                                                    
 c                                                                               
-c              7. deallocate all element stiffness matrices.                    
+c              7. deallocate all element stiffness matrices.
+c                 6/23/2017 - we now run w/o deleteing all those
+c                 blocks on each global Newton iteration.                    
 c                                                                               
-      call estiff_allocate( 5 )                                                 
+c      call estiff_allocate( 5 )                                                 
       if( local_debug ) write(*,*) ' @ 8'                                       
 c                                                                               
       return                                                                    
