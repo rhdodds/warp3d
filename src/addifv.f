@@ -4,12 +4,10 @@ c     *                      subroutine addifv                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 9/28/2015 rhd              *          
+c     *                   last modified : 6/17/2017 rhd              *          
 c     *                                                              *          
 c     *     assembles the internal force vectors for a block of      *          
 c     *     similar, elements into the global internal force vector. *          
-c     *     the calling routine must insure that concurrent access   *          
-c     *     on other threads is prevented                            *          
 c     *     this is a classic scatter operation                      *          
 c     *                                                              *          
 c     ****************************************************************          
@@ -19,18 +17,20 @@ c
      &                   felem, sum_ifv, num_term_ifv,                          
      &                   eleifv, dam_ifv, dam_state, out )                      
       use damage_data, only : dam_ptr, growth_by_kill                           
-      implicit integer (a-z)                                                    
+      implicit none                                                    
       include 'param_def'                                                       
-c                                                                               
-      double precision ::                                                       
-     &   ifv(*), sum_ifv, eleifv(span,*), dam_ifv(mxedof,*)                     
-c                                                                               
+c                     
+      integer :: span, totdof, felem, num_term_ifv, out
       integer :: bedst(totdof,*), iprops(mxelpr,*),                             
      &           dam_state(*)                                                   
-      logical :: debug                                                          
+      double precision :: ifv(*), sum_ifv, eleifv(span,*),
+     &                    dam_ifv(mxedof,*)                     
+      logical, parameter :: debug = .false.                                                          
 c                                                                               
-      debug = .false.                                                           
-c                                                                               
+c             locals                                                            
+c   
+      integer :: i, j, element
+c                                                                                 
       if( debug ) write (out,*) '>>>>  inside addifv'                           
 c                                                                               
       do j = 1, totdof                                                          
@@ -38,7 +38,10 @@ c
 c$OMP ATOMIC UPDATE                                                             
             ifv(bedst(j,i)) = ifv(bedst(j,i)) + eleifv(i,j)                     
          end do                                                                 
-      end do                                                                    
+      end do 
+c           
+c             thread private value passed for sum_ifv, num_term_ifv
+c                                                 
       do j = 1, totdof                                                          
 !DIR$ IVDEP                                                                     
          do i = 1, span                                                         
