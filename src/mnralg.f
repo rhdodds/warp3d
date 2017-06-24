@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified: 1/9/2016 rhd                *          
+c     *                   last modified: 6/17/2017 rhd               *          
 c     *                                                              *          
 c     *     supervises advancing the solution from                   *          
 c     *     step n to n+1 using a newton iteration process.          *          
@@ -1498,15 +1498,13 @@ c                   we still allow MPI + usual
 c                   threaded pardiso. Workers                                   
 c                   perform element level computations. We bring                
 c                   [Ke]s back to root for assembly & solve.                    
-c                   Put MPI workers to sleep while Pardiso runs.                
-c                                                                               
+c                   MPI workers ruinning on same node with root will steal
+c                   spin-wait cycles from the solver use                                                                          
 c            3) cpardiso -                                                      
 c                  just solve using all mpi ranks + threads.                    
 c                  element [ks]s on ranks. assembly on root.                    
 c                  cpardiso runs on root and workers and handles                
 c                  distribution of equations to ranks.                          
-c                                                                               
-      if( use_mpi .and. pardiso ) call wmpi_suspend( 1 )                        
 c                                                                               
 c          drive the equation solver. Code to allow changing                    
 c          solver during a run has been removed.                                
@@ -1542,10 +1540,6 @@ c
 c                                                                               
       call drive_assemble_solve( first_solve, iter, new_pre_cond )              
       first_solve = .false.                                                     
-c                                                                               
-c          MPI: wake up worker processes                                        
-c                                                                               
-      if( use_mpi .and. pardiso ) call wmpi_suspend( 2 )                        
 c                                                                               
 c          check if hypre wants an adaptive step.                               
 c          We can only deal with this in the main mnralg, so                    
