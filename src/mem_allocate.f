@@ -122,6 +122,8 @@ c
          allocate( dstmap(nonode), cstmap(k) )
          do i = 1, k
           u(i)  = zero
+          v(i) = zero
+          a(i) = zero
           du(i) = zero
          end do   
          max_mpc = nonode/5 + 100 ! may need adjustment
