@@ -126,7 +126,6 @@ c                 set the total number of non-zero terms in the upper
 c                 triangle                                                      
 c                                                                               
       ncoeff = sum( num_non_zero_terms )                                        
-c      deallocate( scol_flags, edest, scol_lists )                               
       if( local_debug ) write(*,9000) ncoeff    
 c                                                                               
       return                                                                    
@@ -609,13 +608,13 @@ c
 c                                                                               
 c                    local declarations                                         
 c                                                                               
-      double precision :: zero                                                  
+      double precision, parameter :: zero = 0.d0                                                 
       double precision, allocatable ::  coeff_row(:,:)                          
       integer :: i, srow, now_thread                                            
       integer, external :: omp_get_thread_num                                   
       integer, allocatable :: row_start_index(:), edest(:,:,:)                  
-      integer :: thread_previous_node(max_threads)                              
-      data zero / 0.0d0 /                                                       
+      integer :: thread_previous_node(max_threads)   
+      logical, parameter :: check_values = .false.                           
 c                                                                               
 c                                                                               
 c                 assemble the equilibrium equations directly in                
@@ -683,8 +682,9 @@ c                 loop over all structural equations. the row by row
 c                 assembly makes threaded parallelism reasonably simple.        
 c                 Code above handles making private copies                      
 c                 of arrays for threads above.                                  
-c                                                                               
-      call omp_set_dynamic( .false. )                                           
+c     
+      call omp_set_dynamic( .false. )    
+      if( check_values ) call estiff_allocate( 4 )                                                                           
 c$OMP PARALLEL DO PRIVATE( srow, now_thread ) ! all else shared                 
 c                                                                               
       do srow = 1, neqns                                                        
@@ -720,7 +720,8 @@ c
      &                        dof_eqn_map, k_diag, k_coeffs,                    
      &                        k_indexes, k_ptrs, iprops,  dcp,                  
      &                        noelem, row_start_index, edest,                   
-     &                        previous_snode )                                  
+     &                        previous_snode )         
+      use global_data, only : out                         
       use elem_block_data, only : estiff_blocks                                 
       use main_data,       only : elems_to_blocks, repeat_incid,                
      &                            inverse_incidences                            
@@ -734,19 +735,17 @@ c
      &           k_ptrs(*), k_indexes(*),                                       
      &           iprops(mxelpr,*), dcp(*),                                      
      &           row_start_index(*), edest(mxedof,*)                            
-      double precision  ::                                                      
-     & k_diag(*), k_coeffs(*), coeff_row(*)                                     
+      double precision :: k_diag(*), k_coeffs(*), coeff_row(*)                                     
 c                                                                               
 c                    local declarations                                         
 c                                                                               
       integer :: local_scol(mxedof)                                             
       integer :: snode, num_ele_on_snode, j, ele_on_snode, totdof, blk,         
      &           rel_col, start_loc                                             
-      double precision :: zero                                                  
+      double precision, parameter :: zero = 0.d0, k_tol = 1.d-30                                                  
       double precision, dimension(:,:), pointer :: emat                         
 c                                                                               
       logical :: repeated                                                       
-      data zero / 0.0d0 /                                                       
 c                                                                               
 c                 get the structure node number corresponding to this           
 c                 equation.                                                     
@@ -776,7 +775,11 @@ c
           repeated = repeat_incid(ele_on_snode)                                 
           totdof  = iprops(2,ele_on_snode) * iprops(4,ele_on_snode)             
           blk     = elems_to_blocks(ele_on_snode,1)                             
-          rel_col = elems_to_blocks(ele_on_snode,2)                             
+          rel_col = elems_to_blocks(ele_on_snode,2)    
+          if( .not. associated( estiff_blocks(blk)%ptr ) ) then
+            write(out,9100) srow, ele_on_snode
+            call die_abort
+          end if                        
           emat    => estiff_blocks(blk)%ptr                                     
           if( totdof .eq. 24 ) then                                             
              call assem_a_row_24                                                
@@ -791,7 +794,6 @@ c
              cycle                                                              
           end if                                                                
           if( totdof .eq. 60 ) then                                             
-             local_scol(1:60) =  dof_eqn_map(edest(1:60,j))                     
              call assem_a_row_60                                                
              cycle                                                              
           end if                                                                
@@ -800,7 +802,7 @@ c
 c                                                                               
 c                 copy the diagonal term from coeff_row into k_diag.            
 c                                                                               
-      k_diag(srow) = k_diag(srow) + coeff_row(srow)                             
+      k_diag(srow)    = k_diag(srow) + coeff_row(srow)  
       coeff_row(srow) = zero                                                    
 c                                                                               
 c                 pack the non-zero stiffness coefficients on this              
@@ -821,7 +823,16 @@ c
          coeff_row(k_indexes(start_loc+j)) = zero                               
       end do                                                                    
 c                                                                               
-      return                                                                    
+      return     
+c
+ 9000 format('>> FATAL ERROR: assem_a_row. < = 0 diagonal for node #,',        
+     &  /,   '                equation #: ',2i10,' value: ',d20.8,                                     
+     &  /,   '                job terminated' )  
+ 9100 format('>> FATAL ERROR: assem_a_row. bad block ptr. srow,',        
+     &  /,   '                element: ',2i10,                                  
+     &  /,   '                job terminated' )  
+
+                                                                     
                                                                                 
       contains                                                                  
 c     ****************************************************************          
@@ -847,7 +858,7 @@ c
          scol = local_scol(ecol) ! dof_eqn_map(edest(ecol,j))                   
          if ( scol .lt. srow ) cycle ! lower triange                            
          kk = dcp(max0(ecol,erow))-iabs(ecol - erow)                            
-         ekterm = emat(kk,rel_col)                                              
+         ekterm = estiff_blocks(blk)%ptr(kk,rel_col)    
          coeff_row(scol) = coeff_row(scol) + ekterm                             
        end do                                                                   
        if( .not. repeated ) return                                              
@@ -906,7 +917,9 @@ c
 c                                                                               
       integer :: erow, ecol, scol, kk                                           
       double precision :: ekterm                                                
-                                                                                
+c
+      local_scol(1:60) =  dof_eqn_map(edest(1:60,j))                     
+c                                                                                
       do erow = 1, 60                                                           
        if( local_scol(erow) .ne. srow ) cycle                                   
 !DIR$ IVDEP                                                                     
