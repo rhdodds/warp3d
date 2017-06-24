@@ -23,27 +23,30 @@ c
       subroutine cohes_rot_mat(span, felem, nnode, etype, ce, bigR )            
       implicit none                                                             
 c                                                                               
-      include 'param_def'                                                       
+      include 'param_def' 
+c                                                            
 c                  parameters                                                   
 c                                                                               
-      integer span, felem, nnode, etype                                         
-      double precision                                                          
-     & ce(mxvl,mxecor), bigR(mxvl,3,3)                                          
+      integer :: span, felem, nnode, etype                                         
+      double precision :: ce(mxvl,mxecor), bigR(mxvl,3,3)                                          
 c                                                                               
 c                   local data                                                  
 c                                                                               
-      integer i, j, imxvl, ispan, innode                                        
-      double precision                                                          
+      integer :: i, j, imxvl, ispan, innode                                        
+      double precision ::                                                          
      & x21,y21,z21, x31,y31,z31, d1, d2, d3, a2, b2, c2,                        
      & a3, b3, c3, x1, y1, z1,                                                  
-     & zero, third, e123_to_ref(3,3),                                           
+     & e123_to_ref(3,3),                                           
      & ce_rotated(mxvl,mxecor), len, nzeta(mxndel),                             
      & neta(mxndel), nxi(mxndel), jac(mxvl,3,3), dj(mxvl),                      
-     & g_to_e123(mxvl,3,3)                                                      
+     & g_to_e123(mxvl,3,3)      
+      double precision, parameter :: zero1 = 0.0d0, zero2 = 0.0d0,
+     &                               zero3 = 0.0d0,
+     &                               third1 = 1.0d0/3.0d0,
+     &                               third2 = 1.0d0/3.0d0                                            
 c                                                                               
-      logical local_debug, quad_interface, tri_interface                        
-      data local_debug /.false. /                                               
-      data third, zero / 0.33333333333333333333d0, 0.0d0 /                      
+      logical :: quad_interface, tri_interface    
+      logical, parameter :: local_debug = .false.                    
 c                                                                               
 c                                                                               
 c               for geonl these are deformed coordinates of the                 
@@ -109,7 +112,7 @@ c
         g_to_e123(i,2,3) = c2/d2                                                
       end do                                                                    
 c                                                                               
-      imxvl = mxvl; ispan = span; innode = nnode                                
+      imxvl = mxvl; ispan = span; innode = nnode         
       call rotate_cohes_var( imxvl, ispan, innode, g_to_e123,                   
      &                       ce, ce_rotated )                                   
 c                                                                               
@@ -141,13 +144,14 @@ c              and coordinate jacobian
 c                                                                               
        quad_interface = etype .eq. 12                                           
        tri_interface  = etype .eq. 14  .or. etype .eq. 15                       
-c                                                                               
+c                             
+       nxi = zero1; neta = zero1; nzeta = zero1  ! prevents unint failure                                                 
        if( quad_interface )                                                     
-     &   call derivs( etype, zero, zero, zero, nxi, neta, nzeta )               
+     &   call derivs( etype, zero1, zero2, zero3, nxi, neta, nzeta )               
 c                                                                               
        if( tri_interface )                                                      
-     &   call derivs( etype, third, third, zero, nxi, neta, nzeta )             
-c                                                                               
+     &   call derivs( etype, third1, third2, zero1, nxi, neta, nzeta )             
+c                
        call jacob_cohes( etype, imxvl, ispan, innode, ce_rotated,               
      &                   nxi, neta, nzeta, dj, jac, 2 )                         
 c                                                                               
