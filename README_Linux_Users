@@ -3,14 +3,19 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: April 28, 2017
-                      
+                      Last Update: JUne 24, 2017
+                                            
 *** LATE BREAKING NEWS ***
+
+
+See note about critical environment variable needed if running MPI
+version on clusters with DAPL protocol. The MPI version has been
+tested using at least 64 cluster nodes with 1600 total cores.
 
 The ready-to-run executables included in this distribution were built
 on Ubuntu 14.04.5 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 2.
 
-These executables also run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS
+These executables also known to run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS
 
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).
@@ -274,6 +279,7 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition)
     export I_MPI_PIN_DOMAIN=omp
     export I_MPI_PIN_HOST=1
     export I_MPI_FABRICS=shm:tcp  <<<---- see Note
+    export I_MPI_DAPL_TRANSLATION_CACHE=0     <<< critical for DAPL !
     mpirun -np $NUM_WARP3D_RANKS $WARP3D_HOME/run_linux_em64t/warp3d.mpi_omp
 
     Note: the setup commands above assume all MPI ranks run on 1 compute node

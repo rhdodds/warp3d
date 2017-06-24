@@ -124,6 +124,10 @@ ulimit -s 100000
 #
 #   =======  no need to change below here =======================
 #
+#    ----- change these as needed for your MPI fabrics and cluster
+#          configuation.
+#
+#          the ..._DAPL_... is critical is using a DAPL protocol
 #
 is_Ubuntu=`uname -a | grep Ubuntu |wc --lines`
 export MPI_TYPE_MAX=4096
@@ -131,6 +135,8 @@ export I_MPI_PIN_DOMAIN=omp
 export I_MPI_PIN_HOST=1
 export I_MPI_FABRICS=shm:tcp
 export I_MPI_SHM_LMT=shm
+export I_MPI_DEBUG=2
+export I_MPI_DAPL_TRANSLATION_CACHE=0  #   critical if using DAPL
 #
 #       touch core file and make it non-writable in case we dump
 #
