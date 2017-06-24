@@ -35,14 +35,16 @@ c
      &  internal_energy, beta_fact, eps_bbar, plastic_work, zero                
       double precision,                                                         
      & allocatable :: ddt(:,:), uddt(:,:), qnhalf(:,:,:),                       
-     &                qn1(:,:,:)                                                
+     &                qn1(:,:,:)    
 c                                                                               
       logical :: cut_step,                                                      
      &           adaptive, geonl, bbar, material_cut_step,                      
-     &           local_debug, adaptive_flag                                     
-c                                                                               
+     &           local_debug, adaptive_flag 
+     
+      logical:: isnan        
+c      
       data local_debug, zero / .false., 0.0d00 /                                
-c                                                                               
+c            
       internal_energy   = local_work%block_energy                               
       plastic_work      = local_work%block_plastic_work                         
       beta_fact         = local_work%beta_fact                                  
@@ -157,7 +159,7 @@ c
 c                                                                               
 c------------------------------------------------------------------------       
 c                                                                               
- 7000 continue                                                                  
+ 7000 continue 
       select case ( mat_type )                                                  
       case ( 1 )                                                                
 c                                                                               
@@ -250,7 +252,7 @@ c          elment. urcs_blk_n1(..,7) is really the current (total) energy
 c          density per unit deformed volume - look above...                     
 c          increment of plastic work density stored in plastic_work_incr        
 c                                                                               
-      if( iter .ne. 0 ) then                                                    
+      if( iter .ne. 0 ) then    
         call rstgp1_b( span, internal_energy, plastic_work,                     
      &                 local_work%urcs_blk_n1(1,7,gpn),                         
      &                 local_work%urcs_blk_n1(1,8,gpn),                         
@@ -260,7 +262,7 @@ c
         plastic_work    = plastic_work * beta_fact *                            
      &                    local_work%weights(gpn)                               
         local_work%block_energy       = internal_energy                         
-        local_work%block_plastic_work = plastic_work                            
+        local_work%block_plastic_work = plastic_work  
       end if                                                                    
 c                                                                               
       if( local_debug ) then                                                    
@@ -5094,7 +5096,7 @@ c
 c                                                                               
       if( itype .ne. 1 ) go to 100                                              
 !DIR$ VECTOR ALIGNED                                                            
-      do i = 1, span                                                            
+      do i = 1, span     
         internal_energy = internal_energy + gp_energies(i) *                    
      &                     dfn1(i) * det_j(i)                                   
          plastic_work    = plastic_work +                                       
