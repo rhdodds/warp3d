@@ -59,15 +59,18 @@ MVC      = /bin/mv -f
 FTRAP      = 
 INLINE     = -no-inline-factor
 PROFILE    = -g
+PROFILE = 
 OPT_REPORT = -qopt-report-annotate=text -qopt-report=5
 OPT_REPORT = 
-OPENMP     = -qopenmp -reentrancy 
+OPENMP     = -qopenmp -reentrancy
+CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
+CHECKFLOAT = 
 #
 MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte  
 DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
-MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE)
+MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE) 
 #
-FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz  \
+FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
          $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
