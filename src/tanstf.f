@@ -252,15 +252,15 @@ c        local_work%tv(3) = dmatprp(124, tm)
 c      end if                                                                   
 c                                                                               
       call chk_killed_blk( blk, local_work%killed_status_vec,                   
-     &                     local_work%block_killed )                            
+     &                     local_work%block_killed )  
+      estiff_blocks(blk)%ptr(1:nrow_ek,1:span) = zero                           
 c                                                                               
 c             check if blk has all killed elements -- if so skip                
-c             all calculations. just zero element [k]s                          
+c             all calculations. use zero element [k]s                          
 c                                                                               
       if( growth_by_kill ) then  ! note return inside here                      
         if( local_work%block_killed ) then                                      
           if( local_debug ) write (*,*)'blk ',blk,' killed, skip.'              
-          estiff_blocks(blk)%ptr(1:nrow_ek,1:span) = zero                       
           return  ! no tanstf_deallocate  needed                                
         end if                                                                  
       end if                                                                    
@@ -372,7 +372,7 @@ c     *                subroutine estiff_allocate                    *
 c     *                                                              *          
 c     *                    written by : rhd                          *          
 c     *                                                              *          
-c     *                last modified : 1/9/2016 rhd                  *          
+c     *                last modified : 6/21/2017 rhd                 *          
 c     *                                                              *          
 c     *     create the blocked data structure for storage of element *          
 c     *     stiffness matrices                                       *          
@@ -393,10 +393,11 @@ c
       integer :: type                                                           
                                                                                 
       integer :: iok, idummy, iout, dummy, blk, felem, num_enodes,              
-     &           num_enode_dof, totdof, span, utsz, nterms                      
-                                                                                
-                                                                                
-      logical :: myblk                                                          
+     &           num_enode_dof, totdof, span, utsz, chksize,
+     &           blk_owner, count_msg, nrow_block                      
+      logical :: myblk, makeblk, blk_exists
+      logical, parameter :: local_debug = .false.  
+      double precision, parameter :: zero = 0.0d0                                                        
 c                                                                               
 c                                                                               
 c            the data structure is a 2-D array for each element                 
@@ -404,19 +405,26 @@ c            block (dynamically allocated). the arrays are
 c            hung from a dynamically allocated pointer vector                   
 c            of length nelblk.                                                  
 c                                                                               
-c            type  = 1, 4 allocate stiffness blocks.                            
-c            type  = 2 no longer used. old ebe                                  
-c            type =  3 not used                                                 
-c            type =  5 deallocate blocks                                        
-c                                                                               
-      select case ( type ) ! careful. type could be integer constant            
-      case ( 1, 4 ) ! symmetric or asymmetric.                                  
+c            type  = 1 allocate blocks owned by this processor (rank).
+c                    for non-MPI, all blocks are root owned.                           
+c            type  = 2 root needs all blocks at this point. allocate
+c                    ones not yet present
+c            type = 3 check sizes of blocks for consistency on myid
+c            type = 4 all blocks should be on root. check                                  
+c            type = 5 deallocate blocks  on root                                      
+c  
+c            elblks(2,blk) holds which rank owns the block.             
+
+      if( local_debug ) 
+     &   write(out,*) '... in estiff_allocate. type: ', type
+c
+      select case ( type ) ! careful. type could be integer constant             
+      case ( 1 )                             
 c                                                                               
          if( .not. allocated( estiff_blocks ) ) then                            
            allocate( estiff_blocks(nelblk), stat=iok )                          
            if( iok .ne. 0 ) then                                                
-              call iodevn( idummy, iout, dummy, 1 )                             
-              write(iout,9100) iok                                              
+              write(out,9100) iok, 1, myid                                              
               call die_abort                                                    
            end if                                                               
            do blk = 1, nelblk                                                   
@@ -424,66 +432,225 @@ c
            end do                                                               
          end if                                                                 
 c                                                                               
-c             MPI:                                                              
-c               elblks(2,blk) holds which rank owns the                         
-c               block.  For worker ranks, if we don't own                       
-c               the block, don't allocate it.  For root,                        
-c               allocate everything for type = 4.                               
-c             for threads only, allocate all blocks                             
-c             skip blocks if the pointer to them is associated.                 
-c                                                                               
-         do blk = 1, nelblk                                                     
-            myblk = myid .eq. elblks(2,blk)                                     
-            if( myid .eq. 0 .and. type .eq. 4 ) myblk = .true.                  
+         do blk = 1, nelblk 
+            blk_owner =  elblks(2,blk)                                                   
+            myblk     = myid .eq. blk_owner                                     
             if( .not. myblk ) cycle                                             
-            if( associated(estiff_blocks(blk)%ptr) ) cycle                      
             felem         = elblks(1,blk)                                       
             num_enodes    = iprops(2,felem)                                     
             num_enode_dof = iprops(4,felem)                                     
             totdof        = num_enodes * num_enode_dof                          
             span          = elblks(0,blk)                                       
             utsz          = ((totdof*totdof)-totdof)/2 + totdof                 
-            nterms        = utsz                                                
-            if( asymmetric_assembly ) nterms = totdof * totdof                  
-            allocate( estiff_blocks(blk)%ptr(nterms,span),stat=iok )            
-            if( iok .ne. 0 ) then                                               
-               call iodevn( idummy, iout, dummy, 1 )                            
-               write(iout,9100) iok                                             
-            end if                                                              
-         end do                                                                 
+            nrow_block    = utsz                                               
+            if( asymmetric_assembly ) nrow_block = totdof*totdof   
+            makeblk = .not. associated(estiff_blocks(blk)%ptr)
+            if( makeblk ) then 
+              allocate( estiff_blocks(blk)%ptr(nrow_block,span),
+     &                  stat=iok )            
+              if( iok .ne. 0 ) then                                               
+               write(out,9100) iok, 2, myid                                             
+              end if
+            else
+              chksize = size( estiff_blocks(blk)%ptr )
+              if( chksize .ne. nrow_block*span ) then
+                 write(out,9310) blk, 1, myid
+                 call die_abort
+              end if
+            end if       
+         end do 
+c                                                                           
+      case ( 2 )                             
 c                                                                               
-      case( 5 ) ! deallocate estiff_blocks                                      
+         if( worker_processor ) return     
+         if( local_debug ) write(out,*) 
+     &          '.... allocating fill-in blks on root'                                                          
+         if( .not. allocated( estiff_blocks ) ) then                            
+              write(out,9400) 1, myid                                              
+              call die_abort                                                    
+         end if                                                               
 c                                                                               
-         if( .not. allocated( estiff_blocks ) ) return                          
-         if( myid .ne. 0 ) return ! only do this on root                        
-         do blk = 1, nelblk                                                     
-            myblk = myid .eq. elblks(2,blk)                                     
+         do blk = 1, nelblk 
+            blk_owner     = elblks(2,blk)                                                  
+            felem         = elblks(1,blk)                                       
+            num_enodes    = iprops(2,felem)                                     
+            num_enode_dof = iprops(4,felem)                                     
+            totdof        = num_enodes * num_enode_dof                          
+            span          = elblks(0,blk)                                       
+            utsz          = ((totdof*totdof)-totdof)/2 + totdof                 
+            nrow_block    = utsz                                                
+            if( asymmetric_assembly ) nrow_block = totdof * totdof   
+            makeblk       = .not. associated(estiff_blocks(blk)%ptr)
+            if( makeblk ) then 
+              allocate( estiff_blocks(blk)%ptr(nrow_block,span),
+     &                  stat=iok )            
+              if( iok .ne. 0 ) then                                               
+               write(out,9100) iok, 3, myid                                             
+              end if
+            else
+              chksize = size( estiff_blocks(blk)%ptr )
+              if( chksize .ne. nrow_block*span ) then
+                 write(out,9310) blk, 2, myid
+                 call die_abort
+              end if
+            end if       
+         end do 
+c         
+      case ( 3 )                             
+c
+         if( local_debug ) 
+     &        write(out,*) '... consistency checking rank: ', myid                                                                       
+         if( .not. allocated( estiff_blocks ) ) then                            
+              write(out,9400) 2, myid                                              
+              call die_abort                                                    
+         end if                                                               
+c           
+        count_msg = 0
+c                                                                            
+         do blk = 1, nelblk 
+            blk_owner     = elblks(2,blk)                                                  
+            myblk         = myid .eq. blk_owner                                     
             if( .not. myblk ) cycle                                             
-            deallocate( estiff_blocks(blk)%ptr, stat=iok )                      
-            if( iok .ne. 0 ) then                                               
-               call iodevn( idummy, iout, dummy, 1 )                            
-               write(iout,9200) iok                                             
-            end if                                                              
-            nullify( estiff_blocks(blk)%ptr )                                   
+            felem         = elblks(1,blk)                                       
+            num_enodes    = iprops(2,felem)                                     
+            num_enode_dof = iprops(4,felem)                                     
+            totdof        = num_enodes * num_enode_dof                          
+            span          = elblks(0,blk)                                       
+            utsz          = ((totdof*totdof)-totdof)/2 + totdof                 
+            nrow_block    = utsz                                               
+            if( asymmetric_assembly ) nrow_block = totdof * totdof   
+            blk_exists =  associated(estiff_blocks(blk)%ptr)
+            if( blk_exists ) then
+               chksize = size( estiff_blocks(blk)%ptr )
+               if( chksize .ne. nrow_block*span ) then
+                 write(out,9310) blk, 4, myid
+                 call die_abort
+               end if
+               call estiff_allocate_chk( count_msg )
+            else
+               write(out,9400) 3, myid
+               call die_abort
+            end if       
+         end do
+         
+      case ( 4 )                             
+c          
+         if( worker_processor ) then
+            write(out,9400) 7, myid
+            call die_abort
+         end if   
+         if( local_debug ) 
+     &       write(out,*)' ... consistency checking all after moves'                                                                     
+         if( .not. allocated( estiff_blocks ) ) then                            
+              write(out,9400) 6, myid                                              
+              call die_abort                                                    
+         end if                                                               
+c             
+         count_msg = 0
+c                                                                           
+         do blk = 1, nelblk 
+            felem         = elblks(1,blk)                                       
+            num_enodes    = iprops(2,felem)                                     
+            num_enode_dof = iprops(4,felem)                                     
+            totdof        = num_enodes * num_enode_dof                          
+            span          = elblks(0,blk)                                       
+            utsz          = ((totdof*totdof)-totdof)/2 + totdof                 
+            nrow_block    = utsz                                              
+            if( asymmetric_assembly ) nrow_block = totdof * totdof   
+            blk_exists =  associated(estiff_blocks(blk)%ptr)
+            if( blk_exists ) then
+               chksize = size( estiff_blocks(blk)%ptr )
+               if( chksize .ne. nrow_block*span ) then
+                 write(out,9310) blk, 4, myid
+                 call die_abort
+               end if
+               call estiff_allocate_chk( count_msg )
+            else
+               write(out,9400) 3, myid
+               call die_abort
+            end if       
+         end do 
+          
+c                                                                               
+      case( 5 ) ! deallocate estiff_blocks on root.                                  
+c          
+         if( worker_processor ) return                                                                     
+         if( .not. allocated( estiff_blocks ) ) then
+             write(out,9400) 4, myid
+             call die_abort
+         end if     
+c
+         do blk = 1, nelblk  
+            blk_exists = associated(estiff_blocks(blk)%ptr)
+            if( blk_exists ) then
+               deallocate( estiff_blocks(blk)%ptr, stat=iok )                      
+               if( iok .ne. 0 ) then                                               
+                  write(out,9200) iok, blk                                             
+               end if                                                              
+               nullify( estiff_blocks(blk)%ptr ) 
+            else
+               write(out,9400) 5, myid
+               call die_abort
+            end if                                      
          end do                                                                 
 c                                                                               
       case default                                                              
-         call iodevn( idummy, iout, dummy, 1 )                                  
-         write(iout,9300)                                                       
+         write(out,9300)    type                                                   
          call die_abort                                                         
       end select                                                                
 c                                                                               
       return                                                                    
 c                                                                               
  9100 format('>> FATAL ERROR: estiff_allocate, memory allocate failure',        
-     &  /,   '                status= ',i5,                                     
+     &  /,   '                status= ',i5,' @ ',i3,' myid: ',i4,                                     
      &  /,   '                job terminated' )                                 
  9200 format('>> FATAL ERROR: estiff_allocate, memory deallocate',              
-     &  /,   '                failure. status= ',i5,                            
+     &  /,   '                failure. status= ',i5,' blk: ',i7,
+     &  ' myid: ', i4,                            
      &  /,   '                job terminated' )                                 
- 9300 format('>> FATAL ERROR: estiff_allocate, unknown state',                  
+ 9300 format('>> FATAL ERROR: estiff_allocate, unknown type: ',i8,                  
      &  /,   '                job terminated' )                                 
-      end                                                                       
+ 9310  format('>> FATAL ERROR: estiff_allocate, inconsistent sizes at ',                  
+     &  /,   '                block: ',i6,' @ ',i3,' myid: ',i4,
+     &  /,   '                job terminated' )                                 
+ 9320  format('>> FATAL ERROR: estiff_allocate, missing  ',                  
+     &  /,   '                @ 3 block: ',i6,5x,' job terminated' )                                 
+ 9400  format('>> FATAL ERROR: estiff_allocate, internal error @ ',i3,  
+     & ' myid: ', i4,                
+     &  /,   '                job terminated' )                                 
+
+      contains
+c     ========
+
+      subroutine estiff_allocate_chk( count )
+      implicit none
+      
+      integer :: i, j, count
+      logical :: header
+      
+      header = .true.
+      
+      do i = 1, span
+        do j = 1, nrow_block
+         if( isnan( estiff_blocks(blk)%ptr(j,i) ) ) then
+             if( header ) then
+               write(out,9000)
+               header = .false.
+             end if  
+             write(out,9010) myid, blk, span, nrow_block, felem+i-1, j
+             count = count + 1
+             if( count > 10 ) call die_abort
+         end if
+        end do
+      end do
+ 
+      return
+ 9000 format( '>> Internal Errors: checking in estiff_allocate')
+ 9010 format(10x,' myid, blk, span, nrow_block, element, stiff term:',
+     &      6i6)
+      
+      end subroutine estiff_allocate_chk              
+      end subroutine estiff_allocate                                                                  
 c     ****************************************************************          
 c     *                                                              *          
 c     *                  subroutine dptstf_blocks                    *          
