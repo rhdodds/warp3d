@@ -304,8 +304,6 @@ c
       use_iterative = solver_mkl_iterative                                      
       direct_solve = .not. use_iterative                                        
                   
-      write(*,*) '...   inside  pardiso_symmetric'
-      write(*,*) '           itype, neq, ncoeff: ',itype, neq, ncoeff                                                          
       select case( itype )                                                      
       case( 1 )                                                                 
         call pardiso_symmetric_setup                                            
@@ -360,8 +358,6 @@ c              map vss to csr equation storage
 c                                                                               
       call pardiso_symmetric_map( neq, ncoeff, k_diag, rhs, eqn_coeffs,         
      &                            k_pointers, k_indices )      
-      write(*,*)   '   ....inside pardiso_symmetric_setup'
-      write(*,*)   '          neq, ncoeff: ', neq, ncoeff             
 c                                                                               
 c             if previously sovled a set of equations,release memory.           
 c                                                                               
