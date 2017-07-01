@@ -1,0 +1,146 @@
+c
+c     9/8/16 - from DJGM_soften12 on design star
+c     testing how the Voce model works.
+c
+c
+structure HCP_Ti6242
+c
+c Units: m, Pa, Kelvin, seconds
+c
+c REMEMBER: Taylor factors for stresses
+c
+crystal 1
+      properties slip_type hcp6 elastic_type isotropic,
+      mu_0 4.0e+10,
+      e 1.0e+11,
+      nu 0.25,
+      theta_0 -1.0000000e+00,
+      k_0 -1.0000000e+02,
+      h0_1 5.0000000e+07,
+      h0_4 5.0000000e+07,
+      gam_1 0.25,
+      gam_4 0.25,
+      m_1 2.0e-1,
+      m_4 2.0000000e-01,
+      gt_1 5.000000e7,
+      gt_4 5.000000e7,
+      r_1 1.0,
+      r_4 1.0,
+      n_1 0.0,
+      n_4 0.0,
+      g0_1 3.000000e+07,
+      g0_4 3.0000000e+07,
+      hardening djgm xtol 1.0e-4
+c      solver tr method 3 miter 40
+c
+crystal 2
+      properties slip_type bcc12 elastic_type isotropic,
+      mu_0 4.0e+10,
+      e 1.0e+11,
+      nu 0.25,
+      theta_0 -1.0000000e+00,
+      k_0 -1.0000000e+02,
+      h0_1 5.0000000e+07,
+      h0_4 5.0000000e+07,
+      gam_1 0.25,
+      gam_4 0.25,
+      m_1 2.0e-1,
+      m_4 2.0000000e-01,
+      gt_1 5.000000e7,
+      gt_4 5.000000e7,
+      r_1 1.0,
+      r_4 1.0,
+      n_1 0.0,
+      n_4 0.0,
+      g0_1 2.900000e+07,
+      g0_4 2.9000000e+07,
+      hardening djgm xtol 1.0e-4
+c      solver tr method 3 miter 40
+c
+c 
+c
+material hx_cp
+      properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
+      n_crystals 2 crystal_input file angle_type degrees, 
+      orientation_input file filename 'angles.inp',
+      debug off tolerance 1.0E-10
+c
+c
+number of nodes 8
+number of elements 1
+
+coordinates
+      1     0.0   0.0   0.0
+      2     1.0   0.0   0.0
+      3     1.0   1.0   0.0
+      4     0.0   1.0   0.0
+      5     0.0   0.0   1.0
+      6     1.0   0.0   1.0
+      7     1.0   1.0   1.0
+      8     0.0   1.0   1.0
+
+elements
+      1     type l3disop nonlinear material hx_cp,
+                 order 2x2x2 center_output
+
+incidences
+      1     1     2     3     4     5     6     7     8
+
+blocking
+      1     1     1
+
+constraints
+     1 u 0 v 0 w 0
+     2 v 0
+     5 u 0 v 0
+     6 v 0
+     3 v -1.0
+     4 v -1.0
+     7 v -1.0
+     8 v -1.0
+c
+loading dummy
+ nodal forces
+  1 force_x 0.0
+c
+initial conditions
+ temperatures
+  nodes 1-8 temperature 623.0
+c
+c
+c output model flat patran convention text file "cp_model_flat"
+
+ loading test
+  nonlinear
+   steps 1-9 constraints 5.0e-04
+   steps 10-800 constraints 5.0e-04
+
+
+ nonlinear analysis parameters
+   solution technique asymmetric iterative
+   assembly asymmetric on
+   maximum iterations 10
+   minimum iterations 4
+   convergence test norm res tol 0.5
+   nonconvergent solutions stop
+   adaptive on
+   linear stiffness for iteration one off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   extrapolate on
+c
+ nonlinear analysis parameters
+   time step  1.0  $  real time, seconds
+c 
+c 
+ compute displacements for loading test step 9
+ nonlinear analysis parameters
+   time step  1.0  $  real time, seconds
+c 
+ compute displacements for loading test step 20
+   output eformat precision displacements nodes 1-8
+   output  eformat stresses 1
+c
+stop
+c
+c
