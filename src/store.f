@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 6/5/2017 rhd               *          
+c     *                   last modified : 7/3/2017 rhd               *          
 c     *                                                              *          
 c     *                  writes analysis restart file                *          
 c     *                                                              *          
@@ -570,7 +570,8 @@ c
 c                                                                               
       if (use_contact) then                                                     
          write (fileno) num_contact                                             
-         call wrtbk( fileno, contact_shape, num_contact)                        
+         call wrtbk( fileno, contact_shape, num_contact) 
+         call wrtbk( fileno, contact_outside, num_contact) 
          call wrt2d( fileno, contact_cause, maxcontact, maxcontact,             
      &        nonode)                                                           
          call wrtbk( fileno, contact_stiff, num_contact* prec_fact)             

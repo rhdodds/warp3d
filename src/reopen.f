@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *          
 c     *                      written by : bh                         *          
 c     *                                                              *          
-c     *                   last modified : 6/5/2017 rhd               *          
+c     *                   last modified : 7/3/2017 rhd               *          
 c     *                                                              *          
 c     *          read restart file. get solution start up            *          
 c     *                                                              *          
@@ -535,7 +535,8 @@ c
       if( use_contact ) then                                                    
          call mem_allocate( 25 )                                                
          read (fileno) num_contact                                              
-         call rdbk( fileno, contact_shape, num_contact)                         
+         call rdbk( fileno, contact_shape, num_contact)
+         call rdbk( fileno, contact_outside, num_contact) 
          call rd2d( fileno, contact_cause, maxcontact, maxcontact,              
      &        nonode)                                                           
          call rdbk( fileno, contact_stiff, num_contact*prec_fact)               

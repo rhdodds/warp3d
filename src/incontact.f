@@ -5,7 +5,7 @@ c     *                      subroutine incontact                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 05/10/04 rhd               *          
+c     *                   last modified : 07/3/2017 rhd              *          
 c     *                                                              *          
 c     *        This routine processes the user input which describes *          
 c     *        the contact surfaces.                                 *          
@@ -19,7 +19,7 @@ c
 c                                                                               
 c                                                                               
       logical numd, numi, sbflg1, sbflg2, rate, point_set, norm_set,            
-     &    matchs                                                                
+     &    matchs, outside, inside                                                               
       character :: name*80, string*80, dums*1                                   
       double precision                                                          
      &     zero, dot, stiff, fric, point(3,3), mag1, mag2,                      
@@ -69,7 +69,9 @@ c
       radius = zero                                                             
       length = zero                                                             
       point_set = .false.                                                       
-      norm_set = .false.                                                        
+      norm_set = .false.    
+      outside = .true.  
+      inside = .false.                                                  
       do i=1, 3                                                                 
          rate_val(i) = zero                                                     
          do j=1, 3                                                              
@@ -203,7 +205,8 @@ c             store plane constats -- stiffness, friction, rate
 c                                                                               
       contact_shape(shape) = 1                                                  
       contact_stiff(shape) = stiff                                              
-      contact_fric(shape) = fric                                                
+      contact_fric(shape) = fric 
+      contact_outside(shape) = .true.                                               
       if ( depth .ne. zero ) contact_depth(shape) = depth                       
       do i=1, 3                                                                 
          cshape_rate(i,shape) = rate_val(i)                                     
@@ -228,10 +231,12 @@ c
       if ( matchs('velocity',3) ) goto 340                                      
       if ( matchs('radius',3) ) goto 350                                        
       if ( matchs('length',3) ) goto 360                                        
-      if ( matchs('direction',3) ) goto 370                                     
+      if ( matchs('direction',3) ) goto 370      
+      if ( matchs('outside',3) ) go to  375
+      if ( matchs('inside',3) ) go to 380                              
 c                                                                               
 c            if we don't match any keywords, we assume that the                 
-c            plane definition is complete.                                      
+c            cylinder definition is complete.                                      
 c                                                                               
       goto 390                                                                  
 c                                                                               
@@ -305,9 +310,21 @@ c
             goto 300                                                            
          endif                                                                  
       enddo                                                                     
-      goto 300                                                                  
+      goto 300    
+c
+c        enforce contact on outside (default) of cylinder or
+c        inside                             
 c                                                                               
-c          save this data as part of contact plane                              
+ 375  continue                                                                  
+      outside = .true.
+      inside = .false.
+      go to 300
+ 380  continue
+      inside = .true.
+      outside = .false.
+      go to 300                          
+c                                                                               
+c          save this data as part of cylinder                              
 c                                                                               
  390  continue                                                                  
 c                                                                               
@@ -339,8 +356,9 @@ c
       cshape_param (2,shape) = length                                           
       contact_shape(shape) = 2                                                  
       contact_stiff(shape) = stiff                                              
-      contact_fric(shape) = fric                                                
-      if ( depth .ne. zero ) contact_depth(shape) = depth                       
+      contact_fric(shape) = fric  
+      contact_outside(shape) = outside                                              
+      if( depth .ne. zero ) contact_depth(shape) = depth                       
       cshape_rate(1:3,shape) = rate_val(1:3)                                    
       use_contact = .true.                                                      
 c                                                                               
@@ -361,6 +379,8 @@ c
       if ( matchs('rate',4) ) goto 440                                          
       if ( matchs('velocity',3) ) goto 440                                      
       if ( matchs('radius',3) ) goto 450                                        
+      if ( matchs('outside',3) ) go to  460
+      if ( matchs('inside',3) ) go to 465                             
 c                                                                               
 c            if we don't match any keywords, we assume that the                 
 c            sphere definition is complete.                                     
@@ -417,6 +437,18 @@ c
       if ( .not. numd(radius))                                                  
      &     call errmsg (306, dumi, dums, dumr, dumd)                            
       goto 400                                                                  
+c
+c        enforce contact on outside (default) of sphere or
+c        inside                             
+c                                                                               
+ 460  continue                                                                  
+      outside = .true.
+      inside = .false.
+      go to 400
+ 465  continue
+      inside = .true.
+      outside = .false.
+      go to 400                          
 c                                                                               
 c          save this data as part of contact sphere                             
 c                                                                               
@@ -445,7 +477,8 @@ c
       contact_shape(shape) = 3                                                  
       contact_stiff(shape) = stiff                                              
       contact_fric(shape) = fric                                                
-      cshape_rate(1:3,shape) = rate_val(1:3)                                    
+      cshape_rate(1:3,shape) = rate_val(1:3)   
+      contact_outside(shape) = outside                                 
       use_contact = .true.                                                      
 c                                                                               
       goto 20                                                                   
@@ -468,8 +501,9 @@ c
          contact_fric(i) = zero                                                 
          contact_force(i) = zero                                                
          contact_shape(i) = 0                                                   
-         contact_depth(i) = ten_billion                                         
-      enddo                                                                     
+         contact_depth(i) = ten_billion   
+         contact_outside(shape) = .true.                                      
+      end do                                                                     
 c                                                                               
       use_contact = .false.                                                     
 c                                                                               
@@ -511,7 +545,8 @@ c
             write (out,*) '    radius:', cshape_param(1,shape)                  
             write (out,*) '    length:', cshape_param(2,shape)                  
             write (out,*) '    stiffness:', contact_stiff(shape)                
-            write (out,*) '    friction:', contact_fric(shape)                  
+            write (out,*) '    friction:', contact_fric(shape)
+            write (out,*) '    outside: ', contact_outside(shape)                  
 c                                                                               
          else if ( contact_shape(shape) .eq. 3 ) then                           
 c                                                                               
@@ -523,6 +558,7 @@ c
             write (out,*) '    radius:', cshape_param(1,shape)                  
             write (out,*) '    stiffness:', contact_stiff(shape)                
             write (out,*) '    friction:', contact_fric(shape)                  
+            write (out,*) '    outside: ', contact_outside(shape)                  
 c                                                                               
          endif                                                                  
 c                                                                               

@@ -4,7 +4,7 @@ c     *                      subroutine contact_find                 *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/16/98                   *          
+c     *                   last modified : 07/3/2017 rhd              *          
 c     *                                                              *          
 c     *        This routine checks all nodes against all contact     *          
 c     *        shapes to see if contact has occurred.  If contact is *          
@@ -24,9 +24,10 @@ c
       implicit integer (a-z)                                                    
 c                                                                               
 c                                                                               
-      double precision                                                          
+      double precision ::                                                     
      &     pen_dist(maxcontact), zero, force, normal(3,maxcontact),             
-     &     transmat(3,3), dumd                                                  
+     &     transmat(3,3), dumd, new_pen_sign   
+      double precision :: pen_sign(maxcontact)                                         
       real dumr                                                                 
       character(len=1) :: dums                                                  
       logical debug, penetrated, allow_trn, referenced, owned                   
@@ -79,7 +80,7 @@ c             if it does, list the contacting surfaces ranked by decreasing
 c             penetration in contact_cause(xxx,node). Return the penetration    
 c             and direction of contact for all shapes contacting this node.     
 c                                                                               
-         call contact_find_node ( node, pen_dist, normal)                       
+         call contact_find_node ( nod e, pen_dist, pen_sign, normal)                       
 c                                                                               
 c             if no contact was found, cycle to next node.                      
 c                                                                               
@@ -166,7 +167,8 @@ c
 c                                                                               
 c                    calculate the contact force normal to contact shape.       
 c                                                                               
-            force = pen_dist(cause) * contact_stiff(cause)                      
+            force = pen_dist(cause) * contact_stiff(cause) *
+     &              pen_sign(cause)                      
 c                                                                               
 c                   if transformation is allowed, then rotate                   
 c                   force contribution to transformed coordinates.              
@@ -309,7 +311,8 @@ c     *        penetration order in contact_cause.                   *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine contact_find_node ( node, pen_dist, normal )                   
+      subroutine contact_find_node ( node, pen_dist, pen_sign, 
+     &                               normal )                   
       use global_data ! old common.main
 c                                                                               
       use main_data, only : crdmap, trn, trnmat                                 
@@ -318,7 +321,7 @@ c
       implicit integer (a-z)                                                    
 c                                                                               
 c                                                                               
-      double precision                                                          
+      double precision :: pen_sign(*), new_pen_sign,                                                         
      &     pen_dist(*), zero, curr_coord(3),                                    
      &     normal(3,*), tmp_coord(3),                                           
      &     dumvec(3), new_dist, curr_normal(3), curr_dist,                      
@@ -357,7 +360,7 @@ c                find penetration for this contact shape.
 c                if no penetration is found, then go to next shape.             
 c                                                                               
          call find_shape_contact( curr_coord, shape, pen_dist(shape),           
-     &        penetrated, normal(1,shape), node )                               
+     &        pen_sign(shape), penetrated, normal(1,shape), node )                               
          if (.not. penetrated) cycle                                            
 c                                                                               
 c                penetration has been found. Insert this shape into list of     
@@ -471,7 +474,7 @@ c                    find if new location still violates current
 c                    contact shape.                                             
 c                                                                               
          call find_shape_contact( tmp_coord, pen_list(loop), new_dist,          
-     &        penetrated, dumvec, node )                                        
+     &        new_pen_sign, penetrated, dumvec, node )                                        
 c                                                                               
 c                    if no penetration is found, then current contact           
 c                    shape is no longer a valid contact surface. Set            
@@ -507,7 +510,7 @@ c                          check if new contact location still violates
 c                          this contact shape.                                  
 c                                                                               
             call find_shape_contact( tmp_coord2, pen_list(j),                   
-     &           new_dist, penetrated, dumvec, node )                           
+     &           new_pen_sign, new_dist, penetrated, dumvec, node )                           
 c                                                                               
 c                          if no penetration is found, then shape we are        
 c                          checking is no longer valid.  Otherwise, do          
@@ -667,7 +670,7 @@ c     *                      subroutine find_shape_contact           *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/17/98                   *          
+c     *                   last modified : 07/3/2017 rhd              *          
 c     *                                                              *          
 c     *        This routine serves as a branching point for finding  *          
 c     *        contact on all contact shapes.                        *          
@@ -675,16 +678,15 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_shape_contact( curr_coord, shape, pen_dist,               
-     &     penetrated, normal, node )                                           
+     &     pen_sign, penetrated, normal, node )                                           
       use global_data ! old common.main
 c                                                                               
       use contact                                                               
       implicit integer (a-z)                                                    
 c                                                                               
 c                                                                               
-      double precision                                                          
-     &     pen_dist, curr_coord(3), normal(3)                                   
-      logical debug, penetrated                                                 
+      double precision :: pen_dist, pen_sign, curr_coord(3), normal(3)                                   
+      logical :: debug, penetrated                                                 
       data debug /.false./                                                      
 c                                                                               
 c      if ( debug)  write (*,*) '                 >> looking for',              
@@ -692,13 +694,14 @@ c     &     ' contact: node, shape:',node, shape
 c                                                                               
       if (contact_shape(shape) .eq. 1) then                                     
          call find_plane_contact( curr_coord, shape, pen_dist,                  
-     &        penetrated, normal, node, debug )                                 
+     &        penetrated, normal, node, debug )  
+         pen_sign = 1.0d0                               
       else if (contact_shape(shape) .eq. 2) then                                
          call find_cyl_contact( curr_coord, shape, pen_dist,                    
-     &        penetrated, normal, node, debug )                                 
+     &        pen_sign, penetrated, normal, node, debug )                                 
       else if (contact_shape(shape) .eq. 3) then                                
          call find_sph_contact( curr_coord, shape, pen_dist,                    
-     &        penetrated, normal, node, debug )                                 
+     &        pen_sign, penetrated, normal, node, debug )                                 
       else                                                                      
          penetrated = .false.                                                   
       endif                                                                     
@@ -816,29 +819,29 @@ c     *                      subroutine find_cyl_contact             *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/17/98                   *          
+c     *                   last modified : 07/2/2017 rhd              *          
 c     *                                                              *          
 c     *         This routine determines if contact has occurred      *          
 c     *         on a cylindrical region.                             *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine find_cyl_contact ( curr_coord, shape, pen_dist,                
-     &     penetrated, normal, node, debug )                                    
+      subroutine find_cyl_contact( curr_coord, shape, pen_dist,               
+     &      pen_sign, penetrated, normal, node, debug )                                    
       use global_data ! old common.main
 c                                                                               
       use contact                                                               
       implicit integer (a-z)                                                    
 c                                                                               
 c                                                                               
-      double precision                                                          
+      double precision :: pen_sign,                                                          
      &     pen_dist, zero, curr_coord(3), vprime(3), dot, proj_dist,            
      &     normal(3), mag, angle, point(3), dumd, dist, radius,                 
      &     length                                                               
-      logical debug, penetrated                                                 
+      logical debug, penetrated, outside, inside                                                
       data zero /0.0/                                                           
 c                                                                               
-c      if ( debug)  write (*,*) '                 >> looking for',              
+c      if( debug)  write (*,*) '                 >> looking for',              
 c     &     ' contact: node,pln:',node, shape                                   
 c                                                                               
 c                check if node is penetrating cylinder. Do this by the          
@@ -850,7 +853,9 @@ c                  - calc distance between node and center line along normal.
 c                         this gives penetration.                               
 c                  - check if projection of node onto center line is within     
 c                         the length of the center line.                        
-c                                                                               
+c        
+      outside = contact_outside(shape)
+      inside = .not. outside                                                                       
       radius = cshape_param(1,shape)                                            
       length = cshape_param(2,shape)                                            
       penetrated = .false.                                                      
@@ -860,19 +865,26 @@ c
       do i = 1, 3                                                               
          vprime(i) = curr_coord(i) - ( cshape_pnt(i,shape) +                    
      &        cshape_rate(i,shape)*dt )                                         
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c                now calc angle, and then the perpendiular distance             
 c                                                                               
       call normalize (vprime,mag)                                               
       call dot_prod (vprime, cshape_norm(1,shape), dot)                         
-      angle = acos (dot)                                                        
+      angle = acos (dot) 
       proj_dist = mag * sin(angle)                                              
-      pen_dist = radius - proj_dist                                             
-c                                                                               
+      pen_dist = radius - proj_dist     
+c
+      if( outside ) then
+        pen_sign = 1.0d0
+        if( pen_dist <= zero) go to 9999   ! node still outside cylinder  
+      end if
+      if( inside ) then
+        pen_sign = -1.0d0
+        pen_dist = proj_dist - radius
+        if( pen_dist <= zero ) go to 9999 ! node still inside cycliner                                       
+      end if                                                                                        
 c                      if we haven't penetrated, exit                           
-c                                                                               
-      if (pen_dist .le. zero) goto 9999                                         
 c                                                                               
 c                      we have penetrated cylinder. Find if we are              
 c                      within the length of the cylinder.  First find           
@@ -915,7 +927,7 @@ c     *                      subroutine find_sph_contact             *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/17/98                   *          
+c     *                   last modified : 7/3/2017 rhd               *          
 c     *                                                              *          
 c     *         This routine determines if contact has occurred      *          
 c     *         on a spherical region.                               *          
@@ -923,18 +935,18 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_sph_contact ( curr_coord, shape, pen_dist,                
-     &     penetrated, normal, node, debug )                                    
+     &      pen_sign, penetrated, normal, node, debug )                                    
       use global_data ! old common.main
 c                                                                               
       use contact                                                               
       implicit integer (a-z)                                                    
 c                                                                               
 c                                                                               
-      double precision                                                          
+      double precision :: pen_sign,                                                         
      &     pen_dist, zero, curr_coord(3), vprime(3),                            
      &     normal(3), mag, angle, point(3), dumd, dist, radius,                 
      &     length                                                               
-      logical debug, penetrated                                                 
+      logical debug, penetrated, outside, inside                                                 
       data zero /0.0/                                                           
 c                                                                               
 c      if ( debug)  write (*,*) '                 >> looking for',              
@@ -949,21 +961,34 @@ c                  - if the length of the vector is less than the radius
 c                         we have penetration.                                  
 c                  - normal is vector after normalization                       
 c                                                                               
+      outside = contact_outside(shape)
+      inside = .not. outside                                                                       
       radius = cshape_param(1,shape)                                            
-      penetrated = .false.                                                      
+      penetrated = .false.     
+      pen_sign = 1.0d0                                                 
 c                                                                               
       do i = 1, 3                                                               
          vprime(i) = curr_coord(i) - ( cshape_pnt(i,shape) +                    
      &        cshape_rate(i,shape)*dt )                                         
-      enddo                                                                     
+      end do                                                                     
       call normalize (vprime,dist)                                              
 c                                                                               
 c                                                                               
-      if( dist .lt. radius ) then                                               
-        penetrated = .true.                                                     
-        pen_dist = radius - dist                                                
-        normal(1:3) = vprime(1:3)                                               
-      end if                                                                    
+      if( outside ) then
+        if( dist .lt. radius ) then                                               
+          penetrated = .true.                                                     
+          pen_dist = radius - dist                                                
+          normal(1:3) = vprime(1:3)  
+          pen_sign = 1.0d0                                             
+        end if 
+      else ! chk penetration from inside sphere
+        if( dist .gt. radius ) then
+          penetrated = .true.                                                     
+          pen_dist = abs( radius - dist )                                           
+          normal(1:3) = vprime(1:3)  
+          pen_sign = -1.0d0                                             
+        end if 
+      end if  
 c                                                                               
 c                                                                               
  9999 continue                                                                  
