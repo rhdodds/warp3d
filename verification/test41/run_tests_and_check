@@ -9,12 +9,15 @@
 
 function cleanup_files {
 #
-/bin/rm -f  *_out 
+/bin/rm -f  *_out >& /dev/null
+/bin/rm -f  gmon* >& /dev/null
+/bin/rm -f  woutput >& /dev/null
 /bin/rm -f  *~ >& /dev/null
 /bin/rm -f energy  >& /dev/null
-/bin/rm -f *_db >& /dev/null
-/bin/rm -f wn*  >& /dev/null
-/bin/rm -f we*  >& /dev/null
+/bin/rm -f *.db >& /dev/null
+/bin/rm -f *.neut >& /dev/null
+/bin/rm -f wn* >& /dev/null
+/bin/rm -f we* >& /dev/null
 #
 }
 
@@ -26,12 +29,20 @@ function cleanup_files {
 
 function run_and_compare {
 #
-echo "  ... running test_41..."
-"$warp3d_exe" $num_threads  < test_41 > test_41_out
+echo "  ... running test_41a (pipe crush in a box)..."
+"$warp3d_exe" $num_threads  < test_41a > test_41a_out
+#
+echo "  ... running test_41a (rigid cylinder from inside)..."
+"$warp3d_exe" $num_threads  < test_41b > test_41b_out
+#
+echo "  ... running test_41c (rigid sphere from inside)..."
+"$warp3d_exe" $num_threads  < test_41c > test_41c_out
 #
 echo "  ... WARP3D jobs completed..."
 #
-perl check_41.perl
+perl check_41a.perl
+perl check_41b.perl
+perl check_41c.perl
 #
 cleanup_files
 #
