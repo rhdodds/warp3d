@@ -500,7 +500,6 @@ c
            call iodevn( idummy, iout, dummy, 1 )                                
            write (iout,1050) face, element                                      
            failed = .true.                                                      
-           stop                                                                 
            return                                                               
           end if                                                                
         end if                                                                  
