@@ -1,0 +1,89 @@
+!
+!      test rigid contact of a body inside a sphere
+!      expanding outward under pressure and contacting
+!      the sphere
+!
+!      model is a piece of a 1 unit thick hemisphere with
+!      inner radius 9.0, outer radius 10.0
+!      planes x,y,z= 0 are symmetry
+!
+!      model made by:
+!         1) sweep a line segment 9 <= x <= 10 about z for +30-degrees
+!            to create an arc surface in x-y plane
+!         2) sweep the arc surface -30 degrees aroud +Y to make a solid
+!         3) rotate that solid twice more -30 degrees around +Y to
+!            finish a partial hemisphere that lies entirely in 1st quadrant
+!
+!      apply increasing pressure to inner surface of those elements only
+!      in solid one to create a nonuniform and increasing contact area
+!      with pressure
+!
+!      the rigid contact surface is a sphere with radius 10.01
+!
+!      solution takes 7 secs on 20 threads (2017 server) 
+!
+ *echo off
+ structure sphere
+! 
+  material elastic
+    properties bilinear e 1.0e05 nu 0.3 yld_pt 1.0e20
+! 
+  number nodes 13760  elements 2601
+!
+  elements
+    1-2601 type q3disop linear material elastic,
+               order 2x2x2 bbar center_output short
+! 
+ *input from 'test_41c_coords.inp'
+ *input from 'test_41c_incid.inp'
+ blocking automatic size = 20
+!
+ constraints
+  plane z=0 symmetry
+  plane y=0 symmetry
+  plane x=0 symmetry
+!
+  contact surface
+   surface 1 sphere
+   stiffness 1.0e5
+   point 0.0 0.0 0.0
+   radius 10.01
+   inside
+!
+ loading partial  
+   element loads
+    1-289 face 1 pressure 1.0
+! 
+ loading test
+  nonlinear
+    step 1 partial 1.0
+    step 2-15 partial 0.5
+!
+! output model flat patran convention text file "partial_sphere"
+! 
+  nonlinear analysis parameters
+   solution technique sparse direct 
+   time step 1.0e06 
+   maximum iterations 20 $  global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   line search off
+   divergence check off
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+ compute displacements for loading test step 15
+  output displacements 3781
+!  
+!  save to file "restart.db"
+! 
+ stop
