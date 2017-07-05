@@ -66,7 +66,7 @@ c
          write (*,*) '>>     penetrating nodes, pen dist, force'                
       endif                                                                     
 c                                                                               
-      do node = 1, nonode                                                       
+      do node = 1, nonode !  big outside loop                                                      
 c                                                                               
 c             skip node if not referenced by this processor                     
 c                                                                               
@@ -80,7 +80,7 @@ c             if it does, list the contacting surfaces ranked by decreasing
 c             penetration in contact_cause(xxx,node). Return the penetration    
 c             and direction of contact for all shapes contacting this node.     
 c                                                                               
-         call contact_find_node ( nod e, pen_dist, pen_sign, normal)                       
+         call contact_find_node ( node, pen_dist, pen_sign, normal )                       
 c                                                                               
 c             if no contact was found, cycle to next node.                      
 c                                                                               
@@ -204,7 +204,7 @@ c
      &        pen_dist ( contact_cause (1,node)),                               
      &        (contact_force (dstmap(node)+i-1),i=1,3)                          
 c                                                                               
-      enddo                                                                     
+      end do   ! over nonode                                                                
 c                                                                               
 c               now reduce the contact_force vector and the nodal               
 c               transformation matrices caused by contact back to the           

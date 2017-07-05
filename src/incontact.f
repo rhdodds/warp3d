@@ -472,7 +472,7 @@ c
 c                                                                               
 c             store sphere constants                                            
 c                                                                               
-      cshape_pnt (1:3,shape) = point(1:3,1)                                     
+      cshape_pnt (1:3,shape) = point(1:3,1)                       
       cshape_param (1,shape) = radius                                           
       contact_shape(shape) = 3                                                  
       contact_stiff(shape) = stiff                                              
@@ -502,7 +502,7 @@ c
          contact_force(i) = zero                                                
          contact_shape(i) = 0                                                   
          contact_depth(i) = ten_billion   
-         contact_outside(shape) = .true.                                      
+         contact_outside(i) = .true.                                      
       end do                                                                     
 c                                                                               
       use_contact = .false.                                                     

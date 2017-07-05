@@ -485,7 +485,8 @@ c
          contact_stiff(i)            = zero                                     
          contact_fric(i)             = zero                                     
          contact_shape(i)            = 0                                        
-         contact_depth(i)            = ten_billion                              
+         contact_depth(i)            = ten_billion           
+         contact_outside(i)          = .true.                   
       end do                                                                    
 c                                                                               
 c                       initialize variables used for fgm material              
