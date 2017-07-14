@@ -15,7 +15,7 @@ c
       implicit integer ( a-z )
       double precision
      &  vol(mxvl,8,3), volume(span), zero
-         data zero / 0.0d0 /
+         data zero / 0.0d0 /  
       vol = zero
       volume = zero
       return
