@@ -117,7 +117,8 @@ c
         go to 100                                                               
       end if                                                                    
 c                                                                               
-      call ulist_simple( list_col, debug, out, max(nonode,noelem,100) )         
+      call ulist_simple( list_col, debug, out, 
+     &                   4*max(nonode,noelem,100) )         
       if( matchs( 'display',6 ) ) do_display = .true.                           
       if( matchs( 'coordinates', 4 ) ) display_coords = .true.                  
 c                                                                               
@@ -143,7 +144,7 @@ c
       use main_data, only : user_lists                                          
       implicit integer (a-z)                                                    
       logical debug                                                             
-      dimension local_list(max_list)                                            
+      integer, allocatable :: local_list(:)                                            
 c                                                                               
 c                 the default option for user defined integer list              
 c                 when no geometric selection option is specified.              
@@ -151,8 +152,9 @@ c                 input must be a regular interger list at this point.
 c                 value of 'all' is not acceptable since no context             
 c                 for what all means (nodes, elements, etc) is                  
 c                 known.                                                        
-c                                                                               
+c       
       if( debug ) write(out,*) "..ulist_simple called..."                       
+      allocate( local_list(max_list) )                                                                        
 c                                                                               
 c                 get an integer list and check for errors. "all"               
 c                 not allowed since we would not know all of                    
