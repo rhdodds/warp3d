@@ -12,6 +12,7 @@ rm -f  *_out  woutp* *.db >& /dev/null
 rm -f  *~ >& /dev/null
 rm -f energy  >& /dev/null
 rm -f *_db >& /dev/null
+rm -f *.db >& /dev/null
 rm -f wn*  >& /dev/null
 rm -f we*  >& /dev/null
 rm -f step*.rest  >& /dev/null
@@ -41,7 +42,7 @@ echo "  ... WARP3D job completed ..."
 #
 perl check.perl
 #
-# cleanup_files
+cleanup_files
 printf ">>> All done\n"
 cleanup_files
 #
