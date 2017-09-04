@@ -1,0 +1,101 @@
+#!/bin/bash
+
+#**************************************************************
+#*                                                            *
+#*      cleanup_files                                         *
+#*                                                            *
+#**************************************************************
+
+function cleanup_files {
+#
+/bin/rm -f  *_out
+/bin/rm -f  space*
+/bin/rm -f  *batch*
+/bin/rm -f  *~ >& /dev/null
+/bin/rm -f energy  >& /dev/null
+/bin/rm -f *_db >& /dev/null
+/bin/rm -f wn*  >& /dev/null
+/bin/rm -f we*  >& /dev/null
+/bin/rm -f *.neut  >& /dev/null
+/bin/rm -f states*  >& /dev/null
+/bin/rm -f *flat.text  >& /dev/null
+/bin/rm -f temp*
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      run_and_compare                                       *
+#*                                                            *
+#**************************************************************
+
+function run_and_compare {
+#
+out="_out"
+#
+echo "  ... running test 83 series on bar2 element ..."
+
+input="test_83a"
+echo "  ... running $input ..."
+"$warp3d_exe" $num_threads  < $input > $input$out
+#
+input="test_83b"
+echo "  ... running $input ..."
+"$warp3d_exe" $num_threads  < $input > $input$out
+#
+input="test_83c"
+echo "  ... running $input ..."
+"$warp3d_exe" $num_threads  < $input > $input$out
+#
+input="test_83d"
+echo "  ... running $input ..."
+"$warp3d_exe" $num_threads  < $input > $input$out
+
+#
+echo "  ... WARP3D jobs completed..."
+echo " "
+echo "... Check all results:"
+#
+perl check_83a.perl
+perl check_83b.perl
+perl check_83c.perl
+perl check_83d.perl
+
+#
+cleanup_files
+#
+}
+
+
+#**************************************************************
+#*                                                            *
+#*      main programs                                         *
+#*                                                            *
+#**************************************************************
+#
+echo " "; echo " ";
+#
+machine=`uname`
+echo ">> machine id: " $machine
+num_threads=$NUM_THREADS
+cleanup_files
+#
+if [ "$MACHINE_TYPE" = '0' ]; then
+   echo -e "   OSX and Linux verification..."
+   warp3d_exe="$WARP3D_EXE"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '1' ]; then
+   echo -e "\n Windows 32-bit verification..."
+   warp3d_exe="$WARP3D_EXE_32"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '2' ]; then
+   echo -e "   Windows verification..."
+   warp3d_exe="$WARP3D_EXE_64"
+   run_and_compare
+fi
+#
+#
+echo -e "\n>>> All done with test_83 ...\n\n"
+exit

@@ -1,0 +1,87 @@
+ structure test
+!
+ material rigid
+    properties bilinear e 1.0e8 alpha 0.0
+!
+ material flex_bar
+    properties bilinear e 10000. alpha 0.0
+!
+ material block
+      properties bilinear e 30000.0 nu 0.3,
+                 yld_pt 50.0 tan_e 100.0 alpha 1.0e-06
+!
+ number of nodes 14 elements 6
+!
+ elements
+      1 2 type l3disop nonlinear material block bbar order 2x2x2
+      3 4 type bar2 nonlinear area 1.0 material flex_bar
+      5 6 type bar2 nonlinear area 1.0 material rigid
+!      
+ coordinates
+      1      0.0  0.0  0.0
+      2      1.0  0.0  0.0
+      3      1.0  1.0  0.0
+      4      0.0  1.0  0.0
+      5      0.0  0.0  1.0
+      6      1.0  0.0  1.0
+      7      1.0  1.0  1.0
+      8      0.0  1.0  1.0
+      9      2.0 0.0 0.0
+      10     2.0 1.0 0.0
+      11     2.0 1.0 1.0
+      12     2.0 0.0 1.0
+      13     3.0 1.0 0.0
+      14     3.0 1.0 1.0
+!
+ incidences
+      1     1-8
+      2     2 9 10 3 6 12 11 7
+      3     10 13
+      4     11 14
+      5     3 10
+      6     7 11
+!
+ blocking automatic display 
+!
+ constraints
+       plane y=0 symmetry
+       1 2 9 4 3 10 w 0
+       1 5 u 0
+!      
+       13 14 v 0 w 0
+!        
+ initial conditions
+      temperatures
+            nodes 1-8 temperature 300.0
+!
+loading appforce
+      nodal loads
+        13 14  force_x 1.0
+c
+ loading temps
+      nodal loads
+         1-12 temperature -1.0
+
+loading test
+      nonlinear
+          steps 1-5 appforce 3.0 constraints 1.0 
+
+solution parameters
+  nonlinear analysis parameters
+   solution technique direct sparse $ asymmetric direct
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01 maximum residual tol 0.05
+   nonconvergent solutions stop
+   time step  1.0e10
+   trace solution on
+   line search on
+   adaptive solution on
+   batch messages on
+   bbar stabilization factor 0.0
+   extrapolate off
+   binary packets off 
+
+output commands use file "get_output_4.inp" steps 1 - 100
+compute displacements for loading test for steps 5
+stop
