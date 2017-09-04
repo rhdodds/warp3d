@@ -1,0 +1,53 @@
+!
+ structure neper  $ mesh from neper code
+!
+  number of nodes 727 elements 2099
+!
+  material solids
+	properties e 120000.0 nu 0.3 yld_pt 220.0 tan_e 1200.0
+!
+  material connector
+     properties link stiff_link 1.0e10 mass_link 0.0
+!
+  elements
+	1-2096 type tet4 linear material solids order 1pt_rule
+	2097-2099 type link2 material connector
+!
+*input from "coords_incid.inp"
+!
+  blocking automatic
+!
+  constraints
+	675 u 0.0 v 0.0 w 0.0
+!
+!     Deformation gradient - I
+!
+  	725   u 0.1   v -0.02   w 0.0
+	726   u 0.0   v -0.1    w 0.05
+	727   u 0.0   v 0.0     w 0.05
+!
+*input from "periodic_mpcs.inp"
+!
+  loading total
+      nonlinear
+            steps 1-100 constraints 0.01 
+!
+  solution parameters
+	solution technique sparse direct
+	time step 1.0e6
+	convergence test norm res tol 1.0e-3
+	maximum iterations 10
+	divergence check on
+	adaptive on
+	line search on
+!
+! output model flat patran convention text file "model"
+!
+! output commands use file "get_output_2" after steps 1 - 100
+!
+  compute displacements for loading total for steps 1 - 100
+!
+  output displacements nodes 722 723 724 527
+  output reactions nodes 722 723 724
+!
+ stop

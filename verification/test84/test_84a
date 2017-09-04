@@ -1,0 +1,95 @@
+!
+!        test of the link2 element capability to enforce 
+!        multi-point constraints
+!
+!        1 hex-8 element with symmetry on X=Y=Z=0 planes
+!        2 link2 element at a standoff distance. 1 nodes of links
+!        connected to node 5 and 7 of hex.
+!
+!        displacements imposed on node 10 which is attached
+!        to both link elements.
+!
+!        link stiffness large to enforce same displacement
+!        at hex nodes 5, 9 as on link node 10
+!
+!        thermal loadings to add more deformation and checking.
+!        lots of plasticity on the hex element
+!
+!        solution check by imposing displacements directly on
+!        model with just hex element.
+!
+!
+  structure test_link
+!
+  material testblock
+      properties bilinear e 10000.0 nu 0.3 yld_pt 100.0 tan_e 1000.0
+!      
+  material rigid_link
+     properties link stiff_link 1.0e8 mass_link 0    
+!
+  number of nodes 10 elements 3
+!
+  elements
+      1 type l3disop linear material testblock bbar order 2x2x2
+      2-3 type link2 material rigid_link
+! 
+   coordinates
+      1     x 0.0 y 0.0 z 0.0
+      2     x 1.0 y 0.0 z 0.0
+      3     x 1.0 y 1.0 z 0.0
+      4     x 0.0 y 1.0 z 0.0
+      5     x 0.0 y 0.0 z 1.0
+      6     x 1.0 y 0.0 z 1.0
+      7     x 1.0 y 1.0 z 1.0
+      8     x 0.0 y 1.0 z 1.0
+      9     x 2.0 y 2.0 z 2.0
+      10    x 2.0 y 2.0 z 2.0
+!
+  incidences
+      1     1 2 3 4 5 6 7 8
+      2     5 9
+      3     7 10
+!
+  blocking automatic
+!
+  constraints
+      plane x = 0.0 u = 0.0
+      plane y = 0.0 v = 0.0
+      plane z = 0.0 w = 0.0
+      10 w 0.1
+!
+  initial conditions
+      temperatures
+            nodes 1-8 temperature = 300.0
+!
+  loading appforce
+      nodal loads
+         9 force_z 100.0
+!
+  loading temps
+   nodal loads
+            1-8 temperature -1.0
+!
+  loading strain
+    nonlinear
+      steps 1-100 appforce 0.01 constraints 0.01 temps 1.0
+!
+  solution parameters
+	solution technique direct sparse
+	maximum iterations 15
+	convergence test norm res tol 1.0e-6
+	divergence check off
+	adaptive on
+	line search on
+	bbar stabilization 0.0
+!
+! output model flat patran convention text file "mesh"
+!
+ output commands use file "get_output_84a" after steps 50 100
+! 
+ compute displacements for loading strain for steps 100
+ output displacements
+ output stresses
+ output strains
+! 
+stop
