@@ -31,6 +31,8 @@ test78
 test80
 test81
 test82
+test83
+test84
 }
 function test14 {
 echo -e "\n>>> Test 14 (Linear elastic impact, sparse iterative solver)"
@@ -267,6 +269,24 @@ cd test82
 cd ..
 }
 
+function test83 {
+echo -e "\n>>> Test 83 (bar2 element)"
+echo      "    ======================"
+cd test83
+./run_tests_and_check
+cd ..
+}
+
+
+function test84 {
+echo -e "\n>>> Test 84 (link2 element, Periodic Boundary Conditions)"
+echo      "    ====================================================="
+cd test84
+./run_tests_and_check
+cd ..
+}
+
+
 function get_num_threads {
 #
  printf ">> number of threads to use? "
@@ -421,6 +441,8 @@ m_test78="Test 78: (High-rate loading panel with hole. 20-node, rate plasticity)
 m_test80="Test 80: (Norton creep. Non-global constraints)"
 m_test81="Test 81: (Flat and Patran result output files"
 m_test82="Test 82: (Crystal Plasticity options)"
+m_test83="Test 83: (bar2 element)"
+m_test84="Test 84: (link2 element; Periodic Boundary Conditions)"
 
 all="All problems"
 quit="Quit"
@@ -452,6 +474,8 @@ PS3="Enter your choice (<return> to repeat menu): "
      "$m_test80" \
      "$m_test81" \
      "$m_test82" \
+     "$m_test83" \
+     "$m_test84" \
      "$quit"
 #
   do
@@ -517,6 +541,10 @@ PS3="Enter your choice (<return> to repeat menu): "
              test81;;
           $m_test82)
              test82;;
+          $m_test83)
+             test83;;
+          $m_test84)
+             test84;;
           $quit)
            break;;
           *) printf "You can enter only 1, .....\n";;

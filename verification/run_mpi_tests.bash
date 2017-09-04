@@ -2,7 +2,8 @@
 
 function run_all {
 test1
-hybrid-test-2test3
+test2
+test3
 test4
 test5
 test6
@@ -164,5 +165,5 @@ done
 
 echo -e "\n>>> All done with tests ...\n\n"
 exit
-                  
+
 
