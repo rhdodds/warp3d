@@ -4,7 +4,7 @@ c     *                      subroutine ouhstr                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 3/11/13 rhd                *          
+c     *                   last modified : 8/20/2017 rhd              *          
 c     *                                                              *          
 c     *     drive output of element strains/stresses to printed      *          
 c     *     hardcopy and/or to packets files                         *          
@@ -17,22 +17,21 @@ c
      &                   num_list_entries )                                     
       use global_data ! old common.main
       use main_data, only: packet_file_no, cohesive_ele_types,                  
-     &                     elems_to_blocks                                      
+     &                     elems_to_blocks, bar_types, link_types                                      
       implicit integer (a-z)                                                    
-      logical wide, eform, prec, do_stress, noheader, out_packet_now,           
-     &        solid_elem                                                        
-      integer element_list(num_list_entries)                                    
+      logical :: wide, eform, prec, do_stress, noheader, 
+     &           out_packet_now, solid_elem                                                        
+      integer :: element_list(num_list_entries)                                    
 c                                                                               
 c             local declarations                                                
 c                                                                               
       character(len=8) :: strlbl(30), hedtyp*30                                 
-      real dumr                                                                 
-      double precision                                                          
-     &     dumd                                                                 
+      real :: dumr                                                                 
+      double precision :: dumd                                                                 
       character :: dums                                                         
-      logical  bbar_flg, geo_non_flg, long_out_flg,                             
-     &         nodpts_flg, center_output, cohesive_elem,                        
-     &         at_intpts, at_enodes, at_center                                  
+      logical :: bbar_flg, geo_non_flg, long_out_flg,                             
+     &           nodpts_flg, center_output, cohesive_elem,                        
+     &           at_intpts, at_enodes, at_center, bar_elem, link_elem                                  
 c                                                                               
 c             for packet output, loop over the user specified                   
 c             element list to determine how many data records                   
@@ -76,10 +75,8 @@ c             initialize parameters controlling hardcopy output.
 c                                                                               
       lnum               = 56  ! forces printing of headers                     
       pgnum              = 0                                                    
-      lbltyp             = 0   ! not sure this is still needed                  
+      lbltyp             = 0   ! tracks last printed labels
       strlbl(1:30)       = ' '                                                  
-      last_solid_type    = 0   ! for tracking need to change headers            
-      last_cohesive_type = 0   !     "                  "                       
 c                                                                               
 c             pass over the use list of elements for output.                    
 c             call lower routines to compute secondary (derivable)              
@@ -109,7 +106,9 @@ c
         num_short_stress  = 11                                                  
         num_short_strain  = 7                                                   
         cohesive_type     = iprops(27,elem)                                     
-        cohesive_elem     = cohesive_ele_types(elem_type)                       
+        cohesive_elem     = cohesive_ele_types(elem_type)   
+        bar_elem          = bar_types(elem_type)
+        link_elem         = link_types(elem_type)
 c                                                                               
 c             duplicate necessary element block data.                           
 c                                                                               
@@ -118,27 +117,56 @@ c
 c                                                                               
 c             compute the element block stress/strain data to be                
 c             output. set to get new header labels if needed.                   
-c             solids and interface-cohesive treated separately.                 
+c             solids and interface-cohesive treated separately.  
+c    
+c             lbltyp = 1 for solids.
+c                    = 2 for bars
+c                    = 3 for links
+c                    = 5 +  cohesive_type for cohesive elements              
 c                                                                               
         if( cohesive_elem ) then                                                
-          if( last_cohesive_type .ne. cohesive_type ) then                      
-             lnum = 56; last_cohesive_type = cohesive_type                      
+           if( lbltyp .ne. 5 + cohesive_type  ) then
+            lbltyp = 5 + cohesive_type 
+            lnum = 56 ! forces new page & label printing
           end if                                                                
-          last_solid_type = 0                                                   
           call ouhrks_cohesive( elem, blk, felem, elem_type,                    
      &       int_order, num_int_points, num_enodes, center_output,              
      &       do_stress, mat_type, cohesive_type, wide, eform,                   
-     &        prec, lnum, pgnum, lbltyp, strlbl, hedtyp,  noheader,             
+     &       prec, lnum, pgnum, lbltyp, strlbl, hedtyp,  noheader,             
      &       out_packet_now, geo_non_flg )                                      
           cycle                                                                 
-        end if                                                                  
+        end if
+c        
+        if( bar_elem ) then
+          if( lbltyp .ne. 2  ) then
+            lbltyp = 2
+            lnum = 56 ! forces new page & label printing
+          end if
+          call ouhrks_bar( elem, blk, felem, elem_type, num_enodes,    
+     &        do_stress, mat_type, wide, eform, prec, lnum, pgnum,
+     &        lbltyp, strlbl, hedtyp,  noheader, out_packet_now, 
+     &        geo_non_flg )   
+           cycle
+        end if
+c                                                                                    
+        if( link_elem ) then
+          if( lbltyp .ne. 3  ) then
+            lbltyp = 3
+            lnum = 56 ! forces new page & label printing
+          end if
+          call ouhrks_link( elem, blk, felem, elem_type, num_enodes,    
+     &        do_stress, mat_type, wide, eform, prec, lnum, pgnum,
+     &        lbltyp, strlbl, hedtyp,  noheader, out_packet_now, 
+     &        geo_non_flg )   
+           cycle
+        end if                                                                            
 c                                                                               
 c             process solid element                                             
 c                                                                               
-        last_cohesive_type = 0                                                  
-        if(  last_solid_type .eq. 0 ) then                                      
-           lnum = 56; last_solid_type = 1                                       
-        end if                                                                  
+        if( lbltyp .ne. 1 ) then
+          lbltyp = 1
+          lnum = 56 ! forces new page & label printing
+        end if  
         call ouhrks( span, blk, felem, elem_type, int_order,                    
      &                num_int_points, num_enodes,                               
      &                geo_non_flg, long_out_flg,                                

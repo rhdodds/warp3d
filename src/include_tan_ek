@@ -8,7 +8,7 @@ c
 c
       type :: nonlinear_ek_work
 c
-       real (h_prec), allocatable :: ce(:,:)                  ! mxvl,mxecor
+       real (h_prec), allocatable :: ce(:,:), ce_0(:,:)       ! mxvl,mxecor
        real (h_prec), allocatable :: trnmte(:,:,:)            ! mxvl,mxedof,mxndof
 
        real (h_prec), allocatable :: det_jac_block(:,:)      ! mxvl,mxgp
@@ -64,7 +64,8 @@ c
      &            is_axisymm_elem, nuc_v(mxvl),
      &            killed_status_vec(mxvl), block_killed,
      &            is_umat, is_solid_matl, is_deform_plas,
-     &            is_crys_pls, is_cohes_nonlocal, is_inter_dmg
+     &            is_crys_pls, is_cohes_nonlocal, is_inter_dmg,
+     &            is_bar_elem, is_link_elem
 c
 c     Added stuff for CP, if any
 c

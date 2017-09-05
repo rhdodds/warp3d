@@ -5,7 +5,7 @@ c     *                      subroutine derivs                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 02/9/13 rhd                *          
+c     *                   last modified : 08/11/2017 rhd             *          
 c     *                                                              *          
 c     *     given the element type, integration point coordinates    *          
 c     *     return the parametric derivatives for each node          *          
@@ -14,19 +14,21 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine derivs( etype, xi, eta, zeta, nxi, neta, nzeta )               
+      subroutine derivs( etype, xi, eta, zeta, nxi, neta, nzeta )   
+c                  
       implicit none                                                             
-      double precision                                                          
-     &     xi, eta, zeta, nxi(*), neta(*), nzeta(*)                             
-      integer etype                                                             
+      double precision :: xi, eta, zeta, nxi(*), neta(*), nzeta(*)                             
+      integer :: etype  
+      double precision, parameter :: zero = 0.0d0                                                           
 c                                                                               
-      if ( etype .le. 0 .or. etype .gt. 16 ) then                               
+      if ( etype .le. 0 .or. etype .gt. 19 ) then                               
          write(*,9000) etype                                                    
          call die_abort                                                         
       end if                                                                    
 c                                                                               
       go to ( 100, 200, 300, 400, 500, 600, 700, 800, 900,                      
-     &       1000, 1100, 1200, 1300, 1400, 1500, 1600 ), etype                  
+     &       1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700,
+     &       1800, 1900 ), etype                  
 c                                                                               
 c                    20-node brick                                              
 c                                                                               
@@ -119,10 +121,40 @@ c
       call deriv15( xi, eta, nxi, neta )                                        
       return                                                                    
 c                                                                               
-c                    4-node planar quadrilateral, "quad4"                       
+c                    4-node planar quadrilateral, "quad4"  -not 
+c                    really and element. used in various places                      
 c                                                                               
 1600  continue                                                                  
       call deriv16( xi, eta, nxi, neta )                                        
+      return                                                                    
+c                                                                               
+c                    3-node line.  not implemented for derivs.          
+c                                                                               
+1700  continue                                                                  
+      write(*,9100) etype                                                       
+      call die_abort                                                            
+c                                                                               
+c                     2-node bar element. just dummy values since never
+c                                         used in code
+c                                                                               
+1800  continue                                                                  
+      nxi(1) = zero
+      nxi(2) = zero
+      neta(1) = zero
+      neta(2) = zero
+      nzeta(1) = zero
+      nzeta(2) = zero
+      return                                                                    
+c                     2-node link element. just dummy values since never
+c                                         used in code
+c                                                                               
+1900  continue                                                                  
+      nxi(1) = zero
+      nxi(2) = zero
+      neta(1) = zero
+      neta(2) = zero
+      nzeta(1) = zero
+      nzeta(2) = zero
       return                                                                    
 c                                                                               
  9000 format('> FATAL ERROR: derivs, etype: ',i10,//,                           

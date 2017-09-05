@@ -31,8 +31,7 @@ c
      &           last_blk                                                       
       integer, external :: warp3d_get_device_number, omp_get_thread_num,        
      &                     warp3d_matl_num                                      
-      double precision, allocatable, dimension(:,:) ::                          
-     &  st_values                                                               
+      double precision, allocatable, dimension(:,:) :: st_values                                                               
       double precision ::                                                       
      &  start_time, end_time, zero, start_time2, end_time2                      
       double precision, external :: omp_get_wtime                               
@@ -596,7 +595,7 @@ c     *  (in contains) subroutine oustates_process_blks              *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 2/2/2017 rhd               *          
+c     *                   last modified : 8/22/2017 rhd              *          
 c     *                                                              *          
 c     *    drive over all element blocks in parallel. build          *          
 c     *    an array of states output for entire model.               *          
@@ -606,10 +605,11 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine oustates_process_blks                                          
-      use main_data, only: imatprp                                              
+      use main_data, only: imatprp, bar_types, link_types                                              
       implicit none                                                             
 c                                                                               
-      integer :: ncrystals_blk, i, elem                                         
+      integer :: ncrystals_blk, i, elem 
+      logical :: is_bar_elem, is_link_elem                                        
 c                                                                               
 c           process all blocks. call a material routine to fill state           
 c           variables to output for a block. write out zero values for          
@@ -640,7 +640,10 @@ c
           matnum      = iprops(38,felem)                                        
 c                                                                               
           if( local_debug ) write(out,9050) myid, blk, felem, elem_type,        
-     &                      mat_type, int_points, span, hist_size               
+     &                      mat_type, int_points, span, hist_size 
+          is_bar_elem  = bar_types(elem_type)
+          is_link_elem = link_types(elem_type)    
+          if( is_bar_elem .or. is_link_elem ) cycle          
 c                                                                               
           if( mat_type .eq. warp3d_matl_model ) then                            
              if( warp3d_matl_model .eq. cp_model_type )                         

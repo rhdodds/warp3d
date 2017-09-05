@@ -4,7 +4,7 @@ c     *                      subroutine oulbst                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 03/11/13  rhd              *          
+c     *                   last modified : 8/21/2017 rhd              *          
 c     *                                                              *          
 c     *     sets the label type and corresponding                    *          
 c     *     dof labels for an element for stress/strain output       *          
@@ -14,13 +14,31 @@ c
 c                                                                               
       subroutine oulbst( do_stress, lbltyp, elem_type, elem,                    
      &                   strlbl, long, hedtyp, geonl, cohesive_type )           
-      implicit integer (a-z)                                                    
+      use main_data, only: bar_types, link_types                                      
+      implicit none
+c
+      integer :: lbltyp, elem_type, elem, cohesive_type
+      logical :: long, do_stress, geonl     
       character(len=8) :: strlbl(*)                                             
-      character(len=*) :: hedtyp                                                
-      logical long, do_stress, geonl                                            
+      character(len=*) :: hedtyp
+c                                                      
+      logical :: bar_type, link_type  
 c                                                                               
 c                       solids and interface-cohesive are separate              
 c                                                                               
+      bar_type  = bar_types(elem_type)
+      link_type = link_types(elem_type)
+c
+      if( bar_type ) then
+         call oulbst_bar
+         return
+      end if  
+c             
+      if( link_type ) then
+         call oulbst_link
+         return
+      end if         
+c
       if( cohesive_type. ne. 0 ) then                                           
          call oulbst_cohesive                                                   
       else                                                                      
@@ -44,9 +62,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine oulbst_cohesive                                                
-      implicit integer (a-z)                                                    
-                                                                                
-      lbltyp = 1                                                                
+      implicit none                                                    
 c                                                                               
       select case ( cohesive_type )                                             
 c                                                                               
@@ -170,9 +186,7 @@ c     ****************************************************************
 c                                                                               
                                                                                 
       subroutine   oulbst_solid                                                 
-      implicit integer (a-z)                                                    
-c                                                                               
-      lbltyp = 1                                                                
+      implicit none                                                    
 c                                                                               
 c                       short output                                            
 c                                                                               
@@ -239,5 +253,66 @@ c
       end if                                                                    
       return                                                                    
       end subroutine oulbst_solid                                               
+c                                                                               
+c     ****************************************************************          
+c     *                                                              *          
+c     *                    subroutine oulbst_bar                     *          
+c     *                                                              *          
+c     *                       written by : rhs                       *          
+c     *                                                              *          
+c     *                   last modified : 03/3/2017 rhd              *          
+c     *                                                              *          
+c     *       sets output header labels for bar elements             *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+                                                                                
+      subroutine   oulbst_bar                                                 
+      implicit none                                                    
+c       
+      if( do_stress ) then                                                      
+         hedtyp(1:) = 'stresses'                                                
+         if ( geonl ) hedtyp(1:) = 'cauchy stresses'                            
+         strlbl(1)  = 'sigma'                                                
+         strlbl(2)  = 'force'                                                
+      else                                                                      
+         hedtyp(1:)= 'strains '                                                 
+         if ( geonl ) hedtyp(1:) = 'logarithmic strains'                        
+         strlbl(1) = '  eps'                                                 
+      end if                                                                    
+c
+      return                                                                    
+      end subroutine oulbst_bar                                               
+c                                                                               
+c     ****************************************************************          
+c     *                                                              *          
+c     *                    subroutine oulbst_link                    *          
+c     *                                                              *          
+c     *                       written by : rhs                       *          
+c     *                                                              *          
+c     *                   last modified : 08/20/2017 rhd             *          
+c     *                                                              *          
+c     *       sets output header labels for link elements            *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+                                                                                
+      subroutine   oulbst_link                                                 
+      implicit none                                                    
+c                                                                               
+      if( do_stress ) then                                                      
+         hedtyp(1:) = 'forces'                                                
+         strlbl(1)  = 'force_x'                                                
+         strlbl(2)  = 'force_y'
+         strlbl(3)  = 'force_z'
+      else                                                                      
+         hedtyp(1:)= 'rel-dis'                                                 
+         strlbl(1) = '   du'                                                 
+         strlbl(2) = '   dv'                                                 
+         strlbl(3) = '   dw'                                                 
+      end if                                                                    
+c
+      return                                                                    
+      end subroutine oulbst_link                                               
 c                                                                               
       end subroutine oulbst                                                     

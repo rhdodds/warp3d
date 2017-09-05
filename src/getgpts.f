@@ -4,7 +4,7 @@ c     *                      subroutine getgpts                      *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 02/09/13 rhd               *          
+c     *                   last modified : 08/11/2017 rhd             *          
 c     *                                                              *          
 c     *     given the element type, order of integration and the     *          
 c     *     integration point number, return the parametric          *          
@@ -15,17 +15,17 @@ c     ****************************************************************
 c                                                                               
       subroutine getgpts( etype, order, gpn, xi, eta, zeta, weight )            
       implicit none                                                             
-      double precision                                                          
-     &     xi, eta, zeta, weight                                                
+      double precision :: xi, eta, zeta, weight                                                
       integer etype, order, gpn                                                 
 c                                                                               
-      if ( etype .le. 0 .or. etype .gt. 17 ) then                               
+      if ( etype .le. 0 .or. etype .gt. 19 ) then                               
          write(*,9000) etype                                                    
          call die_abort                                                         
-      end if                                                                    
+      end if 
 c                                                                               
       go to ( 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,                
-     &       1100, 1200, 1300, 1400, 1500, 1600, 1700 ), etype                  
+     &       1100, 1200, 1300, 1400, 1500, 1600, 1700, 
+     &       1800, 1900 ), etype                  
 c                                                                               
 c                20-node brick                                                  
 c                                                                               
@@ -116,20 +116,40 @@ c
 1500  continue                                                                  
       call trint12_gp( order, gpn, xi, eta, zeta, weight )                      
       return                                                                    
+c
+c                4-node quadrilateral - used for various
+c                purposes - not a real element
+c
+1600  continue
+      call quad10( order, gpn, xi, eta, zeta, weight )
+      return
+c
+c                3-node line -- - used for various
+c                purposes - not a real element
+c
+1700  continue
+      call line3( order, gpn, xi, eta, zeta, weight )
+      return                                                                               
+c                                                                                                                                                            
+c                2-node bar element                                   
 c                                                                               
-c                4-node quadrilateral element                                   
+1800  continue 
+      xi = 0.5d0
+      eta = 0.0d0
+      zeta = 0.0d0
+      weight = 1.0d0
+      return
+c                                                                                                                                                            
+c                2-node link element
 c                                                                               
-1600  continue                                                                  
-      call quad10( order, gpn, xi, eta, zeta, weight )                          
-      return                                                                    
-c                                                                               
-c                3-node line element                                            
-c                                                                               
-1700  continue                                                                  
-      call line3( order, gpn, xi, eta, zeta, weight )                           
-      return                                                                    
-c                                                                               
-c                                                                               
+1900  continue 
+      xi = 0.5d0
+      eta = 0.0d0
+      zeta = 0.0d0
+      weight = 1.0d0
+      return
+c
+                                                                     
  9000 format('> FATAL ERROR: getgpts, etype: ',i10,//,                          
      &       '               job aborted' )                                     
  9100 format('> FATAL ERROR: getgpts, etype: ',i10,//,                          
@@ -181,8 +201,8 @@ c
         call die_abort                                                          
       end if                                                                    
       if ( .not. valid(order) ) then                                            
-        write(*,9000)                                                           
-        call die_abort                                                          
+        write(*,9000) order     
+        call die_abort                                                 
       end if                                                                    
 c                                                                               
       select case( order )                                                      
@@ -599,7 +619,7 @@ c
  9999 return                                                                    
 c                                                                               
  9000 format('>> FATAL ERROR: invalid integration order for',                   
-     & /,    '                20, 15 or 12-node element. order= ',i3,           
+     & /,    '                20, 15 or 12-node element. order= ',i9,           
      & /,    '                job terminated.',//)                              
       end                                                                       
 c     ****************************************************************          

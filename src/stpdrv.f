@@ -35,7 +35,7 @@ c
      &     mf, mf_nm1, d32460, dumd, load_reduce_fact                           
       real con_stp_factor                                                       
       logical local_debug, msg_flag, stpdrv_error                               
-      data local_debug / .false. /                                              
+      data local_debug / .true. /                                              
       data msg_flag / .false. /                                                 
       data d32460 /32460.0 /                                                    
 c                                                                               

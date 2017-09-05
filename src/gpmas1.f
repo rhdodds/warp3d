@@ -4,7 +4,7 @@ c     *                      subroutine gpmas1                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 01/20/2015 rhd             *          
+c     *                   last modified : 08/11/2017 rhd             *          
 c     *                                                              *          
 c     *     this subroutine computes the lumped mass matrix terms    *          
 c     *     for elements in the block. uses undeformed coordinates.  *          
@@ -14,19 +14,18 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine gpmas1( span, felem, type, order, gpn, nnode,                  
-     &                   volume, mel, totdof, fgm_props, rho, emass,            
-     &                   iout, rho_fgm_flags, axisymm_elem,                     
-     &                   implemented_elem, ce_block, rho_block )                
+     &                   volume, mel, totdof, fgm_props, area, rho,            
+     &                   emass, iout, rho_fgm_flags, axisymm_elem,                     
+     &                   implemented_elem, ce_block, rho_block )
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
 c                       parameter declarations                                  
 c                                                                               
-      integer :: span, felem, type, order, gpn, nnode,                          
-     &                 totdof, iout                                             
+      integer :: span, felem, type, order, gpn, nnode, totdof, iout                                             
       double precision ::                                                       
      &  volume(*), mel(totdof,*), rho(*), emass(*), rho_fgm_flags(*),           
-     &  ce_block(mxvl,*), rho_block(mxndel,*)                                   
+     &  ce_block(mxvl,*), rho_block(mxndel,*), area(*)
       logical :: fgm_props, axisymm_elem, implemented_elem                      
 c                                                                               
 c                       locals                                                  
@@ -36,13 +35,11 @@ c
      &   shape(mxndel), radius(mxvl), dummy(mxvl,3,3),                          
      &   jac(mxvl,ndim,ndim),  gama(mxvl,ndim,ndim),                            
      &   xi, eta ,zeta, wfactor, dj(mxvl),                                      
-     &   nxi(mxndel), neta(mxndel), nzeta(mxndel),                              
-     &   one                                                                    
-c                                                                               
-      data one / 1.0d00 /                                                       
+     &   nxi(mxndel), neta(mxndel), nzeta(mxndel)
+      double precision, parameter :: one = 1.0d0                           
 c                                                                               
 c                       message for unsupported elements                        
-c                                                                               
+c  
       if( .not. implemented_elem ) then                                         
         write(iout,9500) type,span,felem,order,gpn,nnode,totdof                 
         do j = 1, nnode                                                         
@@ -83,7 +80,7 @@ c                       thru nodal values. interpolate density
 c                       at this gauss point for all elements in                 
 c                       the block.                                              
 c                                                                               
-      if ( fgm_props )                                                          
+      if( fgm_props )                                                          
      &    call set_fgm_solid_props_for_block(                                   
      &                span, felem, type, gpn, nnode, rho, shape,                
      &                rho_block, 1, rho_fgm_flags )                             
@@ -91,8 +88,9 @@ c
 c                       compute the gauss point contribution to the             
 c                       the nodal mass term.                                    
 c                                                                               
-      call mass_sum( type, totdof, nnode, mxvl, span, radius,                   
-     &               shape, dj, wfactor, mel, volume, rho, emass )              
+      call mass_sum( type, totdof, nnode, mxvl, span, radius, shape,                  
+     &               dj, wfactor, ce_block, mel, volume, area, rho,
+     &               emass )              
 c                                                                               
 c                                                                               
       return                                                                    
@@ -113,7 +111,7 @@ c     *                                                              *
 c     *                     subroutine mass_sum                      *          
 c     *                                                              *          
 c     *                       written by: rau                        *          
-c     *                    last modified: 07/11/00                   *          
+c     *                    last modified: 8/21/2017 rhd              *          
 c     *                                                              *          
 c     *     this routine computes the current gauss point            *          
 c     *     contribution to the terms of the consistent              *          
@@ -150,135 +148,165 @@ c                     block at the current Gauss integration point
 c                                                                               
 c                                                                               
       subroutine mass_sum( elem_type, totdof, nnode, mxvl, span, radius,        
-     &                     shape, dj, w, mel, volume, rho, emass )              
+     &                     shape, dj, w, ce_0, mel, volume, area, 
+     &                     rho, emass )              
       implicit none                                                             
 c                                                                               
 c               parameter declarations                                          
 c                                                                               
       integer :: elem_type, totdof, nnode, mxvl, span                           
-      double precision ::                                                       
-     &         radius(*),                                                       
-     &         shape(*),                                                        
-     &         dj(*),                                                           
-     &         w,                                                               
-     &         mel(totdof,*),                                                   
-     &         volume(*),                                                       
-     &         rho(*),                                                          
-     &         emass(*)                                                         
+      double precision :: radius(*), shape(*), dj(*), w, mel(totdof,*),                                                   
+     &         volume(*), rho(*), emass(*), ce_0(mxvl,*), area(*)
 c                                                                               
 c               local variables                                                 
 c                                                                               
       integer :: i,j                                                            
-      double precision ::                                                       
-     &         two,                                                             
-     &         half,                                                            
-     &         pi,                                                              
-     &         scalar,                                                          
-     &         weight                                                           
-c                                                                               
-      data two, half, pi                                                        
-     & / 2.d0, 0.5d0, 3.14159265358979323846d0 /                                
+      double precision :: scalar, weight, x1, x2, y1, y2, z1, z2, len
+      double precision, parameter :: two = 2.0d0, half = 0.5d0,
+     &                               pi =  3.14159265358979323846d0                                                          
 c                                                                               
 c               the element type determines the calculations                    
 c               performed. compute the current mass and volume                  
 c               contributions for the different element types.                  
 c                                                                               
-      go to ( 100, 100, 100, 100, 100, 600, 100, 800, 100,                      
-     &        1000, 1100, 100, 600 ), elem_type                                 
+      select case( elem_type )                           
 c                                                                               
 c               element numbers 1-5, 7, 9, 12: hex elements                     
 c                                                                               
- 100  continue                                                                  
+       case( 1,2,3,4,5, 7, 9, 12 )                                                                  
 c                                                                               
-      do j = 1, nnode                                                           
-         do i = 1, span                                                         
-           mel(j,i) = mel(j,i) + shape(j)*shape(j)*dj(i)*w*rho(i)               
+        do j = 1, nnode                                                           
+!DIR$ VECTOR ALIGNED
+          do i = 1, span                                                         
+             mel(j,i) = mel(j,i) + shape(j)*shape(j)*dj(i)*w*rho(i)               
          end do                                                                 
-      end do                                                                    
+        end do                                                                    
 c                                                                               
-      do i = 1, span                                                            
-         volume(i) = volume(i) + dj(i)*w                                        
-         emass(i) = emass(i) + dj(i)*w*rho(i)                                   
-      end do                                                                    
-c                                                                               
-      return                                                                    
+!DIR$ VECTOR ALIGNED
+        do i = 1, span                                                            
+          volume(i) = volume(i) + dj(i)*w                                        
+          emass(i) = emass(i) + dj(i)*w*rho(i)                                   
+        end do                                                                    
 c                                                                               
 c               element number 6, 13: tet10, tet4                               
 c                                                                               
- 600   continue                                                                 
+       case( 6, 13 )                                                                 
 c                                                                               
-       scalar = 1.0D0/6.0D0                                                     
-       weight = scalar*w                                                        
-       do j = 1, nnode                                                          
+         scalar = 1.0D0 / 6.0D0                                                     
+         weight = scalar * w                                                        
+         do j = 1, nnode                                                          
+!DIR$ VECTOR ALIGNED
           do i = 1, span                                                        
             mel(j,i) = mel(j,i) + shape(j)*shape(j)*dj(i)*weight*rho(i)         
           end do                                                                
-       end do                                                                   
+         end do                                                                   
 c                                                                               
-       do i = 1, span                                                           
+!DIR$ VECTOR ALIGNED
+         do i = 1, span                                                           
           volume(i) = volume(i) + dj(i)*weight                                  
           emass(i) = emass(i) + dj(i)*weight*rho(i)                             
-       end do                                                                   
-c                                                                               
-       return                                                                   
-c                                                                               
+         end do                                                                   
+c
 c               element number 8: tri6                                          
 c                                                                               
- 800   continue                                                                 
+        case( 8 )                                                                
 c                                                                               
-       scalar = half                                                            
-       weight = scalar*w                                                        
-       do j = 1, nnode                                                          
+         scalar = half                                                            
+         weight = scalar*w                                                        
+         do j = 1, nnode                                                          
+!DIR$ VECTOR ALIGNED
           do i = 1, span                                                        
             mel(j,i) = mel(j,i) + shape(j)*shape(j)*dj(i)*weight*rho(i)         
           end do                                                                
-       end do                                                                   
+         end do                                                                   
 c                                                                               
-       do i = 1, span                                                           
+!DIR$ VECTOR ALIGNED
+         do i = 1, span                                                           
           volume(i) = volume(i) + dj(i)*weight                                  
-          emass(i) = emass(i) + dj(i)*weight*rho(i)                             
-       end do                                                                   
-c                                                                               
-       return                                                                   
+          emass(i)  = emass(i) + dj(i)*weight*rho(i)                             
+         end do                                                                   
 c                                                                               
 c               element numbers 10: axisymmetric quad                           
 c                                                                               
- 1000  continue                                                                 
+        case( 10 ) 
 c                                                                               
 c               axisymmetric elements, multiply by 2*pi*radius                  
 c                                                                               
-      scalar = two * pi                                                         
-       do j = 1, nnode                                                          
+         scalar = two * pi                                                         
+         do j = 1, nnode                                                          
           do i = 1, span                                                        
             mel(j,i) = mel(j,i) +                                               
-     &                 scalar*radius(i)*shape(j)*shape(j)*dj(i)*w*rho(i)        
+     &              scalar*radius(i)*shape(j)*shape(j)*dj(i)*w*rho(i)        
           end do                                                                
-       end do                                                                   
-       do i = 1, span                                                           
+         end do                                                                   
+         do i = 1, span                                                           
           volume(i) = volume(i) + scalar*radius(i)*dj(i)*w                      
           emass(i) = emass(i) + dj(i)*w*rho(i)                                  
-       end do                                                                   
-c                                                                               
-       return                                                                   
+         end do                                                                   
 c                                                                               
 c               element number 11: axisymmetric tri                             
 c               note that for the axisymmetric triangle 2*pi*0.5 = pi.          
 c                                                                               
- 1100  continue                                                                 
+        case( 11 )
 c                                                                               
-       scalar = pi                                                              
-       do j = 1, nnode                                                          
+         scalar = pi                                                              
+         do j = 1, nnode                                                          
           do i = 1, span                                                        
             mel(j,i) = mel(j,i) +                                               
-     &                 scalar*radius(i)*shape(j)*shape(j)*dj(i)*w*rho(i)        
+     &               scalar*radius(i)*shape(j)*shape(j)*dj(i)*w*rho(i)        
           end do                                                                
-       end do                                                                   
-       do i = 1, span                                                           
+         end do                                                                   
+         do i = 1, span                                                           
           volume(i) = volume(i) + scalar*radius(i)*dj(i)*w                      
           emass(i)  = emass(i) + dj(i)*w*rho(i)                                 
-       end do                                                                   
+         end do  
 c                                                                               
-       return                                                                   
+c               element number 18: 2-node element
+c                                                                               
+       case( 18 )
+c              
+         nnode = 2                                                                 
+         do j = 1, nnode                                                 
+!DIR$ VECTOR ALIGNED
+          do i = 1, span   
+            x1 = ce_0(i,1); y1 = ce_0(i,nnode+1)
+            z1 = ce_0(i,2*nnode+1)      
+            x2 = ce_0(i,2); y2 = ce_0(i,nnode+2)
+            z2 = ce_0(i,2*nnode+2)      
+            len = sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2 )                                               
+            mel(j,i) = mel(j,i) + rho(i) * area(i) * len * half    
+          end do                                                                
+         end do                                                                   
+!DIR$ VECTOR ALIGNED
+         do i = 1, span                                                           
+          volume(i) = area(i) * len                   
+          emass(i)  = emass(i) + area(i) * len * rho(i)                                 
+         end do    
+c                                                                               
+c               element number 19: 2-node link element. has no 
+c               volume. user set rho is total element mass
+c                                                                               
+       case( 19 )
+c              
+         nnode = 2                                                                 
+         do j = 1, nnode                                                 
+          do i = 1, span   
+            mel(j,i) = mel(j,i) + rho(i) * half    
+          end do                                                                
+         end do
+         do i = 1, span                                                           
+          volume(i) = 0.0d0                   
+          emass(i)  = emass(i) + rho(i)
+         end do    
+
+      case default 
+         write(*,9000) elem_type
+         call die_abort
+      end select
+c                                                                           
+      return 
+ 9000 format('>> FATAL ERROR: mass_sum. no element type:',i8,
+     & /,    '                job terminated' )                                                                         
        end                                                                      
 c     ****************************************************************          
 c     *                                                              *          

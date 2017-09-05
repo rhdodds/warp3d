@@ -4,7 +4,7 @@ c     *                      subroutine rstgp1                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 1/2/2016 rhd               *          
+c     *                   last modified : 8/12/2017 rhd              *          
 c     *                                                              *          
 c     *     supervise the computation of strains, stresses and       *          
 c     *     accompaning stress data at an integration point          *          
@@ -19,7 +19,7 @@ c
       subroutine rstgp1( props, lprops, iprops, local_work )                    
       use segmental_curves, only : max_seg_points                               
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
 c                      parameter declarations                                   
@@ -30,20 +30,18 @@ c
       include 'include_sig_up'                                                  
 c                                                                               
 c                       locally defined variables                               
-c                                                                               
-      double precision ::                                                       
-     &  internal_energy, beta_fact, eps_bbar, plastic_work, zero                
-      double precision,                                                         
-     & allocatable :: ddt(:,:), uddt(:,:), qnhalf(:,:,:),                       
-     &                qn1(:,:,:)    
-c                                                                               
-      logical :: cut_step,                                                      
-     &           adaptive, geonl, bbar, material_cut_step,                      
-     &           local_debug, adaptive_flag 
-     
-      logical:: isnan        
-c      
-      data local_debug, zero / .false., 0.0d00 /                                
+c
+      integer :: i, k, span, felem, type, order, gpn, ngp, nnode, ndof,
+     &           step, iter, mat_type, iout, error                                                                               
+      double precision :: internal_energy, beta_fact, eps_bbar, 
+     &                    plastic_work, bar_volumes(mxvl),
+     &                    bar_areas_0(mxvl), bar_areas_mid(mxvl) 
+      double precision, parameter :: zero = 0.0d0            
+      double precision, allocatable :: ddt(:,:), uddt(:,:),
+     &                                 qnhalf(:,:,:), qn1(:,:,:)    
+      logical :: cut_step, adaptive, geonl, bbar, material_cut_step,                      
+     &           adaptive_flag, isnan
+      logical, parameter :: local_debug = .false.
 c            
       internal_energy   = local_work%block_energy                               
       plastic_work      = local_work%block_plastic_work                         
@@ -65,7 +63,7 @@ c
       adaptive_flag     = local_work%adaptive_flag                              
       eps_bbar          = local_work%eps_bbar                                   
       adaptive          = adaptive_flag .and. step .gt. 1                       
-      iout              = local_work%iout                                       
+      iout              = local_work%iout   
       if( local_debug ) write(iout,*) '... in rstgp1'                           
 c                                                                               
 c        allocate and zero. only span rows are used but                         
@@ -93,6 +91,21 @@ c
      &               local_work%cohes_rot_block,                                
      &               local_work%shape(1,gpn),                                   
      &               local_work%elem_type,gpn, felem, iout )                    
+        go to 7000                                                              
+      end if                                                                    
+c                                                                               
+c        process bar elements separately                                   
+c                                                                               
+      if( local_work%is_bar_elem ) then                                       
+        if ( local_debug ) write(*,*) '>> calling gtlsn3...'
+        bar_areas_0(1:span) = props(43,1:span)
+        call gtlsn3_vols( span, mxvl, felem, iout, bar_areas_0(1),
+     &                    bar_areas_mid(1),
+     &                    local_work%ce_0, local_work%ce_mid,
+     &                    bar_volumes(1) )
+        call gtlsn3( span, local_work%due, uddt, 
+     &               local_work%ddtse(1,1,gpn), local_work%ce_mid,
+     &               mxvl, nstr, local_work%elem_type, felem, iout )                   
         go to 7000                                                              
       end if                                                                    
 c                                                                               
@@ -256,7 +269,9 @@ c
         call rstgp1_b( span, internal_energy, plastic_work,                     
      &                 local_work%urcs_blk_n1(1,7,gpn),                         
      &                 local_work%urcs_blk_n1(1,8,gpn),                         
-     &                 local_work%det_j(1,gpn), local_work%dfn1, 1 )            
+     &                 local_work%det_j(1,gpn), local_work%dfn1, 1,
+     &                 local_work%is_bar_elem, local_work%is_link_elem,
+     &                 bar_volumes(1) )            
         internal_energy = internal_energy * beta_fact *                         
      &                    local_work%weights(gpn)                               
         plastic_work    = plastic_work * beta_fact *                            
@@ -322,26 +337,27 @@ c
       subroutine rstgp2( props, lprops, iprops, local_work )                    
       use segmental_curves, only : max_seg_points, max_seg_curves               
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
 c                      parameter declarations                                   
-c                                                                               
+c                                                                              
       real    :: props(mxelpr,*)  ! all 3 are same but read only                
-      logical :: lprops(mxelpr,*)                                               
+      logical :: lprops(mxelpr,*) ! 1st col is 1st elem of blk                                              
       integer :: iprops(mxelpr,*)                                               
       include 'include_sig_up'                                                  
 c                                                                               
 c                       locally defined variables                               
-c                                                                               
-      double precision ::                                                       
-     &  internal_energy, beta_fact, eps_bbar,                                   
-     &  uddt(mxvl,nstr), plastic_work, dummy_q(1), dummy_dfn1(1)                
-c                                                                               
-      logical :: bbar, local_debug, signal_flag                                 
-c                                                                               
-      data local_debug / .false. /                                              
-                                                                                
+c      
+      integer :: span, felem, type, order, gpn, ngp, nnode, ndof, step,
+     &           iter, mat_type, number_points, curve_step, iout,
+     &           curve_set, i, k                                                                          
+      double precision :: internal_energy, beta_fact, eps_bbar,                                   
+     &  uddt(mxvl,nstr), plastic_work, dummy_q(1), dummy_dfn1(1),
+     &  bar_volumes(mxvl), bar_areas_0(mxvl), bar_areas_nx(mxvl)              
+      logical :: bbar, signal_flag, drive_material_model   
+      logical, save :: local_debug = .false.                             
+c                                                                                
       internal_energy   = local_work%block_energy                               
       plastic_work      = local_work%block_plastic_work                         
       beta_fact         = local_work%beta_fact                                  
@@ -361,7 +377,7 @@ c
       eps_bbar          = local_work%eps_bbar                                   
       number_points     = local_work%number_points                              
       curve_set         = local_work%curve_set_number                           
-      iout              = local_work%iout                                       
+      iout              = local_work%iout 
 c                                                                               
 c          compute the strain increment in vector form. update the              
 c          accumulated strains. branch to call material model.                  
@@ -380,8 +396,23 @@ c
      &               local_work%cohes_rot_block,                                
      &               local_work%shape(1,gpn),                                   
      &               local_work%elem_type, gpn, felem, iout )                   
-      else                                                                      
-        call gtlsn1( span, nnode,                                               
+       else if( local_work%is_link_elem ) then
+        call gtlsn4( span, mxelpr, props, local_work%due, uddt, 
+     &               local_work%ddtse(1,1,gpn), 
+     &               local_work%urcs_blk_n(1,1,gpn),
+     &               local_work%urcs_blk_n1(1,1,gpn), mxvl, nstr,
+     &               nstrs, local_work%elem_type, felem, iout )                   
+      else if( local_work%is_bar_elem ) then
+        bar_areas_0(1:span) = props(43,1:span)
+        call gtlsn3_vols( span, mxvl, felem, iout, bar_areas_0(1),
+     &                    bar_areas_nx(1),
+     &                    local_work%ce_0, local_work%ce_0,
+     &                    bar_volumes(1) )
+        call gtlsn3( span, local_work%due, uddt, 
+     &               local_work%ddtse(1,1,gpn), local_work%ce_0,
+     &               mxvl, nstr, local_work%elem_type, felem, iout )                   
+      else
+        call gtlsn1( span, nnode, 
      &               local_work%due, uddt,                                      
      &               local_work%gama(1,1,1,gpn), local_work%nxi(1,gpn),         
      &               local_work%neta(1,gpn),                                    
@@ -392,7 +423,67 @@ c
       end if                                                                    
 c                                                                               
 c------------------------------------------------------------------------       
+c     
+      drive_material_model = .true.
+      if( local_work%is_link_elem ) drive_material_model = .false.
+      if( drive_material_model ) call rstgp2_drive_matls 
+c                                                                                  
+c                 If we're actually an interface damage model,                  
+c                 call the interface damage calculations                        
 c                                                                               
+      if( local_work%is_inter_dmg )                                             
+     &       call drive_11_update(gpn, props, lprops, iprops,                   
+     &            local_work, uddt, iout)                                       
+c                                                                               
+c --------------------------------------------------------------------          
+c                                                                               
+c            calculate the current (total) internal energy                      
+c            by integrating the energy density over the volume                  
+c            of the element. do only if iter > 0                                
+c                                                                               
+      if( iter .ne. 0 ) then                                                    
+        call rstgp1_b( span, internal_energy, plastic_work,                     
+     &                 local_work%urcs_blk_n1(1,7,gpn),                         
+     &                 local_work%urcs_blk_n1(1,8,gpn),                         
+     &                 local_work%det_j(1,gpn), dummy_dfn1, 2,
+     &                 local_work%is_bar_elem, local_work%is_link_elem,
+     &                 bar_volumes(1)   )                 
+        internal_energy = internal_energy * beta_fact *                         
+     &                    local_work%weights(gpn)                               
+        plastic_work    = plastic_work * beta_fact *                            
+     &                    local_work%weights(gpn)                               
+        local_work%block_energy       = internal_energy                         
+        local_work%block_plastic_work = plastic_work                            
+      end if  
+c
+      if( local_debug ) then                                                    
+        write(iout,*) '>> rstgp2 .. gauss point: ', gpn                         
+        write (iout,9500) internal_energy,                                      
+     &                 plastic_work                                             
+        write(iout,9110)                                                        
+        do i = 1, span                                                          
+         write(iout,9100) i, (local_work%urcs_blk_n(i,k,gpn),k=1,7),            
+     &                 (local_work%urcs_blk_n1(i,k,gpn),k=1,7),                 
+     &                 (uddt(i,k),k=1,6)                                        
+        end do                                                                  
+      end if                                                                    
+                                                                        
+c                                                                               
+      return                                                                    
+c  
+ 9100 format(i5,7f15.6,/,5x,7f15.6,/,5x,6f15.6,/,5x,6f15.6)                     
+ 9110 format(1x,'Elem    /',20('-'),                                            
+     &        ' unrot. Cauchy @ n, unrot. Cauchy @ n+1,',                       
+     &        ' uddt', 20('-'),'/')                                        
+ 9500 format('  Internal energy inside of (rstgp2)    = ',e16.6,                
+     &     /,'  Plasstic work inside of (rstgp2)      = ',e16.6)                
+c                                                                               
+      contains
+c     ========
+c
+      subroutine rstgp2_drive_matls
+      implicit none
+c            
       select case (  mat_type )                                                 
       case ( 1 )                                                                
 c                                                                               
@@ -467,38 +558,9 @@ c
         stop                                                                    
       end select                                                                
 c                                                                               
-c                 If we're actually an interface damage model,                  
-c                 call the interface damage calculations                        
-c                                                                               
-      if( local_work%is_inter_dmg )                                             
-     &       call drive_11_update(gpn, props, lprops, iprops,                   
-     &            local_work, uddt, iout)                                       
-c                                                                               
-c --------------------------------------------------------------------          
-c                                                                               
-c            calculate the current (total) internal energy                      
-c            by integrating the energy density over the volume                  
-c            of the element. do only if iter > 0                                
-c                                                                               
-      if( iter .ne. 0 ) then                                                    
-        call rstgp1_b( span, internal_energy, plastic_work,                     
-     &                 local_work%urcs_blk_n1(1,7,gpn),                         
-     &                 local_work%urcs_blk_n1(1,8,gpn),                         
-     &                 local_work%det_j(1,gpn), dummy_dfn1, 2 )                 
-        internal_energy = internal_energy * beta_fact *                         
-     &                    local_work%weights(gpn)                               
-        plastic_work    = plastic_work * beta_fact *                            
-     &                    local_work%weights(gpn)                               
-        local_work%block_energy       = internal_energy                         
-        local_work%block_plastic_work = plastic_work                            
-        if ( local_debug ) write (iout,9500) internal_energy                    
-      end if                                                                    
-c                                                                               
-      return                                                                    
-c                                                                               
- 9500 format('  Internal energy inside of (rstgp1) = ',e16.6)                   
-c                                                                               
-      end                                                                       
+      return
+      end subroutine rstgp2_drive_matls
+      end subroutine rstgp2                                                                            
 c     ****************************************************************          
 c     *                                                              *          
 c     *                subroutine drive_01_update                    *          
@@ -702,7 +764,7 @@ c
         call gp_temp_eps( span, uddt_temps,                                     
      &                    local_work%alpha_vec, gp_dtemps ,                     
      &                    gp_temps, gp_rtemps,                                  
-     &                    local_work%alpha_vec_n )                              
+     &                    local_work%alpha_vec_n, type )                              
         if( local_debug ) write(iout,9050)                                      
       end if                                                                    
 c                                                                               
@@ -1318,7 +1380,8 @@ c
 c                                                                               
       if( temperatures )                                                        
      &    call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,        
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )           
+     &                    gp_temps, gp_rtemps, local_work%alpha_vec,
+     &                    type )           
       igpn = gpn                                                                
       call recstr_cep_uddt_for_block( mxvl, span,                               
      &      gbl_cep_blocks(now_blk)%vector,                                     
@@ -1589,7 +1652,7 @@ c
       if( temperatures ) then                                                   
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,               
      &                     gp_dtemps, gp_temps, gp_rtemps,                      
-     &                     local_work%alpha_vec_n )                             
+     &                     local_work%alpha_vec_n, type )                             
         if( local_debug ) write(iout,9050)                                      
       end if                                                                    
 c                                                                               
@@ -2418,7 +2481,7 @@ c
       if( temperatures ) then                                                   
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,               
      &                    gp_dtemps, gp_temps, gp_rtemps,                       
-     &                    local_work%alpha_vec_n )                              
+     &                    local_work%alpha_vec_n, type )                              
         if( local_debug ) write(iout,9050)                                      
       end if                                                                    
 c                                                                               
@@ -2895,7 +2958,7 @@ c
       if( temperatures ) then                                                   
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,               
      &                    gp_dtemps, gp_temps, gp_rtemps,                       
-     &                    local_work%alpha_vec )                                
+     &                    local_work%alpha_vec, type )                                
       end if                                                                    
 c                                                                               
 c            init block of nonlocal state variables. values array always        
@@ -3140,8 +3203,8 @@ c
       uddt_temps = zero                                                         
       if ( temperatures ) then                                                  
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,               
-     &                    gp_dtemps,                                            
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )           
+     &                    gp_dtemps, gp_temps, gp_rtemps, 
+     &                    local_work%alpha_vec, type )           
       end if                                                                    
 c                                                                               
 !DIR$ VECTOR ALIGNED                                                            
@@ -3496,7 +3559,7 @@ c                           to indicate user-specified temp changes over
 c                           load step                                           
      &    call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,             
      &                      gp_dtemps, gp_temps, gp_rtemps,                     
-     &                      local_work%alpha_vec )                              
+     &                      local_work%alpha_vec, type )                              
 c                                                                               
 c           4. (x,y,z) coordinates at this integration point for all            
 c              elements in the block. umat specification requires the           
@@ -3973,8 +4036,8 @@ c
       uddt_temps = zero                                                         
       if ( temperatures ) then                                                  
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,               
-     &                    gp_dtemps,                                            
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )           
+     &                    gp_dtemps, gp_temps, gp_rtemps, 
+     &                    local_work%alpha_vec, type )           
       end if                                                                    
 c                                                                               
                                                                                 
@@ -4238,8 +4301,8 @@ c
       uddt_temps = zero                                                         
       if ( temperatures ) then                                                  
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,               
-     &                    gp_dtemps,                                            
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )           
+     &                    gp_dtemps, gp_temps, gp_rtemps, 
+     &                    local_work%alpha_vec, type )           
       end if                                                                    
 c                                                                               
 c            init block of nonlocal state variables. values array always        
@@ -4706,7 +4769,8 @@ c            internally)
 c                                                                               
       if ( temperatures ) then                                                  
         call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,          
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec )           
+     &                    gp_temps, gp_rtemps, local_work%alpha_vec,
+     &                    type )           
       end if                                                                    
 c                                                                               
 c          for iter = 0 we just use the stored [Dt] to compute                  
@@ -5088,30 +5152,55 @@ c
                                                                                 
       subroutine rstgp1_b( span, internal_energy, plastic_work,                 
      &                     gp_energies, gp_plast_work, det_j,                   
-     &                     dfn1, itype )                                        
-      integer :: span                                                           
+     &                     dfn1, itype, is_bar_elem, is_link_elem,
+     &                     bar_vols )
+      implicit none
+c                                              
+      integer :: span, itype, i 
+      logical :: is_bar_elem, is_link_elem
       double precision ::                                                       
      &  internal_energy, plastic_work, gp_energies(*),                          
-     &  det_j(*), dfn1(*), gp_plast_work(*)                                     
-c                                                                               
-      if( itype .ne. 1 ) go to 100                                              
+     &  det_j(*), dfn1(*), gp_plast_work(*), bar_vols(*)                                     
+c    
+      if( is_bar_elem ) then
 !DIR$ VECTOR ALIGNED                                                            
-      do i = 1, span     
-        internal_energy = internal_energy + gp_energies(i) *                    
-     &                     dfn1(i) * det_j(i)                                   
-         plastic_work    = plastic_work +                                       
-     &                     gp_plast_work(i) * dfn1(i) * det_j(i)                
-      end do                                                                    
-      return                                                                    
-c                                                                               
- 100  continue                                                                  
+        do i = 1, span     
+          internal_energy = internal_energy + gp_energies(i) *                    
+     &                      bar_vols(i)                                   
+          plastic_work    = plastic_work +                                       
+     &                     gp_plast_work(i) * bar_vols(i)                
+        end do                                                                    
+        return 
+      end if                                                                         
+c
+      if( is_link_elem ) then
 !DIR$ VECTOR ALIGNED                                                            
-      do i = 1, span                                                            
+        do i = 1, span    ! no delta-pls work. link is linear 
+          internal_energy = internal_energy + gp_energies(i)
+        end do                                                                    
+        return 
+      end if                                                                         
+                                                                                 
+      if( itype .eq. 1 ) then   ! large strain                                           
+!DIR$ VECTOR ALIGNED                                                            
+        do i = 1, span     
+          internal_energy = internal_energy + gp_energies(i) *                    
+     &                      dfn1(i) * det_j(i)                                   
+          plastic_work    = plastic_work +                                       
+     &                      gp_plast_work(i) * dfn1(i) * det_j(i)                
+        end do                                                                    
+        return 
+      end if                                                                   
+c                                                                               
+      if( itype .eq. 2 ) then   ! small strain                                                               
+!DIR$ VECTOR ALIGNED                                                            
+        do i = 1, span                                                            
          internal_energy = internal_energy + gp_energies(i) *                   
-     &                       det_j(i)                                           
+     &                     det_j(i)                                           
          plastic_work    = plastic_work + gp_plast_work(i) * det_j(i)           
-      end do                                                                    
-      return                                                                    
+        end do                                                                    
+        return     
+      end if                                                               
 c                                                                               
       end                                                                       
                                                                                 

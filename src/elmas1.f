@@ -4,7 +4,7 @@ c     *                      subroutine elmas1                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 12/28/00                   *          
+c     *                   last modified : 8/11/2017 rhd              *          
 c     *                                                              *          
 c     *     this subroutine scales the appropriate mass              *          
 c     *     matrices and parses them to all dof for a block of       *          
@@ -21,16 +21,14 @@ c
 c                      parameter declarations                                   
 c                                                                               
       integer ::  span, nnode, totdof                                           
-      double precision ::                                                       
-     & volume(*), mel(totdof,*), emass(*)                                       
+      double precision :: volume(*), mel(totdof,*), emass(*)                                       
 c                                                                               
 c                      locals                                                   
 c                                                                               
       integer :: i, j                                                           
-      double precision ::                                                       
-     & scale(mxvl), trace(mxvl), zero, mass_tol                                 
-      logical :: local_debug                                                    
-      data zero, local_debug, mass_tol / 0.0d00, .false., 1.0d-20 /             
+      double precision :: scale(mxvl), trace(mxvl)
+      double precision, parameter :: zero=0.0d0, mass_tol=1.0d-20                                
+      logical, parameter :: local_debug = .false.                                                    
 c                                                                               
 c                       compute the element diagonal mass matrix.               
 c                       compute the trace of the consistent diagonal            

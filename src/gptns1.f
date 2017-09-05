@@ -4,7 +4,7 @@ c     *                      subroutine gptns1                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *               last modified : 9/19/2016 rhd                  *          
+c     *               last modified : 8/20/2017 rhd                  *          
 c     *                                                              *          
 c     *     computes the contributon to the tangent                  *          
 c     *     stiffnes matrices for a block of similar elements in     *          
@@ -24,20 +24,22 @@ c
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn                                                            
-      real props(mxelpr,*)                                                      
-      integer cp(*), icp(mxutsz,*), iprops(mxelpr,*)                            
+      real :: props(mxelpr,*)    ! 1st col of block passed                                                  
+      integer :: cp(*), icp(mxutsz,*), iprops(mxelpr,*)                            
 c                                                                               
       double precision :: glb_ek_blk(*)                                         
 c                                                                               
 c                     locals                                                    
 c                                                                               
       integer :: etype, span, felem, utsz, nnode, totdof, mat_type,             
-     &           iter, int_order, local_iout, nrow_ek                           
-      double precision ::                                                       
-     & eps_bbar, weight, rad(mxvl), dummy, factors(mxvl), one                   
-      logical include_qbar, geonl, bbar, first, qbar_flag,                      
-     &        temps_to_process, iscp, symmetric_assembly                        
-      data one  / 1.0d00 /                                                      
+     &           iter, int_order, local_iout, nrow_ek, drive_cnst,
+     &           stiff_type 
+      double precision :: eps_bbar, weight, rad(mxvl), dummy,
+     &                    factors(mxvl), bar_areas_0(mxvl), 
+     &                    bar_areas_n1(mxvl), bar_volumes(mxvl)    
+      double precision, parameter :: one = 1.0d0             
+      logical :: include_qbar, geonl, bbar, first, qbar_flag, convert,                            
+     &           temps_to_process, iscp, symmetric_assembly
 c                                                                               
 c                       set local versions of the data structure                
 c                       scalars. set logical to include/not include the         
@@ -97,8 +99,12 @@ c
            call blcmp_cohes( span, local_work%b_block,                          
      &                       local_work%cohes_rot_block,                        
      &                       local_work%shape(1,gpn), etype, nnode )            
+      elseif( local_work%is_bar_elem )  then
+          continue
+      elseif( local_work%is_link_elem )  then
+          continue
       else                                                                      
-           call gptns1_a  ! set up solid elements                               
+          call gptns1_a  ! set up solid elements                               
       end if                                                                    
 c                                                                               
 c                 branch on material type:                                      
@@ -135,8 +141,13 @@ c                    for the latets updates.
 c                                                                               
 c                    [Dt] computed in unrotated configuration.                  
 c                                                                               
-      local_iout = local_work%iout                                              
-      select case ( mat_type )                                                  
+      local_iout = local_work%iout  
+      drive_cnst = mat_type
+      if( local_work%is_link_elem ) drive_cnst = -1
+c 
+      select case( drive_cnst ) 
+      case( -1 )
+        continue   ! link elements                                                  
       case ( 1 )                                                                
         call drive_01_cnst( gpn, local_iout, local_work )                       
       case ( 2 )                                                                
@@ -182,14 +193,20 @@ c                       [Dt] stored in WARP3D is really for Cauchy
 c                       stress - not unrotated Cauchy stress. The               
 c                       code below skips the rotation but may include           
 c                       the [Q] modification as requested in user               
-c                       input.                                                  
+c                       input.     
+                                             
+c                       skip for bar, link elements                                                
 c                                                                               
       if( geonl .and. local_work%is_deform_plas ) then                          
             write(local_iout,9000)                                              
             call die_abort                                                      
             stop                                                                
       end if                                                                    
-      if( geonl .and. local_work%is_solid_matl )                                
+      convert = geonl .and. local_work%is_solid_matl .and.
+     &          .not. local_work%is_bar_elem  .and.
+     &          .not. local_work%is_link_elem      
+c                                            
+      if( convert )                                
      &  call ctran1( span, local_work%cep, local_work%qn1,                      
      &               local_work%cs_blk_n1,                                      
      &               include_qbar, local_work%det_jac_block(1,gpn),             
@@ -212,30 +229,57 @@ c                     compute each part of the element tangent
 c                     stiffness matrix and add it in to the                     
 c                     total. for geonl, we include initial stress               
 c                     stiffness. separate code (unrolled) is used for           
-c                     the 8-node brick for speed.                               
+c                     the 8-node brick for speed.  
+c                     note that props(1,felem) passed in above                              
 c                                                                               
-c                                                                               
-      if( asymmetric_assembly ) then                                            
-        call bdbt_asym( span, local_work%b_block,                               
+c
+      stiff_type = 1 ! solid, cohesive
+      if( local_work%is_bar_elem )  stiff_type = 2      
+      if( local_work%is_link_elem ) stiff_type = 3
+c     
+      select case( stiff_type ) 
+        case( 1 )
+          if( asymmetric_assembly ) then                                            
+             call bdbt_asym( span, local_work%b_block,                               
      &                local_work%bd_block,                                      
      &                local_work%cep, local_work%ek_full, mxvl,                 
      &                mxedof, totdof*totdof, totdof )                           
-      else   ! symmetric assembly                                               
-         call bdbtgen( span, icp, local_work%b_block,                           
+          else   ! symmetric assembly                                               
+             call bdbtgen( span, icp, local_work%b_block,                           
      &                 local_work%bd_block,                                     
      &                 local_work%cep, local_work%ek_symm, mxvl,                
      &                 mxedof, utsz, nstr, totdof, mxutsz )                     
-      end if                                                                    
+          end if                                                                    
 c                                                                               
-      if( geonl ) then  ! add tans([G]) M [G] to [Ke]                           
-        call kgstiff( span, cp, icp, local_work%gama_block(1,1,1,gpn),          
+          if( geonl ) then  ! add tans([G]) M [G] to [Ke]                           
+             call kgstiff( span, cp, icp,
+     &            local_work%gama_block(1,1,1,gpn),          
      &            local_work%nxi(1,gpn), local_work%neta(1,gpn),                
      &            local_work%nzeta(1,gpn), nnode,                               
      &            local_work%cs_blk_n1,                                         
      &            local_work%det_jac_block(1,gpn),                              
      &            weight, local_work%ek_full, local_work%ek_symm,               
      &            local_work%vol_block, bbar, totdof )                          
-      end if                                                                    
+          end if
+        case( 2 )
+          bar_areas_0(1:span) = props(43,1:span)
+          call gtlsn3_vols( span, mxvl, felem, local_iout,
+     &                     bar_areas_0(1), bar_areas_n1(1),
+     &                     local_work%ce_0, local_work%ce,
+     &                     bar_volumes(1) )
+          call gptns3( span, felem, local_iout, geonl, 
+     &                asymmetric_assembly,
+     &                local_work%ce_0, local_work%ce, bar_areas_0,
+     &                bar_areas_n1,
+     &                local_work%urcs_blk_n1, !mxvl,nstrs,1
+     &                local_work%cep, local_work%ek_full,  ! mxvl,6,6  span,36
+     &                local_work%ek_symm ) ! span,21
+        case( 3 ) 
+          call gptns4( span, felem, local_iout,  
+     &                asymmetric_assembly, props,   
+     &                local_work%ek_full,  ! mxvl,6,6  span,36
+     &                local_work%ek_symm ) ! span,21
+      end select
 c                                                                               
       return                                                                    
 c                                                                               
@@ -296,7 +340,501 @@ c
 c                                                                               
       return                                                                    
       end subroutine gptns1_a                                                   
-      end subroutine gptns1                                                     
+      end subroutine gptns1 
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine gptns3                       *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 8/4/2017 rhdd              *    
+c     *                                                              *
+c     *               tangent stiffness for bar elements             *      
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+      subroutine gptns3( span, felem, iout, geonl, asymmetric_assembly,
+     &                ce_0, ce_n1, areas_0, areas_n1,
+     &                stress, ! (mxvl,nstrs,1). only use column 1
+     &                et, ek_full,  ! (mxvl,6,6) span,36
+     &                ek_symm ) ! (span,21)
+      implicit none  
+      include 'param_def'                                                           
+c
+c                     parameter declarations                                    
+c                                                                               
+      integer :: span, felem, iout
+      logical :: geonl, asymmetric_assembly 
+      double precision :: ce_0(mxvl,*), ce_n1(mxvl,*), areas_0(*), 
+     &                    areas_n1(*), stress(*), et(*),
+     &                    ek_full(span,36), ek_symm(span,21)                                                    
+c                                                                               
+c                     local variables                                           
+c                                                                               
+      integer :: i, j                                 
+      double precision :: dx, dy, dz, len, cx, cy, cz, area, const,
+     &                    const2, force
+      double precision, allocatable, dimension (:) :: x1, x2, y1, y2,
+     &                                                z1, z2
+      double precision, allocatable :: kfull(:,:,:)
+      double precision, parameter :: zero = 0.0d0
+      logical, parameter :: local_debug = .false. 
+c
+      if( local_debug ) write(iout,9000) felem, span, geonl
+c
+      allocate( x1(span), y1(span), z1(span), x2(span), y2(span),
+     &          z2(span), kfull(6,6,span) )
+c  
+      if( geonl ) then
+         do i = 1, span   
+           x1(i) = ce_n1(i,1)
+           x2(i) = ce_n1(i,2)
+           y1(i) = ce_n1(i,3)
+           y2(i) = ce_n1(i,4)
+           z1(i) = ce_n1(i,5)
+           z2(i) = ce_n1(i,6)
+         end do
+      else  ! small displacements
+         do i = 1, span   
+           x1(i) = ce_0(i,1)
+           x2(i) = ce_0(i,2)
+           y1(i) = ce_0(i,3)
+           y2(i) = ce_0(i,4)
+           z1(i) = ce_0(i,5)
+           z2(i) = ce_0(i,6)
+         end do
+      end if
+c
+c              dof ordering: u1, u2, v1, v2, w1, w2
+c 
+      call gptns3_b  ! linearized part, 6x6 in global
+      if( geonl ) call gptns3_a ! compute 6x6 KG in global, add to kfull
+c
+c               store full element [k] or lower triangle as req'd
+c      
+      if( asymmetric_assembly ) then
+        call gptns3_c
+      else
+        call gptns3_d
+      end if
+c      
+      return
+c      
+ 9000 format('... Entered gptns3,  felem, span, geonl:',i8,i4,l3)      
+c 
+      contains
+c     ========
+c
+      subroutine gptns3_a ! geometric stiffness in global
+      implicit none
+c
+      integer :: i
+      double precision :: v12(3), len, const2,  kgfull(6,6)
+      double precision, parameter :: zero = 0.0d0 
+c 
+c              the geometric stiffness in global = 
+c              matrix in local.
+c              KG is invariant under an orthogonal 
+c              transformation
+c     
+      do i = 1, span
+c      
+       v12(1) = x2(i) - x1(i)
+       v12(2) = y2(i) - y1(i)
+       v12(3) = z2(i) - z1(i)
+       len = norm2( v12 )
+       const2 = areas_n1(i) * stress(i) / len
+       kgfull = zero
+       kgfull(1,1) =   const2 
+       kgfull(2,1) = - const2
+       kgfull(1,2) = - const2
+       kgfull(2,2) =   const2
+       kgfull(3,3) =   const2
+       kgfull(4,3) = - const2
+       kgfull(3,4) = - const2
+       kgfull(4,4) =   const2
+       kgfull(5,5) =   const2
+       kgfull(6,5) = - const2
+       kgfull(5,6) = - const2
+       kgfull(6,6) =   const2
+       kfull(1:6,1:6,i) = kfull(1:6,1:6,i) + kgfull
+c       
+      end do ! over span
+      return
+c     
+      end subroutine gptns3_a
+c      
+      subroutine gptns3_b ! linearized K in global
+      implicit none
+c
+      do i = 1, span   
+        dx = x2(i) - x1(i)
+        dy = y2(i) - y1(i)
+        dz = z2(i) - z1(i)
+        len = sqrt( dx*dx + dy*dy + dz*dz ) ! @ t=0 or n1
+        cx = dx / len
+        cy = dy / len
+        cz = dz / len
+        area = areas_0(i)
+        if( geonl ) area = areas_n1(i)
+        const = et(i) * area / len
+        kfull(1,1,i) =  const * cx * cx 
+        kfull(2,1,i) = -const * cx * cx 
+        kfull(3,1,i) =  const * cx * cy
+        kfull(4,1,i) = -const * cx * cy
+        kfull(5,1,i) =  const * cx * cz
+        kfull(6,1,i) = -const * cx * cz
+c
+        kfull(1,2,i) = -const * cx * cx 
+        kfull(2,2,i) =  const * cx * cx 
+        kfull(3,2,i) = -const * cx * cy
+        kfull(4,2,i) =  const * cx * cy
+        kfull(5,2,i) = -const * cx * cz
+        kfull(6,2,i) =  const * cx * cz
+c
+        kfull(1,3,i) =  const * cx * cy
+        kfull(2,3,i) = -const * cx * cy
+        kfull(3,3,i) =  const * cy * cy 
+        kfull(4,3,i) = -const * cy * cy 
+        kfull(5,3,i) =  const * cy * cz
+        kfull(6,3,i) = -const * cy * cz
+c
+        kfull(1,4,i) = -const * cx * cy
+        kfull(2,4,i) =  const * cx * cy
+        kfull(3,4,i) = -const * cy * cy 
+        kfull(4,4,i) =  const * cy * cy 
+        kfull(5,4,i) = -const * cy * cz
+        kfull(6,4,i) =  const * cy * cz
+c
+        kfull(1,5,i) =  const * cx * cz
+        kfull(2,5,i) = -const * cx * cz
+        kfull(3,5,i) =  const * cy * cz
+        kfull(4,5,i) = -const * cy * cz
+        kfull(5,5,i) =  const * cz * cz 
+        kfull(6,5,i) = -const * cz * cz 
+c        
+        kfull(1,6,i) = -const * cx * cz
+        kfull(2,6,i) =  const * cx * cz
+        kfull(3,6,i) = -const * cy * cz
+        kfull(4,6,i) =  const * cy * cz
+        kfull(5,6,i) = -const * cz * cz 
+        kfull(6,6,i) =  const * cz * cz 
+c
+      end do  ! over span 
+c        
+      if( .not. local_debug ) return
+      do i = 1, span
+        dx = x2(i) - x1(i)
+        dy = y2(i) - y1(i)
+        dz = z2(i) - z1(i)
+        len = sqrt( dx*dx + dy*dy + dz*dz )
+        cx = dx / len
+        cy = dy / len
+        cz = dz / len
+        area = areas_0(i)
+        if( geonl ) area = areas_n1(i)
+        force = stress(i) * area
+        write(iout,9010) i + felem - 1, len, cx, cy, cz
+        write(iout,9020) area, force
+        do j = 1, 6
+           write(iout,9030) j, kfull(j,1:6,i)
+        end do    
+      end do 
+c      
+      return
+c     
+ 9010 format('     element, len, cx,y,z: ',i8,f12.5,3f10.6)
+ 9020 format('        area, force: ', f10.4, f10.4 )
+ 9030 format('        row: ',i1,6f15.4) 
+c     
+      end subroutine gptns3_b      
+c      
+      subroutine gptns3_c ! store 6x6 form
+      implicit none
+c
+      integer :: i
+c
+      do i = 1, span
+        ek_full(i,1)  = kfull(1,1,i)  
+        ek_full(i,2)  = kfull(2,1,i)  
+        ek_full(i,3)  = kfull(3,1,i)  
+        ek_full(i,4)  = kfull(4,1,i)  
+        ek_full(i,5)  = kfull(5,1,i)  
+        ek_full(i,6)  = kfull(6,1,i)  
+c        
+        ek_full(i,7)  = kfull(1,2,i)  
+        ek_full(i,8)  = kfull(2,2,i)  
+        ek_full(i,9)  = kfull(3,2,i)  
+        ek_full(i,10) = kfull(4,2,i)  
+        ek_full(i,11) = kfull(5,2,i)  
+        ek_full(i,12) = kfull(6,2,i) 
+c
+        ek_full(i,13) = kfull(1,3,i)  
+        ek_full(i,14) = kfull(2,3,i)  
+        ek_full(i,15) = kfull(3,3,i)  
+        ek_full(i,16) = kfull(4,3,i)  
+        ek_full(i,17) = kfull(5,3,i)  
+        ek_full(i,18) = kfull(6,3,i)  
+c
+        ek_full(i,19) = kfull(1,4,i)  
+        ek_full(i,20) = kfull(2,4,i)  
+        ek_full(i,21) = kfull(3,4,i)  
+        ek_full(i,22) = kfull(4,4,i)  
+        ek_full(i,23) = kfull(5,4,i)  
+        ek_full(i,24) = kfull(6,4,i) 
+c         
+        ek_full(i,25) = kfull(1,5,i)  
+        ek_full(i,26) = kfull(2,5,i)  
+        ek_full(i,27) = kfull(3,5,i)  
+        ek_full(i,28) = kfull(4,5,i)  
+        ek_full(i,29) = kfull(5,5,i)  
+        ek_full(i,30) = kfull(6,5,i) 
+c        
+        ek_full(i,31) = kfull(1,6,i)  
+        ek_full(i,32) = kfull(2,6,i)  
+        ek_full(i,33) = kfull(3,6,i)  
+        ek_full(i,34) = kfull(4,6,i)  
+        ek_full(i,35) = kfull(5,6,i)  
+        ek_full(i,36) = kfull(6,6,i)  
+c
+      end do
+c
+      return
+      end subroutine gptns3_c
+c       
+      subroutine gptns3_d ! store lower triangle
+      implicit none
+c
+      integer :: i
+c
+      do i = 1, span
+        ek_symm(i,1)  = kfull(1,1,i)  
+        ek_symm(i,2)  = kfull(2,1,i)  
+        ek_symm(i,3)  = kfull(2,2,i)  
+        ek_symm(i,4)  = kfull(3,1,i)  
+        ek_symm(i,5)  = kfull(3,2,i)  
+        ek_symm(i,6)  = kfull(3,3,i)  
+        ek_symm(i,7)  = kfull(4,1,i)  
+        ek_symm(i,8)  = kfull(4,2,i)  
+        ek_symm(i,9)  = kfull(4,3,i)  
+        ek_symm(i,10) = kfull(4,4,i)  
+        ek_symm(i,11) = kfull(5,1,i)  
+        ek_symm(i,12) = kfull(5,2,i)  
+        ek_symm(i,13) = kfull(5,3,i)  
+        ek_symm(i,14) = kfull(5,4,i)  
+        ek_symm(i,15) = kfull(5,5,i)  
+        ek_symm(i,16) = kfull(6,1,i)  
+        ek_symm(i,17) = kfull(6,2,i)  
+        ek_symm(i,18) = kfull(6,3,i) 
+        ek_symm(i,19) = kfull(6,4,i)  
+        ek_symm(i,20) = kfull(6,5,i)  
+        ek_symm(i,21) = kfull(6,6,i) 
+      end do
+c
+      return
+      end subroutine gptns3_d 
+c      
+      subroutine gptns3_cross_prod( vec1, vec2, vec_out ) 
+      implicit none
+      double precision :: vec1(3), vec2(3), vec_out(3)                                         
+c                                                                               
+      vec_out(1) = vec1(2)*vec2(3) - vec2(2)*vec1(3)                                                      
+      vec_out(2) = vec2(1)*vec1(3) - vec1(1)*vec2(3)                                                      
+      vec_out(3) = vec1(1)*vec2(2) - vec2(1)*vec1(2)                                                      
+c                                                                               
+      return                                                                    
+      end subroutine gptns3_cross_prod                                                                      
+c         
+      end subroutine gptns3                  
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine gptns4                       *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 8/20/2017 rhd              *    
+c     *                                                              *
+c     *               tangent stiffness for link2 elements           *      
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+      subroutine gptns4( span, felem, iout, asymmetric_assembly,
+     &                   props, ek_full,  ! (mxvl,6,6) span,36
+     &                   ek_symm ) ! (span,21)
+      implicit none  
+      include 'param_def'                                                           
+c
+c                     parameter declarations                                    
+c                                                                               
+      integer :: span, felem, iout
+      logical :: asymmetric_assembly 
+      double precision :: ek_full(span,36), ek_symm(span,21)
+      real :: props(mxelpr,span)                                                    
+c                                                                               
+c                     local variables                                           
+c                                                                               
+      integer :: i, j                                 
+      double precision :: const, kx, ky, kz  
+      double precision, allocatable :: kfull(:,:,:)
+      double precision, parameter :: zero = 0.0d0
+      logical, parameter :: local_debug = .false.
+c
+      if( local_debug ) write(iout,9000) felem, span
+c
+      allocate( kfull(6,6,span) )
+      kfull = zero
+c  
+c              dof ordering: u1, u2, v1, v2, w1, w2
+c 
+      call gptns4_b  ! linearized part, 6x6 in global
+c
+c               store full element [k] or lower triangle as req'd
+c      
+      if( asymmetric_assembly ) then
+        call gptns4_c
+      else
+        call gptns4_d
+      end if
+c      
+      return
+c      
+ 9000 format('... Entered gptns4 (link2),  felem, span:',i8,i4)      
+c 
+      contains
+c     ========
+c
+     
+      subroutine gptns4_b ! linearized K in global
+      implicit none
+c
+      do i = 1, span
+c         
+        kx = props(7,i)
+        ky = props(8,i)
+        kz = props(9,i)
+        const = kx
+        kfull(1,1,i) =  const 
+        kfull(2,1,i) = -const 
+        kfull(1,2,i) = -const 
+        kfull(2,2,i) =  const 
+c
+        const = ky
+        kfull(3,3,i) =  const 
+        kfull(4,3,i) = -const 
+        kfull(3,4,i) = -const 
+        kfull(4,4,i) =  const 
+c
+        const = kz
+        kfull(5,5,i) =  const 
+        kfull(6,5,i) = -const 
+        kfull(5,6,i) = -const 
+        kfull(6,6,i) =  const 
+c
+      end do  ! over span 
+c        
+      if( .not. local_debug ) return
+      do i = 1, span
+        write(iout,9010) i + felem - 1
+        do j = 1, 6
+           write(iout,9030) j, kfull(j,1:6,i)
+        end do    
+      end do 
+c      
+      return
+c     
+ 9010 format('     element: ',i8)
+ 9030 format('        row: ',i1,6f15.4) 
+c     
+      end subroutine gptns4_b      
+c      
+      subroutine gptns4_c ! store 6x6 form
+      implicit none
+c
+      integer :: i
+c
+      do i = 1, span
+        ek_full(i,1)  = kfull(1,1,i)  
+        ek_full(i,2)  = kfull(2,1,i)  
+        ek_full(i,3)  = kfull(3,1,i)  
+        ek_full(i,4)  = kfull(4,1,i)  
+        ek_full(i,5)  = kfull(5,1,i)  
+        ek_full(i,6)  = kfull(6,1,i)  
+c        
+        ek_full(i,7)  = kfull(1,2,i)  
+        ek_full(i,8)  = kfull(2,2,i)  
+        ek_full(i,9)  = kfull(3,2,i)  
+        ek_full(i,10) = kfull(4,2,i)  
+        ek_full(i,11) = kfull(5,2,i)  
+        ek_full(i,12) = kfull(6,2,i) 
+c
+        ek_full(i,13) = kfull(1,3,i)  
+        ek_full(i,14) = kfull(2,3,i)  
+        ek_full(i,15) = kfull(3,3,i)  
+        ek_full(i,16) = kfull(4,3,i)  
+        ek_full(i,17) = kfull(5,3,i)  
+        ek_full(i,18) = kfull(6,3,i)  
+c
+        ek_full(i,19) = kfull(1,4,i)  
+        ek_full(i,20) = kfull(2,4,i)  
+        ek_full(i,21) = kfull(3,4,i)  
+        ek_full(i,22) = kfull(4,4,i)  
+        ek_full(i,23) = kfull(5,4,i)  
+        ek_full(i,24) = kfull(6,4,i) 
+c         
+        ek_full(i,25) = kfull(1,5,i)  
+        ek_full(i,26) = kfull(2,5,i)  
+        ek_full(i,27) = kfull(3,5,i)  
+        ek_full(i,28) = kfull(4,5,i)  
+        ek_full(i,29) = kfull(5,5,i)  
+        ek_full(i,30) = kfull(6,5,i) 
+c        
+        ek_full(i,31) = kfull(1,6,i)  
+        ek_full(i,32) = kfull(2,6,i)  
+        ek_full(i,33) = kfull(3,6,i)  
+        ek_full(i,34) = kfull(4,6,i)  
+        ek_full(i,35) = kfull(5,6,i)  
+        ek_full(i,36) = kfull(6,6,i)  
+c
+      end do
+c
+      return
+      end subroutine gptns4_c
+c       
+      subroutine gptns4_d ! store lower triangle
+      implicit none
+c
+      integer :: i
+c
+      do i = 1, span
+        ek_symm(i,1)  = kfull(1,1,i)  
+        ek_symm(i,2)  = kfull(2,1,i)  
+        ek_symm(i,3)  = kfull(2,2,i)  
+        ek_symm(i,4)  = kfull(3,1,i)  
+        ek_symm(i,5)  = kfull(3,2,i)  
+        ek_symm(i,6)  = kfull(3,3,i)  
+        ek_symm(i,7)  = kfull(4,1,i)  
+        ek_symm(i,8)  = kfull(4,2,i)  
+        ek_symm(i,9)  = kfull(4,3,i)  
+        ek_symm(i,10) = kfull(4,4,i)  
+        ek_symm(i,11) = kfull(5,1,i)  
+        ek_symm(i,12) = kfull(5,2,i)  
+        ek_symm(i,13) = kfull(5,3,i)  
+        ek_symm(i,14) = kfull(5,4,i)  
+        ek_symm(i,15) = kfull(5,5,i)  
+        ek_symm(i,16) = kfull(6,1,i)  
+        ek_symm(i,17) = kfull(6,2,i)  
+        ek_symm(i,18) = kfull(6,3,i) 
+        ek_symm(i,19) = kfull(6,4,i)  
+        ek_symm(i,20) = kfull(6,5,i)  
+        ek_symm(i,21) = kfull(6,6,i) 
+      end do
+c
+      return
+      end subroutine gptns4_d 
+c      
+      end subroutine gptns4                  
+c                    
+c                                                          
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine drive_01_cnst                *          

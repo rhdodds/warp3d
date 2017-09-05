@@ -52,11 +52,11 @@ c
       double precision, parameter :: zero = 0.0d0                                                                            
       double precision, external :: omp_get_wtime                               
       logical, allocatable, dimension(:)  :: step_cut_flags,                    
-     &    blks_reqd_serial                                                      
+     &                                    blks_reqd_serial                                                      
 c                                                                               
       logical :: umat_matl        
       logical, parameter :: local_debug = .false.                                 
-      real, parameter :: spone = 1.0                                                             
+      real, parameter :: spone = 1.0e0                                                             
 c                                                                               
 c             MPI:                                                              
 c               alert workers we are in the strain-                             
@@ -354,10 +354,10 @@ c
       use main_data,         only : trn, incid, incmap,                         
      &                              temperatures_ref,                           
      &                              fgm_node_values_defined,                    
-     &                              cohesive_ele_types,                         
+     &                              cohesive_ele_types, bar_types,                        
      &                              linear_displ_ele_types,                     
      &                              adjust_constants_ele_types,                 
-     &                              axisymm_ele_types,                          
+     &                              axisymm_ele_types, link_types,                        
      &                              nonlocal_analysis, imatprp                  
       use segmental_curves, only : max_seg_points, max_seg_curves               
       use damage_data, only : dam_ptr, growth_by_kill                           
@@ -366,19 +366,17 @@ c
       include 'include_sig_up'                                                  
 c                                                                               
       integer :: blk, iter, step                                                
-      double precision                                                          
-     &    block_energy, block_plastic_work                                      
-      logical material_cut_step                                                 
+      double precision :: block_energy, block_plastic_work                                      
+      logical :: material_cut_step                                                 
 c                                                                               
       integer :: elem, ii, jj, span, felem, matnum, mat_type,                   
      &           num_enodes, num_enode_dof, totdof, num_int_points,             
      &           elem_type, int_order, cohes_type, surface                      
-      double precision :: zero                                                  
+      double precision, parameter :: zero=0.0d0                                                  
       integer, external :: omp_get_thread_num                                   
-      logical local_debug, geo_non_flg, bbar_flg, tet_elem, tri_elem,           
-     &            axisymm_elem, cohesive_elem, used_flg                         
-      data zero, local_debug / 0.0d00, .false. /                                
-      double precision :: gp_coords(mxvl,3,mxgp)                                
+      logical :: geo_non_flg, bbar_flg, tet_elem, tri_elem,           
+     &           axisymm_elem, cohesive_elem, used_flg
+      logical, parameter :: local_debug = .false.                         
 c                                                                               
       span           = elblks(0,blk)                                            
       felem          = elblks(1,blk)                                            
@@ -456,7 +454,10 @@ c
      &        ( local_work%is_umat .or. local_work%is_crys_pls )                
       tet_elem = elem_type .eq. 6 .or. elem_type .eq. 13                        
       tri_elem = elem_type .eq. 8                                               
-      axisymm_elem = elem_type .eq. 10 .or. elem_type .eq. 11                   
+      axisymm_elem = axisymm_ele_types(elem_type) 
+      local_work%is_bar_elem  = bar_types(elem_type)
+      local_work%is_link_elem = link_types(elem_type) 
+                       
 c                                                                               
 c             See if we're actually an interface damaged material               
 c                                                                               
@@ -514,8 +515,7 @@ c
      &   cdest_blocks(blk)%ptr(1,1), local_work%ce_0,                           
      &   local_work%ce_n, local_work%ce_mid,                                    
      &   local_work%ce_n1, local_work%ue, local_work%due, local_work )          
-c                                                                               
-c                                                                               
+c                                                                                                                                                          
 c             compute updated strain increment for specified                    
 c             displacement increment. update stresses at all                    
 c             strain points of elements in block.                               
@@ -559,7 +559,8 @@ c
      &         sizeof(    element_vol_blocks(blk)%ptr )                         
       end if                                                                    
       call rknifv( einfvec_blocks(blk)%ptr(1,1),                                
-     &             element_vol_blocks(blk)%ptr(1), span, local_work )           
+     &             element_vol_blocks(blk)%ptr(1), props, span,
+     &             local_work )           
       if( local_debug ) write(out,9505) blk, span, felem                        
 c                                                                               
 c             release all allocated data for block                              

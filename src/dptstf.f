@@ -4,7 +4,7 @@ c     *                      subroutine dptstf                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 03/16/2017 rhd             *          
+c     *                   last modified : 07/29/2017 rhd             *          
 c     *                                                              *          
 c     *     this subroutine creates a separate copy of all element   *          
 c     *     data necessary for the tangent stiffness computation of  *          
@@ -18,7 +18,7 @@ c
      &                   nnode, ndof, geonl, totdof, mat_type,                  
      &                   trn_e_flags,                                           
      &                   trn_e_block,                                           
-     &                   ce,                                                    
+     &                   ce,  ce_0,                                                  
      &                   trne,                                                  
      &                   trnmte,                                                
      &                   ue,                                                    
@@ -39,7 +39,7 @@ c
      &          middle_surface                                                  
       double precision                                                          
      & ce(mxvl,*), trnmte(mxvl,mxedof,*), ue(mxvl,*), due(mxvl,*),              
-     & ce_orig(mxvl,mxecor), djcoh(mxvl), zero                                  
+     & ce_orig(mxvl,mxecor), djcoh(mxvl), zero, ce_0(mxvl,mxecor)                                  
       data zero / 0.0 /                                                         
 c                                                                               
 c           transformation matrices are used to define a "local"                
@@ -70,7 +70,10 @@ c
             ce(i,k)        = c(bcdst(k,i))                                      
             ce(i,k+1)      = c(bcdst(k+1,i))                                    
             ce(i,k+2)      = c(bcdst(k+2,i))                                    
-         end do                                                                 
+            ce_0(i,k)      = c(bcdst(k,i))                                      
+            ce_0(i,k+1)    = c(bcdst(k+1,i))                                    
+            ce_0(i,k+2)    = c(bcdst(k+2,i))                                    
+        end do                                                                 
          do i = 1, span                                                         
             trne(i,j)      = trn(belinc(j,i))                                   
             trn_e_flags(i) = trn_e_flags(i) .or. trne(i,j)                      

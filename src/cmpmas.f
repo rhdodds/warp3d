@@ -4,7 +4,7 @@ c     *                      subroutine cmpmas                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 01/21/2015 rhd             *          
+c     *                   last modified : 8/11/2017 rhdd             *          
 c     *                                                              *          
 c     *     drives computation of the global, diagonal mass matrix   *          
 c     *     (stored as a vector). the effective diagonal mass        *          
@@ -27,21 +27,26 @@ c
      &                            cohesive_ele_types,                           
      &                            linear_displ_ele_types,                       
      &                            implemented_ele_types,                        
-     &                            axisymm_ele_types                             
+     &                            axisymm_ele_types, bar_types,
+     &                            link_types                             
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                   
 c                                                                               
-c              locals                                                           
+c              locals
+c
+      integer :: iout, blk, felem, elem_type, def_int_order, 
+     &           num_enodes, num_enode_dof, totdof, def_num_int_points,
+     &           span, iok, i, int_order, num_int_points                                                         
       double precision,                                                         
      &     allocatable, dimension(:,:) :: mel                                   
 c                                                                               
-      double precision ::                                                       
-     &     zero, totvol, ce_block(mxvl,mxecor), rho_block(mxndel,mxvl)          
-      logical :: fgm_props                                                      
-      data zero, three / 0.0d00, 3.0d00 /                                       
+      double precision :: totvol, ce_block(mxvl,mxecor), 
+     &                    rho_block(mxndel,mxvl)
+      double precision, parameter :: zero=0.0d0, three=3.0d0          
+      logical :: fgm_props, is_bar_elem, is_link_elem                                                     
 c                                                                               
       call thyme( 4, 1 )                                                        
-      call iodevn( idummy, iout, dummy, 1 )                                     
+      iout = out
 c                                                                               
 c              MPI: tell the slave processors to join us here                   
 c              non-MPI: a dummy routine.                                        
@@ -87,7 +92,9 @@ c
          num_enode_dof  = iprops(4,felem)                                       
          totdof         = num_enodes * num_enode_dof                            
          def_num_int_points = iprops(6,felem)                                   
-         span           = elblks(0,blk)                                         
+         span           = elblks(0,blk) 
+         is_bar_elem    = bar_types(elem_type)
+         is_link_elem   = link_types(elem_type)                                        
 c                                                                               
          call mass_getint( elem_type, def_int_order, def_num_int_points,        
      &                     int_order, num_int_points, iout)                     
@@ -110,7 +117,7 @@ c
            write(iout,9100) iok, 1                                              
            call die_abort                                                       
          end if                                                                 
-c                                                                               
+c                              
          call rknmas( span, felem, iprops(1,felem), int_order,                  
      &                num_int_points, num_enodes, totdof,                       
      &                props(1,felem),                                           
@@ -120,7 +127,7 @@ c
      &                linear_displ_ele_types(elem_type),                        
      &                axisymm_ele_types(elem_type),                             
      &                implemented_ele_types(elem_type),                         
-     &                ce_block, rho_block )                                     
+     &                ce_block, rho_block, out )                                     
 c                                                                               
          call addmas( span, edest_blocks(blk)%ptr(1,1), totdof,                 
      &                mdiag, mel )                                              
@@ -149,10 +156,8 @@ c
 c                                                                               
 c              set a global variable defining total mass of model               
 c                                                                               
-      total_mass = zero                                                         
-      do i = 1, nodof                                                           
-         total_mass = total_mass + mdiag(i)                                     
-      end do                                                                    
+      total_mass = sum( mdiag(1:nodof) )
+c
       write(iout,9000) total_mass / three                                       
       write(iout,9010) totvol                                                   
 c                                                                               
@@ -175,7 +180,7 @@ c     *                      subroutine mass_getint                  *
 c     *                                                              *          
 c     *                       written by : rau                       *          
 c     *                                                              *          
-c     *                    last modified : 03/02/01                  *          
+c     *                    last modified : 08/11/2017 rhd            *          
 c     *                                                              *          
 c     *                                                              *          
 c     *     this subroutine returns the order of integration         *          
@@ -188,8 +193,8 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine mass_getint(elem_type, def_int_ord, def_num_pts,               
-     &                  int_ord, num_int_pts, iout)                             
+      subroutine mass_getint( elem_type, def_int_ord, def_num_pts,               
+     &                       int_ord, num_int_pts, iout )                             
       implicit integer (a-z)                                                    
 c                                                                               
       select case( elem_type )                                                  
@@ -283,6 +288,18 @@ c
          case(15)                                                               
             int_ord     = def_int_ord                                           
             num_int_pts = def_num_pts                                           
+c                                                                                                                                                            
+c        element type is 'bar2'                                              
+c                                                                               
+         case(18)                                                               
+            int_ord     = 1                                           
+            num_int_pts = 1                                           
+c                                                                                                                                                            
+c        element type is 'link2'                                              
+c                                                                               
+         case(19)                                                               
+            int_ord     = 1                                           
+            num_int_pts = 1                                           
 c                                                                               
          case default                                                           
             write(iout, 1000)                                                   

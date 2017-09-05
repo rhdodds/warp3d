@@ -22,8 +22,7 @@ c
       use global_data ! old common.main
       implicit integer (a-z)                                                    
       logical do_stresses, geonl, long, nodpts, center_output                   
-      double precision                                                          
-     &   nowtime                                                                
+      double precision ::  nowtime                                                                
                                                                                 
 c                                                                               
 c                       get the element stresses or strains                     
@@ -85,7 +84,186 @@ c
       end if                                                                    
 c                                                                               
       return                                                                    
-      end                                                                       
+      end
+      
+      
+c     ****************************************************************          
+c     *                                                              *          
+c     *                   subroutine ouhrks_link                     *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 8/20/2017 rhd              *          
+c     *                                                              *          
+c     *               drive output for a single link element         *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine ouhrks_link( elem, blk, felem, elem_type, num_enodes,               
+     &                       do_stress, mat_type, wide, eform, prec,                        
+     &                       lnum, pgnum, lbltyp, strlbl, hedtyp, 
+     &                       noheader, out_packet_now, geo_non_flg  )                                        
+      use global_data ! old common.main
+c                                                                               
+      use elblk_data, only : urcs_blk_n, elestr, ddtse           
+c                                                                                
+      implicit none
+c
+      integer :: elem, blk, felem, elem_type, num_enodes, mat_type,
+     &           pgnum, lnum, lbltyp 
+      logical :: do_stress, wide, eform, prec, noheader, 
+     &           out_packet_now, geo_non_flg                         
+      character(len=8) :: strlbl(30), hedtyp*30                                 
+c                                                                               
+c             locals                             
+c      
+      integer :: nvals_to_output, bele                                                                       
+      logical :: newel   
+      logical, parameter :: local_debug = .false.                           
+c                                                                               
+      if( local_debug ) write(out,9000) elem, blk, elem_type                  
+c                                                                               
+      if( do_stress ) then 
+        nvals_to_output = 3
+        elestr(1,1,1) = urcs_blk_n(1,1,1) 
+        elestr(1,2,1) = urcs_blk_n(1,2,1) 
+        elestr(1,3,1) = urcs_blk_n(1,3,1) 
+      else ! strain output
+        nvals_to_output = 3
+        elestr(1,1,1) = ddtse(1,1,1)
+        elestr(1,2,1) = ddtse(1,2,1)
+        elestr(1,3,1) = ddtse(1,3,1)
+      end if 
+c                                                                               
+c             set labels for link element as needed. 
+c             then output values.                          
+c                                                                               
+      call oulbst( do_stress, lbltyp, elem_type, elem, strlbl,                  
+     &             .false., hedtyp, .false., 0 )                   
+c                                                                                
+      bele  = 1                                                       
+      newel = .true.                                                  
+c                                                                               
+      call ouhel( bele, elem, hedtyp, 2, 1,               
+     &            .false., nvals_to_output, wide,                               
+     &            eform, prec, strlbl, pgnum, lnum, newel,                      
+     &            .false., noheader, out_packet_now )                     
+c                                                                               
+      return                                                                    
+                                                                                
+ 9000 format(/,'.... entered ouhkrs_link ....',                             
+     &  /,10x,'elem, blk, etype: ', i8, i6, i5 )                     
+ 9010 format(15x,'node1:2, x1,y1,z1:', 2i7,3f10.3,
+     & /,15x,'x2,y2,z2, len0:',4f10.3,
+     & /,15x,'u1,v1,w1: ',3f15.6,       
+     & /,15x,'u2,v2,w2: ',3f15.6 )       
+ 9100 format(/,">>>> FATAL ERROR. oulbst_bar. val: ",i10,                  
+     & /,      "                  job aborted...",//)  
+c
+      end                              
+      
+c     ****************************************************************          
+c     *                                                              *          
+c     *                   subroutine ouhrks_bar                      *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 8/4/2017 rhd               *          
+c     *                                                              *          
+c     *               drive output for a single bar element          *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine ouhrks_bar( elem, blk, felem, elem_type, num_enodes,               
+     &                       do_stress, mat_type, wide, eform, prec,                        
+     &                       lnum, pgnum, lbltyp, strlbl, hedtyp, 
+     &                       noheader, out_packet_now, geo_non_flg  )                                        
+      use global_data ! old common.main
+c                                                                               
+      use elblk_data, only : urcs_blk_n, ddtse, elestr 
+      use main_data, only : incmap, incid, crdmap              
+c                                                                                
+      implicit none
+c
+      integer :: elem, blk, felem, elem_type, num_enodes, mat_type,
+     &           pgnum, lnum, lbltyp 
+      logical :: do_stress, wide, eform, prec, noheader, 
+     &           out_packet_now, geo_non_flg                       
+      character(len=8) :: strlbl(30), hedtyp*30                                 
+c                                                                               
+c             locals                             
+c      
+      integer :: nvals_to_output, pos, node1, node2, bele                                                                       
+      double precision :: x1, x2, y1, y2, z1, z2, len0, u1, u2, v1, v2,
+     &                    w1, w2, len, area  
+      double precision, parameter :: zero = 0.0d0                                
+      logical :: newel   
+      logical, parameter :: local_debug = .false.                           
+c                                                                               
+      if( local_debug ) write(out,9000) elem, blk, elem_type                  
+c                                                                               
+      if( do_stress ) then  !  must get area @ n1 for geonl
+        nvals_to_output = 2
+        elestr(1,1,1) = urcs_blk_n(1,1,1) 
+        pos   = incmap(elem)
+        node1 = incid(pos)
+        node2 = incid(pos+1)
+        x1 = c(crdmap(node1))                                                  
+        y1 = c(crdmap(node1)+1)                                                  
+        z1 = c(crdmap(node1)+2)                                                  
+        x2 = c(crdmap(node2))                                                  
+        y2 = c(crdmap(node2)+1)                                                  
+        z2 = c(crdmap(node2)+2)
+        len0 = sqrt( (x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2 )
+        u1 = u(node1)
+        u2 = u(node2)
+        v1 = u(node1+nonode)
+        v2 = u(node2+nonode)
+        w1 = u(node1+2*nonode)
+        w2 = u(node2+2*nonode)
+c        if( local_debug ) write(out,9010) node1, node2, x1, y1, z1,
+c     &      x2, y2, z2, len0, u1, v1, w1, u2, v2, w2
+        y1 = y1 + v1                                              
+        z1 = z1 + w1                                          
+        x2 = x2 + u2                                               
+        y2 = y2 + v2                                                 
+        z2 = z2 + w2
+        len = sqrt( (x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2 )
+        area = props(43,elem)
+        if( geo_non_flg ) area = area * len0 / len
+        elestr(1,2,1) = urcs_blk_n(1,1,1) * area 
+      else ! strain output
+        nvals_to_output = 1
+        elestr(1,1,1) = ddtse(1,1,1)
+      end if 
+c                                                                               
+c             set labels for bar element as needed. then output values.                          
+c                                                                               
+      call oulbst( do_stress, lbltyp, elem_type, elem, strlbl,                  
+     &             .false., hedtyp, geo_non_flg, 0 )                   
+c                                                                                
+      bele  = 1                                                       
+      newel = .true.                                                  
+c                                                                               
+      call ouhel( bele, elem, hedtyp, 2, 1,               
+     &            .false., nvals_to_output, wide,                               
+     &            eform, prec, strlbl, pgnum, lnum, newel,                      
+     &            .false., noheader, out_packet_now )                     
+c                                                                               
+      return                                                                    
+                                                                                
+ 9000 format(/,'.... entered ouhkrs_bar ....',                             
+     &  /,10x,'elem, blk, etype: ', i8, i6, i5 )                     
+ 9010 format(15x,'node1:2, x1,y1,z1:', 2i7,3f10.3,
+     & /,15x,'x2,y2,z2, len0:',4f10.3,
+     & /,15x,'u1,v1,w1: ',3f15.6,       
+     & /,15x,'u2,v2,w2: ',3f15.6 )       
+ 9100 format(/,">>>> FATAL ERROR. oulbst_bar. val: ",i10,                  
+     & /,      "                  job aborted...",//)  
+c
+      end                              
 c     ****************************************************************          
 c     *                                                              *          
 c     *                subroutine ouhrks_cohesive                    *          

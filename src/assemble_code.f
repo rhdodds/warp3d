@@ -23,7 +23,7 @@ c
      &                                    start_kindex_locs,
      &                                    edest, scol_flags, 
      &                                    scol_lists, nrow_lists )                         
-      use main_data, only : inverse_incidences                                  
+      use main_data, only : inverse_incidences                                 
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
@@ -99,7 +99,8 @@ c             more than once in the incid list for element, i.e.,
 c             crack front collapsed elements. Then have to process              
 c             all element [Ke] rows since more than 1 erow will                 
 c             correspond to srow being processed.                               
-c                                                                               
+c 
+      if( local_debug ) write(*,9010) 
       scol_flags           = 0 ! 2d array                                       
       scol_lists           = 0 ! 2d array                                       
       num_non_zero_terms   = 0 ! vector                                         
@@ -118,7 +119,7 @@ c$OMP PARALLEL DO PRIVATE( srow, now_thread ) ! all else shared
      &      num_non_zero_terms(now_thread), eqn_node_map,                       
      &      edest(1,1,now_thread), iprops, dof_eqn_map,                         
      &      scol_flags(1,now_thread), scol_lists(1,now_thread),
-     &      start_kindex_locs(srow) )                
+     &      start_kindex_locs(srow), nrow_lists )                
        end do                                                                   
 c$OMP END PARALLEL DO                                                           
 c                                                                               
@@ -126,12 +127,14 @@ c                 set the total number of non-zero terms in the upper
 c                 triangle                                                      
 c                                                                               
       ncoeff = sum( num_non_zero_terms )                                        
-      if( local_debug ) write(*,9000) ncoeff    
+      if( local_debug ) write(*,9000) ncoeff 
 c                                                                               
       return                                                                    
 c                                                                               
- 9000 format(2x,'... in count_profile_symmetric: ',                             
-     & /,10x,'ncoeff: ',i8)                                                     
+ 9000 format(10x,
+     & '... number of non-zero K-coeff above diagonal (ncoeff): ',i10,                             
+     & /,1x,'..... leaving count_profile_symmetric .....')
+ 9010 format(1x,'..... entering count_profile_symmetric .....')                                                 
 c                                                                               
       end                                                                       
 c     ****************************************************************          
@@ -140,27 +143,31 @@ c     *                    count_profile_symmetric_srow              *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 6/6/2017  rhd              *          
+c     *                   last modified : 8/10/2017 rhd              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
       subroutine count_profile_symmetric_srow(                                  
      &  srow, neqns, previous_snode, num_non_zero_terms, eqn_node_map,          
-     &  edest, iprops, dof_eqn_map, scol_flags, scol_list, temp_kptr )                     
+     &  edest, iprops, dof_eqn_map, scol_flags, scol_list, temp_kptr,
+     &  nrow_lists )                     
 c                                                                               
       use main_data, only : repeat_incid, inverse_incidences                    
 c                                                                               
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
-      integer :: srow, neqns, previous_snode, num_non_zero_terms                
-      integer :: eqn_node_map(*), edest(mxedof,*), iprops(mxelpr,*),            
-     &           dof_eqn_map(*), scol_flags(*), scol_list(*)                    
+      integer :: srow, neqns, previous_snode, num_non_zero_terms,
+     &           nrow_lists                
+      integer :: eqn_node_map(*), edest(mxedof,mxconn), 
+     &           iprops(mxelpr,*),            
+     &           dof_eqn_map(*), scol_flags(*), scol_list(nrow_lists)                    
 c                                                                               
       integer :: snode, num_ele_on_snode, next_scol_list, ele_on_snode,         
      &           totdof, erow, ecol, scol, j  
      
-      integer :: temp_kptr                                  
+      integer :: temp_kptr    
+      logical, parameter :: ldebug = .false.                              
 c                                                                               
       snode             = eqn_node_map(srow) ! structure node                   
       num_ele_on_snode  = inverse_incidences(snode)%element_count               
@@ -170,21 +177,41 @@ c
      &         inverse_incidences(snode)%element_list(1),                       
      &         num_ele_on_snode, iprops )                                       
          previous_snode = snode                                                 
-      end if  
-      
+      end if 
+c      
+      if( ldebug ) then 
+         write(*,*) '    ... inside  count_profile_symmetric_srow ...'
+         write(*,*) '          srow, snode, num_ele_on_snode: ',
+     &      srow, snode, num_ele_on_snode
+         write(*,*) '          edest:'
+         do j = 1, 24
+            write(*,9000) j, edest(j,1:num_ele_on_snode)
+         end do
+      end if   
+c      
       temp_kptr = 0                                                                  
 c                                                                               
 c                 process all elements which contribute stiffness terms         
 c                 to this structural equation.                                  
 c                                                                               
       do j = 1, num_ele_on_snode                                                
-          ele_on_snode = inverse_incidences(snode)%element_list(j)              
+          ele_on_snode = inverse_incidences(snode)%element_list(j)      
+c          if( ldebug ) write(*,*) '... doing element: ',ele_on_snode
           if( ele_on_snode .le. 0 ) cycle                                       
-          totdof = iprops(2,ele_on_snode) * iprops(4,ele_on_snode)              
-          do erow = 1, totdof ! which erow matches srow                         
+          totdof = iprops(2,ele_on_snode) * iprops(4,ele_on_snode)  
+c          if( ldebug ) write(*,*) '     totdof: ', totdof
+          do erow = 1, totdof ! which erow matches srow  
+c            if( ldebug ) write(*,*)
+c     &        '    erow,  dof_eqn_map(edest(erow,j))', erow,
+c     &            dof_eqn_map(edest(erow,j))                        
             if( dof_eqn_map(edest(erow,j)) .ne. srow ) cycle                    
             do ecol = 1, totdof                                                 
-              scol = dof_eqn_map(edest(ecol,j))                                 
+              scol = dof_eqn_map(edest(ecol,j))  
+c              if( ldebug) write(*,*) '      ecol, scol: ', ecol, scol
+c              if( scol .gt. neqns ) then
+c                  write(*,*) '.... bad scol: ', scol
+c                  call die_abort
+c              end if                               
               if( scol .le. srow ) cycle ! would be on lower-triangle           
               if( scol_flags(scol) .eq. 0 ) then                                
                 scol_flags(scol)   = 1                                          
@@ -205,7 +232,10 @@ c
           scol_flags(scol_list(j)) = 0                                          
       end do                                                                    
 c                                                                               
-      return                                                                    
+      return
+c                                                                          
+ 9000 format(15x,i2,3i8)  
+c      
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
@@ -221,7 +251,7 @@ c     *  entry.                                                      *
 c     *                                                              *          
 c     *                   written by : rhd                           *          
 c     *                                                              *          
-c     *                   last modified : 6/6/2017 rhd               *          
+c     *                   last modified : 8/10/2017 rhd              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -229,7 +259,7 @@ c
       subroutine build_col_sparse_symm(                                         
      &  neqns, num_threads, eqn_node_map, dof_eqn_map,               
      &  k_indexes, k_ptrs, start_kindex_locs, edest, scol_lists,
-     &  nrow_lists )  
+     &  nrow_lists, ncoeff_above_diagonal )  
 c                                                             
       use main_data, only : inverse_incidences
       use global_data, only : out, iprops, mxedof, mxconn, max_threads                        
@@ -237,7 +267,7 @@ c
 c                                                                               
 c                    parameter declarations                                     
 c                                                                               
-      integer :: neqns, last_k_index, num_threads, nrow_lists                          
+      integer :: neqns, num_threads, nrow_lists, ncoeff_above_diagonal                          
       integer :: eqn_node_map(*), dof_eqn_map(*), k_ptrs(*),                    
      &           k_indexes(*), start_kindex_locs(*), 
      &           edest(mxedof,mxconn,num_threads),
@@ -245,10 +275,11 @@ c
 c                                                                               
 c                    local declarations                                         
 c                                                                               
-      integer :: i, next_k_index, previous_node, srow, scol, snode,             
+      integer :: i, max_k_index, previous_node, srow, scol, snode,             
      &           num_scols_used, j, totdof, ele_on_snode, erow, ecol,           
      &           num_unique_cols, num_ele_on_snode, now_thread
-      integer :: thread_previous_node(max_threads)  
+      integer :: thread_previous_node(max_threads),
+     &           last_k_index(max_threads)  ! for checking
       integer, external :: omp_get_thread_num                                   
 c                                   
       logical, parameter :: local_debug = .false.    
@@ -267,7 +298,8 @@ c                 loop over all structural equations (skip last one
 c                 since it has no terms right of diagonal).                     
 c 
       scol_lists           = 0 ! 2d array                                       
-      thread_previous_node = 0 ! vector      
+      thread_previous_node = 0 ! vector   
+      last_k_index         = 0 ! vector for checking consistency  
 c                                                         
       call omp_set_dynamic( .false. )                                           
 c$OMP PARALLEL DO PRIVATE( srow, now_thread ) ! all else shared                 
@@ -276,26 +308,35 @@ c$OMP PARALLEL DO PRIVATE( srow, now_thread ) ! all else shared
        call build_col_sparse_symm_srow( 
      &     srow, neqns, thread_previous_node(now_thread), 
      &     start_kindex_locs(srow), eqn_node_map(srow), dof_eqn_map, 
-     &     k_indexes, k_ptrs,  
-     &     edest(1,1,now_thread), scol_lists(1,now_thread)  )  
+     &     k_indexes, k_ptrs, edest(1,1,now_thread), 
+     &     scol_lists(1,now_thread), last_k_index(now_thread)  )  
       end do !  srow                                                            
 c$OMP END PARALLEL DO                                                           
 c                                                                               
-      k_ptrs(neqns) = 0                                                         
+      k_ptrs(neqns) = 0   
+      max_k_index = maxval( last_k_index )
+      if( max_k_index .ne. ncoeff_above_diagonal ) then
+         write(out,9020)
+         call die_abort
+      end if                                                         
 c                                                                               
-      if( local_debug ) then                                                    
-        write(out,9000) last_k_index, neqns                                       
-        write(out,*) '   k_ptrs ...'                                              
-        write(out,9010) (i, k_ptrs(i), i = 1, neqns)                              
-        write(out,*) '   k_indexes ...'                                           
-        write(out,9010) (i,k_indexes(i),i=1,last_k_index)                         
-      end if                                                                    
+      if( .not. local_debug ) return
+      write(out,9000) max_k_index, neqns                                       
+      write(out,*) '   k_ptrs ...'   
+      do i = 1, neqns
+         write(out,9010) i, k_ptrs(i)
+      end do                                 
+      write(out,*) '   k_indexes ...'                                           
+      write(out,9010) (i,k_indexes(i),i=1,max_k_index)                         
 c                                                                               
       return                                                                    
 c                                                                               
  9000 format(2x,'... in build_col_sparse_symm: ',                               
-     & /,10x,'last_k_index, neqns: ',2i8)                                       
- 9010 format(6x,12i8)                                                           
+     & /,10x,'max_k_index, neqns: ',2i8)                                       
+ 9010 format(10x,2i8)   
+ 9020 format(1x,                                                                
+     &'>> FATAL ERROR: Job Aborted.',                                           
+     &5x,' inconsistent data structure in build_col_sparse_symm' ) 
 c                                                                               
       end     
       
@@ -306,7 +347,7 @@ c     *               (routine runs thread parallel)                 *
 c     *                                                              *          
 c     *                   written by : rhd                           *          
 c     *                                                              *          
-c     *                   last modified : 6/6/2017 rhd               *          
+c     *                   last modified : 8/10/2017 rhd              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -314,7 +355,7 @@ c
      &  srow, neqns, previous_snode,
      &  start_kindex_loc, snode, dof_eqn_map,               
      &  k_indexes, k_ptrs,
-     &  edest, scol_list )    
+     &  edest, scol_list, last_k_index )    
 c                                                           
       use main_data, only : inverse_incidences, repeat_incid     
       use global_data, only : mxelpr, mxedof, iprops, out          
@@ -322,7 +363,8 @@ c
 c                                                                               
 c                    parameter declarations                                     
 c                                                                               
-      integer :: srow, neqns, previous_snode, start_kindex_loc, snode                         
+      integer :: srow, neqns, previous_snode, start_kindex_loc, snode,
+     &           last_k_index      ! for checking                   
       integer :: dof_eqn_map(*), k_ptrs(*), k_indexes(*), scol_list(*),  
      &           edest(mxedof,*)                              
 c                                                                               
@@ -416,8 +458,13 @@ c
       end if                                                                  
 c
       num_unique_cols         = 1                                             
-      next_k_index            = start_kindex_loc                              
-      k_indexes(next_k_index) = scol_list(1)                                  
+      next_k_index            = start_kindex_loc   
+      if( next_k_index == 0 ) then
+          write(*,9300) '... next_k_index =0, srow: ', srow
+          call die_abort
+      end if                           
+      k_indexes(next_k_index) = scol_list(1)      
+      last_k_index = next_k_index                         
       if( num_scols_used .eq. 1 ) then                                        
            k_ptrs(srow) = 1                                                     
            return                                                              
@@ -427,11 +474,17 @@ c
            if( scol_list(j) .eq. scol_list(j-1) ) cycle                         
            num_unique_cols         = num_unique_cols + 1                        
            next_k_index            = next_k_index + 1                           
-           k_indexes(next_k_index) = scol_list(j)                               
+           k_indexes(next_k_index) = scol_list(j)        
+           last_k_index            = next_k_index  ! for checking                   
       end do                                                                  
       k_ptrs(srow) = num_unique_cols                                          
 c                                                                               
       return                                                                    
+c
+ 9300 format(1x,                                                                
+     & '>> FATAL ERROR: Job Aborted.',                                           
+     & 5x,'inconsistent data structure. build_col_sparse_symm_srow')
+c
       end                                                                       
                                                                                 
 c     ****************************************************************          
@@ -515,7 +568,8 @@ c
 c                                                                               
 c         local                                                                 
 c                                                                               
-      integer :: eqn_counter, dof                                               
+      integer :: eqn_counter, dof 
+      logical, parameter :: local_debug = .false.                                              
 c                                                                               
 c         assign the equation number for each structure dof.                    
 c         dof with absolute constraints do not appear in the equations.         
@@ -541,8 +595,17 @@ c
 c         set the number of equilibrium equations to be solved in each          
 c         iteration of the load(time) step.                                     
 c                                                                               
-      neqns = eqn_counter                                                       
-c                                                                               
+      neqns = eqn_counter   
+      if( local_debug ) then
+         write(*,*)'... leaving dof_map ....'
+         write(*,*)'      dof,  dof_eqn_map    eqn_node_map'
+         do dof = 1,  ndof*nonode
+          write(*,9000) dof, dof_eqn_map(dof), eqn_node_map(dof)
+         end do
+      end if
+c
+      return         
+ 9000 format(10x,i3,2i8 )                                                             
       return                                                                    
       end                                                                       
 c ------------------------------------------------------------------------      
@@ -1205,7 +1268,7 @@ c     *           essentially de-blocks the indexes for a set of     *
 c     *           elements                                           *          
 c     *                                                              *          
 c     *                       written by  : rhd                      *          
-c     *                   last modified : 6/20/2016                  *          
+c     *                   last modified : 8/10/2017 rhd              *          
 c     *                                                              *          
 c     ****************************************************************          
                                                                                 
@@ -1218,21 +1281,24 @@ c
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
-      integer :: table(mxedof,*), elem_list(*), list_length,                    
+      integer :: table(mxedof,mxconn), elem_list(*), list_length,                    
      &           iprops(mxelpr,*)                                               
       integer, dimension (:,:), pointer :: edest                                
 c                                                                               
       integer :: i, elem, totdof, blk, rel_elem, dof                            
-c                                                                               
+c        
+c              could zero table for clarity since new values may
+c              not overwrite all old values - but accesses into 
+c              table know their sizes.
+c
       do i = 1, list_length                                                     
        elem = elem_list(i)   ! absolute element number                          
        if( elem .le. 0 ) cycle                                                  
        totdof   = iprops(2,elem) * iprops(4,elem)                               
        blk      = elems_to_blocks(elem,1)                                       
        rel_elem = elems_to_blocks(elem,2)                                       
-       edest    => edest_blocks(blk)%ptr                                        
-!DIR$ IVDEP                                                                     
-       table(1:totdof,i) = edest(1:totdof,rel_elem)                             
+       edest    => edest_blocks(blk)%ptr                                                                                                         
+       table(1:totdof,i) = edest(1:totdof,rel_elem)    
       end do                                                                    
 c                                                                               
       return                                                                    

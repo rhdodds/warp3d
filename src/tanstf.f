@@ -4,7 +4,7 @@ c     *                      subroutine tanstf                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 02/17/2017 rhd             *          
+c     *                   last modified : 8/12/2017 rhdd             *          
 c     *                                                              *          
 c     *     drive computation of all element [K]s. can be symmetric  *          
 c     *     (store upper-triangle) or asymmetric (store full [K])    *          
@@ -125,10 +125,10 @@ c
       use elem_extinct_data, only : dam_blk_killed, dam_state                   
 c                                                                               
       use main_data,         only : trn, incid, incmap,                         
-     &                              cohesive_ele_types,                         
+     &                              cohesive_ele_types, link_types,                         
      &                              linear_displ_ele_types,                     
      &                              adjust_constants_ele_types,                 
-     &                              axisymm_ele_types,                          
+     &                              axisymm_ele_types, bar_types,                         
      &                              nonlocal_analysis,                          
      &                              asymmetric_assembly,                        
      &                              dmatprp, imatprp,                           
@@ -149,16 +149,15 @@ c
 c                       local declarations                                      
 c                                                                               
       include 'include_tan_ek'                                                  
-      double precision ::                                                       
-     &  zero, lambda(mxvl,3,3) ! on stack                                       
-      logical :: local_debug, geo_non_flg, bbar_flg,                            
-     &           symmetric_assembly, block_is_killable                          
+      double precision :: lambda(mxvl,3,3) ! on stack  
+      double precision, parameter :: zero = 0.0d0
+      logical :: geo_non_flg, bbar_flg,                            
+     &           symmetric_assembly, block_is_killable 
+      logical, parameter :: local_debug = .false.                         
       integer :: felem, elem_type, int_order, mat_type, num_enodes,             
      &           num_enode_dof, totdof, num_int_points, span, utsz,             
      &           cohes_type, surface, matnum, nrow_ek, ispan, relem,            
      &           element                                                        
-c                                                                               
-      data local_debug, zero / .false., 0.0d0 /                                 
 c                                                                               
       felem          = elblks(1,blk)                                            
       elem_type      = iprops(1,felem)                                          
@@ -216,7 +215,10 @@ c
       local_work%is_umat        = mat_type .eq. 8                               
       local_work%is_deform_plas = mat_type .eq. 2                               
       local_work%is_crys_pls    = mat_type .eq. 10                              
-      local_work%cep_sym_size       = 21                                        
+      local_work%cep_sym_size       = 21 
+      local_work%is_bar_elem    = bar_types(elem_type)
+      local_work%is_link_elem   = link_types(elem_type)
+      
 c                                                                               
       if( local_work%is_umat ) call material_model_info( felem, 0, 3,           
      &                                 local_work%umat_stress_type )            
@@ -293,7 +295,7 @@ c
      &             mat_type,                                                    
      &             local_work%trn_e_flags,                                      
      &             local_work%trn_e_block,                                      
-     &             local_work%ce,                                               
+     &             local_work%ce, local_work%ce_0,                                            
      &             local_work%trne,                                             
      &             local_work%trnmte,                                           
      &             local_work%ue,                                               
@@ -872,7 +874,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 5/2/2017 rhd               *          
+c     *                   last modified : 7/29/2017 rhd              *          
 c     *                                                              *          
 c     *     allocate data structure in local_work for updating       *          
 c     *     element stiffnesses                                      *          
@@ -893,7 +895,8 @@ c
 c                                                                               
 c               history data for block allocated in dptstf_blocks               
 c                                                                               
-      allocate( local_work%ce(mxvl,mxecor) )                                    
+      allocate( local_work%ce(mxvl,mxecor), 
+     &          local_work%ce_0(mxvl,mxecor) )                                    
 c                                                                               
       allocate(                                                                 
      1 local_work%det_jac_block(mxvl,mxgp),                                     
@@ -998,7 +1001,7 @@ c     *                   subroutine tanstf_deallocate               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 5/2/2017 rhd               *          
+c     *                   last modified : 7/29/2017 rhd              *          
 c     *                                                              *          
 c     *     release data structure in local_work for updating        *          
 c     *     strains-stresses-internal forces.                        *          
@@ -1018,7 +1021,7 @@ c
       if( local_debug ) write(out,*) "..tanstf_deall @ 1"                       
       local_mt = local_work%mat_type                                            
 c                                                                               
-      deallocate( local_work%ce,                                                
+      deallocate( local_work%ce, local_work%ce_0,                                               
      1 local_work%det_jac_block,                                                
      2 local_work%shape,                                                        
      3 local_work%nxi,                                                          

@@ -134,7 +134,7 @@ c
        real (h_prec), allocatable :: mm05_props(:,:)          ! (mxvl,10)
        real (h_prec), allocatable :: mm06_props(:,:)          ! (mxvl,10)
        real (h_prec), allocatable :: mm07_props(:,:)          ! (mxvl,10)
-       real (h_prec), allocatable :: umat_props(:,:)          ! (mxvl,50)
+       real (h_prec), allocatable :: umat_props(:,:)          ! (mxvl,50) 
 c
        real (h_prec), allocatable ::   ! nonlocal cohesive support
      &            top_surf_solid_stresses_n(:,:),             ! (mxvl,nstrs)
@@ -185,7 +185,8 @@ c
      &            is_axisymm_elem, killed_status_vec(mxvl),
      &            block_killed, is_umat, is_solid_matl, is_crys_pls,
      &            compute_f_bar, compute_f_n, is_cohes_nonlocal,
-     &            is_inter_dmg, block_has_nonlocal_solids
+     &            is_inter_dmg, block_has_nonlocal_solids,
+     &            is_bar_elem, is_link_elem
 c     Added stuff for CP
       logical, allocatable :: debug_flag(:)                   ! mxvl
       double precision, allocatable :: local_tol(:)           ! mxvl

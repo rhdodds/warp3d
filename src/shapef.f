@@ -4,10 +4,7 @@ c     *                      subroutine shapef                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 07/15/97                   *          
-c     *                                   08/24/98 gvt               *          
-c     *                                   05/26/99 aroy              *          
-c     *                                   12/27/00 sushovan          *          
+c     *                   last modified : 08/11/2017 rhd             *          
 c     *                                                              *          
 c     *     given the element type and a point in parametric         *          
 c     *     space, return the element shape functions evaluated      *          
@@ -17,18 +14,17 @@ c     ****************************************************************
 c                                                                               
       subroutine shapef( etype, xi, eta, zeta, n )                              
       implicit integer (a-z)                                                    
-      double precision                                                          
-     &     xi, eta, zeta, n(*)                                                  
+      double precision ::  xi, eta, zeta, n(*)                                                  
 c                                                                               
 c                                                                               
-      if ( etype .le. 0 .or. etype .gt. 16 ) then                               
+      if ( etype .le. 0 .or. etype .gt. 19 ) then                               
          write(*,9000) etype                                                    
          call die_abort                                                         
-         stop                                                                   
       end if                                                                    
 c                                                                               
       go to ( 100, 200, 300, 400, 500, 600, 700, 800, 900,                      
-     &       1000, 1100, 1200, 1300, 1400, 1500, 1600 ), etype                  
+     &       1000, 1100, 1200, 1300, 1400, 1500, 1600,
+     &       1700, 1800, 1900 ), etype                  
 c                                                                               
 c                    20-node                                                    
 c                                                                               
@@ -71,7 +67,6 @@ c
  700  continue                                                                  
          write(*,9100) etype                                                    
          call die_abort                                                         
-         stop                                                                   
 cADD SUBR      call shape7( xi, eta, zeta, n )                                  
       return                                                                    
 c                                                                               
@@ -80,16 +75,13 @@ c
  800  continue                                                                  
          write(*,9100) etype                                                    
          call die_abort                                                         
-         stop                                                                   
 cADD SUBR      call shape8( xi, eta, zeta, n )                                  
       return                                                                    
 c                                                                               
 c                    8-node planar quadrillateral, "quad8"                      
 c                                                                               
  900  continue                                                                  
-c                                                                               
       call shape9( xi, eta, n )                                                 
-c                                                                               
       return                                                                    
 c                                                                               
 c                    8-node axisymmetric quadrillateral, "axiquad8"             
@@ -123,11 +115,32 @@ c                    12-noded triangular interface element, "trint12"
 1500  continue                                                                  
       call shape15( xi, eta, n )                                                
       return                                                                    
+c
+c                    4-node quadrillateral element
+c
+1600  continue
+      call shape16( xi, eta, n )
+      return
+c
+c                    3-node line. should not be called in code
+c
+1700  continue
+      write(*,9100) etype                                                    
+      call die_abort                                                         
+
 c                                                                               
-c                    4-node quadrillateral element                              
+c                    2-node bar
 c                                                                               
-1600  continue                                                                  
-      call shape16( xi, eta, n )                                                
+1800  continue 
+      n(1) = 0.5d0 
+      n(2) = 0.5d0                                                                
+      return                                                                    
+c                                                                               
+c                    2-node link
+c                                                                               
+1900  continue 
+      n(1) = 0.5d0 
+      n(2) = 0.5d0                                                                
       return                                                                    
 c                                                                               
 c                                                                               

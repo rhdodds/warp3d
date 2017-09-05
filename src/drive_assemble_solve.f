@@ -346,13 +346,14 @@ c
 c
 c                    locals                                                     
 c        
-      integer :: i, j, k, l                                                                       
+      integer :: i, j, k, l, srow, start_srow                                                                      
       integer, allocatable :: start_kindex_locs(:), edest(:,:,:), 
      &                        scol_flags(:,:), scol_lists(:,:)                                           
       character(len=200) mkl_string                                             
       integer :: mkl_num_thrds, next_space, count_previous, count_now,
      &           nrow_lists, safety_factor                                      
-      integer, external :: mkl_get_max_threads      
+      integer, external :: mkl_get_max_threads
+      logical, parameter :: local_debug_2 = .false.  
 c                                                                               
 c              1. generate equation numbers for all unconstrained               
 c                 nodal dof. dof_eqn_map(i) gives equation                      
@@ -421,7 +422,8 @@ c
       safety_factor = 10    
       allocate( start_kindex_locs(neqns) )
       allocate( scol_flags(neqns,num_threads) )                                 
-      allocate( edest(mxedof,mxconn,num_threads) )    
+      allocate( edest(mxedof,mxconn,num_threads) )
+      edest = 0
       nrow_lists = mxconn * mxedof * safety_factor                      
       allocate( scol_lists(nrow_lists,num_threads) )           
 c                                                                         
@@ -456,24 +458,46 @@ c                 convert to the starting locating in k_indexes for
 c                 storage of column indexes for each equation.
 c
       start_kindex_locs(neqns) = 0
+c      
+      if( local_debug_2 )  then
+          write(out,*) '...  start_kindex_locs ...'
+          do i = 1, neqns
+             write(out,*) '        ',i,start_kindex_locs(i)
+          end do 
+      end if 
+c             
       select case( neqns )
         case( 1 )
         case( 2 ) 
           start_kindex_locs(1) = 1
+          if( ncoeff_from_assembled_profile == 0 ) ! 2x2 no (1,2) term
+     &           start_kindex_locs(1) = 0
         case( 3: )
-          count_previous = start_kindex_locs(1)
-          start_kindex_locs(1) = 1
-          do i = 2, neqns-1
+          start_srow = 0
+          do srow = 1, neqns-1
+            if( start_kindex_locs(srow) > 0 ) then
+               start_srow = srow
+               exit
+            end if   
+          end do
+          if( start_srow == 0 ) then
+               write(out,9210) 
+               call die_abort
+          end if     
+          count_previous = start_kindex_locs(start_srow)
+          start_kindex_locs(start_srow) = 1
+          do i = start_srow+1, neqns-1
            count_now = start_kindex_locs(i)
            start_kindex_locs(i) = start_kindex_locs(i-1) +
      &                            count_previous
            count_previous = count_now
           end do 
-          if( start_kindex_locs(neqns-1) .ne. 
-     &          ncoeff_from_assembled_profile ) then 
-              write(out,9210)                                                        
-              call die_gracefully                                                    
-          end if         
+          if( local_debug_2 ) then
+              write(out,*) '... start_k_indexes_locs after update'
+              do i = 1, neqns
+                 write(out,*) '        ',i,start_kindex_locs(i)
+              end do     
+          end if
       end select  
 c                                                                             
       if( cpu_stats .and. show_details ) write(out,9419) wcputime(1)            
@@ -487,7 +511,7 @@ c
       call build_col_sparse_symm( 
      &      neqns, num_threads, eqn_node_map, dof_eqn_map,                            
      &      save_k_indexes, save_k_ ptrs,                       
-     &      start_kindex_locs, edest, scol_lists, nrow_lists )
+     &      start_kindex_locs, edest, scol_lists, nrow_lists, ncoeff )
 c                                                                               
       deallocate( start_kindex_locs, scol_flags, edest, scol_lists )           
                                                      
@@ -499,8 +523,7 @@ c
 c                                                                                
  9210 format('>> FATAL ERROR: computations of dense storage data',              
      & /,    '                failed in equation solver.',                      
-     & /,    '                inconsistencies in number of non-zero',           
-     & /,    '                terms off diagonal.',                             
+     & /,    '                inconsistencies in data structure',           
      & /,    '                job terminated' )                                 
  9300  format (                                                                 
      &  10x, '>> solver wall time statistics (secs):'                           

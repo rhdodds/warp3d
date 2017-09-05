@@ -4,7 +4,7 @@ c     *                      subroutine gpifv1                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 07/2/12 rhd                *          
+c     *                   last modified : 07/29/2017 rhd             *          
 c     *                                                              *          
 c     *     computes the internal resisting force                    *          
 c     *     vectors for a block of similar elements in uniform       *          
@@ -16,25 +16,24 @@ c
       subroutine gpifv1( eleifv, nrow_ifv, gpn, weight, dj, b,                  
      &                   urcs_blk_n1, local_work, element_volumes )             
 c                                                                               
-      use segmental_curves, only : max_seg_points, max_seg_curves               
-      implicit integer (a-z)                                                    
+      implicit none                                                   
       include 'param_def'                                                       
       include 'include_sig_up'                                                  
 c                                                                               
 c                       parameter declarations                                  
-c                                                                               
-      double precision                                                          
-     &  eleifv(nrow_ifv,*), weight, dj(*), element_volumes(*),                  
-     &  b(mxvl,mxedof,*), urcs_blk_n1(mxvl,*)                                   
+c             
+      integer :: nrow_ifv ! same as span
+      integer :: gpn                                                                  
+      double precision :: eleifv(nrow_ifv,*), weight, dj(*), 
+     &                    element_volumes(*), b(mxvl,mxedof,*), 
+     &                    urcs_blk_n1(mxvl,*)                                   
 c                                                                               
 c                       local declarations                                      
-c                                                                               
-      logical geonl, bbar                                                       
-c                                                                               
-      double precision                                                          
-     &   qtn1(mxvl,nstr,nstr), cs_blk_n1(mxvl,nstr),                            
-     &   eps_bbar, w, scalar                                                    
-c                                                                               
+c      
+      integer :: i, j, span, felem, type, nnode, totdof, iter                                                                         
+      logical :: geonl, bbar                                                       
+      double precision :: qtn1(mxvl,nstr,nstr), cs_blk_n1(mxvl,nstr),                            
+     &                    eps_bbar, w, scalar                                                    
 c                                                                               
       span            = local_work%span                                         
       felem           = local_work%felem                                        
@@ -153,5 +152,106 @@ c
 c                                                                               
       return                                                                    
       end                                                                       
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine gpifv3                       *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 07/29/2017 rhd             *          
+c     *                                                              *          
+c     *     computes the internal resisting force                    *          
+c     *     vectors for a block of bar elements in global            *
+c     *     coordinates                                              *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine gpifv3( span, mxvl, felem, iout, etype, geonl, 
+     &                   urcs_blk_n1, eleifv, ce, areas_0, areas_n1 )             
+c                                                                               
+      implicit none                                                    
+c                                                                               
+c                       parameter declarations                                  
+c                
+      integer :: span, mxvl, felem, iout, etype
+      logical :: geonl  
+      double precision ::  eleifv(span,*), urcs_blk_n1(mxvl,*),
+     &                     ce(mxvl,*), areas_0(*), areas_n1(*)                                   
+c                                                                               
+c                       local declarations                                      
+c 
+      integer :: i
+      logical, parameter :: local_debug = .false.
+      double precision :: x1, x2, y1, y2, z1, z2, dx, dy, dz, len,
+     &                    cos_l, cos_m, cos_n, area, force 
+c
+c                        compute force at 2 end of bar then global
+c                        components at each end.
+c 
+c                        ce = ce_0 for small displacements
+c                        ce = ce_n1 for large displacements
+c
+c                        urcs.. is engineering stress or Cauchy stress   
+c 
+c                        force ordering: Px1, Px2, Py1, Py2, Pz1, Pz2   
+c      
+!DIR$ VECTOR ALIGNED                                                            
+      do i = 1, span   
+        x1 = ce(i,1)
+        x2 = ce(i,2)
+        y1 = ce(i,3)
+        y2 = ce(i,4)
+        z1 = ce(i,5)
+        z2 = ce(i,6)
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1
+        len = sqrt( dx*dx + dy*dy + dz*dz )
+        cos_l = dx / len
+        cos_m = dy / len
+        cos_n = dz / len
+        area = areas_0(i)
+        if( geonl ) area = areas_n1(i)
+        force = urcs_blk_n1(i,1) * area
+        eleifv(i,1) = -force * cos_l
+        eleifv(i,2) =  force * cos_l
+        eleifv(i,3) = -force * cos_m
+        eleifv(i,4) =  force * cos_m
+        eleifv(i,5) = -force * cos_n
+        eleifv(i,6) =  force * cos_n
+      end do  
+c
+      if( .not. local_debug ) return
+      write(iout,9000) felem
+      do i = 1, span
+        x1 = ce(i,1)
+        x2 = ce(i,2)
+        y1 = ce(i,3)
+        y2 = ce(i,4)
+        z1 = ce(i,5)
+        z2 = ce(i,6)
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1
+        len = sqrt( dx*dx + dy*dy + dz*dz )
+        cos_l = dx / len
+        cos_m = dy / len
+        cos_n = dz / len
+        area = areas_0(i)
+        if( geonl ) area = areas_n1(i)
+        force = urcs_blk_n1(i,1) * area
+        write(iout,9010) i + felem - 1, len, cos_l, cos_m, cos_n
+        write(iout,9020) area, force
+        write(iout,9030) eleifv(i,1:6)
+      end do                
+c   
+      return
+ 9000 format(3x,'... internal bar forces for blk starting @ elem: ',i8)  
+ 9010 format(8x,'elem, len, l, m, n: ',i8,4f15.6)
+ 9020 format(8x,'area, force: ',2f15.6)
+ 9030 format(8x,'node 1, 2 ifv: ',3f15.5,/,
+     &       8x,'               ',3f15.5 )    
+      end                                                                            
                                                                                 
                                                                                 

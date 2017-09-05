@@ -4,7 +4,7 @@ c     *                      subroutine inmat                        *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 5/18/2017 rhd              *          
+c     *                   last modified : 8/20/2017 rhd              *          
 C     *                                                              *          
 C     *     input of properties of the materials in the material     *          
 c     *     library for the current problem.                         *          
@@ -33,7 +33,8 @@ c
       logical :: matchs, numr, endcrd, true, label, scanms, numd,               
      &           matchs_exact                                                   
       logical, parameter :: local_debug = .false.                               
-      real ::  dumr                                                             
+      real ::  dumr, kx_stiff, ky_stiff, kz_stiff, link_mass,
+     &        link_stiff                                                             
       real, parameter :: fgm_mark = -99.0                                       
       double precision :: dumd                                                  
       double precision, parameter :: one=1.0d0                                  
@@ -277,7 +278,10 @@ c                      131-- nfail ("")
 c                       132-- macro_sz                                          
 c                       133-- cp_sz                                             
 c                                                                               
-c                                                                               
+c                      148-- link2 x-stiffness
+c                      149-- link2 y-stiffness
+c                      150-- link2 z-stiffness
+c                                                                              
 c                      151-200 -- Abaqus compatible UMAT                        
 c                              151 - um_1                                       
 c                              151 - um_2                                       
@@ -429,6 +433,7 @@ c
       if ( matchs_exact('rho')          ) go to 280                             
       if ( matchs('thickness_ratio',8)  ) go to 285                             
       if ( matchs_exact('bilinear')     ) go to 300                             
+      if ( matchs_exact('link')         ) go to 300                             
       if ( matchs_exact('gurson')       ) go to 310                             
       if ( matchs_exact('mises')        ) go to 312                             
       if ( matchs('n_power',5)          ) go to 330                             
@@ -451,7 +456,7 @@ c
       if ( matchs('sig_o',5)            ) go to 260                             
       if ( matchs('linear_elastic',6)   ) go to 290                             
       if ( matchs_exact('creep')        ) go to 600                             
-        if ( matchs_exact('B') )                        go to 605               
+      if ( matchs_exact('B')            ) go to 605               
       if ( matchs_exact('cyclic') )         go to 800                           
       if ( matchs_exact('cylic') )          go to 800                           
       if ( matchs_exact('mises_hydrogen') ) go to 1000                          
@@ -517,7 +522,13 @@ c
          if( matchs_exact( 'um_49') ) go to 1110                                
          if( matchs_exact( 'um_50') ) go to 1110                                
          if( matchs_exact('CP')     ) go to 2000                                
-         if( matchs_exact( 'interface_damage')) go to 2100                      
+         if( matchs_exact( 'interface_damage')) go to 2100 
+      if( matchs_exact('kx_stiff') ) go to 2200
+      if( matchs_exact('ky_stiff') ) go to 2205
+      if( matchs_exact('kz_stiff') ) go to 2210
+      if( matchs_exact('mass_link') ) go to 2215
+      if( matchs_exact('stiff_link') ) go to 2220
+                              
 c                                                                               
       if ( matchs(',',1) ) go to 215                                            
                                                                                 
@@ -767,7 +778,8 @@ c
 c **********************************************************************        
 c *                                                                    *        
 c *                     vectorized linear and von mises                *        
-c *                     plasticity model                               *        
+c *                     plasticity model. also used for bar2 and       *   
+c *                     link2 elements.     
 c *                                                                    *        
 c **********************************************************************        
 c                                                                               
@@ -1395,20 +1407,86 @@ c
       call die_abort                                                            
       matprp(9, matnum) = 11                                                    
       call inmat_inter( matnum)                                                 
-      go to 9998                                                                
-c                                                                               
- 9800 format('>>>> FATAL ERROR: in inmat @',i3,                                 
-     &    /, '                  job aborted.'//)                                
-                                                                                
+      go to 9998   
+      
+c
+c **********************************************************************
+c *                                                                    *
+c *         link material stiffness, mass values                       *
+c *                                                                    *
+c **********************************************************************
+c
+ 2200 continue
+      if( numr(kx_stiff) ) then
+         if( kx_stiff < 0.0e0 ) then
+           call errmsg( 87, dum, dums, dumr, dumd )
+           go to 210
+         end if
+         matprp(148,matnum) = kx_stiff
+         go to 210
+      end if
+      call errmsg( 124, dum, 'kx_stiff', dumr, dumd )
+      go to 210
+ 2205 continue
+      if( numr(ky_stiff) ) then
+         if( ky_stiff < 0.0e0 ) then
+           call errmsg( 87, dum, dums, dumr, dumd )
+           go to 210
+         matprp(149,matnum) = ky_stiff
+         end if
+         go to 210
+      end if
+      call errmsg( 124, dum, 'ky_stiff', dumr, dumd )
+      go to 210
+ 2210 continue
+      if( numr(kz_stiff) ) then
+         if( kz_stiff < 0.0e0 ) then
+           call errmsg( 87, dum, dums, dumr, dumd )
+           go to 210
+         end if
+         matprp(150,matnum) = kz_stiff
+         go to 210
+      end if
+      call errmsg( 124, dum, 'kz_stiff', dumr, dumd )
+      go to 210
+ 2215 continue
+      if( numr(link_mass) ) then
+         if( link_mass < 0.0e0 ) then
+           call errmsg( 140, dum, dums, dumr, dumd )
+           go to 210
+         end if
+         matprp(7,matnum) = link_mass
+         go to 210
+      end if
+      call errmsg( 352, dum, dums, dumr, dumd )
+      go to 210
+ 2220 continue
+      if( numr(link_stiff) ) then
+         if( link_stiff < 0.0e0 ) then
+           call errmsg( 87, dum, dums, dumr, dumd )
+           matprp(148,matnum) = 0.0e0
+           matprp(149,matnum) = 0.0e0
+           matprp(150,matnum) = 0.0e0
+           go to 210
+         end if
+         matprp(148,matnum) = link_stiff
+         matprp(149,matnum) = link_stiff
+         matprp(150,matnum) = link_stiff
+         go to 210
+      end if
+      call errmsg( 124, dum, 'link_stiff', dumr, dumd )
+      go to 210
+c
  9997 sbflg1= .true.                                                            
       go to 9999                                                                
 c                                                                               
  9998 sbflg1= .false.                                                           
 c                                                                               
  9999 sbflg2= .true.                                                            
-                                                                                
 c                                                                               
       return                                                                    
+ 9800 format('>>>> FATAL ERROR: in inmat @',i3,                                 
+     &    /, '                  job aborted.'//)                                
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          

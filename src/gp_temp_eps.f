@@ -121,7 +121,7 @@ c     *                      subroutine gp_temp_eps                  *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 04/1/00                    *          
+c     *                   last modified : 08/20/2017 rhd             *          
 c     *                                                              *          
 c     *     compute incremental thermal strains at gauss point for   *          
 c     *     all elements of the block. subtract them from incr.      *          
@@ -131,32 +131,33 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine gp_temp_eps( span, deps, alpha_n1, gp_dtemps,                  
-     &                        gp_temps, gp_rtemps, alpha_n  )                   
-      implicit integer (a-z)                                                    
+     &                        gp_temps, gp_rtemps, alpha_n, etype  )                   
+      use main_data,         only : bar_types, link_types                        
+      implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
 c                      parameter declarations                                   
+c      
+      integer :: span, etype                                                                         
+      double precision :: deps(mxvl,*), alpha_n1(mxvl,6),
+     &                    alpha_n(mxvl,6), gp_dtemps(*), 
+     &                    gp_temps(*), gp_rtemps(*)                                 
 c                                                                               
-      double precision                                                          
-     &  deps(mxvl,*), alpha_n1(mxvl,6), alpha_n(mxvl,6),                        
-     &  gp_dtemps(*), gp_temps(*), gp_rtemps(*)                                 
-c                                                                               
-c                     locally defined arrays-variables                          
-c                                                                               
-      double precision                                                          
-     &  theta_n, dtn, dtn1, deps_theta(6), zero                                 
-                                                                                
-      logical local_debug                                                       
-      data local_debug, zero / .false., 0.0 /                                   
+c                     locals
+c   
+      integer :: i, j                                                                            
+      double precision :: theta_n, dtn, dtn1, deps_theta(6)
+      double precision, parameter :: zero = 0.0d0                                 
+      logical :: is_bar_elem, is_link_elem 
+      logical, parameter :: local_debug = .false.                                                    
 c                                                                               
 c            compute incremental thermal strain and subtract from               
 c            strain increment due to displacements.                             
 c                                                                               
-      if (  local_debug ) then                                                  
-           write(*,9100) (i,(deps(i,j),j=1,6),i=1,span)                         
-      end if                                                                    
-c                                                                               
-c                                                                               
+      if( local_debug ) write(*,9100) (i,(deps(i,j),j=1,6),i=1,span)                         
+      is_bar_elem  = bar_types(etype)
+      is_link_elem = link_types(etype)
+c
       do i = 1, span                                                            
 c                                                                               
        theta_n = gp_temps(i) -  gp_dtemps(i)                                    
@@ -175,8 +176,10 @@ c
        deps(i,4) = deps(i,4) -   deps_theta(4)                                  
        deps(i,5) = deps(i,5) -   deps_theta(5)                                  
        deps(i,6) = deps(i,6) -   deps_theta(6)                                  
-                                                                                
-      end do                                                                    
+c                                                                                
+      end do  
+c
+      if( is_bar_elem .or. is_link_elem ) deps(1:span,2:6) = zero
 c                                                                               
       if ( .not. local_debug ) return                                           
       write(*,*) '>> thermal strain increments...'                              
@@ -189,7 +192,8 @@ c
        deps_theta(3) = alpha_n1(i,3)*dtn1 - alpha_n(i,3)*dtn                    
        deps_theta(4) = alpha_n1(i,4)*dtn1 - alpha_n(i,4)*dtn                    
        deps_theta(5) = alpha_n1(i,5)*dtn1 - alpha_n(i,5)*dtn                    
-       deps_theta(6) = alpha_n1(i,6)*dtn1 - alpha_n(i,6)*dtn                    
+       deps_theta(6) = alpha_n1(i,6)*dtn1 - alpha_n(i,6)*dtn  
+       if( is_bar_elem ) deps_theta(2:6) = zero                  
        write(*,9200) i, deps_theta                                              
       end do                                                                    
       write(*,9000) (i,(deps(i,j),j=1,6),i=1,span)                              
