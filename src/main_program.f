@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/6/2017 rhd               *
+c     *                   last modified : 9/4/2017 rhd               *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -15,14 +15,14 @@ c
       program warp3d
       use global_data !  replacement for common.main
       use file_info
-      use main_data, only : output_packets, windows_os, osx_os, 
+      use main_data, only : output_packets, windows_os, osx_os,
      &                      linux_os
       use performance_data
       use erflgs
       implicit none
-c      
+c
       integer :: return_type, nsn, lsn, idummy, nc, param, path,
-     &           build_number, olddof, chkprm    
+     &           build_number, olddof, chkprm
       real :: t1, dumr
       real, external :: wcputime
       character :: stcnam*8, dums*8, sdate_*24
@@ -44,7 +44,7 @@ c
 c
 c                       initialize the load step timing and debug
 c
-      debug1   = .false. 
+      debug1   = .false.
       debug2   = .false.
       call setstarttime
       t1 = wcputime ( 0 )
@@ -69,10 +69,10 @@ c
 #ifdef Windows
       windows_os = .true.
 #endif
-#ifdef OSX 
+#ifdef OSX
       osx_os = .true.
-#endif      
-#ifdef Linux 
+#endif
+#ifdef Linux
       linux_os = .true.
 #endif
 
@@ -87,8 +87,8 @@ c
          write(out,9010)
          call die_abort
       end if
-c      
-      char_os = ' ' 
+c
+      char_os = ' '
       if( windows_os ) char_os = 'Windows 64-bit'
       if( linux_os )   char_os = 'Linux 64-bit'
       if( osx_os )     char_os = 'OSX 64-bit'
@@ -977,7 +977,7 @@ c
          call release_constraints( sbflg1, sbflg2 )
          go to 20
       end if
-      
+
 c
 c                       output timings. end execution.
 c
@@ -1009,7 +1009,7 @@ c
      &     '    **                                             ',
      &     '                  **',/,
      &     '    **     ',a21,'      -rel-    Release: ',
-     &     ' 17.8.2      **',/,
+     &     ' 17.8.4      **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
@@ -1063,9 +1063,9 @@ c
 c
       integer :: outdev
       logical :: clear
-c            
+c
       logical, save ::  already_called = .false.
-c      
+c
 c            clear specifies if the message counts are to be cleared.
 c            already_called is how we tell if we are outputing on the
 c            first step or not.
@@ -1088,7 +1088,7 @@ c
        if( num_warn > 0 .or. num_error > 0 .or.
      &      num_fatal > 0 ) then
            write(outdev,9100) num_warn, num_error, num_fatal
-           if( outdev .ne. out ) write (out,9100) num_warn, 
+           if( outdev .ne. out ) write (out,9100) num_warn,
      &                            num_error, num_fatal
        end if
        if( .not. clear .and. num_fatal > 0 .or.
@@ -1137,10 +1137,10 @@ c
 c
 
       subroutine warp3d_normal_stop
-c      
-      use global_data 
+c
+      use global_data
       use file_info
-      use main_data, only : output_packets 
+      use main_data, only : output_packets
       use performance_data, only : time_assembly, assembly_total,
      &            ntimes_assembly,  t_performance_eoj,
      &            t_performance_eoj_pardiso
@@ -1174,8 +1174,8 @@ c
       write(out,*)
       t1 = wcputime ( 1 )
       write(out,'(">> total job wall time (secs): ", f12.2)') t1
-c      
-      if( output_1_thread_cpu_times ) then 
+c
+      if( output_1_thread_cpu_times ) then
         call t_performance_eoj( warptime )
         write(out,*) ' '
         call t_performance_eoj_pardiso( pardiso_time )

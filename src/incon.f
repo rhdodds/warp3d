@@ -492,7 +492,8 @@ c
 c                                                                               
 c                       warn user that all constraints are being                
 c                       destroyed and that all constraints must be              
-c                       be re-defined....                                       
+c                       be re-defined....  deallocate also deletes
+c                       allocatable sub-objects (F2003)                                     
 c                                                                               
       new_constraints = .true.                                                  
       if ( cons_defined ) then                                                  
@@ -1196,7 +1197,7 @@ c     *                    subroutine incon_mpcs                     *
 c     *                                                              *          
 c     *                       written by : bjb                       *          
 c     *                                                              *          
-c     *                   last modified : 05/10/2014 rhd             *          
+c     *                   last modified : 08/22/2017 rhd             *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *     multi-point constraint equations                         *          
@@ -1244,7 +1245,8 @@ c
 c                                                                               
 c              notify user we're discarding any existing mpcs                   
 c              in the mpc module. allocate permanent data structure             
-c              for user mpcs in the module (see comments in mod_mpc)            
+c              for user mpcs in the module (see comments in mod_mpc)
+c              F2003 - also deallocates allocated sub-objects.             
 c                                                                               
       if( mpcs_exist ) then                                                     
          call errmsg2( 59, dumi, dums, dumr, dumd )                             
@@ -1300,8 +1302,7 @@ c
          now_dof        = 0                                                     
          now_term_coeff = 0.0                                                   
          nmpc = nmpc + 1                                                        
-         if( nmpc .gt. max_mpc )                                                
-     &           call errmsg2( 35, max_mpc, dums, dumr, dumd )                  
+         if( nmpc .gt. max_mpc ) call  incon_mpcs_resize                                              
 c                                                                               
          do ! all terms for this mpc eqn                                        
 c                                                                               
@@ -1474,16 +1475,85 @@ c    While storing into the global MPC data structure that Brian's
 c    code uses, scale the coefficients so that the leading term                 
 c    multiplier is -1.0.                                                        
 c                                                                               
+      end  
+c     ****************************************************************          
+c     *                                                              *          
+c     *                  subroutine incon_mpcs_resize                *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 8/22/2017 rhd              *          
+c     *                                                              *          
+c     *     increase size of the user_mpc_table. make larger one,    *
+c     *     deep copy old -> new, move allocation. release old table *
+c     *                                                              *          
+c     ****************************************************************          
 c                                                                               
-c                                                                               
-      end                                                                       
+      
+      subroutine incon_mpcs_resize
+      use global_data ! old common.main
+      use mod_mpc, only : user_mpc_table, mpc_eqn                
+      implicit none                                                     
+c
+      integer :: old_mpc_size, i, j, nt
+      logical, parameter :: local_debug = .false.
+      type (mpc_eqn), allocatable, dimension (:) :: new_mpc_table
+c     
+      if( local_debug ) then
+         write(*,*) '...  resizing mpc user table.....'
+         write(*,*) '       old_max_mpc: ', max_mpc 
+      end if
+c          
+      old_mpc_size = max_mpc
+      max_mpc = 2 * old_mpc_size
+      allocate( new_mpc_table(max_mpc) )
+c     
+c              deep copy as required
+c 
+      do i = 1, old_mpc_size
+          nt = user_mpc_table(i)%num_terms
+          new_mpc_table(i)%num_terms = nt
+          new_mpc_table(i)%constant = user_mpc_table(i)%constant
+          allocate( new_mpc_table(i)%node_list(nt),
+     &              new_mpc_table(i)%dof_list(nt),
+     &              new_mpc_table(i)%multiplier_list(nt)  )
+          do j = 1, nt
+           new_mpc_table(i)%node_list(j) = 
+     &                   user_mpc_table(i)%node_list(j)
+           new_mpc_table(i)%dof_list(j) = 
+     &                   user_mpc_table(i)%dof_list(j)
+           new_mpc_table(i)%multiplier_list(j) = 
+     &                   user_mpc_table(i)%multiplier_list(j)
+          end do ! on j
+      end do
+c      
+c              initialize remainder of new table. probably not req'd
+c 
+      do i =  old_mpc_size+1, max_mpc
+          new_mpc_table(i)%num_terms = 0
+          new_mpc_table(i)%constant = 0.0
+          new_mpc_table(i)%node_list => null()
+          new_mpc_table(i)%dof_list  => null()
+          new_mpc_table(i)%multiplier_list  => null()
+      end do ! on i
+c
+c              release old table and move allocation. F2003 &
+c              later does a deep release on derived types. move_alloc
+c              does a deep release on new_mpc_table
+c
+      deallocate( user_mpc_table )
+      call move_alloc( new_mpc_table, user_mpc_table )
+c
+      return
+      end          
+c
 c     ****************************************************************          
 c     *                                                              *          
 c     *                  subroutine incon_mpcs_store                 *          
 c     *                                                              *          
 c     *                       written by : bjb                       *          
 c     *                                                              *          
-c     *                   last modified : 6/5/2017 rhd               *          
+c     *                   last modified : 8/22/2017 rhd              *          
 c     *                                                              *          
 c     *     stores a user-definite MPC equation into global data     *          
 c     *     data structure                                           *          
@@ -1509,11 +1579,8 @@ c
       character(len=1) :: dums                                                  
 c                                                                               
       num_user_mpc = num_user_mpc + 1                                           
-      if( num_user_mpc .gt. max_mpc ) then                                      
-         call errmsg2( 35,max_mpc,dums,dumr,dumd )                              
-         call die_abort                                                         
-      end if                                                                    
-c                                                                               
+      if( num_user_mpc .gt. max_mpc )  call incon_mpcs_resize
+c
       user_mpc_table(num_user_mpc)%num_terms = nterm                            
       user_mpc_table(num_user_mpc)%constant  = const                            
 c                                                                               
