@@ -1,23 +1,23 @@
 #
 # ****************************************************************************
-#                                                               
-#   File: Header.linux_em64t.mpi            
-#                                                               
+#
+#   File: Header.linux_em64t.mpi
+#
 #   Updated: Jan 2017  rhd
 #
 #   Description:
-#     Makefile Header for use with the WARP3D 
-#     This header will make an MPI + OpenMP Makefile for Linux 
+#     Makefile Header for use with the WARP3D
+#     This header will make an MPI + OpenMP Makefile for Linux
 #
 #     It sets specific flags required to compile the MPI+threaded version of WARP3D,
-#     then calls the part of the Makefile which is the same for both the OpenMP 
-#     and MPI versions of the code. 
+#     then calls the part of the Makefile which is the same for both the OpenMP
+#     and MPI versions of the code.
 #
 # *****************************************************************************
 #
 #
 #
-HYROOT = $(HYPRE_ROOT) 
+HYROOT = $(HYPRE_ROOT)
 HYLIB = -L$(HYPRE_ROOT)/lib -lHYPRE
 HYINC = -I$(HYPRE_ROOT)/include
 #
@@ -25,9 +25,10 @@ LIBMPI = -lmkl_blacs_intelmpi_lp64 #  required at 17.1, 17.2
 #         Intel MKL is supposed to have this library in the install but it
 #         is not included - Bad !
 #         I have an old version and it is in $WARP3D_HOME/linux_packages/LIB
+#         Looks like 17.4 no longer needs this lib
 #
-#LIBMPI = 
-MPIOPT = -mt_mpi 
+#LIBMPI =
+MPIOPT = -mt_mpi
 ODIR  = ././../obj_linux_em64t_mpi
 EXE_NAME = warp3d.mpi_omp
 #
