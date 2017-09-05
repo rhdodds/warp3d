@@ -3,19 +3,19 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: June 24, 2017
-                   
-                   Version 17.8.2 on all Platforms
-                   
-Late breaking news:  
-==================   
+                   Last Update: Spetember 5, 2017
 
-The ready-to-run executables are built using Intel Fortran/MKL 17.0.2 
+                   Version 17.8.4 on all Platforms
+
+Late breaking news:
+==================
+
+The ready-to-run executables are built using Intel Fortran/MKL 17.0.2
 with options that allow the executable to run on a wide-range of
-Intel 64 bit processors dating from 2011.
+Intel 64 bit processors.
 
-Our ready-to-run executables now require that your processor(s) 
-support the AVX (vector) instruction set as a minimum. 
+Our ready-to-run executables now require that your processor(s)
+support the AVX (vector) instruction set as a minimum.
 WARP3D will not run on older processors.
 
 Processors with AVX support became available in early 2011 and include:
@@ -25,7 +25,7 @@ Processors with AVX support became available in early 2011 and include:
   2nd Generation Intel® Core™ i3 Processors
   Intel® Xeon® Processor E5 Family
   Intel® Xeon® Processor E3 Family
-  
+
   + all newer processors
 
 In future releases of WARP3d we plan to require processors with
@@ -33,11 +33,11 @@ AVX2 instruction support.
 
 The best performance - especially on the newest processors -
 can be obtained only by re-compiling. If your processor
-supports the AVX2 instruction set, there will be a boost in performance 
-across the entire code from the increased vector lenth of AVX2.  
+supports the AVX2 instruction set, there will be a boost in performance
+across the entire code from the increased vector lenth of AVX2.
 
-Re-building scripts in the distribution instruct the compiler to optimize 
-for the hardware on which the compilation is executed.             
+Re-building scripts in the distribution instruct the compiler to optimize
+for the hardware on which the compilation is executed.
 
 Contents:
 =========
@@ -69,7 +69,7 @@ distribution in PDF form (the manual directory),
 complete with full bookmarks.
 
 The full distribution: source code, ready-to-run executables,
-re-building scripts for each platform, updated user manual (pdf) is 
+re-building scripts for each platform, updated user manual (pdf) is
 available as a single download on:   www.warp3d.net
 
 The website provides two distribution styles, one oriented towards
@@ -85,11 +85,11 @@ Files for MacOS / Linux users:
 
  o  We recommend downloading the tar.gz file into /opt, /usr/local/share,
     /usr/local/bin or into the home directory of a specific user.
-    
+
     When installed into a user home directory, root access is
     not required.
-    
-    If located elsewhere, the permissions will require updating 
+
+    If located elsewhere, the permissions will require updating
     to allow desired levels of access.
 
     The install process for WARP3D does not put any file outside
@@ -107,14 +107,14 @@ Files for MacOS / Linux users:
 
     Linux -- To unzip and then untar a file named < >.tar.gz:
       tar -xvzpf < >.tar.gz
-      
+
     where < > is replace by the actual, downloaded file name.
 
  o  Look through the remainder of this README
 
  o  Quick start instructions and more detailed instructions are provided
     in the README_Linux_Users or README_MacOS_Users
-    
+
  o  The ready-to-run executables for MacOS and Linux are included in the
     distribution. No other libraries, compilers, etc. are required (but
     some minor configuration is required, see installation instructions).
@@ -125,7 +125,7 @@ Files for MacOS / Linux users:
 Files for Windows Users:
 ------------------------
  o  The entire WARP3D distribution is available for download as one
-    (~200 megabyte) .zip file called warp3d_distribute_###.zip. 
+    (~200 megabyte) .zip file called warp3d_distribute_###.zip.
 
  o  To unzip a file named (for example) temp.zip on Windows:
       <Right click the file temp.zip and choose Extract All...>
@@ -140,7 +140,7 @@ Files for Windows Users:
     without any system level access. For example, a user can install WARP3D
     with this process in their Documents folder.
 
- o  Examine the README_Windows_Users - viewable in WordPad, 
+ o  Examine the README_Windows_Users - viewable in WordPad,
     NotePad, NotePad++, ....
 
  o  The ready-to-run executable for Windows is included
@@ -215,22 +215,22 @@ running WARP3D.
   parallel execution.
 
   This version was created on Windows 10.
-    
-  Note: we continue to have issues on some Windows 7 machines with the 
+
+  Note: we continue to have issues on some Windows 7 machines with the
         system dll:  libiomp5md.dll
         We include a current version of this DLL in the run_windows_64
-        directory. 
-        
+        directory.
+
         In some instances, we see the warp3d.exe in that same directory
-        fail to start properly with a Windows pop-up window saying The 
+        fail to start properly with a Windows pop-up window saying The
         Application Failed to Start Properly ...
-        
+
         Renaming libiomp5md.dll to save_libiomp5md.dll fixes the problem.
 
   run_linux_em64t  (a directory)
   ==============================
 
-  Pre-compiled executables for WARP3D, patwarp, combine_mpi_results. 
+  Pre-compiled executables for WARP3D, patwarp, combine_mpi_results.
   Both threaded (OpenMP) and MPI + OpenMP versions are provided for WARP3D.
 
     a) To use the threads only version, no Intel compiler/MPI
@@ -241,8 +241,8 @@ running WARP3D.
 
   WARP3D on Linux uses a number of shared libraries, including MKL, at run time.
   These are included with the WARP3D distribution and are located in the
-  directory linux_packages. 
-  
+  directory linux_packages.
+
   By using the latest shared MKL libraries included in the distribution on Linux,
   the highest performance on each type of hardware is reached w/o re-compiling.
   Intel permits re-distribution of these MKL libraries.
@@ -250,7 +250,7 @@ running WARP3D.
   To re-build the threaded WARP3D executable, you need the Intel Fortran compiler
   suite installed (which includes the MKL library). To re-build the MPI +
   OpenMP threaded version, the Intel MPI system must be installed.
-  
+
   The included executables are built on Ubuntu 14.04.5 LTS.
   There are verified to run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS
 
@@ -263,7 +263,7 @@ running WARP3D.
   parallel execution.
 
   The Intel sparse solver (Pardiso) is included in these executbales - both
-  the direct and iterative options in Pardiso. 
+  the direct and iterative options in Pardiso.
 
   WARP3D on MacOS is an almost statically linked executable. One library
   is dynamically linked: pthreads. This library is part of MacOS.
@@ -283,7 +283,7 @@ running WARP3D.
   the platform on which to compile.
 
   Note that each platform has a different compile script. Linux and
-  MacOS have Bash scripts. Windows has a .bat file. The executables 
+  MacOS have Bash scripts. Windows has a .bat file. The executables
   are placed into the warp3d_project/run_<platform> directory.
 
   MacOS and Windows require only the Intel Fortran compiler.
@@ -301,22 +301,22 @@ running WARP3D.
   warp3d2exii (directory)
   =======================
 
-  Contains a Python (2.7.3 or later) program to create an ExodusII (.exo) database 
+  Contains a Python (2.7.3 or later) program to create an ExodusII (.exo) database
   for post-processing by ParaView and other programs.
-  
+
   The program is warp3d2exii (formerly named pat2exII)
-  
+
   warp3d2exII does the following:
-  
+
     1) reads flat model description file produced by WARP3D
        (see manual Section 2.12)
-       
+
     or
-    
+
     2) reads a Patran (text) neutral file for the model written by
        WARP3D (see manual Section 2.12)  or some other program.
-       
-       
+
+
     and then reads WARP3D generated "flat" result files (_text, _stream
     or _text.gz)
 
@@ -331,7 +331,7 @@ running WARP3D.
   The Python source code for warp3d2exII runs on Windows, Linux and
   MacOS. A Python environment on your machine will be
   needed.
-  
+
   ===>>  Python version 2.7.3 or later is required to run warp3d2exii.
   Current releases of Enthought Python on Linux are unable to execute the
   program. The native installation of Python, numpy, etc, are required.
@@ -349,11 +349,11 @@ running WARP3D.
   This directory contains the source code, include files and shared
   libraries needed to provide the additional functionality on Linux.
   Specifically MKL, MPI and the hypre iterative solver from LLNL.
-  
-  To complete loading of these libraries run the bash shell script 
-  
+
+  To complete loading of these libraries run the bash shell script
+
         install_libs_from_remote
-        
+
   in the WARP3D directory.
 
   manual  (a directory)
@@ -384,23 +384,23 @@ running WARP3D.
 
   Users are highly encouraged to exercise the software verification
   facilities located here.
-  
+
   This is our key tool to verify most all of WARP3D after making
   source code changes.
-  
+
   There are two bash scripts (run_tests.bash, run_mpi_tests.bash).
-  
+
   These interactive scripts conduct automated execution of WARP3D
   over a wide array of models/simulations and compare results to
   known good values - indicating clearly when differences arise.
-  
+
   The scripts present a menu of simulations to execute. The longest
   verification problems run in a few minutes on 4-8 cores.
-  
+
   On Windows, the Bash shell and Perl programs must be available.
-  We highly recommend the free Cygwin software: https://www.cygwin.com  
-  
-  
+  We highly recommend the free Cygwin software: https://www.cygwin.com
+
+
   example_problems  (5 directories)
   ================
 
@@ -413,10 +413,10 @@ running WARP3D.
     example_problems_for_READMEs - a few problems referred to in platform
         specific README files just to test that WARP3D is installed
         properly
-        
+
     manual_examples_chpt1 - WARP3D input files and supporting
         files (e.g. Python scripts to make plots) for the
-        example problems described in Section 1.2 of the User Manual.        
+        example problems described in Section 1.2 of the User Manual.
 
     example_problems_threads - a large collection of simple to
         complex problems set up to run in parallel using only threads.
@@ -435,10 +435,10 @@ running WARP3D.
   combine_mpi_results_files  (a directory)
   =========================
 
-  When WARP3D runs in parallel using MPI with domain decomposition of 
-  the mesh, "patran" patran and "flat" result files are constructed piecewise by each 
-  process. The pieces must be combined into a single result 
-  file with Patran or flat file format. This directory contains the source code 
+  When WARP3D runs in parallel using MPI with domain decomposition of
+  the mesh, "patran" patran and "flat" result files are constructed piecewise by each
+  process. The pieces must be combined into a single result
+  file with Patran or flat file format. This directory contains the source code
   and compile script to build the combine program for each platform.
 
   The compile script puts the executable in the appropriate run_<platform>
@@ -448,7 +448,7 @@ running WARP3D.
   fracture_models  (a directory)
   ===============
 
-  A set of complete, ready-to-run models for various 
+  A set of complete, ready-to-run models for various
   fracture simulations.
 
   The README file in the directory describes each model.
@@ -473,7 +473,7 @@ running WARP3D.
   We generally put the template files into the <patran>/res_templates directory
   and invoke a chmod o+rx on them. However, the template files can be placed
   and any convenient location - Patran always asks for the location.
-  
+
   These files are not used by ParaView for post-processing.
 
   packet_dir  (a directory)
@@ -511,8 +511,8 @@ running WARP3D.
               executable built using Windows 10
 
    - Linux: Intel64 (EM64T) processors. We have tested the build
-            process and executables on Red Hat/Centos 7.3 Server 
-            and Ubuntu 14.04.5. The included executables are built on 
+            process and executables on Red Hat/Centos 7.3 Server
+            and Ubuntu 14.04.5. The included executables are built on
             Ubuntu 14.04.5 LTS.
             There are 2 WARP3D executables:
                 - Parallel execution using only threads

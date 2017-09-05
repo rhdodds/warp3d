@@ -2,14 +2,14 @@
 
                Highest Level README for Windows Users
 
-                last Update: April 20, 2017
+                last Update: September 5, 2017
 
 ==========================================================================
 
 *** NOTES: ***
 
-WARP3D is built for Windows using the Intel Fortran Composer XE 
-and MKL Version 17 Update 2. 
+WARP3D is built for Windows using the Intel Fortran Composer XE
+and MKL Version 17 Update 2.
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
@@ -57,7 +57,7 @@ Quick Start Using the Ready-to-Run Executable
 
 3. WARP3D does not have a graphical user interface (GUI). The program
    is initiated from the command line in a shell program.
-   
+
    On Windows, this will often be the "command prompt". We use, and
    highly recommend, the freely available Cygwin environment
    for Windows that provides provides bash, csh, and ksh shells that
@@ -66,35 +66,35 @@ Quick Start Using the Ready-to-Run Executable
 4. The Windows version of WARP3D supports parallel execution thru
    threads only. At this time, we do not support MPI execution
    on Windows.
-   
-5. We continue to have issues on some Windows machines with the 
+
+5. We continue to have issues on some Windows machines with the
    system dll:  libiomp5md.dll
    depending on what other software is installed on the machine.
    We include a current version of this DLL in the run_windows_64
    directory with the save_libiomp5md.dll as a precaution.
-        
-   In some instances, we see that WARP3D fails to start properly 
-   with a Windows pop-up window saying: The Application Failed to 
+
+   In some instances, we see that WARP3D fails to start properly
+   with a Windows pop-up window saying: The Application Failed to
    Start Properly ... or that the libiomp5md.dll is missing.
-        
+
    On a *new* install of Windows 10, the first execution of WARP3D
    will fail with the message libiomp5md.dll not found.
-   
+
    Renaming save_libiomp5md.dll to libiomp5md.dll fixes the problem.
 
 6. To run WARP3D using the built-in Windows software,
-   open a standard "command shell" using any technique you know 
-   [on W10, click Start and type the word command in search box. 
-   The Command shell is at top of list]. 
-   
+   open a standard "command shell" using any technique you know
+   [on W10, click Start and type the word command in search box.
+   The Command shell is at top of list].
+
     ** The example below assumes you have installed the
     ** WARP3D distribution in the directory c:\warp3d
-       
+
    (shortened name from the as distributed name warp3d_distribute_...).
    Modify as needed to the location you installed WARP3D.
-   
-   The example here changes to the example problems directory 
-   and starts execution to run test_18 (crack growth in a SEB specimen 
+
+   The example here changes to the example problems directory
+   and starts execution to run test_18 (crack growth in a SEB specimen
    using Gurson cell elements).
 
     set warp3d="c:\warp3d\run_windows_64\warp3d.exe"
@@ -133,18 +133,18 @@ Quick Start Using the Ready-to-Run Executable
    conventional bash, csh, tcsh shells to execute WARP3D.
 
 8. Most WARP3D users construct input files starting with Patran, Cubit,
-   FEMAP, etc modeling systems. Such programs output a Patran compatible 
+   FEMAP, etc modeling systems. Such programs output a Patran compatible
    neutral file for the model. The program patwarp_windows.exe included in
    the run_windows_64 directory converts Patran neutral files
    into WARP3D input files. This program runs interactively. Just
    start it in a command shell and follow the on-screen
    instructions.
-   
+
    A standard text editor (e.g. NotePad++) is then used to add specialized
    output commands, compute commands, nonlinear material definitions,
    etc. to complete the input file.
-   
-   We often find that users have created specialized mesh generators for 
+
+   We often find that users have created specialized mesh generators for
    their class of models - such programs may be readily extended to output
    directly a WARP3D input file.
 
@@ -163,49 +163,49 @@ Re-Building the Windows Executable for WARP3D
    This software includes the Math Kernel Library (MKL) with the Pardiso solver.
 
 2. To simplify the process of setting up the proper environment and running the
-   Intel compiler, on our systems we create a shortcut to a 
-   standard Windows command shell on the desktop for convenience. 
-   We make one of these with name Fortran. 
-   
-   
+   Intel compiler, on our systems we create a shortcut to a
+   standard Windows command shell on the desktop for convenience.
+   We make one of these with name Fortran.
+
+
    2A.  For Fortran 2017, we access Properties of the command shell and set the Target as:
-   
+
    C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\
          windows\bin\ipsxe-comp-vars.bat" intel64 vs2013"
- 
+
    and set the "Start In" directory as:
 
     c:\warp3d\src
 
-3.  Put your UMAT routine and all support routines it calls into the 
-    four (4) user_routines....f  files located in the src directory. 
+3.  Put your UMAT routine and all support routines it calls into the
+    four (4) user_routines....f  files located in the src directory.
     Please read the instructions/guidance
-    in comments at the top of the existing user_routines....f files. 
-    Example UMAT routines used to test the UMAT capability in 
+    in comments at the top of the existing user_routines....f files.
+    Example UMAT routines used to test the UMAT capability in
     WARP3D are included in the distributed user_routines....f files.
 
-4. At the usual prompt in the command shell window for Fortran, 
+4. At the usual prompt in the command shell window for Fortran,
    enter the command:
 
    Makewarp.bat
 
    to build the executable. The bat script places the generated executable
    into the warp3d\run_windows_64 directory.
-   
-   The Makewarp.bat program must be able to locate the Windows 
+
+   The Makewarp.bat program must be able to locate the Windows
    program: nmake.exe  (Windows variant of Linux make). It checks this location:
-  
-  c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe 
+
+  c:\Program Files (x86)\Microsoft Visual Studio 12.0\Intel Fortran\Microsoft Files\VC\Bin\nmake.exe
 
    If your system has nmake.exe in a different location, please change the
    top commands in Makewarp.bat to use the correct location.
-   
+
 5. Other software tools are included in the distribution, e.g.
    the Patran -to- WARP3D translator program. Source code for each
-   of these tools is located in a separate directory and has 
+   of these tools is located in a separate directory and has
    a compile script similar to Makewarp.bat.
-   
-  
+
+
 
 Running Verification Suite of Analyses
 --------------------------------------
@@ -224,7 +224,7 @@ Running Verification Suite of Analyses
    home directory for your system. Example:
 
         export WARP3D_HOME=c:/local_programs/warp3d
-        
+
    where c:/local_programs... is replaced by the actual location used.
 
 5. The supplied Bash shell script: warp3d_script_windows may be
@@ -234,7 +234,7 @@ Running Verification Suite of Analyses
 
    where # is replaced by the number of threads for parallel execution.
 
-6.  Run the shell script run_tests.bash and follow the interactive 
+6.  Run the shell script run_tests.bash and follow the interactive
     prompts. The script runs selcted problems an checks output for
     correctness.
 

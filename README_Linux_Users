@@ -1,10 +1,10 @@
- 
+
 
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: JUne 24, 2017
-                                            
+                      Last Update: September 5, 2017
+
 *** LATE BREAKING NEWS ***
 
 
@@ -15,7 +15,8 @@ tested using at least 64 cluster nodes with 1600 total cores.
 The ready-to-run executables included in this distribution were built
 on Ubuntu 14.04.5 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 2.
 
-These executables also known to run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS
+These executables also known to run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS,
+OpenSuse 42.2.
 
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).
@@ -33,7 +34,7 @@ Composer XE 2017 compiler suite and the Intel MPI (Message Passing Interface)
 software system.
 
 The Intel Fortran compiler system is ** NOT ** required on your system to use
-the ready-to-run executable for threads only included in the distribution. 
+the ready-to-run executable for threads only included in the distribution.
 The compiler system is needed only if you intend to modify the source code and
 and re-build the executable.
 
@@ -55,7 +56,7 @@ E. Re-Building the Threads-Only (Type 1)  Executable for WARP3D
    --> Needed to include your UMAT
 F. Re-Building the Hybrid (MPI + Threads) (Type 2) Executable for WARP3D
    --> Needed to include your UMAT
-G. Run Verification Suite   
+G. Run Verification Suite
 
 ===================================================================================
 
@@ -69,7 +70,7 @@ Type 1: executable is warp3d.omp (for nearly all laptop, desktop, server users)
   Parallel execution uses only threads. Most useful for laptops, desktops
   and compute servers offering shared-memory style computing. On
   traditional computing "clusters," the threads only version runs on just one
-  machine in the cluster (but multiple concurrent WARP3D analysis jobs can 
+  machine in the cluster (but multiple concurrent WARP3D analysis jobs can
   of course be run on other machines in the cluster).
 
   This type of parallel execution requires no domain decomposition of
@@ -102,12 +103,12 @@ Type 2: executable is warp3d.mpi_omp
   Most often:
     (1) the number of domains will be set to the number compute nodes
         in the cluster,
-    (2) the number of threads is set to the number of cores on a 
+    (2) the number of threads is set to the number of cores on a
         compute node.
 
-  Linear equation solvers: CPardiso (sparse direct) and 
+  Linear equation solvers: CPardiso (sparse direct) and
   hypre (iterative) which run on the same
-  MPI ranks as WARP3D. Each CPardiso and  hypre rank uses the same 
+  MPI ranks as WARP3D. Each CPardiso and  hypre rank uses the same
   number of threads as ranks in WARP3D.
 
   The Intel MPI runtime system must installed on your computer.
@@ -121,12 +122,12 @@ Type 2: executable is warp3d.mpi_omp
 B.  Installing the precompiled versions of WARP3D
     ---------------------------------------------
 
-1.  We recommend you look through the README file  and this file 
+1.  We recommend you look through the README file  and this file
     before proceeding.
 
 2.  Obtain the WARP3D distribution for Linux/OS X from the WARP3D website:
-   
-             http://www.warp3d.net 
+
+             http://www.warp3d.net
 
 3.  Extract the tarball (for example, use: tar xvzf warp3d.....tar.gz).
 
@@ -142,14 +143,14 @@ B.  Installing the precompiled versions of WARP3D
     In a bash shell:
 
      export WARP3D_HOME= .... path to WARP3D distribution...
-     
+
      (Use full name, e.g.,  /home/tjones/warp3d  )
 
     Recommendation: set this variable in your ~/.bashrc to avoid having to
     redo this step every time you open a new terminal window.
 
 8.  Modify the variable LD_LIBRARY_PATH that enables the linker to find the
-    various shared libraries included in the Linux distribution. 
+    various shared libraries included in the Linux distribution.
     For a bash shell:
 
       export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
@@ -158,25 +159,25 @@ B.  Installing the precompiled versions of WARP3D
     ~/.bashrc.  Instead modify it in a "wrapper script" used
     to run WARP3D.  Example wrapper scripts are provided (files are
     warp3d_script_*).
-    
+
 9.  Pull various shared libraries from the WARP3D web site. In a bash shell,
-   
+
        $ cd $WARP3D_HOME
        $ ./install_libs_from_remote
-       
+
      These include the most current versions of the MKL routines in the
      redistributable package defined by Intel.
-     
+
      The MKL libs are backward compatible with the Fortran compiler and
      hardware processors.
-       
+
 10. If you plan to use the MPI (hybrid) version, verify that MPI is set up
-    properly on your Linux system. In a bash shell, 
-    
+    properly on your Linux system. In a bash shell,
+
        $ mpirun -version
-       
-    If installed and available to you, this command just prints the version number.       
-         
+
+    If installed and available to you, this command just prints the version number.
+
 
 The precompiled versions of WARP3D are now installed.
 
@@ -272,7 +273,7 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition)
     cd $WARP3D_HOME/example_problems_for_READMEs
     export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
     export NUM_WARP3D_RANKS=4
-    export OMP_NUM_THREADS=2 
+    export OMP_NUM_THREADS=2
     export MKL_NUM_THREADS=2
     ulimit -s 100000      <<<   Some Linux versions will need this
     export MPI_TYPE_MAX=4096
@@ -284,11 +285,11 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition)
 
     Note: the setup commands above assume all MPI ranks run on 1 compute node
     and thus use shared memory for MPI communication with TCP as a fall back.
-    
+
     Local operational procedures for your cluster will describe how to modify the
     setup commands for the local installation, especially for running
     across a large number of compute nodes.
-       
+
     The first line sets a short path to run the correct WARP3D
     executable.
 
@@ -326,7 +327,7 @@ E.  Re-Building the Threads-Only (Type 1) Executable for WARP3D
 To build the threads-only version of WARP3D, a recent version of the Intel
 Fortran Composer XE system must be installed. This package includes
 the Intel Fortran compiler "ifort" and the MKL math library
-(has the Pardiso solver). 
+(has the Pardiso solver).
 
 Steps:
 
@@ -337,15 +338,15 @@ Steps:
 
     export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 
-    We recommend putting this command in a Bash shell script that 
+    We recommend putting this command in a Bash shell script that
     drives the compile or just in the terminal window where the compile
-    is done. 
+    is done.
 
-3.  Put your UMAT routine and all support routines it calls into the 
-    four (4) user_routines....f  files located in the src directory. 
+3.  Put your UMAT routine and all support routines it calls into the
+    four (4) user_routines....f  files located in the src directory.
     Please read the instructions/guidance
-    in comments at the top of the existing user_routines....f files. 
-    Example UMAT routines used to test the UMAT capability in 
+    in comments at the top of the existing user_routines....f files.
+    Example UMAT routines used to test the UMAT capability in
     WARP3D are included in the distributed user_routines....f files.
 
 4.  Change to the src directory and run the "Makewarp.bash" script.  This
@@ -361,7 +362,7 @@ Important note on LD_LIBRARY_PATH:
 
 You must have the Intel Fortran compiler system (which includes MKL
 library) installed on the machine where you run the compile/link process.
-ifort expects to find all the MKL libraries where indicated by the system 
+ifort expects to find all the MKL libraries where indicated by the system
 MKLROOT variable.
 
 We include the limited MKL redistributable (runtime) libraries in the directory
@@ -372,15 +373,15 @@ At runtime, the WARP3D executable uses the MKL libraries located in
 $WARP3D_HOME/linux_packages/lib --- even if you have Intel Fortran/MKL
 installed.
 
-This is accomplished by the above command  
+This is accomplished by the above command
 
   export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
-  
+
 Note that the WARP3D library is inserted BEFORE the system LD_LIBRARY_PATH
 which references the installed ifort/MKL libraries if they exist.
 
 If you want WARP3D to use the MKL libraries in the installed Intel FORTRAN/
-MKL system at runtime, simply reverse the order of libraries appearing in the 
+MKL system at runtime, simply reverse the order of libraries appearing in the
 above statement. The system MKL libraries will be found first.
 
 
@@ -409,10 +410,10 @@ Steps:
 
     export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 
-    We recommend putting this command in a Bash shell script that 
+    We recommend putting this command in a Bash shell script that
     drives the compile or just in the terminal window where the compile
-    is done. 
-    
+    is done.
+
 3.  You may wish to recompile (not required) two of the open-source
     external libraries used in the MPI version of WARP3D: hypre and METIS.
     To do this, navigate to the linux_packages/source directory
@@ -443,9 +444,9 @@ G.  Run the Verifications Suite of Test Problems
    a broad coverage of the WARP3D code.
 
 2. Once WARP3D is installed and tested, the
-   verification problems may be executed. 
+   verification problems may be executed.
 
-3. The Bash shell script run_tests.bash runs analyses using threads only 
+3. The Bash shell script run_tests.bash runs analyses using threads only
    parallel execution. The script runs interactively and prompts for
    various information. After an analysis is completed, the script examines
    output files to insure the result match know good solutions.
@@ -453,5 +454,5 @@ G.  Run the Verifications Suite of Test Problems
 4. The bash shell script run_mpi_tests.bash runs analyses using MPI+threads
    parallel execution. The script runs interactively and prompts for
    various information. After an analysis is completed, the script examines
-   output files to insure the result match know good solutions.    
-   
+   output files to insure the result match know good solutions.
+

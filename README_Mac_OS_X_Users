@@ -1,15 +1,15 @@
- 
+
 
         Highest Level Read Me for MacOS  Users File for WARP3D
         ------------------------------------------------------
 
-                      Last Update: April 20, 2017
+                      Last Update: September 5, 2017
 
 ==========================================================================
 
 *** Latest NOTES: ***
 
-WARP3D is built for MacOS using the Intel Fortran Composer XE 2017 
+WARP3D is built for MacOS using the Intel Fortran Composer XE 2017
 Update 2 compiler suite version ifort and concurrent MKL.
 
 The Intel compiler is * NOT * required on your system to use the
@@ -17,7 +17,7 @@ ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on MacOS 10.11.6.
+This distribution was built & verified on MacOS 10.12.5 (Sierra)
 
 We build the executable using statically-linked MKL libraries.
 These executables run across all Macs dating from 2011
@@ -138,9 +138,9 @@ Re-Building the Mac MacOS Executable for WARP3D
    The "ifort" command must be recognized in a Terminal shell.
 
    At present, we use Composer XE 2017 Update 2.
-   Older versions may also work * BUT * optimization issues may arise. 
-   With each release of the compiler, we tweak optimization levels (-O#) 
-   in the makefile. We experiment with the key *.f files to obtain 
+   Older versions may also work * BUT * optimization issues may arise.
+   With each release of the compiler, we tweak optimization levels (-O#)
+   in the makefile. We experiment with the key *.f files to obtain
    correct execution at the highest optimization level for this release
    of the compiler. The highest levels that produce code do vary
    between compiler releases.
@@ -153,11 +153,11 @@ Re-Building the Mac MacOS Executable for WARP3D
    You will likely want to add this command to your ~/.bash_profile
    so that it will be done automatically at login.
 
-3. Put your UMAT routine and all support routines it calls into the 
-   four (4) user_routines....f  files located in the src directory. 
+3. Put your UMAT routine and all support routines it calls into the
+   four (4) user_routines....f  files located in the src directory.
    Please read the instructions/guidance
-   in comments at the top of the existing user_routines....f files. 
-   Example UMAT routines used to test the UMAT capability in 
+   in comments at the top of the existing user_routines....f files.
+   Example UMAT routines used to test the UMAT capability in
    WARP3D are included in the distributed user_routines....f files.
 
 4. Change to the src directory of the WARP3D distribution and invoke the
@@ -169,7 +169,7 @@ Re-Building the Mac MacOS Executable for WARP3D
 
 5. Other software tools are included in the distribution, e.g. the Patran -to-
    WARP3D translator program. And warp3d2exii that builds an Exodus .exo file
-   for the model and computed results. Each of these tools is located 
+   for the model and computed results. Each of these tools is located
    in a separate directory and has a compile script similar to Makewarp.bash.
 
 Running Verification Suite of Analyses
@@ -179,13 +179,13 @@ Running Verification Suite of Analyses
    a broad coverage of the WARP3D code.
 
 2. Once WARP3D is installed and tested, the
-   verification problems may be executed. 
+   verification problems may be executed.
 
-3. The Bash shell script run_tests.bash runs analyses using threads only 
+3. The Bash shell script run_tests.bash runs analyses using threads only
    parallel execution. The script runs interactively and prompts for
    various information. After an analysis is completed, the script examines
    output files to insure the results match known good solutions.
-   Clear messages are output if the solutions do not match - shows the 
+   Clear messages are output if the solutions do not match - shows the
    computed value and the known good value.
 
 
