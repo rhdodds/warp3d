@@ -574,7 +574,8 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine die_abort                                                      
-c                                                                               
+c         
+      call tracebackqq('... warp3d stop ...',1)                                                                      
       stop                                                                      
 c                                                                               
       return                                                                    
