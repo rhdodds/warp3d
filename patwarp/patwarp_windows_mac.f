@@ -1,5 +1,5 @@
 c *                                                                          *
-c *    Modifications  3/30/2017 rhd                                          *
+c *    Modifications  8/27/2017 rhd                                          *
 c *                                                                          *
 c ****************************************************************************
 c ****************************************************************************
@@ -282,9 +282,10 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 2 (formatted) Neutral File    *',
      &  /,   ' *       (',i7,' nodes - ',i7,' elements)         *',
-     &  /,   ' *            Build Date:  4-1-2017                 *',
+     &  /,   ' *            Build Date:  9-1-2017                 *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
+     &  /,   ' *  o support for 2 node bar2 and link2 elements    *',
      &  /,   ' *  o support for 8, 9, 12, 15, 20-node hexs        *',
      &  /,   ' *  o support for 4, 10 node tets                   *',
      &  /,   ' *  o support for 6, 15 node wedges                 *',
@@ -885,11 +886,23 @@ c
  300  continue
 c
 c            Types of elements: in warp all elements are solids
+c             iv = 2   trusses, link connections (patwarp type 19)
 c             iv = 5   tets (patwarp element types 11,12)
 c             iv = 7   wedges (patwarp element types 21, 22)
 c             iv = 8   hexes (patwarp element types 1-5)
 c
       select case ( iv )
+      case ( 2 )
+c
+c                  bar/truss/link elements
+c
+         if ( nodes .eq.  2 ) then
+           eletyp(elemid) = 19
+         else
+           write(termot,1205)  elemid
+           stop
+         end if  
+c
       case ( 5 )
 c
 c                  tet elements. 4 or 10 node versions
@@ -1000,6 +1013,8 @@ c
      &        /,'>> element incidences: ',10(/,10x,10i8) )
  1200 format(1x,'>> element id: ',i8,' has unsupported type..',
      &       /, '   translation aborted' )
+ 1205 format(1x,'>> element id: ',i8,' has unsupported # nodes',
+     &       /, '    for type. translation aborted' )
  1300 format(1x,'>> element id > number of elements. job aborted' )
 c
       end
@@ -3495,6 +3510,7 @@ c                                        WARP3D built-in automatic
 c                                        blocking
 c                    = 2 => user wants vectorized blocking to
 c                           support EBE PCG solver
+c                           Deprecated with removal of EBE solver.
 c
       if( block_method .eq. 1 ) then
         write(termot,9500)
@@ -4221,6 +4237,8 @@ c
             call trnlae( 'tet4', elenum, confg)
          case ( 12 )
             call trnlae( 'tet10', elenum, confg)
+         case ( 19 )
+            call trnlae( 'link2', elenum, confg)
          case ( 21 )
             call trnlae( 'wedge6', elenum, confg)
          case ( 22 )
@@ -4244,14 +4262,15 @@ c *                                                                      *
 c ************************************************************************
 c
 c
-      logical function  valid_etype ( etype, hex, tet, wedge )
+      logical function  valid_etype ( etype, hex, tet, wedge, bar )
       implicit integer (a-z)
-      logical  hex, tet, wedge
+      logical  hex, tet, wedge, bar
 c
+      bar   =  etype .eq. 19
       hex   =  etype .ge. 1  .and. etype .le. 5
       tet   =  etype .ge. 11 .and. etype .le. 12
       wedge =  etype .ge. 21 .and. etype .le. 22
-      valid_etype = hex .or. tet .or. wedge
+      valid_etype = hex .or. tet .or. wedge .or. bar
 c
       return
       end
@@ -4266,7 +4285,7 @@ c
       use patwarp_data
       implicit integer (a-z)
       dimension  nod(50), tnod(50),  wedge15(15)
-      logical    dupl, hex, tet, wedge, valid_etype
+      logical    dupl, hex, tet, wedge,bar, valid_etype
       data wedge15 / 1,2,3,4,5,6,7,8,9,13,14,15,10,11,12 /
 c
 c            write element incidence data in warp3d format.
@@ -4289,7 +4308,7 @@ c
       write(ofile,9000)
       do elenum = 1, numele
          etype  = eletyp(elreno(elenum))
-         if ( .not. valid_etype ( etype, hex, tet, wedge ) ) then
+         if ( .not. valid_etype ( etype, hex, tet, wedge, bar ) ) then
               write(termot,9040) elenum
               cycle
          end if
@@ -4530,8 +4549,8 @@ c            types.  the list of element types is scanned and output
 c            data lines built and printed.
 c
 c            lists of consecutively numbered elements are compressed
-c            into a finite integer list format to avoid a list overflow
-c            in grammar store.  the following decision table applies:
+c            into a finite integer list format to avoid a list overflow.
+c            the following decision table applies:
 c
 c |comprs|nowptr|ilast+1|ifirst|
 c |      |.ne.0 |=elenum|=ilast|   action

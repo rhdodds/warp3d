@@ -5,7 +5,7 @@ c *     includes Metis for domain decomposition                              *
 c *                                                                          *
 c ****************************************************************************
 c *                                                                          *
-c *    Modifications  3/30/2017 rhd                                          *
+c *    Modifications  8/27/2017 rhd                                          *
 c *                                                                          *
 c ****************************************************************************
 c
@@ -283,9 +283,10 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 2 (formatted) Neutral File    *',
      &  /,   ' *       (',i7,' nodes - ',i7,' elements)         *',
-     &  /,   ' *            Build Date:  4-2-2017                 *',
+     &  /,   ' *            Build Date:  9-1-2017                 *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
+     &  /,   ' *  o support for 2 node bar2 and link2 elements    *',
      &  /,   ' *  o support for 8, 9, 12, 15, 20-node hexs        *',
      &  /,   ' *  o support for 4, 10 node tets                   *',
      &  /,   ' *  o support for 6, 15 node wedges                 *',
@@ -743,7 +744,7 @@ c
 1050  format(1x,'>>>> fatal errors have occurred.  neutral file',
      &        /,'     processing aborted.')
 1060  format(/,8x,'>> neutral file created on: ', a12,' time: ',a8,
-     &       //,8x,  '>> patran version:', a )
+     &       //,8x,  '>> patran neutral version:', a )
 1070  format(/,8x,'>> model size parameters:'
      &  /,14x,'>> number of nodes ...............',i8,
      &  /,14x,'>> number of elements ............',i8,
@@ -889,11 +890,23 @@ c
  300  continue
 c
 c            Types of elements: in warp all elements are solids
+c             iv = 2   trusses, link connections (patwarp type 19)
 c             iv = 5   tets (patwarp element types 11,12)
 c             iv = 7   wedges (patwarp element types 21, 22)
 c             iv = 8   hexes (patwarp element types 1-5)
 c
       select case ( iv )
+      case ( 2 )
+c
+c                  bar/truss/link elements
+c
+         if ( nodes .eq.  2 ) then
+           eletyp(elemid) = 19
+         else
+           write(termot,1205)  elemid
+           stop
+         end if
+c
       case ( 5 )
 c
 c                  tet elements. 4 or 10 node versions
@@ -1004,6 +1017,8 @@ c
      &        /,'>> element incidences: ',10(/,10x,10i8) )
  1200 format(1x,'>> element id: ',i8,' has unsupported type..',
      &       /, '   translation aborted' )
+ 1205 format(1x,'>> element id: ',i8,' has unsupported # nodes',
+     &       /, '    for type. translation aborted' )
  1300 format(1x,'>> element id > number of elements. job aborted' )
 c
       end
@@ -2026,24 +2041,24 @@ c
       q_num = 7
 c
       if( ynanswers(q_num) .ne. 1 ) return
-c      
+c
       sep_file_control = .true.
-c      
+c
       prefix_name = trim(adjustl( prefix_name ))
       if( prefix_name(1:1) .eq. ' ' ) prefix_name(1:) = 'default'
       last = len( trim(prefix_name) )
-c      
+c
       coord_file(1:) = prefix_name(1:last) // '_coords.inp'
       incid_block_file(1:) = prefix_name(1:last) //  '_incid.inp'
       const_file(1:) = prefix_name(1:last) // '_constraints.inp'
-c      
+c
       cdf_len = len(trim(coord_file))
       open( unit=cd_file, file=coord_file, status='unknown' )
-c      
+c
       inbl_len = len(trim(incid_block_file))
-      open( unit=inbl_file, file=incid_block_file, 
+      open( unit=inbl_file, file=incid_block_file,
      &         status='unknown' )
-c     
+c
       ctf_len = len(trim(const_file))
       open( unit=ct_file, file=const_file, status='unknown' )
 c
@@ -2733,6 +2748,7 @@ c
          incptr = eleipt(elem) - 1
          do enode = 1, num_enodes
             snode = eleinc(incptr + enode)
+            if( snode .eq. 0 ) cycle ! funky etypes can have zeros
 c
 c               if nodes were not renumbered in patran, then we have
 c               problems... do a fatal error.
@@ -2781,7 +2797,7 @@ c
          num_elems = elem_count(snode)
          found_8  = .false.
          found_20 = .false.
-	 nod_trn_list(snode) = 0
+	     nod_trn_list(snode) = 0
          do j = 1, num_elems
             elem = nodal_incid(snode,j)
             etype = eletyp(elem)
@@ -4057,16 +4073,23 @@ c *     this subroutine calls the metis partitioning library to assign   *
 c *     elements to processors.  The ordering results are then used in   *
 c *     getgrp to make groups of elements corresponding to processors.   *
 c *                                                                      *
+c *                updated 9/9/2017 rhd (support for 2 node elements)    *
+c *                                                                      *
 c ************************************************************************
 c
 c
       subroutine trnlmetis (numprocs)
       use patwarp_data
-      implicit integer (a-z)
+      implicit none
+c
+      integer :: numprocs
+c
       integer, allocatable, dimension (:) :: etype, incvec, dadjncy,
      &                                       elemwgt, options, dxadj,
      &                                       node_reorder
+      integer :: elem, incptr, cnt, node, i, tot_node, ptr, dum, dum2
 c
+      logical :: two_node, tri_or_8node_cohes
 c
       allocate ( options(0:4),
      &           etype(numele),
@@ -4076,9 +4099,7 @@ c
      &           dadjncy(numele*8),
      &           node_reorder(numnod) )
 c
-      do i = 0, 4
-         options(i) = 0
-      enddo
+      options(0:4) = 0
 c
 c                          build incidence structure for use of Metis
 c                          decomposition library.  Metis only accepts linear
@@ -4089,16 +4110,25 @@ c                          numbering.  This does not effect the actual
 c                          node numbering, it is just a trick to get metis
 c                          to work correctly.
 c
-c                              set node_reorder to 1 for a node if it is
-c                              a corner node, 0 otherwise
+c                          set node_reorder to 1 for a node if it is
+c                          a corner node, 0 otherwise
+c
+c                          here and in next loops, we setup 2-node elements
+c                          to be treated as 8-node solids for Metis
 c
       node_reorder(1:numnod) = 0
 c
       do elem = 1, numele
          incptr = eleipt(elem) - 1
-         if ((eletyp(elem).eq.11).or.(eletyp(elem).eq.12)) then
+         two_node = eletyp(elem) .eq. 18 .or. eletyp(elem) .eq. 19
+         tri_or_8node_cohes = eletyp(elem) .eq. 11 .or.
+     &                        eletyp(elem) .eq. 12
+         if( tri_or_8node_cohes ) then
             cnt = 4
             etype(elem) = 2
+         elseif( two_node ) then
+            cnt = 2
+            etype(elem) = 3
          else
             cnt = 8
             etype(elem) = 3
@@ -4113,7 +4143,7 @@ c                              node_reorder
 c
       node = 0
       do i = 1, numnod
-         if ( node_reorder(i) .eq. 1) then
+         if( node_reorder(i) .eq. 1 ) then
             node = node + 1
             node_reorder(i) = node
          end if
@@ -4126,15 +4156,25 @@ c
       ptr = 0
       do elem = 1, numele
          incptr = eleipt (elem) - 1
-         if (etype(elem) .eq. 2) then
+         two_node = eletyp(elem) .eq. 18 .or. eletyp(elem) .eq. 19
+         if( etype(elem) .eq. 2 ) then
             cnt = 4
+         elseif( two_node ) then
+            cnt = 2
          else
             cnt = 8
          end if
          do node = 1, cnt
             incvec(ptr+node) = node_reorder( eleinc(incptr+node) )
-      if (ptr+node.gt.numele*8)  write(*,*) ptr+node
+            if( ptr+node .gt. numele*8 )  then
+                 write(*,*) '>> Fatal Error @ 1: trnlmetis'
+                 stop
+            end if
          end do
+         if( two_node ) then
+            cnt = 8
+            incvec(ptr+3:ptr+8) = incvec(ptr+1)
+         end if
          ptr = ptr + cnt
       end do
 c
@@ -4168,7 +4208,9 @@ c
             elemwgt(elem) = 10
          else if ( eletyp(elem) .eq. 12) then
             elemwgt(elem) = 63
-         end if
+         else if ( eletyp(elem) .eq. 19) then
+            elemwgt(elem) = 10
+        end if
       end do
 c
 c                          call METIS library to partition our weighted
@@ -4221,7 +4263,7 @@ c           first form the inverse incidence table -- given a node, what
 c           elements are attatched to it
 c
       allocate( invinc(0:maxcon,numnod) )
-c      
+c
       do i = 0, maxcon
          do j = 1, numnod
             invinc(i,j) = 0
@@ -4493,7 +4535,7 @@ c
 c
       if (debug) write (termot,*) '>>>> in gtblrb'
       allocate( inode(numnod) )
-c      
+c
       do i= 1,numele
          iblock(i)= 0
       enddo
@@ -4729,6 +4771,8 @@ c
             call trnlae( 'tet4', elenum, confg)
          case ( 12 )
             call trnlae( 'tet10', elenum, confg)
+         case ( 19 )
+            call trnlae( 'link2', elenum, confg)
          case ( 21 )
             call trnlae( 'wedge6', elenum, confg)
          case ( 22 )
@@ -4752,14 +4796,15 @@ c *                                                                      *
 c ************************************************************************
 c
 c
-      logical function  valid_etype ( etype, hex, tet, wedge )
+      logical function  valid_etype ( etype, hex, tet, wedge, bar )
       implicit integer (a-z)
-      logical  hex, tet, wedge
+      logical  hex, tet, wedge, bar
 c
+      bar   =  etype .eq. 19
       hex   =  etype .ge. 1  .and. etype .le. 5
       tet   =  etype .ge. 11 .and. etype .le. 12
       wedge =  etype .ge. 21 .and. etype .le. 22
-      valid_etype = hex .or. tet .or. wedge
+      valid_etype = hex .or. tet .or. wedge .or. bar
 c
       return
       end
@@ -4774,7 +4819,7 @@ c
       use patwarp_data
       implicit integer (a-z)
       dimension  nod(50), tnod(50),  wedge15(15)
-      logical    dupl, hex, tet, wedge, valid_etype
+      logical    dupl, hex, tet, wedge, bar, valid_etype
       data wedge15 / 1,2,3,4,5,6,7,8,9,13,14,15,10,11,12 /
 c
 c            write element incidence data in warp3d format.
@@ -4797,7 +4842,7 @@ c
       write(ofile,9000)
       do elenum = 1, numele
          etype  = eletyp(elreno(elenum))
-         if ( .not. valid_etype ( etype, hex, tet, wedge ) ) then
+         if ( .not. valid_etype ( etype, hex, tet, wedge, bar ) ) then
               write(termot,9040) elenum
               cycle
          end if
@@ -5038,8 +5083,8 @@ c            types.  the list of element types is scanned and output
 c            data lines built and printed.
 c
 c            lists of consecutively numbered elements are compressed
-c            into a finite integer list format to avoid a list overflow
-c            in grammar store.  the following decision table applies:
+c            into a finite integer list format to avoid a list overflow.
+c            the following decision table applies:
 c
 c |comprs|nowptr|ilast+1|ifirst|
 c |      |.ne.0 |=elenum|=ilast|   action
