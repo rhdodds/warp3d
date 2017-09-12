@@ -1,11 +1,11 @@
 
-Last Update: February 8, 2015
------------------------------
+Last Update: September 11, 2017
+-------------------------------
 
 Python 2.7.x is required for warp3d2exii
 
 warp3d2exII is a stand-alone Python program (see also last Section here).
-(a copy is also named pat2xii to reain the older naming for a while longer)
+(a copy is also named pat2xii to remain the older naming for a while longer)
 
 warp3d2exii reads in:
 
@@ -13,12 +13,12 @@ warp3d2exii reads in:
   
   or
   
-  2) a MSC Patran neutral file and flat results files
+  2) a MSC Patran style neutral file and flat results files
 
 And generates an Exodus II (.exo) file.
 
-The Exodus II format is compatible with 
-Paraview, a free post-processing visualization software, and many other pre-
+The Exodus II format is compatible with Paraview, a free 
+post-processing visualization software, and many other pre-
 and post- processing software packages (e.g. Cubit).
 
 The "flat" result files were a new feature of WARP3D starting at 
@@ -42,13 +42,13 @@ commands of the form
   output model flat patran convention file <file name>  
 
 ================================================================================
-Using the program 
+Using the warp3d2exii Python program 
 ================================================================================
 
 warp3d2exii is a Python program - it is Python source code executed by
 your runtime Python environment.
 
-The code is located at:
+The Python source code is located in the file:
 
   $WAR3D_HOME/warp3d2exii/warp3d2exii
 
@@ -102,13 +102,15 @@ the following information:
 Efficiency:
 
    Reading of a flat model description file is very fast.   
-   Reading of a Patran neutral file is quite slow for a large model.
+   Reading of a Patran style neutral file for the model is 
+     quite slow for a large model.
    
    Reading of flat results files, especially stream format, is very fast.
    
-   Writing of the final .exo file is reasonably fast at this point. 
+   Writing of the final .exo file is reasonably fast with this version.
+    
    warp3d2exii issues a message when it finishes and closes the .exo file.
-   A very large .exo file (multi GBs) may requires several minutes
+   A very large .exo file (multi GBs) may require several minutes
    to write to disk.
 
 
@@ -116,35 +118,36 @@ Efficiency:
 Python Requirements for warp3d2exii
 ================================================================================
 
-warp3d2exii is built and tested on Python 2.7 on Windows, Linux and Mac OS X.
+warp3d2exii is built and tested on Python 2.7.3 and later
+on Windows, Linux and Mac OS X.
 
 You will need a working Python environment to use warp3d2exii (in a
 Bash shell for Linux and OS X and in the command prompt for
 Windows)
 
+Python maybe installed through various free and commercial mechanisms on
+each of the platforms. Not all of them work equally well and/or contain the
+most common packages. You will need to test your particular implementation.
+
+These mostly standard packages will be imported when warp3d2exii starts up:
+
+   import os
+   import os.path
+   import time
+   import glob   
+   from collections import OrderedDict
+   import numpy as np
+   import re
+   import itertools
+   import scipy as sp
+
 The fortranformat (free) package may need to be included in your Python
-environment. Install it if needed using a Bash shell command (Linux, OS X)
+environment. This package is not routinely installed with Python.
 
-     %  easy_install fortranformat
-     
-Use sudo easy_install  ... if needed.
+https://pypi.python.org/pypi/fortranformat
 
-Python environments
--------------------
+Use easy_install or pip as needed for your Python implementation
+as required to install fortranformat.  
 
-We can recommend highly the free Python environment
-for Linux, Windows and Mac OS X available from
-
-   Enthought Scientific Computing Solutions   www.enthought.com
-    Products -> Enthought Python Distribution (EPD) EPD Free
-
-EPD Free is a hassle free approach to install a modern 
-Python environment -- especially on Windows and 
-Mac OS X where installation of all components is otherwise
-a challenge. 
-
-Under Windows, the EPD becomes the default Python under the command
-prompt.  The easy_install command is also available to obtain
-the fortranformat package.
 
 
