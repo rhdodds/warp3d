@@ -13,10 +13,10 @@ c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_mrr_GH(s_type,num_hard,G,H)
+      subroutine mm10_mrr_GH(s_type,num_hard,G,H,i,c)
       implicit none
 c
-      integer :: s_type, num_hard
+      integer :: s_type, num_hard, i, c
       double precision, dimension(num_hard,num_hard) ::  G, H
 c
       if( s_type .eq. 1 ) then ! FCC
@@ -6217,12 +6217,13 @@ c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_DJGM_GH(local_work,s_type,num_hard,G,H)
+      subroutine mm10_DJGM_GH(local_work,s_type,num_hard,G,H,
+     &                        i,c)
       use mm10_defs ! to get definition of cc_props
       implicit none
       include 'include_sig_up'
 c
-      integer :: s_type, num_hard
+      integer :: s_type, num_hard, i, c
       double precision, dimension(num_hard,num_hard) ::  G
       double precision, dimension(7,num_hard) ::  H
       double precision :: one
@@ -6231,56 +6232,56 @@ c
 c
         if( s_type .eq. 7 ) then ! BCC12
 c       Parameters
-      H(1,1:12) = local_work%c_props(1,1)%u1
-      H(2,1:12) = local_work%c_props(1,1)%u4
-      H(3,1:12) = local_work%c_props(1,1)%u7
-      H(4,1:12) = local_work%c_props(1,1)%u10
-      H(5,1:12) = local_work%c_props(1,1)%q_y
-      H(6,1:12) = local_work%c_props(1,1)%burgers
-      H(7,1:12) = local_work%c_props(1,1)%Go_y
+      H(1,1:12) = local_work%c_props(i,c)%u1
+      H(2,1:12) = local_work%c_props(i,c)%u4
+      H(3,1:12) = local_work%c_props(i,c)%u7
+      H(4,1:12) = local_work%c_props(i,c)%u10
+      H(5,1:12) = local_work%c_props(i,c)%q_y
+      H(6,1:12) = local_work%c_props(i,c)%burgers
+      H(7,1:12) = local_work%c_props(i,c)%Go_y
 c     q matrix
       G(1:12,1:12) = one
         elseif( s_type .eq. 9 ) then ! HCP6
 c       Parameters
-      H(1,1:3) = local_work%c_props(1,1)%u1
-      H(2,1:3) = local_work%c_props(1,1)%u4
-      H(3,1:3) = local_work%c_props(1,1)%u7
-      H(4,1:3) = local_work%c_props(1,1)%u10
-      H(5,1:3) = local_work%c_props(1,1)%q_y
-      H(6,1:3) = local_work%c_props(1,1)%burgers
-      H(7,1:3) = local_work%c_props(1,1)%Go_y
-      H(1,4:6) = local_work%c_props(1,1)%u2
-      H(2,4:6) = local_work%c_props(1,1)%u5
-      H(3,4:6) = local_work%c_props(1,1)%u8
-      H(4,4:6) = local_work%c_props(1,1)%p_y
-      H(5,4:6) = local_work%c_props(1,1)%q_v
-      H(6,4:6) = local_work%c_props(1,1)%tau_a
-      H(7,4:6) = local_work%c_props(1,1)%eps_dot_o_y
+      H(1,1:3) = local_work%c_props(i,c)%u1
+      H(2,1:3) = local_work%c_props(i,c)%u4
+      H(3,1:3) = local_work%c_props(i,c)%u7
+      H(4,1:3) = local_work%c_props(i,c)%u10
+      H(5,1:3) = local_work%c_props(i,c)%q_y
+      H(6,1:3) = local_work%c_props(i,c)%burgers
+      H(7,1:3) = local_work%c_props(i,c)%Go_y
+      H(1,4:6) = local_work%c_props(i,c)%u2
+      H(2,4:6) = local_work%c_props(i,c)%u5
+      H(3,4:6) = local_work%c_props(i,c)%u8
+      H(4,4:6) = local_work%c_props(i,c)%p_y
+      H(5,4:6) = local_work%c_props(i,c)%q_v
+      H(6,4:6) = local_work%c_props(i,c)%tau_a
+      H(7,4:6) = local_work%c_props(i,c)%eps_dot_o_y
 c     q matrix
       G(1:6,1:6) = one
         elseif( s_type .eq. 10 ) then ! HCP18
 c       Parameters
-      H(1,1:3) = local_work%c_props(1,1)%u1
-      H(2,1:3) = local_work%c_props(1,1)%u4
-      H(3,1:3) = local_work%c_props(1,1)%u7
-      H(4,1:3) = local_work%c_props(1,1)%u10
-      H(5,1:3) = local_work%c_props(1,1)%q_y
-      H(6,1:3) = local_work%c_props(1,1)%burgers
-      H(7,1:3) = local_work%c_props(1,1)%Go_y
-      H(1,4:6) = local_work%c_props(1,1)%u2
-      H(2,4:6) = local_work%c_props(1,1)%u5
-      H(3,4:6) = local_work%c_props(1,1)%u8
-      H(4,4:6) = local_work%c_props(1,1)%p_y
-      H(5,4:6) = local_work%c_props(1,1)%q_v
-      H(6,4:6) = local_work%c_props(1,1)%tau_a
-      H(7,4:6) = local_work%c_props(1,1)%eps_dot_o_y
-      H(1,7:18) = local_work%c_props(1,1)%u3
-      H(2,7:18) = local_work%c_props(1,1)%u6
-      H(3,7:18) = local_work%c_props(1,1)%u9
-      H(4,7:18) = local_work%c_props(1,1)%p_v
-      H(5,7:18) = local_work%c_props(1,1)%boltzman
-      H(6,7:18) = local_work%c_props(1,1)%tauHat_v
-      H(7,7:18) = local_work%c_props(1,1)%Go_v
+      H(1,1:3) = local_work%c_props(i,c)%u1
+      H(2,1:3) = local_work%c_props(i,c)%u4
+      H(3,1:3) = local_work%c_props(i,c)%u7
+      H(4,1:3) = local_work%c_props(i,c)%u10
+      H(5,1:3) = local_work%c_props(i,c)%q_y
+      H(6,1:3) = local_work%c_props(i,c)%burgers
+      H(7,1:3) = local_work%c_props(i,c)%Go_y
+      H(1,4:6) = local_work%c_props(i,c)%u2
+      H(2,4:6) = local_work%c_props(i,c)%u5
+      H(3,4:6) = local_work%c_props(i,c)%u8
+      H(4,4:6) = local_work%c_props(i,c)%p_y
+      H(5,4:6) = local_work%c_props(i,c)%q_v
+      H(6,4:6) = local_work%c_props(i,c)%tau_a
+      H(7,4:6) = local_work%c_props(i,c)%eps_dot_o_y
+      H(1,7:18) = local_work%c_props(i,c)%u3
+      H(2,7:18) = local_work%c_props(i,c)%u6
+      H(3,7:18) = local_work%c_props(i,c)%u9
+      H(4,7:18) = local_work%c_props(i,c)%p_v
+      H(5,7:18) = local_work%c_props(i,c)%boltzman
+      H(6,7:18) = local_work%c_props(i,c)%tauHat_v
+      H(7,7:18) = local_work%c_props(i,c)%Go_v
 c     q matrix
       G(1:18,1:18) = one
         else ! calculate manually

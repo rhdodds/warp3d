@@ -75,6 +75,7 @@ c
         double precision :: ms(6,max_slip_sys), qs(3,max_slip_sys),
      &                      qc(3,max_slip_sys)
         double precision, dimension(max_uhard) :: u
+        double precision, dimension(6) :: ed, ep
         integer :: step, elem, gp, iter
       end type
 c
@@ -2392,7 +2393,7 @@ c             Get the local crystal number
               if (imatprp(104,i) .eq. 1) then
                 cnum = imatprp(105,i)
               elseif (imatprp(104,i) .eq. 2) then
-                osn = data_offset(elnum)
+                osn = data_offset(j)
                 cnum = crystal_input(osn,k)
 c               Couldn't do this earlier, so check here
                 if ((cnum .gt. max_crystals) .or. 

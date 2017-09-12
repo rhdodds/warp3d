@@ -36,7 +36,7 @@ c
      &  total_hist_size, crystal,
      &  loc_start, loc_cauchy, loc_euler, loc_pls_R, loc_uddt,
      &  loc_els_eps, loc_cur_slip_incr, loc_tau_tilde, loc_user_hist,
-     &  loc_tt_rate, indev, outdev, idummy, jdummy,
+     &  loc_tt_rate, loc_ep, loc_ed, indev, outdev, idummy, jdummy,
      &  nslip, num_hard, cur_slip, cur_hard
       logical :: local_debug, use_max
 c
@@ -73,7 +73,7 @@ c
       call iodevn( indev, outdev, idummy, jdummy )
 c
       num_common_indexes = 5
-      num_crystal_terms  = 9
+      num_crystal_terms  = 11
 c
 c                run through materials employed in model.
 c                find the CP materials, determine number of variables
@@ -226,6 +226,8 @@ c                 12 -- n_eff ( 1 x 1 )
 c                 13 -- s_trace (1 x 1)
 c                 14 -- B_eff ( 1 x 1 )
 c                 15 -- ed_dot = diffusion rate ( 1 x 1 )
+c                 16-21 -- cp strain rate tensor 6x1
+c                 22-27 -- diff strain rate tensor 6x1
 c
 c
       length_crys_hist(1) = 6
@@ -238,11 +240,15 @@ c
         length_crys_hist(7) = max_uhard
         length_crys_hist(8) = max_uhard
         length_crys_hist(9) = max_uhard
+        length_crys_hist(10) = 6
+        length_crys_hist(11) = 6
       else
         length_crys_hist(6) = nslip
         length_crys_hist(7) = num_hard
         length_crys_hist(8) = 15
         length_crys_hist(9) = num_hard
+        length_crys_hist(10) = 6
+        length_crys_hist(11) = 6
       end if
 c
 c              length of one crystal history
@@ -278,6 +284,8 @@ c
         loc_tau_tilde     = loc_cur_slip_incr  + length_crys_hist(6)
         loc_user_hist     = loc_tau_tilde      + length_crys_hist(7)
         loc_tt_rate       = loc_user_hist      + length_crys_hist(8)
+        loc_ep            = loc_tt_rate        + length_crys_hist(9)
+        loc_ed            = loc_ep             + length_crys_hist(10)
 c
         index_crys_hist(crystal,1,1) = loc_cauchy
         index_crys_hist(crystal,1,2) = loc_cauchy + 
@@ -311,6 +319,14 @@ c
         index_crys_hist(crystal,9,1) = loc_tt_rate
         index_crys_hist(crystal,9,2) = loc_tt_rate   + 
      &                                 length_crys_hist(9)-1
+c
+        index_crys_hist(crystal,10,1) = loc_ep
+        index_crys_hist(crystal,10,2) = loc_ep   + 
+     &                                 length_crys_hist(10)-1
+c
+        index_crys_hist(crystal,11,1) = loc_ed
+        index_crys_hist(crystal,11,2) = loc_ed   + 
+     &                                 length_crys_hist(11)-1
 c
 c                consistency check
 c
@@ -426,7 +442,7 @@ c
        case( 3 )
         n = ncrystals
         if( user_output_opt2 /= 0 ) n = 1
-        info_vector(1) = n * 12
+        info_vector(1) = n * 12 + length_comm_hist(5) +1
        case( 4 )
         n = ncrystals
         if( user_output_opt2 /= 0 ) n = 1
@@ -442,7 +458,8 @@ c
         if( user_output_opt2 /= 0 ) n = 1
         info_vector(1) = 18 + 3 + length_comm_hist(5) 
      &  + n * ( 6 + 3 + 9 + 6 + length_crys_hist(6)
-     &        + length_crys_hist(7) + 5 + 5 )
+     &        + length_crys_hist(7) + 5 + 5
+     &        + length_crys_hist(10) + length_crys_hist(11))
        case default
         write(iout,9100) 1
         call die_abort

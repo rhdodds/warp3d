@@ -207,7 +207,8 @@ c
       num_states_here = 21 + length_comm_hist(5) 
      &  + nterms_crystal_list *
      &  ( 6 + 3 + 9 + 6 + length_crys_hist(6)
-     &      + length_crys_hist(7) + 5 + 5 )
+     &      + length_crys_hist(7) + 5 + 5 
+     &      + length_crys_hist(10) + length_crys_hist(11))
       if( num_states_here .ne. max_cp_states_values ) then
          write(iout,9030) 1
          call die_gracefully
@@ -245,6 +246,8 @@ c                      (7) effective Norton exponent n
 c                      (8) effective_Norton_stress
 c                      (9) effective Norton B value
 c                      (10) equivalent diffusion strain rate
+c                  h. cp strain rate (6 x 1)
+c                  i. diffusion strain rate (6 x 1)
 c
 c         **   values are averages computed over all integration points
 c 
@@ -384,6 +387,26 @@ c
          state_descriptors(s+4) = "Norton_B_eff"
          state_descriptors(s+5) = "diffus. rate"
          s = s + 5
+c
+         state_labels(s+1) = "ep1-" // crystal_id
+         state_labels(s+2) = "ep2-" // crystal_id
+         state_labels(s+3) = "ep3-" // crystal_id
+         state_labels(s+4) = "ep4-" // crystal_id
+         state_labels(s+5) = "ep5-" // crystal_id
+         state_labels(s+6) = "ep6-" // crystal_id
+         state_descriptors(s+1) = "creep rate ten # " // crystal_id
+         state_descriptors(s+2:s+6) = "  "
+         s = s + 6
+c
+         state_labels(s+1) = "ed1-" // crystal_id
+         state_labels(s+2) = "ed2-" // crystal_id
+         state_labels(s+3) = "ed3-" // crystal_id
+         state_labels(s+4) = "ed4-" // crystal_id
+         state_labels(s+5) = "ed5-" // crystal_id
+         state_labels(s+6) = "ed6-" // crystal_id
+         state_descriptors(s+1) = "diffus. rate ten # " // crystal_id
+         state_descriptors(s+2:s+6) = "  "
+         s = s + 6
 c
       end do
 c
@@ -558,6 +581,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm10_states_labels_type_3
+      use mm10_defs, only : length_comm_hist
       implicit none
 c
       integer :: s, nc, cry_id, num_states_here
@@ -565,7 +589,8 @@ c
 c
 c              sanity check
 c
-      num_states_here = 12 * nterms_crystal_list
+      num_states_here = length_comm_hist(5) +1 + 
+     &                  12 * nterms_crystal_list
       if( num_states_here .ne. max_cp_states_values ) then
          write(iout,9030) 1
          call die_gracefully
@@ -581,6 +606,17 @@ c              nterms_crystal_list will = 1 or the maximum number of
 c              crystals used in all the CP materials of the FE  model
 c
       s = 0
+c
+      state_labels(s+1) = "eq-epspl"
+      state_descriptors(s+1) = "equiv plastic eps"
+      s = s + 1
+c
+      do i = 1, length_comm_hist(5) 
+         write(state_labels(s+i), 9000) i
+         state_descriptors(s+i) = "integrated slip"
+      end do
+      s = s + length_comm_hist(5)
+c
       do nc = 1, nterms_crystal_list
 c
          cry_id = crystal_list(nc)
@@ -1167,7 +1203,8 @@ c
       num_states_here = 21 + length_comm_hist(5) 
      &  + num_crystals_to_process *
      &  ( 6 + 3 + 9 + 6 + length_crys_hist(6)
-     &      + length_crys_hist(7) + 5 + 5 )
+     &      + length_crys_hist(7) + 5 + 5
+     &    + length_crys_hist(10) + length_crys_hist(11) )
 c
       if( num_states_here > num_states ) then
          write(iout,9000) 1
@@ -1211,6 +1248,8 @@ c                      (7) effective Norton exponent n
 c                      (8) effective_Norton_stress
 c                      (9) effective Norton B value
 c                      (10) equivalent  diffusion strain rate
+c                  h. cp strain rate (6 x 1)
+c                  i. diffusion strain rate (6 x 1)
 c
 c         **   values are averages computed over all integration points
 c
@@ -1362,6 +1401,24 @@ c
         call mm10_avg_states( one_elem_states, s, e, sh, eh,
      &                  hisblk(1,1,relem), hist_size, int_points )
         s = s + 5
+c
+c           2h. ep. creep rate tensor (6x1)
+c
+        e = s + 5
+        sh = index_crys_hist(cry_id,10,1)
+        eh = index_crys_hist(cry_id,10,2)
+        call mm10_avg_states( one_elem_states, s, e, sh, eh,
+     &                  hisblk(1,1,relem), hist_size, int_points )
+        s = s + 6
+c
+c           2i. ed. diffusion rate tensor (6x1)
+c
+        e = s + 5
+        sh = index_crys_hist(cry_id,11,1)
+        eh = index_crys_hist(cry_id,11,2)
+        call mm10_avg_states( one_elem_states, s, e, sh, eh,
+     &                  hisblk(1,1,relem), hist_size, int_points )
+        s = s + 6
 c
       end do ! over crystals
 c
@@ -1548,7 +1605,8 @@ c     ****************************************************************
 c
       subroutine mm10_states_values_3( one_elem_states, hisblk )
 c
-      use mm10_defs, only : indexes_common, index_crys_hist
+      use mm10_defs, only : indexes_common, index_crys_hist,
+     &                      length_comm_hist
 c
 c               parameters. history_blk passed so alignment
 c               can be declared
@@ -1580,6 +1638,7 @@ c               - 6 x 1 lattice strains averaged over int points
 c               - 3 x 1 values for max slip rates (see notes below)
 c
       num_states_here = num_crystals_to_process * 12
+     &                  + 1 + length_comm_hist(5)
       if( num_states_here > num_states ) then ! sanity check
          write(iout,9000) 1
          write(iout,*) '.... num_states: ', num_states
@@ -1589,6 +1648,27 @@ c
 c           1. loop over all required crystals in the global list.
 c
       s = 1
+c
+c             1c,d,e. work density (1x1), plastic work density (1x1
+c                     equiv eps-pls (1x1)
+c
+      e = s + 0
+      sh = indexes_common(4,1) + 2
+      eh = indexes_common(4,2)
+      call mm10_avg_states( one_elem_states, s, e, sh, eh,
+     &                  hisblk(1,1,relem), hist_size, int_points )
+      s = s + 1
+c
+c             1f. current (total) slip on each system. averaged over
+c                 integration points
+c
+      sh  = indexes_common(5,1)
+      eh  = indexes_common(5,2)
+      e   = s + (length_comm_hist(5) - 1)
+      call mm10_avg_states( one_elem_states, s, e, sh, eh,
+     &                  hisblk(1,1,relem), hist_size, int_points )
+      s = s + length_comm_hist(5)
+c
       do nc = 1, num_crystals_to_process
 c
 c           2a. number of crystal being processed

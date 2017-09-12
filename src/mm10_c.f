@@ -5615,19 +5615,20 @@ c-----------------------------------------------------------------------
       include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
       
-      solve_work1 = solve_work
-      return
+c      write(*,*) 'I found out we did not need this'
+c      solve_work1 = solve_work
+c      return
 
-      write(*,*) 'I found out we did not need this'
+c      write(*,*) 'I found out we did not need this'
       call mm10_copy_props(solve_work1%props,solve_work%props)
       call mm10_copy_state(solve_work1%np1,solve_work%np1)
       call mm10_copy_state(solve_work1%np0,solve_work%np0)
-c      solve_work1%vec1 = solve_work%vec1
-c      solve_work1%vec2 = solve_work%vec2
-c      solve_work1%arr1 = solve_work%arr1
-c      solve_work1%arr2 = solve_work%arr2
-c      solve_work1%ivec1 = solve_work%ivec1
-c      solve_work1%ivec2 = solve_work%ivec2
+      solve_work1%vec1 = solve_work%vec1
+      solve_work1%vec2 = solve_work%vec2
+      solve_work1%arr1 = solve_work%arr1
+      solve_work1%arr2 = solve_work%arr2
+      solve_work1%ivec1 = solve_work%ivec1
+      solve_work1%ivec2 = solve_work%ivec2
       solve_work1%gaspt = solve_work%gaspt
       solve_work1%solvfnc = solve_work%solvfnc
       solve_work1%x2 = solve_work%x2
@@ -5806,7 +5807,7 @@ c
       props1%cp_100 = props%cp_100
 
 c         constants for use in material models
-
+      if( allocated(props%Gmat) ) then
 c     Gmat: First full determine size of allocated array
       dim1 = size(props%Gmat,1)
       dim2 = size(props%Gmat,2)
@@ -5819,7 +5820,9 @@ c     Allocate G
       endif
 c     Copy the contents
       call mm10_c_copy_darray(props%Gmat,sizeArr,props1%Gmat)
+      end if
 
+      if( allocated(props%Hmat) ) then
 c     Hmat: First full determine size of allocated array
       dim1 = size(props%Hmat,1)
       dim2 = size(props%Hmat,2)
@@ -5832,6 +5835,7 @@ c     Allocate G
       endif
 c     Copy the contents
       call mm10_c_copy_darray(props%Hmat,sizeArr,props1%Hmat)
+      end if
 
       return
       end
@@ -5845,7 +5849,12 @@ c
 c
       type(crystal_props) :: props1
 c
-      deallocate( props1%Gmat, props1%Hmat )
+      if( allocated(props1%Gmat) ) then
+      deallocate( props1%Gmat  )
+      end if
+      if( allocated(props1%Hmat) ) then
+      deallocate( props1%Hmat )
+      end if
 c
       return
       end
@@ -5884,7 +5893,8 @@ c
       n1%ms = n%ms
       n1%qs = n%qs
       n1%qc = n%qc
-
+      n1%ed = n%ed
+      n1%ep = n%ep
       return
       end
 
@@ -5895,7 +5905,7 @@ c
       integer :: n, i
       double precision, dimension(n) :: A,B
 c
-      B = A      enddo
+      B(1:n) = A(1:n)
 c
       return
       end subroutine

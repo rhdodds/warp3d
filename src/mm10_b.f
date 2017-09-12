@@ -244,6 +244,11 @@ c
       call mm10_IW (wp, Iw )
       J11 = J11 + Iw
 c
+c	add J of creep strain due to pressure precipitation (Ran)
+	if ( abs(props%cp_031-one)<1.0e-5 ) then
+		call mm10_halite_formJpp( props, J11, np1%tinc )
+	end if
+c
       do i = 1, 6
         J11(i,i) = J11(i,i) + one
       end do
@@ -1081,6 +1086,9 @@ c
       call mm10_symSW( stress, wp, symTW) 
 c
       work_vec1 =  np1%D - dbarp
+	if ( abs(props%cp_031-one)<1.0e-5 ) then
+	  call mm10_halite_formRpp( props, work_vec1, stress, np1%tinc )
+	end if
       call mm10_b_mult_type_2( work_vec2, props%stiffness, work_vec1 )
       R1 = stress - n%stress - work_vec2 + two * symTW
 c
@@ -5357,6 +5365,91 @@ c
 c
       return
       end subroutine
+c
+c
+c     Halite/diffusion functions
+c
+c		formR for pressure-precipitation model
+	subroutine mm10_halite_formRpp( props, work_vec1, stress, tinc )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+c	global variables
+      type(crystal_props) :: props
+      double precision, dimension(6) :: stress, work_vec1
+      double precision :: tinc
+c	local variables
+	double precision :: I_dev(6, 6), eps_norton(6), temp(6)
+c
+	I_dev(1:3, 4:6) = zero
+	I_dev(4:6, 1:3) = zero
+	I_dev(1, 1) = two/three
+	I_dev(1, 2) = -one/three
+	I_dev(1, 3) = -one/three
+	I_dev(2, 1) = -one/three
+	I_dev(2, 2) = two/three
+	I_dev(2, 3) = -one/three
+	I_dev(3, 1) = -one/three
+	I_dev(3, 2) = -one/three
+	I_dev(3, 3) = two/three
+	I_dev(4, 4) = one
+	I_dev(4, 5) = zero
+	I_dev(4, 6) = zero
+	I_dev(5, 4) = zero
+	I_dev(5, 5) = one
+	I_dev(5, 6) = zero
+	I_dev(6, 4) = zero
+	I_dev(6, 5) = zero
+	I_dev(6, 6) = one
+	call mm10_b_mult_type_2( temp, I_dev, stress )
+	eps_norton = three/two * props%cp_033 * tinc * temp
+	eps_norton(4:6) = eps_norton(4:6) * two
+	work_vec1 = work_vec1 - eps_norton
+	end subroutine
+c
+c		formJ for pressure-precipitation model
+	subroutine mm10_halite_formJpp( props, J11, tinc )
+      use mm10_defs
+      use mm10_constants
+      implicit none
+c
+      type(crystal_props) :: props
+	double precision :: J11(6, 6)
+	double precision :: tinc
+c	local variables
+	double precision :: I_dev(6, 6), temp(6, 6)
+	integer :: i
+c
+	I_dev(1:3, 4:6) = zero
+	I_dev(4:6, 1:3) = zero
+	I_dev(1, 1) = two/three
+	I_dev(1, 2) = -one/three
+	I_dev(1, 3) = -one/three
+	I_dev(2, 1) = -one/three
+	I_dev(2, 2) = two/three
+	I_dev(2, 3) = -one/three
+	I_dev(3, 1) = -one/three
+	I_dev(3, 2) = -one/three
+	I_dev(3, 3) = two/three
+	I_dev(4, 4) = one
+	I_dev(4, 5) = zero
+	I_dev(4, 6) = zero
+	I_dev(5, 4) = zero
+	I_dev(5, 5) = one
+	I_dev(5, 6) = zero
+	I_dev(6, 4) = zero
+	I_dev(6, 5) = zero
+	I_dev(6, 6) = one
+	do i = 1, 6
+        call mm10_b_mult_type_2(temp(1:6, i), 
+     &            props%stiffness, I_dev(1:6, i))
+      end do
+	temp(4:6, 1:6) = temp(4:6, 1:6) * two
+	J11 = J11 + three/two*props%cp_033*temp*tinc
+c
+	end subroutine
+c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine mm10_b_mult...                    *

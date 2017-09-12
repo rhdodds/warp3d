@@ -122,7 +122,7 @@ c              initialize G,H arrays for certain CP constitutive
 c              models. Note: all crystals in the element block
 c              will have the same hardening model and slip systems
 c
-      call mm10_set_cons( local_work, cc_props, 1, c )
+      call mm10_set_cons( local_work, cc_props, 1, iloop, c )
           if( locdebug ) write(iout,*) "Setting up properties"
           call mm10_a_do_crystal
           if( local_work%material_cut_step ) then
@@ -131,7 +131,7 @@ c
 c              release allocated G & H arrays for
 c              certain CP constitutive models
 c
-      call mm10_set_cons( local_work, cc_props, 2, c )
+      call mm10_set_cons( local_work, cc_props, 2, iloop, c )
         end do ! over crystals
 c
 c              finalize averages over all crystals at point.
@@ -250,7 +250,7 @@ c
      &        local_work%material_cut_step, iout, .false., 0,
      &        p_strain_ten_c, iter_0_extrapolate_off )
       if( local_work%material_cut_step ) then
-          call mm10_set_cons( local_work, cc_props, 2, c )
+          call mm10_set_cons( local_work, cc_props, 2, i, c )
           return
       end if
 c
@@ -369,7 +369,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine mm10_set_cons( local_work, cc_props, isw, c )
+      subroutine mm10_set_cons( local_work, cc_props, isw, i, c )
 c
       use mm10_defs ! to get definition of cc_props
       use mm10_constants
@@ -379,12 +379,12 @@ c
 c
       type(crystal_props) :: cc_props
       integer :: isw, s_type1, n_hard, h_type, allocate_status
-      integer :: c
+      integer :: i, c
       logical :: process_G_H
 c
-      h_type  = local_work%c_props(1,c)%h_type
-      s_type1 = local_work%c_props(1,c)%s_type
-      n_hard  = local_work%c_props(1,c)%num_hard
+      h_type  = local_work%c_props(i, c)%h_type
+      s_type1 = local_work%c_props(i, c)%s_type
+      n_hard  = local_work%c_props(i, c)%num_hard
 c
       process_G_H = ( h_type .eq. 4 ) .or.
      &              ( h_type .eq. 7 ) .or.
@@ -403,7 +403,7 @@ c
               call die_gracefully
            end if
            call mm10_mrr_GH( s_type1, n_hard, cc_props%Gmat,
-     &                     cc_props%Hmat)
+     &                     cc_props%Hmat,i,c)
          case( 2 ) ! deallocate G,H matrices
            deallocate( cc_props%Gmat, cc_props%Hmat )
          case default
@@ -424,7 +424,7 @@ c       Armstrong-Frederick
               call die_gracefully
            end if
            call mm10_DJGM_GH(local_work,s_type1,n_hard,
-     &               cc_props%Gmat, cc_props%Hmat)
+     &               cc_props%Gmat, cc_props%Hmat,i,c)
          case( 2 ) ! deallocate G,H matrices
            deallocate( cc_props%Gmat, cc_props%Hmat )
          case default
@@ -444,7 +444,7 @@ c
               call die_gracefully
            end if
            call mm10_DJGM_GH(local_work,s_type1,n_hard,
-     &               cc_props%Gmat, cc_props%Hmat)
+     &               cc_props%Gmat, cc_props%Hmat,i,c)
          case( 2 ) ! deallocate G,H matrices
            deallocate( cc_props%Gmat, cc_props%Hmat )
          case default
@@ -1032,6 +1032,12 @@ c
 c
       sh = index_crys_hist(crys_no,9,1) 
       history(1,sh:sh-1+len1) = np1%tt_rate(1:len1)
+c
+      sh = index_crys_hist(crys_no,10,1) 
+      history(1,sh:sh-1+6) = np1%ep(1:6)
+c
+      sh = index_crys_hist(crys_no,11,1) 
+      history(1,sh:sh-1+6) = np1%ed(1:6)
 c
       return
 c
@@ -2531,6 +2537,14 @@ c
       eh = index_crys_hist(crys_no,9,2) 
       n%tt_rate(1:len1) = history(1,sh:sh-1+len1)
 c
+      sh = index_crys_hist(crys_no,10,1) 
+      eh = index_crys_hist(crys_no,10,2) 
+      n%ep(1:6) = history(1,sh:eh)
+c
+      sh = index_crys_hist(crys_no,11,1) 
+      eh = index_crys_hist(crys_no,11,2) 
+      n%ed(1:6) = history(1,sh:eh)
+c
       return
 c
  9000 format('>> FATAL ERROR: mm10_copy_cc_hist @ ',i2 )   
@@ -2799,6 +2813,11 @@ c
       else
           write(props%out,*)" Reason: encountered NaN"
       end if
+      write(props%out,*) vec1(1:6)
+      write(props%out,*) tt(1:6)
+      write(props%out,*) stress, np1%D
+c      write(props%out,*) props%Hmat(1:7,1)
+      write(props%out,*) np1%ms(1:6,1)
       write(props%out,*)" AbsNorm=", failr(1), " AbsTol=", failr(2)
       write(props%out,*)" RelNorm=", failr(3), " RelTol=", failr(4)
       write(props%out,*)" Error occured in: element=",
@@ -3414,7 +3433,7 @@ c              locals
 c
       integer :: i, info, sysID, numAct, nslip
       double precision, dimension(6) :: ee, dbarp, ewwe, ep, 
-     &                                  eeunrot, se, ed
+     &                                  eeunrot, se, ed, work_vec1
       double precision, dimension(3) :: wp
       double precision, dimension(6,6) :: S, erot
       double precision :: maxslip, ec_dot, n_eff, rs, ec_slip, ep_dot,
@@ -3480,6 +3499,13 @@ c     Compute manually
           do i = 1, nslip
             ed = ed + dif_slp(i)*np1%ms(1:6,i)
           end do
+c     Isotropic diffusion
+        work_vec1 = zero
+	if ( abs(props%cp_031-one)<1.0e-5 ) then
+	  call mm10_halite_formRpp( props, work_vec1, np1%stress, np1%tinc )
+          ed = ed - work_vec1 ! Ran's value is negative
+	end if
+      np1%ed = ed / np1%tinc
 c          store the plastic strain increment for nonlocal averages
       t1 = ed(1)**2 + ed(2)**2 + ed(3)**2
       t2 = ed(4)**2 + ed(5)**2 + ed(6)**2
@@ -3515,6 +3541,7 @@ c
       call mm10_symSW( ee, wp, ewwe )
 c
       ep = dbarp + ewwe
+      np1%ep = ep / np1%tinc
 c           compute plastic creep rate
       t1 = ep(1)**2 + ep(2)**2 + ep(3)**2
       t2 = ep(4)**2 + ep(5)**2 + ep(6)**2
