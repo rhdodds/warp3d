@@ -900,7 +900,7 @@ c
          else
            write(termot,1205)  elemid
            stop
-         end if  
+         end if
 c
       case ( 5 )
 c
@@ -2046,24 +2046,24 @@ c
       q_num = 7
 c
       if( ynanswers(q_num) .ne. 1 ) return
-c      
+c
       sep_file_control = .true.
-c      
+c
       prefix_name = trim(adjustl( prefix_name ))
       if( prefix_name(1:1) .eq. ' ' ) prefix_name(1:) = 'default'
       last = len( trim(prefix_name) )
-c      
+c
       coord_file(1:) = prefix_name(1:last) // '_coords.inp'
       incid_block_file(1:) = prefix_name(1:last) //  '_incid.inp'
       const_file(1:) = prefix_name(1:last) // '_constraints.inp'
-c      
+c
       cdf_len = len(trim(coord_file))
       open( unit=cd_file, file=coord_file, status='unknown' )
-c      
+c
       inbl_len = len(trim(incid_block_file))
-      open( unit=inbl_file, file=incid_block_file, 
+      open( unit=inbl_file, file=incid_block_file,
      &         status='unknown' )
-c     
+c
       ctf_len = len(trim(const_file))
       open( unit=ct_file, file=const_file, status='unknown' )
 c
@@ -3457,7 +3457,7 @@ c
          end do
       end if
       return
-      end 
+      end
 c
 c ************************************************************************
 c *                                                                      *
@@ -3898,7 +3898,7 @@ c                                2) configuration number
 c
 c
       if (debug) write (termot,*) '>>> in getgrp'
-      allocate( grprm(4,mxnmgp) ) 
+      allocate( grprm(4,mxnmgp) )
 
 c
 c                    check over all elements
@@ -3997,7 +3997,7 @@ c
 c
       if (debug) write (termot,*) '>>>> in gtblrb'
       allocate( inode(numnod) )
-c      
+c
       do i= 1,numele
          iblock(i)= 0
       end do
@@ -4952,7 +4952,7 @@ c
       subroutine trneload(loading_case,fload)
       use patwarp_data
       implicit integer (a-z)
-      logical   bitchk, local_debug, hex, tet, wedge, valid_etype
+      logical   bitchk, local_debug, hex, tet, wedge, bar, valid_etype
       character * 8 ldname
       integer   pspc(17), pointer, face_map(6)
       integer, allocatable :: elnewo(:)
@@ -5013,7 +5013,7 @@ c
          nfe     = deload(pointer, 2)
          npv     = deload(pointer + 1, 1)
          etype   = eletyp(element)
-         if ( .not. valid_etype ( etype, hex, tet, wedge ) ) then
+         if ( .not. valid_etype ( etype, hex, tet, wedge, bar ) ) then
               write(termot,9040) element
               cycle
          end if
@@ -5277,7 +5277,7 @@ c              processor number which owns the block as the last number.
 c
 c
 c           for automatic blocking in threads only, just put blocking
-c           command in main input file - not in the separate 
+c           command in main input file - not in the separate
 c           incidences file
 c
       if( block_method .eq. 1 ) then
@@ -5286,7 +5286,7 @@ c
          return
       end if
 c
-c              if writing blocking to separate file, 
+c              if writing blocking to separate file,
 c              change device number
 c
       if( sep_file_control ) ofile = inbl_file

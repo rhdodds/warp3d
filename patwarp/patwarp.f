@@ -5483,7 +5483,7 @@ c
       subroutine trneload(loading_case,fload)
       use patwarp_data
       implicit integer (a-z)
-      logical   bitchk, local_debug, hex, tet, wedge, valid_etype
+      logical   bitchk, local_debug, hex, tet, wedge, valid_etype, bar
       character * 8 ldname
       integer   pspc(17), pointer, face_map(6)
       integer, allocatable :: elnewo(:)
@@ -5544,7 +5544,7 @@ c
          nfe     = deload(pointer, 2)
          npv     = deload(pointer + 1, 1)
          etype   = eletyp(element)
-         if ( .not. valid_etype ( etype, hex, tet, wedge ) ) then
+         if ( .not. valid_etype ( etype, hex, tet, wedge, bar ) ) then
               write(termot,9040) element
               cycle
          end if
