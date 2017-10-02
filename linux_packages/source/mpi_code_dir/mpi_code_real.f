@@ -970,7 +970,9 @@ c
      &      temper_nodes_ref, temperatures_ref, fgm_node_values,
      &      fgm_node_values_defined, fgm_node_values_cols,
      &      matprp, lmtprp, imatprp, dmatprp, smatprp,
-     &      nonlocal_analysis, asymmetric_assembly
+     &      nonlocal_analysis, asymmetric_assembly,
+     &      initial_stresses_user_routine, initial_stresses_file,
+     &      initial_stresses
 
       use elem_block_data, only: edest_blocks, cdest_blocks,
      &                           edest_blk_list, cdest_blk_list
@@ -985,6 +987,7 @@ c
       integer :: status(MPI_STATUS_SIZE), ierr
       integer, allocatable :: element_node_counts(:)
       double precision, parameter :: zero = 0.0d0
+      logical :: initial_stresses_exist
 c
 c         tell workers we are about to send them basic data
 c
@@ -1030,6 +1033,12 @@ c
      &                MPI_COMM_WORLD, ierr )
       call MPI_BCAST( common_hist_size, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( common_hist_size, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( initial_stresses_user_routine, 1, MPI_LOGICAL,
+     &                0, MPI_COMM_WORLD, ierr)
+      call MPI_Bcast( initial_stresses_file, 100, MPI_CHARACTER, 0,
+     &                MPI_COMM_WORLD,ierr)
 c
 c             static arrays:
 c
@@ -1158,6 +1167,20 @@ c             set up data distribution information so all processors
 c             know what blocks of elements they own.
 c
       call wmpi_calc_dist
+c
+c             initial stresses if they exist
+c
+      if( root_processor ) initial_stresses_exist =
+     &                   allocated( initial_stresses )
+      call MPI_BCAST( initial_stresses_exist, 1, MPI_LOGICAL,
+     &                0, MPI_COMM_WORLD, ierr)
+      if( initial_stresses_exist ) then
+        if( worker_processor ) allocate( initial_stresses(6,noelem) )
+        call MPI_Bcast( initial_stresses, 6*noelem,
+     &                  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD,
+     &                  ierr )
+      end if
+
 c
 c             now communicate allocated blocked structures:
 c
