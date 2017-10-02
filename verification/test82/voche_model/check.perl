@@ -14,7 +14,7 @@ print "   ... output file opened ...\n";
 find_line( 1, "       64       1    " );
 @parts = split( / +/, $line);
 #
-$answer = "476.645963";
+$answer = "476.645594";
 $partno = 3;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
@@ -22,8 +22,8 @@ $out_value = $parts[$partno];
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
