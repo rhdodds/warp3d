@@ -2,7 +2,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine zero_vol                     *
 c     *                                                              *
-c     *                       written by : kck                       *
+c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 09/5/2017 rhd              *
 c     *                                 : 02/08/94 rhd               *
