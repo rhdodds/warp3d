@@ -1,0 +1,145 @@
+c
+ structure bar
+c
+c
+  material strong
+    properties mises e 10000 nu 0.0 yld_pt 1.0e20,
+               n_power 10
+c
+  material weak
+    properties mises e 10000 nu 0.0 yld_pt 2.0,
+               n_power 10
+c
+ number of nodes 44  elements 3
+c
+ elements
+  2 3 type q3disop linear material strong,
+     order 2x2x2 center_output short
+c
+  1 type q3disop linear material weak,
+     order 2x2x2 center_output short
+c
+coordinates
+*echo off
+      1  0.000000000E+00  0.000000000E+00  0.000000000E+00
+      2  0.500000000E+00  0.000000000E+00  0.000000000E+00
+      3  0.100000000E+01  0.000000000E+00  0.000000000E+00
+      4  0.150000000E+01  0.000000000E+00  0.000000000E+00
+      5  0.200000000E+01  0.000000000E+00  0.000000000E+00
+      6  0.250000000E+01  0.000000000E+00  0.000000000E+00
+      7  0.300000000E+01  0.000000000E+00  0.000000000E+00
+      8  0.000000000E+00  0.500000000E+00  0.000000000E+00
+      9  0.100000000E+01  0.500000000E+00  0.000000000E+00
+     10  0.200000000E+01  0.500000000E+00  0.000000000E+00
+     11  0.300000000E+01  0.500000000E+00  0.000000000E+00
+     12  0.000000000E+00  0.100000000E+01  0.000000000E+00
+     13  0.500000000E+00  0.100000000E+01  0.000000000E+00
+     14  0.100000000E+01  0.100000000E+01  0.000000000E+00
+     15  0.150000000E+01  0.100000000E+01  0.000000000E+00
+     16  0.200000000E+01  0.100000000E+01  0.000000000E+00
+     17  0.250000000E+01  0.100000000E+01  0.000000000E+00
+     18  0.300000000E+01  0.100000000E+01  0.000000000E+00
+     19  0.000000000E+00  0.000000000E+00  0.500000000E+00
+     20  0.100000000E+01  0.000000000E+00  0.500000000E+00
+     21  0.200000000E+01  0.000000000E+00  0.500000000E+00
+     22  0.300000000E+01  0.000000000E+00  0.500000000E+00
+     23  0.000000000E+00  0.100000000E+01  0.500000000E+00
+     24  0.100000000E+01  0.100000000E+01  0.500000000E+00
+     25  0.200000000E+01  0.100000000E+01  0.500000000E+00
+     26  0.300000000E+01  0.100000000E+01  0.500000000E+00
+     27  0.000000000E+00  0.000000000E+00  0.100000000E+01
+     28  0.500000000E+00  0.000000000E+00  0.100000000E+01
+     29  0.100000000E+01  0.000000000E+00  0.100000000E+01
+     30  0.150000000E+01  0.000000000E+00  0.100000000E+01
+     31  0.200000000E+01  0.000000000E+00  0.100000000E+01
+     32  0.250000000E+01  0.000000000E+00  0.100000000E+01
+     33  0.300000000E+01  0.000000000E+00  0.100000000E+01
+     34  0.000000000E+00  0.500000000E+00  0.100000000E+01
+     35  0.100000000E+01  0.500000000E+00  0.100000000E+01
+     36  0.200000000E+01  0.500000000E+00  0.100000000E+01
+     37  0.300000000E+01  0.500000000E+00  0.100000000E+01
+     38  0.000000000E+00  0.100000000E+01  0.100000000E+01
+     39  0.500000000E+00  0.100000000E+01  0.100000000E+01
+     40  0.100000000E+01  0.100000000E+01  0.100000000E+01
+     41  0.150000000E+01  0.100000000E+01  0.100000000E+01
+     42  0.200000000E+01  0.100000000E+01  0.100000000E+01
+     43  0.250000000E+01  0.100000000E+01  0.100000000E+01
+     44  0.300000000E+01  0.100000000E+01  0.100000000E+01
+*echo on
+c
+  incidences
+       1       1       3      14      12      27      29      40      38,
+       2       9      13       8      28      35      39      34      19,
+      20      24      23
+       2       3       5      16      14      29      31      42      40,
+       4      10      15       9      30      36      41      35      20,
+      21      25      24
+       3       5       7      18      16      31      33      44      42,
+       6      11      17      10      32      37      43      36      21,
+      22      26      25
+c
+  blocking automatic
+c
+ initial conditions
+     stresses
+      2 10.0
+        dump
+!
+ constraints
+    plane x=0 symmetric
+    plane x=3 symmetric
+    plane y=0 symmetric
+    plane z=0 symmetric
+
+ loading unit
+   nodal loads
+      44 force_y 1.0e-09
+
+ loading end
+   element loads
+      3  face 5 pressure -1.000
+!
+ loading test
+  nonlinear
+    step  1 2 constraints 1.0
+c
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 5 $ global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   convergence test norm res tol 0.01
+   line search off
+   divergence check on
+   nonconvergent solutions stop
+   adaptive on   $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+c
+c
+ compute displacements for loading test step 1
+ output displacements all
+ output wide stresses 1-3
+ output wide strains 1
+c
+ compute displacements for loading test step 2
+ output displacements all
+ output wide stresses 1-3
+ output wide strains 1
+ stop
+c
+ output patran binary displacements
+ output patran binary strains
+ output patran binary stresses
+c
+ output flat text compressed nodal stresses
+ output flat stream element strains
+c
+stop
