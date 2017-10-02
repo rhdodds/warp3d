@@ -4,7 +4,7 @@ c     *                      subroutine rknstr                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/20/2015 rhd              *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     drive updating of strains/stresses for a block of        *
 c     *     elements                                                 *
@@ -14,10 +14,11 @@ c
 c
       subroutine rknstr( props, lprops, iprops, local_work )
       use segmental_curves
-      use main_data, only : matprp, lmtprp, imatprp, dmatprp
+      use main_data, only : matprp, lmtprp, imatprp, dmatprp,
+     &                      initial_stresses
       use mm10_defs, only : indexes_common, index_crys_hist
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
       real    :: props(mxelpr,mxvl)   ! all 3 the same. read only
@@ -27,13 +28,14 @@ c
 c
 c                    locals
 c
-      double precision ::
-     &      xi, eta, zeta, zero, temp_ref, d_temp, temp_np1
-      logical :: geonl, bbar, local_debug, adaptive_flag, adaptive,
-     &           segmental, cohesive_elem, linear_displ,
-     &           fgm_enode_props, compute_shape, average
-      integer :: sh, eh
-      data local_debug, zero / .false., 0.0d00 /
+      integer :: span, felem, elem_type, order, ngp, nnode, step,
+     &           iter, mat_type, totdof, cohesive_type, iout,
+     &           i, gpn, ndof, cohes_type, ielem
+
+      double precision, parameter :: zero = 0.0d0
+      logical :: geonl, bbar, adaptive_flag, segmental, cohesive_elem,
+     &           fgm_enode_props, compute_shape
+      logical, parameter :: local_debug = .false.
 c
 c           pull values from the local block definition
 c
@@ -53,13 +55,12 @@ c
       adaptive_flag   = local_work%adaptive_flag
       cohes_type      = local_work%cohes_type
       cohesive_elem   = local_work%is_cohes_elem
-      surf            = local_work%surface
       fgm_enode_props = local_work%fgm_enode_props
       compute_shape   = cohesive_elem .or. fgm_enode_props
       iout            = local_work%iout
 c
 c            set up to compute element volumes for bbar option and for
-c           [F] bar options
+c            [F] bar options
 c
       if( bbar .and. elem_type .eq. 2 )
      &  call rknstr_zero_vol( local_work%vol_block,
@@ -140,7 +141,26 @@ c
 c           for new models, all elements in the block must have the
 c           same property values.
 c
+c           if global initial stresses exist, load array for block
+c           as required based on material model.
+c           (original allocate set zero)
+c
       call rknstr_set_up_materials
+c
+      call rknstr_initial_stresses
+      if( allocated( initial_stresses ) ) then
+!DIR$ VECTOR ALIGNED
+         do i = 1, span
+           ielem = felem + i - 1
+           local_work%initial_stresses(1:6,i) =
+     &                     initial_stresses(1:6,ielem)
+c           if( ielem .eq. 2) then
+c             write(*,*) '... loading initial stresses elem 2 '
+c             write(*,*) local_work%initial_stresses(1:6,i)
+c           end if
+         end do
+      end if
+
 c
 c           compute the updated strains and stresses for all elements
 c           in the block. outer loop is over integration points, inner
@@ -169,14 +189,84 @@ c
 c
       contains
 c     ========
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rknstr_initial_stresses         *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 9/26/2017 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rknstr_initial_stresses
+      implicit none
+c
+      integer :: i, k, ielem
+      logical :: stresses_exist, value_found
+      double precision, parameter :: zero = 0.0d0, tol = 1.0d-08
+c
+      stresses_exist = allocated( initial_stresses )
+      if( .not. stresses_exist ) return
+c
+      value_found = .false.
+      do k = 1, 6
+!DIR$ VECTOR ALIGNED
+         do i = 1, span
+           ielem = felem + i - 1
+           if( abs( initial_stresses(k,ielem) ) > tol ) then
+               value_found = .true.
+               go to 100
+           end if
+         end do
+      end do
+ 100  continue
+      if( .not. value_found ) return
 
+      select case ( mat_type )
+c
+        case ( 1, 3, 5, 6, 7, 8, 10 ) ! bilinear, mises, cyclic,
+!                                       creep, H_2, umat, CP
+!DIR$ VECTOR ALIGNED
+         do i = 1, span
+           ielem = felem + i - 1
+           local_work%initial_stresses(1:6,i) =
+     &                     initial_stresses(1:6,ielem)
+c           if( ielem .eq. 2) then
+c             write(*,*) '... loading initial stresses elem 2 '
+c             write(*,*) local_work%initial_stresses(1:6,i)
+c           end if
+         end do
+        case( 2 )
+           write(iout,9000) 'deformation'
+           call die_gracefully
+        case( 4 ) ! cohesive
+           write(iout,9000) 'cohesive'
+           call die_gracefully
+        case default
+         write(iout,9020)
+         call die_gracefully
+      end select
+c
+      return
+c
+ 9000 format(//,'>>> Error: initial stresses not supported',
+     &  ' material model: ',a,
+     &  /,      '           job terminated....', //)
+ 9020 format(//,'>>> Fatal Error: routine rknstr_initial_stresses',
+     &  /,      '                 job terminated....', //)
+c
+      end subroutine rknstr_initial_stresses
+c
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine rknstr_finish_cp                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/12/2016 rhd             *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     make calls to the specific material model for block      *
 c     *                                                              *
@@ -184,6 +274,9 @@ c     ****************************************************************
 c
 c
       subroutine rknstr_finish_cp
+      implicit none
+c
+      integer :: sh, eh, i, iblkrow, rs, re
 c
 c              calculate the gradient of the elastic
 c              rotations at the element level by linear curve fit.
@@ -202,7 +295,7 @@ c
      &       local_work%rot_blk_n1(1,1,1),
      &       local_work%jac(1,1,1),
      &       local_work%elem_hist(1,rs,1),
-     &       local_work%elem_hist1(1,sh,1), out, iblkrow, span,
+     &       local_work%elem_hist1(1,sh,1), iout, iblkrow, span,
      &       local_work%hist_size_for_blk )
         end if
       end do
@@ -218,7 +311,7 @@ c     *                   subroutine rknstr_set_up_materials         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/20/2015 rhd              *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     make calls to the specific material model for block      *
 c     *                                                              *
@@ -226,7 +319,10 @@ c     ****************************************************************
 c
 c
       subroutine rknstr_set_up_materials
-
+      implicit none
+c
+      logical :: adaptive
+c
       adaptive = adaptive_flag .and. step .gt. 1
 c
       select case ( mat_type )
@@ -303,7 +399,7 @@ c     *                   subroutine rknstr_fix_temps                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/20/2015 rhd              *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     make temp for higher-order elements vary linearly        *
 c     *     between nodes to stop locking from temp loading          *
@@ -313,8 +409,12 @@ c     ****************************************************************
 c
 c
       subroutine rknstr_fix_temps
+      implicit none
 c
-
+      integer :: i
+      logical :: average
+      double precision :: temp_ref, d_temp, temp_np1
+c
       average =  local_work%linear_displ_elem .or.
      &             local_work%is_cohes_elem
       if( average ) then
@@ -345,17 +445,13 @@ c
       return
 c
       end subroutine rknstr_fix_temps
-
-
-
-
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine rknstr_geonl                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/13/2010 add only        *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     driver all computations to set up subsequent strain      *
 c     *     computations for large displacement elements where F is  *
@@ -365,6 +461,11 @@ c     ****************************************************************
 c
 c
       subroutine rknstr_geonl
+      implicit none
+c
+      integer :: gpn, enode
+      double precision :: xi, eta, zeta
+
 c
 c           for geometrically nonlinear elements, the deformation
 c           jacobians at (n + 1/2) and (n + 1) relative to n = 0 are
@@ -459,7 +560,7 @@ c     *                   subroutine rknstr_sm_displ                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/13/2010 add only        *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     driver all computations to set up subsequent strain      *
 c     *     computations for small displacement elements             *
@@ -468,7 +569,10 @@ c     ****************************************************************
 c
 c
       subroutine rknstr_sm_displ
+      implicit none
 c
+      integer :: gpn, enode
+      double precision :: xi, eta, zeta
 c
       do gpn = 1, ngp
         local_work%gpn = gpn
@@ -490,7 +594,7 @@ c
      &    local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &    local_work%nzeta(1,gpn), local_work%ce_0, nnode )
 c
-        if ( compute_shape )
+        if( compute_shape )
      &     call shapef( elem_type, xi, eta, zeta,
      &                  local_work%shape(1,gpn) )
 c
@@ -523,9 +627,7 @@ c     *                   subroutine rknstr_geonl_f_bar              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/13/2010 add only        *
-c     *                                                              *
-c     *                   last modified : 12/13/2010 add only        *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     driver all computations to set up subsequent strain      *
 c     *     computations for large displacement elements             *
@@ -535,6 +637,10 @@ c     ****************************************************************
 c
 c
       subroutine rknstr_geonl_f_bar
+      implicit none
+c
+      integer :: gpn, enode, i
+      double precision :: xi, eta, zeta
 c
 c           loop for geometric nonlinear when we also need to compute
 c           terms needed for [F] bar at same time. mainly we're just
@@ -543,7 +649,7 @@ c           regular coordinate jacobian is based on n+1/2 element
 c           deformed shape.
 c
       do gpn = 1, ngp
-       if( local_debug ) write(*,9050)  gpn, elem_type
+       if( local_debug ) write(iout,9050)  gpn, elem_type
        local_work%gpn = gpn
        call getgpts( elem_type, order, gpn, xi, eta, zeta,
      &               local_work%weights(gpn) )
@@ -652,20 +758,22 @@ c
      &                            seg_curves, max_seg_points
 c
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      integer iprops(mxelpr,mxvl), span
       include 'include_sig_up'
 c
 c                    local declarations
-      real dumr
-      double precision
-     &      dumd
+c
+      integer :: bit_flags, curve_set_number, first_curve, no_pts
+      integer, intrinsic :: iand
+      real :: dumr
+      double precision :: dumd
 c
 c                  determine if the material stress-strain properties
 c                  are from a set of curves defined for the material.
@@ -870,7 +978,7 @@ c     *                   subroutine setup_mm01_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 04/15/01 mcw                    *
+c     *              last modified : 9/26/2017 rhd                   *
 c     *                                                              *
 c     *     set up material model #1 (bilinear mises) for stress     *
 c     *     updating                                                 *
@@ -882,15 +990,17 @@ c
      &                              local_work )
       use segmental_curves
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
-      real props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real :: props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl)
+      integer :: iprops(mxelpr,mxvl), span
       include 'include_sig_up'
+c
+      integer :: i
 c
 !DIR$ IVDEP
       do i = 1, span
@@ -935,7 +1045,7 @@ c     *                   subroutine setup_mm02_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 04/5/00                    *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     set up material model #2 (deformation plasticity)        *
 c     *     for stress updating                                      *
@@ -948,15 +1058,17 @@ c
       use segmental_curves
 c
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
-      real props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real :: props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl)
+      integer :: iprops(mxelpr,mxvl), span
       include 'include_sig_up'
+c
+      integer :: i
 c
 !DIR$ IVDEP
       do i = 1, span
@@ -987,7 +1099,7 @@ c     *                   subroutine setup_mm03_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 04/15/01 mcw               *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     set up material model #3 (general mises and gurson)      *
 c     *     for stress updating                                      *
@@ -999,19 +1111,20 @@ c
      &                              adaptive, local_work )
       use segmental_curves
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real ::   props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl), adaptive
+      integer :: iprops(mxelpr,mxvl), span
       include 'include_sig_up'
 c
 c                    local
 c
-      logical adaptive
+      integer :: i, bit_flags
+      integer, intrinsic :: iand
 c
 !DIR$ IVDEP
       do i = 1, span
@@ -1082,7 +1195,7 @@ c     *                   subroutine setup_mm05_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 07/31/2011                 *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     set up material model #5 (cyclic plasticity)             *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1095,19 +1208,20 @@ c
       use segmental_curves
       use main_data, only : matprp, lmtprp
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real  ::  props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl), adaptive
+      integer :: iprops(mxelpr,mxvl), span
       include 'include_sig_up'
 c
 c                    local
 c
-      logical adaptive
+      integer :: matnum, i, bit_flags
+      integer, intrinsic :: iand
 c
 c                  NOTE:  at present, all elements in the block must be
 c                         same cyclic material defined by the user.
@@ -1185,7 +1299,7 @@ c     *                   subroutine setup_mm06_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/19/2015 rhd             *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     set up material model #6 (creep)                         *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1197,19 +1311,21 @@ c
      &                              adaptive, local_work )
       use main_data, only : matprp, lmtprp
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
       real    ::  props(mxelpr,mxvl)
-      logical ::  lprops(mxelpr,mxvl)
-      integer ::  iprops(mxelpr,mxvl)
+      logical ::  lprops(mxelpr,mxvl), adaptive
+      integer ::  iprops(mxelpr,mxvl), span
       include 'include_sig_up'
 c
 c                    local
 c
-      logical :: adaptive, local_debug
+      integer :: i, jout, felem, bit_flags, matnum
+      logical :: local_debug
+      integer, intrinsic :: iand
 c
       local_debug = .false.
       matnum = local_work%matnum
@@ -1268,7 +1384,7 @@ c     *                   subroutine setup_mm07_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/18/02 rhd               *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     set up material model #7 (mises + hydrogen)              *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1281,19 +1397,20 @@ c
       use segmental_curves
       use main_data, only : matprp, lmtprp
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real  ::  props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl), adaptive
+      integer :: iprops(mxelpr,mxvl), span
       include 'include_sig_up'
 c
 c                    local
 c
-      logical adaptive
+      integer :: matnum, i, bit_flags
+      integer, intrinsic :: iand
 c
       matnum = local_work%matnum
 c
@@ -1333,7 +1450,7 @@ c     *                   subroutine setup_umat_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/5/2014 rhd              *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *   set up material model #8 (Abaqus compatible UMAT)          *
 c     *                                                              *
@@ -1345,19 +1462,20 @@ c
       use segmental_curves
       use main_data, only : matprp, lmtprp, dmatprp
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                    parameter declarations
 c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
+      real ::   props(mxelpr,mxvl)
+      logical :: lprops(mxelpr,mxvl), adaptive
+      integer :: iprops(mxelpr,mxvl), span
       include 'include_sig_up'
 c
 c                    local
 c
-      logical adaptive
+      integer :: i, matnum, bit_flags
+      integer, intrinsic :: iand
 c
       matnum = local_work%matnum
 c
@@ -1574,7 +1692,7 @@ c
       end do
 c
       return
-d
+c
       end  subroutine set_up_mm10_rknstr_d
 
 
@@ -2118,7 +2236,7 @@ c     *            subroutine characteristic_elem_length             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 03/25/12                   *
+c     *                   last modified : 9/26/2017 rhd              *
 c     *                                                              *
 c     *     compute characteristic length for elements in block      *
 c     *     for possible use by material update routines             *
@@ -2128,22 +2246,22 @@ c
 c
       subroutine characteristic_elem_length(
      &       etype, span, nnodel, node_coords, lengths, iout  )
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                      parameter declarations
 c
-      double precision
-     &  node_coords(mxvl,*), lengths(*)
+      integer :: etype, span, nnodel, iout
+      double precision :: node_coords(mxvl,*), lengths(*)
 c
 c                     locally defined arrays-variables
 c
-      double precision
-     &  zero, one, half, rnlengths, xa, xb,
+      double precision :: rnlengths, xa, xb,
      &  ya, yb, za, zb, local_sums(mxvl), scale_factor
-      logical local_debug, brick, tet, wedge, linear
-      integer node_pairs(4,2)
-      data half, one, zero, local_debug / 0.5, 1.0, 0.0, .false. /
+      double precision, parameter :: half=0.5d0, one=1.0d0, zero=0.0d0
+      logical :: brick, tet, wedge, linear
+      logical, parameter :: local_debug = .false.
+      integer :: j, nodea, nodeb, i, node_pairs(4,2), nlengths
 
 c
       brick = etype .ge. 1  .and. etype .le. 5

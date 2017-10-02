@@ -27,7 +27,7 @@ c
      &                      cohesive_ele_types, linear_displ_ele_types,
      &                      adjust_constants_ele_types,
      &                      axisymm_ele_types, umat_used,
-     &                      implemented_ele_types, bar_types, 
+     &                      implemented_ele_types, bar_types,
      &                      tables, user_lists, nonlocal_analysis,
      &                      modified_mpcs, umat_serial,
      &                      convergence_history, link_types,
@@ -39,7 +39,9 @@ c
      &                      creep_model_used, extrapolate,
      &                      extrap_off_next_step, line_search,
      &                      ls_details, ls_min_step_length,
-     &                      ls_max_step_length, ls_rho, ls_slack_tol
+     &                      ls_max_step_length, ls_rho, ls_slack_tol,
+     &                      initial_stresses_user_routine,
+     &                      initial_stresses_file
 c
       use stiffness_data
       use file_info
@@ -522,7 +524,7 @@ c
 c
 c                       non-hex and non-interface elements require
 c                       adjustments in geometry constants (triangles,
-c                       tets, wedges, axisymmetric) 
+c                       tets, wedges, axisymmetric)
 c
       adjust_constants_ele_types(6)  = .true.
       adjust_constants_ele_types(7)  = .true.
@@ -538,8 +540,8 @@ c
 c
 c                       bar_types, link_types
 c
-      bar_types(18)  = .true.  
-      link_types(19) = .true.    
+      bar_types(18)  = .true.
+      link_types(19) = .true.
 c
 c                       element types currently implemented
 c                       see setelb routine
@@ -548,7 +550,7 @@ c
       implemented_ele_types(11)    = .true.
       implemented_ele_types(12:15) = .true.
       implemented_ele_types(18:19) = .true.
-      
+
 c
 c                       initialize for possible nonlocal_analysis using
 c                       cohesive elements.
@@ -702,6 +704,11 @@ c
       msg_count_1 = 0
       msg_count_2 = 0
 c
+c                       model initial stresses
+c
+      initial_stresses_file = " "
+      initial_stresses_user_routine = .false.
+c
       return
 c
  9220 format(/1x,'>>>>> fatal error: the number of threads',
@@ -758,9 +765,9 @@ c
 c
       twod_elem = quad_elem .or. triangle_elem .or. axisymm_elem
 c
-      bar_elem  = element_type .eq. 18 
+      bar_elem  = element_type .eq. 18
 c
-      link_elem = element_type .eq. 19 
+      link_elem = element_type .eq. 19
 c
       return
       end

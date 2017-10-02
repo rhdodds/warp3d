@@ -9,7 +9,7 @@ c     *                 subroutine mm10_set_history_locs             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 10/23/2016 rhd              *
+c     *                   last modified: 9/30/2017 rhd               *
 c     *                                                              *
 c     *  set locations (indexes) of various data within the          *
 c     *  history vectory for a single integration point.             *
@@ -32,7 +32,7 @@ c
       use main_data
       implicit none
 c
-      integer :: i, j, k, ncrystals, cnum, osn, num, ecount, 
+      integer :: i, j, k, ncrystals, cnum, osn, num, ecount,
      &  total_hist_size, crystal,
      &  loc_start, loc_cauchy, loc_euler, loc_pls_R, loc_uddt,
      &  loc_els_eps, loc_cur_slip_incr, loc_tau_tilde, loc_user_hist,
@@ -80,7 +80,7 @@ c                find the CP materials, determine number of variables
 c
       cur_slip = 0
       cur_hard = 0
-c      
+c
       do i = 1, nummat
        if( matprp(9,i) /= 10 ) cycle
        matprp(1,i) = 0.0  !  matprp is single precision
@@ -102,7 +102,7 @@ c                  couldn't do this earlier, so check here
                   call die_gracefully
                  end if
               else ! something bad wrong
-                write(outdev,9502) 
+                write(outdev,9502)
                 call die_gracefully
               end if
               if( cur_slip < c_array(cnum)%nslip )
@@ -111,10 +111,10 @@ c                  couldn't do this earlier, so check here
      &             cur_hard = c_array(cnum)%num_hard
             end do ! over k, crystals
         end do ! over j ( noelem)
-      end do  ! over i, materials 
+      end do  ! over i, materials
 c
 c              consistency checks
-c    
+c
       if( cur_hard > max_uhard ) then
         write(outdev,9200) 3
         call die_gracefully
@@ -127,15 +127,14 @@ c
         write(outdev,9200) 4
         call die_gracefully
       end if
-      write(*,*) 'cur_hard', cur_hard, 'cur_slip', cur_slip
-c      
+c
 c              use max value if either one is close
 c
       if( (cur_hard == max_uhard) .or.
      &    (cur_slip == max_slip_sys) ) then
         use_max = .true.
       else
-        use_max = .false. 
+        use_max = .false.
       end if
       num_hard = cur_hard
       nslip    = cur_slip
@@ -288,7 +287,7 @@ c
         loc_ed            = loc_ep             + length_crys_hist(10)
 c
         index_crys_hist(crystal,1,1) = loc_cauchy
-        index_crys_hist(crystal,1,2) = loc_cauchy + 
+        index_crys_hist(crystal,1,2) = loc_cauchy +
      &                                 length_crys_hist(1)-1
 c
         index_crys_hist(crystal,2,1) = loc_euler
@@ -301,7 +300,7 @@ c
         index_crys_hist(crystal,4,2) = loc_uddt + length_crys_hist(4)-1
 c
         index_crys_hist(crystal,5,1) = loc_els_eps
-        index_crys_hist(crystal,5,2) = loc_els_eps + 
+        index_crys_hist(crystal,5,2) = loc_els_eps +
      &                                 length_crys_hist(5)-1
 c
         index_crys_hist(crystal,6,1) = loc_cur_slip_incr
@@ -309,23 +308,23 @@ c
      &                                 length_crys_hist(6)-1
 c
         index_crys_hist(crystal,7,1) = loc_tau_tilde
-        index_crys_hist(crystal,7,2) = loc_tau_tilde + 
+        index_crys_hist(crystal,7,2) = loc_tau_tilde +
      &                                 length_crys_hist(7)-1
 c
         index_crys_hist(crystal,8,1) = loc_user_hist
-        index_crys_hist(crystal,8,2) = loc_user_hist + 
+        index_crys_hist(crystal,8,2) = loc_user_hist +
      &                                 length_crys_hist(8)-1
 c
         index_crys_hist(crystal,9,1) = loc_tt_rate
-        index_crys_hist(crystal,9,2) = loc_tt_rate   + 
+        index_crys_hist(crystal,9,2) = loc_tt_rate   +
      &                                 length_crys_hist(9)-1
 c
         index_crys_hist(crystal,10,1) = loc_ep
-        index_crys_hist(crystal,10,2) = loc_ep   + 
+        index_crys_hist(crystal,10,2) = loc_ep   +
      &                                 length_crys_hist(10)-1
 c
         index_crys_hist(crystal,11,1) = loc_ed
-        index_crys_hist(crystal,11,2) = loc_ed   + 
+        index_crys_hist(crystal,11,2) = loc_ed   +
      &                                 length_crys_hist(11)-1
 c
 c                consistency check
@@ -452,11 +451,11 @@ c
        case( 6 )
         n = ncrystals
         if( user_output_opt2 /= 0 ) n = 1
-        info_vector(1) = n * ( 3 + 4 + length_crys_hist(7)  )   
+        info_vector(1) = n * ( 3 + 4 + length_crys_hist(7)  )
        case( 7 )
         n = ncrystals
         if( user_output_opt2 /= 0 ) n = 1
-        info_vector(1) = 18 + 3 + length_comm_hist(5) 
+        info_vector(1) = 18 + 3 + length_comm_hist(5)
      &  + n * ( 6 + 3 + 9 + 6 + length_crys_hist(6)
      &        + length_crys_hist(7) + 5 + 5
      &        + length_crys_hist(10) + length_crys_hist(11))

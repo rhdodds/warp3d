@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 9/3/2017 rhd               *
+c     *                   last modified : 9/23/2017 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -50,7 +50,7 @@ c
      &           how_defined, itab, num_rows, num_cols, ilist,
      &           ulen, nsize, maplength
       character ::  dbname*100, string*80, dums*1
-      logical :: flexst, scanms, nameok,
+      logical :: flexst, scanms, nameok, initial_stresses_exist,
      &          read_nod_load, msg_flag, read_table, exist_flag
       real :: dumr, restart_time
       real, external :: wcputime
@@ -160,8 +160,10 @@ c
      &             umat_serial, umat_used, asymmetric_assembly,
      &             extrapolate, extrap_off_next_step,
      &             divergence_check, diverge_check_strict,
-     &             line_search, ls_details
-      read(fileno) sparse_stiff_file_name, packet_file_name
+     &             line_search, ls_details, initial_stresses_exist,
+     &             initial_stresses_user_routine
+      read(fileno) sparse_stiff_file_name, packet_file_name,
+     &             initial_stresses_file
       call chk_data_key( fileno, 1, 1 )
 c
 c
@@ -659,6 +661,7 @@ c
 c
 c                       read the crystal plasticity crystal data structures
 c                       which are handled separately from the material params
+c
       call read_alloc_cry( fileno )
       write(out,9200)
       call chk_data_key( fileno, 12, 1)
@@ -733,6 +736,16 @@ c
         allocate( output_step_bitmap_list(maplength ) )
         read(fileno) output_step_bitmap_list
       end if
+c
+c                       get initial stress data
+c
+      if( initial_stresses_exist ) then
+        allocate( initial_stresses(6,noelem) )
+        call rdbk( fileno, initial_stresses, prec_fact*noelem*6 )
+        write(out,9230)
+      end if
+c
+c                       USER routines data
 c
       call uexternaldb_reopen( fileno, out )
       write(out,9220)
@@ -816,6 +829,7 @@ c
  9200 format(15x,'> crystal data read...')
  9210 format(15x,'> convergence history read...')
  9220 format(15x,'> user routine data read...')
+ 9230 format(15x,'> initial stress data read...')
       return
       end
 c     ****************************************************************

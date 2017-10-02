@@ -81,6 +81,7 @@ c
        real (h_prec), allocatable :: uen1(:,:)                ! (mxvl,mxedof)
        real (h_prec), allocatable :: urcs_blk_n(:,:,:)        ! (mxvl,nstrs,mxgp)
        real (h_prec), allocatable :: urcs_blk_n1(:,:,:)       ! (mxvl,nstrs,mxgp)
+       real (h_prec), allocatable :: initial_stresses(:,:)    ! (6,mxvl)
        real (h_prec), allocatable :: rot_blk_n1(:,:,:)        ! (mxvl,9,mxgp)
        real (h_prec), allocatable :: rtse(:,:,:)              ! (mxvl,nstr,mxgp)
        real (h_prec), allocatable :: elem_hist1(:,:,:), elem_hist(:,:,:)
@@ -134,7 +135,7 @@ c
        real (h_prec), allocatable :: mm05_props(:,:)          ! (mxvl,10)
        real (h_prec), allocatable :: mm06_props(:,:)          ! (mxvl,10)
        real (h_prec), allocatable :: mm07_props(:,:)          ! (mxvl,10)
-       real (h_prec), allocatable :: umat_props(:,:)          ! (mxvl,50) 
+       real (h_prec), allocatable :: umat_props(:,:)          ! (mxvl,50)
 c
        real (h_prec), allocatable ::   ! nonlocal cohesive support
      &            top_surf_solid_stresses_n(:,:),             ! (mxvl,nstrs)
@@ -170,7 +171,7 @@ c
      &            number_points, cohes_type, curve_set_number,
      &            surface, hist_size_for_blk, iout, blk,
      &            umat_stress_type, cep_sym_size, num_threads,
-     &            inter_mat, macro_sz, cp_sz, now_thread 
+     &            inter_mat, macro_sz, cp_sz, now_thread
 c
        logical, allocatable ::  trne(:,:)                     ! (mxvl,mxndel)
 
@@ -186,7 +187,7 @@ c
      &            block_killed, is_umat, is_solid_matl, is_crys_pls,
      &            compute_f_bar, compute_f_n, is_cohes_nonlocal,
      &            is_inter_dmg, block_has_nonlocal_solids,
-     &            is_bar_elem, is_link_elem
+     &            is_bar_elem, is_link_elem, process_initial_stresses
 c     Added stuff for CP
       logical, allocatable :: debug_flag(:)                   ! mxvl
       double precision, allocatable :: local_tol(:)           ! mxvl

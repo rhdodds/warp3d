@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/3/2017 rhd               *
+c     *                   last modified : 9/23/2017 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -54,7 +54,8 @@ c
      &           maplength
       integer, parameter :: check_data_key=2147483647
       character :: dbname*100
-      logical :: nameok, scanms, delfil, wrt_nod_lod, write_table
+      logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
+     &           initial_stresses_exist
       real :: dumr, rsum
       real, parameter :: rzero = 0.0
       double precision :: dumd
@@ -157,6 +158,7 @@ c                       write out logical and character (scalar)
 c                       variables.
 c
 c
+      initial_stresses_exist = allocated( initial_stresses )
       write(fileno) prnres,halt,
      &              linmas,ifvcmp,zrocon,growth_k_flag,
      &              newtrn,lsldnm,incflg,
@@ -174,8 +176,10 @@ c
      &              umat_serial, umat_used, asymmetric_assembly,
      &              extrapolate, extrap_off_next_step,
      &              divergence_check, diverge_check_strict,
-     &              line_search, ls_details
-      write(fileno) sparse_stiff_file_name, packet_file_name
+     &              line_search, ls_details, initial_stresses_exist,
+     &              initial_stresses_user_routine
+      write(fileno) sparse_stiff_file_name, packet_file_name,
+     &              initial_stresses_file
       write (fileno) check_data_key
 c
 c
@@ -713,7 +717,6 @@ c
         end do
       end if
       write(out,9210)
-
 c
 c                       save for output commands file ... information
 c                       save file name and bitmap list if it exists
@@ -725,6 +728,13 @@ c
         write(fileno) output_step_bitmap_list(1:maplength)
       else
         write(fileno) 0
+      end if
+c
+c                       save initial stress data
+c
+      if( initial_stresses_exist ) then
+        call wrtbk( fileno, initial_stresses, prec_fact*noelem*6 )
+        write(out,9230)
       end if
 c
 c                       USER routines data
@@ -783,6 +793,7 @@ c
  9200 format(15x,'> crystal data written...')
  9210 format(15x,'> convergence history written...')
  9220 format(15x,'> user routine data written...')
+ 9230 format(15x,'> initial stress data written...')
       return
       end
 c     ****************************************************************

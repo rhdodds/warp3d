@@ -129,7 +129,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 8/11/2017 rhd                   *
+c     *              last modified : 9/22/2017 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -462,6 +462,10 @@ c                 options for states results on usual output cmd
 c
       integer :: output_states_type_opt1, output_states_type_opt2
 c
+
+      double precision, allocatable :: initial_stresses(:,:)
+      logical ::  initial_stresses_user_routine
+      character(len=100) :: initial_stresses_file
 
       end module
 
