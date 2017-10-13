@@ -566,7 +566,7 @@ c     *                      subroutine die_abort                    *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 03/02/98                   *          
+c     *                   last modified : 10/8/2017 rhd              *          
 c     *                                                              *          
 c     *         Dummy routine for serial version of warp3d.          *          
 c     *                                                              *          
@@ -575,6 +575,7 @@ c
 c                                                                               
       subroutine die_abort                                                      
 c         
+      use ifcore
       call tracebackqq('... warp3d stop ...',1)                                                                      
       stop                                                                      
 c                                                                               
