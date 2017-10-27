@@ -28,6 +28,7 @@ c
       real :: rparam
       integer, save :: high_lvl_count = 0
       logical, save :: mess_61, write_msg_255, write_msg_321
+      integer, save :: count_150=0
       data hundred /100.0/
       data mess_61, write_msg_255, write_msg_321
      &     / .true., .true., .true. /
@@ -237,11 +238,18 @@ c
 c
  150  continue
       num_fatal = num_fatal + 1
-      write(out,9014) param
- 9014 format(/1x,'>>>>> fatal error: coordinates for node ',i6,' have',
+      count_150 = count_150 + 1
+      if( count_150 <= 20 ) then
+        write(out,9014) param
+ 9014 format(/1x,'>>>>> error: coordinates for node ',i6,' have',
      & ' not been input.',
      &           '  displacement computation cannot'/14x,
-     &     'proceed without node coordiantes.'/)
+     &     'proceed without node coordiantes.')
+      end if
+      if( count_150 == 20 ) then
+        write(out,*)
+     &     '      >>> additional messages this type suppressed ...'
+      end if
       input_ok = .false.
       go to 9999
 c
@@ -921,7 +929,7 @@ c
       go to 9999
 c
 c
- 870  continue  
+ 870  continue
       num_error = num_error + 1
       write(out,9084)
  9084 format(/1x,'>>>>> error: each link stiffness value must',
@@ -1765,7 +1773,7 @@ c
  1770 continue
       num_error = num_error + 1
       write(out,9187) sparam
- 9187 format(/1x,'>>>>> error: the file specified:',/,14x,a,/,
+ 9187 format(/1x,'>>>>> error: the file specified: ',a,/,
      &           '             does not exist.')
       goto 9999
 c
@@ -1809,7 +1817,7 @@ c
       num_error = num_error + 1
       write(out,9193)
  9193 format(/1x,'>>>>> error: fatal error in input was never fixed.',
-     &         /,'             unable to continue.')
+     &         /,'              unable to continue.')
       goto 9999
 c
 c
@@ -3249,7 +3257,7 @@ c
      &           'nd in the material'/14x,'library. the material ',
      &           'must be defined before it can be'/14x,'used.' /)
       go to 9999
-c      
+c
  3520 continue
       num_error = num_error + 1
       write(out,9369)
@@ -3579,7 +3587,7 @@ c
      & /,16x,'This mpc equation will be skipped....'/)
       go to 9999
 c
- 350  continue  !     available 
+ 350  continue  !     available
       num_error = num_error + 1
       write(out,9035) param
  9035 format(/1x,
