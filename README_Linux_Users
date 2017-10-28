@@ -3,7 +3,7 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: September 5, 2017
+                      Last Update: October 28, 2017
 
 *** LATE BREAKING NEWS ***
 
@@ -13,10 +13,10 @@ version on clusters with DAPL protocol. The MPI version has been
 tested using at least 64 cluster nodes with 1600 total cores.
 
 The ready-to-run executables included in this distribution were built
-on Ubuntu 14.04.5 LTS using Intel Composer XE Fortran, MKL and MPI 17 Update 2.
+on OpenSuse 42.3 using Intel Composer XE Fortran, MKL and MPI 18.0.0.
 
-These executables also known to run on RedHat/Centos 7.3, Ubuntu 16.04.2 LTS,
-OpenSuse 42.2.
+These executables also known to run on RedHat/Centos 7.3,
+Ubuntu 16.04.2 LTS.
 
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).
@@ -30,7 +30,7 @@ and going forward.
 *** NOTES: ***
 
 The precompiled versions of WARP3D are built for Linux using the Intel Fortran
-Composer XE 2017 compiler suite and the Intel MPI (Message Passing Interface)
+Composer XE 2018 compiler suite and the Intel MPI (Message Passing Interface)
 software system.
 
 The Intel Fortran compiler system is ** NOT ** required on your system to use
@@ -397,8 +397,8 @@ To build the hybrid version of WARP3D, this Intel software must be installed:
       (has the Pardiso solver).
 
   2.  Intel's MPI distribution (impi). Our processes work correctly with
-      impi 5.1 and have been tested on RedHat/Centos 7.3
-      Ubuntu 14.04.5 LTS. Other MPI distributions,
+      impi 5.x and have been tested on RedHat/Centos 7.3
+      Ubuntu 16.04 LTS. Other MPI distributions,
       such as the free and open-source OpenMPI may work, but are untested.
 
 Steps:

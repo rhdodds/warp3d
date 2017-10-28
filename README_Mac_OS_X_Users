@@ -3,14 +3,14 @@
         Highest Level Read Me for MacOS  Users File for WARP3D
         ------------------------------------------------------
 
-                      Last Update: September 5, 2017
+                      Last Update: October 28, 2017
 
 ==========================================================================
 
 *** Latest NOTES: ***
 
-WARP3D is built for MacOS using the Intel Fortran Composer XE 2017
-Update 2 compiler suite version ifort and concurrent MKL.
+WARP3D is built for MacOS using the Intel Fortran Composer XE 2018.0.0
+compiler suite version ifort and concurrent MKL.
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The

@@ -3,16 +3,16 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: Spetember 11, 2017
+                   Last Update: October 28, 2017
 
-                   Version 17.8.4 on all Platforms
+                   Version 17.8.5 on all Platforms
 
 Late breaking news:
 ==================
 
 See new part of description below: Components of WARP3D Distribution
 
-The ready-to-run executables are built using Intel Fortran/MKL 17.0.2
+The ready-to-run executables are built using Intel Fortran/MKL 18.0.0
 with options that allow the executable to run on a wide-range of
 Intel 64 bit processors.
 
@@ -76,37 +76,37 @@ The WARP3D system contains these components:
     descriptions from one or more text files (like Abaqus .inp files),
     performs the analysis as requested and outputs various types of
     results files for post-processing.
-    
+
     The WARP3D executable does NOT handle any graphical pre- or post-
     processing.
-    
+
     The code may be run interactively through a terminal window (Linux,
     MacOS) or a CMD shell (Windows) or the Bash shell (Cygwin on Windows).
-    
+
     On supercomputers, the code most likely will be executed in "batch" mode
     via PBS, SLURM, etc type scheduling systems.
-    
+
   - The patwarp executable. This standalone program converts a model "neutral"
-    (text) file that conforms to Version 2.5 (and later) of the 
+    (text) file that conforms to Version 2.5 (and later) of the
     Patran specification.
-    
+
     Many mesh generation programs have options to output such a neutral file for
     the finite element model - it is NOT required that you use Patran to create
     the neutral file. This neutral file format is widely distributed and
     has become a de facto standard.
-    
+
     On Linux systems, patwarp offers to partition the mesh into domains using
     Metis for specialized executions using the MPI+threads version of WARP3D.
     (The default partitioning built-into WARP3D often removes the need for this
     Metis partitioning).
-    
+
   - The warp3d3exii Python program. This standalone program reads (1) a condensed
-    description of the model (a text file written by WARP3D) and (2) condensed 
+    description of the model (a text file written by WARP3D) and (2) condensed
     versions of computational results written by WARP3D (text or stream formats).
     warp3d2exii then writes a *.exo (stream) file which can be post-processed
     by a variety of free and commercial software. We use the free software
     ParaView for this purpose and recommend it highly.
-    
+
   - The standalone program combine_mpi_result_files (for Linux).  When WARP3D
     with MPI + threads executes, results files are written by each MPI rank.
     Example: 64 MPI ranks with stress output for load (time) step 100. 64
@@ -114,9 +114,9 @@ The WARP3D system contains these components:
     combine_mpi_results_files collects these partial results files, combines them
     as needed, and writes a single file of stresses (this example) as though the
     threads-only version had been executed.
-    
-    
-    
+
+
+
 1. OBTAINING & INSTALLING WARP3D
 
 The WARP3D User Guide/Manual is included in the
@@ -388,9 +388,9 @@ running WARP3D.
   needed.
 
   ===>>  Python version 2.7.3 or later is required to run warp3d2exii.
-  
+
          See additional discussion about Python requirements in the README
-         file of this directory. 
+         file of this directory.
 
 
   license_agreement  (a file)
