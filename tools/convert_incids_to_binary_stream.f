@@ -1,91 +1,109 @@
 c     ****************************************************************
 c     *                                                              *
-c     *   support program to make a stream or binary file of nodal   *
-c     *   coordinates. used to speed up input processing for very    *
+c     *   support program to make a stream or binary file of element *
+c     *   incidences. used to speed up input processing for very     *
 c     *   large models.                                              *
 c     *                                                              *
-c     *   a text file of coordinates for all nodes is read and       *
-c     *   written in required format. file name must be coords.txt   *
+c     *   a text file of incidences for all elements is read and     *
+c     *   written in required format. the existing file name         *
+c     *   must be incids.txt                                         *
 c     *                                                              *
 c     *   the binary format uses a segmented record type to support  *
 c     *   extremely long record lengths for very large models.       *
-c     *   file name will be: coords.stream or coords.binary
+c     *   file name will be: incids.stream or incids.binary          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/29/2017 rhd             *
+c     *                   last modified : 10/28/2017                 *
 c     *                                                              *
 c     ****************************************************************
 c
-      program make_coords_file
+      program make_incids_file
       implicit none
 c
-      integer :: filenum, node, inode, cfile, nonode, termout
+      integer :: filenum, elem, ifile, noelem, termout, loc, i, nnode,
+     &           ielem, einc(30)
+      integer, allocatable :: incids(:)
       logical :: stream, binary
       character(len=100) :: filename
       character(len=20) :: answer
-      double precision, allocatable :: xcoor(:), ycoor(:), zcoor(:)
-      double precision :: x, y, z
 c
-      cfile   = 10
+      ifile   = 10
       termout = 6
 c
-c              coords.txt file format:
+c          incids.txt file format:
+c          ----------------------
 c
-c              <number of nodes>
-c              <binary or stream>  keyword
-c              <node #> <x> <y> <z>
-c              <node #> <x> <y> <z>
-c               ...
+c          <number of elements>
+c          <binary or stream>  keyword
+c          <element #> <number of nodes> <list of nodes>   ***
+c          <element #> <number of nodes> <list of nodes>   ***
+c           ...
 c
-c              nodes not required to be in order. data for all nodes must
-c              be given.
+c          elements MUST be in numerical order. data for all elements
+c          must be given.
 c
-c              coords.txt may contain comment lines anywhere that
-c              start with c, C, !, # in column 1 with blanks in cols 2,3,4
+c          incids.txt may contain comment lines any where that
+c          start with c, C, !, # in column 1 with blanks in cols 2,3,4
 c
-      open( unit=cfile, file='coords.txt', status='old')
-      call skip_comments( cfile, termout )
-      read(cfile,*) nonode
-      call skip_comments( cfile, termout )
-      read(cfile,fmt="(a)") answer
+c         *** modify lines below marked with *** if you don't want to
+c             include teh number of element nodes on each line
+c
+      open( unit=ifile, file='incids.txt', status='old')
+      call skip_comments( ifile, termout )
+      read(ifile,*) noelem
+      call skip_comments( ifile, termout )
+      read(ifile,fmt="(a)") answer
       stream = index( answer, "stream" ) > 0
       binary = .not. stream
 c
-      allocate( xcoor(nonode), ycoor(nonode), zcoor(nonode) )
-      do node = 1, nonode
-       call skip_comments( cfile, termout )
-       read(cfile,*) inode, x, y, z
-       xcoor(inode) = x
-       ycoor(inode) = y
-       zcoor(inode) = z
+      allocate( incids(noelem*27) )
+      loc = 0
+c
+      do elem = 1, noelem
+       call skip_comments( ifile, termout )
+       read(ifile,*) ielem, nnode, einc(1:nnode)   !   ****
+       do i = 1, nnode
+          incids(loc+i) = einc(i)
+       end do
+       loc = loc + nnode
       end do
 c
-      close(cfile)
-      write(termout,*) '... coords.txt read. file closed ...'
+      close(ifile)
+      write(termout,*) '... incids.txt read. file closed ...'
 c
       if( stream ) then
-         open( unit=cfile, file='coords.stream', status='unknown',
+         open( unit=ifile, file='incids.stream', status='unknown',
      &         access="stream", form="unformatted" )
       else
-         open( unit=cfile, file='coords.binary', status='unknown',
+         open( unit=ifile, file='incids.binary', status='unknown',
      &         access='sequential', form='unformatted',
      &         recordtype='segmented' )
       end if
 c
-      write(cfile) xcoor
-      write(cfile) ycoor
-      write(cfile) zcoor
+      write(ifile) loc
+      write(ifile) incids(1:loc)
+!      write(termout,*) incids(1:loc)
+      write(termout,*) '... incid values writte to file: ', loc
+      close(ifile)
 c
-      close(cfile)
-c
-      if( stream ) write(termout,*) '... coords.stream file written ...'
-      if( binary ) write(termout,*) '... coords.binary file written ...'
+      if( stream ) write(termout,*) '... incids.stream file written ...'
+      if( binary ) write(termout,*) '... incids.binary file written ...'
       write(termout,*) " "
       write(termout,*) "... normal termination ..."
       write(termout,*) " "
       stop
       end
+
+
+
+
+
+
+
+
+
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine skip_comments                     *
