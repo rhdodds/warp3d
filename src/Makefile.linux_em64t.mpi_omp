@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.mpi
 #
-#   Updated: Jan 2017  rhd
+#   Updated: Oct 2018 rhd (comments)
 #
 #   Description:
 #     Makefile Header for use with the WARP3D
@@ -21,7 +21,7 @@ HYROOT = $(HYPRE_ROOT)
 HYLIB = -L$(HYPRE_ROOT)/lib -lHYPRE
 HYINC = -I$(HYPRE_ROOT)/include
 #
-LIBMPI = -lmkl_blacs_intelmpi_lp64 #  required at 17.1, 17.2
+LIBMPI = -lmkl_blacs_intelmpi_lp64 #  required at 17.x, 18.x
 #         Intel MKL is supposed to have this library in the install but it
 #         is not included - Bad !
 #         I have an old version and it is in $WARP3D_HOME/linux_packages/LIB

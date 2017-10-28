@@ -406,6 +406,7 @@ c
 c
       logical :: stream, nameok
       integer :: nchar, ierror, cfile, status, node
+      integer, external :: warp3d_get_device_number
       double precision, allocatable :: xcoor(:), ycoor(:), zcoor(:)
       character(len=200) :: filename, tfilename
 c
@@ -413,14 +414,7 @@ c              enter with word "file" having just been recognized by
 c              scanner. allow label or string for file name. if string,
 c              process ~ in name as required to generate absolute path
 
-      if( endcrd(dum) ) then
-          write(out,9080)
-          num_error = num_error + 1
-          return
-      end if
-c
-      filename = " "
-      tfilename = " "
+      if( endcrd(dum) ) return
 c
       if( label(dum) ) then
           call entits ( filename, nchar )
@@ -454,6 +448,7 @@ c
 c              open file. note use of "segmented" record type for
 c              binary to support extremely long records.
 c
+      cfile = warp3d_get_device_number()
       if( stream ) then
          open( unit=cfile, file=filename, status='old', access="stream",
      &         form="unformatted" )
@@ -525,7 +520,6 @@ c
  9050 format(/1x,'>>>>> error: unknown error reading Y-coordinates' )
  9060 format(/1x,'>>>>> error: end-of-file reading Z-coordinates' )
  9070 format(/1x,'>>>>> error: unknown error reading Z-coordinates' )
- 9080 format(/1x,'>>>>> error: no file name given' )
 c
       end subroutine incoor_file
       end subroutine incoor
