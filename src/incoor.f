@@ -413,7 +413,10 @@ c
 c              enter with word "file" having just been recognized by
 c              scanner. allow label or string for file name. if string,
 c              process ~ in name as required to generate absolute path
-
+c
+      filename = " "
+      tfilename = " "
+c
       if( endcrd(dum) ) return
 c
       if( label(dum) ) then
@@ -491,6 +494,8 @@ c
 c
       close( unit=cfile )
       write(out,9010)
+c      write(out,*) "... coords for node: ",nonode
+c      write(out,*) " ", xcoor(nonode), ycoor(nonode), zcoor(nonode)
 c
 c              create the crdmap vector for node values in order. save
 c              coordinates in regular data structure

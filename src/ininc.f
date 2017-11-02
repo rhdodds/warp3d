@@ -234,7 +234,10 @@ c
 c              enter with word "file" having just been recognized by
 c              scanner. allow label or string for file name. if string,
 c              process ~ in name as required to generate absolute path
-
+c
+      filename = " "
+      tfilename = " "
+c
       if( endcrd(dum) ) return
 c
       if( label(dum) ) then
