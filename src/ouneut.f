@@ -199,7 +199,7 @@ c     *                subroutine oumodel_flat_patran                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/12/2017 rhd             *
+c     *                   last modified : 12/1/2017 rhd              *
 c     *                                                              *
 c     *    output element information to flat file using the Patran  *
 c     *    convention for element type, node ordering.               *
@@ -340,7 +340,7 @@ c
                end do
              end if
          end if
-c         
+c
          if( bar_elem .or. link_elem ) then
              pat_etype = 2
              pat_incid(1) = incid(incptr + 1)
@@ -361,9 +361,9 @@ c
 c
       return
 c
- 5000 format(4x,'>>>  Incidences for element : ',i6 //
-     &        4x,'     WARP3D  : ',20i6 /
-     &        4x,'     PATRAN  : ',20i6)
+ 5000 format(4x,'>>>  Incidences for element : ',i7 //
+     &        4x,'     WARP3D  : ',10i8 /
+     &        4x,'     PATRAN  : ',10i8)
  9100 format('>> FATAL ERROR: vector overflow: oumodel_flat_patran',
      &  /,   '                job terminated' )
  9110 format('>> FATAL ERROR: element, coordinates, incidences, and',
@@ -379,7 +379,7 @@ c     *                      subroutine oumodel_flat_warp3d          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/12/2017 rhdd             *
+c     *                   last modified : 12/1/2017 rhd              *
 c     *                                                              *
 c     *    output element information to flat file using the WARP3D  *
 c     *    convention for element type, node ordering.               *
@@ -463,9 +463,9 @@ c
 c
       return
 
- 5000 format(4x,'>>>  Incidences for element : ',i6 //
-     &        4x,'     WARP3D  : ',20i6 /
-     &        4x,'     PATRAN  : ',20i6)
+ 5000 format(4x,'>>>  Incidences for element : ',i7 //
+     &        4x,'     WARP3D  : ',10i8 /
+     &        4x,'     PATRAN  : ',10i8)
  9100 format('>> FATAL ERROR: vector overflow: oumodel_flat_warp3d',
      &  /,   '                job terminated' )
  9110 format('>> FATAL ERROR: element, coordinates, incidences, and',
@@ -485,7 +485,7 @@ c     *                      subroutine ouneut                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/12/2017 rhd             *
+c     *                   last modified : 12/1/2017 rhd              *
 c     *                                                              *
 c     *    outputs a patran neutral file of the model including      *
 c     *    coordinates, incidences, element types, constraints       *
@@ -743,9 +743,9 @@ c
  1020 format (//,1x,'>>>>>> ERROR:  Either the number of nodes or',
      &        ' number of elements in the model is zero.'/
      &       18x, ' Must define model before using this option.' )
- 5000 format (4x,'>>>  Incidences for element : ',i6 //
-     &        4x,'     WARP3D  : ',20i6 /
-     &        4x,'     PATRAN  : ',20i6)
+ 5000 format (4x,'>>>  Incidences for element : ',i7 //
+     &        4x,'     WARP3D  : ',10i8 /
+     &        4x,'     PATRAN  : ',10i8)
  5010 format (4x,'>>>  Node : ',i6 /9x,'Constrained: ',l3/
      &        18x, 6i2 )
  9000 format (I2,8I8)
