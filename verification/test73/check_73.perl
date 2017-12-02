@@ -13,7 +13,7 @@ print "   ... output file opened ...\n";
 #
 #
 find_line( 1, "  output wide stresses 5" );
-find_line( 2, "  5       1 " );
+find_line( 2, "   5      1 " );
 @parts = split( / +/, $line);
 #
 $answer = "26.119914";
@@ -24,8 +24,8 @@ $out_value = $parts[$partno];
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
@@ -55,7 +55,7 @@ sub find_line {
 #
       while ( !eof(infile) )
         {
-           $line = <infile>; 
+           $line = <infile>;
 	   if( $line =~ /$string/ ) {return};
         }
 #
