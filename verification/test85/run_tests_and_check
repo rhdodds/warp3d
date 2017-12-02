@@ -117,5 +117,5 @@ if [ "$MACHINE_TYPE" = '2' ]; then
 fi
 #
 #
-echo -e "\n>>> All done with test_84 ...\n\n"
+echo -e "\n>>> All done with test_85 ...\n\n"
 exit
