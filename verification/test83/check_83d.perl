@@ -11,7 +11,7 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 #
-find_line( 1, "2       1" );
+find_line( 1, "2      1 " );
 #
 @parts = split( / +/, $line);
 #
@@ -32,7 +32,7 @@ print "   ... value from output file: ", "$out_value$message\n";
 
 
 find_line( 1, "elem  g.p.         sigma               force" );
-find_line( 1, "3       1" );
+find_line( 1, "3      1" );
 #
 @parts = split( / +/, $line);
 #
