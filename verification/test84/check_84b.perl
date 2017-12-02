@@ -11,7 +11,7 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 #
-find_line( 1, "  2       1  " );
+find_line( 1, "  2      1  " );
 #
 @parts = split( / +/, $line);
 #

@@ -12,7 +12,7 @@ print "   ... output file opened ...\n";
 #
 #
 find_line( 1, "elem  g.p.         sigma_xx" );
-find_line( 1, "1       1" );
+find_line( 1, "1      1" );
 #
 @parts = split( / +/, $line);
 #
