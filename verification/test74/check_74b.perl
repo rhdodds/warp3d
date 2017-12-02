@@ -13,7 +13,7 @@ print "   ... output file opened ...\n";
 #
 #
 find_line( 1, "  output wide stresses 1025" );
-find_line( 2, "  1025       1 " );
+find_line( 2, "   1025      1 " );
 @parts = split( / +/, $line);
 #
 $answer = "471.454198";
@@ -24,8 +24,8 @@ $out_value = $parts[$partno];
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
