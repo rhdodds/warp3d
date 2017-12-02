@@ -12,7 +12,7 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 find_line( 1, "  step no.    500  " );
-find_line( 2, " 8       1        0.017679" );
+find_line( 2, "  8      1        0.017679" );
 
 #
 #    line with results is current
@@ -24,8 +24,8 @@ $partno = 3;
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$parts[$partno]$message\n";
