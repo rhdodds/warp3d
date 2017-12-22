@@ -147,8 +147,8 @@ c                   of mdiag and totvol into a full version on the
 c                   root processor.                                             
 c              non-MPI: everything here                                         
 c                                                                               
-      call wmpi_reduce_vec_std ( mdiag, nodof )                                     
-      call wmpi_reduce_vec_std ( totvol, 1 )                                        
+      call wmpi_reduce_vec ( mdiag, nodof )                                     
+      call wmpi_reduce_vec ( totvol, 1 )                                        
 c                                                                               
 c              slaves leave now                                                 
 c                                                                               
