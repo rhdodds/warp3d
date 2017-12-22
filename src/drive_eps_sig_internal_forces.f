@@ -3,7 +3,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/22/2017 rhd              *
+c     *                   last modified : 12/21/2017 rhd             *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -40,24 +40,27 @@ c
 c             locals
 c
       integer :: blk, felem, mat_type, now_thread, num_enodes,
-     &           num_enode_dof, span, i, j, kkk, totdof
+     &           num_enode_dof, span, i, j, kkk, totdof, ksize
       integer :: num_term_ifv_threads(max_threads),
      &           idummy1(1), idummy2(1)
       integer, external :: omp_get_thread_num
 c
       double precision, allocatable :: block_energies(:),
-     &                                 block_plastic_work(:)
-      double precision :: mag, start_time,
+     &                                 block_plastic_work(:),
+     &                                 block_stress_norm2s(:),
+     &                                 block_strain_norm2s(:)
+      double precision :: mag, start_time, sum_stress_norm2s,
+     &                    sum_strain_norm2s,
      &                    end_time, sum_ifv_threads(max_threads)
-      double precision, parameter :: zero = 0.0d0
+      double precision, parameter :: zero = 0.0d0, one = 1.0d0
       double precision, external :: omp_get_wtime
       logical, allocatable, dimension(:)  :: step_cut_flags,
-     &                                    blks_reqd_serial
+     &                                       blks_reqd_serial
 c
-      logical :: umat_matl
-      logical, parameter :: local_debug = .false.
-      real, parameter :: spone = 1.0e0
-
+      logical :: umat_matl, run_serial_loop
+      logical, parameter :: local_debug = .false.,
+     &                      local_debug_sums = .false.
+c
       integer :: init_file_no, ielem
       logical :: initsig
       integer, external :: warp3d_get_device_number
@@ -109,6 +112,10 @@ c             the umat must run serial.
 c
       allocate ( block_energies(nelblk), block_plastic_work(nelblk),
      &           step_cut_flags(nelblk), blks_reqd_serial(nelblk) )
+      ksize = 1
+      if( local_debug_sums ) ksize = nelblk
+      allocate( block_stress_norm2s(ksize),
+     &          block_strain_norm2s(ksize) ) !  for checking MPI
 c
       do blk = 1, nelblk
         block_energies(blk)     = zero
@@ -118,8 +125,7 @@ c
         felem                   = elblks(1,blk)
         mat_type                = iprops(25,felem)
         umat_matl               = mat_type .eq. 8
-        if( umat_matl .and. umat_serial )
-     &       blks_reqd_serial(blk)   = .true.
+        if( umat_matl .and. umat_serial ) blks_reqd_serial(blk) = .true.
       end do
 
 c
@@ -145,6 +151,7 @@ c             high-level parallel operation.
 c
       call omp_set_dynamic( .false. )
       if( local_debug ) start_time = omp_get_wtime()
+      run_serial_loop = .false.
 c
 c$OMP PARALLEL DO PRIVATE( blk, now_thread )
 c$OMP&            SHARED( nelblk, elblks, myid, iter, step,
@@ -152,11 +159,18 @@ c$OMP&                    step_cut_flags, block_energies,
 c$OMP&                    block_plastic_work )
       do blk = 1, nelblk
          if( elblks(2,blk) .ne. myid ) cycle
-         if( blks_reqd_serial(blk) ) cycle
+         if( blks_reqd_serial(blk) ) then
+c$OMP ATOMIC WRITE
+            run_serial_loop = .true.
+            cycle
+         end if
          now_thread = omp_get_thread_num() + 1
          call do_nleps_block( blk, iter, step, step_cut_flags(blk),
      &                        block_energies(blk),
-     &                        block_plastic_work(blk) )
+     &                        block_plastic_work(blk),
+     &                        block_stress_norm2s(1),
+     &                        block_strain_norm2s(1),
+     &                        local_debug_sums )
       end do
 c$OMP END PARALLEL DO
 c
@@ -164,14 +178,19 @@ c             now run a serial version of the block loop to
 c             catch left over blocks that must be run
 c             serial.
 c
-      do blk = 1, nelblk
+      if( run_serial_loop ) then
+       do blk = 1, nelblk
          if( elblks(2,blk) .ne. myid ) cycle
          if( .not. blks_reqd_serial(blk) ) cycle
          now_thread = omp_get_thread_num() + 1
          call do_nleps_block( blk, iter, step, step_cut_flags(blk),
      &                        block_energies(blk),
-     &                        block_plastic_work(blk) )
-      end do
+     &                        block_plastic_work(blk),
+     &                        block_stress_norm2s(1),
+     &                        block_strain_norm2s(1),
+     &                        local_debug_sums )
+       end do
+      end if
 c
       if( local_debug ) then
          end_time = omp_get_wtime()
@@ -186,14 +205,34 @@ c
       material_cut_step = .false.
       internal_energy   = zero
       plastic_work      = zero
+      sum_stress_norm2s = zero      ! for MPI checking
+      sum_strain_norm2s = zero      ! for MPI checking
       do blk = 1, nelblk
          if( elblks(2,blk) .ne. myid ) cycle
          if( step_cut_flags(blk) )  material_cut_step = .true.
          internal_energy = internal_energy + block_energies(blk)
          plastic_work    = plastic_work + block_plastic_work(blk)
+         if( local_debug_sums ) then
+            sum_stress_norm2s = sum_stress_norm2s +
+     &                           block_stress_norm2s(blk)
+            sum_strain_norm2s = sum_strain_norm2s +
+     &                           block_strain_norm2s(blk)
+         end if
       end do
+
+      if( myid .eq. -1 ) then   !  save for future MPI debug
+
+        write(out,*) '....  myid = 5, block norm2 stresses'
+        do blk = 1, nelblk
+           if( elblks(2,blk) .ne. 5 ) cycle
+           write(out,8900)  blk, block_strain_norm2s(blk),
+     &           block_stress_norm2s(blk)
+        end do
+        end if
+c
       deallocate( step_cut_flags, block_energies, block_plastic_work,
-     &            blks_reqd_serial )
+     &            blks_reqd_serial, block_stress_norm2s,
+     &            block_strain_norm2s )
 c
 c             For MPI:
 c               reduce the logical flag step_cut_flags to all processors
@@ -202,14 +241,13 @@ c               all processors are aware of it.  Also reduce back the
 c               (scalar) internal energy to the root procaessor.
 c
       call wmpi_redlog( material_cut_step )
-      call wmpi_reduce_vec_std( internal_energy, 1 )
-      call wmpi_reduce_vec_std( plastic_work, 1 )
+      call wmpi_reduce_vec( internal_energy, 1 )
+      call wmpi_reduce_vec( plastic_work, 1 )
 c
 c             scatter the element internal forces (stored in blocks) into
 c             the global vector (unless we are cutting step)
 c             initialize the global internal force vector.
 c
-!DIR$ VECTOR ALIGNED
       ifv(1:nodof) = zero    ! for this rank
       sum_ifv      = zero    ! for this rank
       num_term_ifv = 0       ! for this rank
@@ -280,7 +318,6 @@ c
          write(out,*) '>> atomic scatter ifv: ', end_time - start_time
       end if
 c
-c
 c             reduction of scalars sum_ifv and
 c             num_term_ifv for all threads used to process blocks on
 c             this rank.
@@ -290,8 +327,11 @@ c
         num_term_ifv = num_term_ifv + num_term_ifv_threads(j)
       end do
 
-      if( local_debug ) write (out,*) myid,':>>>>>> local sum_ifv is:',
-     &                              sum_ifv
+      if( local_debug_sums ) then
+         write (out,9000) myid, num_term_ifv, norm2( ifv ),
+     &                    sum_stress_norm2s, sum_strain_norm2s
+      end if
+c
       if( iter .eq. 0 .and. local_debug ) then
        write(out,*) '... drive sig-eps ifv for iter 0'
        do kkk = 1, min(100,nodof)
@@ -304,9 +344,13 @@ c              sum the worker contributions to the ifv terms,
 c              the number of ifv terms, and the whole ifv vector back
 c              on the root processor.
 c
-      call wmpi_reduce_vec_std( sum_ifv, 1 )
+      call wmpi_reduce_vec( sum_ifv, 1 )
       call wmpi_redint( num_term_ifv )
-      call wmpi_reduce_vec_std( ifv(1), nodof )
+      call wmpi_reduce_vec( ifv(1), nodof )
+      if( local_debug_sums ) then
+         if( root_processor ) write(out,9010) norm2( ifv )
+      end if
+
 c
 c            deallocate space for blocks of element internal force
 c            vectors.
@@ -320,7 +364,7 @@ c
 c            modify ifv by beta_factor for thickness other than 1.
 c            only used in 2d analysis
 c
-      if( beta_fact .ne. spone ) ifv(1:nodof) =
+      if( beta_fact .ne. one ) ifv(1:nodof) =
      &                            beta_fact * ifv(1:nodof)
 c
 c            set flag indicating that the internal force
@@ -332,6 +376,13 @@ c
       return
 c
 c
+8900  format(1x,'drive_eps_sig. rank=5, blk norms strains, stresses:',
+     &       i10,e14.6,2x,e14.6 )
+ 9000 format(1x,'drive_eps_sig. rank, terms_ifv, norm ifv,',
+     & ' sum_sig_norm sum_eps_norm:',
+     &       i4,i12,e14.6,2x,e14.6,2x,e14.6)
+ 9010 format(/,1x,
+     &  'drive_eps_sig. norm2 ifv after reduce to root: ',e14.6)
  9300 format(i5,':>>> ready to call addifv:',
      &     /,10x,'blk, span, felem                 :',3i10)
  9400 format(5x,'>>> dump of internal force vector:')
@@ -343,13 +394,15 @@ c     *                      subroutine do_nleps_block               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/26/2015 rhd             *
+c     *                   last modified : 12/21/2017 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine do_nleps_block( blk, iter, step, material_cut_step,
-     &                           block_energy, block_plastic_work )
+     &                           block_energy, block_plastic_work,
+     &                           block_stress_sums, block_strain_sums,
+     &                           local_debug_sums )
       use global_data ! old common.main
 c
       use elem_extinct_data, only : dam_blk_killed, dam_state
@@ -372,8 +425,9 @@ c
       include 'include_sig_up'
 c
       integer :: blk, iter, step
-      double precision :: block_energy, block_plastic_work
-      logical :: material_cut_step
+      double precision :: block_energy, block_plastic_work,
+     &                    block_stress_sums(1), block_strain_sums(1)
+      logical :: material_cut_step, local_debug_sums
 c
       integer :: elem, ii, jj, span, felem, matnum, mat_type,
      &           num_enodes, num_enode_dof, totdof, num_int_points,
@@ -555,7 +609,8 @@ c            access these data structures w/o conflict.
 c
       if( local_debug ) write(out,9520) blk, span, felem
       call rplstr( span, felem, num_int_points, mat_type, iter,
-     &             geo_non_flg, local_work, blk )
+     &             geo_non_flg, local_work, blk, block_stress_sums,
+     &             block_strain_sums, local_debug_sums )
       if( local_debug ) write(out,9522) blk, span, felem
 c
 c            compute updated internal force vectors for each element
