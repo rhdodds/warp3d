@@ -13,7 +13,7 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 find_line( 1, "node               u  ");
- $line = <infile>; 
+ $line = <infile>;
 #
 #    line with strain valuesis current. print value
 #
@@ -29,8 +29,8 @@ $out_value = $parts[$partno];
 
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 
 #
@@ -38,8 +38,8 @@ print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
 print "\n";
 #
-find_line( 1, " 7471       1    ");
- $line = <infile>; 
+find_line( 1, " 7471      1   ");
+ $line = <infile>;
 #
 #    line with stress is current. print value
 #
@@ -54,8 +54,8 @@ $out_value = $parts[$partno];
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
 print "\n";
@@ -72,7 +72,7 @@ exit;
 #*                                                        *
 #**********************************************************
 
-sub find_line {  
+sub find_line {
       my ( $type, $string ) = @_;
       my ( $debug );
       $debug = 0;
@@ -85,7 +85,7 @@ sub find_line {
 #
       while ( !eof(infile) )
         {
-           $line = <infile>; 
+           $line = <infile>;
 	   if( $line =~ /$string/ ) {return};
         }
 #
