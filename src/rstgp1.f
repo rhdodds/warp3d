@@ -3437,7 +3437,7 @@ c     *            subroutine drive_umat_update  (umat)              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/27/2015 rhd             *
+c     *                   last modified : 12/19/2017 rhd             *
 c     *                                                              *
 c     *     drives material model 08 (Abaqus umat) to update         *
 c     *     stresses and history for all elements in block at        *
@@ -3453,24 +3453,29 @@ c
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1,
      &                            gbl_cep_blocks => cep_blocks
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                      parameter declarations
 c
-      double precision ::
-     &  uddt(mxvl,nstr), qn1(mxvl,nstr,nstr)
+      integer :: gpn, iout
+      double precision :: uddt(mxvl,nstr), qn1(mxvl,nstr,nstr)
       include 'include_sig_up'
 c
 c                       locally defined variables
 c
+      integer :: span, felem, type, order, ngp, nnode, step, iter,
+     &           now_blk, hist_size_for_blk, knumthreads, kthread,
+     &           max_nstatv, ndi, nshr, ntens, npt, layer, kspt,
+     &           kstep, kinc, kiter, kout,nstatv, k, ielem, noel,
+     &           nprops, j, nj, start_loc, n
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero, one, gp_alpha, ddsddt(6), drplde(6), drpldt,
      &  big, pnewdt, predef(1), dpred(1), time(2), dtime,
      &  stress(6), stran(6), dstran(6),
      &  abq_props(50), temp_n, dtemp,
-     &  statev(500), sse, spd, scd, coords(3), celent,
+     &  statev(500), sse, spd, scd, coords(3), celent, rpl,
      &  dfgrd0(9), dfgrd1(9), dfgrd0_array(3,3), dfgrd1_array(3,3),
      &  drot(9), ddsdde(6,6),
      &  gp_coords(mxvl,3), symm_part_ddsdde(21), total_work_np1,
@@ -3781,8 +3786,8 @@ c
      h   pnewdt, ! up
      i   celent,
      j   dfgrd0, dfgrd1,
-     k   noel, npt,
-     l   kslay, kspt, kstep, kinc, kiter, kout, kthread, knumthreads,
+     k   noel, npt, layer,
+     l   kspt, kstep, kinc, kiter, kout, kthread, knumthreads,
      m   nonloc_ele_values, nonlocal_shared_state_size )
 c
 c               5.9 make sure umat did not overwite the declared
