@@ -36,10 +36,17 @@ c              processor in the total processor numbering. Processor 0
 c              will be the root(manager) processor, while all others
 c              be workers.
 c
-      call MPI_INIT_THREAD (MPI_THREAD_FUNNELED, iallowed, ierr)
-      if( iallowed .ne. MPI_THREAD_FUNNELED ) then
+c      call MPI_INIT_THREAD (MPI_THREAD_FUNNELED, iallowed, ierr)
+c      if( iallowed .ne. MPI_THREAD_FUNNELED ) then
+c        write(out,*) '>>> fatal error on MPI start up.'
+c        write(out,*) '    MPI_THREAD_FUNNELED, iallowed:',
+c     &                  MPI_THREAD_FUNNELED, iallowed
+c        call die_abort
+c      end if
+      call MPI_INIT_THREAD (MPI_THREAD_MULTIPLE, iallowed, ierr)
+      if( iallowed .ne. MPI_THREAD_MULTIPLE ) then
         write(out,*) '>>> fatal error on MPI start up.'
-        write(out,*) '    MPI_THREAD_FUNNELED, iallowed:',
+        write(out,*) '    MPI_THREAD_MULTIPLE, iallowed:',
      &                  MPI_THREAD_FUNNELED, iallowed
         call die_abort
       end if
@@ -284,7 +291,7 @@ c     *                      subroutine wmpi_reduce_vec              *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/17/2017/05/98                   *
+c     *                   last modified : 12/20/2017 rhd             *
 c     *                                                              *
 c     *     This routine takes processor local vectors which hold    *
 c     *     contributions to a global vector, and sums them on       *
@@ -304,14 +311,58 @@ c
       double precision :: vec(size)
 c
       if( size .eq. nodof ) then
-         call wmpi_reduce_vec_new ( vec )
+c         call wmpi_reduce_vec_new ( vec )
+         call wmpi_reduce_vec_inplace( vec, size )
       else
          call wmpi_reduce_vec_std ( vec, size )
+c         call wmpi_reduce_vec_inplace( vec, size )
       endif
 c
       return
 c
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine wmpi_reduce_vec_inplace      *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/13/2017 rhd             *
+c     *                                                              *
+c     *     takes processor local vectors which hold                 *
+c     *     contributions to a global vector, and sums them on       *
+c     *     the root processor.  Thus once this routine is complete, *
+c     *     the root processor has a full copy of the vector, as if  *
+c     *     it had calculated the whole vector on its own.           *
+c     *                                                              *
+c     *     this version uses the MPI_IN_PLACE option to eliminate   *
+c     *     the usual allocation/copy of temporary on root           *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_vec_inplace( vec, size )
+      use global_data ! old common.main
+      implicit none
+      include "mpif.h"
+c
+      integer :: size
+      double precision :: vec(size)
+c
+      integer ::  ierr
+c
+      if( root_processor ) then
+        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_DOUBLE_PRECISION,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      else
+        call MPI_REDUCE( vec, vec, size, MPI_DOUBLE_PRECISION,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      end if
+c
+      return
+c
+      end
+
 c
 c     ****************************************************************
 c     *                                                              *
@@ -873,6 +924,7 @@ c
 c         broadcast several solution parameters to be passed to
 c         uexternaldb on each worker
 c
+      call wmpi_wait
       call MPI_BCAST(total_model_time,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(dt,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(ltmstp,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
@@ -936,6 +988,7 @@ c
 c
       call uexternaldb_mm04_cavity( aba_lop, aba_lrestart, aba_time,
      &                  aba_dtime, aba_kstep, aba_kinc )
+      call wmpi_wait
       return
 c
  9000 format(/,2x,"FATAL ERROR: invalid douextdb in ",
@@ -1338,14 +1391,20 @@ c
       include "mpif.h"
 c
       integer :: ierr
+      logical, parameter :: local_debug = .false.
 c
 c                   incremental displacements as determined
 c                   from the equation solve.
 c
       call wmpi_alert_slaves( 24 )
       call MPI_BCAST( du,nodof,MPI_VAL,0,MPI_COMM_WORLD,ierr )
+      call wmpi_wait
+c
+      if( local_debug ) write(out,9000) myid, norm2( du )
 c
       return
+c
+ 9000 format(1x,'>>> L2 norm du after bcast update: ',i4,e14.6)
       end
 c
 c     ****************************************************************
@@ -1372,6 +1431,7 @@ c
       include "mpif.h"
 c
       integer :: ierr
+      logical, parameter :: local_debug = .false.
 c
       call wmpi_alert_slaves ( 12 )
 c
@@ -1394,8 +1454,10 @@ c
      &                MPI_COMM_WORLD, ierr )
 c
       call MPI_BCAST( u, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+      if( local_debug ) write(out,9000) myid, norm2( u )
 c
       return
+ 9000 format(1x,'.. wmpi_send_step. rank, norm2(u): ', i4, e14.6 )
       end
 c
 c     ****************************************************************
@@ -1423,6 +1485,7 @@ c
       integer :: ierr
       double precision :: mag
       double precision, parameter :: zero = 0.0d0
+      logical, parameter :: local_debug = .false.
 c
       call wmpi_alert_slaves ( 22 )
 c
@@ -1442,6 +1505,8 @@ c
      &                   MPI_COMM_WORLD, ierr )
          call MPI_BCAST( dtemp_elems, noelem, MPI_VAL, 0,
      &                   MPI_COMM_WORLD, ierr )
+         if( local_debug ) write(out,9000) myid, norm2(dtemp_nodes),
+     &                                     norm2(dtemp_elems)
       end if
 c
 c            send the global integer flag which sets the length of the
@@ -1457,9 +1522,17 @@ c
      &                  MPI_COMM_WORLD,  ierr )
         call MPI_BCAST( eq_node_forces, eq_node_force_len, MPI_VAL, 0,
      &                  MPI_COMM_WORLD, ierr )
-      end if
+        if( local_debug ) write(out,9010) myid,
+     &                    sum(eq_node_force_indexes),
+     &                    norm2(eq_node_forces(1:eq_node_force_len))
+       end if
 c
       return
+c
+ 9000 format(1x,'..wmpi_send_temp_eqloads. myid, norm2a, norm2b: ',i4,
+     &     e14.6, 2x, e14.6 )
+ 9010 format(1x,'..wmpi_send_temp_eqloads. myid, sum-c, norm2d: ',i4,
+     &     e14.6, 2x, e14.6 )
       end
 c
 c
@@ -2363,7 +2436,28 @@ c
 c
       return
       end
-
+c
+c
+c         we have 3 versions of the routine to bring element stiffness
+c         blocks back to rank 0. All 3 work correctly.
+c
+c             1. loop over all blocks sequentially. use send/recv to
+c                request and retrieve each block.
+c
+c             2. OpenMP parallel over all ranks. each thread loops
+c                over all blocks for that rank and brings them back.
+c                uses send/recv
+c
+c             3. Use isend/irecv to post requests for all blocks
+c                from workers and handle as they arrive on rank 0.
+c
+c          Benchmarking as of 12/21/2017 at OSC using DAPL fabric
+c          shows that overall method (1) is fastest. Surprising.
+c
+c          Methods 2,3 can be 50% slower wall time.
+c
+c          We use method 1 for now.
+c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -2402,6 +2496,554 @@ c
 c
       return
       end
+c     ****************************************************************
+c     *                                                              *
+c     *           subroutine wmpi_combine_stf_non_blocking           *
+c     *                                                              *
+c     *                   last modified : 12/21/2017 rhd             *
+c     *                                                              *
+c     *     gathers the block element stiffnesses from workers.      *
+c     *     when done, root has copy of all element stiff blocks.    *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_combine_stf_non_blocking
+      use global_data ! old common.main
+      use elem_block_data, only: estiff_blocks
+      use main_data, only: asymmetric_assembly
+      implicit none
+      include "mpif.h"
+c
+      integer :: ierr, status(MPI_STATUS_SIZE), blk, felem, num_enodes,
+     &           num_enode_dof, totdof, span, utsz, blk_owner,
+     &           inblk, i, count, count_to_receive, count_to_send,
+     &           nrow_block, received_count, send_size_data(2), source,
+     &           tag, request, num_requests, idx
+      integer, save :: local_count = 0
+      integer, allocatable :: requests(:)
+      logical :: ok
+      logical, parameter :: debug = .false., check_1 = .false.,
+     &                      check_2 = .false., check_3 = .false.,
+     &                      local_debug = .false., check_4 = .false.
+      double precision :: start_move_time, end_move_time
+c
+      if( numprocs .eq. 1 ) return
+c
+c              alert workers to sync here
+c
+      call wmpi_alert_slaves ( 7 )
+c
+c              create blocks on root for element stiffness owned
+c              by workers. optionally check blocks owned by this
+c              rank for <nans>
+c
+c
+      if( local_debug ) call wmpi_combine_stf_mess( 0 )
+      if( root_processor ) call estiff_allocate( 2 )
+      if( check_1 ) call estiff_allocate( 3 )
+c
+c              root drives process to bring blocks back in order
+c              1, 2, 3, ... nelblk. Sends message to worker who owns
+c              the block to transmit it. workers run a loop blocking on
+c              a receive waiting to get a block number.
+c
+c              when done, root sends workers a 0 block number.
+c
+      start_move_time = MPI_WTIME()
+c
+      if( root_processor ) then
+c
+         num_requests = 0
+         do blk = 1, nelblk ! count blocks not owned by root
+           blk_owner      = elblks(2,blk)
+           if( blk_owner .eq. 0 ) cycle ! skip blocks owned by root
+           num_requests = num_requests + 1
+         end do  ! over all blocks
+
+         allocate ( requests( num_requests ) )
+
+         idx = 1
+         do blk = 1, nelblk ! bring blocks to root in order
+           blk_owner      = elblks(2,blk)
+           if( blk_owner .eq. 0 ) cycle ! skip blocks owned by root
+           felem          = elblks(1,blk)
+           num_enodes     = iprops(2,felem)
+           num_enode_dof  = iprops(4,felem)
+           totdof         = num_enodes * num_enode_dof
+           span           = elblks(0,blk)
+           utsz           = ((totdof*totdof)-totdof)/2 + totdof
+           nrow_block     = utsz
+           if( asymmetric_assembly ) nrow_block = totdof**2
+           count_to_receive = nrow_block * span
+           if( local_debug ) call wmpi_combine_stf_mess( 4 )
+c           call MPI_SEND( blk, 1, MPI_INTEGER, blk_owner, 21,
+c     &                    MPI_COMM_WORLD, ierr)
+c           call wmpi_check_error( 1, myid, ierr, out )
+c           if( check_4 ) then
+c             call MPI_RECV( send_size_data, 2, MPI_INTEGER, blk_owner,
+c     &                      13, MPI_COMM_WORLD, status, ierr )
+c             call wmpi_check_error( 5, myid, ierr, out )
+c             ok = ( send_size_data(1) .eq. nrow_block ) .and.
+c     &          ( send_size_data(2) .eq. span )
+c             if( .not. ok ) call wmpi_combine_stf_mess( 10 )
+c           end if
+c           call MPI_RECV( estiff_blocks(blk)%ptr(1,1),
+c     &                    count_to_receive, MPI_VAL, blk_owner,
+c     &                    14, MPI_COMM_WORLD, status, ierr )
+           call MPI_IRECV( estiff_blocks(blk)%ptr(1,1),
+     &                     count_to_receive, MPI_VAL, blk_owner,
+     &                     14, MPI_COMM_WORLD, request, ierr )
+           requests(idx) = request
+           idx = idx + 1
+           call wmpi_check_error( 2, myid, ierr, out )
+c           call MPI_GET_COUNT( status, MPI_VAL, received_count, ierr )
+c           if( received_count .ne. count_to_receive )
+c     &          call wmpi_combine_stf_mess( 1 )
+           if( check_3 ) call wmpi_combine_stf_check( 0, blk )
+         end do  ! over all blocks
+
+         call MPI_WAITALL( num_requests, requests, MPI_STATUSES_IGNORE,
+     &                     ierr )
+         deallocate ( requests )
+c
+         if( local_debug ) call wmpi_combine_stf_mess( 2 )
+c         do i = 1, numprocs - 1
+c           call MPI_SEND( 0, 1, MPI_INTEGER, i, 21, MPI_COMM_WORLD,
+c     &                    ierr )
+c         end do
+         if( local_debug ) call wmpi_combine_stf_mess( 3 )
+c
+      else ! worker code
+c
+         !do
+         do blk = 1, nelblk
+c           call MPI_RECV( inblk, 1, MPI_INTEGER, 0, 21, MPI_COMM_WORLD,
+c     &                    status, ierr )
+c           call wmpi_check_error( 3, myid, ierr, out )
+c           if( local_debug ) call wmpi_combine_stf_mess( 7 )
+c           if( inblk .eq. 0 ) then
+c             if( local_debug ) call wmpi_combine_stf_mess( 5 )
+c             exit  ! done with loop
+c           end if
+           blk_owner      = elblks(2,blk)
+           if( myid .ne. blk_owner )
+     &         cycle
+c     &        call wmpi_combine_stf_mess( 6 ) ! root sent wrong block #
+           felem          = elblks(1,blk)
+           num_enodes     = iprops(2,felem)
+           num_enode_dof  = iprops(4,felem)
+           totdof         = num_enodes * num_enode_dof
+           span           = elblks(0,blk)
+           utsz           = ((totdof*totdof)-totdof)/2 + totdof
+           nrow_block     = utsz
+           if( asymmetric_assembly ) nrow_block = totdof**2
+           count_to_send = nrow_block * span
+           if( check_3 ) call wmpi_combine_stf_check( 1, blk )
+c           if( check_4 ) then
+c              send_size_data(1) = nrow_block
+c              send_size_data(2) = span
+c              call MPI_SEND( send_size_data, 2, MPI_INTEGER, 0, 13,
+c     &                       MPI_COMM_WORLD, ierr )
+c           end if
+c           call MPI_SEND( estiff_blocks(blk)%ptr(1,1),
+c     &                       count_to_send, MPI_VAL, 0, 14,
+c     &                       MPI_COMM_WORLD, ierr )
+           call MPI_ISEND( estiff_blocks(blk)%ptr(1,1),
+     &                     count_to_send, MPI_VAL, 0, 14,
+     &                     MPI_COMM_WORLD, request, ierr )
+c           call MPI_WAIT(request, status, ierr)
+           call wmpi_check_error( 4, myid, ierr, out )
+          end do ! worker wait loop
+      end if
+c
+      end_move_time = MPI_WTIME()
+c
+      if( root_processor .and. check_2 ) then
+          if( local_debug ) call wmpi_combine_stf_mess( 9 )
+          call estiff_allocate( 4 ) ! check all blks root
+      end if
+c
+      if( root_processor ) then ! .and. local_count .eq. 0 ) then
+         write(out,9010) end_move_time - start_move_time
+         local_count = 1
+      end if
+c
+      if( local_debug ) call  wmpi_combine_stf_mess( 8 )
+      return
+c
+ 9010 format(10x,'>>> walltime to move elem stiffs:',f14.3 )
+ 9020 format(
+     &   15x, 'FATAL ERRROR: wmpi_combine_stf. inconsistent',
+     & /,15x, '              block size. blk: ',i8,
+     & /,15x  '              Job aborted.')
+c
+      contains
+c     ========
+
+      subroutine wmpi_combine_stf_mess( messno )
+      implicit none
+c
+      integer :: messno
+c
+      select case( messno )
+c
+        case( 0 )
+          write(out,*) '... entered wmpi_combine_stf_mess on rank: ',
+     &                   myid
+        case( 1 )
+          write(out,9010) blk, blk_owner, count_to_receive,
+     &                    received_count
+          call die_abort
+        case( 2 )
+          write(out,*) '.... sending termination 0 to each worker'
+        case( 3 )
+          write(out,*) '.... all workers told done'
+        case( 4 )
+          write(out,*) '.... root requests block, size : ', blk,
+     &                count_to_receive
+        case( 5 )
+          write(out,*) '.... worker recd quit from root: ',myid
+        case( 6 )
+          write(out,9030) myid, inblk
+          call die_abort
+        case( 7 )
+          write(out,*) '.... worker recd block number. myid, block: ',
+     &                 myid, inblk
+        case( 8 )
+          write(out,*) '... leaving wmpi_combine_stf_mess on rank: ',
+     &                   myid
+        case( 9 )
+          write(out,*) '... all blocks on root. check again for nans'
+        case( 10 )
+          write(out,9040) blk, blk_owner, nrow_block, span,
+     &         send_size_data(1), send_size_data(2)
+          call die_abort
+        case default
+          write(out,9020) myid, messno
+c
+      end select
+c
+      return
+c
+ 9010 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     block recd from worker has wrong size',
+     & /,10x,'blk, blk_owner, count_to_receive, received_count: ',
+     & 4i6,
+     & /,     '     job terminated')
+ 9020 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     invalid message number. myid, error:',2i5,
+     & /,     '     job terminated')
+ 9030 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     root sent wrong block number to worker',
+     & /,10x,'myid, inblk: ', 2i6,
+     & /,     '     job terminated')
+ 9040 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     mismatched sizes on send to root',
+     & /,10x,'blk, blk_owner, nrow_block, span, send_size_data(1,2): ',
+     & 6i6,
+     & /,     '     job terminated')
+c
+      end subroutine wmpi_combine_stf_mess
+
+      subroutine wmpi_combine_stf_check( type, blk_to_chk )
+      implicit none
+c
+      integer :: type, blk_to_chk, i, j, mcount
+      logical :: header
+c
+      header = .true.
+      mcount = 0
+c
+      do i = 1, span
+        do j = 1, nrow_block ! look for a nan value
+         if( isnan( estiff_blocks(blk_to_chk)%ptr(1,1) ) ) then
+             if( header ) then
+               write(out,9000) type
+               header = .false.
+             end if
+             write(out,9010) myid, blk_to_chk, span, nrow_block,
+     &                       felem+i-1, j
+             mcount = mcount + 1
+             if( mcount > 10 ) call die_abort
+         end if
+        end do
+      end do
+c
+      return
+
+ 9000 format( '>> Internal Errors: wmpi_combine_stf_check. type: ',i3)
+ 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i6)
+c
+      end subroutine wmpi_combine_stf_check
+c
+      end subroutine wmpi_combine_stf_non_blocking
+
+c     ****************************************************************
+c     *                                                              *
+c     *              subroutine wmpi_combine_stf_parallel            *
+c     *                                                              *
+c     *                   last modified : 12/20/2017 rhd             *
+c     *                                                              *
+c     *     gathers the block element stiffnesses from workers.      *
+c     *     when done, root has copy of all element stiff blocks.    *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_combine_stf_parallel
+      use global_data ! old common.main
+      use elem_block_data, only: estiff_blocks
+      use main_data, only: asymmetric_assembly
+      implicit none
+      include "mpif.h"
+c
+      integer :: ierr, status(MPI_STATUS_SIZE), blk, felem, num_enodes,
+     &           num_enode_dof, totdof, span, utsz, blk_owner,
+     &           inblk, i, count, count_to_receive, count_to_send,
+     &           nrow_block, received_count, send_size_data(2),
+     &           rank
+      integer, save :: local_count = 0
+      logical :: ok
+      logical, parameter :: debug = .false., check_1 = .false.,
+     &                      check_2 = .false., check_3 = .false.,
+     &                      local_debug = .false., check_4 = .false.
+      double precision :: start_move_time, end_move_time
+c
+      if( numprocs .eq. 1 ) return
+c
+c              alert workers to sync here
+c
+      call wmpi_alert_slaves ( 7 )
+c
+c              create blocks on root for element stiffness owned
+c              by workers. optionally check blocks owned by this
+c              rank for <nans>
+c
+c
+      if( local_debug ) call wmpi_combine_stf_mess( 0 )
+      if( root_processor ) call estiff_allocate( 2 )
+      if( check_1 ) call estiff_allocate( 3 )
+c
+c              root drives process to bring blocks back in order
+c              1, 2, 3, ... nelblk. Sends message to worker who owns
+c              the block to transmit it. workers run a loop blocking on
+c              a receive waiting to get a block number.
+c
+c              when done, root sends workers a 0 block number.
+c
+      start_move_time = MPI_WTIME()
+c
+      if( root_processor ) then
+c
+c
+c$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
+c$OMP&   PRIVATE( rank, blk, blk_owner, felem, num_enodes,
+c$OMP&   num_enode_dof, totdof, span, utsz, nrow_block,
+c$OMP&   count_to_receive, ierr, myid, send_size_data,
+c$OMP&   status, received_count, out)
+       do rank = 1, numprocs - 1
+         do blk = 1, nelblk ! bring blocks to root in order
+           blk_owner      = elblks(2,blk)
+           if( blk_owner .ne. rank ) cycle ! skip blocks owned by root
+           felem          = elblks(1,blk)
+           num_enodes     = iprops(2,felem)
+           num_enode_dof  = iprops(4,felem)
+           totdof         = num_enodes * num_enode_dof
+           span           = elblks(0,blk)
+           utsz           = ((totdof*totdof)-totdof)/2 + totdof
+           nrow_block     = utsz
+           if( asymmetric_assembly ) nrow_block = totdof**2
+           count_to_receive = nrow_block * span
+           if( local_debug ) call wmpi_combine_stf_mess( 4 )
+           call MPI_SEND( blk, 1, MPI_INTEGER, blk_owner, 21,
+     &                    MPI_COMM_WORLD, ierr)
+           call wmpi_check_error( 1, 0, ierr, out )
+           if( check_4 ) then
+             call MPI_RECV( send_size_data, 2, MPI_INTEGER, blk_owner,
+     &                      13, MPI_COMM_WORLD, status, ierr )
+             call wmpi_check_error( 5, myid, ierr, out )
+             ok = ( send_size_data(1) .eq. nrow_block ) .and.
+     &          ( send_size_data(2) .eq. span )
+             if( .not. ok ) call wmpi_combine_stf_mess( 10 )
+           end if
+           call MPI_RECV( estiff_blocks(blk)%ptr(1,1),
+     &                    count_to_receive, MPI_VAL, blk_owner,
+     &                    14, MPI_COMM_WORLD, status, ierr )
+           call wmpi_check_error( 2, 0, ierr, out )
+           call MPI_GET_COUNT( status, MPI_VAL, received_count, ierr )
+           if( received_count .ne. count_to_receive )
+     &          call wmpi_combine_stf_mess( 1 )
+           if( check_3 ) call wmpi_combine_stf_check( 0, blk )
+         end do  ! over all blocks
+      end do ! over ranks
+c$OMP END PARALLEL DO
+
+         if( local_debug ) call wmpi_combine_stf_mess( 2 )
+         do i = 1, numprocs - 1
+           call MPI_SEND( 0, 1, MPI_INTEGER, i, 21, MPI_COMM_WORLD,
+     &                    ierr )
+         end do
+         if( local_debug ) call wmpi_combine_stf_mess( 3 )
+c
+      else ! worker code
+c
+         do
+           call MPI_RECV( inblk, 1, MPI_INTEGER, 0, 21, MPI_COMM_WORLD,
+     &                    status, ierr )
+           call wmpi_check_error( 3, myid, ierr, out )
+           if( local_debug ) call wmpi_combine_stf_mess( 7 )
+           if( inblk .eq. 0 ) then
+             if( local_debug ) call wmpi_combine_stf_mess( 5 )
+             exit  ! done with loop
+           end if
+           if( myid .ne. elblks(2,inblk) )
+     &        call wmpi_combine_stf_mess( 6 ) ! root sent wrong block #
+           felem          = elblks(1,inblk)
+           num_enodes     = iprops(2,felem)
+           num_enode_dof  = iprops(4,felem)
+           totdof         = num_enodes * num_enode_dof
+           span           = elblks(0,inblk)
+           utsz           = ((totdof*totdof)-totdof)/2 + totdof
+           nrow_block     = utsz
+           if( asymmetric_assembly ) nrow_block = totdof**2
+           count_to_send = nrow_block * span
+           if( check_3 ) call wmpi_combine_stf_check( 1, inblk )
+           if( check_4 ) then
+              send_size_data(1) = nrow_block
+              send_size_data(2) = span
+              call MPI_SEND( send_size_data, 2, MPI_INTEGER, 0, 13,
+     &                       MPI_COMM_WORLD, ierr )
+           end if
+           call MPI_SEND( estiff_blocks(inblk)%ptr(1,1),
+     &                       count_to_send, MPI_VAL, 0, 14,
+     &                       MPI_COMM_WORLD, ierr )
+           call wmpi_check_error( 4, myid, ierr, out )
+          end do ! worker wait loop
+      end if
+c
+      call wmpi_wait
+      end_move_time = MPI_WTIME()
+c
+      if( root_processor .and. check_2 ) then
+          if( local_debug ) call wmpi_combine_stf_mess( 9 )
+          call estiff_allocate( 4 ) ! check all blks root
+      end if
+c
+      if( root_processor .and. local_count .eq. 0 ) then
+         write(out,9010) end_move_time - start_move_time
+         local_count = 1
+      end if
+c
+      if( local_debug ) call  wmpi_combine_stf_mess( 8 )
+      return
+c
+ 9010 format(10x,'>>> walltime to move elem stiffs:',f14.3 )
+ 9020 format(
+     &   15x, 'FATAL ERRROR: wmpi_combine_stf. inconsistent',
+     & /,15x, '              block size. blk: ',i8,
+     & /,15x  '              Job aborted.')
+c
+      contains
+c     ========
+
+      subroutine wmpi_combine_stf_mess( messno )
+      implicit none
+c
+      integer :: messno
+c
+      select case( messno )
+c
+        case( 0 )
+          write(out,*) '... entered wmpi_combine_stf_mess on rank: ',
+     &                   myid
+        case( 1 )
+          write(out,9010) blk, blk_owner, count_to_receive,
+     &                    received_count
+          call die_abort
+        case( 2 )
+          write(out,*) '.... sending termination 0 to each worker'
+        case( 3 )
+          write(out,*) '.... all workers told done'
+        case( 4 )
+          write(out,*) '.... root requests block, size : ', blk,
+     &                count_to_receive
+        case( 5 )
+          write(out,*) '.... worker recd quit from root: ',myid
+        case( 6 )
+          write(out,9030) myid, inblk
+          call die_abort
+        case( 7 )
+          write(out,*) '.... worker recd block number. myid, block: ',
+     &                 myid, inblk
+        case( 8 )
+          write(out,*) '... leaving wmpi_combine_stf_mess on rank: ',
+     &                   myid
+        case( 9 )
+          write(out,*) '... all blocks on root. check again for nans'
+        case( 10 )
+          write(out,9040) blk, blk_owner, nrow_block, span,
+     &         send_size_data(1), send_size_data(2)
+          call die_abort
+        case default
+          write(out,9020) myid, messno
+c
+      end select
+c
+      return
+c
+ 9010 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     block recd from worker has wrong size',
+     & /,10x,'blk, blk_owner, count_to_receive, received_count: ',
+     & 4i6,
+     & /,     '     job terminated')
+ 9020 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     invalid message number. myid, error:',2i5,
+     & /,     '     job terminated')
+ 9030 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     root sent wrong block number to worker',
+     & /,10x,'myid, inblk: ', 2i6,
+     & /,     '     job terminated')
+ 9040 format( '>>>  FATAL ERROR: wmpi_combine_stf',
+     & /,     '     mismatched sizes on send to root',
+     & /,10x,'blk, blk_owner, nrow_block, span, send_size_data(1,2): ',
+     & 6i6,
+     & /,     '     job terminated')
+c
+      end subroutine wmpi_combine_stf_mess
+
+      subroutine wmpi_combine_stf_check( type, blk_to_chk )
+      implicit none
+c
+      integer :: type, blk_to_chk, i, j, mcount
+      logical :: header
+c
+      header = .true.
+      mcount = 0
+c
+      do i = 1, span
+        do j = 1, nrow_block ! look for a nan value
+         if( isnan( estiff_blocks(blk_to_chk)%ptr(1,1) ) ) then
+             if( header ) then
+               write(out,9000) type
+               header = .false.
+             end if
+             write(out,9010) myid, blk_to_chk, span, nrow_block,
+     &                       felem+i-1, j
+             mcount = mcount + 1
+             if( mcount > 10 ) call die_abort
+         end if
+        end do
+      end do
+c
+      return
+
+ 9000 format( '>> Internal Errors: wmpi_combine_stf_check. type: ',i3)
+ 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i6)
+c
+      end subroutine wmpi_combine_stf_check
+c
+      end subroutine wmpi_combine_stf_parallel
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine wmpi_combine_stf             *
