@@ -17,15 +17,15 @@
 #
 #     ODIR, COMPILER, HYINC, HYLIB, MPIOPT, MKLROOT
 #
-#     Notes  
+#     Notes
 #
-#       1. We specify the -xHost  -align array64byte ifort options. 
+#       1. We specify the -xHost  -align array64byte ifort options.
 #
-#       2. The compiler will generate code for the highest level 
+#       2. The compiler will generate code for the highest level
 #          instruction set available in your processor(s).
 #
 #       3. WARP3D code ** requires ** that your processor support the
-#          AVX instruction set as a minimum. 
+#          AVX instruction set as a minimum.
 #
 #          These processors became available in early 2011 and include:
 #             2nd Generation Intel® Core™ i7 Processors
@@ -37,38 +37,38 @@
 #
 #
 OSNAME   := Linux
-BUILDNUM := 3310
+BUILDNUM := 3320
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
 #
 #                ODIR is set before make invoked. for simplicity
 #                we use separate object code directories for
-#                threaded only and threaded + MPI 
+#                threaded only and threaded + MPI
 #
 O        = .o
 OD       = $(ODIR)
 RMC      = /bin/rm -f
 MVC      = /bin/mv -f
 #
-#              common options other than used here: 
+#              common options other than used here:
 #                      FTRAP = -ftrapuv -check uninit
 #                     INLINE = -inline-level=0
 #                    PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
-FTRAP      = 
+FTRAP      =
 INLINE     = -no-inline-factor
 PROFILE    = -g
-PROFILE = 
+PROFILE =
 OPT_REPORT = -qopt-report-annotate=text -qopt-report=5
-OPT_REPORT = 
+OPT_REPORT =
 OPENMP     = -qopenmp -reentrancy
 CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
-CHECKFLOAT = 
+CHECKFLOAT =
 #
-MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte  
+MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
 DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
-MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE) 
+MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE)
 #
 FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
@@ -102,17 +102,17 @@ MODS     := $(OD)/mod_adaptive_steps.o \
             $(OD)/mod_stiffness.o
 #
 INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
-            include_usr_parm 
+            include_usr_parm
 #
 #                MKL libraries to include at link time. Needed MPI
 #                library for CPardiso set by invoking makefile.
 #
 LIBMKL =  -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core \
-          -lmkl_intel_thread -lpthread -lm  
+          -lmkl_intel_thread -lpthread -lm
 #
 LIBS = $(LIBMKL) $(LIBMPI)  $(HYLIB)
 #
-#                all *.o files for linking.  module files are listed 
+#                all *.o files for linking.  module files are listed
 #                first for readability. try to keep ordering alphabetic
 #                after modules
 #
@@ -362,7 +362,7 @@ $(EXE_NAME) : $(OBJ)
 #            => for simplicity we assume all the *.f depend on all
 #               modules, includes, param_def
 #
-$(OD)/%.o : %.f $(MODS) $(INCLUDES)	 
+$(OD)/%.o : %.f $(MODS) $(INCLUDES)
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 #        $(FOR) -qopt-report-file=$<.html $< -c -o $@
@@ -384,26 +384,26 @@ $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 #       ---  Abaqus compatible user routines. Listed explicitly for clarity ------
 #            ==============================================================
 #
-$(ODIR)/user_routines_module$O : user_routines_module.f 
+$(ODIR)/user_routines_module$O : user_routines_module.f
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
 
-$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O 
+$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR)  -inline-level=1  $< -c -o $@
 
 $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
-                                     $(OD)/user_routines_module$O 
+                                     $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR) -heap-arrays $< -c -o $@
 
 $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
-                               $(OD)/user_routines_module$O 
+                               $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR) -heap-arrays  $< -c -o $@
 
 $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
-                                $(OD)/user_routines_module$O 
+                                $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
 #
@@ -457,7 +457,7 @@ $(ODIR)/mod_jintegral$O : mod_jintegral.f param_def
 $(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
-	
+
 $(ODIR)/mod_main$O : mod_main.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@

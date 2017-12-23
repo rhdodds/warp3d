@@ -15,16 +15,16 @@
 #    Windows machines w/o the Intel compiler suite.
 #
 #
-#    1. We specify the -xHost  -align array64byte ifort options. 
+#    1. We specify the -xHost  -align array64byte ifort options.
 #
-#       -> alternatively you can build with the 
+#       -> alternatively you can build with the
 #          MINIMUM_MACHINE_TYPE option indicated below
 #
-#    2. The compiler will generate code for the highest level 
+#    2. The compiler will generate code for the highest level
 #       instruction set available in your processor(s).
 #
 #    3. WARP3D code ** requires ** that your processor support the
-#       AVX instruction set ==>> as a minimum. 
+#       AVX instruction set ==>> as a minimum.
 #
 #       These processors became available in early 2011 and include:
 #          2nd Generation Intel® Core™ i7 Processors
@@ -41,7 +41,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 3310
+BUILDNUM = 3320
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows_64
@@ -55,7 +55,7 @@ F90TRAP    =
 INLINEOPT  = /Qinline-factor-
 #INLINEOPT = /Ob0   # no inlining
 #
-PARALLEL   = /Qmkl:parallel /threads /reentrancy /Qopenmp 
+PARALLEL   = /Qmkl:parallel /threads /reentrancy /Qopenmp
 STACKSIZE  = /F400000000
 #
 MINIMUM_MACHINE_TYPE = /QaxAVX /align:array64byte
@@ -63,11 +63,11 @@ DEFAULT_MACHINE_TYPE = /QxHOST /align:array64byte
 MACHINE_TYPE         = $(DEFAULT_MACHINE_TYPE)
 #
 F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
-F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback  
-F3 = $(INLINEOPT) $(MACHINE_TYPE) $(PARALLEL) $(STACKSIZE) 
+F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback
+F3 = $(INLINEOPT) $(MACHINE_TYPE) $(PARALLEL) $(STACKSIZE)
 #
-F90 = ifort $(F1) $(F2) $(F3) 
-LINK90 = $(F90) 
+F90 = ifort $(F1) $(F2) $(F3)
+LINK90 = $(F90)
 #
 O = .obj
 OD = $(ODIR)
@@ -899,7 +899,7 @@ $(OD)/mm03p$O : mm03p.f param_def \
 	$(F90) /O3 /Qip  /c mm03p.f
 	$(MVC) mm03p$O $@
 
-$(OD)/mm04$O : mm04.f param_def 
+$(OD)/mm04$O : mm04.f param_def
 	$(F90) /O3 /Qip   /c mm04.f
 	$(MVC) mm04$O $@
 
@@ -1424,7 +1424,7 @@ $(OD)/user_list$O : user_list.f $(OD)/mod_main$O \
                   param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c user_list.f
 	$(MVC) user_list$O $@
-	
+
 $(OD)/uppbar$O : uppbar.f $(OD)/mod_main$O \
                    param_def
 	$(F90) /O3 /Qip  /c uppbar.f
@@ -1439,22 +1439,22 @@ $(OD)/upres$O : upres.f $(OD)/mod_main$O \
 #
 #       ---  Abaqus compatible user routines ------
 #
-$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O 
+$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
 	$(F90) /O3 /Qip /Ob1 /c user_routines_umat.f
 	$(MVC) user_routines_umat$O $@
 
 $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f  \
-                                     $(OD)/user_routines_module$O 
+                                     $(OD)/user_routines_module$O
 	$(F90) /O3 /Qip /heap-arrays /c user_routines_other_Abaqus.f
 	$(MVC) user_routines_other_Abaqus$O $@
 
 $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
-                               $(OD)/user_routines_module$O 
+                               $(OD)/user_routines_module$O
 	$(F90) /O3 /Qip /heap-arrays /c user_routines_warp3d.f
 	$(MVC) user_routines_warp3d$O $@
 
 $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
-                                $(OD)/user_routines_module$O 
+                                $(OD)/user_routines_module$O
 	$(F90) /O3 /Qip /c user_routines_support.f
 	$(MVC) user_routines_support$O $@
 
@@ -1564,6 +1564,6 @@ $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(F90) /O3 /Qip  /c mod_stiffness.f
 	$(MVC) mod_stiffness$O $@
 
-$(ODIR)/user_routines_module$O : user_routines_module.f 
+$(ODIR)/user_routines_module$O : user_routines_module.f
 	$(F90) /O3 /Qip  /c user_routines_module.f
 	$(MVC) user_routines_module$O $@
