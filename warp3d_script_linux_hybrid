@@ -127,16 +127,24 @@ ulimit -s 100000
 #    ----- change these as needed for your MPI fabrics and cluster
 #          configuation.
 #
-#          the ..._DAPL_... is critical is using a DAPL protocol
+#
 #
 is_Ubuntu=`uname -a | grep Ubuntu |wc --lines`
+export KMP_AFFINITY=scatter
 export MPI_TYPE_MAX=4096
 export I_MPI_PIN_DOMAIN=omp
-export I_MPI_PIN_HOST=1
 export I_MPI_FABRICS=shm:tcp
 export I_MPI_SHM_LMT=shm
-export I_MPI_DEBUG=2
-export I_MPI_DAPL_TRANSLATION_CACHE=0  #   critical if using DAPL
+#
+#            for Mellanox Infiniband, these are known to work
+#            well. tested on 64 nodes with 1200+ cores
+#
+#export KMP_AFFINITY=scatter
+#export I_MPI_PIN_DOMAIN=omp
+#export I_MPI_DAPL_TRANSLATION_CACHE=ON
+#export I_MPI_SCALABLE_OPTIMIZATION=enable
+#export I_MPI_DYNAMIC_CONNECTION=ON   # errors when this alone
+#export I_MPI_DEBUG=0  # set =2 for fabric info on starrtup
 #
 #       touch core file and make it non-writable in case we dump
 #
