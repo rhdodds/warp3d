@@ -3,9 +3,9 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: October 28, 2017
+                   Last Update: December 23, 2017
 
-                   Version 17.8.5 on all Platforms
+              Version 17.8.5, Build 3320 on all Platforms
 
 Late breaking news:
 ==================
@@ -30,13 +30,14 @@ Processors with AVX support became available in early 2011 and include:
 
   + all newer processors
 
-In future releases of WARP3d we plan to require processors with
-AVX2 instruction support.
+ --> In future releases of WARP3d we plan to require processors with
+     AVX2 instruction support.
 
 The best performance - especially on the newest processors -
 can be obtained only by re-compiling. If your processor
-supports the AVX2 instruction set, there will be a boost in performance
-across the entire code from the increased vector lenth of AVX2.
+supports the AVX2, AVX512 instruction set, there will be a
+boost in performance across the entire code from the increased vector
+register lenghts in AVX2 and AVX512.
 
 Re-building scripts in the distribution instruct the compiler to optimize
 for the hardware on which the compilation is executed.
