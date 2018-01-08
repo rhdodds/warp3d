@@ -4,7 +4,7 @@ c     *                      subroutine gtmat1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/11/2017 rhd              *
+c     *                   last modified : 1/1/2018 rhd               *
 c     *                                                              *
 c     *      computes deformation gradients and stress               *
 c     *      transformation matrices necessary for stress            *
@@ -15,17 +15,19 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine gtmat1( qnhalf, qn1, error, local_work )
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c          parameter declarations
 c
+      integer :: error
       double precision :: qnhalf(mxvl,nstr,*),  qn1(mxvl,nstr,*)
+      include 'include_sig_up'   ! defines local_work
 c
 c          local declarations - make allocatable
 c          to reduce stack size
 c
-      include 'include_sig_up'
+      integer :: span, felem, type, order, nnode, gpn
       double precision :: xi, eta, zeta
       double precision, parameter :: zero = 0.0d0, one = 1.0d0
       double precision, allocatable :: rnh(:,:,:), fnh(:,:,:), 
@@ -40,7 +42,7 @@ c
 c
       allocate( rnh(mxvl,ndim,ndim), fnh(mxvl,ndim,ndim), dfh(mxvl),
      &          theta(mxvl,mxtnsz), dfn(mxvl) )
-
+c
 !DIR$ VECTOR ALIGNED
       rnh = zero
 !DIR$ VECTOR ALIGNED
@@ -163,7 +165,7 @@ c     *                    subroutine gtmat1_init_fn                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/1/2102 rhd               *
+c     *                   last modified : 1/1/2018 rhd               *
 c     *                                                              *
 c     *      make identity and set det [Fn] = 1.0. will be inlined   *
 c     *                                                              *
@@ -171,19 +173,17 @@ c     ****************************************************************
 c
 c
       subroutine gtmat1_init_fn( span, mxvl, fn, dfn )
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameter declarations
 c
-      double precision ::
-     &     fn(mxvl,3,3),  dfn(*)
+      integer :: span, mxvl
+      double precision :: fn(mxvl,3,3),  dfn(*)
 c
 c                       local declarations
 c
-      double precision
-     &  zero, one
-c
-        data zero, one / 0.0d00, 1.0d00 /
+      integer :: i
+      double precision, parameter :: zero = 0.0d0, one = 1.0d0
 c
 c                       set [F @ 0] to identity. set determinant
 c                       to 1.0 (no deformation). routine will
@@ -205,7 +205,7 @@ c     *               subroutine gtmat1_make_fbar                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 09/2/2012                  *
+c     *                   last modified : 1/1/2018 rhd               *
 c     *                                                              *
 c     *      [F] is deformation gradient (3x3) at this Gauss pt for  *
 c     *      for all elements in block. make the [F-bar]             *
@@ -217,19 +217,20 @@ c     ****************************************************************
 
       subroutine gtmat1_make_fbar( span, mxvl, f, det_f,
      &                undeformed_elem_vols, deformed_elem_vols )
-      implicit integer (a-z)
+      implicit none
 c
 c                      parameter declarations
 c
-      double precision
-     &    f(mxvl,3,3), det_f(*), undeformed_elem_vols(*),
-     &    deformed_elem_vols(*)
+      integer :: span, mxvl
+      double precision :: f(mxvl,3,3), det_f(*),
+     &                    undeformed_elem_vols(*),
+     &                    deformed_elem_vols(*)
 c
 c                      locals
 c
-      double precision
-     &   factor, third, j_bar
-      data third / 0.3333333333333333333333d00 /
+      integer :: i
+      double precision :: j_bar, factor
+      double precision, parameter :: third = 1.0d0/3.0d0
 c
 c                      bar [F] = [F] * (bar J/J)**0.333 where
 c                      J = det [F], bar J is volume of deformed
@@ -489,8 +490,7 @@ c     *                      subroutine tcomp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/01/90                   *
-c     *                                 : 02/09/94                   *
+c     *                   last modified : 1/1/2018 rhd               *
 c     *                                                              *
 c     *     this subroutine computes the displacement gradients      *
 c     *     at a given gauss point for a block of solid elements     *
@@ -500,23 +500,25 @@ c
 c
       subroutine tcomp1( span, theta, nxi, neta, nzeta, gama, ue,
      &                   nnode )
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                     parameter declarations
 c
-      double precision
-     &     theta(mxvl,9), nxi(*), neta(*), nzeta(*), gama(mxvl,ndim,*),
-     &     ue(mxvl,*)
+      integer :: span, nnode
+      double precision ::
+     &   theta(mxvl,9), nxi(*), neta(*), nzeta(*), gama(mxvl,ndim,*),
+     &   ue(mxvl,*)
 c
 c                     locally allocated
 c
-      double precision
-     &     thtemp(mxvl,mxndel,ndim), zero
-      data zero / 0.0d00 /
+      integer :: i, j, tpos1, tpos2
+      double precision, allocatable :: thtemp(:,:,:)
+      double precision, parameter :: zero = 0.0d0
 c
 c           initialize theta
 c
+      allocate( thtemp(mxvl,mxndel,ndim) )
 !DIR$ VECTOR ALIGNED
       theta = zero ! faster to just zero entire array
 c
@@ -664,11 +666,14 @@ c
 c
 c
       subroutine rtcmp1(span,f,r)
-      implicit integer (a-z)
+      implicit none
+      integer :: span
       include 'param_def'
-      double precision
-     &     f(mxvl,ndim,*),r(mxvl,ndim,*),ui(mxvl,nstr)
+      double precision :: f(mxvl,ndim,*), r(mxvl,ndim,*)
+      double precision, allocatable :: ui(:,:)
 c
+      integer :: i
+      allocate( ui(mxvl,nstr) )
 c                       compute the inverse of the right
 c                       stretch tensor.
 c
@@ -721,13 +726,12 @@ c
 c           locals
 c
       integer :: i
-      double precision
-     & two, rbar(mxvl,3,3)
-      data two / 2.0d00 /
+      double precision :: rbar(mxvl,3,3)
+      double precision, parameter :: two = 2.0d0
 c
 c           compute q. branch on quantity & direction of rotation.
 c
-      if ( opt .eq. 1 ) then
+      if( opt .eq. 1 ) then
 c
 c      unrotated rate of deformation vector {d} = [q] *
 c       (rotated) rate of deformation vector {D}. in tensor form:
@@ -920,7 +924,7 @@ c     *                      subroutine irscp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 06/30/91                   *
+c     *                   last modified : 1/1/2018 rhd               *
 c     *                                                              *
 c     *     this subroutine computes the inverse of the right        *
 c     *     stretch tensor. the computations are for a gauss         *
@@ -931,22 +935,27 @@ c
 c
 c
       subroutine irscp1( span, f, ui )
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                       parameter declarations
 c
-      double precision
-     &   f(mxvl,ndim,*),ui(mxvl,*)
+      integer :: span
+      double precision :: f(mxvl,ndim,*), ui(mxvl,*)
 c
 c                       locally allocated arrays
 c
-      double precision
+      integer :: i
+      double precision, allocatable ::
+     &   c(:,:), cc(:,:),
+     &   iu(:), iiu(:), iiiu(:), a2(:), b2(:),
+     &   c2(:),d2(:)
+      double precision, parameter :: one = 1.0d0, two = 2.0d0
+c
+      allocate (
      &   c(mxvl,nstr), cc(mxvl,nstr),
      &   iu(mxvl), iiu(mxvl), iiiu(mxvl), a2(mxvl), b2(mxvl),
-     &   c2(mxvl),d2(mxvl), one, two
-c
-      data one, two / 1.0d00, 2.0d00 /
+     &   c2(mxvl),d2(mxvl) )
 c
 c                       ui is in symmetric upper triangular form.
 c
@@ -987,7 +996,7 @@ c     *                      subroutine ivcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/6/2016 rhd               *
+c     *                   last modified : 1/1/2018 rhd               *
 c     *                                                              *
 c     *     this subroutine computes the invariants of the right     *
 c     *     stretch tensor, the metric tensor, and its square.       *
@@ -1011,7 +1020,9 @@ c               locally allocated arrays
 c
       integer :: i
       logical, parameter :: new = .true.
-      double precision :: ct(mxvl,nstr), ev(mxvl,ndim)
+      double precision, allocatable :: ct(:,:), ev(:,:)
+c
+      allocate(  ct(mxvl,nstr), ev(mxvl,ndim) )
 c
 c              c and cc are in symmetric upper triangular form.
 c              compute the metric tensor.
@@ -1045,7 +1056,9 @@ c              form Cardano extraction of eigenvales for this
 c              specific type & size of matrix. New is
 c              considerable faster.
 c
-      if( new ) call evcmp1_new( span, mxvl, c, ev )
+      if( new ) then
+        call evcmp1_new( span, mxvl, c, ev )
+      end if  
       if( .not. new ) then
 c
 c              copy the metric tensor to stress vector
@@ -1105,19 +1118,29 @@ c
 c
 c                 locals
 c
-      integer :: bel
+      integer :: bel, i
+C     double precision ::
+C    &  m11, m12, m13, m22, m23, m33, e1, e2, e3,
+C    &  swap1, swap2, swap3, zero,
+C    &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi,
+C    &  one, two, three, third, oneptfive, thirteenptfive,
+C    &  twentyseven, quarter, sixpt75, oneroot3
+C     data zero, one, two, three / 0.0d0, 1.0d0, 2.0d0, 3.0d0 /
+C     data third, oneptfive / 0.3333333333333333333d0, 1.5d0 /
+C     data thirteenptfive, twentyseven / 13.5d0, 27.0d0 /
+C     data quarter, sixpt75, oneroot3
+C    &     / 0.25d0, 6.75d0, 0.5773502691896258d0 /
       double precision ::
      &  m11, m12, m13, m22, m23, m33, e1, e2, e3,
-     &  swap1, swap2, swap3, zero,
-     &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi,
-     &  one, two, three, third, oneptfive, thirteenptfive,
-     &  twentyseven, quarter, sixpt75, oneroot3
-      data zero, one, two, three / 0.0d0, 1.0d0, 2.0d0, 3.0d0 /
-      data third, oneptfive / 0.3333333333333333333d0, 1.5d0 /
-      data thirteenptfive, twentyseven / 13.5d0, 27.0d0 /
-      data quarter, sixpt75, oneroot3
-     &     / 0.25d0, 6.75d0, 0.5773502691896258d0 /
-c
+     &  swap1, swap2, swap3,
+     &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi
+
+      double precision, parameter ::
+     &  zero = 0.0d0, one = 1.0d0, two = 2.0d0, three = 3.0d0,
+     &  third = 1.0d0/3.0d0, oneptfive = 1.5d0,
+     &  thirteenptfive = 13.5d0, twentyseven = 27.0d0,
+     &  quarter = 0.25d0, sixpt75 = 6.75d0,
+     &  oneroot3 = 0.5773502691896258d0
 c
 c              calculates the eigenvalues of a symmetric 3x3 matrix
 c              using Cardano's analytical algorithm.
