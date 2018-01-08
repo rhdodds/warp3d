@@ -3,14 +3,16 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: October 28, 2017
+                      Last Update: January 7, 2018
 
 *** LATE BREAKING NEWS ***
 
 
-See note about critical environment variable needed if running MPI
-version on clusters with DAPL protocol. The MPI version has been
-tested using at least 64 cluster nodes with 1600 total cores.
+See updated notes about running  MPI version with DAPL communication
+protocol. Recent WARP3D fix eanbles use of DAPL optimizations.
+
+The MPI version of WARP3D has been tested in Dec 2017 at the
+Ohio Supercomputer Center  using 64 cluster nodes with 1600 total cores.
 
 The ready-to-run executables included in this distribution were built
 on OpenSuse 42.3 using Intel Composer XE Fortran, MKL and MPI 18.0.0.
@@ -102,13 +104,14 @@ Type 2: executable is warp3d.mpi_omp
 
   Most often:
     (1) the number of domains will be set to the number compute nodes
-        in the cluster,
+        in the cluster -- sometimes 2 domains/cluser node provides
+        better performance, i.e., one domain per socket
     (2) the number of threads is set to the number of cores on a
-        compute node.
+        compute node (or the number of threads per socket)
 
   Linear equation solvers: CPardiso (sparse direct) and
-  hypre (iterative) which run on the same
-  MPI ranks as WARP3D. Each CPardiso and  hypre rank uses the same
+  hypre (iterative) run on the same
+  MPI ranks as WARP3D. Each CPardiso and hypre rank uses the same
   number of threads as ranks in WARP3D.
 
   The Intel MPI runtime system must installed on your computer.
@@ -116,6 +119,10 @@ Type 2: executable is warp3d.mpi_omp
 
   The patwarp program included with WARP3D performs the domain decomposition
   using Metis starting from a Patran neutral file for the model.
+
+  The default assignment of lements to blocks and blocks to domains
+  as part of the "blocking" command in WARP3D suffices whenever the
+  Cluster Pardiso solver is used.
 
 -----------------------------------------------------------------------------
 
@@ -277,10 +284,7 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition)
     export MKL_NUM_THREADS=2
     ulimit -s 100000      <<<   Some Linux versions will need this
     export MPI_TYPE_MAX=4096
-    export I_MPI_PIN_DOMAIN=omp
-    export I_MPI_PIN_HOST=1
     export I_MPI_FABRICS=shm:tcp  <<<---- see Note
-    export I_MPI_DAPL_TRANSLATION_CACHE=0     <<< critical for DAPL !
     mpirun -np $NUM_WARP3D_RANKS $WARP3D_HOME/run_linux_em64t/warp3d.mpi_omp
 
     Note: the setup commands above assume all MPI ranks run on 1 compute node
@@ -289,6 +293,15 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads, domain decomposition)
     Local operational procedures for your cluster will describe how to modify the
     setup commands for the local installation, especially for running
     across a large number of compute nodes.
+
+    For the common DAPL protocol, we recommend:
+
+       export KMP_AFFINITY=scatter
+       export I_MPI_DAPL_TRANSLATION_CACHE=ON
+       export I_MPI_SCALABLE_OPTIMIZATION=enable
+       export I_MPI_DYNAMIC_CONNECTION=ON
+       export I_MPI_DEBUG=0  # set =2 for fabric info on starrtup
+
 
     The first line sets a short path to run the correct WARP3D
     executable.
