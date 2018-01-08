@@ -9,7 +9,7 @@ test39
 test41
 test44
 test47
-test48
+test86
 test50
 test51
 test54
@@ -92,10 +92,10 @@ cd ..
 }
 
 
-function test48 {
-echo -e "\n>>> Test 48 (Functionally graded materials)"
-echo      "    ======================================="
-cd test48
+function test86 {
+echo -e "\n>>> Test 86 (SEB, FGMs, nonlinear, J-values)"
+echo      "    ========================================"
+cd test86
 ./run_tests_and_check
 cd ..
 }
@@ -429,7 +429,7 @@ m_test39="Test 39: (CTOA crack growth)"
 m_test41="Test 41: (rigid contact, large displacements)"
 m_test44="Test 44: (Cohesive-interface growth, restart)"
 m_test47="Test 47: (Bilinear, cyclic, thermo-plasticity)"
-m_test48="Test 48: (Functionally graded materials - nonlinear)"
+m_test86="Test 86: (SEB, FGMs, nonlinear, J-values)"
 m_test50="Test 50: (Fatigue crack growth using node release)"
 m_test51="Test 51: (Nonlinear patch tests: tet elements)"
 m_test54="Test 54: (FGM, linear, SE(T), non-global constraints)"
@@ -463,7 +463,7 @@ PS3="Enter your choice (<return> to repeat menu): "
      "$m_test41"  \
      "$m_test44" \
      "$m_test47" \
-     "$m_test48" \
+     "$m_test86" \
      "$m_test50" \
      "$m_test51" \
      "$m_test54" \
@@ -509,8 +509,8 @@ PS3="Enter your choice (<return> to repeat menu): "
              test44;;
           $m_test47)
              test47;;
-          $m_test48)
-             test48;;
+          $m_test86)
+             test86;;
           $m_test50)
              test50;;
           $m_test51)
