@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: May 22, 2017
+#   Last modifications: 1-1-2018 RHD
 #
 #   Description:
 #
@@ -35,6 +35,12 @@
 #             Intel® Xeon® Processor E3 Family
 #             + all newer processors
 #
+#           During he next year, we plan to require processors
+#           that support the AVX2 instruction set.
+#
+#       4. We build a static executable including MKL and threads
+#          support libraries.
+#
 #
 # ***********************************************************************
 #
@@ -61,23 +67,27 @@ MVC      = mv -f
 #              ==> we use the simplest (static) linking method for MKL
 #
 COMPILER = ifort
-OPENMP   = -qopenmp -reentrancy -static-intel
+OPENMP   = -qopenmp -reentrancy -mkl=parallel -static-intel -qopenmp-link=static
 FTRAP    =
 OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
 OPT_REPORT =
-INLINE   =  -no-inline-factor
+INLINE   = -inline-level=0
+INLINE   = -no-inline-factor
+PROFILE  = -pg
 PROFILE  =
 CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
 CHECKFLOAT =
 MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
-DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
+DEFAULT_MACHINE_TYPE  = -xCOMMON-AVX512 -align array64byte
+DEFAULT_MACHINE_TYPE  = -xAVX2  -align array64byte
 MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
 #
 FCOPTS   =  -O3 -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
             -module $(ODIR) -ftz  $(MACHINE_TYPE)  $(FTRAP) $(INLINE) $(OPENMP) \
             $(CHECKFLOAT)
 FOR      = $(COMPILER) $(FCOPTS)
-LINK     = $(COMPILER) $(FCOPTS) -mkl
+LINK     = $(COMPILER) $(FCOPTS)
+
 #
 #                all system level module files that appear as separate *.f in WARP3D
 #                => does not include the user routine module .f for Abaqus
