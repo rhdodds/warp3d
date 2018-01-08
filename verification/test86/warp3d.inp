@@ -1,0 +1,100 @@
+!
+!
+!   plane strain model of SE(B) with functionally graded
+!   linear an nonlinear material properties with J-integral
+!   computation.
+!
+!   tests J-computation when explicit partial derivatives are needed to
+!   maintain path independence
+!
+!   1/2 symmetric model. W = 1.0 in. S = 4.0 in. specimen oriented
+!   with S along +Y. a/W = 0.35 with crack from left to right. Y = 0
+!   is a symmetry plane.
+!
+!   loading by imposed displacements ( u < 0 ) on multiple
+!   nodes. elements at load point and and far roller support are
+!   linear elastic and stiffer to prevent element collapse.
+!
+!   two sets of material properties with division along line
+!   y = -(x - 0.5). below the line, E= 30000, yld_pt = 60, n_power = 10.
+!   above the line E= 10000, yld_pt 30 n_power 5
+!
+!   increase loading for 10 steps to get a J of about 2.0
+!
+ structure seb  $ plane strain
+!
+ material steel_left
+    properties mises  e 30000 nu 0.3 yld_pt 'fgm',
+               n_power 'fgm'
+!
+material steel_right
+    properties mises  e 'fgm' nu 0.3 yld_pt 'fgm',
+               n_power 'fgm'
+!
+ material stiff
+   properties bilinear e 'fgm' nu 0.3 yld_pt 1.0e06
+!
+ number of nodes    45603  elements     6400
+!
+ elements
+  1-3200 type q3disop  linear material steel_left,
+         order 2x2x2 center_output short
+!
+  3201-6400 type q3disop  linear material steel_right,
+         order 2x2x2 center_output short
+!
+  3081 3082 3121 3122 3237-3240 type q3disop  linear,
+     material stiff order 2x2x2 center_output short
+!
+  functionally graded material properties
+   *echo off
+     *input from 'fgm_props.inp'
+   *echo on
+!
+*input from 'coordinates.inp'
+*input from 'incidences.inp'
+ blocking automatic size = 128
+ constraints
+   all w = 0.0   $ plane strain
+   *input from 'cons_crk_ligament.inp'
+   *input from 'cons_roller.inp'
+   9517 22516 22515 u = 0.0   $ remote roller
+!
+!    output patran neutral "neutral_from_warp3d"
+  output model flat patran convention text file "model"
+!
+loading test
+  nonlinear
+    step 1-2 constraints 0.005
+    steps 3-10 constraints 0.01
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 10 $ global Newton iterations
+   minimum iterations 2
+   extrapolate on
+   convergence test norm res tol 0.01
+   line search on
+   divergence check off
+   nonconvergent solutions stop
+   adaptive on   $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+ compute displacements for loading test step 10
+ output displacements 9844 53 32962  $ cmod/2, ctod/2, load point
+!
+ output flat text element stresses
+ output flat text element states
+ output flat text displacements
+!
+ *input from "get_j.inp'
+!
+stop
