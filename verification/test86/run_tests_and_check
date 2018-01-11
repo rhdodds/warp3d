@@ -37,7 +37,7 @@ echo "  ... WARP3D jobs completed..."
 #
 perl check_86.perl
 #
-tail -1 wes00010_text > flat_text_stresses
+tail -1 wes000010_text > flat_text_stresses
 perl check_text_stresses.perl
 #
 cleanup_files
