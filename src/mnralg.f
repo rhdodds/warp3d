@@ -649,18 +649,18 @@ c
  9002 format(/,1x,'... mnralg:  mf_nm1, scaling_load',
      & 2f10.6)
  9100 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
+     & '>> updating strains/stress/forces step, iteration: ',i6,i3)
  9110 format(7x,
-     & '>> updating internal forces step, iteration:       ',i5,i3)
+     & '>> updating internal forces step, iteration:       ',i6,i3)
  9150 format(/,7x,
-     & '>> starting global newton solution for step:       ',i5)
+     & '>> starting global newton solution for step:       ',i6)
  9152 format(7x,
-     & '>> extrapolating displacements to start step:      ',i5,
+     & '>> extrapolating displacements to start step:      ',i6,
      & ' (* ',f7.3,')')
  9154 format(7x,
-     & '>> no extrapolating displacements to start step:   ',i5)
+     & '>> no extrapolating displacements to start step:   ',i6)
  9155 format(7x,
-     & '>> delta forces for loads/displ/temps/creep. step: ',i5)
+     & '>> delta forces for loads/displ/temps/creep. step: ',i6)
  9410 format(/1x,'>> iteration limit exceeded for current step:',i6,
      & /,1x       '   (or adaptive sub-increment) or the solution ',
      &   'appears to be diverging....')
@@ -677,8 +677,6 @@ c
      & /,8x,'Original time step = ',e16.6,
      & /,8x,'Adaptive factor = ', e16.6,
      & /,8x,'Current time step = ',e16.6)
- 9520 format(7x,
-     & '>> automatically forcing a second iteration:       ',i5)
  9530 format(/,'... mnralg:',
      & /,8x,'>>>> Scaling previous displacements by   ',e16.6)
  9600 format(/,'... mnralg:',
@@ -859,22 +857,21 @@ c
      & '>> begin line search ' )
  9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
-     &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
+     &      '>> line search s0 value:',f8.3,' > 0.',14x,i6,i3,
      & /,7x,'   using step length 1.0 this iteration')
  9030 format(20x,'new s, r:  ',2f10.4)
  9100 format(7x,
-     &    '>> line search did not converge. iterations: ',i3,3x,i5,i3,
+     &    '>> line search did not converge. iterations: ',i3,3x,i6,i3,
      &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
  9200 format(7x,
-     & '>> line search completed. step length: ',f6.3,a2,4x,i5,i3)
+     & '>> line search completed. step length: ',f6.3,a2,4x,i6,i3)
  9205 format(7x,
      & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
  9210 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
+     & '>> updating strains/stress/forces step, iteration: ',i6,i3)
  9220 format(7x,
      & '      ... finished line search. iterations, step length: ',
      &   i2,1x,f7.4)
-
 c
       end subroutine mnralg_ls
 c     ****************************************************************
@@ -999,18 +996,18 @@ c
      & '>> begin line search ' )
  9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
-     &      '>> line search s0 value:',f8.3,' > 0.',14x,i5,i3,
+     &      '>> line search s0 value:',f8.3,' > 0.',14x,i6,i3,
      & /,7x,'   using step length 1.0 this iteration')
  9030 format(20x,'new s, r:  ',2f10.4)
  9100 format(7x,
-     &    '>> line search did not converge. iterations: ',i3,3x,i5,i3,
+     &    '>> line search did not converge. iterations: ',i3,3x,i6,i3,
      &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
  9200 format(7x,
-     & '>> line search completed. step length: ',f6.3,a2,4x,i5,i3)
+     & '>> line search completed. step length: ',f6.3,a2,4x,i6,i3)
  9205 format(7x,
      & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
  9210 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i5,i3)
+     & '>> updating strains/stress/forces step, iteration: ',i6,i3)
  9220 format(7x,
      & '      ... finished line search. iterations, step length: ',
      &   i2,1x,f7.4)
@@ -1566,7 +1563,7 @@ c
       return
 c
  9142 format(7x,
-     & '>> running sparse solver step, iteration:          ',i5,i3)
+     & '>> running sparse solver step, iteration:          ',i6,i3)
  9200 format(1x,'>> FATAL ERROR: Job Aborted.',
      & /,5x,'i_lagrange_forces not allocated. eqn_solve')
 c
@@ -1860,6 +1857,6 @@ c
       return
 c
  9110 format(7x,
-     & '>> computing tangent stiffness step, iteration:    ',i5,i3)
+     & '>> computing tangent stiffness step, iteration:    ',i6,i3)
 c
       end

@@ -846,14 +846,14 @@ c
 c
        return
 c
- 9000  format('Debug mm05_fa_compute:  element ', i5, ' at gp ', i3,
-     &   ' step number ', i5 )
+ 9000  format('Debug mm05_fa_compute:  element ', i7, ' at gp ', i3,
+     &   ' step number ', i7 )
  9001  format('computed error: ', e15.6, '  nsubinc: ', i6)
  9002  format('stress_1step: ', / 3e15.6 / 3e15.6)
  9003  format('stress_2step: ', / 3e15.6 / 3e15.6)
  9004  format('trial stress: ', / 3e15.6 / 3e15.6)
  9005  format('devdeps: ', / 3e15.6 / 3e15.6)
- 9006  format('element ', i5, ' at gp ', i3, ' step ', i5,
+ 9006  format('element ', i7, ' at gp ', i3, ' step ', i7,
      &        ' used ', i6, ' substeps')
 c
        end
@@ -950,7 +950,7 @@ c
 c
             end do
 c
-9000  format('Debug mm05_fa_compute:  element ', i5, ' at gp ', i3,
+9000  format('Debug mm05_fa_compute:  element ', i7, ' at gp ', i3,
      &   ' step number ', i6 )
 
        end
@@ -1086,7 +1086,7 @@ c
       return
 c
  9000  format( 3e15.6, /, 3e15.6 )
- 9020  format( 'element ', i5, ' at gauss point ', i3,
+ 9020  format( 'element ', i7, ' at gauss point ', i3,
      &  ' requests step size reduction:  mm05 failed to converge' // )
  9200  format( '>> Fatal Error: routine mm05_fa_lambda_solve.' //
      &         ' newton iterations failed to converge.',
@@ -2328,13 +2328,13 @@ c
 
        return
 c
- 9000  format('Debug mm05_gp_init:  element ', i5, ' at gp ', i3,
-     &   ' step number ', i5 )
+ 9000  format('Debug mm05_gp_init:  element ', i7, ' at gp ', i3,
+     &   ' step number ', i6 )
  9010  format( 'f_n,  norm_rsen, kn    =', 3e15.6 )
  9020  format( 'f_n1, norm_rtse, kb_n1 =', 3e15.6 )
  9030  format( 'f_n1, F_trial, tol*k_n =', 3e15.6 )
  9040  format( 3e15.6, /, 3e15.6 )
- 9050  format( 'element ', i6, ' at gauss point ', i3,
+ 9050  format( 'element ', i7, ' at gauss point ', i3,
      &      '   begins yielding' )
        end
 
@@ -2603,14 +2603,14 @@ c
 c
        return
 c
- 9000  format('Debug mm05_gp_compute:  element ', i5, ' at gp ', i3,
-     &   ' step number ', i5 )
+ 9000  format('Debug mm05_gp_compute:  element ', i7, ' at gp ', i3,
+     &   ' step number ', i7 )
  9001  format('computed error: ', e15.6, '  nsubinc: ', i6)
  9002  format('stress_1step: ', / 3e15.6 / 3e15.6)
  9003  format('stress_2step: ', / 3e15.6 / 3e15.6)
  9004  format('stress_nstep: ', / 3e15.6 / 3e15.6)
  9005  format('extrapolated stresses: ', / 3e15.6 / 3e15.6)
- 9006  format('element ', i5, ' at gp ', i3, ' step ', i5,
+ 9006  format('element ', i7, ' at gp ', i3, ' step ', i6,
      &        ' used ', i3, ' substeps')
  9007  format('>>>>> warning: error tolerance for adaptive integration',
      &        'leads to ', i5, ' subincrements. exceeds limit.',/15x,
@@ -2810,7 +2810,7 @@ c
 c
       end do
 c
- 9000 format('Debug mm05_gp_nsteps:  element ', i5, ' at gp ', i3,
+ 9000 format('Debug mm05_gp_nsteps:  element ', i7, ' at gp ', i3,
      &   ' step number ', i6, ' subincrement', i3, ' of', i3 )
  9001 format('stress_j : ', / 3e15.6 / 3e15.6)
  9002 format('alpha_j  : ', / 3e15.6 / 3e15.6)
@@ -2944,14 +2944,14 @@ c
       end if
 c
  7000 format('>> ERROR: no real value for lambda in generalized',
-     &     ' plasticity algorithm',/,' for element ', i5, ' at step '
+     &     ' plasticity algorithm',/,' for element ', i7, ' at step '
      &     , i6,' gauss point ', i2)
  7001 format('(a,b,c) = ', 3(1x,e13.6), / )
  7002 format('>> ERROR: no positive value for lambda in',
-     &     ' generalized plasticity algorithm',/,' for element ', i5,
+     &     ' generalized plasticity algorithm',/,' for element ', i7,
      &     ' at step ', i6, ' gauss point ', i2)
  7003 format('>> ERROR: unknown error with quadratic solution in',
-     &     ' generalized plasticity algorithm',/,' for element ', i5,
+     &     ' generalized plasticity algorithm',/,' for element ', i7,
      &     ' at step ', i6, ' gauss point ', i2, ' lambda ', e13.6)
  7010 format( '>> Fatal Error: cannot requst step size reduction',
      &        ' Job terminated.' // )
@@ -3361,7 +3361,7 @@ c
 c
       return
 c
- 9000 format('Debug mm05_gp_elastic_fraction:  element ', i5, ' at gp ',
+ 9000 format('Debug mm05_gp_elastic_fraction:  element ', i7, ' at gp ',
      &   i3, ' step number ', i6  )
  9001 format( 't1 t2 t3:', 3e15.6, /, 't4 t5 t6:', 3e15.6 )
  9002 format( 'eta_low  f_low: ', 2e15.6 )
@@ -3372,10 +3372,10 @@ c
  9011 format( 'alpha_n =  ', 3e15.6, /, '           ', 3e15.6 )
  9012 format( 'devdeps =  ', 3e15.6, /, '           ', 3e15.6 )
  9200 format( '>> Fatal Error: routine mm05_gp_elastic_fraction:',
-     &        '  element ', i6, ' gauss point ', i3, ' eta = 1 ',
+     &        '  element ', i7, ' gauss point ', i3, ' eta = 1 ',
      &         ' Job terminated.' // )
  9201 format( '>> Fatal Error: routine mm05_gp_elastic_fraction:',
-     &         '   element ', i6, ' gauss point ', i3, /,
+     &         '   element ', i7, ' gauss point ', i3, /,
      &         '   eta is not properly bracketed.', /,
      &         ' Job terminated.' // )
  9202 format(/,3x,'>> Error: divide by zero in ',
