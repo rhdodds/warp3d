@@ -15,7 +15,7 @@ c
      &    nonlocal_shared_state_size, max_interface_props
 
       parameter( mxel=3000000,mxndel=20,max_threads=128,
-     &    mxlbel=19,mxndof=3,mxgp=14,nstr=6,mxstep=100000,mxlc=5000,
+     &    mxlbel=19,mxndof=3,mxgp=14,nstr=6,mxstep=200000,mxlc=5000,
      &    mxmat=500,mxlsz=5000,mxelmp=30,mxstmp=30, mxstc=10,
      &    mxoupr=30,ntrc=10,mxconn=100,mxvl=128,mxnmgp=10,
      &    mxblsz=128,mxnmbl=20000,nparam=3,mxelpr=43,vclim=28,
