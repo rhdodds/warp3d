@@ -4,8 +4,8 @@ c     *                      find_patran_work                        *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine find_patran_work( combine_binary, combine_formatted, 
-     &                             local_count, matl_states_name )  
+      subroutine find_patran_work( combine_binary, combine_formatted,
+     &                             local_count, matl_states_name )
 c
       use global_data, only : termout, nodal_stresses_step_list,
      &   nodal_strains_step_list, element_stresses_step_list,
@@ -18,15 +18,15 @@ c                parameter declarations
 c                ----------------------
 c
       integer :: local_count
-      logical :: combine_binary, combine_formatted   
+      logical :: combine_binary, combine_formatted
       character(len=*) :: matl_states_name
 c
 c                local variables
-c                ---------------    
+c                ---------------
 c
       integer :: step
-      logical :: l1, l2, l3, l4, l5  
-      logical, parameter :: local_debug = .false.    
+      logical :: l1, l2, l3, l4, l5
+      logical, parameter :: local_debug = .false.
       character(len=80) :: node_stress_fname, node_strain_fname,
      &                     element_stress_fname, element_strain_fname,
      &                     element_states_fname
@@ -69,9 +69,9 @@ c
             write(termout,9000) step, node_stress_fname,
      &                         node_strain_fname, element_stress_fname,
      &                         element_strain_fname, matl_states_name,
-     &                         element_states_fname 
+     &                         element_states_fname
             write(termout,9010) l1, l2, l3, l4, l5
-        end if     
+        end if
 c
         if( l1 ) then
             nodal_stresses_step_list(step) = 1
@@ -93,15 +93,15 @@ c
             element_states_step_list(step)  = 1
             found_ele_states = .true.
         end if
-        if( l1 .or. l2 .or. l3 .or. l4 .or. l5 ) 
+        if( l1 .or. l2 .or. l3 .or. l4 .or. l5 )
      &            local_count = local_count + 1
 c
       end do
 c
-      return  
+      return
 c
- 9000 format("... Patran file names for step: ",i7,/,10(10x,a,/))  
- 9010 format("    Exit flags for step: ",10l2)        
+ 9000 format("... Patran file names for step: ",i7,/,10(10x,a,/))
+ 9010 format("    Exit flags for step: ",10l2)
 c
       end subroutine find_patran_work
 c **********************************************************************
@@ -113,7 +113,7 @@ c
 c
       subroutine build_patran_file_names( step, myid, node_stress_fname,
      &                         node_strain_fname, element_stress_fname,
-     &                         element_strain_fname, matl_states_name, 
+     &                         element_strain_fname, matl_states_name,
      &                         element_states_fname, termout,
      &                         combine_binary, combine_formatted,
      &                         file_name, result_type, data_type  )
@@ -130,14 +130,14 @@ c
      &                    matl_states_name
 c
 c                local variables
-c                ---------------    
+c                ---------------
 c
       integer :: nchars
       logical :: local_debug
-      character :: step_id*5, proc_id*4, format*1
+      character :: step_id*6, proc_id*4, format*1
 c
       local_debug              = .false.
-      node_stress_fname(1:)    = ' '  
+      node_stress_fname(1:)    = ' '
       node_strain_fname(1:)    = ' '
       element_stress_fname(1:) = ' '
       element_strain_fname(1:) = ' '
@@ -151,23 +151,23 @@ c
       elseif( combine_formatted ) then
          format = 'f'
       else
-         write(termout,*) 
+         write(termout,*)
      &       '>> FATAL ERROR: routine build_patran_file_names'
          write(termout,*) '>>   invalid format flag...'
          write(termout,*) '>>   job terminated...'
          stop
       end if
 c
-      node_stress_fname(1:)    = 'wn' // format // 's' // 
+      node_stress_fname(1:)    = 'wn' // format // 's' //
      &                           step_id // '.' // proc_id
       node_strain_fname(1:)    = 'wn' // format // 'e' //
      &                           step_id // '.' // proc_id
       element_stress_fname(1:) = 'we' // format // 's' //
      &                           step_id // '.' // proc_id
-      element_strain_fname(1:) = 'we' // format // 'e' // 
+      element_strain_fname(1:) = 'we' // format // 'e' //
      &                           step_id // '.' // proc_id
       nchars = len_trim( matl_states_name )
-      element_states_fname(1:) = 'we' // format // 'm' // 
+      element_states_fname(1:) = 'we' // format // 'm' //
      &                           step_id // '_' //
      &                           matl_states_name(1:nchars) // '.' //
      &                           proc_id
@@ -176,7 +176,7 @@ c          data_type = 0   (element results)
 c                    = 1   (nodal results)
 c
 c          result_type  = 0 (stress results)
-c                       = 1 (strain results)  
+c                       = 1 (strain results)
 c                       = 2 (states results)
 c
 c
@@ -191,7 +191,7 @@ c
            write(termout,9300)
            stop
         end if
-      elseif( data_type .eq. 1 ) then 
+      elseif( data_type .eq. 1 ) then
         if( result_type .eq. 1 ) then
            file_name(1:) = node_strain_fname(1:)
         elseif( result_type .eq. 0 ) then
@@ -204,17 +204,17 @@ c
         write(termout,9400)
         stop
       end if
-c       
+c
       if( local_debug ) then
         write(termout,*) ' >> local debug in build_patran_file_names...'
         write(termout,9200) node_stress_fname, node_strain_fname,
      &                      element_stress_fname, element_strain_fname,
      &                      element_states_fname
       end if
-c 
-      return      
 c
- 9000 format( i5.5 )
+      return
+c
+ 9000 format( i6.6 )
  9100 format( i4.4 )
  9200 format( 5x,' > file names: ', 5(/10x,a) )
  9300 format( '>> FATAL ERROR: routine build_patran_file_names...',
@@ -232,7 +232,7 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine do_patran_nodal_step( step, combine_binary, 
+      subroutine do_patran_nodal_step( step, combine_binary,
      &          combine_formatted, termout, sig_eps_type, file_no,
      &          missing_flg, did_patran_binary, did_patran_formatted,
      &          consistent_num_values )
@@ -247,13 +247,13 @@ c
       integer :: step, termout, sig_eps_type, file_no,
      &           consistent_num_values
       logical :: combine_binary, combine_formatted, missing_flg,
-     &           did_patran_binary, did_patran_formatted 
+     &           did_patran_binary, did_patran_formatted
 c
 c                local variables
-c                ---------------    
+c                ---------------
 c
       integer:: myid, open_status, num_values, allocate_status,
-     &          now_num_values, num_nodes, now_num_nodes, node_id, 
+     &          now_num_values, num_nodes, now_num_nodes, node_id,
      &          miss_count
       integer, allocatable, dimension(:)  :: node_list
       logical :: local_debug, print_header, print, bad1, bad2
@@ -262,7 +262,7 @@ c
       character(len=80) :: node_stress_fname, node_strain_fname,
      &                     element_stress_fname, element_strain_fname,
      &                     dummy_fname, dummy_name
-      character(len=14) :: file_name
+      character(len=15) :: file_name
       character(len=4) :: title1_binary(80), title2_binary(80)
       character(len=1) :: title1_formatted(80), title2_formatted(80)
 c
@@ -279,26 +279,26 @@ c
      &   element_strain_fname, dummy_name, dummy_fname, termout,
      &   combine_binary, combine_formatted, file_name, sig_eps_type, 1 )
 c
-      if( local_debug ) write(termout,9700) step, file_name(1:14),
-     &                   file_no 
+      if( local_debug ) write(termout,9700) step, file_name(1:15),
+     &                   file_no
 c
 c                open the node result file for processor
-c                zero. read the header records to get the 
+c                zero. read the header records to get the
 c                number of data values per node and the number
 c                of nodes. each result file for other processors
 c                must have the same values else bad.
 c
-      call open_old_patran_result_file( file_no, file_name, 
+      call open_old_patran_result_file( file_no, file_name,
      &   combine_binary, combine_formatted, termout, 1, open_status, 0 )
 c
-      call read_patran_node_file_header( 
-     &   file_no, title1_binary, num_values, title2_binary, num_nodes, 
+      call read_patran_node_file_header(
+     &   file_no, title1_binary, num_values, title2_binary, num_nodes,
      &   title1_formatted, title2_formatted, termout, combine_binary,
      &   combine_formatted )
       close( unit=file_no )
-c  
+c
 c                check consistency
-c    
+c
       if(  local_debug ) write(termout,9710) num_values, num_nodes
       if( consistent_num_values == -1 )
      &          consistent_num_values = num_values
@@ -307,7 +307,7 @@ c
       if( bad1 .or. bad2 ) then
         write(termout,9730) num_nodes, num_model_nodes, num_values,
      &                      consistent_num_values,
-     &                      file_name(1:len_trim(file_name))  
+     &                      file_name(1:len_trim(file_name))
         stop
       end if
 c
@@ -326,19 +326,19 @@ c
       node_list(1:num_nodes)                = 0
       if(  local_debug ) write(termout,9720) num_nodes
 c
-c                loop over all the separate rank files of 
+c                loop over all the separate rank files of
 c                node results for this load step.
 c                open the file and read the
 c                node results into the single array here. keep
-c                track of how many times a node appears in result files 
+c                track of how many times a node appears in result files
 c                to enable averaging.
 c
       do myid = 0, last_proc_id ! MPI ranks
 c
         call build_patran_file_names( step, myid, node_stress_fname,
-     &     node_strain_fname, element_stress_fname, 
+     &     node_strain_fname, element_stress_fname,
      &     element_strain_fname, dummy_name, dummy_fname, termout,
-     &     combine_binary, combine_formatted, file_name, sig_eps_type, 
+     &     combine_binary, combine_formatted, file_name, sig_eps_type,
      &     1 )
 c
 c                open the node result file for the processor.
@@ -351,22 +351,22 @@ c
      &     file_no, file_name, combine_binary, combine_formatted,
      &     termout, 2, open_status, 1 )
         if( open_status .ne. 0 ) cycle
-        if( local_debug ) write(termout,9705) myid, file_name(1:14),
+        if( local_debug ) write(termout,9705) myid, file_name(1:15),
      &                                        file_no
 c
 c               read node results for this processor. check
 c               header info for consistency with other processor
 c               files for this step.
 c
-        call read_patran_node_file_header_dummy( file_no, 
+        call read_patran_node_file_header_dummy( file_no,
      &     now_num_values, now_num_nodes, termout, combine_binary,
      &     combine_formatted )
         bad1 = now_num_nodes .ne. num_model_nodes
         bad2 = now_num_values .ne. consistent_num_values
         if( bad1 .or. bad2 ) then
-          write(termout,9730) now_num_nodes, num_model_nodes, 
+          write(termout,9730) now_num_nodes, num_model_nodes,
      &                        now_num_values, consistent_num_values,
-     &                        file_name(1:len_trim(file_name))  
+     &                        file_name(1:len_trim(file_name))
           stop
         end if
 c
@@ -375,9 +375,9 @@ c                single node results table. update count of
 c                node appearances.
 c
        call read_patran_node_values( file_no, node_values, num_values,
-     &    num_nodes, node_list, termout, combine_binary, 
-     &    combine_formatted ) 
-     &   
+     &    num_nodes, node_list, termout, combine_binary,
+     &    combine_formatted )
+     &
        close( unit=file_no,status='keep' )
 c
 c              end loop over processor files for step
@@ -415,22 +415,22 @@ c               node results data looks ok. create a new,
 c               single patran results file for this step.
 c               write in all the data.
 c
-      call open_new_patran_result_file( file_no, file_name, 
+      call open_new_patran_result_file( file_no, file_name,
      &   combine_binary, combine_formatted, termout, 2 )
 c
       if( combine_binary ) did_patran_binary = .true.
       if( combine_formatted ) did_patran_formatted = .true.
-      call write_patran_node_results( file_no, title1_binary, 
+      call write_patran_node_results( file_no, title1_binary,
      &   num_values, title2_binary, num_nodes, node_values, node_list,
-     &   title1_formatted, title2_formatted, termout, combine_binary, 
+     &   title1_formatted, title2_formatted, termout, combine_binary,
      &   combine_formatted, sig_eps_type )
-c    
+c
       close( unit=file_no )
 c
       deallocate( node_values, node_list, stat=allocate_status )
       call check_deallocate_status( termout, 20, allocate_status )
 c
-      return    
+      return
 c
  9120 format( '>> FATAL ERROR: routine do_patran_nodal_step...',
      &  /,    '                internal error @ 4',
@@ -442,10 +442,10 @@ c
  9400 format(15x,i7)
 c
  9700 format(5x,'> local debug in do_node_step: ',
-     & /,10x,'step: ',i5,/,10x,'file_name: ',a14,
+     & /,10x,'step: ',i6,/,10x,'file_name: ',a15,
      & /,10x,'file_no: ',i5 )
  9705 format(5x,'> local debug in do_node_step: ',
-     & /,10x,'myid: ',i5,/,10x,'file_name: ',a14,
+     & /,10x,'myid: ',i6,/,10x,'file_name: ',a15,
      & /,10x,'file_no: ',i5 )
  9710 format(10x,'number of data values, nodes: ',i5,i9)
  9720 format(5x,'> data arrays allocated. no. nodes: ',i7)
@@ -470,29 +470,29 @@ c
      &  matl_state_name, did_patran_binary, did_patran_formatted,
      &  consistent_num_values )
 c
-      use global_data, only : num_model_elems, last_proc_id 
+      use global_data, only : num_model_elems, last_proc_id
 
       implicit none
 c
 c                parameter declarations
 c                ----------------------
 c
-      integer :: step, termout, result_type, file_no, 
+      integer :: step, termout, result_type, file_no,
      &           consistent_num_values
       logical :: combine_binary, combine_formatted, missing_flg,
-     &           did_patran_binary, did_patran_formatted  
+     &           did_patran_binary, did_patran_formatted
       character(len=*) :: matl_state_name
 c
 c                local variables
-c                ---------------    
+c                ---------------
 c
       integer :: myid, open_status, num_values, allocate_status,
-     &           now_num_values, num_elements, element_id, 
+     &           now_num_values, num_elements, element_id,
      &           now_num_elements, miss_count
       character(len=80) :: node_stress_fname, node_strain_fname,
      &               element_stress_fname, element_strain_fname,
      &               element_states_fname
-      character :: file_name*80, title1_binary(80)*4, 
+      character :: file_name*80, title1_binary(80)*4,
      &             title2_binary(80)*4, title1_formatted(80)*1,
      &             title2_formatted(80)*1
       logical :: local_debug, fatal, print_header, print, bad1, bad2
@@ -508,14 +508,14 @@ c                 file.
 c
       call build_patran_file_names( step, 0, node_stress_fname,
      &   node_strain_fname, element_stress_fname,
-     &   element_strain_fname, matl_state_name, element_states_fname, 
+     &   element_strain_fname, matl_state_name, element_states_fname,
      &   termout, combine_binary, combine_formatted, file_name,
      &   result_type, 0 )
       if( local_debug ) write(termout,9700) step,
-     &                  file_name(1:len_trim(file_name)), file_no 
+     &                  file_name(1:len_trim(file_name)), file_no
 c
 c                open the element result file for processor
-c                zero. read the header records to get the 
+c                zero. read the header records to get the
 c                number of data values per element and the number
 c                of elements. each result file for other processors
 c                must have the same values else bad.
@@ -527,7 +527,7 @@ c
      &   num_values, title2_binary, num_elements, title1_formatted,
      &   title2_formatted, termout, combine_binary, combine_formatted )
       close( unit=file_no )
-c      
+c
       if( local_debug ) write(termout,9710) num_values, num_elements
       if( consistent_num_values == -1 )
      &          consistent_num_values = num_values
@@ -536,8 +536,8 @@ c
       if( bad1 .or. bad2 ) then
         write(termout,9730) num_elements, num_model_elems, num_values,
      &                      consistent_num_values,
-     &                      file_name(1:len_trim(file_name))  
- 
+     &                      file_name(1:len_trim(file_name))
+
         stop
       end if
 c
@@ -554,7 +554,7 @@ c
       element_values(1:num_values,1:num_elements) = 0.0
       if( local_debug ) write(termout,9720) num_elements
 c
-c                loop over all the separate processor files of 
+c                loop over all the separate processor files of
 c                element results for this load step.
 c                open the file and read the
 c                element results into the single array here. keep
@@ -564,11 +564,11 @@ c
 c
         call build_patran_file_names( step, myid, node_stress_fname,
      &     node_strain_fname, element_stress_fname,
-     &     element_strain_fname, matl_state_name, 
-     &     element_states_fname, termout, combine_binary, 
+     &     element_strain_fname, matl_state_name,
+     &     element_states_fname, termout, combine_binary,
      &     combine_formatted, file_name, result_type, 0 )
         if( local_debug ) write(termout,9705) myid,
-     &                     file_name(1:len_trim(file_name)), file_no 
+     &                     file_name(1:len_trim(file_name)), file_no
 c
 c                open the element result file for the processor.
 c                read all data for a binary or a formmated file. if
@@ -576,8 +576,8 @@ c                the open fails, keep looking for processor files
 c                until max_procs in case user blew away a
 c                processor file.
 c
-        call open_old_patran_result_file( file_no, file_name, 
-     &       combine_binary,combine_formatted, termout, 2, 
+        call open_old_patran_result_file( file_no, file_name,
+     &       combine_binary,combine_formatted, termout, 2,
      &       open_status, 1 )
         if( open_status .ne. 0 ) cycle
 c
@@ -585,15 +585,15 @@ c               read element results for this processor. check
 c               header info for consistency with other processor
 c               files for this step.
 c
-        call read_patran_element_file_header_dummy( file_no, 
+        call read_patran_element_file_header_dummy( file_no,
      &     now_num_values, termout, combine_binary, combine_formatted,
      &     now_num_elements )
         bad1 = now_num_elements .ne. num_model_elems
         bad2 = now_num_values .ne. consistent_num_values
         if( bad1 .or. bad2 ) then
           write(termout,9730) num_elements, num_model_elems, num_values,
-     &                        consistent_num_values, 
-     &                        file_name(1:len_trim(file_name))  
+     &                        consistent_num_values,
+     &                        file_name(1:len_trim(file_name))
           stop
         end if
 
@@ -604,14 +604,14 @@ c                element appearances.
 c
        call read_patran_element_values( file_no, element_values,
      &     num_values, num_elements, element_list, termout,
-     &     combine_binary, combine_formatted ) 
-     &   
+     &     combine_binary, combine_formatted )
+     &
        close( unit=file_no )
 c
 c              end loop over processor files for step
       end do
 c
-c                check that each element has exactly 1 set of 
+c                check that each element has exactly 1 set of
 c                values read from all the processor file
 c
       fatal        = .false.
@@ -645,21 +645,21 @@ c               write in all the data.
 c
       if( combine_binary )    did_patran_binary = .true.
       if( combine_formatted ) did_patran_formatted = .true.
-      call open_new_patran_result_file( file_no, file_name, 
+      call open_new_patran_result_file( file_no, file_name,
      &             combine_binary, combine_formatted, termout, 1 )
 c
-      call write_patran_element_results( 
+      call write_patran_element_results(
      &         file_no, title1_binary, num_values, title2_binary,
      &         num_elements, element_values, title1_formatted,
-     &         title2_formatted, termout, combine_binary, 
+     &         title2_formatted, termout, combine_binary,
      &         combine_formatted, element_list )
-c    
+c
       close( unit=file_no )
 c
       deallocate( element_values, element_list, stat=allocate_status)
       call check_deallocate_status( termout, 1, allocate_status )
 c
-      return    
+      return
 c
  9120 format( '>> FATAL ERROR: routine do_patran_element_step...',
      &  /,    '                internal error @ 4',
@@ -673,10 +673,10 @@ c
  9400 format(15x,i7)
 c
  9700 format(5x,'> local debug in do_patran_element_step: ',
-     & /,10x,'step: ',i5,/,10x,'file_name: ',a,
+     & /,10x,'step: ',i6,/,10x,'file_name: ',a,
      & /,10x,'file_no: ',i5 )
  9705 format(5x,'> local debug in do_patran_element_step: ',
-     & /,10x,'myid: ',i5,/,10x,'file_name: ',a,
+     & /,10x,'myid: ',i6,/,10x,'file_name: ',a,
      & /,10x,'file_no: ',i5 )
  9710 format(10x,'number of data values, elements: ',i5,i10)
  9720 format(5x,'> data arrays allocated. no. elements: ',i7)
@@ -695,8 +695,8 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine open_old_patran_result_file( file_no, file_name, 
-     &             combine_binary, combine_formatted, termout, 
+      subroutine open_old_patran_result_file( file_no, file_name,
+     &             combine_binary, combine_formatted, termout,
      &             location, open_status, dowhat )
       implicit none
 c
@@ -712,14 +712,14 @@ c                  ------------------
 c
 c
       if( combine_binary ) then
-        open( unit=file_no, file=file_name, status='old', 
+        open( unit=file_no, file=file_name, status='old',
      &        access='sequential', form='unformatted',
      &        iostat= open_status )
-      elseif( combine_formatted ) then 
-        open( unit=file_no, file=file_name, status='old', 
+      elseif( combine_formatted ) then
+        open( unit=file_no, file=file_name, status='old',
      &        access='sequential', form='formatted',
      &        iostat= open_status )
-      else 
+      else
         write(termout,9200) location
         stop
       end if
@@ -733,7 +733,7 @@ c
       if( open_status .ne. 0 ) then
         write(termout,9100) location
         stop
-      end if        
+      end if
 c
       return
 c
@@ -750,9 +750,9 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine read_patran_element_file_header( file_no, 
+      subroutine read_patran_element_file_header( file_no,
      &                   title1_binary,
-     &                   num_values, title2_binary, num_elements, 
+     &                   num_values, title2_binary, num_elements,
      &                   title1_formatted, title2_formatted, termout,
      &                   combine_binary, combine_formatted )
       implicit none
@@ -769,8 +769,8 @@ c                  local declarations
 c                  ------------------
 c
       integer :: read_status
-c              
-      if( combine_binary ) then 
+c
+      if( combine_binary ) then
          read(unit=file_no,iostat=read_status) title1_binary, num_values
          call check_read_status( file_no, read_status, termout, 1 )
          read(unit=file_no,iostat=read_status) title2_binary
@@ -779,7 +779,7 @@ c
          call check_read_status( file_no, read_status, termout, 3 )
          read(unit=file_no,iostat=read_status) num_elements
          call check_read_status( file_no, read_status, termout, 3 )
-      elseif( combine_formatted ) then  
+      elseif( combine_formatted ) then
          read(unit=file_no,iostat=read_status,
      &        fmt=9300) title1_formatted
          call check_read_status( file_no, read_status, termout, 4 )
@@ -833,8 +833,8 @@ c
       character(len=4) :: title1_binary(80), title2_binary(80)
       character(len=1) :: title1_formatted(80), title2_formatted(80)
 c
-      if(  combine_binary ) then 
-         read(unit=file_no,iostat=read_status) title1_binary, 
+      if(  combine_binary ) then
+         read(unit=file_no,iostat=read_status) title1_binary,
      &        now_num_values
          call check_read_status( file_no, read_status, termout, 1 )
          read(unit=file_no,iostat=read_status) title2_binary
@@ -843,7 +843,7 @@ c
          call check_read_status( file_no, read_status, termout, 3 )
          read(unit=file_no,iostat=read_status) now_num_elements
          call check_read_status( file_no, read_status, termout, 3 )
-      elseif( combine_formatted ) then  
+      elseif( combine_formatted ) then
          read(unit=file_no,iostat=read_status,
      &        fmt=9300) title1_formatted
          call check_read_status( file_no, read_status, termout, 4 )
@@ -883,8 +883,8 @@ c
 c
       subroutine read_patran_element_values(
      &           file_no, element_values, num_values, num_elements,
-     &           element_list, termout, combine_binary, 
-     &           combine_formatted  ) 
+     &           element_list, termout, combine_binary,
+     &           combine_formatted  )
       implicit none
 c
 c                  parameter declarations
@@ -903,9 +903,9 @@ c
 c
 c
       do
-        if( combine_binary ) then 
+        if( combine_binary ) then
           read(unit=file_no,iostat=read_status) element_id,
-     &         elem_family, 
+     &         elem_family,
      &        ( element_data(i), i = 1, num_values )
         elseif( combine_formatted ) then
           read(unit=file_no,iostat=read_status,fmt=9330)
@@ -947,8 +947,8 @@ c *          open_new_patran_result_file                               *
 c *                                                                    *
 c **********************************************************************
 c
-      subroutine open_new_patran_result_file( file_no, file_name, 
-     &             combine_binary, combine_formatted, termout, 
+      subroutine open_new_patran_result_file( file_no, file_name,
+     &             combine_binary, combine_formatted, termout,
      &             location )
       implicit none
 c
@@ -973,16 +973,16 @@ c
         stop
       end if
       local_fname(1:) = file_name(1:dot_pos-1)
-c      
+c
       if( combine_binary ) then
-        open( unit=file_no, file=local_fname, status='unknown', 
+        open( unit=file_no, file=local_fname, status='unknown',
      &        access='sequential', form='unformatted',
      &        iostat= open_status )
-      elseif( combine_formatted ) then 
-        open( unit=file_no, file=local_fname, status='unknown', 
+      elseif( combine_formatted ) then
+        open( unit=file_no, file=local_fname, status='unknown',
      &        access='sequential', form='formatted',
      &        iostat= open_status )
-      else 
+      else
         write(termout,9200) location
         stop
       end if
@@ -990,7 +990,7 @@ c
       if( open_status .ne. 0 ) then
         write(termout,9100) location
         stop
-      end if        
+      end if
 c
       return
 c
@@ -1013,12 +1013,12 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine write_patran_element_results( 
+      subroutine write_patran_element_results(
      &         file_no, title1_binary, num_values, title2_binary,
      &         num_elements, element_values, title1_formatted,
-     &         title2_formatted, termout, combine_binary, 
-     &         combine_formatted, element_list ) 
-      implicit none 
+     &         title2_formatted, termout, combine_binary,
+     &         combine_formatted, element_list )
+      implicit none
 c
 c                  parameter declarations
 c                  ----------------------
@@ -1036,8 +1036,8 @@ c
       integer ::  element_id, write_status, i
 
 
-c       
-      if( combine_binary ) then 
+c
+      if( combine_binary ) then
 c
          write(unit=file_no,iostat=write_status) title1_binary,
      &                                           num_values
@@ -1078,7 +1078,7 @@ c
       else
         write(termout,9200)
         stop
-c           
+c
       end if
 c
       return
@@ -1100,7 +1100,7 @@ c **********************************************************************
 c
 c
       subroutine read_patran_node_file_header( file_no, title1_binary,
-     &                   num_values, title2_binary, num_nodes, 
+     &                   num_values, title2_binary, num_nodes,
      &                   title1_formatted, title2_formatted, termout,
      &                   combine_binary, combine_formatted )
       implicit none
@@ -1119,16 +1119,16 @@ c
       integer :: read_status,  dum1, dum3
       real :: dum2
 c
-c              
-      if( combine_binary ) then 
+c
+      if( combine_binary ) then
          read(unit=file_no,iostat=read_status) title1_binary,
-     &                 num_nodes, dum1, dum2, dum3, num_values 
+     &                 num_nodes, dum1, dum2, dum3, num_values
          call check_read_status( file_no, read_status, termout, 1 )
          read(unit=file_no,iostat=read_status) title2_binary
          call check_read_status( file_no, read_status, termout, 2 )
          read(unit=file_no,iostat=read_status) title2_binary
          call check_read_status( file_no, read_status, termout, 3 )
-      elseif( combine_formatted ) then  
+      elseif( combine_formatted ) then
          read(unit=file_no,iostat=read_status,
      &        fmt=9300) title1_formatted
          call check_read_status( file_no, read_status, termout, 4 )
@@ -1161,8 +1161,8 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine read_patran_node_file_header_dummy( file_no, 
-     &  num_values, num_nodes, termout, combine_binary, 
+      subroutine read_patran_node_file_header_dummy( file_no,
+     &  num_values, num_nodes, termout, combine_binary,
      &  combine_formatted )
       implicit none
 c
@@ -1180,16 +1180,16 @@ c
       integer :: read_status, dum1, dum3
       real :: dum2
 c
-c              
-      if( combine_binary ) then 
+c
+      if( combine_binary ) then
          read(unit=file_no,iostat=read_status) title1_binary,
-     &                 num_nodes, dum1, dum2, dum3, num_values 
+     &                 num_nodes, dum1, dum2, dum3, num_values
          call check_read_status( file_no, read_status, termout, 1 )
          read(unit=file_no,iostat=read_status) title2_binary
          call check_read_status( file_no, read_status, termout, 2 )
          read(unit=file_no,iostat=read_status) title2_binary
          call check_read_status( file_no, read_status, termout, 3 )
-      elseif( combine_formatted ) then  
+      elseif( combine_formatted ) then
          read(unit=file_no,iostat=read_status,
      &        fmt=9300) title1_formatted
          call check_read_status( file_no, read_status, termout, 4 )
@@ -1224,8 +1224,8 @@ c
 c
       subroutine read_patran_node_values(
      &           file_no, node_values, num_values, num_nodes,
-     &           node_list, termout, combine_binary, 
-     &           combine_formatted  ) 
+     &           node_list, termout, combine_binary,
+     &           combine_formatted  )
       implicit none
 c
 c                  parameter declarations
@@ -1246,7 +1246,7 @@ c
 c
       bcount = 0
       do
-        if( combine_binary ) then 
+        if( combine_binary ) then
           read(unit=file_no,iostat=read_status) node_id, lcount,
      &        node_data(1:num_values)
         elseif( combine_formatted ) then
@@ -1293,12 +1293,12 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine write_patran_node_results( 
+      subroutine write_patran_node_results(
      &         file_no, title1_binary, num_values, title2_binary,
      &         num_nodes, node_values, node_list, title1_formatted,
-     &         title2_formatted, termout, combine_binary, 
-     &         combine_formatted, sig_eps_type ) 
-      implicit none 
+     &         title2_formatted, termout, combine_binary,
+     &         combine_formatted, sig_eps_type )
+      implicit none
 c
 c                  parameter declarations
 c                  ----------------------
@@ -1324,19 +1324,19 @@ c
 c
       do node_id = 1, num_nodes
         scale = 0.0d0
-        if(  node_list(node_id) .gt. 0 ) 
+        if(  node_list(node_id) .gt. 0 )
      &       scale = 1.0d0 /  real( node_list(node_id) )
         node_values(node_id,1:num_values) =
      &            node_values(node_id,1:num_values) * scale
-      end do      
+      end do
 c
       call compute_extra_sig_eps_values( node_values, num_nodes,
      &                                   sig_eps_type )
-c       
-      if( combine_binary ) then 
+c
+      if( combine_binary ) then
 c
          write(unit=file_no,iostat=write_status) title1_binary,
-     &                 num_nodes, dum1, dum2, dum3, num_values 
+     &                 num_nodes, dum1, dum2, dum3, num_values
          call check_write_status( file_no, write_status, termout, 1 )
          write(unit=file_no,iostat=write_status) title2_binary
          call check_write_status( file_no, write_status, termout, 2 )
@@ -1351,7 +1351,7 @@ c
           call check_write_status( file_no, write_status, termout, 12 )
          end do
 c
-      elseif( combine_formatted ) then  
+      elseif( combine_formatted ) then
 c
          write(unit=file_no,iostat=write_status,
      &        fmt=9300) title1_formatted
