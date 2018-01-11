@@ -8,7 +8,7 @@
 
 function cleanup_files {
 #
-rm -f  *_out 
+rm -f  *_out
 rm -f  *~ >& /dev/null
 rm -f energy  >& /dev/null
 rm -f *_db >& /dev/null
@@ -58,11 +58,11 @@ perl check_2.perl
 perl check_3.perl
 perl check_4.perl
 perl check_5.perl
-tail -1 wes00030_text | cut -c1-46 >temp1
+tail -1 wes000030_text | cut -c1-46 >temp1
 perl check_6.perl
-tail -1 wne00030_text | cut -c1-46 >temp2
+tail -1 wne000030_text | cut -c1-46 >temp2
 perl check_7.perl
-tail -1 wns00030_text | cut -c1-46 >temp3
+tail -1 wns000030_text | cut -c1-46 >temp3
 perl check_8.perl
 python read_element_flat_stream_strains.py > temp4
 perl check_9.perl

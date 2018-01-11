@@ -6,7 +6,7 @@
 #
 $inputfile = 'temp3';
 $line = ' ';
-print "\n... Check results: wns00030_text\n";
+print "\n... Check results: wns000030_text\n";
 open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
@@ -25,8 +25,8 @@ $out_value = $parts[$partno];
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$out_value$message\n";
@@ -44,7 +44,7 @@ exit;
 #*                                                        *
 #**********************************************************
 
-sub find_line {  
+sub find_line {
       my ( $type, $string ) = @_;
       my ( $debug );
       $debug = 0;
@@ -57,7 +57,7 @@ sub find_line {
 #
       while ( !eof(infile) )
         {
-           $line = <infile>; 
+           $line = <infile>;
 	   if( $line =~ /$string/ ) {return};
         }
 #
