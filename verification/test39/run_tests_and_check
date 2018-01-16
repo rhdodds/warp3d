@@ -32,8 +32,6 @@ echo "  ... running test_39..."
 #
 echo "  ... WARP3D jobs completed..."
 #
-sync
-sleep 2
 perl check_39.perl
 #
 cleanup_files
