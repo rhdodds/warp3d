@@ -2508,7 +2508,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_combine_stf_non_blocking
+      subroutine wmpi_combine_stf
       use global_data ! old common.main
       use elem_block_data, only: estiff_blocks
       use main_data, only: asymmetric_assembly
@@ -2777,7 +2777,7 @@ c
 c
       end subroutine wmpi_combine_stf_check
 c
-      end subroutine wmpi_combine_stf_non_blocking
+      end subroutine wmpi_combine_stf
 
 c     ****************************************************************
 c     *                                                              *
@@ -3058,7 +3058,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_combine_stf
+      subroutine wmpi_combine_stf_original
       use global_data ! old common.main
       use elem_block_data, only: estiff_blocks
       use main_data, only: asymmetric_assembly
@@ -3299,7 +3299,7 @@ c
 c
       end subroutine wmpi_combine_stf_check
 c
-      end subroutine wmpi_combine_stf
+      end subroutine wmpi_combine_stf_original
 c
 c     ****************************************************************
 c     *                                                              *
