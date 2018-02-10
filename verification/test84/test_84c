@@ -1,33 +1,33 @@
 !
 ! test displacement driven loading with periodic boundary
 ! conditions for a simple RVE.
-! 
+!
 ! Geometry is unit square in X-Y, 0.1 thickness in Z.
 ! Includes a central, circular hole to mimic a micro-scale
 ! feature of the RVE.
-! 
+!
 ! Plane strain in Z just for simplifying the test problem.
-! 
+!
 ! 8-node elements. 1 link2 element located remote from RVE
 ! (on nodes 49,50) to enable multipoint constraints
 ! in homogeneous form (as required, See Chapter 2 section
 ! on constraints).
-! 
+!
 ! Corner nodes are: 1,2  23,24   25,27  19,20
-! 
+!
 ! Use 2 materials with different E, yielding for elements in
 ! RVE. This makes response inside RVE non-symmetric as
 ! will happen, for example, in complex composites.
-! 
+!
 ! Use 10 load(time) steps to impose simple shear strain
 ! on the RVE via displacements with PBCs.
 !
  material steel
     properties mises e 30000  nu 0.3 n_power 5 yld_pt 60
-!    
+!
  material al
      properties mises e 10000  nu 0.25 n_power 10 yld_pt 30
-! 
+!
  material rve_link
      properties link stiff_link 1.0e10 mass_link 0.0
 !
@@ -38,7 +38,7 @@
      order 2x2x2 bbar center_output short
   15 16 type l3disop nonlinear material al,
      order 2x2x2 bbar center_output short
-  17 type link2 material rve_link   
+  17 type link2 material rve_link
 !
 *input from 'pbc_coords_incid.inp'
 !
@@ -49,49 +49,49 @@
    1-15 by 2  face 4 pressure 1.0
  loading unit_top $ not used this example
   nodal loads
-    19 20 force_y 0.5   
+    19 20 force_y 0.5
  loading unit_right $ not used this example
   nodal loads
-    23 24 force_x 0.5   
+    23 24 force_x 0.5
  constraints
 !
 !     plane strain (omit for plane stress)
 !
   1-48 w 0.0
-! 
+!
 !     bottom left corner (I) always = 0
 !
-  1 2 u 0 v 0 
+  1 2 u 0 v 0
   23 24 v 2.0 u 0
-! 
+!
   50 u 2.0 v 2.0 w 0
-! 
+!
  multipoint
-! 
+!
   28 1.0 u - 8 1.0 u = 0
   26 1.0 u - 7 1.0 u = 0
-!  
+!
   28 1.0 v - 8 1.0 v - 49 1.0 v = 0
   26 1.0 v - 7 1.0 v - 49 1.0 v = 0
-!  
+!
   27 1.0 u - 20 1.0 u = 0
   25 1.0 u - 19 1.0 u = 0
-!  
+!
   27 1.0 v - 20 1.0 v - 49 1.0 v = 0
   25 1.0 v - 19 1.0 v - 49 1.0 v = 0
-!  
+!
   22 1.0 u - 14 1.0 u - 49 1.0 u = 0
   21 1.0 u - 13 1.0 u - 49 1.0 u = 0
-!  
+!
   22 1.0 v - 14 1.0 v  = 0
   21 1.0 v - 13 1.0 v  = 0
-!  
+!
  loading test
   nonlinear
     step 1-10 constraints 0.001
-! 
+!
  nonlinear analysis parameters
-   solution technique sparse direct 
+   solution technique sparse direct
    maximum iterations 5 $  newton iterations
    minimum iterations 1
    convergence test norm res tol 0.01
@@ -109,7 +109,7 @@
 !
  output model flat patran convention text file "pbc_model"
 !
- output commands use file "get_output.inp" steps all
+ output commands use file "get_output.inp" steps 1-10
  compute displacements for loading test step 10
  output wide precision displacements 1-50
  output wide stresses 2
