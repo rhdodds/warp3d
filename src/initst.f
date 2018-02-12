@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/11/2017 rhd              *
+c     *                   last modified : 2/8/2018 rhd               *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -34,14 +34,15 @@ c
      &                      run_user_solution_routine, cp_unloading,
      &                      divergence_check, diverge_check_strict,
      &                      asymmetric_assembly, output_command_file,
-     &                      output_step_bitmap_list,
      &                      material_model_names, batch_mess_fname,
      &                      creep_model_used, extrapolate,
      &                      extrap_off_next_step, line_search,
      &                      ls_details, ls_min_step_length,
      &                      ls_max_step_length, ls_rho, ls_slack_tol,
      &                      initial_stresses_user_routine,
-     &                      initial_stresses_file
+     &                      initial_stresses_file, max_step_limit,
+     &                      user_cnstrn_stp_factors, stpchk,
+     &                      actual_cnstrn_stp_factors
 c
       use stiffness_data
       use file_info
@@ -61,7 +62,7 @@ c
       implicit none
 c
       integer :: nblank, reclen, endchr, lword, rword, i, strtop,
-     &           strstp, rottop, env_length
+     &           strstp, rottop, env_length, k
       integer, external :: omp_get_max_threads
       logical :: promsw, echosw, comsw, atrdsw, eolsw, eofsw, menusw,
      &           ptsw, signsw, sbflg1, sbflg2
@@ -244,7 +245,11 @@ c
 c                       initialize the constraint multipliers for
 c                       each load step
 c
-      do i = 1, mxstep
+      max_step_limit = 50000
+      k = max_step_limit
+      allocate( actual_cnstrn_stp_factors(k),
+     &          user_cnstrn_stp_factors(k), stpchk(k) )
+      do i = 1, k
          user_cnstrn_stp_factors(i) = 1.0
          stpchk(i) = .false.
       end do
@@ -692,9 +697,8 @@ c                       Asymmetric assembly
 c
       asymmetric_assembly = .false.
 c
-c                       initialize the file name and bit map of step
-c                       numbers for the "output commands file ...
-c                       steps ..."  bit list is allocated as needed
+c                       initialize the file name for the
+c                       "output commands file ... steps ..."
 c
       output_command_file(1:) = " "
 c

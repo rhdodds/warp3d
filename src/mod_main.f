@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 7/23/2017 rhd                   *
+c     *              last modified : 2/8/2018 rhd                    *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -52,17 +52,14 @@ c
 c
 c              --- real arrays/vectors/scalars ---
 c
-!dir$ attributes align: 64:: props, times, user_cnstrn_stp_factors,
-     &    actual_cnstrn_stp_factors   ! continuation of !dir$, also more below
+!dir$ attributes align: 64:: props, times
       real :: props(mxelpr,mxel)
       real :: times(mxtim,2)
-      real :: user_cnstrn_stp_factors(mxstep)
-      real :: actual_cnstrn_stp_factors(mxstep)
       real :: strtm, time_limit
 c
 c              --- logical arrays/vectors/scalars ---
 c
-!dir$ attributes align: 64:: stpchk, trace, convrg
+!dir$ attributes align: 64::trace, convrg
       logical ::
      &    prnres, halt, linmas, newstf, zrocon, newtrn,
      &    newmas, incflg, ifvcmp, prlres, input_ok, adaptive_flag,
@@ -73,7 +70,7 @@ c
      &    sparse_research, solver_mkl_iterative, temperatures,
      &    root_processor, slave_processor, worker_processor,
      &    use_mpi, ! end of scalars
-     &    stpchk(mxstep), trace(ntrc), convrg(10)
+     &    trace(ntrc), convrg(10)
 c
 !dir$ attributes align: 64 :: lprops
       logical :: lprops(mxelpr,mxel) ! only for equivalencing to props
@@ -129,7 +126,7 @@ c     *                    f-90 module main_data                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 9/22/2017 rhd                   *
+c     *              last modified : 2/10/2018 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -281,6 +278,10 @@ c
 c                global data to store the load pattern numbers and
 c                multipliers for each nonlinear load step
 c
+      integer :: max_step_limit
+      real, allocatable, dimension(:) :: actual_cnstrn_stp_factors,
+     &                                   user_cnstrn_stp_factors
+      logical, allocatable, dimension(:) :: stpchk
       type :: load_data_for_a_step
         integer :: num_load_patterns
         integer, allocatable, dimension(:) :: load_patt_num

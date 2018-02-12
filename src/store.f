@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/23/2017 rhd              *
+c     *                   last modified : 2/10/2018 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -48,10 +48,9 @@ c
 c
 c               locals
 c
-      integer :: dum, fileno, last, prec_fact, node,
+      integer :: dum, fileno, last, prec_fact, node, local_length,
      &           i,  how_defined, node_count, num_patterns, mpc,
-     &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize,
-     &           maplength
+     &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize
       integer, parameter :: check_data_key=2147483647
       character :: dbname*100
       logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
@@ -144,7 +143,7 @@ c
      &              solver_threads, eq_node_force_len,
      &              precond_type,
      &              hsolver_type, precond_printlevel,
-     &              solver_printlevel,
+     &              solver_printlevel, max_step_limit,
      &              hypre_max, levels, symme, error_count,
      &              precond_fail_count, ntimes_assembly,
      &              initial_map_type, final_map_type,
@@ -244,7 +243,7 @@ c
 c
       write(fileno) convrg, trace                  ! short logical vecs
       call wrtbk( fileno, trn, nonode)             ! logical vec
-      call wrtbk( fileno, stpchk, mxstep)          ! logical vec
+      call wrtbk( fileno, stpchk, max_step_limit ) ! logical vec
       call wrtbk( fileno, repeat_incid, noelem )   ! logical vec
 c
       write(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
@@ -256,8 +255,8 @@ c                       write out real arrays.
 c
       call wrt2d( fileno, props, mxelpr, mxelpr, noelem )
       call wrt2d( fileno, matprp, mxmtpr, mxmtpr, mxmat )
-      call wrtbk( fileno, user_cnstrn_stp_factors, mxstep)
-      call wrtbk( fileno, actual_cnstrn_stp_factors, mxstep)
+      call wrtbk( fileno, user_cnstrn_stp_factors, max_step_limit )
+      call wrtbk( fileno, actual_cnstrn_stp_factors, max_step_limit )
       write (fileno) check_data_key
       if ( fgm_node_values_defined )
      &  call wrt2d( fileno, fgm_node_values, nonode, nonode,
@@ -419,10 +418,10 @@ c
 c                       save the nonlinear load step data
 c
       if ( .not. allocated( step_load_data ) ) call mem_allocate( 19 )
-      do i = 1, mxstep
+      do i = 1, max_step_limit
           write(fileno) step_load_data(i)%num_load_patterns
       end do
-      do i = 1, mxstep
+      do i = 1, max_step_limit
        num_patterns = step_load_data(i)%num_load_patterns
        if ( num_patterns .gt. 0 ) then
         write(fileno) step_load_data(i)%load_patt_num(1:num_patterns)
@@ -722,13 +721,12 @@ c                       save for output commands file ... information
 c                       save file name and bitmap list if it exists
 c
       write(fileno) output_command_file
-      if( allocated( output_step_bitmap_list ) ) then
-        maplength = (mxstep - 1)/30 + 1
-        write(fileno) maplength
-        write(fileno) output_step_bitmap_list(1:maplength)
-      else
-        write(fileno) 0
-      end if
+      local_length = 0
+      if( allocated( output_step_bitmap_list ) )
+     &   local_length = size( output_step_bitmap_list )
+      write(fileno) local_length
+      if( local_length > 0 )
+     &   write(fileno) output_step_bitmap_list
 c
 c                       save initial stress data
 c

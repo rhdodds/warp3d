@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 9/23/2017 rhd              *
+c     *                   last modified : 2/10/2018 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -48,7 +48,7 @@ c
       integer :: dum, last, prec_fact, node, i, node_count, eload_size,
      &           num_patterns, err, dumi, mpc, ntrm, fileno,
      &           how_defined, itab, num_rows, num_cols, ilist,
-     &           ulen, nsize, maplength
+     &           ulen, nsize, local_length
       character ::  dbname*100, string*80, dums*1
       logical :: flexst, scanms, nameok, initial_stresses_exist,
      &          read_nod_load, msg_flag, read_table, exist_flag
@@ -128,7 +128,7 @@ c
      &              solver_threads, eq_node_force_len,
      &              precond_type,
      &              hsolver_type, precond_printlevel,
-     &              solver_printlevel,
+     &              solver_printlevel, max_step_limit,
      &              hypre_max, levels, symme, error_count,
      &              precond_fail_count, ntimes_assembly,
      &              initial_map_type, final_map_type,
@@ -230,7 +230,7 @@ c                       read logical and character arrays.
 c
       read(fileno) convrg, trace                  ! short logical vecs
       call rdbk( fileno, trn, nonode )            ! logical vec
-      call rdbk( fileno, stpchk, mxstep )         ! logical vec
+      call rdbk( fileno, stpchk, max_step_limit ) ! logical vec
       call init_maps( fileno, 3 )
 c
       read(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
@@ -242,8 +242,8 @@ c                       read real arrays.
 c
       call rd2d( fileno, props, mxelpr, mxelpr, noelem )
       call rd2d( fileno, matprp, mxmtpr, mxmtpr, mxmat )
-      call rdbk( fileno, user_cnstrn_stp_factors, mxstep)
-      call rdbk( fileno, actual_cnstrn_stp_factors, mxstep)
+      call rdbk( fileno, user_cnstrn_stp_factors, max_step_limit )
+      call rdbk( fileno, actual_cnstrn_stp_factors, max_step_limit )
       call chk_data_key( fileno, 3, 0 )
       if ( fgm_node_values_defined ) then
         call mem_allocate( 20 )
@@ -408,10 +408,10 @@ c
 c                       retrieve the nonlinear load step data
 c
       if ( .not. allocated( step_load_data ) ) call mem_allocate( 19 )
-      do i = 1, mxstep
+      do i = 1, max_step_limit
          read(fileno) step_load_data(i)%num_load_patterns
       end do
-      do i = 1, mxstep
+      do i = 1, max_step_limit
        num_patterns = step_load_data(i)%num_load_patterns
        if ( num_patterns .gt. 0 ) then
         allocate( step_load_data(i)%load_patt_num(num_patterns),
@@ -731,9 +731,9 @@ c                       get output commands file ... information
 c                       save file name and bitmap list if it exists
 c
       read(fileno) output_command_file
-      read(fileno) maplength
-      if( maplength .gt. 0 ) then
-        allocate( output_step_bitmap_list(maplength ) )
+      read(fileno) local_length
+      if( local_length > 0 ) then
+        allocate( output_step_bitmap_list(local_length ) )
         read(fileno) output_step_bitmap_list
       end if
 c

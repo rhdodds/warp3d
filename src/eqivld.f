@@ -30,7 +30,8 @@ c
      &                      load_pattern_factors, elem_eq_loads,
      &                      eq_node_force_indexes, eq_node_forces,
      &                      node_load_defs, crdmap, cnstrn_in,
-     &                      temper_nodes_ref, total_user_nodal_forces
+     &                      temper_nodes_ref, total_user_nodal_forces,
+     &                      user_cnstrn_stp_factors
 c
       implicit integer (a-z)
 c
@@ -875,7 +876,7 @@ c
       use global_data ! old common.main
 c
       use main_data,  only : load_pattern_factors, output_packets,
-     &                       packet_file_no
+     &                       packet_file_no, actual_cnstrn_stp_factors
 c
       implicit integer (a-z)
       double precision

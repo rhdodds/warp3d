@@ -4,7 +4,7 @@ c     *                      subroutine inlod                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/16/2018 rhd              *
+c     *                   last modified : 2/8/2018 rhd               *
 c     *                                                              *
 c     *              translate and store loading definitions         *
 c     *                                                              *
@@ -15,8 +15,11 @@ c
       subroutine inlod( sbflg1, sbflg2, lodnum, path )
       use global_data ! old common.main
       use elem_load_data, only : numfaces
-      use main_data, only : step_load_data, temp_nodmap,
-     &                      temp_nodlod, node_load_defs, tables
+      use main_data, only : step_load_data, temp_nodmap, temp_nodlod,
+     &                      node_load_defs, tables, stpchk,
+     &                      user_cnstrn_stp_factors, max_step_limit,
+     &                      actual_cnstrn_stp_factors,
+     &                      load_data_for_a_step
       implicit none
 c
 c                       parameter declarations
@@ -54,7 +57,7 @@ c                       entered.
 c
       if( debug ) write (*,*) '>>>>>>>>> in inlod'
       allocate( intlst(mxlsz), step_load_list(mxlc),
-     &          list_of_steps(mxstep) ) ! auto deallocated
+     &          list_of_steps(max_step_limit) ) ! auto deallocated
       if( sbflg1 ) then
 c
 c                       re-enter nodal or element load input
@@ -257,8 +260,8 @@ c                       initialize variables which keep track of the
 c                       lowest and highest step number given for the
 c                       loading.
 c
-      histep = 0
-      lowstp = mxstep
+      histep = 0     ! highest step
+      lowstp = 1000000
 c
 c                       step check vector initialized by initst.f
 c                       set flag indicating that this loading is a
@@ -281,12 +284,13 @@ c
       if( matchs('steps',4) ) then
 c
 c                       get a list of step numbers and expand list into
-c                       local vector for easy reference.
+c                       local vector for easy reference. "all" is not
+c                       allowed here.
 c
-         list_of_steps(1:mxstep) = 0
+         list_of_steps(1:max_step_limit) = 0
          step_count = 0
          call scan
-         call trlist(intlst,mxlsz,mxstep,lenlst,errnum)
+         call trlist(intlst,mxlsz,0,lenlst,errnum)
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -326,11 +330,7 @@ c
          iplist = 1
  824     call trxlst(intlst,lenlst,iplist,icn,step)
 c
-         if( step .gt. mxstep ) then
-            param = mxstep
-            call errmsg(61,param,dums,dumr,dumd)
-            go to 826
-         end if
+         if( step .gt. max_step_limit )  call inlod_resize_steps
 c
          if( step .lt. 0 ) then
             param = step
@@ -1096,7 +1096,89 @@ c
 c
  9999 continue
       return
-      end
+c
+      contains
+c     ========
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine inlod_resize_steps               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 2/8/2018 rhd               *
+c     *                                                              *
+c     *     resize global data structures that store definition for  *
+c     *     each load step to increase the allowable number of steps *
+c     *                                                              *
+c     ****************************************************************
+
+      subroutine inlod_resize_steps
+      implicit none
+c
+      integer :: old_max_steps, i, alloc_stat, np
+      integer, allocatable, dimension(:) :: new_list
+      real, allocatable, dimension(:) :: new_user, new_actual
+      logical, allocatable, dimension(:) :: new_stpchk
+      type(load_data_for_a_step), allocatable,
+     &                            dimension(:) :: new_step_data
+c
+c              double the maxim number of load steps.
+c
+      old_max_steps = max_step_limit
+      max_step_limit = max_step_limit * 2
+c
+c              resize the working step list for inload driver
+c
+      allocate( new_list(max_step_limit) )
+      new_list(1:old_max_steps) = list_of_steps(1:old_max_steps)
+      call move_alloc( new_list, list_of_steps )
+c
+c              resize simple global vectors. move_alloc deallocates
+c              as needed.
+c
+      allocate( new_user(max_step_limit), new_actual(max_step_limit),
+     &          new_stpchk(max_step_limit) )
+c
+      do i = 1, old_max_steps
+        new_user(i)   = user_cnstrn_stp_factors(i)
+        new_actual(i) = actual_cnstrn_stp_factors(i)
+        new_stpchk(i) = stpchk(i)
+      end do
+      call move_alloc( new_user, user_cnstrn_stp_factors )
+      call move_alloc( new_actual, actual_cnstrn_stp_factors )
+      call move_alloc( new_stpchk, stpchk )
+c
+c              for step_load_data we have to do the deep copy of
+c              allocated vectors of the derived type. move_alloc
+c              does not do this.
+c
+      allocate( new_step_data(max_step_limit), stat = alloc_stat )
+c
+      do i = old_max_steps + 1, max_step_limit
+        new_step_data(i)%num_load_patterns  = 0
+      end do
+c
+      do i = 1, old_max_steps
+       np = step_load_data(i)%num_load_patterns
+       if( np == 0 ) cycle
+       new_step_data(i)%num_load_patterns = np
+       allocate( new_step_data(i)%load_patt_num(np) )
+       new_step_data(i)%load_patt_num(1:np) =
+     &         step_load_data(i)%load_patt_num(1:np)
+       deallocate( step_load_data(i)%load_patt_num )
+       allocate( new_step_data(i)%load_patt_factor(np) )
+       new_step_data(i)%load_patt_factor(1:np) =
+     &         step_load_data(i)%load_patt_factor(1:np)
+       deallocate( step_load_data(i)%load_patt_factor )
+      end do
+c
+      call move_alloc( new_step_data, step_load_data )
+c
+      return
+
+      end subroutine inlod_resize_steps
+      end subroutine inlod
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine store_loadings               *

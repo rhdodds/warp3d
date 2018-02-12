@@ -4,7 +4,7 @@ c     *               subroutine mem_allocate                        *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                last modified : 9/3/2017 rhd                  *
+c     *                last modified : 2/8/2018 rhd                  *
 c     *                                                              *
 c     *     provides the general allocation/deallocation of arrays   *
 c     *     during problem solution.                                 *
@@ -411,14 +411,14 @@ c              for nonlinear loading steps and initialize
 c
       case( 19 )
 c
-       allocate( step_load_data(mxstep), stat = alloc_stat )
+       allocate( step_load_data(max_step_limit), stat = alloc_stat )
        if( alloc_stat .ne. 0 ) then
           write(out,9900)
           write(out,9996)
           call die_abort
        end if
 c
-       step_load_data(1:mxstep)%num_load_patterns = 0
+       step_load_data(1:max_step_limit)%num_load_patterns = 0
 c
 c              allocate the array to store nodal values of material
 c              properties for functionally graded materials

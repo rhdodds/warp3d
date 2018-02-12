@@ -3,7 +3,7 @@ c     *                      suboutine errmsg                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified :8/11/2017 rhd               *
+c     *                   last modified : 2/8/2018 rhd               *
 c     *                                                              *
 c     *     this subroutine prints assorted error messages in re-    *
 c     *     ponse to calls from all over the program. virtually all  *
@@ -15,6 +15,7 @@ c
 c
       subroutine errmsg( errnum, param, sparam, rparam, dparam )
       use global_data ! old common.main
+      use main_data, only : max_step_limit
       implicit integer (a-z)
       character(len=50) :: string
       character(len=35) :: strng1
@@ -1272,10 +1273,10 @@ c
 c
  1250 continue
       num_error = num_error + 1
-      write(out,9122) param,mxstep
+      write(out,9122) param, max_step_limit
  9122 format(/1x,'>>>>> error: ',i6,',',' the step to be computed',
      &           ',',' is greater than'/14x,i6,',',' the maximum nu',
-     &           'mber of steps allowed. it will'/14x,'be ignored',
+     &           'mber of steps defined. it will'/14x,'be ignored',
      &           ',',' and the next step in the list will be ',
      &           'processed.'/)
       go to 9999
