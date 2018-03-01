@@ -4,7 +4,7 @@ import os
 #
 set_printoptions(threshold='nan')
 #
-stream_fname = "./wee000030_stream"
+stream_fname = "./wee0000030_stream"
 #
 fileobj = open(stream_fname, mode='rb')
 num_cols = 22
