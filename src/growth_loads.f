@@ -176,15 +176,15 @@ c
 c                                                                               
       return                                                                    
  9000 format('  > current gurson release type 2 parameters: ',                  
-     & /,10x,'element:     ',i6,                                                
-     & /,10x,'elem_ptr:    ',i6,                                                
+     & /,10x,'element:     ',i7,                                                
+     & /,10x,'elem_ptr:    ',i7,                                                
      & /,10x,'dbar_now,  dbar_zero: ',2f10.6,                                   
      & /,10x,'refer_deform, now_fraction, last_fraction, fraction',             
      & /,10x,5x,4f10.6 )                                                        
  9100 format('  > updated load for element:')                                   
  9150 format(10x,i3,i8,e14.6)                                                   
  9200 format(/1x,'  >> force release information for killed elements:')         
- 9300 format(1x,'       element: ',i6,'. forces released (%): ',f5.1)           
+ 9300 format(1x,'       element: ',i7,'. forces released (%): ',f5.1)           
  9400 format(1x,'        *no forces are currently being released*')             
  9500 format(1x,'       total elements in active release: ',i6)                 
                                                                                 
@@ -303,7 +303,7 @@ c
              if (node .eq. 0) exit                                              
                dof = dstmap(node) + crk_pln_normal_idx - 1                      
                if ( debug )                                                     
-     &            write(*,'(" change dof",i6," from load:",e13.6)')             
+     &            write(*,'(" change dof",i7," from load:",e13.6)')             
      &            dof, load(dof)                                                
                ldincr = fraction*crkpln_nodes_react(node_data_entry)            
                load(dof)  = load(dof) - ldincr                                  
@@ -399,7 +399,7 @@ c            step by the incremental force release for the
 c            this node in the crack plane normal direction.                     
 c                                                                               
         dof = dstmap(node) + crk_pln_normal_idx - 1                             
-        if ( debug ) write(*,'(" change dof",i6," from load:",e13.6)')          
+        if ( debug ) write(*,'(" change dof",i7," from load:",e13.6)')          
      &       dof, load(dof)                                                     
         ldincr = fraction*crkpln_nodes_react(node_loop)                         
         load(dof)  = load(dof) - ldincr                                         
