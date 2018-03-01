@@ -745,7 +745,7 @@ c
 c
       return
 
-9084  format(/1x,'>>>>> error: step number ',i6,' of loading ',a8,
+9084  format(/1x,'>>>>> error: step number ',i7,' of loading ',a8,
      &           ' has not been'/14x,'defined. an attempt to use this',
      &           ' time step will not be'/14x,'allowed.'/)
 c
@@ -1308,7 +1308,7 @@ c           Check for file
  1005 format(/1x,'>>>> Fatal error in material ', a24,
      &            ': file ', a24, ' not found.'/)
  1006 format(/1x,'>>>> Fatal error in material ', a24,
-     &            ': offset element ', i6,
+     &            ': offset element ', i7,
      &            ' is not valid'/)
  1007 format(/1x,'>>>> Fatal error in material ', a24,
      &            ': invalid crystal #',i3,/)
