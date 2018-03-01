@@ -188,9 +188,9 @@ c
 c                                                                               
  9000 format(/1x,'>>>>> error: syntax error in release constraints',            
      &   /,14x,'input. read new line ...')                                      
- 9100 format(/1x,'>>>>> error: node: ',i6,' dof: ',a1,                          
+ 9100 format(/1x,'>>>>> error: node: ',i7,' dof: ',a1,                          
      &  /14x,'already in release')                                              
- 9110 format(/1x,'>>>>> error: node: ',i6,' dof: ',a1,                          
+ 9110 format(/1x,'>>>>> error: node: ',i7,' dof: ',a1,                          
      &  /14x,'has no constraint to release')                                    
  9120 format(/1x,'>>>>> error: invalid number of release steps',                
      &   /,14x,'input. read new line ...')                                      
@@ -952,7 +952,7 @@ c
       return                                                                    
 c                                                                               
  9073 format(/1x,'>>>>> error: the number of ',a8,' input for a row of',        
-     &           ' the transformation'/14x,'matrix of node ',i6,                
+     &           ' the transformation'/14x,'matrix of node ',i7,                
      &           ' exceeds the maximum number of'/14x,'degrees of',             
      &           ' freedom allowed any node. the number of'/14x,a8,             
      &           ' stored will be the above maximum.'/)                         
