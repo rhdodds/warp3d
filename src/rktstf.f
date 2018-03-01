@@ -192,16 +192,16 @@ c
      &   ' in block...')
  9210 format(3x,i8,1000(6e15.6,/11x))
  9400 format(1x,//,'>> Upper triangluar matrix:')
- 9405 format(1x,'   element #',i6)
+ 9405 format(1x,'   element #',i7)
  9410 format(1x,'j=',i3,2x,'row=',i3,2x,'col=',i3,2x,'ek=',f25.8)
  9300 format(1x,////,
      & '  ELEMENT TESTING, values in rktstf.f',//,
-     & '       span = ',i6,/,
-     & '      nnode = ',i6,/,
-     & '     totdof = ',i6,/,
-     & '  elem_type = ',i6,/,
-     & '      felem = ',i6,/,
-     & '       utsz = ',i6,/)
+     & '       span = ',i7,/,
+     & '      nnode = ',i7,/,
+     & '     totdof = ',i7,/,
+     & '  elem_type = ',i7,/,
+     & '      felem = ',i7,/,
+     & '       utsz = ',i7,/)
  9500 format(1x,'>> Fatal Error: rktstf. invalid material type..',
      &    /, 1x,'                job terminated' )
 c
