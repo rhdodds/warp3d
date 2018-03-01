@@ -12,7 +12,7 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 #
-find_line( 1, "  step no.     50" );
+find_line( 1, "  step no.      50" );
 find_line( 1, "  stresses" );
 find_line( 1, "    14      1 " );
 $line = <infile>;
