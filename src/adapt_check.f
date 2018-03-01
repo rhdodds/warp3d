@@ -193,13 +193,13 @@ c
      &   /,   1x,'                   job aborted.',/)
  9010 format( 1x,'>>>>> FATAL Error: adapt_check. table overflow: ',i5,
      &   /,   1x,'                   job aborted.',/)
- 9200 format(/,4x,'adaptive solution for load step: ',i6,
+ 9200 format(/,4x,'adaptive solution for load step: ',i7,
      & /,    7x,'now advancing step solution from: ',f7.4,' to: ',f7.4)
- 9300 format(/,6x,'adaptive solution driver for step: ',i6,
+ 9300 format(/,6x,'adaptive solution driver for step: ',i7,
      & /, 9x,'subdividing current increment from: ',f7.4,' to: ',f7.4,
      & /, 9x,'into smaller increments of:         ',f7.4,
      & /, 9x,'now advancing step solution from:   ',f7.4,' to: ',f7.4)
- 9420 format(/,6x,'adaptive solution for load step: ',i6,
+ 9420 format(/,6x,'adaptive solution for load step: ',i7,
      & /, 9x,'failed in advancing increment from: ',f7.4,' to: ',f7.4,
      & /, 9x,'subdivision limit has been reached.',
      & /, 9x,'the analysis will be terminated; restart from last ',
