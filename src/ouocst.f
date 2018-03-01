@@ -26,8 +26,8 @@ c                       locals
 c
       integer :: step_number, bnfile, fmfile, flat_file_number
       integer, external :: warp3d_get_device_number
-      character(len=15) :: bflnam, fflnam
-      character(len=4) :: strtnm
+      character(len=16) :: bflnam, fflnam
+      character(len=4)  :: strtnm
       character(len=30) :: command
       character(len=30), save :: flat_name
       logical :: patran_file
@@ -38,7 +38,8 @@ c                       (opt = 1) or closed (opt=2).
 c
       step_number = stepno
       patran_file = oubin .or. ouasc
-      if( step_number .gt. 999999 ) step_number = step_number - 999999
+      if( step_number .gt. 9999999 )
+     &     step_number = step_number - 9999999
 c
       select case ( opt )
 c
@@ -47,7 +48,7 @@ c
 c                       attach patran binary file, if necessary.
 c
 c                       wn(be)(fe) or (fe)(fs) + step no + .MPI rank
-c                            char*4              + i6.6  + a1,i4.4
+c                            char*4              + i7.7 + a1,i4.4
 c
       if( patran_file .and. oubin ) then
          strtnm = 'wnbe'
@@ -75,12 +76,12 @@ c
 c                       flat result file. name structure
 c
 c                        wne + step # + _text   + .MPI rank
-c                               i6.6              a1, i4.4
-c                        1-3   4-9      10-14     15, 16-19
+c                               i7.7              a1, i4.4
+c                        1-3   4-10      11-15     16, 17-20
 c
 c                        wns + step # + _stream + .MPI rank
-c                        1-3    4-9     10-16     17, 18-21
-c                              i6.6               a1, i4.4
+c                        1-3    4-10     11-17     18, 19-22
+c                               i7.7               a1, i4.4
 c
       flat_file_number = warp3d_get_device_number()
       flat_name(1:) = ' '
@@ -89,10 +90,10 @@ c
       write(flat_name(4:),9000) step_number
 c
       if( stream_file ) then
-        flat_name(10:) = '_stream'
+        flat_name(11:) = '_stream'
         if( use_mpi )  then
-          flat_name(17:) = "."
-          write(flat_name(18:),9100) myid
+          flat_name(18:) = "."
+          write(flat_name(19:),9100) myid
          end if
         open( unit=flat_file_number, file=flat_name, status='unknown',
      &        access='stream', form='unformatted' )
@@ -100,10 +101,10 @@ c
       end if
 c
       if( text_file ) then
-        flat_name(10:) = '_text'
+        flat_name(11:) = '_text'
         if( use_mpi ) then
-          flat_name(15:) = "."
-          write(flat_name(16:),9100) myid
+          flat_name(16:) = "."
+          write(flat_name(17:),9100) myid
         end if
         open( unit=flat_file_number, file=flat_name, status='unknown',
      &        access='sequential', form='formatted' )
@@ -139,7 +140,7 @@ c
 c
       end select
 c
- 9000 format(i6.6)
+ 9000 format(i7.7)
  9100 format(i4.4)
 c
       end
