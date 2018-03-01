@@ -2349,7 +2349,7 @@ c
 4     format(4i10,i5,3f16.8)
 5     format(4a10,a5,3a16)
 c          femap netural file node format:
-7     format(i6,'   0 0 1 46 0 0 0 0 0 0  ',3es16.8,' 0')
+7     format(i7,'   0 0 1 46 0 0 0 0 0 0  ',3es16.8,' 0')
 9002  format(//,10x,'>> warning: tied contact processing',/,
      &      10x,'>>   the following dependent slave nodes were not',/,
      &      10x,'>>   within the given gap tolerance of their',/,
@@ -2359,7 +2359,7 @@ c          femap netural file node format:
      & 5x,'slave node',3x,'master elem',3x,'face',6x,'gap distance',
      & 7x,'gap tolerance',/,
      & 80('-'))
-9003  format(7x,i6,8x,i5,8x,i1,4x,es15.6,5x,es15.6)
+9003  format(7x,i7,8x,i5,8x,i1,4x,es15.6,5x,es15.6)
 c
 c----------------------------------------------------------------------
 c           jump here on an error for exit procedures
@@ -3087,7 +3087,7 @@ c
           write(logunit,*)'  equation coefficient row_sum =',row_sum
         end do
 11      format(a6,a10,a5,a17)
-12      format(i6,i10,i5,es17.7)
+12      format(i7,i10,i5,es17.7)
 
         xyz_letter(1) = 'x'
         xyz_letter(2) = 'y'
@@ -5132,7 +5132,7 @@ c
 10    format(a,i1,a,a)
 11    format(a,i8)
 12    format(a,es16.6)
-13    format(8x,a,i6,es16.7,a2,a)
+13    format(8x,a,i7,es16.7,a2,a)
 14    format(8x,a,f15.4,a2,a)
 
       return
