@@ -99,11 +99,11 @@ c
      &               '       for element type = ',i3,/,                         
      &               '   Skipping mass matrix computation, set',/,              
      &               '   unit values for now.',//,                              
-     &               '     span =',i6,/,                                        
-     &               '    felem =',i6,/,                                        
-     &               '    order =',i6,/,                                        
-     &               '      gpn =',i6,/,                                        
-     &               '    nnode =',i6,/,                                        
+     &               '     span =',i7,/,                                        
+     &               '    felem =',i7,/,                                        
+     &               '    order =',i7,/,                                        
+     &               '      gpn =',i7,/,                                        
+     &               '    nnode =',i7,/,                                        
      &               '   totdof =',i6)                                          
       end                                                                       
 c     ****************************************************************          
