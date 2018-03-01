@@ -844,7 +844,7 @@ c
 c                                                                               
  9000 format(//,5x,'Domain definition:',2x,a24,/)                               
  9100 format(8x,'Number of front nodes: ',i4,' Nodes on front:',                
-     &     /,8x,10i6,/,8x,10i6,/,8x,10i6 )                                      
+     &     /,8x,10i7,/,8x,10i6,/,8x,10i6 )                                      
  9110 format(8x,'** no front nodes specified **')                               
  9120 format(8x,'Direction cosines: ',3f10.6 )                                  
  9130 format(8x,'Symmetric domain: ',l1 )                                       
