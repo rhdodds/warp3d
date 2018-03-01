@@ -356,27 +356,27 @@ c
  9999 continue                                                                  
       return                                                                    
 c                                                                               
- 9000 format(/,'   >> element death invoked for element: ',i6,                  
+ 9000 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   f: ',f6.3)                                                          
- 9002 format(/,'   >> element death invoked for element: ',i6,                  
+ 9002 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   f, W, X: ',3f8.3)                                                   
  9010 format(/,' >> element death option invoked before next step',             
-     &       /,'    element: ',i6,' is now killed.',                            
+     &       /,'    element: ',i7,' is now killed.',                            
      &       /,'    plastic strain: ',f8.5,' is > limit of: ',f8.5)             
  9100 format(/,' >> element death option invoked before next step',             
-     &       /,'    element: ',i6,' is now killed to make crack',               
+     &       /,'    element: ',i7,' is now killed to make crack',               
      &       /,'    face uniform.')                                             
- 9200 format(/,'   >> element death invoked for element: ',i6,                  
+ 9200 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   Deff/Dpeak: ',f5.2,' Teff/Tpeak: ',f5.2)                            
- 9220 format(/,'   >> element death invoked for element: ',i6,                  
+ 9220 format(/,'   >> element death invoked for element: ',i7,                  
      & '.  PPR cohesive option')                                                
- 9230 format(/,'   >> element death invoked for element: ',i6,                  
+ 9230 format(/,'   >> element death invoked for element: ',i7,                  
      & '.  cavit cohesive option')                                              
  9300 format(/,'FATAL ERROR: list length exceeded in chk_elem_kill',            
      & /,      '             job aborted.' )                                    
  9400 format(/,'FATAL ERROR: mixed cohesive options not allowed',               
      & /,      '             at present in WARP3D with crack growth.'           
-     & /,      '             found while processing element: ',i6,              
+     & /,      '             found while processing element: ',i7,              
      & /,      '             job aborted.' )                                    
       end                                                                       
 c                                                                               
@@ -676,7 +676,7 @@ c
       if ( debug ) write(out,*) '<<<< leaving dam_init2'                        
       return                                                                    
  9030 format(' dam_node_elecnt(',i4,')=',i2)                                    
- 9050 format(' elem: ',i6, '  face nodes: ',8i8)                                
+ 9050 format(' elem: ',i7, '  face nodes: ',8i8)                                
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
@@ -743,7 +743,7 @@ c
  9999 continue                                                                  
       if ( debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
       return                                                                    
- 9010 format('  old constraints for node ',i6,' :',3(1x,e14.6))                 
+ 9010 format('  old constraints for node ',i7,' :',3(1x,e14.6))                 
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
@@ -850,7 +850,7 @@ c
          if( kill_order ) then                                                  
             write (out,*) '> kill_order_list:'                                  
             do i = 1, num_kill_order_list                                       
-               write (out,'("  entry:",i6," elem:",i6)')i,                      
+               write (out,'("  entry:",i7," elem:",i6)')i,                      
      &              kill_order_list(i)                                          
             end do                                                              
          end if                                                                 
@@ -882,7 +882,7 @@ c
      &        critical_angle                                                    
          write (out,*) '> entry, node, state, ifv:'                             
          do i=1,num_crack_plane_nodes                                           
-            write (out,'(2x,i6,i6,i6,3x,e13.6)')i,crack_plane_nodes(i),         
+            write (out,'(2x,i7,i6,i6,3x,e13.6)')i,crack_plane_nodes(i),         
      &           crkpln_nodes_state(i), crkpln_nodes_react(i)                   
          enddo                                                                  
          write (out,*) '> global nodes => crack plane nodes'                    
@@ -904,7 +904,7 @@ c
      &           char_length, release_fraction, release_height                  
             write (out,*) '> node_release_frac:'                                
             do i = 1, num_crack_plane_nodes                                     
-               write (out,'(2x,i6,2x,e13.6)')i,node_release_frac(i)             
+               write (out,'(2x,i7,2x,e13.6)')i,node_release_frac(i)             
             enddo                                                               
          endif                                                                  
 c                                                                               
@@ -1047,7 +1047,7 @@ c
       return                                                                    
 c                                                                               
  9000 format(' > element release type 2. Cell height computation.',             
-     & /,5x,'action: ',i1,10x,'element: ',i6,' avg. face displ: ',f10.6,        
+     & /,5x,'action: ',i1,10x,'element: ',i7,' avg. face displ: ',f10.6,        
      & ' D-bar now: ',f10.6 )                                                   
 c                                                                               
       end                                                                       
