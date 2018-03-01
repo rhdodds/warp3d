@@ -174,8 +174,8 @@ c
       return                                                                    
 c                                                                               
  100  format(//,'---begin evaluation of surface-traction integral:',            
-     &       ' element ',i6)                                                    
- 110  format(//,'---element ',i6,' has nodal loads',                            
+     &       ' element ',i7)                                                    
+ 110  format(//,'---element ',i7,' has nodal loads',                            
      &       /,1x,'snode',9x,'fx',13x,'fy',13x,'fz')                            
  120  format(i8,3(2x,e13.6))                                                    
  130  format('sum of nodal loads',2x,e13.6)                                     
@@ -1000,7 +1000,7 @@ c
      &       ' termw_aux, iterm(8,j)',4(2x,e13.6),/)                            
  9960 format(/,'     >>  crack-face tractions on element face:',/,              
      &        10x,'tx, ty, tz: ',3(2x,e13.6))                                   
- 9965 format(/,5x,'node, fnode, qval: ',i2,2x,i2,2x,i6,2x,e13.6)                
+ 9965 format(/,5x,'node, fnode, qval: ',i2,2x,i2,2x,i7,2x,e13.6)                
 c                                                                               
       end                                                                       
 c                                                                               
@@ -1137,8 +1137,8 @@ c
       return                                                                    
 c                                                                               
  1101 format(/,5x,' >>>> reordering face nodes on element ',i8)                 
- 1111 format(/,10x,'node1, node2:',2(2x,i6),/,10x,'sfnode1, sfnode2:',          
-     &       2(2x,i6),/,10x,'x1_1, x1_2, d1:',3(2x,e13.6))                      
+ 1111 format(/,10x,'node1, node2:',2(2x,i7),/,10x,'sfnode1, sfnode2:',          
+     &       2(2x,i7),/,10x,'x1_1, x1_2, d1:',3(2x,e13.6))                      
  1121 format(/,10x,'distance, closest pair: ',2x,e13.6,2x,i8 )                  
  1131 format(/,10x,'numbering of reordered nodes:',                             
      &       /,13x,'node',4x,'snode',8x,'x',14x,'y',14x,'z')                    
