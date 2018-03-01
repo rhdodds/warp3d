@@ -1463,7 +1463,7 @@ c
 c                                                                               
  9000 format(10x,6e14.5)                                                        
  9100 format(2x,".. debug for routine drive_10_cnst",                           
-     & /,10x,"now_blk, span, felem, history size:", 4i6)                        
+     & /,10x,"now_blk, span, felem, history size:", 4i7)                        
 c                                                                               
       end                                                                       
 c                                                                               
