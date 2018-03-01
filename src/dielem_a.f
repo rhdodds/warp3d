@@ -692,7 +692,7 @@ c
  9001 format(' >>>>> supplied values of s (q) function at element',             
      &       ' nodes', /,10(/,5x,3f10.3) )                                      
  9002 format(//,                                                                
-     &       ' >>>>> domain computations for element: ',i6,                     
+     &       ' >>>>> domain computations for element: ',i7,                     
      & //,   '       e, nu, etype, order, ngpts, nnode, linear,: ',             
      & /,15x, f10.1, f5.2, i5, i5, i5, i5, l5,                                  
      & /,    ' >>>>> global->crack rotation matrix:',                           
@@ -710,7 +710,7 @@ c
  9006 format(' >>>>> node alpha(1->6) for element in global x-y-z:' )           
  9007 format(3x,i3,2x,i3,2x,6e14.6)                                             
  9008 format(' >>>>> node alpha(1->6) for nodes in crack x-y-z:' )              
- 9009 format(//,' >>>>> final i-integral contributions for element ',i6)        
+ 9009 format(//,' >>>>> final i-integral contributions for element ',i7)        
  9010 format(/,a)                                                               
  9011 format('iterm1: ',e13.6,' iterm2: ',e13.6,' iterm3: ',e13.6,              
      &       ' iterm4: ',e13.6,' iterm5: ',e13.6,' iterm6: ',e13.6,             
@@ -1391,10 +1391,10 @@ c
       return                                                                    
 c                                                                               
  9012 format(/,' >>>>> max. elem. node dist. from front:     ',e13.6,           
-     &       /,' >>>>> number of 1/4-point nodes on element: ',i6)              
+     &       /,' >>>>> number of 1/4-point nodes on element: ',i7)              
  9014 format(' >>>>> final nodal q-function values for element',                
-     &       2x,i6,/,5x,'node',5x,'snode',8x,'q')                               
- 9016 format(5x,i2,5x,i6,2x,f10.3)                                              
+     &       2x,i7,/,5x,'node',5x,'snode',8x,'q')                               
+ 9016 format(5x,i2,5x,i7,2x,f10.3)                                              
 c                                                                               
       end                                                                       
 c                                                                               
@@ -1972,7 +1972,7 @@ c
       return                                                                    
 c                                                                               
 c                                                                               
- 890  format(///,"J-integral terms: element",2x,i6,2x,"point",2x,i2)            
+ 890  format(///,"J-integral terms: element",2x,i7,2x,"point",2x,i2)            
  892  format(' >>> weight, dqx, csig(10,ptno),jterm(1): ',4(1x,e13.6))          
  900  format(' >>> dux, dvx, dwx: ',3(1x,e13.6),/,                              
      &       '     temp1, 2, 3  : ',3(1x,e13.6 ),/,                             
