@@ -2773,7 +2773,7 @@ c
       return
 
  9000 format( '>> Internal Errors: wmpi_combine_stf_check. type: ',i3)
- 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i6)
+ 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i7)
 c
       end subroutine wmpi_combine_stf_check
 c
@@ -3039,7 +3039,7 @@ c
       return
 
  9000 format( '>> Internal Errors: wmpi_combine_stf_check. type: ',i3)
- 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i6)
+ 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i7)
 c
       end subroutine wmpi_combine_stf_check
 c
@@ -3295,7 +3295,7 @@ c
       return
 
  9000 format( '>> Internal Errors: wmpi_combine_stf_check. type: ',i3)
- 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i6)
+ 9010 format(10x,' myid, blk, span, nterms, element, stiff term:',6i7)
 c
       end subroutine wmpi_combine_stf_check
 c
@@ -5175,39 +5175,39 @@ c
 c
       write(out,*) '>>> # of nodes:',own%num_local_nodes
       write(out,*) '>>> local2global:'
-      write(out,'(5x,12i6)') (own%local2global(i),i=1,
+      write(out,'(5x,12i7)') (own%local2global(i),i=1,
      &     own%num_local_nodes*mxndof)
 c
       write(out,*) '>>> global2local:'
       write(out,'(17x,"1",17x,"2",17x,"3",17x,"4")')
-      write(out,'(5x,12i6)') (own%global2local(i),i=1,nodof)
+      write(out,'(5x,12i7)') (own%global2local(i),i=1,nodof)
 c
       write(out,*) '>>> private nodes:',own%num_private
-      write(out,'(5x,10i6)') (own%private(i),i=1,own%num_private)
+      write(out,'(5x,10i7)') (own%private(i),i=1,own%num_private)
 c
       write(out,*) '>>> owned but shared nodes:',own%num_own_shared
-      write(out,'(5x,10i6)') (own%own_shared(i),i=1,own%num_own_shared)
+      write(out,'(5x,10i7)') (own%own_shared(i),i=1,own%num_own_shared)
       do proc = 0, numprocs-1
          write(out,*) '   ==> nodes shared w/ proc',proc,':',
      &        own%sharing_count(proc)
          if( own%sharing_count(proc) .eq. 0 ) cycle
-         write(out,'(8x,12i6)')
+         write(out,'(8x,12i7)')
      &        (own%sharing_procs(proc)%ptr(i),
      &        i=1,own%sharing_count(proc))
       end do
 c
       write(out,*) '>>> shared nodes:',own%num_shared
-      write(out,'(5x,10i6)') (own%shared(i),i=1,own%num_shared)
+      write(out,'(5x,10i7)') (own%shared(i),i=1,own%num_shared)
       do proc = 0, numprocs-1
          write(out,*) '   ==> nodes owned by proc',proc,':',
      &        own%shared_count(proc)
          if( own%shared_count(proc) .eq. 0 ) cycle
-         write(out,'(8x,12i6)')
+         write(out,'(8x,12i7)')
      &        (own%shared_owner(proc)%ptr(i),i=1,own%shared_count(proc))
       end do
 c
       write(out,*) '>>> list of internal blks'
-      write(out,'("      internal:",20i3)')
+      write(out,'("      internal:",20i4)')
      &     (own%internal_blks(j),j=1,own%num_int_blks)
 c
       return
