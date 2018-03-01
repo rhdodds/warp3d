@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.inc
 #
-#   Last modifications: May 23, 2017
+#   Last modifications: Feb 28, 2018
 #
 #   Description:
 #
@@ -140,11 +140,9 @@ OBJ =	 \
 	$(OD)/addifv.o	 \
 	$(OD)/addmas.o	 \
 	$(OD)/adapt_check.o	 \
-	$(OD)/aplacc.o	 \
 	$(OD)/allocate_damage.o	 \
 	$(OD)/allocate_load.o	 \
 	$(OD)/assemble_code.o	 \
-	$(OD)/bdbt.o	 \
 	$(OD)/blcmp1.o	 \
 	$(OD)/bmod.o	 \
 	$(OD)/chkcrack.o	 \
@@ -169,7 +167,6 @@ OBJ =	 \
 	$(OD)/distup.o	 \
 	$(OD)/distributed_assembly.o  \
 	$(OD)/difrar.o	 \
-	$(OD)/difrtn.o	 \
 	$(OD)/di1dsf.o	 \
 	$(OD)/dimrot.o	 \
 	$(OD)/dicmj.o	 \
@@ -258,7 +255,6 @@ OBJ =	 \
 	$(OD)/mpc_modify.o	 \
 	$(OD)/name_strip.o	 \
 	$(OD)/ndpts1.o	 \
-	$(OD)/oualph.o	 \
 	$(OD)/ouddpa.o	 \
 	$(OD)/oudriv.o	 \
 	$(OD)/oudups.o	 \
@@ -276,9 +272,7 @@ OBJ =	 \
 	$(OD)/oulbdd.o	 \
 	$(OD)/oulbir.o	 \
 	$(OD)/oulbst.o	 \
-	$(OD)/oulbta.o	 \
 	$(OD)/oulg1.o	 \
-	$(OD)/oulrlh.o	 \
 	$(OD)/oumkcv.o	 \
 	$(OD)/oundhd.o	 \
 	$(OD)/ounds1.o	 \
@@ -287,7 +281,6 @@ OBJ =	 \
 	$(OD)/ouneut.o	 \
 	$(OD)/ouocst_elem.o	 \
 	$(OD)/oupads.o	 \
-	$(OD)/ouparm.o	 \
 	$(OD)/oupdva.o	 \
 	$(OD)/oupele.o	 \
 	$(OD)/ouprks.o	 \
