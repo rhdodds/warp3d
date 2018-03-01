@@ -164,7 +164,7 @@ c
  9205 format(5x,"... updating Lagrange forces to n+1 ...")                      
  9210 format(t5,"sdof", t16, "tlf (new)", t31, "tlf(old)",                      
      &  t50, "dlf" )                                                            
- 9220 format(2x,i6,3f16.6)                                                      
+ 9220 format(2x,i7,3f16.6)                                                      
  9300 format(1x,"--- entering update ---" )                                     
  9305 format(1x,"--- leaving update ---" )                                      
                                                                                 
