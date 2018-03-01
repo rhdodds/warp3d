@@ -700,8 +700,8 @@ c
       return
 c
  9000 format('>> FATAL ERROR: do_nleps_block_a'
-     &  /,   '  unallocated nonlocal state vector for element: ',i6,
-     &  /,   '  in block: ',i6,
+     &  /,   '  unallocated nonlocal state vector for element: ',i7,
+     &  /,   '  in block: ',i7,
      &  /,   '  job terminated' )
 c
       end subroutine do_nleps_block_a
