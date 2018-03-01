@@ -1224,7 +1224,7 @@ c
      &        /1x,'          distance from crack plane to crack plane',         
      &        /1x,'          node: ',e13.6)                                     
  9030 format (/1x,'         list of crack plane nodes:')                        
- 9040 format (13x,5(2x,i6))                                                     
+ 9040 format (13x,5(2x,i7))                                                     
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
@@ -1414,7 +1414,7 @@ c
       return                                                                    
  9000 format (/1x,'       * find neighboring nodes...')                         
  9030 format (/1x,'         list of crack front nodes:')                        
- 9060 format (15x,i6)                                                           
+ 9060 format (15x,i7)                                                           
       end                                                                       
 c                                                                               
 c     ****************************************************************          
@@ -1754,7 +1754,7 @@ c
       if (debug) then                                                           
          write (*,*) '>>> Here are the master_lists...'                         
          do i=1, num_lines                                                      
-            write (*,'(6x,i6,6x,20i7)') i, (master_lines(i,j),j=1,              
+            write (*,'(6x,i7,6x,20i7)') i, (master_lines(i,j),j=1,              
      &           num_nodes_back + 1)                                            
          enddo                                                                  
          write (*,*) '<<< leaving init_ctoa_back'                               
