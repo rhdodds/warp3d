@@ -619,7 +619,7 @@ c
 c
       return
 c
- 9100 format(/1x,'>>>>> error: step number in list is not valid: ',i6 )
+ 9100 format(/1x,'>>>>> error: step number in list is not valid: ',i7 )
  9200 format(/1x,'>>>>> error: cannot recognize required ',
      & 'list of step numbers',
      & /14x,'scanning: ',a,//)
