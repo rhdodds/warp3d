@@ -4,7 +4,7 @@ import os
 #
 set_printoptions(threshold='nan')
 #
-stream_fname = "./wem000030_stream_mises_gurson"
+stream_fname = "./wem0000030_stream_mises_gurson"
 #
 fileobj = open(stream_fname, mode='rb')
 num_cols = 6
