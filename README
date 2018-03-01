@@ -3,16 +3,16 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: December 23, 2017
+                   Last Update: March 1, 2018
 
-              Version 17.8.5, Build 3320 on all Platforms
+              Version 17.8.7, Build 3320 on all Platforms
 
 Late breaking news:
 ==================
 
 See new part of description below: Components of WARP3D Distribution
 
-The ready-to-run executables are built using Intel Fortran/MKL 18.0.0
+The ready-to-run executables are built using Intel Fortran/MKL 18.0.1
 with options that allow the executable to run on a wide-range of
 Intel 64 bit processors.
 
@@ -407,7 +407,8 @@ running WARP3D.
   libraries needed to provide the additional functionality on Linux.
   Specifically MKL, MPI and the hypre iterative solver from LLNL.
 
-  To complete loading of these libraries run the bash shell script
+  If you are building from the GitHub source,
+  complete loading of these libraries run the bash shell script
 
         install_libs_from_remote
 
@@ -568,16 +569,16 @@ running WARP3D.
               executable built using Windows 10
 
    - Linux: Intel64 (EM64T) processors. We have tested the build
-            process and executables on Red Hat/Centos 7.3 Server
-            and Ubuntu 14.04.5. The included executables are built on
-            Ubuntu 14.04.5 LTS.
+            process and executables on Red Hat/Centos 7.3 Server,
+            Kubuntu 16.04, and Ubuntu 14.04.5. The included executables
+            are built on Kubuntu 17.04.
             There are 2 WARP3D executables:
                 - Parallel execution using only threads
                 - Parallel execution using a combination of MPI
                   and threads
 
    - OSX: on Intel 64-bit processors (Core 2 Duo and later).
-           The executable is built on 10.11.6.
+           The executable is built on 10.13.2.
 
 ==========================================================================
 5.0 Changing source code and re-building the executables
@@ -595,14 +596,14 @@ running WARP3D.
  be installed. Re-building WARP3D requires only the Fortran Composer XE
  (not Intel C or C++).
 
- On Windows, we use Intel Visual Fortran Composer XE 2017 for Windows
+ On Windows, we use Intel Visual Fortran Composer XE 2018 for Windows
    which includes the Intel Math Kernel Library
 
- On Linux, we use Intel Fortran Composer XE 2017 for Linux
+ On Linux, we use Intel Fortran Composer XE 2018 for Linux
    which includes the Intel Math Kernel Library. The Intel MPI system
    must be installed to run and re-build the MPI + OpenMP version.
 
- On OSX, we use Intel Fortran Composer XE 2017 for OSX
+ On OSX, we use Intel Fortran Composer XE 2018 for OSX
    which includes the Intel Math Kernel Library.
 
  The compile scripts (Makewarp.bash and Makewarp.bat) in the src
@@ -612,7 +613,8 @@ running WARP3D.
  is the ONLY recommended process to re-build the executables. The
  Makewarp.bash script asks a few questions, then builds the executable.
 
- Makaewarp.bat asks no questions -- it just runs.
+ Makewarp.bat asks no questions -- it just runs.
+ Makewarp_jom.bat runs parallel compiles.
 
 
 ==========================================================================

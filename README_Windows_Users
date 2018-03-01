@@ -2,21 +2,22 @@
 
                Highest Level README for Windows Users
 
-                last Update: September 5, 2017
+                last Update: March 1, 2018
 
 ==========================================================================
 
 *** NOTES: ***
 
-WARP3D is built for Windows using the Intel Fortran Composer XE
-and MKL Version 17 Update 2.
+WARP3D is built for Windows 10 Build 16299
+using the Intel Fortran Composer XE 18.0.1
+and MKL Version 18.0.1.
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on Windows 10.
+This distribution was built & verified on Windows 10 Build 16299.
 
 We build the executable using statically-linked MKL libraries.
 
@@ -168,14 +169,15 @@ Re-Building the Windows Executable for WARP3D
    We make one of these with name Fortran.
 
 
-   2A.  For Fortran 2017, we access Properties of the command shell and set the Target as:
+   2A.  For Fortran 2018.0.1, we access Properties of the command
+        shell and set the Target as:
 
-   C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2017\
-         windows\bin\ipsxe-comp-vars.bat" intel64 vs2013"
 
-   and set the "Start In" directory as:
+    C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\parallel_studio_xe_2018.1.041\bin\psxevars.bat" intel64 vs2013"
 
-    c:\warp3d\src
+    2B. and set the "Start In" directory as:
+
+        c:\warp3d\src
 
 3.  Put your UMAT routine and all support routines it calls into the
     four (4) user_routines....f  files located in the src directory.
