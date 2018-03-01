@@ -4,7 +4,7 @@ c     *                      subroutine ouflnm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/11/2018 rhd              *
+c     *                   last modified : 2/27/2018 rhd              *
 c     *                                                              *
 c     *     creates a file name for patran output                    *
 c     *     based on the output type and the step number.            *
@@ -20,15 +20,19 @@ c
       character(len=*) :: flnam
       logical :: use_mpi
 c
-      integer :: step_number
+      integer :: step_number  ! can be 7 digits
 c
       step_number = stepno
+      if( len(flnam) < 16 ) then
+        write(*,9200)
+        call die_gracefully
+      end if
 c
 c                check to make sure the step number is not
-c                greater than 6 digits.
+c                greater than 7 digits.
 c
-      if( step_number .gt. 999999 )
-     &     step_number = step_number - 999999
+      if( step_number .gt. 9999999 )
+     &     step_number = step_number - 9999999
 c
       flnam(1:) = ' '
       flnam(1:4) = strtnm  ! first part of name
@@ -38,12 +42,14 @@ c                for mpi, we add the process id as a suffix
 c                to the file name.
 c
       if ( .not. use_mpi ) return
-      flnam(11:11) = '.'
-      write(flnam(12:15),9000) myid
+      flnam(12:12) = '.'
+      write(flnam(13:16),9000) myid
       return
 c
  9000 format(i4.4)
- 9100 format(i6.6)
+ 9100 format(i7.7)
+ 9200 format('>>>> FATAL ERROR: invlaid string length. ',
+     &    'ouflnm.')
 c
       end
 
