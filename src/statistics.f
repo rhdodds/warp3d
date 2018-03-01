@@ -49,8 +49,8 @@ c
 c
  9000  format (
      & /10x, '>> direct solver statistics:'
-     & /15x, 'total number of equations:       ',i10,
-     & /15x, 'total megabytes needed for [k]:  ',f10.1,
-     & /15x, 'maximum column heigth: ',i8,' average: ',f10.1,/  )
+     & /15x, 'total number of equations:       ',i12,
+     & /15x, 'total megabytes needed for [k]:  ',f12.1,
+     & /15x, 'maximum column heigth: ',i10,' average: ',f12.1,/  )
 c
        end
