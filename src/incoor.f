@@ -383,7 +383,7 @@ c
       return
 c
  9500 format(/,2x,'*** currently defined nodal coordinates ***')
- 9510 format(5x,i6,3f20.8)
+ 9510 format(5x,i7,3f20.8)
 c
       contains
 c     ========
