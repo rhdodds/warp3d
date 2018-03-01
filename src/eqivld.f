@@ -343,7 +343,7 @@ c
 c
       return
 c
- 9010 format(' ... nonode, step, time_n, dt, step_factor: ',i10,i6,
+ 9010 format(' ... nonode, step, time_n, dt, step_factor: ',i10,i7,
      & 3e14.6)
 c
       end
@@ -943,6 +943,6 @@ c
 
       return
  9000 format(/1x,'>> total applied load pattern factors through step: ',
-     & i6 )
+     & i7 )
  9010 format(6x,'> ',3(a12,' ',f10.3,2x))
       end
