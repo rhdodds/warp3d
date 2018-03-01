@@ -148,7 +148,7 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 9000 format(1x,i6,5(1x,e14.6))                                                 
+ 9000 format(1x,i7,5(1x,e14.6))                                                 
  9010 format(/,5x,'>> Maximum change in plastic strain for this step:',         
      &     e13.6,/)                                                             
  9020 format(1x,'element   eps-pls        eps-crit      ',                      
