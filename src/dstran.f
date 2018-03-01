@@ -47,7 +47,7 @@ c
       write(out,9005)                                                           
 c                                                                               
 c                                                                               
- 9000 format(////20x,'transformation matrix for node ',i6/20x,37('-')//)        
+ 9000 format(////20x,'transformation matrix for node ',i7/20x,37('-')//)        
 c                                                                               
  9005 format(//1x,' ')                                                          
 c                                                                               
