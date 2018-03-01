@@ -92,7 +92,7 @@ c
 c                                                                               
  9000 format(1x,'dof:',i2,' element ifv:',e14.6,' total ifv:',e14.6)            
  9100 format(1x,'FATAL ERROR: in adifv. contact WARP3D developers')             
- 9200 format(/,2x,'... addifv for block with first element: ',i6)               
+ 9200 format(/,2x,'... addifv for block with first element: ',i7)               
  9300 format(5x,8e14.6)                                                         
 c                                                                               
       end                                                                       
