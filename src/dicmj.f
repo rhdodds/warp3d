@@ -702,9 +702,9 @@ c
      &  /,      1x,25x,'--------------------------')                            
  9110 format(7x,'element',5x,'dm1',9x,'dm2',9x,'dm3',9x,'dm4',                  
      &    9x,'dm5',9x,'dm6',9x,'dm7',9x,'dm8' )                                 
- 9130 format(/,5x,' gauss point strains for element ',i6,', gpt ',i2,           
+ 9130 format(/,5x,' gauss point strains for element ',i7,', gpt ',i2,           
      &       ':',/, 3(10x,3(e11.4,2x),/))                                       
- 9140 format(1x,a,1x,i6,8(1x,e11.4))                                            
+ 9140 format(1x,a,1x,i7,8(1x,e11.4))                                            
  9150 format('')                                                                
  9160 format(/,1x,'element totals:',3x,'dm1',9x,'dm2',9x,'dm3',9x,'dm4',        
      &    9x,'dm5',9x,'dm6',9x,'dm7',9x,'dm8',8x,'total')                       
@@ -730,7 +730,7 @@ c
  9290 format(8x,'domain',6x,'dm1',9x,'dm2',9x,'dm3',9x,'dm4',                   
      &    9x,'dm5',9x,'dm6',9x,'dm7',9x,'dm8',7x,'total I',                     
      &    2x,'killed ele' )                                                     
- 9300 format(1x,a,1x,i6,9(1x,e11.4),2x,'(',i3,')')                              
+ 9300 format(1x,a,1x,i7,9(1x,e11.4),2x,'(',i3,')')                              
  9400 format(/,1x,'area under q-function along crack front:  ',e11.4,           
      &       /,1x,'length along crack front for this domain: ',e11.4,/)         
 c                                                                               
