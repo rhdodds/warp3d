@@ -130,6 +130,6 @@ c
      &  "load @ n",                                                             
      &  t66, "dload",                                                           
      &  t78, "lagrange @ n" )                                                   
- 9040 format(2x,i6,5f16.6)                                                      
+ 9040 format(2x,i7,5f16.6)                                                      
 c                                                                               
       end                                                                       
