@@ -516,9 +516,9 @@ c
 c
       return
 c
- 9000 format(/4x,'newton convergence tests step: ',i6,1x,
+ 9000 format(/4x,'newton convergence tests step: ',i7,1x,
      &       'iteration: ',i3,1x,'@ wall time: ',f8.1,
-     7       /4x,74('-') )
+     7       /4x,75('-') )
  9005 format(4x,'completed fraction over step: ',f7.4)
 c
  9010 format(
@@ -576,7 +576,7 @@ c
      & 4x,'test 6: max term corrective displacement vector:',
      & e12.5,1x,a8 )
 c
- 9100 format(/2x,'convergence tests step: ',i6,1x,
+ 9100 format(/2x,'convergence tests step: ',i7,1x,
      &       'iter: ',i2,1x,'wall time: ',f6.0,1x,
      &       'step fraction: ',f7.4 )
 c
