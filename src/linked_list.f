@@ -284,7 +284,7 @@ c
 c                                                                               
       write (*,*) '      entry#, entry, pointer):'                              
       do i = 1, num_crack_plane_nodes                                           
-         write (*,'(5x,3i6)')i,crack_front_nodes(i,1),                          
+         write (*,'(5x,3i7)')i,crack_front_nodes(i,1),                          
      &        crack_front_nodes(i,2)                                            
       enddo                                                                     
 c                                                                               
