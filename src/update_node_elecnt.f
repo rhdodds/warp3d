@@ -38,7 +38,7 @@ c
       if (debug) write (*,*) '>>>> leaving update_node_elecnt'                  
 c                                                                               
       return                                                                    
- 9000 format ('>> node ',i2,' of elem ',i6,' is ',i6)                           
+ 9000 format ('>> node ',i2,' of elem ',i7,' is ',i6)                           
  9010 format ('>>   elems connected to node is ',i2)                            
- 9020 format('old constraints for node ',i6,' :',3(1x,e14.6))                   
+ 9020 format('old constraints for node ',i7,' :',3(1x,e14.6))                   
       end                                                                       
