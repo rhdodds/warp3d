@@ -15,45 +15,45 @@ c
       integer :: termout, num_model_nodes, num_model_elems
 c
 c                local variables
-c                ---------------    
+c                ---------------
 c
       integer :: num_command_args, nchars, status
       character(len=20) :: chars
 c
       num_command_args =  command_argument_count ()
-      if( num_command_args .ne. 4 ) then  
+      if( num_command_args .ne. 4 ) then
          write(termout,9000)
          stop
       end if
-c      
+c
       num_model_nodes = 0
       num_model_elems = 0
-c      
+c
       call get_command_argument( 1, chars, nchars, status )
       if( chars(1:5) .eq. '-node' ) then
-        call get_command_argument( 2, chars, nchars, status ) 
+        call get_command_argument( 2, chars, nchars, status )
         read(chars,*) num_model_nodes
       elseif( chars(1:5) .eq. '-elem' ) then
-        call get_command_argument( 2, chars, nchars, status ) 
+        call get_command_argument( 2, chars, nchars, status )
         read(chars,*) num_model_elems
       else
         write(termout,9000)
-        stop         
-      end if
-c      
-      call get_command_argument( 3, chars, nchars, status )
-      if( chars(1:5) .eq. '-node' ) then
-        call get_command_argument( 4, chars, nchars, status ) 
-        read(chars,*) num_model_nodes
-      elseif( chars(1:5) .eq. '-elem' ) then
-        call get_command_argument( 4, chars, nchars, status ) 
-        read(chars,*) num_model_elems
-      else
-        write(termout,9000)
-        stop         
+        stop
       end if
 c
-      if( num_model_nodes < 1  .or. num_model_elems < 1 ) then  
+      call get_command_argument( 3, chars, nchars, status )
+      if( chars(1:5) .eq. '-node' ) then
+        call get_command_argument( 4, chars, nchars, status )
+        read(chars,*) num_model_nodes
+      elseif( chars(1:5) .eq. '-elem' ) then
+        call get_command_argument( 4, chars, nchars, status )
+        read(chars,*) num_model_elems
+      else
+        write(termout,9000)
+        stop
+      end if
+c
+      if( num_model_nodes < 1  .or. num_model_elems < 1 ) then
          write(termout,9000)
          stop
       end if
@@ -63,9 +63,9 @@ c
  9000 format('>>> invalid command line. required form:',
      & /,10x,' <command>  -nodes ### -elements ###',
      & /,10x,' <command>  -elements ### -nodes ###',
-     & //,10x,'... job terminated ...',//)     
-c 
-      end subroutine  get_model_sizes     
+     & //,10x,'... job terminated ...',//)
+c
+      end subroutine  get_model_sizes
 c **********************************************************************
 c *                                                                    *
 c *          (make) states header_list, find highest step number       *
@@ -73,7 +73,7 @@ c *          for all result files and highest MPI rank number          *
 c *                                                                    *
 c **********************************************************************
 c
-      subroutine extract_directory_info( termout, states_count, 
+      subroutine extract_directory_info( termout, states_count,
      &                                states_materials, max_list,
      &                                last_step, last_proc_id )
       implicit none
@@ -94,9 +94,9 @@ c
       logical :: lstatus, lflag, found
       logical, parameter :: local_debug = .false.
       character(len=80) :: lfile_name, matl_name, list_command,
-     &                     list_file_name 
+     &                     list_file_name
       character(len=10) :: chars
-c     
+c
 c                run system command to create a file with directory
 c                   listing
 c                search for file names: states_headers_...
@@ -104,10 +104,10 @@ c                create list and count of the different material
 c                   models that have states_headers
 c
       if( local_debug ) write(termout,9200)
-c      
+c
       list_file_name(1:) = "tmpfilelist"
       nchars = len_trim( list_file_name )
-c      
+c
       list_command(1:) = "ls -1 >" // list_file_name(1:nchars)
       call execute_command_line( list_command )
       inquire(file=list_file_name,exist=lstatus)
@@ -116,7 +116,7 @@ c
         stop
       end if
 c
-      file_unit = get_device_number()      
+      file_unit = get_device_number()
       open(unit=file_unit,file=list_file_name)
 c
 
@@ -131,7 +131,7 @@ c
         if( local_debug ) write(termout,9010) lfile_name
         matl_name(1:) = trim(lfile_name(15:))
         nchars = len_trim( matl_name )
-        if( states_count .eq. 0 ) then   
+        if( states_count .eq. 0 ) then
           states_count = states_count + 1
           states_materials(states_count) = matl_name(1:nchars)
           cycle
@@ -143,12 +143,12 @@ c
          end if
          states_count = states_count + 1
          states_materials(states_count) = matl_name(1:nchars)
-        end do   ! on i looking for already in list     
+        end do   ! on i looking for already in list
       end do
 c
-c                look at all file names again. see if position 5-9
+c                look at all file names again. see if position 5-11
 c                are an integer step number (Patran files) or
-c                position 4-8 (flat files). find highest step number
+c                position 4-10 (flat files). find highest step number
 c                having results.
 c
 c                look at ending of file name for possible MPI rank
@@ -157,23 +157,23 @@ c
       rewind( unit=file_unit)
       last_step    = 0
       last_proc_id = 0
-c      
+c
       do
-c       
+c
         found = .false.   ! is a Patran results file name ?
         chars = " "
         read(file_unit,fmt="(a)",iostat=status) lfile_name
         if( status .ne. 0 ) exit  ! no more file names
-        chars(1:5) = lfile_name(5:9)
+        chars(1:7) = lfile_name(5:11)
         read(chars,*,iostat=status) stepno
         if( status .eq. 0 ) then
-          last_step = max( last_step, stepno ) 
+          last_step = max( last_step, stepno )
           found = .true.
         end if
 c
         if( .not. found ) then ! is a flat results file name ?
           chars = " " ! is a flat results file name
-          chars(1:5) = lfile_name(4:8)
+          chars(1:7) = lfile_name(4:10)
           read(chars,*,iostat=status) stepno
           if( status .eq. 0 ) then
             last_step = max( last_step, stepno )
@@ -181,13 +181,13 @@ c
           end if
         end if
 c
-        if( .not. found ) cycle     ! not a Patran or flat result file     
-c        
+        if( .not. found ) cycle     ! not a Patran or flat result file
+c
         chars = " "
         last_char = len_trim( lfile_name )
-        dot_pos   = last_char-4 
+        dot_pos   = last_char-4
         lflag     = lfile_name(1:1) == 'w' .and.
-     &              lfile_name(dot_pos:dot_pos) == '.' 
+     &              lfile_name(dot_pos:dot_pos) == '.'
         if( .not. lflag) cycle
         chars(1:4) = lfile_name(dot_pos+1:last_char)
         read(chars,*,iostat=status) proc_id
@@ -195,7 +195,7 @@ c
         last_proc_id = max( last_proc_id, proc_id )
 c
       end do
-c  
+c
 c
       close(unit=file_unit,status="delete")
 c
@@ -203,30 +203,30 @@ c
         write(termout,*) " "
         write(termout,*) '... last step to process:     ',last_step
         write(termout,*) '... last MPI rank to process: ',last_proc_id
-        write(termout,*) 
+        write(termout,*)
      &    "... material names with states header files"
         do i = 1, states_count
-           write(termout,9100) i, states_materials(i) 
+           write(termout,9100) i, states_materials(i)
         end do
         write(termout,*) " "
       end if
-c          
-      if( local_debug ) write(termout,9220)  
+c
+      if( local_debug ) write(termout,9220)
       return
 c
  9000 format(1x,"FATAL ERROR. inconsistency in states file names",
      & /,1x,    "             states_count, lfile_name, matl_name:",
-     & /,10x,i5,a,2x,a,/,1x,"Job Aborted.")   
+     & /,10x,i5,a,2x,a,/,1x,"Job Aborted.")
  9005 format(1x,"FATAL ERROR. inconsistency. directory list command",
      & /,1x,    "             failed in: build_states_headers_list",
-     & /,1x,    "             Job Aborted.")   
+     & /,1x,    "             Job Aborted.")
  9010 format(".... states header file name: ",a)
  9100 format(10x,i3,2x,a30)
  9200 format(1x,'... entered extract_directory_info ... ')
  9210 format(1x,'      ... file name: ',a)
  9220 format(1x,'... leaving extract_directory_info ... ')
 c
-      end subroutine extract_directory_info   
+      end subroutine extract_directory_info
 c **********************************************************************
 c *                                                                    *
 c *          skip_comment_lines                                        *
@@ -241,7 +241,7 @@ c
 c
       character :: first_char*1
 c
-      do 
+      do
         read(file_no,fmt="(a1)") first_char
         if( first_char .eq. "#"  .or.
      &      first_char .eq. "!"  .or.
@@ -254,7 +254,7 @@ c
       return
       end subroutine skip_comment_lines
 c
-c 
+c
 c     ****************************************************************
 c     *                                                              *
 c     *         integer function get_device_number()                 *
@@ -287,7 +287,7 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine check_read_status( file_no, read_status, termout, 
+      subroutine check_read_status( file_no, read_status, termout,
      &                              location )
       implicit none
 c
@@ -328,7 +328,7 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine check_allocate_status( termout, location, 
+      subroutine check_allocate_status( termout, location,
      &                                  allocate_status )
       implicit none
 c
@@ -348,7 +348,7 @@ c *                                                                    *
 c **********************************************************************
 c
 c
-      subroutine check_deallocate_status( termout, location, 
+      subroutine check_deallocate_status( termout, location,
      &                                  allocate_status )
       implicit none
 c
@@ -373,7 +373,7 @@ c
 c
       integer :: num_nodes, sig_eps_type
       double precision :: node_values(num_nodes,*)
-      logical :: stress 
+      logical :: stress
 c
       stress = sig_eps_type .eq. 0
 c
@@ -387,7 +387,7 @@ c
 c
       return
       end
-    
+
 c     ****************************************************************
 c     *                                                              *
 c     *                  subroutine princ_inv_stress                 *
@@ -397,7 +397,7 @@ c     *                                                              *
 c     *                   last modified : 1/18/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine computes the mises stress, principal     *
-c     *     invariants at the nodes/elements                         * 
+c     *     invariants at the nodes/elements                         *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -409,7 +409,7 @@ c
 c
       integer :: i
       double precision, parameter :: six=6.0d0, iroot2=0.70710678118d0
-c        
+c
       do i = 1, num_nodes
          results(i,8) = sqrt( (results(i,1)-results(i,2))**2+
      &                 (results(i,2)-results(i,3))**2+
@@ -418,13 +418,13 @@ c
      &                  results(i,6)**2) )*iroot2
          results(i,12) = results(i,1) +  results(i,2) +
      &                        results(i,3)
-         results(i,13) = results(i,1) * results(i,2) + 
+         results(i,13) = results(i,1) * results(i,2) +
      &                        results(i,2) * results(i,3) +
      &                        results(i,1) * results(i,3) -
      &                        results(i,4) * results(i,4) -
      &                        results(i,5) * results(i,5) -
      &                        results(i,6) * results(i,6)
-         results(i,14) = results(i,1) * 
+         results(i,14) = results(i,1) *
      &            ( results(i,2) * results(i,3) -
      &              results(i,5) * results(i,5) ) -
      &                        results(i,4) *
@@ -432,7 +432,7 @@ c
      &              results(i,5) * results(i,6) ) +
      &                        results(i,6) *
      &            ( results(i,4) * results(i,5) -
-     &              results(i,2) * results(i,6) ) 
+     &              results(i,2) * results(i,6) )
       end do
 c
       return
@@ -446,7 +446,7 @@ c     *                                                              *
 c     *                   last modified : 1/29/2017 rhd              *
 c     *                                                              *
 c     *     this subroutine computes equivalent strain and           *
-c     *     principal invariants  at the nodes/elem                  * 
+c     *     principal invariants  at the nodes/elem                  *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -461,12 +461,12 @@ c
       double precision, parameter ::  half = 0.5d0,
      &                                root23 = 0.47140452079d0,
      &                                onep5 = 1.5d0
-c   
+c
       do i = 1, num_nodes
          t1 =  half * results(i,4)
          t2 =  half * results(i,5)
          t3 =  half * results(i,6)
-         results(i,7) = root23 * sqrt( 
+         results(i,7) = root23 * sqrt(
      &     ( results(i,1) - results(i,2) ) ** 2 +
      &     ( results(i,2) - results(i,3) ) ** 2 +
      &     ( results(i,1) - results(i,3) ) ** 2 +
@@ -482,7 +482,7 @@ c
      &     results(i,1) * ( results(i,2) * results(i,3) -
      &              t2 * t2 ) -  t1 * ( t1 * results(i,3) -
      &              t2 * t3 ) + t3 * ( t1 * t2 -
-     &              results(i,2) * t3 ) 
+     &              results(i,2) * t3 )
       end do
 c
       return
@@ -497,14 +497,14 @@ c     *                   last modified : 1/18/2016 rhd              *
 c     *                                                              *
 c     *     this subroutine computes principal strain values         *
 c     *     at the nodes/elem after the primary values have          *
-c     *     been averaged                                            * 
+c     *     been averaged                                            *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine princ_strain( results, num_nodes )
       implicit none
 c
-      integer :: num_nodes   
+      integer :: num_nodes
       double precision ::  results(num_nodes,*)
 c
 c                    locals
@@ -520,7 +520,7 @@ c        calculate the principal strains and there direction cosines by
 c        passing off strains into dummy array, then calling an eigenvalue
 c        eigenvector routine, and then passing the values from this routine
 c        back to the appropriate places within results
-c      
+c
        do i = 1, num_nodes
           temp_strain(1) = results(i,1)
           temp_strain(2) = results(i,4) * half
@@ -528,8 +528,8 @@ c
           temp_strain(4) = results(i,6) * half
           temp_strain(5) = results(i,5) * half
           temp_strain(6) = results(i,3)
-          call ou3dpr( temp_strain, ndim, 1, ev, evec, ndim, wk, ier )   
-          results(i,11) = ev(1)     
+          call ou3dpr( temp_strain, ndim, 1, ev, evec, ndim, wk, ier )
+          results(i,11) = ev(1)
           results(i,12) = ev(2)
           results(i,13) = ev(3)
           results(i,14) = evec(1,1)
@@ -543,7 +543,7 @@ c
           results(i,22) = evec(3,3)
       end do
       return
-      end  
+      end
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine princ_stress                 *
@@ -551,19 +551,19 @@ c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
 c     *                   last modified : 10/04/94                   *
-c     *                                   03/05/95 kck               *        
-c     *                                   06/10/97 rhd               *        
+c     *                                   03/05/95 kck               *
+c     *                                   06/10/97 rhd               *
 c     *                                                              *
 c     *     this subroutine computes principal stress values         *
 c     *     at the nodes/elem after the primary values have          *
-c     *     been averaged                                            * 
+c     *     been averaged                                            *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine princ_stress( results, num_nodes )
       implicit none
 c
-      integer :: num_nodes   
+      integer :: num_nodes
       double precision ::  results(num_nodes,*)
 c
 c                    locals
@@ -578,7 +578,7 @@ c        calculate the principal stresses and there direction cosines by
 c        passing off stresses into dummy array, then calling an eigenvalue
 c        eigenvector routine, and then passing the values from this routine
 c        back to the appropriate places within results
-c      
+c
        do i = 1, num_nodes
           temp_stress(1) = results(i,1)
           temp_stress(2) = results(i,4)
@@ -586,8 +586,8 @@ c
           temp_stress(4) = results(i,6)
           temp_stress(5) = results(i,5)
           temp_stress(6) = results(i,3)
-          call ou3dpr( temp_stress, ndim, 1, ev, evec, ndim, wk, ier )   
-          results(i,15) = ev(1)     
+          call ou3dpr( temp_stress, ndim, 1, ev, evec, ndim, wk, ier )
+          results(i,15) = ev(1)
           results(i,16) = ev(2)
           results(i,17) = ev(3)
           results(i,18) = evec(1,1)
@@ -601,7 +601,7 @@ c
           results(i,26) = evec(3,3)
       end do
       return
-      end  
+      end
 c *******************************************************************
 c *                                                                 *
 c *      element output service routine -- ou3dpr                   *

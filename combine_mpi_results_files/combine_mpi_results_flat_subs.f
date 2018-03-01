@@ -153,7 +153,7 @@ c                local variables
 c                ---------------
 c
       integer :: fcount, nchars
-      character(len=6) :: step_id
+      character(len=7) :: step_id
       character(len=4) :: proc_id
       character(len=6) :: format
       logical :: local_debug
@@ -242,7 +242,7 @@ c
 c
       return
 c
- 9000 format( i6.6 )
+ 9000 format( i7.7 )
  9100 format( i4.4 )
  9200 format( 5x,' > file names: ', 5(/10x,a) )
  9300 format( '>> FATAL ERROR: routine build_flat_file_names...',
@@ -459,7 +459,7 @@ c
  9400 format(15x,i7)
 c
  9700 format(5x,'> local debug in do_flat_element_step: ',
-     & /,10x,'step: ',i6,/,10x,'file_name: ',a,
+     & /,10x,'step: ',i7,/,10x,'file_name: ',a,
      & /,10x,'file_no: ',i5 )
  9705 format(5x,'> local debug in do_flat_element_step: ',
      & /,10x,'proc_id: ',i6,/,10x,'file_name: ',a,
@@ -985,7 +985,7 @@ c
  9400 format(15x,i7)
 c
  9700 format(5x,'> local debug in do_flat_node_step: ',
-     & /,10x,'step: ',i6,/,10x,'file_name: ',a20,
+     & /,10x,'step: ',i7,/,10x,'file_name: ',a20,
      & /,10x,'file_no: ',i5 )
  9705 format(5x,'> local debug in do_flat_node_step: ',
      & /,10x,'proc_id: ',i6,/,10x,'file_name: ',a20,

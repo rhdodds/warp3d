@@ -134,7 +134,7 @@ c                ---------------
 c
       integer :: nchars
       logical :: local_debug
-      character :: step_id*6, proc_id*4, format*1
+      character :: step_id*7, proc_id*4, format*1
 c
       local_debug              = .false.
       node_stress_fname(1:)    = ' '
@@ -214,7 +214,7 @@ c
 c
       return
 c
- 9000 format( i6.6 )
+ 9000 format( i7.7 )
  9100 format( i4.4 )
  9200 format( 5x,' > file names: ', 5(/10x,a) )
  9300 format( '>> FATAL ERROR: routine build_patran_file_names...',
@@ -262,7 +262,7 @@ c
       character(len=80) :: node_stress_fname, node_strain_fname,
      &                     element_stress_fname, element_strain_fname,
      &                     dummy_fname, dummy_name
-      character(len=15) :: file_name
+      character(len=16) :: file_name
       character(len=4) :: title1_binary(80), title2_binary(80)
       character(len=1) :: title1_formatted(80), title2_formatted(80)
 c
@@ -442,10 +442,10 @@ c
  9400 format(15x,i7)
 c
  9700 format(5x,'> local debug in do_node_step: ',
-     & /,10x,'step: ',i6,/,10x,'file_name: ',a15,
+     & /,10x,'step: ',i7,/,10x,'file_name: ',a,
      & /,10x,'file_no: ',i5 )
  9705 format(5x,'> local debug in do_node_step: ',
-     & /,10x,'myid: ',i6,/,10x,'file_name: ',a15,
+     & /,10x,'myid: ',i6,/,10x,'file_name: ',a,
      & /,10x,'file_no: ',i5 )
  9710 format(10x,'number of data values, nodes: ',i5,i9)
  9720 format(5x,'> data arrays allocated. no. nodes: ',i7)
@@ -673,7 +673,7 @@ c
  9400 format(15x,i7)
 c
  9700 format(5x,'> local debug in do_patran_element_step: ',
-     & /,10x,'step: ',i6,/,10x,'file_name: ',a,
+     & /,10x,'step: ',i7,/,10x,'file_name: ',a,
      & /,10x,'file_no: ',i5 )
  9705 format(5x,'> local debug in do_patran_element_step: ',
      & /,10x,'myid: ',i6,/,10x,'file_name: ',a,
