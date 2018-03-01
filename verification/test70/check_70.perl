@@ -11,7 +11,7 @@ open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
 #
-find_line( 1, "  step no.    500  " );
+find_line( 1, "  step no.     500  " );
 find_line( 2, "  8      1        0.017679" );
 
 #
