@@ -746,7 +746,7 @@ c
  5000 format (4x,'>>>  Incidences for element : ',i7 //
      &        4x,'     WARP3D  : ',10i8 /
      &        4x,'     PATRAN  : ',10i8)
- 5010 format (4x,'>>>  Node : ',i6 /9x,'Constrained: ',l3/
+ 5010 format (4x,'>>>  Node : ',i7 /9x,'Constrained: ',l3/
      &        18x, 6i2 )
  9000 format (I2,8I8)
  9010 format (a80)
