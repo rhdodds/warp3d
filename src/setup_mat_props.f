@@ -329,11 +329,11 @@ c
  9200 format(                                                                   
      & '>> interpolated temperature dependent stress vs. plastic',              
      & ' strain curve for elements in block....')                               
- 9210 format(3x,'block element:',i6,2x,'gp temperature: ',f15.6,                
+ 9210 format(3x,'block element:',i7,2x,'gp temperature: ',f15.6,                
      & ' min value on curve: ',f15.6)                                           
  9215 format(10x,'ym, nu: ',f15.3,f10.3)                                        
  9220 format(10x,i4,f15.6)                                                      
- 9230 format(3x,'block element:',i6,2x,'gp strain rate: ',f15.6,                
+ 9230 format(3x,'block element:',i7,2x,'gp strain rate: ',f15.6,                
      & ' min value on curve: ',f15.6)                                           
  9240 format(                                                                   
      & '>> interpolated strain-rate dependent stress vs. plastic',              
@@ -660,7 +660,7 @@ c
  1000 format('**shape function for node ',i4,2x,f15.8)                          
  2000 format('>> value for elements in block, gauss point # ',i2,               
      & /,'          elem     block value')                                      
- 3000 format(10x,i6,2x,f12.4)                                                   
+ 3000 format(10x,i7,2x,f12.4)                                                   
 c                                                                               
 c                                                                               
       end                                                                       
