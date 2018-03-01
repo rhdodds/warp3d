@@ -518,7 +518,7 @@ c
      &                                ctoa_range
       return
 c
- 9010 format(  '        node: ',i6,'  CTOA: ',f6.3,' (degrees)')
+ 9010 format(  '        node: ',i7,'  CTOA: ',f6.3,' (degrees)')
  9020 format('        * critical CTOA:',
      &       /,'            for growth    : ',f6.3,' (degrees)',
      &       /,'            for initiation: ',f6.3,' (degrees)',
@@ -526,7 +526,7 @@ c
      &                        'critical angle.' )
  1100 format(
      & /,' >>> CTOA Node Release for Non-Constant Front:',
-     & /,'        Before step: ',i6 )
+     & /,'        Before step: ',i7 )
 c
       end
 c
@@ -591,8 +591,8 @@ c
      &                                ctoa_range
       return
 c
- 9010 format(  '        master node:  ',i6,'  CTOA: ',f6.3,' (degrees)')
- 9012 format(  '        interim node: ',i6,'  CTOA: ',f6.3,' (degrees)')
+ 9010 format(  '        master node:  ',i7,'  CTOA: ',f6.3,' (degrees)')
+ 9012 format(  '        interim node: ',i7,'  CTOA: ',f6.3,' (degrees)')
  9020 format('        * critical CTOA:',
      &       /,'            for growth    : ',f6.3,' (degrees)',
      &       /,'            for initiation: ',f6.3,' (degrees)',
@@ -600,7 +600,7 @@ c
      &                        'critical angle.' )
  1100 format(
      &  ' >>> CTOA Node Release for Constant Front Procedure:',/,
-     &  '        Before step: ',i6 )
+     &  '        Before step: ',i7 )
 c
 c
       end
@@ -661,10 +661,10 @@ c
       write(ascii_packet_file_no,9200)
       return
 c
- 9010 format(6x,i6,7x,f7.4,a3,11x,f4.1,3x,'<=')
+ 9010 format(6x,i7,7x,f7.4,a3,11x,f4.1,3x,'<=')
  1100 format(
      &  ' >>> CTOA Step Summary for Constant Front:',/,
-     &  '        After step: ',i6 )
+     &  '        After step: ',i7 )
  9200 format('   NOTE: * indicates critical CTOA is for',
      &        ' initiation', / )
 c
@@ -729,10 +729,10 @@ c
 c
       write(ascii_packet_file_no,9200)
       return
- 9010 format(6x,i6,9x,i6,7x,f7.4,a1,11x,f4.1,3x,'<=')
+ 9010 format(6x,i7,9x,i7,7x,f7.4,a1,11x,f4.1,3x,'<=')
  1100 format(
      & /,' >>> CTOA Step Summary for Non-Constant Front:',
-     & /,'        After step: ',i6 )
+     & /,'        After step: ',i7 )
  9200 format('   NOTE: * indicates critical CTOA is for',
      &        ' initiation', / )
 c
@@ -798,7 +798,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,f12.5,3x,f12.5,3(1x,e14.6),
+ 1000 format(1x,i7,1x,i7,1x,f12.5,3x,f12.5,3(1x,e14.6),
      &                                   a1,(1x,e14.6),a1)
 
  1100 format('  step  element     inital f     current f       Ep    ',
@@ -870,7 +870,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,f12.5,3x,f12.5,3(1x,e14.6),
+ 1000 format(1x,i7,1x,i7,1x,f12.5,3x,f12.5,3(1x,e14.6),
      &                a1,(1x,e14.6),a1,1x,f10.6 )
 
  1100 format('  step  element     inital f     current f       Ep    ',
@@ -929,7 +929,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,f12.5,1x,f12.5,3x,2(1x,e14.6))
+ 1000 format(1x,i7,1x,i7,1x,f12.5,1x,f12.5,3x,2(1x,e14.6))
  1100 format('  step  element   initial f    final f ',
      &       '    mean stress    ',
      &       'mises stress  ')
@@ -984,7 +984,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,4(1x,e14.6))
+ 1000 format(1x,i7,1x,i7,4(1x,e14.6))
 
  1100 format('  step  element   eps-pls        eps-crit      ',
      &       'sig-mean       sig-mises')
@@ -1041,7 +1041,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,5(1x,e14.6))
+ 1000 format(1x,i7,1x,i7,5(1x,e14.6))
 
  1100 format('  step  element    eps-pls        eps-crit      ',
      &       'sig-mean       sig-mises       d(eps-pls)'  )
@@ -1098,7 +1098,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,2x,i6,5x,f8.5,4x,f8.5)
+ 1000 format(1x,i7,2x,i7,5x,f8.5,4x,f8.5)
  1100 format('  step  element   pl-strain  pl-strain limit ')
 c
 c
@@ -1157,7 +1157,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,6(e14.6),1x,a3)
+ 1000 format(1x,i7,1x,i7,1x,6(e14.6),1x,a3)
  1100 format('  step  elem        Tn             Ts            ',
      &       'Dn           Ds          Teff          Deff   ')
 c
@@ -1215,7 +1215,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,6x,
+ 1000 format(1x,i7,1x,i7,6x,
      &                      f5.2,8x,
      &                      f5.2 )
  1100 format('  step  elem    Deff/Dpeak   Teff/Tpeak ')
@@ -1292,11 +1292,11 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i7,1x,
+ 1000 format(1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
- 1100 format(1x,i6,1x,' TOT ',1x,
+ 1100 format(1x,i7,1x,' TOT ',1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1374,11 +1374,11 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
- 1100 format(1x,i6,1x,' TOT ELEM  ',1x,
+ 1100 format(1x,i7,1x,' TOT ELEM  ',1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1441,7 +1441,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1504,7 +1504,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1564,7 +1564,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1625,7 +1625,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1687,7 +1687,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1750,7 +1750,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,i7,1x,
      &                      e14.6,
      &                      e14.6,
      &                      e14.6)
@@ -1825,7 +1825,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,i7,1x,
      &                      e14.6,e14.6,e14.6,
      &                      e14.6,e14.6,e14.6,
      &                      e14.6,e14.6,e14.6,
@@ -1900,7 +1900,7 @@ c
 c
       return
 c
- 1000 format(1x,i6,1x,i6,1x,i6,1x,
+ 1000 format(1x,i7,1x,i7,1x,i7,1x,
      &                      e14.6,e14.6,e14.6,
      &                      e14.6,e14.6,e14.6,
      &                      e14.6 )
