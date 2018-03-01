@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: May 22, 2017 rhd
+#   Last modifications: Feb 28, 2018 RHD
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -100,11 +100,9 @@ OBJ =	 \
 	$(OD)/addifv$O	 \
 	$(OD)/addmas$O	 \
 	$(OD)/adapt_check$O	 \
-	$(OD)/aplacc$O	 \
 	$(OD)/allocate_damage$O	 \
 	$(OD)/allocate_load$O	 \
 	$(OD)/assemble_code$O	 \
-	$(OD)/bdbt$O	 \
 	$(OD)/blcmp1$O	 \
 	$(OD)/bmod$O	 \
 	$(OD)/chkcrack$O	 \
@@ -129,7 +127,6 @@ OBJ =	 \
 	$(OD)/distup$O	 \
 	$(OD)/distributed_assembly$O  \
 	$(OD)/difrar$O	 \
-	$(OD)/difrtn$O	 \
 	$(OD)/di1dsf$O	 \
 	$(OD)/dimrot$O	 \
 	$(OD)/dicmj$O	 \
@@ -211,15 +208,14 @@ OBJ =	 \
 	$(OD)/mm10_d$O	 \
 	$(OD)/mm10_e$O	 \
 	$(OD)/mm10_e$O	 \
-  $(OD)/mm10_f$O	 \
-  $(OD)/mm11$O  \
+	$(OD)/mm10_f$O	 \
+	$(OD)/mm11$O  \
 	$(OD)/mmnoopt$O	 \
 	$(OD)/mpi_code$O	 \
 	$(OD)/mpi_handle_slaves$O \
 	$(OD)/mpc_modify$O	 \
 	$(OD)/name_strip$O	 \
 	$(OD)/ndpts1$O	 \
-	$(OD)/oualph$O	 \
 	$(OD)/ouddpa$O	 \
 	$(OD)/oudriv$O	 \
 	$(OD)/oudups$O	 \
@@ -237,9 +233,7 @@ OBJ =	 \
 	$(OD)/oulbdd$O	 \
 	$(OD)/oulbir$O	 \
 	$(OD)/oulbst$O	 \
-	$(OD)/oulbta$O	 \
 	$(OD)/oulg1$O	 \
-	$(OD)/oulrlh$O	 \
 	$(OD)/oumkcv$O	 \
 	$(OD)/oundhd$O	 \
 	$(OD)/ounds1$O	 \
@@ -248,7 +242,6 @@ OBJ =	 \
 	$(OD)/ouneut$O	 \
 	$(OD)/ouocst_elem$O	 \
 	$(OD)/oupads$O	 \
-	$(OD)/ouparm$O	 \
 	$(OD)/oupdva$O	 \
 	$(OD)/oupele$O	 \
 	$(OD)/ouprks$O	 \
@@ -341,11 +334,6 @@ $(OD)/allocate_load$O : allocate_load.f $(OD)/mod_elem_load$O \
 	$(F90) /O3 /Qip  /c allocate_load.f
 	$(MVC) allocate_load$O $@
 
-$(OD)/aplacc$O : aplacc.f $(OD)/mod_main$O \
-                   param_def
-	$(F90) /O3 /Qip  /c aplacc.f
-	$(MVC) aplacc$O $@
-
 $(OD)/assemble_code$O : assemble_code.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O
@@ -354,10 +342,6 @@ $(OD)/assemble_code$O : assemble_code.f $(OD)/mod_main$O \
 #
 #       --- b --
 #
-$(OD)/bdbt$O : bdbt.f
-	$(F90) /O3 /Qip  /c bdbt.f
-	$(MVC) bdbt$O $@
-
 $(OD)/blcmp1$O : blcmp1.f param_def
 	$(F90) /O3 /Qip  /c blcmp1.f
 	$(MVC) blcmp1$O $@
@@ -519,10 +503,6 @@ $(OD)/difrar$O : difrar.f $(OD)/mod_jintegral$O
 	$(F90) /O3 /Qip  /c difrar.f
 	$(MVC) difrar$O $@
 
-$(OD)/difrtn$O : difrtn.f
-	$(F90) /O3 /Qip  /c difrtn.f
-	$(MVC) difrtn$O $@
-
 $(OD)/di1dsf$O : di1dsf.f
 	$(F90) /O3 /Qip  /c di1dsf.f
 	$(MVC) di1dsf$O $@
@@ -534,13 +514,10 @@ $(OD)/dimrot$O : dimrot.f $(OD)/mod_main$O \
 	$(MVC) dimrot$O $@
 
 #
-#         note that OS X ifort 13.0.2 needs /O0 for code to
-#         function (/Od Windows)
-#
 $(OD)/dicmj$O : dicmj.f param_def \
                    $(OD)/mod_jintegral$O $(OD)/mod_main$O \
                    $(OD)/mod_main$O $(OD)/mod_eleblocks$O
-	$(F90) /Od /Qip /c dicmj.f
+	$(F90) /O3 /Qip /c dicmj.f
 	$(MVC) dicmj$O $@
 
 $(OD)/dielem_a$O : dielem_a.f
@@ -1006,10 +983,6 @@ $(OD)/newmrk$O : newmrk.f $(OD)/mod_main$O \
 #       --- o --
 #
 
-$(OD)/oualph$O : oualph.f
-	$(F90) /O3 /Qip  /c oualph.f
-	$(MVC) oualph$O $@
-
 $(OD)/ouddpa$O : ouddpa.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c ouddpa.f
@@ -1090,18 +1063,9 @@ $(OD)/oulbst$O : oulbst.f
 	$(F90) /O3 /Qip  /c oulbst.f
 	$(MVC) oulbst$O $@
 
-$(OD)/oulbta$O : oulbta.f
-	$(F90) /O3 /Qip  /c oulbta.f
-	$(MVC) oulbta$O $@
-
 $(OD)/oulg1$O : oulg1.f
 	$(F90) /O3 /Qip  /c oulg1.f
 	$(MVC) oulg1$O $@
-
-$(OD)/oulrlh$O : oulrlh.f $(OD)/mod_main$O \
-                   param_def
-	$(F90) /O3 /Qip  /c oulrlh.f
-	$(MVC) oulrlh$O $@
 
 $(OD)/oumkcv$O : oumkcv.f param_def \
                    $(OD)/mod_elblk$O
@@ -1144,10 +1108,6 @@ $(OD)/oupele$O : oupele.f param_def \
                    $(OD)/mod_elblk$O
 	$(F90) /O3 /Qip  /c oupele.f
 	$(MVC) oupele$O $@
-
-$(OD)/ouparm$O : ouparm.f
-	$(F90) /O3 /Qip  /c ouparm.f
-	$(MVC) ouparm$O $@
 
 $(OD)/oupdva$O : oupdva.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_main$O
