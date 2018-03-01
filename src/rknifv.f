@@ -131,7 +131,7 @@ c
       end if
 c
       return
- 9200 format(/,2x,'... rknifv for block with first element: ',i6)
+ 9200 format(/,2x,'... rknifv for block with first element: ',i7)
  9300 format(5x,8e14.6)
       end subroutine rknifv_bar
 c
@@ -160,7 +160,7 @@ c
       end if
 c
       return
- 9200 format(/,2x,'... rknifv for block with first element: ',i6)
+ 9200 format(/,2x,'... rknifv for block with first element: ',i7)
  9300 format(5x,8e14.6)
       end subroutine rknifv_link
 
@@ -244,7 +244,7 @@ c       end do
 
       return
 c
- 9200 format(/,2x,'... rknifv for block with first element: ',i6)
+ 9200 format(/,2x,'... rknifv for block with first element: ',i7)
  9300 format(5x,8e14.6)
 c
       end subroutine rknifv_std
