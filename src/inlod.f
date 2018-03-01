@@ -1339,7 +1339,7 @@ c
       return
  9000 format('>> FATAL ERROR: routine save_step_definitions.',
      &   /,  '                definitions already present for ',
-     &   /,  '                load step: ',i6,
+     &   /,  '                load step: ',i7,
      &   /,  '                job aborted....')
  9100 format('>> inside save_step_definitions.  num_patterns: ',i4)
  9200 format(' load patt. no.  load pattern id    load factor')
