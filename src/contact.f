@@ -200,7 +200,7 @@ c
 c                                                                               
 c               if debug, output calculated contact force.                      
 c                                                                               
-         if (debug) write (*,'(i2,": ---->",i6,4e13.6)')myid,node,              
+         if (debug) write (*,'(i2,": ---->",i7,4e13.6)')myid,node,              
      &        pen_dist ( contact_cause (1,node)),                               
      &        (contact_force (dstmap(node)+i-1),i=1,3)                          
 c                                                                               
@@ -217,7 +217,7 @@ c
             write (*,*) '>> NONZERO CONTACT FORCE TERMS'                        
             do i=1, nodof                                                       
                if ( contact_force(i) .ne. zero ) then                           
-                  write (*,'(6x,i6,3x,e13.6)')i,contact_force(i)                
+                  write (*,'(6x,i7,3x,e13.6)')i,contact_force(i)                
                endif                                                            
             enddo                                                               
          endif                                                                  
