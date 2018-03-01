@@ -379,7 +379,7 @@ c
 c
       return
 c
- 9121 format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i6,
+ 9121 format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i7,
      &       /1x,'                   is not defined for loading: ',a8,
      &       /1x,'                   job terminated....')
 
