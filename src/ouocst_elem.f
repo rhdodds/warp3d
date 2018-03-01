@@ -119,7 +119,7 @@ c
       write(patran_file_name(5:),9000) stepno
 c
       if( data_type .eq. 3 .and. matl_name_id(1:1) .ne. " " )
-     &     patran_file_name(11:) = "_" // matl_name_id(1:)
+     &     patran_file_name(12:) = "_" // matl_name_id(1:)
 c
       if( use_mpi ) then
          dot_pos = len_trim( patran_file_name ) + 1
@@ -132,7 +132,7 @@ c
 c
       return
 c
- 9000 format( i6.6 )
+ 9000 format( i7.7 )
  9010 format( i4.4 )
 c
       end subroutine ouocst_elem_pat_file
@@ -163,7 +163,7 @@ c
       write(flat_name(4:),9000) stepno
 c
       if( flat_file .and. text_file ) then
-         flat_name(10:) = '_text'
+         flat_name(11:) = '_text'
          if( data_type .eq. 3 .and. matl_name_id(1:1) .ne. " " ) then
             now_len = len_trim( flat_name )
             flat_name(now_len+1:) = "_" // matl_name_id(1:)
@@ -178,7 +178,7 @@ c
       end if
 c
       if( flat_file .and. stream_file ) then
-         flat_name(10:) = '_stream'
+         flat_name(11:) = '_stream'
          if( data_type .eq. 3 .and. matl_name_id(1:1) .ne. " " ) then
             now_len = len_trim( flat_name )
             flat_name(now_len+1:) = "_" // matl_name_id(1:)
@@ -197,7 +197,7 @@ c
 c
       return
 c
- 9000 format( i6.6 )
+ 9000 format( i7.7 )
  9010 format( i4.4 )
  9110 format(/1x,
      &'>>>>> FATAL ERROR: routine ouocst_elem_flat_file',
