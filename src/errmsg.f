@@ -167,8 +167,8 @@ c
  100  continue
       num_error = num_error + 1
       write(out,9009) noelem,mxel
- 9009 format(/1x,'>>>>> error: ',i6,': the number of elements in the ',
-     &           'structure exceeds'/14x,i6,': the maximum number of',
+ 9009 format(/1x,'>>>>> error: ',i7,': the number of elements in the ',
+     &           'structure exceeds'/14x,i7,': the maximum number of',
      &         'elements allowed. execution'/14x,'will be terminated.'/)
       input_ok = .false.
       go to 9999
@@ -242,7 +242,7 @@ c
       count_150 = count_150 + 1
       if( count_150 <= 20 ) then
         write(out,9014) param
- 9014 format(/1x,'>>>>> error: coordinates for node ',i6,' have',
+ 9014 format(/1x,'>>>>> error: coordinates for node ',i7,' have',
      & ' not been input.',
      &           '  displacement computation cannot'/14x,
      &     'proceed without node coordiantes.')
@@ -258,8 +258,8 @@ c
  160  continue
       num_error = num_error + 1
       write(out,9015) param,nonode
- 9015 format(/1x,'>>>>> error: ',i6,': the current node number input ',
-     &           'exceeds ',i6,': the'/14x,'number of nodes in the ',
+ 9015 format(/1x,'>>>>> error: ',i7,': the current node number input ',
+     &           'exceeds ',i7,': the'/14x,'number of nodes in the ',
      &           'structure. it will be ignored.'/)
       go to 9999
 c
@@ -442,14 +442,14 @@ c
       write(out,9032) param
  9032 format(/1x,'>>>>> warning: the order of integration input has ',
      &           'no meaning. the'/16x,'default value for element ',
-     &           i6,' will be used.'/)
+     &           i7,' will be used.'/)
       go to 9999
 c
 c
  340  continue
       num_fatal = num_fatal + 1
       write(out,9033) param
- 9033 format(/1x,'>>>>> fatal error: properties for element ',i6,
+ 9033 format(/1x,'>>>>> fatal error: properties for element ',i7,
      &           ' have not been input.'/14x,'execution cannot ',
      &           'proceed without this information.'/)
       input_ok = .false.
@@ -459,8 +459,8 @@ c
  350  continue
       num_error = num_error + 1
       write(out,9034) param,noelem
- 9034 format(/1x,'>>>>> error: ',i6,': the current element number ',
-     &           ' exceeds ',i6,':'/14x,'the number of elements in ',
+ 9034 format(/1x,'>>>>> error: ',i7,': the current element number ',
+     &           ' exceeds ',i7,':'/14x,'the number of elements in ',
      &           'the structure. it will be ignored.'/)
       go to 9999
 c
@@ -479,8 +479,8 @@ c
       count= param/two16
       nnode= param-count*two16
       write(out,9036) count,nnode
- 9036 format(/1x,'>>>>> warning: ',i6,': the current number of nodes',
-     &           ' input exceeds ',i6/16x,': the number of element ',
+ 9036 format(/1x,'>>>>> warning: ',i7,': the current number of nodes',
+     &           ' input exceeds ',i7/16x,': the number of element ',
      &           'nodes. incidence input will'/16x,'terminate.'/)
       go to 9999
 c
@@ -490,8 +490,8 @@ c
       count= param/two16
       nnode= param-count*two16
       write(out,9037) count,nnode
- 9037 format(/1x,'>>>>> error: ',i6,': the number of nodes input is ',
-     &           'less than ',i6,': the'/16x,'number of element nodes.',
+ 9037 format(/1x,'>>>>> error: ',i7,': the number of nodes input is ',
+     &           'less than ',i7,': the'/16x,'number of element nodes.',
      &           ' there are holes in the incidences'/16x,'for this',
      &           ' element'/)
       input_ok = .false.
@@ -512,7 +512,7 @@ c
       num_fatal = num_fatal + 1
       write(out,9039) param
  9039 format(/1x,'>>>>> fatal error: incidences have not been input ',
-     &           'for element ',i6,'.'/)
+     &           'for element ',i7,'.'/)
       input_ok = .false.
       go to 9999
 c
@@ -520,7 +520,7 @@ c
  410  continue
       num_fatal = num_fatal + 1
       write(out,9040) param
- 9040 format(/1x,'>>>>> fatal error: the incidences for element ',i6,
+ 9040 format(/1x,'>>>>> fatal error: the incidences for element ',i7,
      &           ' contain holes(zeros).'/)
       input_ok = .false.
       go to 9999
@@ -592,8 +592,8 @@ c
  490  continue
       num_error = num_error + 1
       write(out,9048) param,nonode
- 9048 format(/1x,'>>>>> error: ',i6,': the current node number ',
-     &           'exceeds ',i6,': the'/16x,'number of struct',
+ 9048 format(/1x,'>>>>> error: ',i7,': the current node number ',
+     &           'exceeds ',i7,': the'/16x,'number of struct',
      &           'ure nodes. this node will not be dis-'/16x,'played.'/)
       go to 9999
 c
@@ -678,7 +678,7 @@ c
  580  continue
       num_error = num_error + 1
       write(out,9057) param
- 9057 format(/1x,'>>>>> error: ',i6,': the current node is less than',
+ 9057 format(/1x,'>>>>> error: ',i7,': the current node is less than',
      &           ' zero. it will be'/14x,'ignored.'/)
       go to 9999
 c
@@ -778,7 +778,7 @@ c
  690  continue
       num_error = num_error + 1
       write(out,9068) param
- 9068 format(/1x,'>>>>> error: ',i6,': the current step is less than',
+ 9068 format(/1x,'>>>>> error: ',i7,': the current step is less than',
      &           ' zero. it will be'/14x,'ignored.'/)
       go to 9999
 c
@@ -787,7 +787,7 @@ c
       num_error = num_error + 1
       write(out,9069) param
  9069 format(/1x,'>>>>> error: there is no transformation matrix for',
-     &           ' node ',i6,'.'/)
+     &           ' node ',i7,'.'/)
       go to 9999
 c
 c
@@ -854,7 +854,7 @@ c
       num_error = num_error + 1
       write(out,9075)
  9075 format(/1x,'>>>>> error: the number of degrees of freedom ',
-     &           'input for node ',i6/14x,' exceeds the maximum ',
+     &           'input for node ',i7/14x,' exceeds the maximum ',
      &           'number of degrees of freedom allowed'/14x,'any ',
      &           'node. the number of dof stored will be the above',
      &           /14x,'maximum.'/)
@@ -874,7 +874,7 @@ c
       num_error = num_error + 1
       write(out,9077) param
  9077 format(/1x,'>>>>> error: there is a zero pointer to the trans-',
-     &           'formation matrix'/14x,'for node ',i6,'. the given',
+     &           'formation matrix'/14x,'for node ',i7,'. the given',
      &           ' constraints are invalid.'/)
       go to 9999
 c
@@ -882,7 +882,7 @@ c
  810  continue
       num_error = num_error + 1
       write(out,9078) param
- 9078 format(/1x,'>>>>> error: the transformation matrix for node ',i6,
+ 9078 format(/1x,'>>>>> error: the transformation matrix for node ',i7,
      &           ' contains'/14x,'illegal data. the given constraints',
      &           ' are invalid.'/)
       go to 9999
@@ -925,7 +925,7 @@ c
  860  continue
       num_error = num_error + 1
       write(out,9083) param
- 9083 format(/1x,'>>>>> error: ',i6,': the current element is less ',
+ 9083 format(/1x,'>>>>> error: ',i7,': the current element is less ',
      &           'than zero. it will be'/14x,'ignored.'/)
       go to 9999
 c
@@ -1257,7 +1257,7 @@ c
  1230 continue
       num_error = num_error + 1
       write(out,9120) param
- 9120 format(/1x,'>>>>> error: step number ',i6,' has already been ',
+ 9120 format(/1x,'>>>>> error: step number ',i7,' has already been ',
      &           'computed. the next'/14x,'step in the list will be',
      &           ' processed.'/)
       go to 9999
@@ -1274,8 +1274,8 @@ c
  1250 continue
       num_error = num_error + 1
       write(out,9122) param, max_step_limit
- 9122 format(/1x,'>>>>> error: ',i6,',',' the step to be computed',
-     &           ',',' is greater than'/14x,i6,',',' the maximum nu',
+ 9122 format(/1x,'>>>>> error: ',i76,',',' the step to be computed',
+     &           ',',' is greater than'/14x,i7,',',' the maximum nu',
      &           'mber of steps defined. it will'/14x,'be ignored',
      &           ',',' and the next step in the list will be ',
      &           'processed.'/)
@@ -1414,7 +1414,7 @@ c
  1390 continue
       num_warn = num_warn + 1
       write(out,9136) param
- 9136 format(/1x,'>>>>> warning: the label type for element ',i6,
+ 9136 format(/1x,'>>>>> warning: the label type for element ',i7,
      &           'does not match the'/16x,'existing label type for ',
      &           'output headers. the existing'/16x,'label type will',
      &           'changed.'/)
@@ -1486,7 +1486,7 @@ c
       param= ltmstp+1
       write(out,9142) param
  9142 format(/1x,'>>>>> error: there has been an error in the solutio',
-     &           'n of step ',i6/14x,'the remaining steps of the ',
+     &           'n of step ',i7/14x,'the remaining steps of the ',
      &           'current request cannot be'/14x,'performed, and ',
      &           'further requests will be ignored.'/)
       go to 9999
@@ -1907,7 +1907,7 @@ c
  1940  continue
       write(out,9204) sparam,param,dparam,rparam
  9204 format(/1x,'>>>>> retrieved structure from ',a100,
-     &      /1x,'>>> step recovered from restart file:',i6,
+     &      /1x,'>>> step recovered from restart file:',i7,
      &      /1x,'>>> analysis time so far            : ',e14.6,' sec',
      &      /1x,'>>> wall time now :                 ',f10.1,' sec',
      &      /)
@@ -1919,7 +1919,7 @@ c
       write(out,9205) param, sparam
  9205 format(/1x,'>>>>> error: doing another step would cause the',
      &           ' time to go beyond',/7x,'the alloted time. saving',
-     &           ' structure at step ',i6,/7x,' as the following',
+     &           ' structure at step ',i7,/7x,' as the following',
      &           ' name:',/7x,a80)
       goto 9999
 c
@@ -2209,7 +2209,7 @@ c
      &          ' constraints and no',/,
      &          '         inertial forces were applied to the',
      &          ' structure for',/,
-     &          '         step ',i6,'.  Skipping to next step.',/)
+     &          '         step ',i7,'.  Skipping to next step.',/)
       goto 9999
 c
  2310 continue
@@ -2365,7 +2365,7 @@ c
       num_warn = num_warn + 1
       write (out,9266) param
  9266 format (/1x,' >>>>> Warning: a new constraint was specified',
-     &        /1x,'                that constrained node ',i6,',',
+     &        /1x,'                that constrained node ',i7,',',
      &        /1x,'                which had been previously released',
      &        /1x,'                by the crack growth routines.',
      &        /1x,'                The new constraint will be',
@@ -2408,7 +2408,7 @@ c
       write (out,9270) param, mxconn
       input_ok = .false.
  9270 format (/1x,' >>>>> Fatal Error: the number of elements',
-     &        /1x,'                 connected to node ',i6,' exceeds',
+     &        /1x,'                 connected to node ',i7,' exceeds',
      &        /1x,'                 the maximum number of elements',
      &        /1x,'                 that may be connected to a single',
      &        /1x,'                 node, which is ',i3,'.',
@@ -2418,7 +2418,7 @@ c
  2530 continue
       num_warn = num_warn + 1
       write (out,9271) param, dparam
- 9271 format (/1x,' >>>>>  Warning:  The released node ',i6,' has',
+ 9271 format (/1x,' >>>>>  Warning:  The released node ',i7,' has',
      &        /1x,'             travelled opposite to the direction',
      &        /1x,'             of the normal to the crack plane,',
      &        /1x,'             either closing the crack or travelling',
@@ -2695,7 +2695,7 @@ c
  2830 continue
       num_warn = num_warn + 1
       write(out,9301) param
- 9301 format(/1x,'>>>>> Warning: node ',i6,' is not a crack front',
+ 9301 format(/1x,'>>>>> Warning: node ',i7,' is not a crack front',
      &           ' node, and thus cannot',/,
      &           '        be a master node.  Skipping node.',
      &           /)
@@ -2911,7 +2911,7 @@ c
  3100 continue
       num_fatal = num_fatal + 1
       write(out,9328) param
- 9328 format(/1x,'>>>>> FATAL ERROR: contact node ',i6,
+ 9328 format(/1x,'>>>>> FATAL ERROR: contact node ',i7,
      &           ' has a coordinate transformation from',/,
      &           '      user input.  Contact nodes cannot',
      &           ' have user-defined coordinate transformations.',/,
@@ -3034,14 +3034,14 @@ c
       elem = param
       write(out,9341) sparam, elem
  9341 format(/1x,'>>>>> Fatal Error: ',A6,' surface of the cohesive ',
-     &'element', I6,/,7x,'is not a  quadrilateral')
+     &'element', I7,/,7x,'is not a  quadralateral')
       go to 9999
 c
  3240 continue
       elem = param
       write(out,9342) elem
  9342 format(/,1x,'>>>>> warning: top and bottom nodes of the',
-     &' cohesive  element',I6,/,7x,' are not coincident')
+     &' cohesive  element',I7,/,7x,' are not coincident')
       go to 9999
 c
  3250 continue
@@ -3573,7 +3573,7 @@ c
       num_warn = num_warn + 1
       write(out,9033) param,sparam,rparam
  9033 format(/1x,
-     &'>>>>> warning: elem ',i6,' has reference surface ',a6,'.',
+     &'>>>>> warning: elem ',i7,' has reference surface ',a6,'.',
      & /,16x,'non-zero beta_coh (input=',e13.6,') not acceptable.',
      & /,16x,'beta_coh set to 0.0.',
      & /,16x,'Also in this case all nodes on symmetry plane and ',
@@ -3584,7 +3584,7 @@ c
       num_warn = num_warn + 1
       write(out,9034) param
  9034 format(/1x,
-     &'>>>>> warning: node ',i6,' is out of bounds.',
+     &'>>>>> warning: node ',i7,' is out of bounds.',
      & /,16x,'This mpc equation will be skipped....'/)
       go to 9999
 c
@@ -3617,7 +3617,7 @@ c
       num_error = num_error + 1
       write(out,9038) param
  9038 format(/1x,
-     &'>>>>> error: element ',i6,' is out of bounds.',
+     &'>>>>> error: element ',i7,' is out of bounds.',
      & /,16x,'This surface entry will be ignored....'/)
       go to 9999
 c
@@ -3945,7 +3945,7 @@ c
       num_warn = num_warn + 1
       write(out,9078) param,sparam
  9078 format(/1x,
-     &'>>>>> warning: elem ',i6,' has reference surface ',a6,'.',
+     &'>>>>> warning: elem ',i7,' has reference surface ',a6,'.',
      & /,16x,'for PPR cohesive option, specify only_normal_mode',
      & /,16x,'or only_shear_mode in material definition.',
      & /,16x,'Also in this case all nodes on symmetry plane and ',
