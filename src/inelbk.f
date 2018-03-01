@@ -108,8 +108,8 @@ c
       return                                                                    
 c                                                                               
  9000 format(//,'>>>> Fatal Error: inconsistent blocking for elements' )        
- 9010 format(10x,'Element: ',i6,' assigned to more than 1 block' )              
- 9020 format(10x,'Element: ',i6,' is not assigned to a block' )                 
+ 9010 format(10x,'Element: ',i7,' assigned to more than 1 block' )              
+ 9020 format(10x,'Element: ',i7,' is not assigned to a block' )                 
  9030 format(//,'>>>> Job terminated due to fatal blocking errors' )            
 c                                                                               
       contains                                                                  
