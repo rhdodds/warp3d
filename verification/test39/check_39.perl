@@ -17,7 +17,7 @@ open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
 #
-find_line( 1, "step no.    200" );
+find_line( 1, "step no.     200" );
 find_line( 2, "Totals: ");
 #
 #    line with reactions is current. print value
@@ -30,8 +30,8 @@ $partno = 3;
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "   ... comparison value:       $answer","\n";
 print "   ... value from output file: ", "$parts[$partno]$message\n";
@@ -59,7 +59,7 @@ sub find_line {
 #
       while ( !eof(infile) )
         {
-           $line = <infile>; 
+           $line = <infile>;
 	   if( $line =~ /$string/ ) {return};
         }
 #
