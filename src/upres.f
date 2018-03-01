@@ -93,7 +93,7 @@ c
  9100 format(/,6x,"dof",2x,"cstmap",5x, "res",13x,"pbar",                       
      & 9x, "-[M]du*nfact",                                                      
      & 3x,"contact_force",6x,"-ifv" )                                           
- 9200 format(3x,2i6,5e16.6)                                                     
+ 9200 format(3x,2i7,5e16.6)                                                     
  9300 format(/,1x,"... enter upres_iter_0 ...")                                 
  9310 format(/,3x,"... dt, nbeta, nfact, nodof: ",3e14.6,i8)                    
  9320 format(/,1x,"... leave upres_iter_0 ...",//)                              
@@ -241,7 +241,7 @@ c
       return                                                                    
 c                                                                               
  9100 format(5x, "... mgload: ",e14.6)                                          
- 9200 format(2x,2i6,7f16.6)                                                     
+ 9200 format(2x,2i7,7f16.6)                                                     
  9300 format(/,1x,"--- entering upres. iter, have multipoint: ",i3,l2)          
  9305 format(1x,"--- leaving upres ---" )                                       
  9400 format(5x,"... various force vector:")                                    
