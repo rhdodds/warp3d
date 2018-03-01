@@ -165,8 +165,8 @@ c
       return                                                                    
 c                                                                               
  9000 format (/1x,'** Max CTOA: ',f6.2,' degrees',                              
-     &        ' @ crack front node: ',i6,                                       
-     &        ' connected to node: ',i6,                                        
+     &        ' @ crack front node: ',i7,                                       
+     &        ' connected to node: ',i7,                                        
      &      /,1x,'   NOTE: * indicates critical CTOA is for',                   
      &        ' initiation',                                                    
      &        / )                                                               
@@ -285,7 +285,7 @@ c
                                                                                 
       return                                                                    
  9000 format (/1x,'** Max CTOA: ',f6.2,' degrees',                              
-     &        ' @ crack front node: ',i6,                                       
+     &        ' @ crack front node: ',i7,                                       
      &      /,1x,'   NOTE: * indicates critical CTOA is for',                   
      &        ' initiation',                                                    
      &        / )                                                               
@@ -648,7 +648,7 @@ c
 c                                                                               
       return                                                                    
  9000 format(/,' >> node release option invoked for the following:',/)          
- 9010 format(  '        node: ',i6,'  CTOA: ',f6.2,' (degrees)')                
+ 9010 format(  '        node: ',i7,'  CTOA: ',f6.2,' (degrees)')                
  9020 format(/,'        * critical CTOA:',                                      
      &       /,'            for growth    : ',f6.2,' (degrees)',                
      &       /,'            for initiation: ',f6.2,' (degrees)',                
@@ -845,8 +845,8 @@ c
 c                                                                               
       return                                                                    
  9000 format(/,' >> node release option invoked for the following:',/)          
- 9010 format(  '        master node:  ',i6,'  CTOA: ',f6.2,' (degrees)')        
- 9015 format(  '        interim node: ',i6,'  CTOA: ',f6.2,' (degrees)')        
+ 9010 format(  '        master node:  ',i7,'  CTOA: ',f6.2,' (degrees)')        
+ 9015 format(  '        interim node: ',i7,'  CTOA: ',f6.2,' (degrees)')        
  9020 format(/,'        * critical CTOA:',                                      
      &       /,'            for growth    : ',f6.2,' (degrees)',                
      &       /,'            for initiation: ',f6.2,' (degrees)',                
@@ -1146,7 +1146,7 @@ c
       if (debug) write (*,*) '<< finished releasing front..'                    
 c                                                                               
       return                                                                    
- 9000 format(  '             node: ',i6,'  slave of master node: ',i6)          
+ 9000 format(  '             node: ',i7,'  slave of master node: ',i6)          
       end                                                                       
 c                                                                               
 c     ****************************************************************          
