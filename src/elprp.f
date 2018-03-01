@@ -3037,11 +3037,11 @@ c
       return
 c
 500     format(1x,//,'    In elprp11 (axitri6 element):',/,
-     &               '          element number =',i6,/,
-     &               '            element type =',i6,/,
+     &               '          element number =',i7,/,
+     &               '            element type =',i7,/,
      &               '    intord=elstor(3,elem)=',i14,/,
-     &               '           iprops(5,elem)=',i6,/,
-     &               '           iprops(6,elem)=',i6,/)
+     &               '           iprops(5,elem)=',i7,/,
+     &               '           iprops(6,elem)=',i7,/)
 c
        end
 c     ****************************************************************
