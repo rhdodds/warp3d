@@ -587,8 +587,8 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 9000 format(1x,i6,1x,f12.5,3x,f12.5,3(1x,e14.6),a1,(1x,e14.6),a1)              
- 9005 format(1x,i6,1x,f12.5,3x,f12.5,                                           
+ 9000 format(1x,i7,1x,f12.5,3x,f12.5,3(1x,e14.6),a1,(1x,e14.6),a1)              
+ 9005 format(1x,i7,1x,f12.5,3x,f12.5,                                           
      &       e14.6,                                                             
      &       2x,e14.6,                                                          
      &       3x,e14.6,a1,                                                       
@@ -598,7 +598,7 @@ c
      &      '.  f-critical (%): ',f7.3,                                         
      &     '. f-initial (%): ',f7.3,/)                                          
  9015 format(/,5x,'>> * = value has decreased since last step.',                
-     &       /,5x,'>> total number of elements killed: ',i6)                    
+     &       /,5x,'>> total number of elements killed: ',i7)                    
  9020 format(1x,'element     inital f     current f       Ep    ',              
      &       '        sigma bar      mean stress    ',                          
      &       'mises stress     delta f        ',/,1x,                           
