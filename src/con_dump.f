@@ -113,7 +113,7 @@ c
 c                                                                               
  9010 format (e13.6)                                                            
  9020 format (4x,i7,3(3x,a1,1x,a13))                                            
- 9030 format (8x,a,i6,es16.7,a2,a)                                              
+ 9030 format (8x,a,i7,es16.7,a2,a)                                              
  9040 format (8x,a,f15.4,a2,a)                                                  
 c                                                                               
       end                                                                       
