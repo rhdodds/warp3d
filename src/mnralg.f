@@ -645,23 +645,23 @@ c
       return  ! back to stpdrv
 c
  9000 format(/,1x,'... mnralg: step, mf, mf_nm1,'
-     & ' mf_ratio_change: ',i6,2f10.6, l2)
+     & ' mf_ratio_change: ',i7,2f10.6, l2)
  9002 format(/,1x,'... mnralg:  mf_nm1, scaling_load',
      & 2f10.6)
  9100 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i6,i3)
+     & '>> updating strains/stress/forces step, iteration: ',i7,i3)
  9110 format(7x,
-     & '>> updating internal forces step, iteration:       ',i6,i3)
+     & '>> updating internal forces step, iteration:       ',i7,i3)
  9150 format(/,7x,
-     & '>> starting global newton solution for step:       ',i6)
+     & '>> starting global newton solution for step:       ',i7)
  9152 format(7x,
-     & '>> extrapolating displacements to start step:      ',i6,
+     & '>> extrapolating displacements to start step:      ',i7,
      & ' (* ',f7.3,')')
  9154 format(7x,
-     & '>> no extrapolating displacements to start step:   ',i6)
+     & '>> no extrapolating displacements to start step:   ',i7)
  9155 format(7x,
-     & '>> delta forces for loads/displ/temps/creep. step: ',i6)
- 9410 format(/1x,'>> iteration limit exceeded for current step:',i6,
+     & '>> delta forces for loads/displ/temps/creep. step: ',i7)
+ 9410 format(/1x,'>> iteration limit exceeded for current step:',i7,
      & /,1x       '   (or adaptive sub-increment) or the solution ',
      &   'appears to be diverging....')
  9420 format(/,2x,'>>> material model stress update computations',
@@ -850,25 +850,25 @@ c
       return
 c
  8900 format(6x,'.... entered line search routine. step, iter: ',
-     &  i6,i3)
+     &  i7,i3)
  8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
  8920 format(20x,'satisfied search tolerance of: ',f10.3)
  8930 format(7x,
      & '>> begin line search ' )
  9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
-     &      '>> line search s0 value:',f8.3,' > 0.',14x,i6,i3,
+     &      '>> line search s0 value:',f8.3,' > 0.',14x,i7,i3,
      & /,7x,'   using step length 1.0 this iteration')
  9030 format(20x,'new s, r:  ',2f10.4)
  9100 format(7x,
-     &    '>> line search did not converge. iterations: ',i3,3x,i6,i3,
+     &    '>> line search did not converge. iterations: ',i3,3x,i7,i3,
      &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
  9200 format(7x,
-     & '>> line search completed. step length: ',f6.3,a2,4x,i6,i3)
+     & '>> line search completed. step length: ',f6.3,a2,4x,i7,i3)
  9205 format(7x,
      & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
  9210 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i6,i3)
+     & '>> updating strains/stress/forces step, iteration: ',i7,i3)
  9220 format(7x,
      & '      ... finished line search. iterations, step length: ',
      &   i2,1x,f7.4)
@@ -989,25 +989,25 @@ c
  9300 format(7x,
      & '      ... LS r-values curve type: ',i3)
  8900 format(6x,'.... entered line search routine. step, iter: ',
-     &  i6,i3)
+     &  i7,i3)
  8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
  8920 format(20x,'satisfied search tolerance of: ',f10.3)
  8930 format(//,7x,
      & '>> begin line search ' )
  9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
-     &      '>> line search s0 value:',f8.3,' > 0.',14x,i6,i3,
+     &      '>> line search s0 value:',f8.3,' > 0.',14x,i7,i3,
      & /,7x,'   using step length 1.0 this iteration')
  9030 format(20x,'new s, r:  ',2f10.4)
  9100 format(7x,
-     &    '>> line search did not converge. iterations: ',i3,3x,i6,i3,
+     &    '>> line search did not converge. iterations: ',i3,3x,i7,i3,
      &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
  9200 format(7x,
-     & '>> line search completed. step length: ',f6.3,a2,4x,i6,i3)
+     & '>> line search completed. step length: ',f6.3,a2,4x,i7,i3)
  9205 format(7x,
      & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
  9210 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i6,i3)
+     & '>> updating strains/stress/forces step, iteration: ',i7,i3)
  9220 format(7x,
      & '      ... finished line search. iterations, step length: ',
      &   i2,1x,f7.4)
@@ -1563,7 +1563,7 @@ c
       return
 c
  9142 format(7x,
-     & '>> running sparse solver step, iteration:          ',i6,i3)
+     & '>> running sparse solver step, iteration:          ',i7,i3)
  9200 format(1x,'>> FATAL ERROR: Job Aborted.',
      & /,5x,'i_lagrange_forces not allocated. eqn_solve')
 c
@@ -1762,7 +1762,7 @@ c
  9100 format(1x,'inode',3x'idof',2x,'n1',3x,
      & 'n2',2x,'sdof',4x,'reaction',4x,'found',4x,'factor',4x,
      & 'dload before', 4x,'dload after')
- 9110 format(1x, i6, i5, i5, i5, i6, e14.6, l5, f10.3, f15.3, f15.3 )
+ 9110 format(1x, i7, i5, i5, i5, i7, e14.6, l5, f10.3, f15.3, f15.3 )
  9120 format(10x,'.... delete release_cons_table on return .....')
 c
       end
@@ -1857,6 +1857,6 @@ c
       return
 c
  9110 format(7x,
-     & '>> computing tangent stiffness step, iteration:    ',i6,i3)
+     & '>> computing tangent stiffness step, iteration:    ',i7,i3)
 c
       end
