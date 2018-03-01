@@ -350,15 +350,15 @@ c
 c                                                                               
  894  format(/,'computing distance for curved crack',/)                         
  895  format(//,5x,'p0 = ',i1,2x,'p1 = ',i1)                                    
- 896  format(//,a,i6,a,i6,/)                                                    
- 897  format(5x,a27,3x,i6,/,5x,a27,3(/,5x,a27,2x,e13.6),/,5x,a27,               
+ 896  format(//,a,i7,a,i6,/)                                                    
+ 897  format(5x,a27,3x,i7,/,5x,a27,3(/,5x,a27,2x,e13.6),/,5x,a27,               
      &       3(/,5x,a27,2x,e13.6),/)                                            
  900  format(//,5x,'local domain origin',/,                                     
-     & 10x,'node: ',i6,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)         
+     & 10x,'node: ',i7,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)         
  905  format(//,5x,'end node of crack segment',/,                               
-     & 10x,'node: ',i6,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)         
+     & 10x,'node: ',i7,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)         
  910  format(//,5x,'point/node coordinates',/,                                  
-     & 10x,'ptno: ',i6,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)         
+     & 10x,'ptno: ',i7,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)         
  915  format(//,10x,'x',2x,e13.6,2x,'y',6x,e13.6,                               
      &        /,10x,'r',2x,e13.6,2x,'theta',2x,e13.6,/)                         
 c                                                                               
@@ -1102,7 +1102,7 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 100  format(////,"auxiliary fields for SIFs, element",2x,i6,                   
+ 100  format(////,"auxiliary fields for SIFs, element",2x,i7,                   
      &       2x,"point",2x,i2,//)                                               
  101  format(13(5x,a27,2x,e13.6,/))                                             
  104  format(/,10x,a)                                                           
@@ -1482,11 +1482,11 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 100  format(////,"plane stress aux fields for T11, element",2x,i6,             
+ 100  format(////,"plane stress aux fields for T11, element",2x,i7,             
      &       2x,"point",2x,i2,//)                                               
  101  format(////,"'plane strain' aux fields for T11, T33, element",            
-     &       2x,i6,2x,"point",2x,i2,//)                                         
- 102  format(////,"anti-plane shear aux fields for T13, element",2x,i6,         
+     &       2x,i7,2x,"point",2x,i2,//)                                         
+ 102  format(////,"anti-plane shear aux fields for T13, element",2x,i7,         
      &       2x,"point",2x,i2,//)                                               
  105  format(/,15x,"tensor of auxiliary stresses",3(/,13x,3(2x,e13.6)))         
  106  format(/,15x,"tensor of auxiliary stress derivatives",                    
@@ -1816,7 +1816,7 @@ c
 c                                                                               
         return                                                                  
 c                                                                               
- 1000 format(////,"interaction integral terms: element",2x,i6,                  
+ 1000 format(////,"interaction integral terms: element",2x,i7,                  
      &       2x,"point",2x,i2,//,'i term 1:')                                   
  1010 format(/,5x,'j = ',i1,/,10x,                                              
      &       'du11_aux du21_aux du31_aux',/,10x,3(e11.4,2x),                    
