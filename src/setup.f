@@ -254,11 +254,11 @@ c
 c
  9999 return
  9000 format(/,'>> Maximum element-to-node connectivity: ',i3,
-     &       ' @ node: ',i6,//)
+     &       ' @ node: ',i7,//)
  9100 format(/,'>> Fatal Error. Internal table overflow.',
      &       /,'   routine setup, element-to-node connectivity',
      &       /,'   at structure node: ',i7,' exceeds fixed',
-     &       /,'   limit (mxconn) of: ',i3,
+     &       /,'   limit (mxconn) of: ',i5,
      &       /,'   Job terminated....',//)
  9200 format(/,'>> Fatal Error. the following nodes have no elements',
      &             ' attached: ' )
