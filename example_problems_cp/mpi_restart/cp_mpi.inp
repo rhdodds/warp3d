@@ -4,14 +4,14 @@
 !
 ! Setp to run with 4 domains and a variable number of threads/domain
 !
-! Model is a "bar" consisting of two "grains" each of a different "phase," 
+! Model is a "bar" consisting of two "grains" each of a different "phase,"
 ! pulled in tension.  Model stops after 25 steps and writes a restart file.
 !
 ! You can restart from this file 'restart.restart' by running restart.inp
-! 
-! 
+!
+!
 structure model
-! 
+!
 !
  crystal 1
       properties slip_type fcc elastic_type cubic,
@@ -37,23 +37,23 @@ structure model
       tau_hat_y 155.0 g_0_y 0.007808 q_y 2.0 p_y 0.5,
       eps_dot_0_y 1.0E13,
       tau_hat_v 25.0 g_0_v 0.00488 q_v 2.0 p_v 0.5,
-      eps_dot_0_v 1.0E7, 
+      eps_dot_0_v 1.0E7,
       k_0 10.0
 !
  material cp_a
       properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
-      n_crystals 1 angle_type degrees, 
+      n_crystals 1 angle_type degrees,
       crystal_input single crystal_type 1,
       orientation_input single angles 45.0 45.0 45.0,
       debug off tolerance 1.0E-10
 
   material cp_b
       properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
-      n_crystals 1 angle_type degrees, 
+      n_crystals 1 angle_type degrees,
       crystal_input single crystal_type 2,
       orientation_input single angles 0.0 0.0 0.0,
       debug off tolerance 1.0E-10
-! 
+!
 number of nodes 2541 elements 2000
 !
 elements
@@ -84,7 +84,7 @@ blocking $ scalar and 4 domains
       16     128    1707       1
       17     116    1835       1
       18      50    1951       2
-! 
+!
 *echo on
 !
 constraints
@@ -96,10 +96,10 @@ constraints
 initial conditions
  temperatures
   nodes 1-2541 temperature 290.0
-! 
+!
  loading test
   nonlinear
-    steps 1-50 constraints 0.02 
+    steps 1-50 constraints 0.02
 !
 nonlinear analysis parameters
 !   solution technique hypre
@@ -113,10 +113,10 @@ nonlinear analysis parameters
    line search on
    consistent q-matrix off
    time step 1.0
-! 
+!
  output model flat patran convention text file "model.text"
-! 
- output commands use file "get_output.inp" steps all
+!
+ output commands use file "get_output.inp" steps 1-100
 !
  compute displacements for loading test step 25
 !
