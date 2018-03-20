@@ -11,7 +11,7 @@ fi
 cd $WARP3D_HOME
 
 
-file_1="https://www.dropbox.com/s/9rfu1h8pxuwtnmc/warp3d_external_libs.tar.gz?dl=0"
+file_1="https://www.dropbox.com/s/le4sbt3yltevwc8/warp3d_external_libs.tar.gz?dl=0"
 
 #wget http://warp3d.googlecode.com/files/warp_external_libs.tar.gz $file_1
 wget --no-check-certificate -O warp_external_libs.tar.gz $file_1
