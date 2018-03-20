@@ -2,36 +2,36 @@
 README for comine_mpi_result_files directory in WARP3D
 ======================================================
 
-     => last update: February 16, 2017 (RHD) <=
+     => last update: March 20, 2018 (RHD) <=
 
-This file describes the process to build and execute 
-the program: combine_mpi_results 
+This file describes the process to build and execute
+the program: combine_mpi_results
 
 Background
 ----------
 
-When WARP3D runs parallel using MPI with domain decompostion, 
-each MPI process (rank) "owns" certain blocks of elements and 
+When WARP3D runs parallel using MPI with domain decompostion,
+each MPI process (rank) "owns" certain blocks of elements and
 nodes in the model. Some nodes are also shared with one or more
 other domains - but elements belong to only one domain.
 
 When a command of the form:
 
-  output patran .... 
+  output patran ....
 
 or
 
   output flat ....
 
-requests strains/stresses/states values, each MPI 
+requests strains/stresses/states values, each MPI
 process is instructed to output a file containing
 the requested values for the elements it owns and the nodes
 it owns entirely and its contribution to the average values at
 nodes shared with other domains.
 
 These are called "partial" result files -- each such file has the 4-digit
-processor (rank) id as the file name suffix, e.g., wnbs#####.iiii is a 
-Patran compatible binary file of nodal strains where ##### is the load(time) 
+processor (rank) id as the file name suffix, e.g., wnbs#####.iiii is a
+Patran compatible binary file of nodal strains where ##### is the load(time)
 step number and iiii is the MPI rank number.
 
 Similarly, the file wem00010_text_mises_gurson.0003 has
@@ -39,31 +39,31 @@ element ('e' after 'w') state values ('m' after 'e')
 for the mises_gurson material model for load(step) 10 for processor 3
 in the 'text' (ASCII) file format.
 
-A key feature here is that the element strain/stress/state values 
+A key feature here is that the element strain/stress/state values
 and nodal strain/stress values are -not- sent to the root processor for
 output. This saves much communication effort. The disadvantage is the
 potentially very large number of partial result files when there are many
 MPI ranks and load(time) steps at which output is requested.
 
 With MPI execution, output for nodal displacements, velocities,
-accelerations and reactions is much simpler. The root process always has 
-these results for all nodes of the model. The root process writes 
+accelerations and reactions is much simpler. The root process always has
+these results for all nodes of the model. The root process writes
 complete results files directly (with no rank number suffix).
 
-Before the partial results can be post-processed by Patran (or Patran 
-compatible software) or used to make a .exo file for ParaView 
+Before the partial results can be post-processed by Patran (or Patran
+compatible software) or used to make a .exo file for ParaView
 post-processing, the partial result files must be "combined"
 into the simpler files that would have been created for solution of the model
 without MPI and domains.
 
-The combine_mpi_results program performs this task. It is executed in the 
-directory that contains all the partial result files of all 
-types: Patran, flat, elements, nodes. The program examines 
+The combine_mpi_results program performs this task. It is executed in the
+directory that contains all the partial result files of all
+types: Patran, flat, elements, nodes. The program examines
 the names of all files in the directory, determines what can be combined
 and then does the combination to write the new, combined result files.
 
-For nodal strain/stress values, the combining process also 
-includes the final averaging of partial values contributed at nodes on 
+For nodal strain/stress values, the combining process also
+includes the final averaging of partial values contributed at nodes on
 the shared boundaries of multiple domains.
 
 Executing the combine_mpi_results program
@@ -102,16 +102,19 @@ The program outputs messages as it completes processing the partial files.
 Building the combine_mpi_results program
 -----------------------------------------
 
-To build the combine_mpi_results program, just run the (Bash) 
+To build the combine_mpi_results program, just run the (Bash)
 shell script named build_linux or build_osx (located in this directory).
 The Intel Fortran compiler (ifort) must be installed.
+
+The scripts use the Intel ifort compiler (any recent version will work).
+The .f files also compile with gfortran. use gfortran -fopenmp -O3 ....
 
 Supported platforms are: Linux and Mac OS X --- OSX does not
 run the MPI vesion of WARP3D. The combine program is just
 for convenience if the partial results files are located on a Mac for
 post-processing.
 
-The executable file named: combine_mpi_results.go  is placed into the 
+The executable file named: combine_mpi_results.go  is placed into the
 appropriate warp3d/run_xx directory.
 
 
@@ -120,9 +123,9 @@ Other tools
 
 The sub-directory compare_programs has 4 Fortran codes developed to
 verify that all the possible combinations of element strains/stresses/states
-and nodal strains stresses are processed correctly for a test FE model. 
+and nodal strains stresses are processed correctly for a test FE model.
 
-A FE model for testing is executed using threads only and again using MPI 
+A FE model for testing is executed using threads only and again using MPI
 with some number of ranks. All or some number of Patran and/or flat element/
 nodal rsults are requested. The combine program is executed on the MPI
 directory of results to generate combined result files for comparison to
@@ -130,6 +133,6 @@ those produced by the threaded solution.
 
 Each compare... program runs interactively to compare 2 results files - one
 produced by the combine... program and one produced by the threads only
-solution. The programs run interactively and prompt the use for 
+solution. The programs run interactively and prompt the use for
 the two file names and other needed values. Differences in the threaded
 and combined results files are listed. Small differences are to be expected.
