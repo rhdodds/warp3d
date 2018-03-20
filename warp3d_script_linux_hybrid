@@ -4,37 +4,49 @@
 #    Run hybrid WARP3D on Linux (MPI + OpenMP)
 #    =========================================
 #
-#    Last updated: June 16, 2013 (RHD)
+#    Last updated: March 20, 2018 (RHD)
 #
 #    This bash script runs the "hybrid" version of WARP3D that
-#    includes MPI, OpenMP and the hypre solver. The Intel MKL libraries
-#    (BLAS) are used by hypre.
+#    includes MPI, OpenMP, MKL Cluster Pardiso and hypre solvers.
+#    The Intel MKL libraries (BLAS) are also used by hypre.
 #
-#    *** The finite element model must have domain decomposition ***
-#    *** defined in the blocking input                           ***
-#
-#    Solver available:   hypre
-#
+#    Solvers available: MKL Cluster Pardiso (direct), hypre
+#                       from LLNL
 #
 #    How to set up:
 #    -------------
 #
-#      Processors: number of physical chips located across one or more
-#                  computers - each processor contains one or more cores
+#      Processors: number of physical processors located across one or more
+#                  computers (compute nodes) - each processor
+#                  contains one or more cores
 #
 #      Cores: a CPU residing on a processor. A core runs a single
 #             thread (we recommend not over assigning threads to cores
 #             that triggers hyperthreading).
 #
 #      Method 1 (recommended)
-#        number of model doamins = number of processors = number of MPI ranks
-#        OMP_NUM_THREADS = number of cores / processor to be used
+#        number of model domains = number of processors = number of MPI ranks
+#        OMP_NUM_THREADS = number of cores / processors to be used
 #        MKL_NUM_THREADS = OMP_NUM_THREADS
 #
 #      Method 2
-#        number of model domains = number of all cores to be used = number of MPI ranks
+#        number of model domains = number of all cores to be used =
+#                                  number of MPI ranks
 #        OMP_NUM_THREADS = MKL_NUM_THREADS = 1 (MPI ranks saturate each core)
 #
+#      Method 3
+#        Let N=number of cores on a compute node.
+#        Some benchmarking shows that using N/2 or N/4 MPI
+#        ranks per node often gives better performance with the
+#        number of threads per MPI rank to fill out all available
+#        cores on a node.
+#
+#      This is a simple driver script intended for testing that WARP3D
+#      is installed properly. The MPI ranks are assigned to the
+#      computer(node) on which this script is started.
+#
+#      Other commands can be included to start the MPI ranks
+#      across other nodes in a cluster.
 #
 #      User specifies # MPI ranks and OMP_NUM_THREADS -- script here
 #      sets MKL_NUM_THREADS = OMP_NUM_THREADS
@@ -47,9 +59,6 @@ if [ $# != "2" ]; then
 echo ">> Usage:"; echo " "
 echo "  warp3d_hybrid_linux  <parms> ( < input ) ( > output )"; echo " "
 echo "      Requirements:"
-echo " "
-echo "        - model must have domain decomposition w/ domains assigned in blocking"
-echo "        - the hypre solver must be used"
 echo " "
 echo "      There are 2 parameters:"
 echo " "
@@ -121,15 +130,9 @@ fi
 #
 ulimit -s 100000
 #
-#
-#   =======  no need to change below here =======================
-#
 #    ----- change these as needed for your MPI fabrics and cluster
 #          configuation.
 #
-#
-#
-is_Ubuntu=`uname -a | grep Ubuntu |wc --lines`
 export KMP_AFFINITY=scatter
 export MPI_TYPE_MAX=4096
 export I_MPI_PIN_DOMAIN=omp
@@ -144,7 +147,8 @@ export I_MPI_SHM_LMT=shm
 #export I_MPI_DAPL_TRANSLATION_CACHE=ON
 #export I_MPI_SCALABLE_OPTIMIZATION=enable
 #export I_MPI_DYNAMIC_CONNECTION=ON   # errors when this alone
-#export I_MPI_DEBUG=0  # set =2 for fabric info on starrtup
+#
+export I_MPI_DEBUG=2  # set =2 for fabric info on starrtup
 #
 #       touch core file and make it non-writable in case we dump
 #
