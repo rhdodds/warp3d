@@ -105,20 +105,24 @@ fi
 # Export everything
 export warp3d=$name
 export ranks_warp3d=4
-export threads_warp3d=6
+export threads_warp3d=4
 echo " "
 echo "    ... Driver to run example MPI+OpenMP version of WARP3D ..."
 echo "        =================================================="
 echo " "
 echo " These are relatively small problems than run in at most a few minutes."
 echo " They exercise some key features of the code for MPI."
-echo " The solutions run MPI with: " $ranks_warp3d " ranks and: "  $threads_warp3d" threads per rank."
-echo " The number of threads per rank can be changed inside this script."
+echo " "
+echo " **** The solutions run MPI on the current node with **** "
+echo " "
+echo "       " $ranks_warp3d "ranks and"  $threads_warp3d" threads per rank."
+echo " "
+echo " **** If your computer has #cores < #ranks x # threads,"
+echo "      reduce the number of threads set inside this script"
 echo " "
 echo " The script to run WARP3D directs MPI to run on a single node and that"
 echo " MPI comminucation is via shared-memory."
 echo " See file: " $name
-echo " The number of threads per rank can be changed inside this script."
 #
 # Print the menu
 printf "\n> Select a problem...\n\n"
