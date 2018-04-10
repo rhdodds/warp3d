@@ -134,7 +134,9 @@ export KMP_AFFINITY=scatter
 export MPI_TYPE_MAX=4096
 export I_MPI_PIN_DOMAIN=omp
 export I_MPI_FABRICS=shm:tcp
-#export I_MPI_SHM_LMT=shm
+if [ $is_Ubuntu = "1" ]; then # known Intel MPI bug with Ubuntu (& flavors)
+  export I_MPI_SHM_LMT=shm
+fi
 #
 #            for Mellanox Infiniband, these are known to work
 #            well. tested on 64 nodes with 1200+ cores
@@ -144,7 +146,7 @@ export I_MPI_FABRICS=shm:tcp
 #export I_MPI_DAPL_TRANSLATION_CACHE=ON
 #export I_MPI_SCALABLE_OPTIMIZATION=enable
 #export I_MPI_DYNAMIC_CONNECTION=ENABLE # errors when this alone
-export I_MPI_DEBUG=2  # set =2 for fabric info on starrtup
+#export I_MPI_DEBUG=2  # set =2 for fabric info on starrtup
 #
 #       touch core file and make it non-writable in case we dump
 #
