@@ -19,13 +19,13 @@ skip_lines( 1, 1 );
 #
 $line = <infile>;  @parts = split( / +/, $line);
 #
-$answer = "0.2777E+01";
+$answer = "0.2941E+01";
 $partno = 10;
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 #
 print "   ... comparison value:       $answer","\n";
