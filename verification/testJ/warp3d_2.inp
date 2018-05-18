@@ -1,0 +1,86 @@
+!
+!
+!       SE(B), plane-strain, 8-node, mises material
+!       ============================================
+!
+!       NLGEOM, no FGMs
+!       3 pt bending load
+!
+!       W= 2.0 in., B = 0.1 in. S/2 = 4.0 in.
+!       Front initial radius:  0.0005 in. (0.5 mils)
+!
+!       stiffer, stronger, higher hardening material at
+!       reaction point and 2 elements where displacements are
+!       imposed.
+!
+!       Crack front along X = Y = 0, 0 <= Z <= 0.1
+!
+!       See README
+!
+!       At step 80, CTOD = 5.2 x CTOD @ zero load
+!
+ structure seb
+!
+  material support_stiff
+     properties mises e 100000  nu 0.3 yld_pt 100.0  n_power 3
+!
+  material steel_mises
+     properties mises e 30000  nu 0.3 yld_pt 60.0  n_power 10.0
+!
+ number of nodes  8686 elements 4185
+!
+ elements
+   2572 2579 3185 3210 type l3disop NLGEOM material support_stiff,
+               order 2x2x2 bbar center_output short
+!
+   1-2571, 2573-2578, 2580-3184, 3186-3209, 3211-4185 type,
+               l3disop NLGEOM material steel_mises,
+               order 2x2x2 bbar center_output short
+!
+*input from 'coords.inp'
+*input from 'incid.inp'
+ blocking automatic size = 32
+!
+*echo on
+ constraints
+!
+    all w 0.0     $ plane strain
+    6658 6684 v 0.0  $ reaction nodes
+    5395 5396 5409 5410 5423 5424 v 1.0
+   *input 'constraints_ligament.inp'
+!
+ loading test
+  nonlinear
+    step 1-35  constraint  0.000500
+    step 36-50 constraint  0.000100
+    step 51-300 constraint 0.000080
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+!   solution technique sparse iterative
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 2
+   extrapolate on
+   line search on
+   divergence check on
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+ compute displacements for loading test step 200
+ output reactions 6658 6684
+ output displacements 4223 4224 $  CMOD/2
+ output displacements 16 $ CTOD/2
+ output patran formatted displacements
+ *input 'front_node_sets'
+!
+ stop

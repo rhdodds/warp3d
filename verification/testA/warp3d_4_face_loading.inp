@@ -1,0 +1,97 @@
+!
+ structure set
+!
+!
+!       SE(T) model, 1 layer, 20-node, plane-strain
+!       Crack front along X=Y=0
+!       a/W=0.5, W=1.2 H=2.4 (of model)
+!       Remote end on rollers v=0
+!
+!       Loading with linear opening traction on crack face
+!       that matches linear thermal gradient
+!
+!       Same problem modeled by Shih, Moran, Nakamura EFM,1986
+!
+!       Plane Strain No crack:
+!       axial stress (yy) at outside edges for linear gradient
+!       from (-) to (+) over width x = -0.6 in to x = +0.6 in.
+!
+!         \sig_\{yy} = \frac{E \alpha \theta_e}{1-\nu}
+!
+!       \theta_e is edge temperature. tension on -x edge,
+!       compression on +x edge
+!
+ material steel
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0e20,
+               tan_e 100 alpha 0.0
+!
+ number of nodes 3020  elements 396
+!
+ elements
+   all type q3disop linear material steel,
+           order 2x2x2 bbar center_output short
+!
+*input from 'coords.inp'
+!
+*input from file "incid.inp"
+ blocking automatic size 32
+!
+*input from 'constraints.inp'
+  all w 0.0
+  plane y=2.4 v 0.0
+!
+ loading unit_face
+  element loads
+         1 face 4 pressure       -0.006
+        11 face 4 pressure       -0.020
+        21 face 4 pressure       -0.036
+        31 face 4 pressure       -0.053
+        41 face 4 pressure       -0.074
+        51 face 4 pressure       -0.101
+        61 face 4 pressure       -0.134
+        71 face 4 pressure       -0.417
+        72 face 4 pressure       -0.176
+        73 face 4 pressure       -0.296
+        74 face 4 pressure       -0.229
+        87 face 2 pressure       -0.583
+       209 face 2 pressure       -0.750
+       219 face 2 pressure       -0.917
+!
+! output model flat patran convention text file "set"
+!
+ loading test
+  nonlinear
+    step 1-10 unit_face 42.8571 constraints 1.0
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+!   solution technique sparse iterative
+!   solution technique hypre
+!   hypre tolerance 0.000001
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   line search off
+   divergence check on
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+!
+ compute displacements for loading test step 1
+ output displacements 1773 1770 1774
+! output flat text displacements
+! output flat text node stresses
+!
+*input from file "get_j.inp"
+!
+stop

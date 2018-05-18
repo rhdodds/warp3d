@@ -1,0 +1,80 @@
+#!/bin/bash
+
+#**************************************************************
+#*                                                            *
+#*      cleanup_files                                         *
+#*                                                            *
+#**************************************************************
+
+function cleanup_files {
+#
+/bin/rm -f  *_out out* we* wn* >& /dev/null
+/bin/rm -f  *~ >& /dev/null
+/bin/rm -f energy  >& /dev/null
+/bin/rm -f *_db >& /dev/null
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      run_and_compare                                       *
+#*                                                            *
+#**************************************************************
+
+function run_and_compare {
+#
+echo "      Small Eps vs NLGEOM for thermal loading 8-node, refined mesh"
+echo "      See README file for explanation of results -- difference in cases 3 and 4"
+echo "  ... running testK_1...(Small Eps, no FGMs)"
+"$warp3d_exe"  $num_threads < warp3d_1.inp > out_1
+echo "  ... running testK_2...(NLGEOM, no FGMs)"
+"$warp3d_exe"  $num_threads < warp3d_2.inp > out_2
+echo "  ... running testK_3...(Small EPs, FGMs)"
+"$warp3d_exe" $num_threads  < warp3d_3.inp > out_3
+echo "  ... running testK_4...(NLGEOM. FGMs)"
+"$warp3d_exe"  $num_threads < warp3d_4.inp > out_4
+perl check_1.perl
+perl check_2.perl
+perl check_3.perl
+perl check_4.perl
+#
+echo "  ... WARP3D jobs completed..."
+
+#
+#
+cleanup_files
+#
+}
+
+
+#**************************************************************
+#*                                                            *
+#*      main programs                                         *
+#*                                                            *
+#**************************************************************
+#
+echo " "; echo " ";
+#
+machine=`uname`
+echo ">> machine id: " $machine
+num_threads=$NUM_THREADS
+cleanup_files
+#
+if [ "$MACHINE_TYPE" = '0' ]; then
+   echo -e "\n   OSX and Linux verification..."
+   warp3d_exe="$WARP3D_EXE"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '1' ]; then
+   echo -e "\n  Windows 32-bit verification..."
+   warp3d_exe="$WARP3D_EXE_32"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '2' ]; then
+   echo -e "\n  Windows verification..."
+   warp3d_exe="$WARP3D_EXE_64"
+   run_and_compare
+fi
+#
+#
+exit

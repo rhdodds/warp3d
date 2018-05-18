@@ -1,0 +1,31 @@
+
+May 12, 2018
+------------
+
+Observations at step 40:
+
+   No FGMs ( J7= J8 = 0 )
+
+   (1)  Small strain path independent from ring 13-15 outward. J = 0.63
+        Ring 1:  0.679
+        Ring 5:  0.670
+        Ring 10: 0.652
+        Ring 15: 0.637
+
+   (2)  NLGEOM. J increases all rings.
+         Ring 1:  0.243
+         Ring 10: 0.303
+         Ring 20: 0.456
+         Ring 25: 0.533
+         Ring 30: 0.593
+
+   FGMs ( J7, J8 .ne. 0 ) but props same as above
+
+   (3)  Small strain path independent from ring 1 outward. J = 0.67
+        Same as Rign 1 value for case (1)
+
+   (4)  NLGEOM. J is same for all rings. J = 0.24 vs 0.67 for small strains
+        Path independent J-value is same st ring 1 for NLGEOM, no FGMs above.
+
+     The J7, J8 terms for linear and NLGEOM restore strong PI !
+

@@ -1,0 +1,22 @@
+
+domain one
+   symmetric
+!        1 (Z=0), 3 (Z=B/2)
+   node set 1  289  361  362  363  364  365  366 1328,
+               1329 1330 1331 1332 1333 1377 1378 1379,
+               1380 1381
+!
+   node set 2  17 1 4 37 38 39 40 41 42 43 44 270 271 272 273 274,
+               275 291 292 293 294 295
+!
+   front nodes sets 1 2 linear verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type d
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-30  $ actually 36 available
+!
+ compute domain integral
+!
+

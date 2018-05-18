@@ -1,0 +1,13 @@
+!
+!    for SE(T) with whole model general orientation in space
+!
+ domain one
+ symmetric
+ front nodes 1031 1028 1032 q3disop verify
+ normal plane nx -0.87390673 ny 0.45501931 nz 0.1710100
+ function type d
+ omit crack front elements no
+c use 1 point rule
+ q-values automatic rings 1-5
+c
+ compute domain integral

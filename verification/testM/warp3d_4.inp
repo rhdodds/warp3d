@@ -1,0 +1,80 @@
+!
+!
+!       SE(T), plane-strain, 20-node, mises material
+!       ============================================
+!
+!       NLGEOM, FGM alpha
+!
+!       Linear gradient of temperature over full model
+!       Temp = -1.0 * Y
+!
+!       W= 2.0 in., B = 0.1 in. S/2 = 4.0 in.
+!       Front initial radius:  0.0005 in. (0.5 mils)
+!
+!       Crack front along X = Y = 0, 0 <= Z <= 0.1
+!
+!
+!
+ structure set
+!
+  material steel_mises
+     properties mises e 30000  nu 0.3 yld_pt 60.0  n_power 10.0,
+                      alpha 'fgm'
+!
+ number of nodes   30083  elements  4185
+!
+ elements
+!
+   1-4185  type q3disop NLGEOM material steel_mises,
+               order 2x2x2 bbar center_output short
+!
+ functionally graded properties
+   1-30083 alpha 10.e-06
+!
+*input from 'coords.inp'
+*input from 'incid.inp'
+ blocking automatic size = 32
+!
+*echo on
+ constraints   $ for gradient thermal loading in Y
+!
+    all w 0.0     $ plane strain
+    plane x = 4.0 u 0  $ remote end fixed
+    18724    18725    18726  v 0.0    $  prevent RBM
+   *input 'constraints_ligament.inp'
+!
+ *input from file 'unit_temp_grad.inp'
+!
+ loading test
+  nonlinear
+   step 1-40 unit_grad 10 constraints 1.0
+!
+ nonlinear analysis parameters
+!   solution technique sparse direct
+   solution technique sparse iterative
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 2
+   extrapolate on
+   line search on
+   divergence check on
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+ compute displacements for loading test step 40
+ output reactions 23001 23027 23028
+ output displacements 14574-14576 $  CMOD/2
+ output displacements 16 $ CTOD/2
+! output patran formatted displacements
+ *input 'front_node_sets'
+!
+ stop

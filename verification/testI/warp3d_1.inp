@@ -1,0 +1,123 @@
+!
+!      Plane-strain SE(B) model for J-testing
+!
+!              => linear elastic no FGMs
+!
+!      20-node elements throughout
+!
+!      Blunted front for finite strain computations
+!
+!      Unit: inches, kips
+!
+!      W = 0.2362, S/2 = 0.4721, B = 0.1
+!
+!      Front initial radius: 0.4921 mils
+!
+!      1 element over thickness.
+!
+!      Orientation: (X = 0, Y = 0, Z) along crasck front
+!                   0.0 <= Z <= 0.10
+!
+!      3 pt. bending load by imposed (v) displacements on 13 nodes
+!          2 elements on X = 0 @ Y = -0.1181
+!
+!      Test cases for J:
+!
+!        Linear elastic:
+!           - isotropic material specifed with material definition (J7=J8=0)
+!           - FGM w/ same modulus everywhere. J7 and J8 not zero
+!
+!        Small strain nonlinear (power-law hardening):
+!          Deformation plasticity
+!           - isotropic material specifed with material definition (J7=J8=0)
+!           - FGM w/ same isotropic properties. J7 and J8 not zero
+!          Flow theory plasticity
+!           - isotropic material specifed with material definition (J7=J8=0)
+!           - FGM w/ same isotropic properties. J7 and J8 not zero
+!           - Path independence and difference with deformation plasticity
+!
+!        Large strain nonlinear (power-law-hardening)
+!           - isotropic material specifed with material definition (J7=J8=0)
+!           - FGM w/ same isotropic properties. J7 and J8 not zero
+!           - explore path independence, differences in
+!
+structure seb
+!
+  material steel_mises
+     properties mises e 30000  nu 0.3 yld_pt 60.e10  n_power 10.0
+
+!
+number of nodes 10458  elements     1435
+!
+elements
+  1-1435 type q3disop linear material steel_mises,
+            order 2x2x2 center_output short
+!
+ functionally graded properties
+    1-10458 e 30000
+!
+*input from 'coords.inp'
+!
+*input from 'incid.inp'
+!
+blocking automatic size = 16
+!
+*echo on
+!
+*input from 'constraints.inp'
+    all w 0.0
+    9426 10338 10337 v 0.0
+    4275 685 4729 131 4278 684 4268 4271 4273 132 139 4274 9 v 1.0
+!
+ loading test
+  nonlinear
+    step 1-300 constraint  0.0005 $0.00005
+!
+ nonlinear analysis parameters
+!   solution technique sparse direct
+   solution technique sparse iterative
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   line search off
+   divergence check on
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+!
+ compute displacements for loading test step 1
+ output displacements 226 9    $ CMOD/2 and LLD (includes punching)
+ output stresses 952  $ at root of front
+! output patran formatted displacements
+
+ domain one
+   symmetric
+   node set 1   44  289  361  362  363  364  365  366 1328 1329 1330,
+                1331 1332 1333 2557 2617 2655 2693 2731 2769 7326,
+                7364 7402 7440 7478 7516 7554
+   node set 2   2566 2568  2624  2662  2700 2738  2776  7329  7367,
+                7405 7443  7481  7519  7557
+   node set 3   1 17 37 38  39 40  41 42 270 271 272 273 274 275,
+                2564 2622 2660 2698 2736 2774 7327 7365 7403,
+                7441 7479 7517 7555
+   front nodes sets 1 2 3 quadratic verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type d
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-40
+!
+ compute domain integral
+!
+stop

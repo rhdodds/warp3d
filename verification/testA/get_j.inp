@@ -1,0 +1,9 @@
+domain one
+ symmetric
+ front nodes 1031 1028 1032 q3disop verify
+ normal plane nx 0 ny 1 nz 0
+ function type d
+c use 1 point rule
+ q-values automatic rings 1-8
+c
+ compute domain integral

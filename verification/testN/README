@@ -1,0 +1,60 @@
+
+May 17, 2018
+------------
+
+8-node, refined mesh, 3 pt loading, 3-layer model
+
+Observations at step 35:
+
+   No FGMs ( J7= J8 = 0 ). Domain type: "D"
+
+   (1)  Small strain path independent from ring 2-3 outward. J = 0.45
+        Ring 1:  0.4649
+        Ring 5:  0.4612
+        Ring 10: 0.4558
+        Ring 15: 0.4478
+        Ring 30: 0.4583
+
+   (2)  NLGEOM. J increases all rings.
+         Ring 1:  0.1964
+         Ring 10: 0.2360
+         Ring 20: 0.3745
+         Ring 25: 0.4235
+         Ring 30: 0.4489
+
+   FGMs ( J7, J8 .ne. 0 ) but props same as above
+
+   (3)  Small strain path independent from ring 1 outward. J = 0.4630
+        Same as Ring 1 value for case (1)
+
+   (4)  NLGEOM. J is same for all rings. J = 0.20 vs 0.43 for small strains
+        Path independent J-value is same st ring 1 for NLGEOM, no FGMs above.
+
+   **  The J7, J8 terms for linear and NLGEOM restore strong PI ! **
+
+
+   No FGMs ( J7= J8 = 0 ). Domain type: "c" @ outside surface
+
+   (1)  Small strain path independent from ring 2-3 outward. J = 0.185
+        Ring 1:  0.1872
+        Ring 5:  0.1863
+        Ring 10: 0.1858
+        Ring 15: 0.1837
+        Ring 30: 0.1958
+
+   (2)  NLGEOM. J increases all rings.
+         Ring 1:  0.1132
+         Ring 10: 0.1290
+         Ring 20: 0.1757
+         Ring 25: 0.1971
+         Ring 30: 0.2161
+
+   FGMs ( J7, J8 .ne. 0 ) but props same as above
+
+   (3)  Small strain varies from 0.1868 -> 0.1978
+        Same as Ring 1 value for case (1)
+
+   (4)  NLGEOM. J is same for all rings. J = 0.12 vs. ?? for small strains
+        Path independent J-value is same st ring 1 for NLGEOM, no FGMs above.
+
+   **  The J7, J8 terms for linear and NLGEOM restore strong PI ! **

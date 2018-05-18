@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#**************************************************************
+#*                                                            *
+#*      cleanup_files                                         *
+#*                                                            *
+#**************************************************************
+
+function cleanup_files {
+#
+/bin/rm -f  *_out out* we* wn* >& /dev/null
+/bin/rm -f  *~ >& /dev/null
+/bin/rm -f energy  >& /dev/null
+/bin/rm -f *_db >& /dev/null
+#
+}
+
+#**************************************************************
+#*                                                            *
+#*      run_and_compare                                       *
+#*                                                            *
+#**************************************************************
+
+function run_and_compare {
+#
+echo "      Differences in mises vs. deformation w/ and w/o J7, J8: small strains (README)"
+echo "  ... running testH_1...(deformation plasticity, no FGMs)"
+"$warp3d_exe"  $num_threads < warp3d_1_bend_deform.inp > out_1
+echo "  ... running testH_2...(deformation plasticity, w/ FGMs + J7, J8)"
+"$warp3d_exe"  $num_threads < warp3d_2_bend_deform_fgm.inp > out_2
+echo "  ... running testH_3...(mises, no FGMs)"
+"$warp3d_exe" $num_threads  < warp3d_3_bend_mises.inp > out_3
+echo "  ... running testH_4...(mises + FGMs + J7, J8)"
+"$warp3d_exe"  $num_threads < warp3d_4_bend_mises_fgm.inp > out_4
+#
+echo "  ... WARP3D jobs completed..."
+
+#
+perl check_1.perl
+perl check_2.perl
+perl check_3.perl
+echo " "
+echo "        ... 4 vs 1-3 shows effects of flow theory plasticity ..."
+perl check_4.perl
+
+#
+cleanup_files
+#
+}
+
+
+#**************************************************************
+#*                                                            *
+#*      main programs                                         *
+#*                                                            *
+#**************************************************************
+#
+echo " "; echo " ";
+#
+machine=`uname`
+echo ">> machine id: " $machine
+num_threads=$NUM_THREADS
+cleanup_files
+#
+if [ "$MACHINE_TYPE" = '0' ]; then
+   echo -e "\n   OSX and Linux verification..."
+   warp3d_exe="$WARP3D_EXE"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '1' ]; then
+   echo -e "\n  Windows 32-bit verification..."
+   warp3d_exe="$WARP3D_EXE_32"
+   run_and_compare
+fi
+if [ "$MACHINE_TYPE" = '2' ]; then
+   echo -e "\n  Windows verification..."
+   warp3d_exe="$WARP3D_EXE_64"
+   run_and_compare
+fi
+#
+#
+exit

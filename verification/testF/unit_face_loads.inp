@@ -1,0 +1,73 @@
+!
+ *echo off
+  loading unit_face $ on crack face
+  element loads
+         6 face 3 pressure        0.000
+         7 face 3 pressure        0.000
+         8 face 3 pressure        0.001
+         9 face 3 pressure        0.001
+        25 face 3 pressure        0.000
+        26 face 3 pressure        0.000
+        27 face 3 pressure        0.001
+        28 face 3 pressure        0.001
+        29 face 2 pressure        0.001
+        38 face 2 pressure        0.003
+        69 face 2 pressure        0.002
+        78 face 2 pressure        0.004
+        87 face 2 pressure        0.005
+       114 face 2 pressure        0.006
+       132 face 2 pressure        0.007
+       154 face 2 pressure        0.008
+       190 face 2 pressure        0.009
+       193 face 2 pressure        0.011
+       215 face 2 pressure        0.010
+       232 face 2 pressure        0.012
+       260 face 2 pressure        0.014
+       267 face 2 pressure        0.013
+       268 face 2 pressure        0.016
+       302 face 2 pressure        0.017
+       334 face 2 pressure        0.018
+       343 face 2 pressure        0.019
+       357 face 2 pressure        0.021
+       374 face 2 pressure        0.022
+       404 face 2 pressure        0.025
+       423 face 2 pressure        0.024
+       436 face 2 pressure        0.026
+       453 face 2 pressure        0.028
+       469 face 2 pressure        0.031
+       486 face 2 pressure        0.033
+       499 face 2 pressure        0.030
+       526 face 2 pressure        0.035
+       536 face 2 pressure        0.038
+       558 face 2 pressure        0.036
+       581 face 2 pressure        0.040
+       615 face 2 pressure        0.042
+       624 face 2 pressure        0.044
+       635 face 2 pressure        0.046
+       640 face 2 pressure        0.049
+       657 face 2 pressure        0.052
+       669 face 2 pressure        0.056
+       719 face 2 pressure        0.062
+       745 face 2 pressure        0.068
+       752 face 2 pressure        0.085
+       763 face 2 pressure        0.075
+       786 face 2 pressure        0.096
+       804 face 2 pressure        0.127
+       817 face 2 pressure        0.110
+       823 face 2 pressure        0.147
+       845 face 1 pressure        0.176
+       876 face 1 pressure        0.244
+       883 face 1 pressure        0.210
+       890 face 1 pressure        0.320
+       895 face 1 pressure        0.297
+       897 face 1 pressure        0.344
+       903 face 1 pressure        0.273
+       904 face 4 pressure        0.373
+       909 face 4 pressure        0.416
+       911 face 4 pressure        0.567
+       913 face 4 pressure        0.887
+       917 face 4 pressure        0.477
+       919 face 4 pressure        0.698
+!
+ *echo on
+ 

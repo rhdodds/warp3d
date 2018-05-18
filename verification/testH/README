@@ -1,0 +1,45 @@
+
+
+1 layer, 8-node hex mesh, plane strain, B-bar
+
+Standard blunt notch mesh at tip used for finite strain solutions
+Initial crack front radius: 0.08 mils
+
+=> Small strain solutions here
+
+Crack plane is Y 0, front along X = Y  = 0, crack plane normal +Y
+
+Units: inches
+
+Thickness 0.075, W 1.0, S 4.0, a/W = 0.5
+rollers at Y = 2, overhang beyond rollers 0.28
+
+Imposed bending displacements on 2 set of thru thickness nodes at X = 0.5
+
+Models:
+
+  1. deformation plasticity, no FGMs. J7=J8 = 0
+
+  2. deformation plasticity, w fake FGMs. J7 + J8 should = 0
+     error caused by extrapolation, averaging derivatives of
+     energy density and strains to get J7 and J8
+
+  3. mises plasticity, no FGMs. J7=J8 = 0
+
+  4. mises, w fake FGMs. J7 + J8 should = 0
+     error caused by extrapolation, averaging derivatives of
+     energy density and strains to get J7 and J8
+
+Key results:
+
+      1 and 2 are about 2.5 % different J-values on remote rings
+         errors from extrapolation/averaging/derivatives
+
+      3 and 4 are about 8.5 % different J-values on remote rings
+         this is an incremental plasticity effect + errors
+         in extrapolation/averaging/derivatives
+
+      1 and 3 are about 3.9% different. caused by differences in
+         deformation vs. incremental plasticity.
+
+

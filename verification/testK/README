@@ -1,0 +1,34 @@
+
+May 14, 2018
+------------
+
+8-node, refined mesh, thermal gradient loading
+
+Observations at step 40:
+
+   No FGMs ( J7= J8 = 0 )
+
+   (1)  Small strain path independent from ring 5-6 outward. J = 0.505
+        Ring 1:  0.5123
+        Ring 5:  0.5095
+        Ring 10: 0.5068
+        Ring 15: 0.5031
+        Ring 30: 0.5167
+
+   (2)  NLGEOM. J increases all rings.
+         Ring 1:  0.2298
+         Ring 10: 0.2367
+         Ring 20: 0.4308
+         Ring 25: 0.4862
+         Ring 30: 0.5155
+
+   FGMs ( J7, J8 .ne. 0 ) but props same as above
+
+   (3)  Small strain path independent from ring 1 outward. J = 0.512
+        Same as Ring 1 value for case (1)
+
+   (4)  NLGEOM. J is same for all rings. J = 0.235 vs. 0.512 for small strains
+        Path independent J-value is same st ring 1 for NLGEOM, no FGMs above.
+
+     The J7, J8 terms for linear and NLGEOM restore strong PI !
+

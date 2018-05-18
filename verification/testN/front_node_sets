@@ -1,0 +1,141 @@
+
+domain average
+   symmetric
+!        1 (Z=0), 4 (Z=B/2)
+   node set 1  289  361  362  363  364  365  366 1328,
+               1329 1330 1331 1332 1333 1377 1378 1379,
+               1380 1381 43 44
+!
+   node set 2  17 1 4 37 38 39 40 41 42 43 44 270 271 272 273 274,
+               275 291 292 293 294 295
+!
+  node set 3  8703 8687  8690 8723  8724  8725  8726  8727,
+       8728  8940  8941  8942  8943  8944  8945  8959,
+       8960  8961  8962  8963
+!
+  node set 4 13076 13060 13063 13096 13097 13098 13099 13100,
+       13101 13313 13314 13315 13316 13317 13318 13332,
+       13333 13334 13335 13336
+!
+   front nodes sets 1 2 3 4 linear verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type d
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-30  $ actually 36 available
+!
+ compute domain integral
+!
+
+domain center
+   symmetric
+!        1 (Z=0), 4 (Z=B/2)
+   node set 1  289  361  362  363  364  365  366 1328,
+               1329 1330 1331 1332 1333 1377 1378 1379,
+               1380 1381
+!
+   node set 2  17 1 4 37 38 39 40 41 42 43 44 270 271 272 273 274,
+               275 291 292 293 294 295
+!
+  node set 3  8703 8687  8690 8723  8724  8725  8726  8727,
+       8728  8940  8941  8942  8943  8944  8945  8959,
+       8960  8961  8962  8963
+!
+  node set 4 13076 13060 13063 13096 13097 13098 13099 13100,
+       13101 13313 13314 13315 13316 13317 13318 13332,
+       13333 13334 13335 13336
+!
+   front nodes sets 1 2 linear verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type a
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-30  $ actually 36 available
+!
+ compute domain integral
+!
+domain plane_2
+   symmetric
+!        1 (Z=0), 4 (Z=B/2)
+   node set 1  289  361  362  363  364  365  366 1328,
+               1329 1330 1331 1332 1333 1377 1378 1379,
+               1380 1381
+!
+   node set 2  17 1 4 37 38 39 40 41 42 43 44 270 271 272 273 274,
+               275 291 292 293 294 295
+!
+  node set 3  8703 8687  8690 8723  8724  8725  8726  8727,
+       8728  8940  8941  8942  8943  8944  8945  8959,
+       8960  8961  8962  8963
+!
+  node set 4 13076 13060 13063 13096 13097 13098 13099 13100,
+       13101 13313 13314 13315 13316 13317 13318 13332,
+       13333 13334 13335 13336
+!
+   front nodes sets 1 2 3 linear verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type b
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-30  $ actually 36 available
+!
+ compute domain integral
+!
+domain plane_3
+   symmetric
+!        1 (Z=0), 4 (Z=B/2)
+   node set 1  289  361  362  363  364  365  366 1328,
+               1329 1330 1331 1332 1333 1377 1378 1379,
+               1380 1381
+!
+   node set 2  17 1 4 37 38 39 40 41 42 43 44 270 271 272 273 274,
+               275 291 292 293 294 295
+!
+  node set 3  8703 8687  8690 8723  8724  8725  8726  8727,
+       8728  8940  8941  8942  8943  8944  8945  8959,
+       8960  8961  8962  8963
+!
+  node set 4 13076 13060 13063 13096 13097 13098 13099 13100,
+       13101 13313 13314 13315 13316 13317 13318 13332,
+       13333 13334 13335 13336
+!
+   front nodes sets 2 3 4 linear verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type b
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-30  $ actually 36 available
+!
+ compute domain integral
+!
+domain outside
+   symmetric
+!        1 (Z=0), 4 (Z=B/2)
+   node set 1  289  361  362  363  364  365  366 1328,
+               1329 1330 1331 1332 1333 1377 1378 1379,
+               1380 1381
+!
+   node set 2  17 1 4 37 38 39 40 41 42 43 44 270 271 272 273 274,
+               275 291 292 293 294 295
+!
+  node set 3  8703 8687  8690 8723  8724  8725  8726  8727,
+       8728  8940  8941  8942  8943  8944  8945  8959,
+       8960  8961  8962  8963
+!
+  node set 4 13076 13060 13063 13096 13097 13098 13099 13100,
+       13101 13313 13314 13315 13316 13317 13318 13332,
+       13333 13334 13335 13336
+!
+   front nodes sets  3 4 linear verify
+   normal plane nx 1.0 ny 0 nz 0.0
+   function type c
+   J to K
+!   use 1 point rule
+   omit front elements no
+   q-values automatic rings 1-30  $ actually 36 available
+!
+ compute domain integral
