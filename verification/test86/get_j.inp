@@ -2,8 +2,8 @@ domain one
  symmetric
  front nodes 57 10037 10036 q3disop verify
  normal plane nx 0 ny 1 nz 0
- print totals
  function type d
+c use 1 point rule
  q-values automatic rings 1-18
 c
  compute domain integral
