@@ -13,14 +13,14 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 find_line( 1, "   dm1         dm2   ");
-$line = <infile>; 
+$line = <infile>;
 #
 #    line with strain valuesis current. print value
 #
 @parts = split( / +/, $line);
 
 #
-$answer = "0.2895E+00";
+$answer = "0.3380E+00";
 $partno = 11;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
@@ -29,8 +29,8 @@ $out_value = $parts[$partno];
 
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 
 #
@@ -50,7 +50,7 @@ exit;
 #*                                                        *
 #**********************************************************
 
-sub find_line {  
+sub find_line {
       my ( $type, $string ) = @_;
       my ( $debug );
       $debug = 0;
@@ -63,7 +63,7 @@ sub find_line {
 #
       while ( !eof(infile) )
         {
-           $line = <infile>; 
+           $line = <infile>;
 	   if( $line =~ /$string/ ) {return};
         }
 #
