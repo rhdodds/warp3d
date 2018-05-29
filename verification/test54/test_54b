@@ -39,6 +39,9 @@ c about two of the global axes in order to test the J-integral
 c routines for proper handling of rotated fields.
 c
 c
+c Interaction integrals are computed after J-values for comparison
+c
+c
 structure rotated_crack
 c
  material fgm
@@ -9426,20 +9429,33 @@ c
         normal plane nx -0.5 ny 0.707107 nz -0.5
         front nodes 3276 3278 3279 q3disop
         q-values automatic rings 1-10
-        omit crack front elements for fgm yes
         function type d
-        print totals
    compute domain integral
-
+c
    domain two
         symmetry
         normal plane nx -0.5 ny 0.707107 nz -0.5
         front nodes 3276 3278 3279 q3disop verify
         q-values automatic rings 1-10
-	omit crack front elements for fgm no
         function type d
-        print totals
    compute domain integral
 c
+c Interaction integral calcs
+c
+   domain one
+        symmetry
+        normal plane nx -0.5 ny 0.707107 nz -0.5
+        front nodes 3276 3278 3279 q3disop
+        q-values automatic rings 1-10
+        function type d
+   compute interaction integral
+c
+   domain two
+        symmetry
+        normal plane nx -0.5 ny 0.707107 nz -0.5
+        front nodes 3276 3278 3279 q3disop verify
+        q-values automatic rings 1-10
+        function type d
+    compute interaction integral
 c
 stop
