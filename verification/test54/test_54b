@@ -45,6 +45,7 @@ c
 structure rotated_crack
 c
  material fgm
+c    properties linear_elastic e 3.0 nu 0.3 alpha 0.0 rho 0.0
     properties linear_elastic e 'fgm' nu 'fgm' alpha 0.0 rho 0.0
 c
 c
@@ -9430,7 +9431,8 @@ c
         front nodes 3276 3278 3279 q3disop
         q-values automatic rings 1-10
         function type d
-   compute domain integral
+c  compute domain integral
+
 c
    domain two
         symmetry
@@ -9438,7 +9440,7 @@ c
         front nodes 3276 3278 3279 q3disop verify
         q-values automatic rings 1-10
         function type d
-   compute domain integral
+c   compute domain integral
 c
 c Interaction integral calcs
 c

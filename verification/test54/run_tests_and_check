@@ -8,7 +8,7 @@
 
 function cleanup_files {
 #
-/bin/rm -f  *_out 
+/bin/rm -f  *_out xx >& /dev/null
 /bin/rm -f  *~ >& /dev/null
 /bin/rm -f energy  >& /dev/null
 /bin/rm -f *_db >& /dev/null
