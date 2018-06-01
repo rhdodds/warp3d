@@ -23,16 +23,21 @@ function cleanup_files {
 
 function run_and_compare {
 #
+#
+#      the 2> /dev/null error re-direction fixes some wierd problem
+#      with MPI doing something to STDIN for the shell
+#
 warp3d_exe=$WARP3D_HOME/warp3d_script_linux_hybrid
 echo "  ... running test5_1...(alpha w/ material definition)"
-"$warp3d_exe" $num_threads 4  < warp3d_1_alpha_with_material.inp > out_5a
+"$warp3d_exe" 4 $num_threads   < warp3d_1_alpha_with_material.inp > out_5a 2> /dev/null
 echo "  ... running test5_2...(FGM alphas)"
-"$warp3d_exe"  $num_threads 4 < warp3d_2_fgm_alpha.inp > out_5b
+"$warp3d_exe" 4 $num_threads  < warp3d_2_fgm_alpha.inp > out_5b 2> /dev/null
 #
 echo "  ... WARP3D jobs completed..."
 #
-perl check_5a.perl
-perl check_5b.perl
+perl check_5a.perl 2> /dev/null
+perl check_5b.perl 2> /dev/null
+
 #
 cleanup_files
 #
