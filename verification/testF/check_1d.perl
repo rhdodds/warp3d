@@ -2,7 +2,7 @@
 #      WARP3D verification system
 #      ==========================
 #
-#      check results for test_1a
+#      check results for test_1d
 #
 $inputfile = 'out_1a';
 print "\n\t... Check results: $inputfile\n";
@@ -16,7 +16,7 @@ find_line( 1, "average      minimum" );
 #
 $line = <infile>;  @parts = split( / +/, $line);
 #
-$answer = "0.2158E-01";
+$answer = "0.2159E-01";
 $partno = 1;
 #
 $message = " ";
