@@ -16,13 +16,13 @@ find_line( 1, "average      minimum" );
 #
 $line = <infile>;  @parts = split( / +/, $line);
 #
-$answer = "0.2964E+00";
+$answer = "0.2962E+00";
 $partno = 1;
 #
 $message = " ";
 if ( $answer ne $parts[$partno] ) {
- $message = "\t\t  **** difference in solution"; 
-}  
+ $message = "\t\t  **** difference in solution";
+}
 #
 print "\t   ... comparison value:       $answer","\n";
 print "\t   ... value from output file: ", "$parts[$partno]$message\n";
@@ -52,7 +52,7 @@ sub find_line {
 #
       while ( !eof(infile) )
         {
-           $line = <infile>; 
+           $line = <infile>;
            if( $line =~ /$string/ ) {return};
         }
 #
