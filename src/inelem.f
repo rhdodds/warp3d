@@ -198,6 +198,8 @@ c
       if(matchs('material',8)) go to 580
       if(matchs('linear',6)) go to 585
       if(matchs('nonlinear',6)) go to 586
+      if(matchs('nlgeom',5)) go to 586
+      if(matchs('geonl',5)) got o 586
       if(matchs('bbar',4)) go to 587
       if(matchs('no_bbar',6)) go to 588
       if(matchs('nobbar',6)) go to 588
