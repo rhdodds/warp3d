@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 6/17/2017 rhd               *
+c     *                   last modified: 5/16/2018 rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -402,6 +402,8 @@ c          we add nodal mass (with newmark beta and dt) to
 c          diagonal terms of element stiffnesses.
 c
  25   continue
+      msg_count_1 = 0 ! used to prevent excessive messages in low level routines
+      msg_count_2 = 0
       if( iter .gt. 1 ) ! start of step done above
      &         call stifup( step, iter, out, newstf, show_details )
 c
