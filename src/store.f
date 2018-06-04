@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/10/2018 rhd              *
+c     *                   last modified : 4/9/2018 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -168,6 +168,7 @@ c
      &              sparse_stiff_binary, sparse_research,
      &              solver_mkl_iterative, output_packets,
      &              temperatures_ref, fgm_node_values_defined,
+     &              fgm_node_values_used,
      &              hyp_trigger_step, hyp_first_solve,
      &              time_assembly, parallel_assembly_allowed,
      &              parallel_assembly_used,
@@ -176,7 +177,8 @@ c
      &              extrapolate, extrap_off_next_step,
      &              divergence_check, diverge_check_strict,
      &              line_search, ls_details, initial_stresses_exist,
-     &              initial_stresses_user_routine
+     &              initial_stresses_user_routine, 
+     &              initial_state_defined
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
