@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/8/2018 rhd               *
+c     *                   last modified : 4/9/2018 rhd               *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -22,8 +22,7 @@ c
       use main_data, only : output_packets, packet_file_name,
      &                      packet_file_no, ascii_packet_file_name,
      &                      ascii_packet_file_no, temperatures_ref,
-     &                      fgm_node_values_defined,
-     &                      fgm_node_values_cols, cp_matls_present,
+     &                      cp_matls_present,
      &                      cohesive_ele_types, linear_displ_ele_types,
      &                      adjust_constants_ele_types,
      &                      axisymm_ele_types, umat_used,
@@ -42,7 +41,11 @@ c
      &                      initial_stresses_user_routine,
      &                      initial_stresses_file, max_step_limit,
      &                      user_cnstrn_stp_factors, stpchk,
-     &                      actual_cnstrn_stp_factors
+     &                      actual_cnstrn_stp_factors,
+     &                      fgm_node_values_defined,
+     &                      fgm_node_values_used,
+     &                      fgm_node_values_cols,
+     &                      initial_state_defined
 c
       use stiffness_data
       use file_info
@@ -498,6 +501,12 @@ c                       properties specified at the model nodes.
 c
       fgm_node_values_defined = .false.
       fgm_node_values_cols    = 8
+      fgm_node_values_used    = .false.
+c
+c                       initialize variables for support of a user
+c                       defined initial state (J-integrals)
+c
+      initial_state_defined = .false.
 c
 c                       initialize logical flags used throughout code
 c                       to indicate various characteristics of elements
