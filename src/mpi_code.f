@@ -111,6 +111,90 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
+c     *                  subroutine wmpi_reduce_all_dble_inplace     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/21/2018 rhd              *
+c     *                                                              *
+c     *                  dummy routine                               *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_all_dble_inplace( vec, size )
+      implicit integer (a-z)
+c
+      double precision :: vec(*)
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine wmpi_reduce_all_real_inplace     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/19/2018 rhd              *
+c     *                                                              *
+c     *                  dummy routine                               *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_all_real_inplace( vec, size )
+      implicit integer (a-z)
+c
+      real :: vec(*)
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine wmpi_reduce_all_int_inplace      *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/19/2018 rhd              *
+c     *                                                              *
+c     *                    dummy routine                             *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_all_int_inplace( vec, size )
+      implicit integer (a-z)
+c
+      integer :: vec(*)
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine wmpi_reduce_vec_inplace      *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/13/2017 rhd             *
+c     *                                                              *
+c     *                          dummy                               *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_vec_inplace( vec, size )
+      implicit integer (a-z)
+c
+      double precision :: vec(*)
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
 c     *                  subroutine wmpi_reduce_vec_std              *
 c     *                                                              *
 c     *                       written by : rhd                       *
@@ -250,6 +334,21 @@ c
 c
       logical log_var
 c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine wmpi_allreduce_vec_log          *
+c     *                                                              *
+c     *                       written by : asg                       *
+c     *                                                              *
+c     *                   last modified : 4/18/2018 rhd              *
+c     *                                                              *
+c     *     Dummy for threads only version                           *
+c     *                                                              *
+c     ****************************************************************
+      subroutine wmpi_allreduce_vec_log( vec, size )
+      implicit integer (a-z)
       return
       end
 c
