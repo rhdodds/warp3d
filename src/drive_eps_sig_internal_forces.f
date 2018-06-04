@@ -394,7 +394,7 @@ c     *                      subroutine do_nleps_block               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/21/2017 rhd             *
+c     *                   last modified : 4/24/2018 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -508,8 +508,8 @@ c
       if( local_work%is_umat ) call material_model_info( felem, 0, 3,
      &                                 local_work%umat_stress_type )
       local_work%compute_f_bar =  bbar_flg .and.
-     &            ( elem_type  .eq. 2 ) .and.
-     &           ( local_work%is_umat .or. local_work%is_crys_pls )
+     &            ( elem_type  .eq. 2 )  .and.
+     &            ( local_work%is_umat .or. local_work%is_crys_pls )
       local_work%compute_f_n = geo_non_flg .and.
      &        ( local_work%is_umat .or. local_work%is_crys_pls )
       tet_elem = elem_type .eq. 6 .or. elem_type .eq. 13
@@ -712,7 +712,7 @@ c     *                   subroutine recstr_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  9/25,2017 rhd             *
+c     *                   last modified :  4/23/2018 rhd             *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -758,30 +758,20 @@ c
          write(out,9000) 2
          call die_abort
       end if
-!DIR$ VECTOR ALIGNED
        local_work%det_j = zero
-!DIR$ VECTOR ALIGNED
        local_work%det_j_mid = zero
-!DIR$ VECTOR ALIGNED
        local_work%gama = zero
-!DIR$ VECTOR ALIGNED
        local_work%gama_mid = zero
-!DIR$ VECTOR ALIGNED
        local_work%neta = zero
-!DIR$ VECTOR ALIGNED
        local_work%nxi = zero
-!DIR$ VECTOR ALIGNED
        local_work%nzeta = zero
 c
       if( local_work%geo_non_flg ) then
         allocate( local_work%fn(mxvl,3,3),
      &           local_work%fn1(mxvl,3,3),
      &           local_work%dfn1(mxvl) )
-!DIR$ VECTOR ALIGNED
         local_work%fn  = zero
-!DIR$ VECTOR ALIGNED
         local_work%fn1 = zero
-!DIR$ VECTOR ALIGNED
         local_work%dfn1 = zero
       end if
 
@@ -790,8 +780,8 @@ c
      &  local_work%vol_block(mxvl,8,3),
      &  local_work%volume_block(mxvl),
      &  local_work%volume_block_0(mxvl),
-     &  local_work%volume_block_n(mxvl),
-     &  local_work%volume_block_n1(mxvl),
+     &  local_work%integral_detF_n(mxvl),
+     &  local_work%integral_detF_n1(mxvl),
      &  local_work%jac(mxvl,3,3),
      &  local_work%b(mxvl,mxedof,nstr),
      &  local_work%ue(mxvl,mxedof),
@@ -802,7 +792,6 @@ c
          call die_abort
       end if
 
-!DIR$ VECTOR ALIGNED
       local_work%b = zero
 c
       allocate( local_work%uen1(mxvl,mxedof),
@@ -815,15 +804,10 @@ c
          write(out,9000) 4
          call die_abort
       end if
-!DIR$ VECTOR ALIGNED
       local_work%det_j       = zero
-!DIR$ VECTOR ALIGNED
       local_work%rot_blk_n1  = zero
-!DIR$ VECTOR ALIGNED
       local_work%urcs_blk_n1 = zero
-!DIR$ VECTOR ALIGNED
       local_work%urcs_blk_n  = zero
-!DIR$ VECTOR ALIGNED
       local_work%initial_stresses = zero
 
 c
@@ -1030,7 +1014,7 @@ c     *                   subroutine recstr_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  3/15/2017 rhd             *
+c     *                   last modified :  4/23/2018 rhd             *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1097,7 +1081,7 @@ c
       deallocate(
      &  local_work%vol_block,
      &  local_work%volume_block, local_work%volume_block_0,
-     &  local_work%volume_block_n, local_work%volume_block_n1,
+     &  local_work%integral_detF_n, local_work%integral_detF_n1,
      &  local_work%jac,
      &  local_work%b,
      &  local_work%ue,
