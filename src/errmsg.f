@@ -3588,11 +3588,11 @@ c
      & /,16x,'This mpc equation will be skipped....'/)
       go to 9999
 c
- 350  continue  !     available
+ 350  continue
       num_error = num_error + 1
-      write(out,9035) param
+      write(out,9035)
  9035 format(/1x,
-     &'>>>>> available error message')
+     &'>>>>> error: missing one or more direction cosines'/)
       go to 9999
 c
  360  continue
