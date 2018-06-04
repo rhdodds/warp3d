@@ -309,6 +309,9 @@ c
 c
       integer :: size
       double precision :: vec(size)
+
+      call wmpi_reduce_vec_inplace( vec, size )
+      return
 c
       if( size .eq. nodof ) then
 c         call wmpi_reduce_vec_new ( vec )
@@ -317,6 +320,122 @@ c         call wmpi_reduce_vec_new ( vec )
          call wmpi_reduce_vec_std ( vec, size )
 c         call wmpi_reduce_vec_inplace( vec, size )
       endif
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine wmpi_reduce_all_dble_inplace     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/21/2018 rhd              *
+c     *                                                              *
+c     *     takes processor local vectors which hold                 *
+c     *     contributions to a global vector, and sums them on       *
+c     *     the root processor - then broadcasts to all ranks        *
+c     *                                                              *
+c     *     this version uses the MPI_IN_PLACE option to eliminate   *
+c     *     the usual allocation/copy of temporary on root           *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_all_dble_inplace( vec, size )
+      use global_data ! old common.main
+      implicit none
+      include "mpif.h"
+c
+      integer :: size
+      double precision :: vec(size)
+c
+      integer ::  ierr
+c
+      if( root_processor ) then
+        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_DOUBLE_PRECISION,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      else
+        call MPI_REDUCE( vec, vec, size, MPI_DOUBLE_PRECISION,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      end if
+c
+      return
+c
+      end
+cc     ****************************************************************
+c     *                                                              *
+c     *                  subroutine wmpi_reduce_all_real_inplace     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/19/2018 rhd              *
+c     *                                                              *
+c     *     takes processor local vectors which hold                 *
+c     *     contributions to a global vector, and sums them on       *
+c     *     the root processor - then broadcasts to all ranks        *
+c     *                                                              *
+c     *     this version uses the MPI_IN_PLACE option to eliminate   *
+c     *     the usual allocation/copy of temporary on root           *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_all_real_inplace( vec, size )
+      use global_data ! old common.main
+      implicit none
+      include "mpif.h"
+c
+      integer :: size
+      real :: vec(size)
+c
+      integer ::  ierr
+c
+      if( root_processor ) then
+        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_REAL,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      else
+        call MPI_REDUCE( vec, vec, size, MPI_REAL,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      end if
+c
+      return
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine wmpi_reduce_all_int_inplace      *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/19/2018 rhd              *
+c     *                                                              *
+c     *     takes processor local vectors which hold                 *
+c     *     contributions to a global vector, and sums them on       *
+c     *     the root processor - then broadcasts to all ranks        *
+c     *                                                              *
+c     *     this version uses the MPI_IN_PLACE option to eliminate   *
+c     *     the usual allocation/copy of temporary on root           *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_reduce_all_int_inplace( vec, size )
+      use global_data ! old common.main
+      implicit none
+      include "mpif.h"
+c
+      integer :: size, vec(size)
+c
+      integer ::  ierr
+c
+      if( root_processor ) then
+        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_INTEGER,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      else
+        call MPI_REDUCE( vec, vec, size, MPI_INTEGER,
+     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+      end if
 c
       return
 c
@@ -420,50 +539,29 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_reduce_vec_log          *
+c     *                   subroutine wmpi_allreduce_vec_log          *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/17/2017 rhd             *
+c     *                   last modified : 4/21/2018 rhd              *
 c     *                                                              *
-c     *     This routine takes processor local vectors which hold    *
-c     *     contributions to a global vector, and sums them on       *
-c     *     the root processor.  Thus once this routine is complete, *
-c     *     the root processor has a full copy of the vector, as if  *
-c     *     it had calculated the whole vector on its own.           *
+c     *     reduce LOR worker vectors to root then bcast to all      *
 c     *                                                              *
 c     ****************************************************************
-      subroutine wmpi_reduce_vec_log( vec, size )
+      subroutine wmpi_allreduce_vec_log( vec, size )
       use global_data ! old common.main
       implicit none
       include "mpif.h"
 c
       integer :: size
-      double precision :: vec(size)
+      logical :: vec(size)
 c
       integer :: alloc_stat, ierr
-      double precision, allocatable ::  vec_tmp(:)
-      double precision, parameter :: zero = 0.0d0
 c
-c              we cannot reduce into the same vector we are sending, so
-c              allocate a temporary array to hold the data
-c
-      allocate ( vec_tmp(size), stat = alloc_stat )
-      if( alloc_stat .ne. 0 ) then
-         write(out,9000)
-         call die_abort
-      endif
-c
-      vec_tmp = vec
-      vec = zero
-c
-      call MPI_REDUCE( vec_tmp, vec, size, MPI_DOUBLE_PRECISION,
-     &                 MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      deallocate ( vec_tmp )
+      call MPI_ALLREDUCE( MPI_IN_PLACE, vec, size, MPI_LOGICAL,
+     &                    MPI_LOR, MPI_COMM_WORLD, ierr )
 c
       return
- 9000 format ('>>>  FATAL ERROR:  could not allocate additional',/,
-     &        '>>>       memory in wmpi_reduce_vec.')
 c
       end
 c
@@ -1005,7 +1103,7 @@ c     *                      subroutine wmpi_send_basic              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/19/2017 rhd             *
+c     *                   last modified : 4/9/2018 rhd               *
 c     *                                                              *
 c     *       This subroutine allows the root processor to send      *
 c     *       basic model data, such as the coordinates, incidences, *
@@ -1022,6 +1120,7 @@ c
      &      dtemp_elems, temper_nodes, temper_elems, invdst,
      &      temper_nodes_ref, temperatures_ref, fgm_node_values,
      &      fgm_node_values_defined, fgm_node_values_cols,
+     &      fgm_node_values_used,
      &      matprp, lmtprp, imatprp, dmatprp, smatprp,
      &      nonlocal_analysis, asymmetric_assembly,
      &      initial_stresses_user_routine, initial_stresses_file,
@@ -1069,6 +1168,8 @@ c
       call MPI_BCAST(temperatures_ref,1,MPI_LOGICAL,0,MPI_COMM_WORLD,
      &               ierr)
       call MPI_BCAST(fgm_node_values_defined,1,MPI_LOGICAL,0,
+     &               MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(fgm_node_values_used,1,MPI_LOGICAL,0,
      &               MPI_COMM_WORLD,ierr)
       call MPI_BCAST (use_contact,1,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(nonlocal_analysis,1,MPI_LOGICAL,0,MPI_COMM_WORLD,
@@ -1330,7 +1431,7 @@ c     *                      subroutine wmpi_send_const              *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/20/2017 rhd             *
+c     *                   last modified : 4/10/2018 rhd              *
 c     *                                                              *
 c     *       send data about constraints to all the MPI workers     *
 c     *                                                              *
@@ -1343,13 +1444,19 @@ c
       implicit none
       include "mpif.h"
 c
-      integer :: ierr, node, dum
+      integer :: ierr, node, dum, count
+      double precision, allocatable :: buffer(:,:,:)
 c
-c                   tell slaves we are about to send them data about
-c                   the constraints.  Note that basic data must be sent
-c                   before we can call this routine -- each processor
-c                   must have the number of elements in the structure,
-c                   number of nodes, etc.
+c              Basic data must be sent before we can call this routine.
+c              Send simple constraint map.
+c              Send logical vector for possible local rotation of
+c                  constraints at nodes.
+c              If node rotations for constraints exist, pack 3x3 node
+c                  matrices into a buffer, bcast the buffer, then
+c                  unpack back into 3x3 rotation matrices on each
+c                  node as required.
+c                  Packing just saves possibly many thousands of
+c                  bcasts for 3x3 materices.
 c
       call wmpi_alert_slaves ( 10 )
 c
@@ -1359,16 +1466,41 @@ c                   broadcast values from constraint input
 c
       call MPI_BCAST( csthed,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr )
       call MPI_BCAST( cstmap,nodof,MPI_INTEGER,0,MPI_COMM_WORLD,ierr )
-      if(.not. allocated(trn) ) call mem_allocate( 3 )
+      if( worker_processor ) call mem_allocate( 3 ) ! trn, trnmat
       call MPI_BCAST( trn,nonode,MPI_LOGICAL,0,MPI_COMM_WORLD,ierr )
 c
+      count = 0
       do node = 1, nonode
-         if( trn(node) ) then
-          if( worker_processor ) call allo_trnmat( node, 1, dum )
-          call MPI_BCAST( trnmat(node)%mat,9,MPI_VAL,0, MPI_COMM_WORLD,
-     &                    ierr)
-         endif
+         if( trn(node) ) count = count + 1
       end do
+      if( count .eq. 0 ) return ! no 3x3 rotation mats to send
+c
+      allocate( buffer(3,3,count) )
+      if( root_processor ) then
+        count = 0
+        do node = 1, nonode
+          if( trn(node) ) then
+            count = count + 1
+            buffer(1:3,1:3,count) = trnmat(node)%mat
+          end if
+        end do
+      end if
+c
+      call MPI_BCAST( buffer,9*count, MPI_VAL, 0,
+     &                MPI_COMM_WORLD, ierr )
+
+      if( worker_processor ) then
+       count = 0
+       do node = 1, nonode
+         if( trn(node) ) then
+          count = count + 1
+          allocate( trnmat(node)%mat(3,3) )
+          trnmat(node)%mat = buffer(1:3,1:3,count)
+         end if
+       end do
+      end if
+c
+      deallocate( buffer )
 c
       return
       end
@@ -1413,7 +1545,7 @@ c     *                      subroutine wmpi_send_step               *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/17/2017 rhd             *
+c     *                   last modified : 4/9/2018 rhd               *
 c     *                                                              *
 c     *       send workers the information needed for                *
 c     *       each load step. This includes displacements            *
@@ -1424,7 +1556,7 @@ c
       subroutine wmpi_send_step
       use global_data ! old common.main
       use main_data, only: asymmetric_assembly, extrapolated_du,
-     &                     non_zero_imposed_du
+     &                     non_zero_imposed_du, initial_state_defined
       use adaptive_steps, only : adapt_disp_fact, adapt_temper_fact,
      &                           adapt_load_fact
       implicit none
@@ -1451,6 +1583,8 @@ c
       call MPI_BCAST( extrapolated_du, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr)
       call MPI_BCAST( non_zero_imposed_du, 1, MPI_LOGICAL, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( initial_state_defined, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr )
 c
       call MPI_BCAST( u, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
@@ -3696,7 +3830,7 @@ c     *                  subroutine wmpi_send_jint                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/23/2017 rhd             *
+c     *                   last modified : 4/14/2018 rhd              *
 c     *                                                              *
 c     *           send/receive data to processes to set up           *
 c     *           j-integral and i-integral computation for          *
@@ -3706,18 +3840,25 @@ c     ****************************************************************
 c
 c
       subroutine wmpi_send_jint
-      use global_data ! old common.main
-      use main_data
-      use elem_block_data, only : history_blocks, rot_n1_blocks,
-     &                            urcs_n_blocks, cdest_blocks,
-     &                            edest_blocks, eps_n_blocks
-      use j_data
+      use global_data, only : numprocs, nonode, noelem, out, myid,
+     &                 root_processor,  worker_processor, MPI_VAL
+      use j_data, only : num_front_nodes, max_exp_front, q_values,
+     &    q_element_maps, front_element_list, expanded_front_nodes,
+     &    first_domain, front_nodes, front_order, front_element_list,
+     &    domain_type, omit_crack_front_elems, face_loading,
+     &    symmetric_domain, q_vals_linear, one_point_rule, static_j,
+     &    ignore_face_loads, front_list_length,
+     &    debug_driver, debug_elements, print_elem_values, out_pstress,
+     &    out_pstrain, cf_traction_flags, domain_rot, domain_origin,
+     &    cf_tractions, front_coords, e_front, nu_front,
+     &    crack_curvature, max_front_nodes, j_geonl_formulation,
+     &    j_linear_formulation
+c
       implicit none
       include "mpif.h"
 c
-      integer :: ierr, alloc_stat, num
-      double precision, parameter :: zero = 0.0d0
-      logical :: logical_vec(15), handle_face_loads
+      integer :: ierr, flags(4), num
+      logical :: logical_vec(15)
       logical, parameter :: debug = .false.
 c
       if( numprocs .eq. 1 ) return
@@ -3728,72 +3869,73 @@ c         to be processed and most all data needs to be broadcast,
 c         (2) on subsequent domains, we only need to broadcast
 c         domain dependent information.
 c
-c         broadcast domain dependent information.
-c             1) q-values at nodes
-c             2) element list to process (stored as a bitmap)
+c         broadcast domain dependent information. these 2 bcasts just make
+c         logic simpler
 c
+      call MPI_BCAST( num_front_nodes, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( max_exp_front, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
+     &                ierr )
+      call MPI_BCAST( front_list_length, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD,  ierr )
+c
+      flags = 0
       if( worker_processor ) then
-          allocate( q_values(nonode), stat = alloc_stat )
-          if( alloc_stat .ne. 0 ) then
-             write(out,9100)
-             call die_abort
-             stop
-          end if
-          allocate( q_element_maps(noelem/30+1), stat = alloc_stat )
-          if( alloc_stat .ne. 0 ) then
-             write(out,9100)
-             call die_abort
-             stop
-          end if
-          allocate( crack_front_elem(noelem), stat = alloc_stat )
-          if( alloc_stat .ne. 0 ) then
-             write(out,9100)
-             call die_abort
-             stop
-          end if
+       if( allocated( q_values ) ) deallocate( q_values )
+       allocate( q_values(nonode), stat=flags(1))
+       if( allocated( q_element_maps ) ) deallocate( q_element_maps )
+       allocate( q_element_maps(noelem/30+1),stat=flags(2) )
+       if( allocated( front_element_list) )
+     &     deallocate( front_element_list )
+       allocate( front_element_list(front_list_length), stat=flags(3) )
+       if( allocated( expanded_front_nodes ) )
+     &     deallocate( expanded_front_nodes )
+       allocate( expanded_front_nodes(0:max_exp_front,num_front_nodes),
+     &           stat=flags(4) )
+       if( any( flags .ne. 0 ) ) then
+          write(out,9100); call die_abort
+       end if
       end if
 c
       call MPI_BCAST( q_values, nonode, MPI_REAL, 0,
      &                MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( q_element_maps, noelem/30+1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
-      call MPI_BCAST( crack_front_elem, noelem, MPI_LOGICAL, 0,
-     &                MPI_COMM_WORLD, ierr )
+c
+      call MPI_BCAST( front_element_list, front_list_length,
+     &                 MPI_INTEGER, 0, MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( first_domain, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
-      call MPI_BCAST( front_nodes, 30, MPI_INTEGER, 0, MPI_COMM_WORLD,
-     &                ierr )
+c
+      call MPI_BCAST( front_nodes, max_front_nodes, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( num_front_nodes, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( front_order, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
      &                ierr )
+c
       call MPI_BCAST( domain_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
      &                ierr )
+c
       call MPI_BCAST( omit_crack_front_elems, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( max_exp_front, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
      &                ierr )
+c
       call MPI_BCAST( face_loading, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
-      if( worker_processor ) then
-         allocate(expanded_front_nodes(0:max_exp_front,num_front_nodes),
-     &        stat = alloc_stat )
-         if( alloc_stat .ne. 0 ) then
-            write(out,9100)
-            call die_abort
-            stop
-         end if
-      end if
 c
-      if( .not. first_domain ) then
-        if( debug )write (*,*) '<<< just leaving wmpi_send_jint,',myid
-        return
-      endif
+      if( .not. first_domain ) return
 c
 c         processing first domain. broadcast data used for all
 c         domains defined at this crack front position.
 c
-c         a set of logical flags. for slaves, turn off flags
+c         a set of logical flags. for workers turn off flags
 c         that would otherwise let them print intermediate results
 c         during j computation.
 c
@@ -3803,8 +3945,8 @@ c
          logical_vec(3)  = one_point_rule
          logical_vec(4)  = static_j
          logical_vec(5)  = ignore_face_loads
-         logical_vec(6)  = process_velocities
-         logical_vec(7)  = process_accels
+         logical_vec(6)  = j_linear_formulation
+         logical_vec(7)  = j_geonl_formulation
          logical_vec(8)  = debug_driver
          logical_vec(9)  = debug_elements
          logical_vec(10) = print_elem_values
@@ -3824,8 +3966,8 @@ c
          one_point_rule       = logical_vec(3)
          static_j             = logical_vec(4)
          ignore_face_loads    = logical_vec(5)
-         process_velocities   = logical_vec(6)
-         process_accels       = logical_vec(7)
+         j_linear_formulation = logical_vec(6)
+         j_geonl_formulation  = logical_vec(7)
          debug_driver         = logical_vec(8)
          debug_elements       = logical_vec(9)
          print_elem_values    = logical_vec(10)
@@ -3840,25 +3982,31 @@ c             1) 3x3 rotation matrix for this crack front poisiton
 c             2) nodal displacements, velocities and accelerations
 c
       call MPI_BCAST( domain_rot, 9, MPI_VAL, 0, MPI_COMM_WORLD,
-     &                ierr)
-      call MPI_BCAST( u, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr)
-      call MPI_BCAST( v, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr)
-      call MPI_BCAST( a, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr)
+     &                ierr )
+c
       call MPI_BCAST( domain_origin, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( cf_tractions, 3, MPI_VAL, 0,
      &                MPI_COMM_WORLD, ierr )
-      call MPI_BCAST( front_coords, 90, MPI_VAL, 0, MPI_COMM_WORLD,
-     &                ierr)
+c
+      call MPI_BCAST( front_coords, 3*max_front_nodes, MPI_VAL, 0,
+     &                MPI_COMM_WORLD,ierr)
+c
       num = (max_exp_front + 1) * num_front_nodes
       call MPI_BCAST( expanded_front_nodes, num, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( e_front, 1, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( nu_front, 1, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+c
       call MPI_BCAST( crack_curvature, 7, MPI_VAL, 0,
      &                MPI_COMM_WORLD, ierr )
 c
-      if( debug )write (*,*) '<<< just leaving wmpi_send_jint,',myid
+      if( debug )  then
+        write (*,*) '<<< just leaving wmpi_send_jint,', myid
+      end if
 c
       return
 c
