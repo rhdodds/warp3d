@@ -4,7 +4,7 @@ c     *                      subroutine rknstr                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 4/24/2018 rhd              *
 c     *                                                              *
 c     *     drive updating of strains/stresses for a block of        *
 c     *     elements                                                 *
@@ -66,12 +66,9 @@ c
      &  call rknstr_zero_vol( local_work%vol_block,
      &                        local_work%volume_block, span, mxvl )
       if( local_work%compute_f_bar ) then
-!DIR$ VECTOR ALIGNED
          local_work%volume_block_0(1:span)  = zero
-!DIR$ VECTOR ALIGNED
-         local_work%volume_block_n(1:span)  = zero
-!DIR$ VECTOR ALIGNED
-         local_work%volume_block_n1(1:span) = zero
+         local_work%integral_detF_n(1:span) = zero
+         local_work%integral_detF_n1(1:span) = zero
       end if
 c
 c           for interface/cohesive elements the global coordinates
@@ -149,15 +146,10 @@ c
 c
       call rknstr_initial_stresses
       if( allocated( initial_stresses ) ) then
-!DIR$ VECTOR ALIGNED
          do i = 1, span
            ielem = felem + i - 1
            local_work%initial_stresses(1:6,i) =
      &                     initial_stresses(1:6,ielem)
-c           if( ielem .eq. 2) then
-c             write(*,*) '... loading initial stresses elem 2 '
-c             write(*,*) local_work%initial_stresses(1:6,i)
-c           end if
          end do
       end if
 
@@ -213,7 +205,6 @@ c
 c
       value_found = .false.
       do k = 1, 6
-!DIR$ VECTOR ALIGNED
          do i = 1, span
            ielem = felem + i - 1
            if( abs( initial_stresses(k,ielem) ) > tol ) then
@@ -229,15 +220,10 @@ c
 c
         case ( 1, 3, 5, 6, 7, 8, 10 ) ! bilinear, mises, cyclic,
 !                                       creep, H_2, umat, CP
-!DIR$ VECTOR ALIGNED
          do i = 1, span
            ielem = felem + i - 1
            local_work%initial_stresses(1:6,i) =
      &                     initial_stresses(1:6,ielem)
-c           if( ielem .eq. 2) then
-c             write(*,*) '... loading initial stresses elem 2 '
-c             write(*,*) local_work%initial_stresses(1:6,i)
-c           end if
          end do
         case( 2 )
            write(iout,9000) 'deformation'
@@ -620,18 +606,17 @@ c
      &         ' etype: ',2i3)
 
       end subroutine rknstr_sm_displ
-
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine rknstr_geonl_f_bar              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 4/24/2018 rhd              *
 c     *                                                              *
-c     *     driver all computations to set up subsequent strain      *
+c     *     drive all computations to set up subsequent strain       *
 c     *     computations for large displacement elements             *
-c     *     where F-bar is needed                                    *
+c     *     where both F-bar & B-bar are needed for 8-node hexes     *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -639,100 +624,138 @@ c
       subroutine rknstr_geonl_f_bar
       implicit none
 c
-      integer :: gpn, enode, i
+      integer :: gpn, enode, i, error, now_elem
+      logical, parameter :: ldebug = .false.
       double precision :: xi, eta, zeta
+      double precision, allocatable :: theta_local(:,:), F_local(:,:,:),
+     &                                 detF_local(:), uen1_local(:,:),
+     &                                 det_j(:)
 c
-c           loop for geometric nonlinear when we also need to compute
-c           terms needed for [F] bar at same time. mainly we're just
-c           computing volume of deformed element at  n=0, n, n+1.
-c           regular coordinate jacobian is based on n+1/2 element
-c           deformed shape.
+      if( ldebug ) write(iout,8900) local_work%blk
+      if( elem_type .ne. 2 ) then
+        write(iout,8910);  call die_abort  ! should not be here
+      end if
 c
-      do gpn = 1, ngp
-       if( local_debug ) write(iout,9050)  gpn, elem_type
-       local_work%gpn = gpn
-       call getgpts( elem_type, order, gpn, xi, eta, zeta,
+      allocate( theta_local(mxvl,9), F_local(mxvl,ndim,ndim),
+     &          detF_local(mxvl), uen1_local(mxvl,24), det_j(mxvl) ) ! all locals
+c
+c              F-bar will be needed at t = n and t = n+1 (n1).
+c              compute F here just to get det(F) used to integrate
+c              det(F) over defromed element volumes (used later to
+c              compute J-bar term for each element).
+c
+c              also compute usual B-bar terms at mid-step t = n+1/2
+c              for incremental strain computation.
+c
+c              weight = 1.0 for 2x2x2 rule so neglected in element
+c              integrals computed here
+c
+c              summation vectors zeroed before call
+c
+      associate( i_detF_n1 => local_work%integral_detF_n1,
+     &           i_detF_n  => local_work%integral_detF_n,
+     &           vb0       => local_work%volume_block_0 )
+c     &           vbn       => local_work%volume_block_n,
+c     &           vbn1      => local_work%volume_block_n1 )
+c
+c              block displacements for end of step (n+1) are not yet
+c              loaded into local_work so make temporary here.
+c
+      uen1_local(1:span,1:24) = local_work%ue(1:span,1:24) +
+     &                          local_work%due(1:span,1:24)
+c
+      do gpn = 1, ngp  ! inner loops over span
+c
+      if( ldebug ) write(iout,9050)  gpn
+      local_work%gpn = gpn
+c
+c              1. Gauss point coords, shape function derivatives
+c
+      call getgpts( elem_type, order, gpn, xi, eta, zeta,
      &               local_work%weights(gpn) )
-       call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
+      call derivs( elem_type, xi, eta, zeta, local_work%nxi(1,gpn),
      &              local_work%neta(1,gpn), local_work%nzeta(1,gpn) )
-       if( local_debug .and. gpn .eq. 1 ) then
-          write(iout,9000) gpn, elem_type, xi, eta, zeta
-          write(iout,9005)
-          do enode = 1, nnode
-            write(iout,9010) enode, local_work%nxi(enode,gpn),
-     &        local_work%neta(enode,gpn),local_work% nzeta(enode,gpn)
-          end do
-       end if
-       call jacob1( elem_type, span, felem, gpn, local_work%jac,
+c
+c              2. coordinate jacobian at t = n+1/2
+c
+      call jacob1( elem_type, span, felem, gpn, local_work%jac,
      &              local_work%det_j_mid(1,gpn),
      &              local_work%gama_mid(1,1,1,gpn),
      &              local_work%cohes_rot_block,
      &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_mid, nnode )
-       call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j(1,gpn),
+c
+c              3. coordinate jacobian at t = 0
+c
+      call jacob1( elem_type, span, felem, gpn, local_work%jac,
+     &              det_j,
      &              local_work%gama(1,1,1,gpn),
      &              local_work%cohes_rot_block,
      &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
      &              local_work%nzeta(1,gpn),
      &              local_work%ce_0, nnode )
-!DIR$ VECTOR ALIGNED
-       do i = 1, span
-         local_work%volume_block_0(i) = local_work%volume_block_0(i)
-     &                + local_work%det_j(i,gpn)
-       end do
-       call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j(1,gpn),
-     &              local_work%gama(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_n, nnode )
-!DIR$ VECTOR ALIGNED
-        do i = 1, span
-           local_work%volume_block_n(i) = local_work%volume_block_n(i)
-     &                + local_work%det_j(i,gpn)
-        end do
-        call jacob1( elem_type, span, felem, gpn, local_work%jac,
-     &              local_work%det_j(1,gpn),
-     &              local_work%gama(1,1,1,gpn),
-     &              local_work%cohes_rot_block,
-     &              local_work%nxi(1,gpn), local_work%neta(1,gpn),
-     &              local_work%nzeta(1,gpn),
-     &              local_work%ce_n1, nnode )
-!DIR$ VECTOR ALIGNED
-        do i = 1, span
-          local_work%volume_block_n1(i) = local_work%volume_block_n1(i)
-     &              + local_work%det_j(i,gpn)
-        end do
 c
-       if( compute_shape )
+c              4. accumulate element volume at t=0. weight = 1.0
+c
+      vb0(1:span) = vb0(1:span) + det_j(1:span)
+c
+c              5. F at t = n. det[F] at t = n.
+c                 accumulate integral of detF over undeformed element.
+c
+      call tcomp1( span, theta_local, local_work%nxi(1,gpn),
+     &             local_work%neta(1,gpn), local_work%nzeta(1,gpn),
+     &             local_work%gama(1,1,1,gpn), local_work%ue, nnode )
+      call fcomp1( span, felem, gpn, F_local, detF_local, theta_local,
+     &             error )
+      i_detF_n(1:span) = i_detF_n(1:span) +
+     &                   detF_local(1:span) * det_j(1:span)
+c
+c              6.F at t = n1. det[F] at t = n1.
+c               accumulate integral of detF over undeformed element.
+c
+      call tcomp1( span, theta_local, local_work%nxi(1,gpn),
+     &              local_work%neta(1,gpn),local_work%nzeta(1,gpn),
+     &              local_work%gama(1,1,1,gpn), uen1_local, nnode )
+      call fcomp1( span, felem, gpn, F_local, detF_local, theta_local,
+     &              error )
+      i_detF_n1(1:span) = i_detF_n1(1:span) +
+     &                    detF_local(1:span) * det_j(1:span)
+c
+      if( compute_shape )
      &     call shapef( elem_type, xi, eta, zeta,
      &                  local_work%shape(1,gpn) )
 c
-       if( bbar ) then
+      if( bbar ) then
          call vol_terms( local_work%gama_mid(1,1,1,gpn),
      &                   local_work%det_j_mid(1,gpn),
      &                   local_work%vol_block, local_work%nxi(1,gpn),
      &                   local_work%neta(1,gpn),
      &                   local_work%nzeta(1,gpn),
      &                   local_work%volume_block, span, mxvl )
-       end if
-      end do
+      end if
 c
-      if( bbar .and. elem_type .eq. 2 )
+      end do ! over 2 x 2 x 2 Gauss points
+c
+      end associate
+c
+      if( bbar )
      &  call vol_avg( local_work%vol_block, local_work%volume_block,
      &                span, mxvl )
 c
+      deallocate( theta_local, F_local, detF_local, uen1_local, det_j )
+c
+      if( ldebug ) write(iout,8905)
       return
 c
- 9000 format(5x,"... gpn, elem_type,  xi, eta, zeta: ",
-     &  2i4, 3f10.4 )
+ 8900 format('... entering rknstr_geonl_f_bar. blk: ',i8)
+ 8905 format('... leaving rknstr_geonl_f_bar ...')
+ 8910 format('>> FATAL ERROR: rknstr_geonl_f_bar @ 1',//)
+ 9000 format(5x,"... gpn, xi, eta, zeta: ",
+     &  i4, 3f10.4 )
  9005 format(10x,"... shape function derivatives ..." )
  9010 format(10x,i4,3f15.6)
- 9050 format ( '>>> ready to calculate deformation gradient gpn,',
-     &         ' etype: ',2i3)
+ 9050 format ( '>>> ready to calculate deformation gradient gpn: ',i3)
 c
       end subroutine rknstr_geonl_f_bar
 

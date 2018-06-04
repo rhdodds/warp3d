@@ -27,10 +27,11 @@ c
 c          local declarations - make allocatable
 c          to reduce stack size
 c
-      integer :: span, felem, type, order, nnode, gpn
+      integer :: span, felem, type, order, nnode, gpn, i,
+     &           now_elem, step
       double precision :: xi, eta, zeta
       double precision, parameter :: zero = 0.0d0, one = 1.0d0
-      double precision, allocatable :: rnh(:,:,:), fnh(:,:,:), 
+      double precision, allocatable :: rnh(:,:,:), fnh(:,:,:),
      &                                 theta(:,:), dfh(:), dfn(:)
 c
       span  = local_work%span
@@ -39,19 +40,15 @@ c
       order = local_work%int_order
       nnode = local_work%num_enodes
       gpn   = local_work%gpn
+      step  = local_work%step
 c
       allocate( rnh(mxvl,ndim,ndim), fnh(mxvl,ndim,ndim), dfh(mxvl),
      &          theta(mxvl,mxtnsz), dfn(mxvl) )
 c
-!DIR$ VECTOR ALIGNED
       rnh = zero
-!DIR$ VECTOR ALIGNED
       fnh = zero
-!DIR$ VECTOR ALIGNED
       dfh = zero
-!DIR$ VECTOR ALIGNED
       theta = zero
-!DIR$ VECTOR ALIGNED
       dfn = zero
 c
 c           compute the deformation gradient at states
@@ -143,12 +140,12 @@ c           [R] from polar decompositions above so doing this operation
 c           here is ok.
 c
       if( local_work%compute_f_bar ) then
-        call gtmat1_make_fbar( span, mxvl, local_work%fn1,
-     &            local_work%dfn1, local_work%volume_block_0,
-     &            local_work%volume_block_n1 )
-        call gtmat1_make_fbar( span, mxvl, local_work%fn,
-     &            dfn, local_work%volume_block_0,
-     &            local_work%volume_block_n  )
+        call gtmat1_make_fbar( span, mxvl, felem, local_work%fn1,
+     &            local_work%dfn1, local_work%integral_detF_n1,
+     &            local_work%volume_block_0, step, .false. )
+        call gtmat1_make_fbar( span, mxvl, felem, local_work%fn,
+     &            dfn, local_work%integral_detF_n,
+     &            local_work%volume_block_0, step, .false.  )
       end if
 c
 c                  done
@@ -188,7 +185,6 @@ c
 c                       set [F @ 0] to identity. set determinant
 c                       to 1.0 (no deformation). routine will
 c                       be inlined.
-!DIR$ VECTOR ALIGNED
       do i = 1, span
         fn(i,1,1) = one
         fn(i,2,2) = one
@@ -205,30 +201,31 @@ c     *               subroutine gtmat1_make_fbar                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/1/2018 rhd               *
+c     *                   last modified : 4/24/2018 rhd              *
 c     *                                                              *
 c     *      [F] is deformation gradient (3x3) at this Gauss pt for  *
 c     *      for all elements in block. make the [F-bar]             *
 c     *      modification to [F] at this Gauss pt                    *
 c     *      for all elements in block. done only for linear         *
-c     *      displacement solid elements                             *
+c     *      displacement solid elements (8-node hex)                *
 c     *                                                              *
 c     ****************************************************************
 
-      subroutine gtmat1_make_fbar( span, mxvl, f, det_f,
-     &                undeformed_elem_vols, deformed_elem_vols )
+      subroutine gtmat1_make_fbar( span, mxvl, felem, f, det_f,
+     &                int_detF_vols, undeformed_elem_vols, step,
+     &                ldebug )
       implicit none
 c
 c                      parameter declarations
 c
-      integer :: span, mxvl
+      integer :: span, mxvl, felem, step
+      logical :: ldebug
       double precision :: f(mxvl,3,3), det_f(*),
-     &                    undeformed_elem_vols(*),
-     &                    deformed_elem_vols(*)
+     &                    int_detF_vols(*), undeformed_elem_vols(*)
 c
 c                      locals
 c
-      integer :: i
+      integer :: i, now_elem
       double precision :: j_bar, factor
       double precision, parameter :: third = 1.0d0/3.0d0
 c
@@ -236,9 +233,8 @@ c                      bar [F] = [F] * (bar J/J)**0.333 where
 c                      J = det [F], bar J is volume of deformed
 c                      element / volume of element at n = 0
 c
-!DIR$ VECTOR ALIGNED
       do i = 1, span
-        j_bar = deformed_elem_vols(i) / undeformed_elem_vols(i)
+        j_bar  = int_detF_vols(i) / undeformed_elem_vols(i)
         factor = (j_bar/ det_f(i) ) ** third
         f(i,1:3,1:3) =  f(i,1:3,1:3) * factor
       end do
@@ -378,10 +374,10 @@ c
         end do
       end if
 c
-c           for bar and link elements. unit array since never 
+c           for bar and link elements. unit array since never
 c           actually used.
 c
-      if( bar_elem .or. link_elem ) then  
+      if( bar_elem .or. link_elem ) then
         do j = 1, nnode
 !DIR$ VECTOR ALIGNED
            do i = 1, span
@@ -391,7 +387,7 @@ c
            end do
         end do
       end if
-      
+
 c
 c           calculate the determinate of the jacobian matrix
 c
@@ -414,26 +410,16 @@ c
 c
 c           check to insure a positive determinate.
 c
-c!DIR$ IVDEP
-c      do i = 1, span
-c       if( dj(i) .le. zero_check ) then
-cc$OMP ATOMIC UPDATE
-c         msg_count_1 = msg_count_1 + 1
-c         write(out,9169) gpn,felem+i-1, dj(i)
-c       end if
-c      end do
-
-!DIR$ IVDEP
       do i = 1, span
        if( dj(i) .le. zero_check ) then
 c$OMP ATOMIC UPDATE
          msg_count_1 = msg_count_1 + 1
-         if( msg_count_1 > 100 ) exit
-         if( msg_count_1 == 100 ) then
-           write(*,9170)
+         if( msg_count_1 > 20 ) exit
+         if( msg_count_1 == 20 ) then
+           write(out,9170)
            exit
          end if
-         write(*,9169) gpn,felem+i-1, dj(i)
+         write(out,9169) gpn,felem+i-1, dj(i)
        end if
       end do
 c
@@ -568,7 +554,7 @@ c     *                      subroutine fcomp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 05/26/2017 rhd             *
+c     *                   last modified : 05/16/2018 rhd             *
 c     *                                                              *
 c     *     this subroutine computes the deformation gradient,       *
 c     *     and its determinate at a given gauss point for a         *
@@ -578,6 +564,7 @@ c     ****************************************************************
 c
 c
       subroutine fcomp1( span, felem, gpn, f, df, theta, error )
+      use global_data, only : msg_count_2, out
       implicit none
       include 'param_def'
 c
@@ -625,16 +612,16 @@ c
 c                       check to insure a positive determinate.
 c
       error = 0
-!DIR$ IVDEP
       do i = 1, span
          if( df(i) .le. zero_check ) then
-            if( msg_count > 100 ) exit
-            if( msg_count < 100 ) then
-              write(*,9170) gpn, felem+i-1, df(i)
-              error = 1
-              msg_count = msg_count + 1
+            error = 1
+c$OMP ATOMIC UPDATE
+            msg_count_2 = msg_count_2 + 1
+            if( msg_count_2 > 20 ) return
+            if( msg_count_2 < 20 ) then
+              write(out,9170) gpn, felem+i-1, df(i)
             else
-              write(*,9180)
+              write(out,9180)
             end if
          end if
       end do
@@ -648,7 +635,6 @@ c
 c
       return
       end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine rtcmp1                       *
@@ -1058,7 +1044,7 @@ c              considerable faster.
 c
       if( new ) then
         call evcmp1_new( span, mxvl, c, ev )
-      end if  
+      end if
       if( .not. new ) then
 c
 c              copy the metric tensor to stress vector
