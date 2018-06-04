@@ -1161,10 +1161,6 @@ c
 !DIR$ VECTOR ALIGNED
         cep  = zero
         call drive_02_update_a
-       if( felem .eq. 1 ) then
-           write(*,*) '... stresses _n+1 element 1 from 02_update_a '
-           write(*,*) local_work%urcs_blk_n1(1,1:6,gpn)
-         end if
       end if
 c
 c          save the [D] matrices (lower-triangle)
