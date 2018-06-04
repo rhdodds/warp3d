@@ -122,11 +122,11 @@ c
       end module global_data
 c     ****************************************************************
 c     *                                                              *
-c     *                    f-90 module main_data                     *
+c     *                     module main_data                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 2/10/2018 rhd                   *
+c     *              last modified : 4/9/2018 rhd                    *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -297,7 +297,7 @@ c                current load step (applied pressures, tractions,
 c                body forces).
 c
 c
-      logical elem_equiv_loads_now
+      logical :: elem_equiv_loads_now
       type :: elem_forces
         integer :: ncols
         double precision, pointer, dimension(:,:) :: forces
@@ -308,7 +308,7 @@ c
       double precision,
      &      save, allocatable, dimension(:) :: eq_node_forces
       integer, save, allocatable, dimension(:) :: eq_node_force_indexes
-      integer eq_node_force_len
+      integer :: eq_node_force_len
 c
 c
 c                 global variables being gradually moved from
@@ -322,8 +322,8 @@ c
 c                 information for output packets
 c
 c
-      integer packet_file_no, ascii_packet_file_no
-      logical output_packets
+      integer :: packet_file_no, ascii_packet_file_no
+      logical :: output_packets
       character(len=50) :: packet_file_name
       character(len=80) :: ascii_packet_file_name
       character(len=80) :: batch_mess_fname
@@ -334,8 +334,8 @@ c                 functionally graded materials
 c
 c
       real, save, allocatable, dimension(:,:) :: fgm_node_values
-      logical fgm_node_values_defined
-      integer fgm_node_values_cols
+      logical :: fgm_node_values_defined, fgm_node_values_used
+      integer :: fgm_node_values_cols
 c
 c
 c                 logical vectors indicating element types with
@@ -354,10 +354,10 @@ c                 material properties array. these sizes correspond to
 c                 mxmtpr x  mxmat in param_def and must always
 c                 be consistent !
 c
-      integer imatprp(300,500)
-      real  matprp(300,500)
-      logical lmtprp(300,500)
-      double precision dmatprp(300,500)
+      integer :: imatprp(300,500)
+      real  :: matprp(300,500)
+      logical :: lmtprp(300,500)
+      double precision :: dmatprp(300,500)
       equivalence (matprp,lmtprp)
       character(len=24), dimension(300,500) :: smatprp
 c
@@ -414,7 +414,7 @@ c
       end type
       type( step_convergence_data ), dimension(5) ::
      &   convergence_history
-      logical run_user_solution_routine
+      logical :: run_user_solution_routine
 c
 c                 A CP flag, stick here b/c it's a solution parameter
 c
@@ -449,7 +449,7 @@ c
 c                 line search parameters
 c
       logical :: line_search, ls_details
-        double precision ::
+      double precision ::
      & ls_min_step_length, ls_max_step_length, ls_rho,
      & ls_slack_tol
 c
@@ -467,7 +467,11 @@ c
       double precision, allocatable :: initial_stresses(:,:)
       logical ::  initial_stresses_user_routine
       character(len=100) :: initial_stresses_file
-
+c
+c                 support for the initial state concept
+c
+      logical :: initial_state_defined
+c
       end module
 
 
