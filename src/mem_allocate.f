@@ -90,28 +90,20 @@ c
 c
 c              vectors of integer and logical data to support
 c              constraints in non-global coordinates. vectors
-c              are length number of structure nodes.
+c              are length number of structure nodes. allocatables
+c              in derived types deleted automatically
 c
       case( 3 )
 c
-         if( allocated( trnmat ) ) then
-           write(out,9900)
-           write(out,9930) 5
-           call die_abort
-         end if
-         if( allocated( trn ) ) then
-           write(out,9900)
-           write(out,9930) 6
-           call die_abort
-         end if
-c
+         if( allocated( trn ) ) deallocate( trn )
+         if( allocated( trnmat ) ) deallocate( trnmat )
          allocate( trnmat(nonode), trn(nonode), stat = alloc_stat )
          if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9940)
            call die_abort
          end if
-         trn(1:nonode) = .false.
+         trn = .false. ! all terms
 c
 c              double vectors based on number of nodes.
 c
