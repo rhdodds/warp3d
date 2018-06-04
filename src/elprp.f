@@ -43,7 +43,7 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 8/11/2017 rhd              *
 c     *                                                              *
-c     * put the properties of the bar2 element into global storage   * 
+c     * put the properties of the bar2 element into global storage   *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -191,10 +191,10 @@ c
       et              = matprp(4,matnum)
       h               = (e*et)/(e-et)
       props(7,elem)   = e
-      props(8,elem)   = rzero 
+      props(8,elem)   = rzero
 c
 c                       set thermal expansion coeeficients
-c                       isotropic only
+c                       isotropic only  -- default
 c
       props(9,elem)  = matprp(6,matnum)
       props(13,elem) = matprp(6,matnum)
@@ -216,11 +216,11 @@ c
       props(23,elem)  = 1.0e10 !  matprp(5,matnum) for linear elastic bar
       props(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
-     &                         ior( iprops(24,elem), 1 )
+     &                         ior( iprops(24,elem), 1 ) ! bit 0
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
-     &                         ior( iprops(24,elem), 2 )
+     &                         ior( iprops(24,elem), 2 ) ! bit 1
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
-     &                         ior( iprops(24,elem), 4 )
+     &                         ior( iprops(24,elem), 4 ) ! bit 2
       iprops(25,elem) = matprp(9,matnum)
       props(26,elem)  = rzero
       props(27,elem)  = rzero
@@ -234,7 +234,7 @@ c
       props(35,elem)  = rzero
       props(36,elem)  = rzero
       props(37,elem)  = rzero
-      iword           = elstor(12,elem) 
+      iword           = elstor(12,elem)
       props(43,elem)  = rword ! element area
 c
 c                       if the material associated with the element has
@@ -255,7 +255,7 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 8/20/2017 rhd              *
 c     *                                                              *
-c     * put the properties of the link2 element into global storage  *   
+c     * put the properties of the link2 element into global storage  *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -417,7 +417,7 @@ c
 c
 c
       matnum          = elstor(2,elem)
-      iprops(38,elem) = matnum  
+      iprops(38,elem) = matnum
       props(7,elem)   = matprp(148,matnum)
       props(8,elem)   = matprp(149,matnum)
       props(9,elem)   = matprp(150,matnum)
@@ -634,13 +634,15 @@ c                       set thermal expansion coeeficients. storage is
 c                       always anisotopic. for istropic the three
 c                       normal values are alpha, and shear values zero.
 c
+c                      alpha_{ij} is symmetric
+c
       if ( lmtprp(25,matnum) ) then
-        props(9,elem)  = matprp(26,matnum)
-        props(13,elem) = matprp(27,matnum)
-        props(34,elem) = matprp(28,matnum)
-        props(35,elem) = matprp(29,matnum)
-        props(36,elem) = matprp(30,matnum)
-        props(37,elem) = matprp(31,matnum)
+        props(9,elem)  = matprp(26,matnum)  !  xx
+        props(13,elem) = matprp(27,matnum)  !  yy
+        props(34,elem) = matprp(28,matnum)  !  zz
+        props(35,elem) = matprp(29,matnum)  !  xy
+        props(36,elem) = matprp(30,matnum)  !  yz
+        props(37,elem) = matprp(31,matnum)  !  xz
       else
         props(9,elem)  = matprp(6,matnum)
         props(13,elem) = matprp(6,matnum)
