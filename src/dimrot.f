@@ -395,7 +395,7 @@ c
          call die_gracefully
          stop
       end if
-      call di1dsf( xsi, dsf, sf, nfnode )
+      call di1dsfc( xsi, dsf, sf, nfnode )
       dx = zero
       dy = zero
       dz = zero
@@ -412,7 +412,7 @@ c
       if( caseno .eq. 5) nfn = 3
       if( caseno .eq. 6) nfn = 4
       xsi = one
-      call di1dsf( xsi, dsf, sf, nfn )
+      call di1dsfc( xsi, dsf, sf, nfn )
       dx = zero
       dy = zero
       dz = zero
@@ -425,7 +425,7 @@ c
       call difrts( dx, dy, dz, tvec1, status )
       if( status .eq. 1 ) return
       xsi = -one
-      call di1dsf( xsi, dsf, sf, nfn )
+      call di1dsfc( xsi, dsf, sf, nfn )
       dx = zero
       dy = zero
       dz = zero
@@ -488,3 +488,47 @@ c
 c
       return
       end
+c *******************************************************************
+c *                                                                 *
+c *   subroutine di1dsfc ---- calculates shape function values and  *
+c *                           derivatives for 1-dimension           *
+c *                                                                 *
+c *******************************************************************
+c
+      subroutine di1dsfc( xsi, dsf, sf, nlnode )
+c
+c              parameter declarations
+c
+      implicit none
+c
+      integer :: nlnode
+      double precision  :: xsi, dsf(*), sf(*)
+c
+c              local declarations
+c
+      double precision :: xsisqr
+      double precision, parameter :: half = 0.5d0, one = 1.0d0,
+     &                               two = 2.0d0
+c
+      select case( nlnode )
+c
+        case(1, 2)  ! linear
+        sf(1)  = half * ( one - xsi )
+        sf(2)  = half * ( one + xsi )
+        dsf(1) = -half
+        dsf(2) =  half
+c
+        case( 3 )  ! quadratic
+        xsisqr = xsi * xsi
+        sf(1)  = half * ( xsisqr - xsi )
+        sf(2)  = one - xsisqr
+        sf(3)  = half * ( xsisqr + xsi )
+        dsf(1) = xsi - half
+        dsf(2) = -two*xsi
+        dsf(3) = xsi + half
+c
+      end select
+c
+      return
+      end
+
