@@ -16,7 +16,7 @@ find_line( 1, "1      1" );
 #
 @parts = split( / +/, $line);
 #
-$answer = "2.282550";
+$answer = "2.282380";
 $partno = 3;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
