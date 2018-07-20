@@ -111,18 +111,18 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *                  subroutine wmpi_reduce_all_dble_inplace     *
+c     *                  subroutine wmpi_allreduce_dble              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/21/2018 rhd              *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
 c     *                  dummy routine                               *
 c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_all_dble_inplace( vec, size )
+      subroutine wmpi_allreduce_dble( vec, size )
       implicit integer (a-z)
 c
       double precision :: vec(*)
@@ -132,18 +132,18 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *                  subroutine wmpi_reduce_all_real_inplace     *
+c     *                  subroutine wmpi_allreduce_real              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/19/2018 rhd              *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
 c     *                  dummy routine                               *
 c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_all_real_inplace( vec, size )
+      subroutine wmpi_allreduce_real( vec, size )
       implicit integer (a-z)
 c
       real :: vec(*)
@@ -153,7 +153,7 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *                  subroutine wmpi_reduce_all_int_inplace      *
+c     *                  subroutine wmpi_allreduce_int               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
@@ -164,7 +164,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_all_int_inplace( vec, size )
+      subroutine wmpi_allreduce_int( vec, size )
       implicit integer (a-z)
 c
       integer :: vec(*)
@@ -293,25 +293,6 @@ c
 c
       subroutine wmpi_bcast_int (int_var)
       implicit integer (a-z)
-c
-      return
-      end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine wmpi_send_real               *
-c     *                                                              *
-c     *                       written by : mcw                       *
-c     *                                                              *
-c     *                   last modified : 02/17/05                   *
-c     *                                                              *
-c     *      Broadcast a real from slave 'source' to root.           *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine wmpi_send_real ( real_vec, size )
-      implicit integer (a-z)
-      real real_vec(*)
 c
       return
       end
@@ -740,6 +721,25 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
+c     *                      subroutine wmpi_get_initial_state       *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/1/2018 rhd               *
+c     *                                                              *
+c     *         Dummy routine for serial version of warp3d.          *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_get_initial_state
+c
+      return
+      end
+
+c
+c     ****************************************************************
+c     *                                                              *
 c     *                      subroutine wmpi_send_reopen             *
 c     *                                                              *
 c     *                       written by : ag                        *
@@ -864,18 +864,15 @@ c     ****************************************************************
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_send_real_new           *
+c     *                      subroutine wmpi_reduce_real_max         *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/11                      *
-c     *                                                              *
-c     *     Get the non-zero data in a vector of a given length      *
-c     *     onto the root processor                                  *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine wmpi_send_real_new(vector,length)
+      subroutine wmpi_reduce_real_max(vector,length)
       implicit none
       real :: vector(*)
       integer :: length

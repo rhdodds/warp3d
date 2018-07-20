@@ -320,7 +320,8 @@ c
 c           do = 33: available
 c
       case( 33 )
-         if(debug) write(out,'("=> Proc",i3," allo pcm")') myid
+         if(debug) write(out,'("=> Proc",i3," wmpi_get_initial_state")') myid
+         call wmpi_get_initial_state
 c
 c           do = 34: available
 c

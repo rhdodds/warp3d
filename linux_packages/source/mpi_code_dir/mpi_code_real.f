@@ -313,24 +313,14 @@ c
       call wmpi_reduce_vec_inplace( vec, size )
       return
 c
-      if( size .eq. nodof ) then
-c         call wmpi_reduce_vec_new ( vec )
-         call wmpi_reduce_vec_inplace( vec, size )
-      else
-         call wmpi_reduce_vec_std ( vec, size )
-c         call wmpi_reduce_vec_inplace( vec, size )
-      endif
-c
-      return
-c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *                  subroutine wmpi_reduce_all_dble_inplace     *
+c     *                  subroutine wmpi_allreduce_dble              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/21/2018 rhd              *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
 c     *     takes processor local vectors which hold                 *
 c     *     contributions to a global vector, and sums them on       *
@@ -342,7 +332,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_all_dble_inplace( vec, size )
+      subroutine wmpi_allreduce_dble( vec, size )
       use global_data ! old common.main
       implicit none
       include "mpif.h"
@@ -352,24 +342,18 @@ c
 c
       integer ::  ierr
 c
-      if( root_processor ) then
-        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_DOUBLE_PRECISION,
-     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      else
-        call MPI_REDUCE( vec, vec, size, MPI_DOUBLE_PRECISION,
-     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      end if
-c
+      call MPI_ALLREDUCE( MPI_IN_PLACE, vec, size, MPI_DOUBLE,
+     &                    MPI_SUM, MPI_COMM_WORLD, ierr )
       return
 c
       end
-cc     ****************************************************************
+c     ****************************************************************
 c     *                                                              *
-c     *                  subroutine wmpi_reduce_all_real_inplace     *
+c     *                  subroutine wmpi_allreduce_real              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/19/2018 rhd              *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
 c     *     takes processor local vectors which hold                 *
 c     *     contributions to a global vector, and sums them on       *
@@ -381,7 +365,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_all_real_inplace( vec, size )
+      subroutine wmpi_allreduce_real( vec, size )
       use global_data ! old common.main
       implicit none
       include "mpif.h"
@@ -390,25 +374,19 @@ c
       real :: vec(size)
 c
       integer ::  ierr
-c
-      if( root_processor ) then
-        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_REAL,
-     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      else
-        call MPI_REDUCE( vec, vec, size, MPI_REAL,
-     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      end if
-c
+
+      call MPI_ALLREDUCE( MPI_IN_PLACE, vec, size, MPI_REAL,
+     &                    MPI_SUM, MPI_COMM_WORLD, ierr )
       return
 c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *                  subroutine wmpi_reduce_all_int_inplace      *
+c     *                  subroutine wmpi_allreduce_int               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/19/2018 rhd              *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
 c     *     takes processor local vectors which hold                 *
 c     *     contributions to a global vector, and sums them on       *
@@ -420,23 +398,16 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine wmpi_reduce_all_int_inplace( vec, size )
+      subroutine wmpi_allreduce_int( vec, size )
       use global_data ! old common.main
       implicit none
       include "mpif.h"
 c
       integer :: size, vec(size)
-c
       integer ::  ierr
 c
-      if( root_processor ) then
-        call MPI_REDUCE( MPI_IN_PLACE, vec, size, MPI_INTEGER,
-     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      else
-        call MPI_REDUCE( vec, vec, size, MPI_INTEGER,
-     &                   MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-      end if
-c
+      call MPI_ALLREDUCE( MPI_IN_PLACE, vec, size, MPI_INTEGER,
+     &                    MPI_SUM, MPI_COMM_WORLD, ierr )
       return
 c
       end
@@ -852,88 +823,6 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_send_real               *
-c     *                                                              *
-c     *                       written by : mcw                       *
-c     *                                                              *
-c     *                   last modified : 2/19/2017 rhd              *
-c     *                                                              *
-c     *      Broadcast a real from workers to root. root keeps the    *
-c     *      non-zero value(s)                                       *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine wmpi_send_real ( real_vec, size )
-      use global_data ! old common.main
-      implicit none
-      include "mpif.h"
-c
-      integer :: size
-      real :: real_vec(size)
-c
-      integer :: proc, i, ierr, alloc_stat, status
-      real, allocatable :: temp_vec(:,:)
-      real, parameter :: zero = 0.0
-      logical, parameter :: debug = .false.
-c
-      if( debug ) write(out,*) ' myid = ', myid, ' size = ', size,
-     &                         ' real_vec() = ', (real_vec(i),i=1,size)
-c
-      if( root_processor ) then
-c
-         allocate( temp_vec(size,numprocs), stat = alloc_stat )
-         if ( alloc_stat .ne. 0) then
-            write (out,9000)
-            call die_abort
-         endif
-c
-         do proc = 1, numprocs - 1
-c
-            call MPI_RECV( real_vec, size, MPI_REAL, proc, 1,
-     &                    MPI_COMM_WORLD, status, ierr )
-c
-            do i = 1, size
-               temp_vec(i,proc) = real_vec(i)
-               if( debug ) then
-                  write(out,*) 'real_vec(', i,') = ', real_vec(i)
-                  write(out,*) 'temp_vec(', i,',',proc,') = ',
-     &                          temp_vec(i,proc)
-               end if
-            end do
-c
-         end do
-c
-c             assign non-zero values of recieved data to real_vec
-c             on root.
-c
-         do proc = 1, numprocs - 1
-            do i = 1, size
-               if( temp_vec(i,proc) .ne. zero ) then
-                  real_vec(i) = temp_vec(i,proc)
-               end if
-            end do
-         end do
-         if( debug ) write(out,*) 'real_vec on root = ',
-     &                            (real_vec(i),i=1,size)
-c
-         deallocate ( temp_vec )
-c
-      else ! workers
-c
-         call MPI_SEND( real_vec, size, MPI_REAL, 0, 1,
-     &                  MPI_COMM_WORLD, ierr )
-c
-      end if
-c
-      return
- 9000 format ('>>>  FATAL ERROR:  could not allocate additional',/,
-     &        '>>>       memory in wmpi_reduce_vec.')
-c
-      end
-c
-c
-c     ****************************************************************
-c     *                                                              *
 c     *                      subroutine wmpi_bcast_log               *
 c     *                                                              *
 c     *                       written by : asg                       *
@@ -1103,7 +992,7 @@ c     *                      subroutine wmpi_send_basic              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/9/2018 rhd               *
+c     *                   last modified : 6/28/2018 rhd              *
 c     *                                                              *
 c     *       This subroutine allows the root processor to send      *
 c     *       basic model data, such as the coordinates, incidences, *
@@ -1124,7 +1013,7 @@ c
      &      matprp, lmtprp, imatprp, dmatprp, smatprp,
      &      nonlocal_analysis, asymmetric_assembly,
      &      initial_stresses_user_routine, initial_stresses_file,
-     &      initial_stresses
+     &      initial_stresses, initial_state_option, initial_state_step
 
       use elem_block_data, only: edest_blocks, cdest_blocks,
      &                           edest_blk_list, cdest_blk_list
@@ -1193,6 +1082,10 @@ c
      &                0, MPI_COMM_WORLD, ierr)
       call MPI_Bcast( initial_stresses_file, 100, MPI_CHARACTER, 0,
      &                MPI_COMM_WORLD,ierr)
+      call MPI_BCAST( initial_state_option, 1, MPI_LOGICAL,
+     &                0, MPI_COMM_WORLD, ierr)
+      call MPI_BCAST( initial_state_step, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr )
 c
 c             static arrays:
 c
@@ -1246,11 +1139,10 @@ c                  incidence data structures, inverse incidence
 c                  dta structures, inverse dof maps
 c
       if( worker_processor ) then
-         call mem_allocate( 4 )
+         call mem_allocate( 4 )  ! u, v, a, ... zeroed
          call mem_allocate(9)
          call init_maps ( 0, 1 )
          call init_maps ( 0, 2 )
-         u(1:nodof) = zero
       endif
       call MPI_BCAST(c,nodof,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(dstmap,nonode,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
@@ -1341,9 +1233,9 @@ c
 c                call the standard initialization routines for these
 c                structures, so that each will contain the proper starting
 c                information.  Note that the root processor has full
-c                copys of each of these arrays; however, the slave processors
+c                copys of each of these arrays; however, the workers
 c                only store the information pertaining to the elements they
-c                own.
+c                own.  The routines mostly allocate blocks.
 c
       if( worker_processor ) then
          call cdest_init
@@ -1373,7 +1265,7 @@ c     *                      subroutine wmpi_send_analysis           *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/19/2017 rhd             *
+c     *                   last modified : 6/29/20198 rhd             *
 c     *                                                              *
 c     *       send data from anaylsis parameters to all the MPI      *
 c     *       processors                                             *
@@ -1383,7 +1275,8 @@ c
       subroutine wmpi_send_analysis
       use global_data ! old common.main
       use main_data,only : umat_serial, cp_matls_present,
-     &                     cp_unloading, creep_model_used
+     &                     cp_unloading, creep_model_used,
+     &                     initial_state_option, initial_state_step
       implicit none
       include "mpif.h"
 c
@@ -1420,6 +1313,10 @@ c
       call MPI_BCAST( cp_unloading, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
       call MPI_BCAST( creep_model_used, 1, MPI_LOGICAL, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( initial_state_option, 1, MPI_LOGICAL, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( initial_state_step, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
       return
       end
@@ -1545,10 +1442,10 @@ c     *                      subroutine wmpi_send_step               *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 4/9/2018 rhd               *
+c     *                   last modified : 7/1/2018 rhd               *
 c     *                                                              *
 c     *       send workers the information needed for                *
-c     *       each load step. This includes displacements            *
+c     *       each load step. This includes u, v, a                  *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -1556,7 +1453,8 @@ c
       subroutine wmpi_send_step
       use global_data ! old common.main
       use main_data, only: asymmetric_assembly, extrapolated_du,
-     &                     non_zero_imposed_du, initial_state_defined
+     &                     non_zero_imposed_du, initial_state_option,
+     &                     initial_state_step
       use adaptive_steps, only : adapt_disp_fact, adapt_temper_fact,
      &                           adapt_load_fact
       implicit none
@@ -1584,10 +1482,15 @@ c
      &                MPI_COMM_WORLD, ierr)
       call MPI_BCAST( non_zero_imposed_du, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr )
-      call MPI_BCAST( initial_state_defined, 1, MPI_LOGICAL, 0,
+      call MPI_BCAST( initial_state_option, 1, MPI_LOGICAL, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( initial_state_step, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
 c
       call MPI_BCAST( u, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( v, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( a, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+c
       if( local_debug ) write(out,9000) myid, norm2( u )
 c
       return
@@ -3441,7 +3344,7 @@ c     *                      subroutine wmpi_get_str                 *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 2/22/2017 rhd              *
+c     *                   last modified : 6/28/2018 rhd              *
 c     *                                                              *
 c     *     this subroutine gathers element data (stresses,strains,  *
 c     *     element volumes)                                         *
@@ -3475,7 +3378,7 @@ c                    local declarations
 c
       integer :: ierr, status(MPI_STATUS_SIZE), blk, felem, num_enodes,
      &           num_enode_dof, totdof, span, utsz, mat_type, histsize,
-     &           cepsize, block_size, ngp
+     &           cepsize, ngp, dowhat
       character(len=80) :: line
       logical, parameter :: local_debug = .false.
       logical, save :: root_has_stress, root_has_strain
@@ -3483,57 +3386,14 @@ c
 c
       if( numprocs .eq. 1 ) return
 c
-c                    if we are the root processor, do some checks.
+c                    root does some checks. may be no work to do
 c
-      if ( root_processor ) then
-c
-c                       if do = 1, then the stresses and strains
-c                       that the root processor
-c                       has for blocks it does not own are out of date.
-c                       Thus next time we return to this routine looking
-c                       to get the full stresses, we will have to do
-c                       communication.
-c
-         if( do .eq. 1 ) then
-            root_has_stress = .false.
-            root_has_strain = .false.
-            return
-c
-c                       if do = 2 , then we are getting the major stress
-c                       data. This data is needed by several different
-c                       algorithms, including stress output, domain
-c                       integral calculations, and database construction.
-c                       if root already has the current stresses for this
-c                       step, return. otherwise go get the stresses.
-c
-         else if( do .eq. 2 ) then
-            if( root_has_stress ) then
-               return
-            end if
-            root_has_stress = .true.
-c
-c                       do = 3 <available> for reuse
-c
-         else if( do .eq. 3 ) then
-c
-c                       if do = 4 , then we are getting the strain
-c                       data. This data is needed by several different
-c                       algorithms, including strain output, crack
-c                       growth calculation, and database construction.
-c                       if root already has the current strains for this
-c                       step, otherwise go get the strains.
-c
-         else if( do .eq. 4 ) then
-            if( root_has_strain ) then
-               return
-            end if
-            root_has_strain = .true.
-c
-         end if
-c
+      if( root_processor ) then
+         call wmpi_get_str_a( dowhat )
+         if( dowhat == 1 ) return
       end if
 c
-c                   if we are here, then we need to get all strains,
+c                   we need to get all strains,
 c                   stresses, volume data from workers. let workers
 c                   the suncronization here works via root and
 c                   workers processing all blocks. only 1 worker owns a
@@ -3544,11 +3404,18 @@ c
       call wmpi_bcast_int ( do )
 c
 c                   get all of the element block info back to
-c                   the root processor
+c                   the root processor. This code synchronizes
+c                   the transfers. root and all workers are executing
+c                   this code.
+c                   if root owns block, skip.
+c                   if worker does not own block, skip.
+c                   after this logic, block "blk" is on the worker
+c                   with data for sending to root and root posts
+c                   receives to that rank.
 c
       do blk = 1, nelblk
 c
-         if( worker_processor ) then
+        if( worker_processor ) then
             if( elblks(2,blk) .ne. myid ) cycle
          end if
          if( root_processor ) then
@@ -3569,105 +3436,382 @@ c
 c                         if do = 2, get history, cep, unrotated
 c                         stresses, and rotation data
 c
-         if( do .eq. 2 ) then
-c
-c                               element [D] tangents
-c
-            block_size = span * ngp * cepsize
-            if( root_processor ) then
-               cep_blocks(blk)%vector(1:block_size) = zero
-               call MPI_RECV( cep_blocks(blk)%vector(1), block_size,
-     &              MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
-     &              ierr )
-            else
-               call MPI_SEND( cep_blocks(blk)%vector(1), block_size,
-     &              MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
-            endif
-c
-c                               element histories
-c
-            block_size = span * ngp * histsize
-            if( root_processor ) then
-               history_blocks(blk)%ptr(1:block_size) = zero
-               call MPI_RECV( history_blocks(blk)%ptr(1), block_size,
-     &              MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
-     &              ierr )
-            else
-               call MPI_SEND( history_blocks(blk)%ptr(1), block_size,
-     &              MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
-            endif
-C
-c                               element stresses
-c
-            block_size    = span * ngp * nstrs
-            if( root_processor ) then
-               urcs_n_blocks(blk)%ptr(1:block_size) = zero
-               call MPI_RECV( urcs_n_blocks(blk)%ptr(1), block_size,
-     &              MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
-     &              ierr )
-            else
-               call MPI_SEND( urcs_n_blocks(blk)%ptr(1), block_size,
-     &              MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
-            endif
-c
-c                               element rotations
-c
-            if( rot_blk_list(blk) .eq. 0) cycle
-            block_size = span * ngp * 9
-            if( root_processor ) then
-               if( allocated(rot_n1_blocks) ) then
-                  rot_n1_blocks(blk)%ptr(1:block_size) = zero
-                  call MPI_RECV( rot_n1_blocks(blk)%ptr(1), block_size,
-     &                 MPI_VAL, elblks(2,blk), 15, MPI_COMM_WORLD,
-     &                 status, ierr )
-               endif
-            else
-               if( allocated(rot_n1_blocks) ) then
-                  call MPI_SEND( rot_n1_blocks(blk)%ptr(1), block_size,
-     &                 MPI_VAL, 0, 15, MPI_COMM_WORLD, ierr )
-               endif
-            endif
-c
-c                         if do = 3, <available>
-c
-         else if ( do .eq. 3 ) then
-c
-c                         if do = 4, get strains
-c
-         else if ( do .eq. 4 ) then
-c
-            block_size = span * ngp * nstr
-            if( root_processor ) then
-               eps_n_blocks(blk)%ptr(1:block_size) = zero
-               call MPI_RECV( eps_n_blocks(blk)%ptr(1), block_size,
-     &              MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
-     &              ierr )
-            else
-               call MPI_SEND( eps_n_blocks(blk)%ptr(1), block_size,
-     &              MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
-            endif
-c
-c                         if do = 5, get element volumes
-c
-         else if ( do .eq. 5 ) then
-c
-            block_size = span
-            if( root_processor ) then
-               element_vol_blocks(blk)%ptr(1:block_size) = zero
-               call MPI_RECV( element_vol_blocks(blk)%ptr(1),
-     &              block_size, MPI_VAL, elblks(2,blk), 14,
-     &              MPI_COMM_WORLD, status, ierr )
-            else
-               call MPI_SEND( element_vol_blocks(blk)%ptr(1),
-     &              block_size, MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
-            end if
-c
-         end if
+         select case( do )
+         case( 2 )
+            call wmpi_get_str_2 ! history, cep [D], unrotated sig, rot mats
+c         case( 3 )    !! available
+c            continue
+         case( 4 )
+           call wmpi_get_str_4  ! strains
+         case( 5 )
+           call wmpi_get_str_5  ! element volumnes
+         case default
+           write(out,9000)
+           call die_abort
+         end select
 c
       end do
 c
       return
-      end
+c
+ 9000 format ('>>>  FATAL ERROR:   wmpi_get_str',/,
+     &        '                    do: ',i10,
+     &    /,  '                    job terminated')
+c
+
+      contains
+c     ========
+c
+      subroutine wmpi_get_str_a( action )
+      implicit none
+c
+      integer :: action
+c
+c               action = 1    caller exectues a return
+c
+      select case( do )
+      case( 1 )
+c
+c               mark stresses and strains that the root processor has
+c               for blocks it does not own as out of date. Thus next
+c               time we return to this routine looking
+c               to get the full stresses, we will have to do communication.
+c
+         root_has_stress = .false.
+         root_has_strain = .false.
+         action = 1
+c
+      case( 2 )
+c
+c               getting the major stress data from workers to root.
+c               This data is needed
+c               by several different algorithms, including stress
+c               output, and restart file construction. if root already
+c               has the current stresses for this step, return.
+c               otherwise go get the stresses.
+c
+        if( root_has_stress ) then
+          action = 1
+        else
+          action = 0
+          root_has_stress = .true.
+        end if
+c
+c               available
+c
+      case( 3 )
+        action = 1
+c
+      case( 4 )
+c
+c               getting the strain data. This data is needed by
+c               several different algorithms, including strain output,
+c               crack growth calculation, and database construction.
+c               if root already has the current strains for this
+c               step, otherwise go get the strains.
+c
+        if( root_has_strain ) then
+          action = 1
+        else
+          action = 0
+          root_has_strain = .true.
+        end if
+c
+      case( 5 )
+c
+c               element volumnes. alwasy get them
+c
+        action = 0
+c
+      case default
+        write(out,9000)
+        call die_abort
+c
+      end select
+      return
+c
+ 9000 format ('>>>  FATAL ERROR:   wmpi_get_str_a',/,
+     &        '                    do: ',i10,
+     &    /,  '                    job terminated')
+c
+      end subroutine wmpi_get_str_a
+c
+      subroutine wmpi_get_str_2
+      implicit none
+c
+      integer :: block_size
+c
+c              element [D] tangents
+c
+      block_size = span * ngp * cepsize
+      if( root_processor ) then
+         cep_blocks(blk)%vector(1:block_size) = zero
+         call MPI_RECV( cep_blocks(blk)%vector(1), block_size,
+     &        MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
+     &        ierr )
+      else
+         call MPI_SEND( cep_blocks(blk)%vector(1), block_size,
+     &        MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
+      end if
+c
+c              element histories
+c
+      block_size = span * ngp * histsize
+      if( root_processor ) then
+         history_blocks(blk)%ptr(1:block_size) = zero
+         call MPI_RECV( history_blocks(blk)%ptr(1), block_size,
+     &        MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
+     &        ierr )
+      else
+         call MPI_SEND( history_blocks(blk)%ptr(1), block_size,
+     &        MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
+      end if
+C
+c              element stresses
+c
+      block_size    = span * ngp * nstrs
+      if( root_processor ) then
+         urcs_n_blocks(blk)%ptr(1:block_size) = zero
+         call MPI_RECV( urcs_n_blocks(blk)%ptr(1), block_size,
+     &        MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD, status,
+     &        ierr )
+      else
+         call MPI_SEND( urcs_n_blocks(blk)%ptr(1), block_size,
+     &        MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
+      end if
+c
+c              element rotations
+c
+      if( rot_blk_list(blk) .eq. 0) return
+      block_size = span * ngp * 9
+      if( root_processor ) then
+         if( allocated(rot_n1_blocks) ) then
+            rot_n1_blocks(blk)%ptr(1:block_size) = zero
+            call MPI_RECV( rot_n1_blocks(blk)%ptr(1), block_size,
+     &           MPI_VAL, elblks(2,blk), 15, MPI_COMM_WORLD,
+     &           status, ierr )
+         end if
+      else
+         if( allocated(rot_n1_blocks) ) then
+            call MPI_SEND( rot_n1_blocks(blk)%ptr(1), block_size,
+     &           MPI_VAL, 0, 15, MPI_COMM_WORLD, ierr )
+         end if
+      end if
+c
+      return
+
+      end subroutine wmpi_get_str_2
+c
+      subroutine wmpi_get_str_4
+      implicit none
+c
+      integer :: block_size
+
+      block_size = span * ngp * nstr
+      if( root_processor ) then
+        eps_n_blocks(blk)%ptr(1:block_size) = zero
+        call MPI_RECV( eps_n_blocks(blk)%ptr(1), block_size,
+     &                 MPI_VAL, elblks(2,blk), 14, MPI_COMM_WORLD,
+     &                 status, ierr )
+      else
+        call MPI_SEND( eps_n_blocks(blk)%ptr(1), block_size,
+     &                 MPI_VAL, 0, 14, MPI_COMM_WORLD, ierr )
+      end if
+c
+      return
+c
+      end subroutine wmpi_get_str_4
+c
+      subroutine wmpi_get_str_5
+      implicit none
+c
+      integer :: block_size
+c
+      block_size = span
+      if( root_processor ) then
+        element_vol_blocks(blk)%ptr(1:block_size) = zero
+        call MPI_RECV( element_vol_blocks(blk)%ptr(1),
+     &                 block_size, MPI_VAL, elblks(2,blk), 14,
+     &                 MPI_COMM_WORLD, status, ierr )
+      else
+        call MPI_SEND( element_vol_blocks(blk)%ptr(1),
+     &                 block_size, MPI_VAL, 0, 14, MPI_COMM_WORLD,
+     &                 ierr )
+      end if
+c
+      return
+c
+      end subroutine wmpi_get_str_5
+      end subroutine wmpi_get_str
+
+c     ****************************************************************
+c     *                                                              *
+c     *                subroutine wmpi_get_initial_state             *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 6/28/2018 rhd              *
+c     *                                                              *
+c     *     makes all intiial state arrays present on rank 0         *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine wmpi_get_initial_state
+      use global_data ! old common.main
+      use elem_block_data, only: estiff_blocks, initial_state_data
+      implicit none
+      include "mpif.h"
+c
+      integer :: ierr, status(MPI_STATUS_SIZE), blk, felem,
+     &           span, blk_owner, ngp, inblk, i, count_to_receive,
+     &           count_to_send, received_count
+     &
+      logical, parameter :: local_debug = .false.
+c
+      if( numprocs .eq. 1 ) return
+c
+c              alert workers to sync here
+c
+      call wmpi_alert_slaves ( 33 )
+c
+      if( local_debug ) call wmpi_get_initial_state_mess( 0 )
+c
+c              root drives process to bring blocks back in order
+c              1, 2, 3, ... nelblk. Sends message to worker who owns
+c              the block to transmit it. workers run a loop blocking on
+c              a receive waiting to get a block number.
+c              allocate space on root for worker owned blocks
+c
+c              when done, root sends workers a 0 block number.
+c
+      if( root_processor ) then
+c
+         associate( x => initial_state_data )
+c
+         do blk = 1, nelblk ! bring blocks to root in order
+           blk_owner      = elblks(2,blk)
+           if( blk_owner .eq. 0 ) cycle ! skip blocks owned by root
+           felem          = elblks(1,blk)
+           span           = elblks(0,blk)
+           ngp            = iprops(6,felem)
+           count_to_receive = ngp * span
+           if( .not. allocated( x(blk)%W_plastic_nis_block ) )
+     &          allocate( x(blk)%W_plastic_nis_block(span,ngp) )
+           if( .not. allocated( x(blk)%displ_grad_nis_block ) )
+     &          allocate( x(blk)%displ_grad_nis_block(9,span,ngp) )
+           call MPI_SEND( blk, 1, MPI_INTEGER, blk_owner, 21,
+     &                    MPI_COMM_WORLD, ierr)
+           call wmpi_check_error( 1, myid, ierr, out )
+           call MPI_RECV( x(blk)%W_plastic_nis_block(1,1),
+     &                    count_to_receive, MPI_VAL, blk_owner,
+     &                    14, MPI_COMM_WORLD, status, ierr )
+           call wmpi_check_error( 2, myid, ierr, out )
+           call MPI_GET_COUNT( status, MPI_VAL, received_count, ierr )
+           if( received_count .ne. count_to_receive )
+     &          call wmpi_get_initial_state_mess( 1 )
+           count_to_receive = 9 * span *  ngp
+           call MPI_RECV( x(blk)%displ_grad_nis_block(1,1,1),
+     &                    count_to_receive, MPI_VAL, blk_owner,
+     &                    15, MPI_COMM_WORLD, status, ierr )
+           call wmpi_check_error( 3, myid, ierr, out )
+           call MPI_GET_COUNT( status, MPI_VAL, received_count, ierr )
+           if( received_count .ne. count_to_receive )
+     &          call wmpi_get_initial_state_mess( 1 )
+         end do  ! over all blocks
+c
+         end associate
+c
+         do i = 1, numprocs - 1   !   workers we're done
+           call MPI_SEND( 0, 1, MPI_INTEGER, i, 21, MPI_COMM_WORLD,
+     &                    ierr )
+         end do
+c
+      else ! worker code
+c
+         associate( y => initial_state_data )
+c
+         do
+           call MPI_RECV( inblk, 1, MPI_INTEGER, 0, 21, MPI_COMM_WORLD,
+     &                    status, ierr )
+           call wmpi_check_error( 5, myid, ierr, out )
+           if( inblk .eq. 0 ) exit  ! done with loop
+           if( myid .ne. elblks(2,inblk) )
+     &        call  wmpi_get_initial_state_mess( 6 ) ! wrong blk # sent
+           felem          = elblks(1,inblk)
+           span           = elblks(0,inblk)
+           ngp            = iprops(6,felem)
+           count_to_send  = ngp * span
+           call MPI_SEND( y(inblk)%W_plastic_nis_block(1,1),
+     &                       count_to_send, MPI_VAL, 0, 14,
+     &                       MPI_COMM_WORLD, ierr )
+           call wmpi_check_error( 6, myid, ierr, out )
+           count_to_send  = 9 * ngp * span
+           call MPI_SEND( y(inblk)%displ_grad_nis_block(1,1,1),
+     &                       count_to_send, MPI_VAL, 0, 15,
+     &                       MPI_COMM_WORLD, ierr )
+           call wmpi_check_error( 7, myid, ierr, out )
+          end do ! worker wait loop
+c
+          end associate
+      end if
+c
+      return
+c
+      contains
+c     ========
+c
+      subroutine wmpi_get_initial_state_mess( messno )
+      implicit none
+c
+      integer :: messno
+c
+      select case( messno )
+c
+        case( 0 )
+          write(out,*)
+     &     '... entered wmpi_get_initial_state_mess on rank: ',
+     &                   myid
+        case( 1 )
+          write(out,9010) blk, blk_owner, count_to_receive,
+     &                    received_count
+          call die_abort
+        case( 3 )
+          write(out,*) '.... send worker blk number'
+        case( 4 )
+        case( 5 )
+          write(out,*) '.... worker recd quit from root: ',myid
+        case( 6 )
+          write(out,9030) myid, inblk
+          call die_abort
+        case( 7 )
+          write(out,*) '.... worker recd block number. myid, block: ',
+     &                 myid, inblk
+        case( 8 )
+          write(out,*) '... leaving  wmpi_get_initial_state_mess: ',
+     &                   myid
+        case( 10 )
+      end select
+c
+      return
+c
+ 9010 format( '>>>  FATAL ERROR: wmpi_get_initial_state_mess',
+     & /,     '     block recd from worker has wrong size',
+     & /,10x,'blk, blk_owner, count_to_receive, received_count: ',
+     & 4i6,
+     & /,     '     job terminated')
+ 9020 format( '>>>  FATAL ERROR: wmpi_get_initial_state_mess',
+     & /,     '     invalid message number. myid, error:',2i5,
+     & /,     '     job terminated')
+ 9030 format( '>>>  FATAL ERROR: wmpi_get_initial_state_mess',
+     & /,     '     root sent wrong block number to worker',
+     & /,10x,'myid, inblk: ', 2i6,
+     & /,     '     job terminated')
+c
+      end subroutine wmpi_get_initial_state_mess
+      end subroutine wmpi_get_initial_state
+
+
 c
 c     ****************************************************************
 c     *                                                              *
@@ -3675,9 +3819,9 @@ c     *                 subroutine wmpi_send_reopen                  *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 02/23/2017 rhd             *
+c     *                   last modified : 7/1/2018 rhd               *
 c     *                                                              *
-c     *     this subroutine sends all the information that the       *
+c     *     this subroutine sends information that the               *
 c     *     workers need after a restart.                            *
 c     *                                                              *
 c     ****************************************************************
@@ -3686,7 +3830,7 @@ c
       use global_data ! old common.main
       use elem_block_data
       use main_data, only: eq_node_force_len, eq_node_force_indexes,
-     &                     eq_node_forces
+     &                     eq_node_forces, initial_state_option
       implicit none
       include "mpif.h"
 c
@@ -3694,7 +3838,7 @@ c                    local declarations
 c
       integer :: ierr, status(MPI_STATUS_SIZE), felem, num_enodes,
      &           num_enode_dof, totdof, span, utsz, ngp, mat_type,
-     &           block_size, blk, idummy
+     &           block_size, blk, idummy, wrkr_rank
       logical, save :: local_debug, root_has_stress, root_has_strain
       character(len=80) :: line
 c
@@ -3702,19 +3846,29 @@ c
 c
       call wmpi_alert_slaves ( 23 )
 c
-c                   First, send out the element blocks of stresses and
-c                   strains to the processors which own them. synching
+c                   displacements, velocities, accelerations.
+c
+      call MPI_BCAST( u, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( v, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( a, nodof, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
+c
+c                   blocked data structure. synching
 c                   again thru blocks - a block is owned by only 1
 c                   worker.
+c
+      root_has_stress  = .false.
+      root_has_strain = .false.
 c
       do blk = 1, nelblk
 c
          if( worker_processor ) then
-            if (elblks(2,blk).ne.myid) cycle
-         endif
+            if( elblks(2,blk) .ne. myid ) cycle
+         end if
          if( root_processor ) then
-            if (elblks(2,blk).eq.myid) cycle
-         endif
+            if( elblks(2,blk) .eq. myid ) cycle
+         end if
+         if( root_processor ) wrkr_rank = elblks(2,blk)
+
 c
          felem          = elblks(1,blk)
          num_enodes     = iprops(2,felem)
@@ -3730,13 +3884,13 @@ c
          block_size = span * ngp * history_blk_list(blk)
          if( worker_processor ) then
             call MPI_RECV(history_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,0,14,MPI_COMM_WORLD,status,ierr)
+     &           MPI_VAL,0,13,MPI_COMM_WORLD,status,ierr)
             call vec_ops( history1_blocks(blk)%ptr(1),
      &           history_blocks(blk)%ptr(1), idummy, block_size, 5 )
          else
             call MPI_SEND(history_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,elblks(2,blk),14,MPI_COMM_WORLD,ierr)
-         endif
+     &           MPI_VAL,wrkr_rank,13,MPI_COMM_WORLD,ierr)
+         end if
 c
 c                               element [D]s
 c
@@ -3746,8 +3900,8 @@ c
      &           MPI_VAL,0,14,MPI_COMM_WORLD,status,ierr)
          else
             call MPI_SEND(cep_blocks(blk)%vector(1),block_size,
-     &           MPI_VAL,elblks(2,blk),14,MPI_COMM_WORLD,ierr)
-         endif
+     &           MPI_VAL,wrkr_rank,14,MPI_COMM_WORLD,ierr)
+         end if
 c
 c                               element stresses
 c
@@ -3759,10 +3913,10 @@ c
      &           MPI_VAL,0,15,MPI_COMM_WORLD,status,ierr)
          else
             call MPI_SEND(urcs_n_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,elblks(2,blk),15,MPI_COMM_WORLD,ierr)
+     &           MPI_VAL,wrkr_rank,15,MPI_COMM_WORLD,ierr)
             call MPI_SEND(urcs_n1_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,elblks(2,blk),15,MPI_COMM_WORLD,ierr)
-         endif
+     &           MPI_VAL,wrkr_rank,15,MPI_COMM_WORLD,ierr)
+         end if
 c
 c
 c                               element integration point rotations
@@ -3774,36 +3928,66 @@ c
                   call MPI_RECV(rot_n1_blocks(blk)%ptr(1),block_size,
      &                 MPI_VAL,0,16,MPI_COMM_WORLD,status,
      &                 ierr)
-               endif
+               end if
             else
                if( allocated(rot_n1_blocks) ) then
                   call MPI_SEND(rot_n1_blocks(blk)%ptr(1),block_size,
-     &                 MPI_VAL,elblks(2,blk),16,MPI_COMM_WORLD,ierr)
-               endif
-            endif
-         endif
+     &                 MPI_VAL,wrkr_rank,16,MPI_COMM_WORLD,ierr)
+               end if
+            end if
+         end if
 c
 c                               element strains
 c
          block_size = span * ngp * nstr
-         if ( worker_processor ) then
+         if( worker_processor ) then
             call MPI_RECV(eps_n_blocks(blk)%ptr(1),block_size,
      &           MPI_VAL,0,17,MPI_COMM_WORLD,status,ierr)
          else
             call MPI_SEND(eps_n_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,elblks(2,blk),17,MPI_COMM_WORLD,ierr)
-         endif
+     &           MPI_VAL,wrkr_rank,17,MPI_COMM_WORLD,ierr)
+         end if
 c
 c                               element volumes
 c
          block_size = span
          if( worker_processor ) then
             call MPI_RECV(element_vol_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,0,17,MPI_COMM_WORLD,status,ierr)
+     &           MPI_VAL,0,18,MPI_COMM_WORLD,status,ierr)
          else
             call MPI_SEND(element_vol_blocks(blk)%ptr(1),block_size,
-     &           MPI_VAL,elblks(2,blk),17,MPI_COMM_WORLD,ierr)
-         endif
+     &           MPI_VAL,wrkr_rank,18,MPI_COMM_WORLD,ierr)
+         end if
+c
+c                              send initial state data arrays. we can
+c                              delete the blocks for workers not on root
+c                              that were needed to support restart.
+c
+         if( .not. initial_state_option ) cycle
+         if( worker_processor ) then
+           if( .not. allocated( initial_state_data ) )
+     &           allocate( initial_state_data(nelblk) )
+             associate( x => initial_state_data )
+             allocate( x(blk)%W_plastic_nis_block(span,ngp) )
+             call MPI_RECV( x(blk)%W_plastic_nis_block(1,1), span*ngp,
+     &           MPI_VAL, 0, 19, MPI_COMM_WORLD, status, ierr )
+             allocate( x(blk)%displ_grad_nis_block(9,span,ngp) )
+             call MPI_RECV( x(blk)%displ_grad_nis_block(1,1,1),
+     &           9*span*ngp, MPI_VAL, 0, 20, MPI_COMM_WORLD,
+     &           status, ierr )
+             end associate
+         else
+             associate( x => initial_state_data )
+             call MPI_send( x(blk)%W_plastic_nis_block(1,1), span*ngp,
+     &           MPI_VAL, wrkr_rank, 19,
+     &           MPI_COMM_WORLD, status, ierr )
+             call MPI_send( x(blk)%displ_grad_nis_block(1,1,1),
+     &           9*span*ngp, MPI_VAL, wrkr_rank, 20,
+     &           MPI_COMM_WORLD, status, ierr )
+             deallocate( x(blk)%W_plastic_nis_block,
+     &                   x(blk)%displ_grad_nis_block )
+             end associate
+         end if
 c
       end do ! on blk
 c
@@ -3830,7 +4014,7 @@ c     *                  subroutine wmpi_send_jint                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/14/2018 rhd              *
+c     *                   last modified : 6/28/2018 rhd              *
 c     *                                                              *
 c     *           send/receive data to processes to set up           *
 c     *           j-integral and i-integral computation for          *
@@ -3852,13 +4036,14 @@ c
      &    out_pstrain, cf_traction_flags, domain_rot, domain_origin,
      &    cf_tractions, front_coords, e_front, nu_front,
      &    crack_curvature, max_front_nodes, j_geonl_formulation,
-     &    j_linear_formulation
+     &    j_linear_formulation, temperatures_on_model,
+     &    process_initial_state, process_temperatures
 c
       implicit none
       include "mpif.h"
 c
       integer :: ierr, flags(4), num
-      logical :: logical_vec(15)
+      logical :: logical_vec(17)
       logical, parameter :: debug = .false.
 c
       if( numprocs .eq. 1 ) return
@@ -3955,9 +4140,12 @@ c
          logical_vec(13) = cf_traction_flags(1)
          logical_vec(14) = cf_traction_flags(2)
          logical_vec(15) = cf_traction_flags(3)
+         logical_vec(16) = temperatures_on_model
+         logical_vec(17) = process_initial_state
+         logical_vec(18) = process_temperatures
       end if
 c
-      call MPI_BCAST( logical_vec, 15, MPI_LOGICAL, 0, MPI_COMM_WORLD,
+      call MPI_BCAST( logical_vec, 18, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
 c
       if( worker_processor ) then
@@ -3976,10 +4164,12 @@ c
          cf_traction_flags(1) = logical_vec(13)
          cf_traction_flags(2) = logical_vec(14)
          cf_traction_flags(3) = logical_vec(15)
+         temperatures_on_model = logical_vec(16)
+         process_initial_state = logical_vec(17)
+         process_temperatures  = logical_vec(18)
       end if
 c
 c             1) 3x3 rotation matrix for this crack front poisiton
-c             2) nodal displacements, velocities and accelerations
 c
       call MPI_BCAST( domain_rot, 9, MPI_VAL, 0, MPI_COMM_WORLD,
      &                ierr )
@@ -4016,18 +4206,19 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine wmpi_send_real_new           *
+c     *                subroutine wmpi_reduce_real_max               *
 c     *                                                              *
-c     *                       written by : mcm                       *
+c     *                       written by :rhd                        *
 c     *                                                              *
-c     *                   last modified : 2/23/2017 rhd              *
+c     *                   last modified : 6/29/2018 rhd              *
 c     *                                                              *
-c     *     Get the non-zero data in a vector of a given length      *
-c     *     onto the root processor                                  *
+c     *     reduction operator of single precision to root with      *
+c     *     MPI_MAX rather than MPI_SUM. each final entry on root    *
+c     *     is the max value across workers                          *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine wmpi_send_real_new( vector, length )
+      subroutine wmpi_reduce_real_max( vector, length )
       use global_data ! old common.main
       implicit none
       include "mpif.h"
@@ -4038,7 +4229,8 @@ c                 Local
       real, dimension(:), allocatable :: temp_vec
       integer :: ierr
 c
-c                 Setup receive buffer, reduce via max, copy over
+c                 Setup receive buffer, reduce via *MAX*, copy final
+c                 vector to actual root vector
 c
       allocate( temp_vec(length) )
       call MPI_REDUCE( vector, temp_vec, length, MPI_REAL,
