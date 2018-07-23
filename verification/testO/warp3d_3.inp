@@ -1,0 +1,110 @@
+!
+!
+!      user specified residual stresses -> 
+!      introduce crack -> get J from crack opening 
+!      displacements and J using initial state
+!
+!      elastic-plastic material
+!
+!      4 pt. SE(B) model in O'Dowd, et al.
+!      IJF, 
+!
+!      step 1 is equilibrium step with some yielding.
+!
+ structure beam
+!
+ material steel
+  properties mises e 30000 nu 0.3 yld_pt 60.0,
+        n_power 5 alpha 0 rho 0
+!
+ material roller
+  properties mises e 100000 nu 0.3 yld_pt 60.0,
+        n_power 5 alpha 0 rho 0
+!
+ number of nodes 7404 elements 3529
+!
+ elements
+  1- 3529 type l3disop linear material steel,
+           order 2x2x2 bbar center_output short
+!
+  1599 2420 type l3disop linear material roller,
+        order 2x2x2 bbar center_output short
+!
+*input from 'coords.inp'
+!
+*input from 'incid.inp'
+!
+blocking automatic size = 128
+!
+*echo on
+!
+ initial conditions
+  stresses
+    *echo off
+    *input from 'residual_stresses.inp'
+    *echo on
+  constraints
+     all w 0.0
+     2581 5352 u 0
+     plane y = 0 symmetry proximity 0.8e-05 $ verify
+!   *input from 'constraints_on_ligament.inp'
+!
+ loading unit_bend  ! 1 kip on model than open crack
+  element loads
+      1599 2420 face 3 pressure 33.047
+!
+!    load to 2.125 Kips on model.
+!
+ loading test
+  nonlinear
+   step 1-2 unit_bend 0.0000001
+   step 3-15 unit_bend 0.1
+!
+! output model flat patran convention text file "model"
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 2
+   extrapolate off
+   line search off
+   divergence check on
+   convergence test norm res tol 0.001
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+   initial state option on
+   initial state step 1
+!
+ compute displacements for loading test step 1 $ equilibrium step
+!
+ release constraints steps 1
+   *echo off
+   *input from 'nodes_to_be_released.inp'
+   *echo on
+!
+ compute displacements for loading test step 15
+ output reactions 2581 5352
+ output displacements 265 3017, 6321 7271, 5618 6568
+! output patran formatted displacements
+!
+ output eformat displacements 6511 6530 6549 6568
+!
+  domain position_1
+    symmetric
+    front nodes 6455 5505 linear verify
+    normal plane nx 0 ny 1 nz 0
+    function type d
+    q-values automatic rings 5-30
+!
+  compute domain integral
+!
+ stop

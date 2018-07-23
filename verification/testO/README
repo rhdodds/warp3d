@@ -1,0 +1,41 @@
+
+July 23, 2018
+------------
+
+8-node, refined mesh, 4 pt loading, 1-layer model, p-strain
+
+O'Dowd et al. model to explore initial state concept for
+J-integral in the presence of (1) user-defined
+residual stresses as analysis initial conditions,
+(2) mechanical loading to introduce residual stress
+and plastic strain fields, followed by introduction
+of a crack.
+
+Test 1
+------
+      user specified residual stresses -> 
+      introduce crack -> get J from crack opening 
+      displacements and J using initial state
+
+      linear elastic material properties
+
+Test 2
+------
+      user specified residual stresses -> 
+      introduce crack -> get J from crack opening 
+      displacements and J using initial state
+
+      nonlinear material properties (mises)
+
+Test 3
+------
+      reverse bend -> unload -> introduce crack
+
+      nonlinear material properties (mises)
+
+Test 4
+------
+      reverse bend -> unload -> introduce crack
+
+      nonlinear material properties (generalized plasticity)
+

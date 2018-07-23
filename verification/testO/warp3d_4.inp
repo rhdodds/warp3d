@@ -1,0 +1,108 @@
+!
+!
+!      reverse bend -> unload -> introduce crack 
+!
+!      load to 1.25 P_L, unload to zero, crack
+!
+!
+ structure beam
+!
+ material steel
+  properties mises e 30000 nu 0.3 yld_pt 60.,
+        n_power 5 alpha 0 rho 0
+!
+ material roller
+  properties mises e 100000 nu 0.3 yld_pt 60.0,
+        n_power 5 alpha 0 rho 0
+!
+material steelgp
+    properties cyclic generalized_plasticity e 30000 nu 0.3,
+                  yld_pt 60,
+              gp_beta_u 200 gp_delta_u 0.010 gp_h_u 400,
+               gp_tau 0.0 sig_tol 0.0001
+!
+ number of nodes 7404 elements 3529
+!
+ elements
+  1- 3529 type l3disop linear material steelgp,
+           order 2x2x2 bbar center_output short
+!
+  1599 2420 type l3disop linear material roller,
+        order 2x2x2 bbar center_output short
+!
+*input from 'coords.inp'
+!
+*input from 'incid.inp'
+!
+blocking automatic size = 128
+!
+*echo on
+!
+  constraints
+     all w 0.0
+     2581 5352 u 0
+     plane y = 0 symmetry proximity 0.8e-05 $ verify
+!
+ loading unit_bend  ! 1 kip on model than open crack
+  element loads
+      1599 2420 face 3 pressure 33.047
+!
+!    load to 2.125 Kips on model.
+!
+ loading test
+  nonlinear
+   step 1-100 unit_bend -0.02125
+   step 101 unit_bend 0.1
+   step 102 unit_bend 2.025
+   step 103-107 unit_bend 0.0000001
+   step 108-207  unit_bend 0.02125
+!
+! output model flat patran convention text file "model"
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   line search off
+   divergence check on
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+   initial state option on
+!
+ compute displacements for loading test step 100
+! output reactions 2581 5352
+!
+ nonlinear analysis parameters
+   initial state step 102
+!
+ compute displacements for loading test step 102
+!
+ release constraints steps 1
+   *input from 'nodes_to_be_released.inp'
+!
+ compute displacements for loading test step 103
+! output reactions 2581 5352
+! output flat text displacements
+! output flat text node stresses
+!
+  domain position_1
+    symmetric
+    front nodes 6455 5505 linear verify
+    normal plane nx 0 ny 1 nz 0
+    function type d
+    q-values automatic rings 10-15
+!
+  compute domain integral
+ stop
+
