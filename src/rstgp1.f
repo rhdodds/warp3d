@@ -4,9 +4,9 @@ c     *                      subroutine rstgp1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/23/2017 rhd              *
+c     *                   last modified : 6/13/2018 rhd              *
 c     *                                                              *
-c     *     supervise the computation of strains, stresses and       *
+c     *     compute strains, stresses and                            *
 c     *     accompaning stress data at an integration point          *
 c     *     for a block of similar elements that use the same        *
 c     *     material model code                                      *
@@ -17,10 +17,11 @@ c     ****************************************************************
 c
 c
       subroutine rstgp1( props, lprops, iprops, local_work )
+c
       use segmental_curves, only : max_seg_points
-      use main_data, only : initial_stresses,
-     &                      initial_stresses_user_routine,
-     &                      initial_stresses_file
+      use main_data, only : initial_stresses, initial_stresses_file,
+     &                      initial_stresses_user_routine
+      use elem_block_data,  only : initial_state_data
 c
       implicit none
       include 'param_def'
@@ -35,7 +36,7 @@ c
 c                       locally defined variables
 c
       integer :: i, k, span, felem, type, order, gpn, ngp, nnode, ndof,
-     &           step, iter, mat_type, iout, error, ielem
+     &           step, iter, mat_type, iout, error, ielem, nowblk
       double precision :: internal_energy, beta_fact, eps_bbar,
      &                    plastic_work, bar_volumes(mxvl),
      &                    bar_areas_0(mxvl), bar_areas_mid(mxvl)
@@ -51,6 +52,7 @@ c
       beta_fact         = local_work%beta_fact
       span              = local_work%span
       felem             = local_work%felem
+      nowblk            = local_work%blk
       type              = local_work%elem_type
       order             = local_work%int_order
       gpn               = local_work%gpn
@@ -75,13 +77,9 @@ c        full content and access uninitialized values.
 c
       allocate( ddt(mxvl,nstr), uddt(mxvl,nstr),
      &          qnhalf(mxvl,nstr,nstr), qn1(mxvl,nstr,nstr) )
-!DIR$ VECTOR ALIGNED
       ddt    = zero
-!DIR$ VECTOR ALIGNED
       uddt   = zero
-!DIR$ VECTOR ALIGNED
       qnhalf = zero
-!DIR$ VECTOR ALIGNED
       qn1    = zero
 c
 c        process cohesive elements separately
@@ -176,6 +174,17 @@ c
 c------------------------------------------------------------------------
 c
  7000 continue
+c
+c                 include initial stresses if present (only step 1)
+c
+      if( local_work%process_initial_stresses )  then
+       do i = 1, span
+!DIR$ VECTOR ALIGNED
+        local_work%urcs_blk_n(i,1:6,gpn) =
+     &         local_work%initial_stresses(1:6,i)
+       end do
+      end if
+c
       select case ( mat_type )
       case ( 1 )
 c
@@ -253,33 +262,34 @@ c
 c
       end select
 c
-c                 include initial stresses if present
+c                 store initial state to support residual strains-
+c                 stresses for J-integral computations
 c
-      if( local_work%process_initial_stresses )  then
-!DIR$ VECTOR ALIGNED
-       do i = 1, span
-         ielem = felem + i - 1
-         local_work%urcs_blk_n1(i,1:6,gpn) =
-     &     local_work%urcs_blk_n1(i,1:6,gpn) +
-     &         initial_stresses(1:6,ielem)
-       end do
+      if( local_work%capture_initial_state ) then
+          call rstgp1_capture_is_grad( span, mxvl, felem, gpn,
+     &      local_work%fn1(1,1,1),
+     &      local_work%elastic_strains_n1(1,1),
+     &      local_work%rot_blk_n1(1,1,gpn),
+     &      initial_state_data(nowblk)%displ_grad_nis_block(1,1,gpn) )
       end if
-c
 c
 c              If we're actually an interface damage model,
 c              call the interface damage calculations
 c
       if( local_work%is_inter_dmg )
      &       call drive_11_update(gpn, props, lprops, iprops,
-     &            local_work, uddt, iout)
+     &            local_work, uddt, iout )
 c
 c --------------------------------------------------------------------
 c
 c          calculate the internal energy and plastic work
-c          y integrating the densities over the deformed volume of the.
-c          elment. urcs_blk_n1(..,7) is really the current (total) energy
-c          density per unit deformed volume - look above...
+c          by integrating the densities over the deformed volume of the
+c          elment. urcs_blk_n1(..,7) is really the current (total)
+c          energy density per unit deformed volume - look above...
 c          increment of plastic work density stored in plastic_work_incr
+c
+c          if required, store initial state: plastic density to support
+c          residual strains-stresses for J-integral computations
 c
       if( iter .ne. 0 ) then
         call rstgp1_b( span, internal_energy, plastic_work,
@@ -294,6 +304,11 @@ c
      &                    local_work%weights(gpn)
         local_work%block_energy       = internal_energy
         local_work%block_plastic_work = plastic_work
+        if( local_work%capture_initial_state ) then
+!DIR$ VECTOR ALIGNED
+         initial_state_data(nowblk)%W_plastic_nis_block(1:span,gpn) =
+     &                local_work%plastic_work_density_n1(1:span)
+        end if
       end if
 c
       if( local_debug ) then
@@ -338,7 +353,7 @@ c     *                      subroutine rstgp2                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/25/2017 rhd              *
+c     *                   last modified : 6/13/2018 rhd              *
 c     *                                                              *
 c     *     supervise the computation of strains, stresses and       *
 c     *     accompaning stress data at an integration point          *
@@ -353,15 +368,15 @@ c
       subroutine rstgp2( props, lprops, iprops, local_work )
       use segmental_curves, only : max_seg_points, max_seg_curves
 c
-      use main_data, only : initial_stresses,
-     &                      initial_stresses_user_routine,
-     &                      initial_stresses_file
+      use main_data, only : initial_stresses, initial_stresses_file,
+     &                      initial_stresses_user_routine
+      use elem_block_data,  only : initial_state_data
       implicit none
       include 'param_def'
 c
 c                      parameter declarations
 c
-      real    :: props(mxelpr,*)  ! all 3 are same but read only
+      real    ::  props(mxelpr,*) ! all 3 are same but read only
       logical :: lprops(mxelpr,*) ! 1st col is 1st elem of blk
       integer :: iprops(mxelpr,*)
       include 'include_sig_up'
@@ -370,7 +385,7 @@ c                       locally defined variables
 c
       integer :: span, felem, type, order, gpn, ngp, nnode, ndof, step,
      &           iter, mat_type, number_points, curve_step, iout,
-     &           curve_set, i, k
+     &           curve_set, i, k, nowblk, ielem
       double precision :: internal_energy, beta_fact, eps_bbar,
      &  uddt(mxvl,nstr), plastic_work, dummy_q(1), dummy_dfn1(1),
      &  bar_volumes(mxvl), bar_areas_0(mxvl), bar_areas_nx(mxvl)
@@ -382,6 +397,7 @@ c
       beta_fact         = local_work%beta_fact
       span              = local_work%span
       felem             = local_work%felem
+      nowblk            = local_work%blk
       type              = local_work%elem_type
       order             = local_work%int_order
       gpn               = local_work%gpn
@@ -447,32 +463,35 @@ c
       if( local_work%is_link_elem ) drive_material_model = .false.
 c
 c                 drive material code, include initial stresses if present
+c                 for step 1
 c
       if( drive_material_model ) then
          if( local_work%process_initial_stresses  )  then
-!DIR$ VECTOR ALIGNED
             do i = 1, span
+!DIR$ VECTOR ALIGNED
               local_work%urcs_blk_n(i,1:6,gpn) =
-     &         local_work%initial_stresses(1:6,i)
-c              if( felem+i-1 .eq. 2) then
-c                write(*,*) '... loading initial stresses elem 2'
-c                write(*,*) local_work%urcs_blk_n(i,1:6,gpn)
-c              end if
+     &                 local_work%initial_stresses(1:6,i)
             end do
          end if
          call rstgp2_drive_matls
-c         write(*,*) '... updated stresses elem 2'
-c         write(*,*) local_work%urcs_blk_n1(2,1:6,gpn)
       end if
 c
-
+c                 store initial state to support residual strains-
+c                 stresses for J-integral computations
+c
+      if( local_work%capture_initial_state ) then
+          call rstgp2_capture_is_eps( span, mxvl, felem, gpn,
+     &      local_work%ddtse(1,1,gpn),
+     &      local_work%elastic_strains_n1(1,1),
+     &      initial_state_data(nowblk)%displ_grad_nis_block(1,1,gpn) )
+      end if
 c
 c                 If we're actually an interface damage model,
 c                 call the interface damage calculations
 c
       if( local_work%is_inter_dmg )
-     &       call drive_11_update(gpn, props, lprops, iprops,
-     &            local_work, uddt, iout)
+     &       call drive_11_update( gpn, props, lprops, iprops,
+     &                             local_work, uddt, iout)
 c
 c --------------------------------------------------------------------
 c
@@ -480,7 +499,11 @@ c            calculate the current (total) internal energy
 c            by integrating the energy density over the volume
 c            of the element. do only if iter > 0
 c
-      if( iter .ne. 0 ) then
+c            if required, store initial state: plastic density to
+c            support residual strains-stresses for J-integral
+c            computations
+c
+      if( iter > 0 ) then
         call rstgp1_b( span, internal_energy, plastic_work,
      &                 local_work%urcs_blk_n1(1,7,gpn),
      &                 local_work%urcs_blk_n1(1,8,gpn),
@@ -493,6 +516,19 @@ c
      &                    local_work%weights(gpn)
         local_work%block_energy       = internal_energy
         local_work%block_plastic_work = plastic_work
+        if( local_work%capture_initial_state ) then
+!DIR$ VECTOR ALIGNED
+         initial_state_data(nowblk)%W_plastic_nis_block(1:span,gpn) =
+     &                local_work%plastic_work_density_n1(1:span)
+!          do i = 1, span
+!            ielem = felem + i - 1
+!            if( .not.(ielem==8955.or. ielem==9060) ) cycle
+!              write(iout,*) '... capture energy density. elem: ',ielem
+!           write(iout,9000)  gpn, local_work%plastic_work_density_n1(i)
+!         end do
+!  9000 format(10x,i3,f15.8)
+
+        end if
       end if
 c
       if( local_debug ) then
@@ -607,7 +643,7 @@ c     *                subroutine drive_01_update                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 12/21/2015 rhd                  *
+c     *              last modified : 7/1/2018 rhd                    *
 c     *                                                              *
 c     *     drives material model #1 (bilinear) to                   *
 c     *     update stresses and history for all elements in the      *
@@ -638,17 +674,17 @@ c                       locally defined variables
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
      &           iter, now_blk, mat_type, number_points, curve_set,
-     &           hist_size_for_blk, curve_type, elem_type, i
+     &           hist_size_for_blk, curve_type, elem_type, i,
+     &           local_out
 c
-      double precision ::
-     &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero,  ddummy(1), gp_alpha, ymfgm, et, uddt_temps(mxvl,nstr),
-     &  uddt(mxvl,nstr), cep(mxvl,6,6)
+      double precision :: dtime, ddummy(1), gp_alpha, ymfgm, et
+      double precision, allocatable :: eps_elas(:,:),
+     &  gp_temps(:), gp_rtemps(:), gp_dtemps(:),
+     &  uddt_temps(:,:), uddt(:,:), cep(:,:,:)
+      double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures, segmental,
      &           temperatures_ref, fgm_enode_props
-c
-      data zero / 0.0d0 /
 c
 c           vectorized mises plasticity model with constant hardening
 c           modulus. the model supports temperature dependence of
@@ -676,6 +712,7 @@ c
       curve_set         = local_work%curve_set_number
       fgm_enode_props   = local_work%fgm_enode_props
       hist_size_for_blk = local_work%hist_size_for_blk
+      local_out         = iout
 c
       local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 3
       if( local_debug ) then
@@ -686,6 +723,10 @@ c
      &                   number_points, curve_set,
      &                   fgm_enode_props, hist_size_for_blk
       end if
+c
+      allocate( eps_elas(span,6),  gp_temps(mxvl), gp_rtemps(mxvl),
+     &          gp_dtemps(mxvl), uddt_temps(mxvl,nstr),
+     &          uddt(mxvl,nstr), cep(mxvl,6,6) )
 c
 c          determine if the material elastic and properties are
 c          described by segmental curve(s) and if they are temperature
@@ -818,13 +859,15 @@ c
       cep  = zero
 c
       do i = 1, span
+!DIR$ VECTOR ALIGNED
        if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
       end do
 c
 c            now standard update process. use nonlinear update and [D]
 c            computation for iter = 0 and extrapolation or iter > 1
 c            for iter = 0 and no extrapolation, use linear-elastic [D]
-c            with props at n+1.
+c            with props at n+1.  store elastic strains at n+1
+c            if requested.
 
       if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
        if( local_debug ) write(iout,9060)
@@ -837,13 +880,21 @@ c            with props at n+1.
      &           uddt, local_work%elem_hist(1,1,gpn),
      &           local_work%elem_hist1(1,1,gpn),
      &           local_work%rtse(1,1,gpn), gp_dtemps,
-     &           local_work%e_vec_n, local_work%nu_vec_n  )
+     &           local_work%e_vec_n, local_work%nu_vec_n,
+     &           local_out, eps_elas )
        call cnst1( span, cep, local_work%rtse(1,1,gpn),
      &            local_work%nu_vec,
      &            local_work%e_vec, local_work%elem_hist1(1,2,gpn),
      &            local_work%elem_hist1(1,5,gpn), local_work%beta_vec,
      &            local_work%elem_hist1(1,1,gpn),
      &            local_work%elem_hist1(1,4,gpn), felem, iout )
+       if( local_work%capture_initial_state ) then
+!DIR$ VECTOR ALIGNED
+         local_work%elastic_strains_n1 = eps_elas
+!DIR$ VECTOR ALIGNED
+          local_work%plastic_work_density_n1(1:span) =
+     &          local_work%urcs_blk_n1(1:span,8,gpn)
+        end if
       else  ! linear-elastic update
         if( local_debug ) write(iout,9070)
         call drive_01_update_a
@@ -1489,7 +1540,7 @@ c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 11/9/2015 rhd                    *
+c     *             last modified : 6/13/2018 rhd                    *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1520,14 +1571,18 @@ c
 c                       locally defined variables
 c
       double precision ::
-     &  dtime, internal_energy, beta_fact, eps_bbar, ddt(mxvl,nstr),
-     &  q(mxvl,nstr,nstr), stress_n(nstrs,mxvl),
-     &  stress_n1(nstrs,mxvl), p_trial(mxvl), q_trial(mxvl), dfn1(mxvl),
+     &  dtime, internal_energy, beta_fact, eps_bbar,
+     &  p_trial(mxvl), q_trial(mxvl), dfn1(mxvl),
      &  yld_func(mxvl), step_scale_fact, plastic_work, gp_temps(mxvl),
      &  gp_dtemps(mxvl), plastic_eps_rates(mxvl), gp_rtemps(mxvl),
      &  zero, gp_alpha, et, ymfgm, copy_sigyld_vec(mxvl),
-     &  trans_factor, curve_min_value, uddt_temps(mxvl,nstr),
-     &  uddt(mxvl,nstr), cep(mxvl,6,6)
+     &  trans_factor, curve_min_value
+c
+c                       locals automatically deallocated
+c
+      double precision, allocatable :: ddt(:,:), q(:,:,:),
+     &  stress_n(:,:), stress_n1(:,:), uddt_temps(:,:),
+     &  uddt(:,:), cep(:,:,:)
 c
       logical :: null_point(mxvl), cut_step, process_block,
      &           adaptive, geonl, bbar, material_cut_step,
@@ -1585,6 +1640,10 @@ c
      &                   fgm_enode_props, hist_size_for_blk
       end if
 c
+      allocate( ddt(mxvl,nstr), q(mxvl,nstr,nstr), stress_n(nstrs,mxvl),
+     &          stress_n1(nstrs,mxvl), uddt_temps(mxvl,nstr),
+     &          uddt(mxvl,nstr), cep(mxvl,6,6) )
+c
       curve_type = -1
       if ( segmental ) call set_segmental_type( curve_set, curve_type,
      &                                          local_work%eps_curve )
@@ -1631,6 +1690,7 @@ c
      &            local_work%enode_mat_props, 8,
      &            local_work%fgm_flags(1,8) )
 c
+!DIR$ VECTOR ALIGNED
           do i = 1, span
             local_work%e_vec(i)         = local_work%e_vec_n(i)
             local_work%nu_vec(i)        = local_work%nu_vec_n(i)
@@ -1715,7 +1775,9 @@ c
       uddt = uddt_displ + uddt_temps
 !DIR$ VECTOR ALIGNED
       cep  = zero
+!DIR$ VECTOR ALIGNED
       do i = 1, span
+!DIR$ VECTOR ALIGNED
        if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
       end do
 c
@@ -1726,12 +1788,24 @@ c
       call drive_03_update_d( span, numrows_stress, stress_n,
      &               local_work%urcs_blk_n(1,1,gpn), mxvl )
 c
+c                perform a nonlinear stress update or a linear-elastic
+c                update. after nonlinear update, store elastic
+c                strains at n+1 if requested.
+c
       if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
         if( local_debug ) write(iout,9060)
         call drive_03_update_a
         call drive_03_update_c( span, numrows_stress, stress_n1,
      &               local_work%urcs_blk_n1(1,1,gpn), mxvl )
-      else  ! linear-elastic update
+        if( local_work%capture_initial_state ) then
+!DIR$ VECTOR ALIGNED
+          local_work%elastic_strains_n1(1:span,1:6) =
+     &          local_work%elem_hist1(1:span,10:15,gpn)
+!DIR$ VECTOR ALIGNED
+          local_work%plastic_work_density_n1(1:span) =
+     &          local_work%urcs_blk_n1(1:span,8,gpn)
+        end if
+      else  ! linear-elastic update. no history updates
         if( local_debug ) write(iout,9070)
         call drive_03_update_b
       end if
@@ -1757,8 +1831,6 @@ c
  9060 format(10x,'...update stresses nonlinear procedure...' )
  9070 format(10x,'...update stresses use linear [D]...' )
  9080 format(10x,'...[D]s saved to global structure...')
-c
-      return
 c
       contains
 c     ========
@@ -1834,7 +1906,7 @@ c
         double precision :: dtime, step_scale_fact
       end type
 c
-      type (arguments) ::args
+      type (arguments) :: args
 c
 c
 c          for rate dependent response defined by a set of segmental
@@ -1916,6 +1988,7 @@ c
 !DIR$ VECTOR ALIGNED
       copy_sigyld_vec(1:span) = local_work%sigyld_vec(1:span)
       if( .not. segmental ) then
+!DIR$ VECTOR ALIGNED
         do i = 1, span
          if( local_work%n_power_vec(i) .gt. zero )
      &    copy_sigyld_vec(i) = copy_sigyld_vec(i) * trans_factor
@@ -1934,7 +2007,7 @@ c
      &       local_work%nonlinear_flag,
      &       process_block, iout, segmental, curve_type, felem,
      &       local_work%e_vec_n, local_work%nu_vec_n,
-     &       hist_size_for_blk  )
+     &       hist_size_for_blk )
 c
       if( process_block ) then
 c
@@ -1955,6 +2028,7 @@ c
       args%step_scale_fact       = step_scale_fact
       args%rate_depend_segmental = curve_type .eq. 2
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( null_point(i) ) cycle
         if( .not. local_work%nonlinear_flag(i) ) cycle
@@ -1995,6 +2069,7 @@ c
      &  local_work%rtse(1,1,gpn), local_work%elem_hist(1,1,gpn),
      &  local_work%elem_hist1(1,1,gpn), cep, span, iout )
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( local_work%killed_status_vec(i) ) then
             cep(i,1:6,1:6) = zero
@@ -2050,6 +2125,7 @@ c
        end do
       end do
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
         if( killed_status(i) ) stress_np1(i,1:6) = zero
       end do
@@ -2073,8 +2149,7 @@ c
       implicit none
 c
       integer :: span, nstrs, mxvl
-      double precision ::
-     &  stress_n1(nstrs,*), urcs_blk_n1(mxvl,*)
+      double precision :: stress_n1(nstrs,*), urcs_blk_n1(mxvl,*)
 c
       integer :: k, i
 c
@@ -2428,8 +2503,9 @@ c
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero, gp_alpha, dtime, sig_tol, ddummy,
      &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
-     &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl),
-     &  uddt_temps(mxvl,nstr), uddt(mxvl,nstr), cep(mxvl,6,6)
+     &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
+      double precision, allocatable ::  uddt_temps(:,:), uddt(:,:), 
+     &                                  cep(:,:,:)
 c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, adaptive_possible, geonl,
@@ -2477,7 +2553,9 @@ c
      &                   number_points, curve_set,
      &                   fgm_enode_props, hist_size_for_blk
       end if
-
+c
+      allocate( uddt_temps(mxvl,nstr), uddt(mxvl,nstr), 
+     &          cep(mxvl,6,6) )
 c
 c          determine if the material elastic and properties are
 c          temperature dependent. The temperature dependent props
@@ -2584,6 +2662,17 @@ c
      &         gbl_cep_blocks(now_blk)%vector, 21, cep )
       if( local_debug ) write(iout,9080)
 c
+c          if required, compute and store the current elastic-strains.
+c          Otherwise - done
+c
+      if( .not. local_work%capture_initial_state ) return
+      call rstgp1_eps_elastic( span, mxvl, 
+     &      local_work%urcs_blk_n1(1,1,gpn),  
+     &      local_work%elastic_strains_n1,
+     &      local_work%e_vec, local_work%nu_vec )
+!DIR$ VECTOR ALIGNED
+      local_work%plastic_work_density_n1(1:span) =
+     &          local_work%urcs_blk_n1(1:span,8,gpn)
       return
 c
  9000 format(1x,'.... debug mm05. felem, gpn, span: ',i7,i3,i3)
@@ -4983,15 +5072,13 @@ c
      &         "               error type: ", i5, /,
      &         "               Job aborted" )
       end
-
-
 c     ****************************************************************
 c     *                                                              *
 c     *             subroutine rstgp1_update_strains                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/28/2015 rhd              *
+c     *                   last modified : 6/13/2018 rhd              *
 c     *                                                              *
 c     *      computed total strains at n+1 by including the          *
 c     *      increment over the current step: n+1 = n + deps         *
@@ -5009,8 +5096,7 @@ c
 c
 c                      parameter declarations
 c
-      double precision ::
-     & deps(mxvl,*), strain_np1(mxvl,*)
+      double precision ::  deps(mxvl,*), strain_np1(mxvl,*)
 c
 !DIR$ VECTOR ALIGNED
        do i = 1, span
@@ -5022,6 +5108,230 @@ c
          strain_np1(i,6) = strain_np1(i,6) + deps(i,6)
       end do
 c
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine rstgp2_capture_is_eps           *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 6/13/2018 rhd              *
+c     *                                                              *
+c     *      save small-strain tensor to support user-defined        *
+c     *      initial states for J-integral computations              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rstgp2_capture_is_eps( span, mxvl, felem, gpn,
+     &              strain_np1, elastic_strains_n1, blk_is_gradients )
+      implicit none
+c
+c                      parameter & local declarations
+c
+      integer :: span, mxvl, i, felem, gpn
+      double precision :: strain_np1(mxvl,6),
+     &                    elastic_strains_n1(span,6),
+     &                    blk_is_gradients(9,span)
+      double precision, parameter :: half = 0.5d0
+      logical, parameter :: local_debug = .true.
+      integer :: ielem
+c
+c              for small-strain formulation, save the symmetric
+c              strain tensor at end of step into the displacement
+c              gradients space for the support of use-defined initial
+c              state used by J-integrals for initial strains.
+c
+       associate( bg=>blk_is_gradients, en1=>strain_np1 )
+c
+!DIR$ VECTOR ALIGNED
+       do i = 1, span
+         bg(1,i) =          en1(i,1) - elastic_strains_n1(i,1)   ! eps_xx
+         bg(2,i) = half * ( en1(i,4) - elastic_strains_n1(i,4) ) ! eps_xy
+         bg(3,i) = half * ( en1(i,6) - elastic_strains_n1(i,6) ) ! eps_xz
+         bg(4,i) = half * ( en1(i,4) - elastic_strains_n1(i,4) ) ! eps_xy
+         bg(5,i) =          en1(i,2) - elastic_strains_n1(i,2)   ! eps_yy
+         bg(6,i) = half * ( en1(i,5) - elastic_strains_n1(i,5) ) ! eps_yz
+         bg(7,i) = half * ( en1(i,6) - elastic_strains_n1(i,6) ) ! eps_xz
+         bg(8,i) = half * ( en1(i,5) - elastic_strains_n1(i,5) ) ! eps_yz
+         bg(9,i) =          en1(i,3) - elastic_strains_n1(i,3)   ! eps_zz
+      end do
+c
+      if( .not. local_debug ) return
+      do i = 1, span
+         ielem = felem + i - 1
+         if( ielem .ne. 9060 ) cycle
+         write(*,*) '.... capture eps U0. elem, gpn:', ielem, gpn
+         write(*,9000) bg(1:9,i)
+       end do
+c
+      end associate
+c
+ 9000 format(10x,3f15.6)
+
+      return
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *              subroutine rstgp1_capture_is_grad               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 6/13/2018 rhd              *
+c     *                                                              *
+c     *      save finite-strain tensor to support user-defined       *
+c     *      initial states for J-integral computations              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine rstgp1_capture_is_grad( span, mxvl, felem, gpn,
+     &                        F, matl_elas_eps, R, blk_is_gradients )
+      implicit none
+c
+c                      parameter & local declarations
+c
+      integer :: span, mxvl, i, felem, gpn
+      double precision :: F(mxvl,3,3), matl_elas_eps(span,6),
+     &                    R(mxvl,3,3), blk_is_gradients(9,span)
+c
+      double precision, allocatable :: RT(:,:,:), d_elas_eps(:,:,:),
+     &                                 t(:,:,:), spatial_elas_eps(:,:,:)
+      double precision, parameter :: half = 0.5d0, one = 1.d0
+      logical, parameter :: local_debug = .false.
+c
+      allocate( RT(span,3,3), d_elas_eps(span,3,3), t(span,3,3),
+     &          spatial_elas_eps(span,3,3) )
+c
+c            compute/store: gradient(u) - spatial elastic strain
+c            for each element in block at current integration point
+c
+c            incoming elastic strains are in the
+c            (material) unrotated frame.
+c
+c            spatial elastic strain =
+c                R * material elastic strain * trans( R )
+c
+c             pull trans (R) for convenience
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        RT(i,1,1) = R(i,1,1)
+        RT(i,1,2) = R(i,2,1)
+        RT(i,1,3) = R(i,3,1)
+        RT(i,2,1) = R(i,1,2)
+        RT(i,2,2) = R(i,2,2)
+        RT(i,2,3) = R(i,3,2)
+        RT(i,3,1) = R(i,1,3)
+        RT(i,3,2) = R(i,2,3)
+        RT(i,3,3) = R(i,3,3)
+      end do
+c
+c             form unrotated tensor of elastic strains from vector
+c             material (unrotated) strains
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        d_elas_eps(i,1,1) = matl_elas_eps(i,1)
+        d_elas_eps(i,1,2) = matl_elas_eps(i,4) * half
+        d_elas_eps(i,1,3) = matl_elas_eps(i,6) * half
+        d_elas_eps(i,2,1) = matl_elas_eps(i,4) * half
+        d_elas_eps(i,2,2) = matl_elas_eps(i,2)
+        d_elas_eps(i,2,3) = matl_elas_eps(i,5) * half
+        d_elas_eps(i,3,1) = matl_elas_eps(i,6) * half
+        d_elas_eps(i,3,2) = matl_elas_eps(i,5) * half
+        d_elas_eps(i,3,3) = matl_elas_eps(i,3)
+      end do
+c
+c             temp = unrotated strain tensor * trans(R)
+c
+      associate( d => d_elas_eps )
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        t(i,1,1) =  d(i,1,1)*RT(i,1,1) + d(i,1,2)*RT(i,2,1) +
+     &                 d(i,1,3)*RT(i,3,1)
+        t(i,1,2) =  d(i,1,1)*RT(i,1,2) + d(i,1,2)*RT(i,2,2) +
+     &                 d(i,1,3)*RT(i,3,2)
+        t(i,1,3) =  d(i,1,1)*RT(i,1,3) + d(i,1,2)*RT(i,2,3) +
+     &                 d(i,1,3)*RT(i,3,3)
+c
+        t(i,2,1) =  d(i,2,1)*RT(i,1,1) + d(i,2,2)*RT(i,2,1) +
+     &                 d(i,2,3)*RT(i,3,1)
+        t(i,2,2) =  d(i,2,1)*RT(i,1,2) + d(i,2,2)*RT(i,2,2) +
+     &                 d(i,2,3)*RT(i,3,2)
+        t(i,2,3) =  d(i,2,1)*RT(i,1,3) + d(i,2,2)*RT(i,2,3) +
+     &                 d(i,2,3)*RT(i,3,3)
+c
+        t(i,3,1) =  d(i,3,1)*RT(i,1,1) + d(i,3,2)*RT(i,2,1) +
+     &                 d(i,3,3)*RT(i,3,1)
+        t(i,3,2) =  d(i,3,1)*RT(i,1,2) + d(i,3,2)*RT(i,2,2) +
+     &                 d(i,3,3)*RT(i,3,2)
+        t(i,3,3) =  d(i,3,1)*RT(i,1,3) + d(i,3,2)*RT(i,2,3) +
+     &                 d(i,3,3)*RT(i,3,3)
+      end do
+      end associate
+c
+c             spatial elastic strain tensor = R * temp
+c
+      associate( e => spatial_elas_eps )
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        e(i,1,1) =  R(i,1,1)*t(i,1,1) + R(i,1,2)*t(i,2,1) +
+     &                 R(i,1,3)*t(i,3,1)
+        e(i,1,2) =  R(i,1,1)*t(i,1,2) + R(i,1,2)*t(i,2,2) +
+     &                 R(i,1,3)*t(i,3,2)
+        e(i,1,3) =  R(i,1,1)*t(i,1,3) + R(i,1,2)*t(i,2,3) +
+     &                 R(i,1,3)*t(i,3,3)
+c
+        e(i,2,1) =  R(i,2,1)*t(i,1,1) + R(i,2,2)*t(i,2,1) +
+     &                 R(i,2,3)*t(i,3,1)
+        e(i,2,2) =  R(i,2,1)*t(i,1,2) + R(i,2,2)*t(i,2,2) +
+     &                 R(i,2,3)*t(i,3,2)
+        e(i,2,3) =  R(i,2,1)*t(i,1,3) + R(i,2,2)*t(i,2,3) +
+     &                 R(i,2,3)*t(i,3,3)
+c
+        e(i,3,1) =  R(i,3,1)*t(i,1,1) + R(i,3,2)*t(i,2,1) +
+     &                 R(i,3,3)*t(i,3,1)
+        e(i,3,2) =  R(i,3,1)*t(i,1,2) + R(i,3,2)*t(i,2,2) +
+     &                 R(i,3,3)*t(i,3,2)
+        e(i,3,3) =  R(i,3,1)*t(i,1,3) + R(i,3,2)*t(i,2,3) +
+     &                 R(i,3,3)*t(i,3,3)
+      end do
+      end associate
+c
+      associate( bg => blk_is_gradients )
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+         bg(1,i) = F(i,1,1) - spatial_elas_eps(i,1,1) - one
+         bg(2,i) = F(i,2,1) - spatial_elas_eps(i,2,1)
+         bg(3,i) = F(i,3,1) - spatial_elas_eps(i,3,1)
+         bg(4,i) = F(i,1,2) - spatial_elas_eps(i,1,2)
+         bg(5,i) = F(i,2,2) - spatial_elas_eps(i,2,2) - one
+         bg(6,i) = F(i,3,2) - spatial_elas_eps(i,3,2)
+         bg(7,i) = F(i,1,3) - spatial_elas_eps(i,1,3)
+         bg(8,i) = F(i,2,3) - spatial_elas_eps(i,2,3)
+         bg(9,i) = F(i,3,3) - spatial_elas_eps(i,3,3) - one
+      end do
+c
+      if( .not. local_debug ) return
+      write(*,*) '.... capture bg finite-eps. felem, gpn:', felem, gpn
+      do i = 1, span
+         write(*,*) '        elem: ', felem+i-1
+         write(*,*) '          unrotated....'
+         write(*,9000) d_elas_eps(i,1:3,1:3)
+         write(*,*) '          spatial....'
+         write(*,9000) spatial_elas_eps(i,1:3,1:3)
+         write(*,*) '          F @ n+1'
+         write(*,9000)  F(i,1:3,1:3)
+         write(*,*) '          grad - spatial '
+         write(*,9000) bg(1:9,i)
+       end do
+c
+      end associate
+c
+ 9000 format(10x,3f15.6)
       return
       end
 c     ****************************************************************
@@ -5132,6 +5442,7 @@ c
       tp = transpose( matrix )
 c
       do j = 1, 6
+!DIR$ VECTOR ALIGNED
         do i = 1, 6
           symm_version(map(i),map(j)) = half * ( matrix(i,j) +
      &                                  tp(i,j) )
@@ -5187,11 +5498,13 @@ c
 c
       subroutine rstgp1_a( ndof, nnode, span, ue, due, uenh, uen1,
      &                     mxvl )
-      integer :: span
-      double precision ::
-     &  ue(mxvl,*), due(mxvl,*), uenh(mxvl,*), uen1(mxvl,*),
-     &  half
-      data half / 0.5d00 /
+      implicit none
+      integer :: ndof, nnode, span, mxvl
+      double precision :: ue(mxvl,*), due(mxvl,*), uenh(mxvl,*),
+     &                    uen1(mxvl,*)
+c
+      integer :: i, j
+      double precision, parameter :: half = 0.5d0
 c
       do j = 1, ndof*nnode
 !DIR$ VECTOR ALIGNED
@@ -5444,3 +5757,45 @@ c
  9000 format(/,3x,">>> FATAL ERROR: wrong. size. rstgp1_store_cep",
      &       /,3x,"                 job aborted" )
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine rstgp1_eps_elastic                *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/3/2018 rhd               *
+c     *                                                              *
+c     *                    elastic strains at n+ 1                   *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine rstgp1_eps_elastic( span, mxvl, stress_n1,
+     &                               eps_elas_n1, e_n1, nu_n1 )
+      implicit none
+c
+      integer :: span, mxvl
+      double precision :: stress_n1(mxvl,6), eps_elas_n1(span,6),
+     &                    e_n1(span), nu_n1(span)
+c
+      integer :: i
+      double precision :: g_n1(mxvl)
+      double precision, parameter :: one = 1.d0, two = 2.d00
+c
+c              elastic strains at n + 1
+c
+      associate( x => eps_elas_n1, y => stress_n1 )
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+         g_n1(i)= e_n1(i)/two/(one+nu_n1(i))
+         x(i,1) = (y(i,1)-nu_n1(i)*(y(i,2)+y(i,3)))/e_n1(i)
+         x(i,2) = (y(i,2)-nu_n1(i)*(y(i,1)+y(i,3)))/e_n1(i)
+         x(i,3) = (y(i,3)-nu_n1(i)*(y(i,1)+y(i,2)))/e_n1(i)
+         x(i,4) = y(i,4) / g_n1(i)
+         x(i,5) = y(i,5) / g_n1(i)
+         x(i,6) = y(i,6) / g_n1(i)
+      end do
+      end associate
+c
+      return
+      end
+

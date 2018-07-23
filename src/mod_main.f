@@ -126,7 +126,7 @@ c     *                     module main_data                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 4/9/2018 rhd                    *
+c     *              last modified : 6/28/2018 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -470,7 +470,8 @@ c
 c
 c                 support for the initial state concept
 c
-      logical :: initial_state_defined
+      logical :: initial_state_option
+      integer :: initial_state_step
 c
       end module
 

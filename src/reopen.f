@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 4/9/2018 rhd               *
+c     *                   last modified : 6/28/2018 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -134,7 +134,8 @@ c
      &              initial_map_type, final_map_type,
      &              coarsening, agg_levels, interpolation, relaxation,
      &              sweeps, cf, cycle_type, max_levels,
-     &              one_crystal_hist_size, common_hist_size
+     &              one_crystal_hist_size, common_hist_size,
+     &              initial_state_step
       call chk_data_key( fileno, 1, 0 )
       call mem_allocate( 4 ) ! vectors based on # nodes
 c
@@ -163,7 +164,7 @@ c
      &             divergence_check, diverge_check_strict,
      &             line_search, ls_details, initial_stresses_exist,
      &             initial_stresses_user_routine,
-     &             initial_state_defined
+     &             initial_state_option
       read(fileno) sparse_stiff_file_name, packet_file_name,
      &             initial_stresses_file
       call chk_data_key( fileno, 1, 1 )
@@ -304,7 +305,6 @@ c
       call rotation_init( fileno, 2 )
       write(out,9060)
       call chk_data_key( fileno, 5, 1 )
-      call chk_data_key( fileno, 5, 2 )
       call strains_init( fileno, 2 )
       write(out,9080)
       call chk_data_key( fileno, 5, 3 )
@@ -713,6 +713,7 @@ c
      &         convergence_history(i)%adapt_substeps
       end do
       read(fileno) run_user_solution_routine
+      call chk_data_key( fileno, 15, 0 )
 c
 c                       get the release_cons_table if we have nodes
 c                       undergoing release operations
@@ -728,6 +729,7 @@ c
         end do
       end if
       write(out,9210)
+      call chk_data_key( fileno, 16, 0 )
 c
 c                       get output commands file ... information
 c                       save file name and bitmap list if it exists
@@ -738,6 +740,7 @@ c
         allocate( output_step_bitmap_list(local_length ) )
         read(fileno) output_step_bitmap_list
       end if
+      call chk_data_key( fileno, 17, 0 )
 c
 c                       get initial stress data
 c
@@ -746,6 +749,16 @@ c
         call rdbk( fileno, initial_stresses, prec_fact*noelem*6 )
         write(out,9230)
       end if
+      call chk_data_key( fileno, 18, 0 )
+c
+c                       get initial state arrays if they exist.
+c                       root gets all blocks.
+c
+      if( initial_state_option ) then
+          call initial_state_read( fileno )
+          write(out,9240)
+      end if
+      call chk_data_key( fileno, 19, 0 )
 c
 c                       USER routines data
 c
@@ -756,7 +769,7 @@ c                       read final check variable -- check if correct.
 c                       if not, the restored data is corrupted.
 c
 c
-      call chk_data_key( fileno, 15, 0 )
+      call chk_data_key( fileno, 20, 0 )
 c
 c
 c                       close the restart file
@@ -832,6 +845,7 @@ c
  9210 format(15x,'> convergence history read...')
  9220 format(15x,'> user routine data read...')
  9230 format(15x,'> initial stress data read...')
+ 9240 format(15x,'> initial state arrays read...')
       return
       end
 c     ****************************************************************
@@ -1647,6 +1661,87 @@ c
      &       '>>> Job terminated....')
 c
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                subroutine initial_state_read                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 6/28/2018 rhd              *
+c     *                                                              *
+c     *     read element blocks of intiial state data                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine initial_state_read( fileno )
+      use global_data ! old common.main
+c
+      use elem_block_data, only : initial_state_data
+c
+      implicit none
+c
+      integer :: fileno
+c
+      integer :: alloc_stat, blk, felem, span, ngp, iflag
+c
+      if( allocated( initial_state_data ) ) then
+          write(out,9920)  ! should not happen  .....
+          call die_abort
+      end if
+c
+      allocate( initial_state_data(nelblk), stat=alloc_stat )
+      if( alloc_stat .ne. 0 ) then
+           write(out,9900); write(out,9910) 1
+           call die_abort
+      end if
+c
+c            loop over all element blocks. allocate blocks and
+c            read from restart file.
+c
+      associate( x => initial_state_data )
+c
+      do blk = 1, nelblk
+c
+        felem = elblks(1,blk)
+        span  = elblks(0,blk)
+        ngp   = iprops(6,felem)
+c
+c             plastic work densities
+c
+        allocate( x(blk)%W_plastic_nis_block(span,ngp),
+     &            stat = alloc_stat )
+        if( alloc_stat .ne. 0 ) then
+           write(out,9900); write(out,9910) 2
+           call die_abort
+        end if
+        read(fileno) x(blk)%W_plastic_nis_block
+c
+c             displacement gradients
+c
+        allocate( x(blk)%displ_grad_nis_block(9,span,ngp),
+     &            stat = alloc_stat )
+        if( alloc_stat .ne. 0 ) then
+           write(out,9900); write(out,9910) 3
+           call die_abort
+        end if
+        read(fileno) x(blk)%displ_grad_nis_block
+c
+        call chk_data_key( fileno, 390, blk )
+c
+      end do
+c
+      end associate
+c
+      return
+c
+ 9900 format('>>> FATAL ERROR: memory allocate failure...')
+ 9910 format('                 initial_state_read: @',i2,/,
+     &       '>>> Job terminated....')
+ 9920 format(/1x,'>>>>> error: routine initial_state_read ',
+     &   /1x,    '             inconsistency. job terminated...')
+c
+      end
+
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine rotation_init                *

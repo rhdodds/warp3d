@@ -57,11 +57,10 @@ MVC      = /bin/mv -f
 #                    PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
 FTRAP      =
-INLINE     = -no-inline-factor
+INLINE     = -no-inline-factor # -fno-inline
 PROFILE    = -g
 PROFILE =
-OPT_REPORT = -qopt-report-annotate=text -qopt-report=5
-OPT_REPORT =
+OPT_REPORT = # -qopt-report=5 -qopt-report-annotate=html -qopt-report-phase=vec
 OPENMP     = -qopenmp -reentrancy
 CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
 CHECKFLOAT =
