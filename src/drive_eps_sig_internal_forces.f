@@ -3,7 +3,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/21/2017 rhd             *
+c     *                   last modified : 6/13/2018 rhd              *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -17,12 +17,6 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-c
-c              files containing code in this tree:
-c                rstgp1.f, dupstr.f rknstr.f gtlsn1.f rplstr.f
-c
-c
-c
       subroutine drive_eps_sig_internal_forces( step, iter,
      &                                          material_cut_step )
       use global_data ! old common.main
@@ -30,7 +24,7 @@ c
       use elem_block_data,   only : einfvec_blocks, edest_blocks
       use elem_extinct_data, only : dam_blk_killed, dam_ifv, dam_state
       use damage_data, only : growth_by_kill
-      use main_data, only: umat_serial
+      use main_data, only: umat_serial, initial_state_option
 c
       implicit none
 c
@@ -127,13 +121,22 @@ c
         umat_matl               = mat_type .eq. 8
         if( umat_matl .and. umat_serial ) blks_reqd_serial(blk) = .true.
       end do
-
 c
 c             allocate blocks of element internal force vectors.
 c             we compute the blocks of vectors in parallel then
 c             scatter in serial to eliminate conflicts.
 c
       call allocate_ifv( 1 )
+c
+c             user-defined initial state to support J computations.
+c           . set up global block-by-block
+c             data structure to store initial state. we
+c             save the displavement gradients - small-strain elastic
+c             strains. these are updated over solution until
+c             now step is > user-defined step to establish initial
+c             state. solid elements only.
+c
+      call recstr_setup_displ_grad_nis( step, iter )
 c
 c             update element strains, stresses, internal forces.
 c             MPI:
@@ -394,7 +397,7 @@ c     *                      subroutine do_nleps_block               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/24/2018 rhd              *
+c     *                   last modified : 6/13/2018 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -417,7 +420,9 @@ c
      &                              adjust_constants_ele_types,
      &                              axisymm_ele_types, link_types,
      &                              nonlocal_analysis, imatprp,
-     &                              initial_stresses
+     &                              initial_stresses,
+     &                              initial_state_option,
+     &                              initial_state_step
       use segmental_curves, only : max_seg_points, max_seg_curves
       use damage_data, only : dam_ptr, growth_by_kill
 c
@@ -435,7 +440,7 @@ c
       double precision, parameter :: zero=0.0d0
       integer, external :: omp_get_thread_num
       logical :: geo_non_flg, bbar_flg, tet_elem, tri_elem,
-     &           axisymm_elem, cohesive_elem, used_flg
+     &           axisymm_elem, cohesive_elem, used_flg, tflag
       logical, parameter :: local_debug = .false.
 c
       span           = elblks(0,blk)
@@ -517,9 +522,13 @@ c
       axisymm_elem = axisymm_ele_types(elem_type)
       local_work%is_bar_elem  = bar_types(elem_type)
       local_work%is_link_elem = link_types(elem_type)
-      local_work%process_initial_stresses =
+      local_work%process_initial_stresses = ! user-defined initial conditions
      &     allocated( initial_stresses ) .and. step == 1
-
+     &     .and. local_work%is_solid_matl
+      tflag =  iter > 0 .and. initial_state_option .and.
+     &         step <= initial_state_step
+     &         .and. local_work%is_solid_matl
+      local_work%capture_initial_state = tflag
 c
 c             See if we're actually an interface damaged material
 c
@@ -712,7 +721,7 @@ c     *                   subroutine recstr_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  4/23/2018 rhd             *
+c     *                   last modified :  6/13/20188 rhd            *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -825,6 +834,24 @@ c
       if( error .ne. 0 ) then
          write(out,9000) 5
          call die_abort
+      end if
+c
+      if( local_work%capture_initial_state ) then
+        span = local_work%span
+        allocate( local_work%elastic_strains_n1(span,nstr),
+     &            stat=error  )
+        if( error .ne. 0 ) then
+         write(out,9000) 51
+         call die_abort
+        end if
+        allocate( local_work%plastic_work_density_n1(span),
+     &            stat=error  )
+        if( error .ne. 0 ) then
+         write(out,9000) 52
+         call die_abort
+        end if
+        local_work%elastic_strains_n1 = zero
+        local_work%plastic_work_density_n1 = zero
       end if
 c
       allocate( local_work%sigyld_vec(mxvl),
@@ -1014,7 +1041,7 @@ c     *                   subroutine recstr_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  4/23/2018 rhd             *
+c     *                   last modified :  6/13/2018 rhd             *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1129,6 +1156,19 @@ c
       if( error .ne. 0 ) then
          write(out,9000) 5
          call die_abort
+      end if
+c
+      if( local_work%capture_initial_state ) then
+        deallocate( local_work%elastic_strains_n1, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 51
+         call die_abort
+        end if
+        deallocate( local_work%plastic_work_density_n1, stat=error )
+        if( error .ne. 0 ) then
+         write(out,9000) 52
+         call die_abort
+        end if
       end if
 c
       if( local_debug ) write(out,*) "..recstr_dell @ 8"
@@ -2247,3 +2287,94 @@ c
 c
       return
       end
+c     ****************************************************************
+c     *                                                              *
+c     *                subroutine recstr_setup_displ_grad_nis        *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 6/28/2018 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine recstr_setup_displ_grad_nis( nowstep, iter )
+      use global_data, only : nelblk, elblks, out, iprops! old common.main
+      use elem_block_data,  only : initial_state_data, eps_blk_list
+      use main_data, only: initial_state_option
+c
+      implicit none
+c
+c              parameters
+c
+      integer :: nowstep, iter
+c
+c              locals
+c
+      integer :: alloc_stat, blk, felem, span, ngp
+      double precision, parameter :: zero = 0.0d0
+c
+c              setup per block data structures to support the
+c              user-defined initial state as requested by user.
+c              skip if already allocated.
+c
+c              MPI: this code is already running on the ranks. the
+c                   data structures follow the per block model. only
+c                   blocks on this rank are created. easy check here
+c                   using the eps_blk_list vector - has flag for
+c                   blocks on this rank. for threads only, all blocks.
+c
+      if( .not. initial_state_option ) return
+      if( iter == 0 ) return
+      if( allocated( initial_state_data ) ) return
+c
+      allocate( initial_state_data(nelblk), stat=alloc_stat )
+      if ( alloc_stat .ne. 0 ) then
+           write(out,9900); write(out,9910)
+           call die_abort
+      end if
+c
+      associate( x => initial_state_data )
+c
+      do blk = 1, nelblk
+c
+        felem      = elblks(1,blk)
+        span       = elblks(0,blk)
+        ngp        = iprops(6,felem)
+c
+c             displacement gradients
+c
+        allocate( x(blk)%displ_grad_nis_block(9,span,ngp),
+     &            stat = alloc_stat )
+        if ( alloc_stat .ne. 0 ) then
+           write(out,9900); write(out,9910)
+           call die_abort
+        end if
+c
+c             plastic work densities
+c
+        allocate( x(blk)%W_plastic_nis_block(span,ngp),
+     &            stat = alloc_stat )
+        if ( alloc_stat .ne. 0 ) then
+           write(out,9900); write(out,9910)
+           call die_abort
+        end if
+c
+        x(blk)%displ_grad_nis_block = zero
+        x(blk)%W_plastic_nis_block  = zero
+c
+      end do
+
+      end associate
+c
+      return
+
+ 9900 format('>>> FATAL ERROR: memory allocate failure in routine:',
+     &  /,   '                 recstr_setup_displ_grad_nis' )
+ 9910 format('>>> Job terminated....')
+c
+      end
+
+
+
+

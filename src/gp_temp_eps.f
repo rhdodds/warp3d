@@ -4,7 +4,7 @@ c     *                      subroutine gp_temps                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/20/2017 rhd             *
+c     *                   last modified : 7/1/2018 rhd               *
 c     *                                                              *
 c     *     compute increment of temperature at a gauss point for    *
 c     *     all elements in the block.                               *
@@ -55,6 +55,7 @@ c
          call shapef( etype, xi, eta, zeta, sf(1) )
       end if
 c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
          gp_dtemps(i) = zero
          gp_temps(i)  = zero
@@ -63,6 +64,7 @@ c
 c
       if( temper_increment ) then
          do enode = 1, nnodel
+!DIR$ VECTOR ALIGNED
            do i = 1, span
              gp_dtemps(i) = gp_dtemps(i) +
      &                      sf(enode) * dtemps_node_blk(i,enode)
@@ -76,6 +78,7 @@ c                     in the block from nodal values.
 c
       if( temps_node_to_process ) then
         do enode = 1, nnodel
+!DIR$ VECTOR ALIGNED
           do i = 1, span
             gp_temps(i) = gp_temps(i) +
      &                    sf(enode) * temps_node_blk(i,enode)
@@ -89,6 +92,7 @@ c                     in the block from nodal values.
 c
       if( temperatures_ref ) then
         do enode = 1, nnodel
+!DIR$ VECTOR ALIGNED
           do i = 1, span
             gp_rtemps(i) = gp_rtemps(i) +
      &                     sf(enode) * temps_ref_node_blk(i,enode)
@@ -119,7 +123,7 @@ c     *                      subroutine gp_temp_eps                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 08/20/2017 rhd             *
+c     *                   last modified : 7/1/2018 rhd               *
 c     *                                                              *
 c     *     compute incremental thermal strains at gauss point for   *
 c     *     all elements of the block. subtract them from incr.      *
@@ -130,7 +134,7 @@ c
 c
       subroutine gp_temp_eps( span, deps, alpha_n1, gp_dtemps,
      &                        gp_temps, gp_rtemps, alpha_n, etype  )
-      use main_data,         only : bar_types, link_types
+      use main_data,  only : bar_types, link_types
       implicit none
       include 'param_def'
 c
@@ -156,10 +160,16 @@ c
       is_bar_elem  = bar_types(etype)
       is_link_elem = link_types(etype)
 c
+c           \Delta\veps_\theta = \alpha_{n+1) T_{n+1)  -
+c                                \alpha_n T_n
+c           adjust for reference temp
+c
+c           \alpha here can be anisotropic
+!DIR$ VECTOR ALIGNED
       do i = 1, span
 c
        theta_n = gp_temps(i) -  gp_dtemps(i)
-       dtn     = theta_n -  gp_rtemps(i)
+       dtn     = theta_n     -  gp_rtemps(i)
        dtn1    = gp_temps(i) -  gp_rtemps(i)
 c
        deps_theta(1) = alpha_n1(i,1)*dtn1 - alpha_n(i,1)*dtn

@@ -86,6 +86,8 @@ c
        real (h_prec), allocatable :: rtse(:,:,:)              ! (mxvl,nstr,mxgp)
        real (h_prec), allocatable :: elem_hist1(:,:,:), elem_hist(:,:,:)
        real (h_prec), allocatable :: ddtse(:,:,:)             ! (mxvl,nstr,mxgp)
+       real (h_prec), allocatable :: elastic_strains_n1(:,:)  ! (span,nstr)
+       real (h_prec), allocatable :: plastic_work_density_n1(:) ! (span)
        real (h_prec), allocatable :: strain_n(:,:,:)          ! (mxvl,nstr,mxgp)
        real (h_prec), allocatable :: dtemps_node_blk(:,:)     ! (mxvl,mxndel)
        real (h_prec), allocatable :: temps_ref_node_blk(:,:)  ! (mxvl,mxndel)
@@ -122,7 +124,6 @@ c
        real (h_prec), allocatable :: nuc_s_n_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: nuc_e_n_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: nuc_f_n_vec(:)           ! (mxvl)
-
 c
        real (h_prec), allocatable :: eps_curve(:)             ! (max_seg_points)
        real (h_prec), allocatable :: shape(:,:)               ! (mxndel,mxgp)
@@ -174,9 +175,10 @@ c
      &            inter_mat, macro_sz, cp_sz, now_thread
 c
        logical, allocatable ::  trne(:,:)                     ! (mxvl,mxndel)
-
+c
        logical :: geo_non_flg, bbar_flg, trn_e_block,
      &            trn_e_flags(mxvl),
+     &            capture_initial_state,
      &            first, material_cut_step, signal_flag,
      &            adaptive_flag, temperatures, lnelas_vec(mxvl),
      &            nuc_vec(mxvl), nonlinear_flag(mxvl), allow_cut,

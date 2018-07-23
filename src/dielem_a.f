@@ -39,13 +39,14 @@ c
      a                    glb_sig_gp, props, iprops, lprops, erots,
      b                    rotate, e_jresults, e_node_temps,
      c                    temperatures, enode_alpha_ij, ierr, elemno,
-     d                    geonl, numrows_stress, snodes, enode_swd,
-     e                    glb_eps_enode, glb_displ_grad_enode,
-     f                    omit_J7_J8_front_elems, fgm_e,
-     f                    fgm_nu, glb_eps_tens_gp, ym_nodes,
-     g                    ym_front_node,nu_nodes, nu_front_node,
-     h                    e_iresults, cf_traction_flags, cf_tractions,
-     i                    front_elem_flag, seg_curves_flag )
+     d                    geonl, numrows_stress, snodes, e_W_is,
+     e                    enode_swd, glb_eps_enode,
+     f                    glb_displ_grad_enode,
+     g                    omit_J7_J8_front_elems, fgm_e,
+     h                    fgm_nu, glb_eps_tens_gp, ym_nodes,
+     i                    ym_front_node,nu_nodes, nu_front_node,
+     j                    e_iresults, cf_traction_flags, cf_tractions,
+     k                    front_elem_flag, seg_curves_flag )
 c
       use global_data, only : mxgp, mxndel, myid, numprocs, out
       use main_data, only : fgm_node_values_defined
@@ -56,7 +57,8 @@ c
      d                   expanded_front_nodes, crack_curvature,
      e                   face_loading, process_temperatures,
      f                   max_exp_front,  comput_i, comput_j,
-     g                   j_linear_formulation, j_geonl_formulation
+     g                   j_linear_formulation, j_geonl_formulation,
+     h                   process_initial_state
 
 c
       implicit none
@@ -71,7 +73,8 @@ c
      b   e_node_temps(*), rotate(3,3), e_jresults(nj), erots(9,*),
      c   enode_alpha_ij(6,*), enode_swd(*), glb_eps_enode(6,*),
      d   glb_displ_grad_enode(9,*), glb_eps_tens_gp(9,*),
-     e   ym_nodes(*), e_iresults(ni,ni), cf_tractions(*), nu_nodes(*)
+     e   ym_nodes(*), e_iresults(ni,ni), cf_tractions(*), nu_nodes(*),
+     f   e_W_is(*)
       double precision :: nu_front_node
 c
       real ::    props(*)
@@ -393,7 +396,7 @@ c                                                              *
 c      dielem -> contains dielem_stresses_geonl                *
 c                                                              *
 c        written by: rhd                                       *
-c        last modified: 4/22/2018 rhd                          *
+c        last modified: 6/18/2018 rhd                          *
 c                                                              *
 c***************************************************************
 c
@@ -421,11 +424,13 @@ c
 c
        loc = ( ptno-1 ) * numrow + 1
 c
-c           unrotated cauchy -> cauchy
+c           unrotated cauchy -> cauchy. adjust energy density by
+c           user-defined state as required.
+c           position 10 is work density
 c
        call digetr( qn, erots(1,ptno) )
        call diqmp1( qn, glb_sig_gp(loc), glb_sig_tens_gp(1,ptno) )
-       glb_sig_tens_gp(10,ptno) = glb_sig_gp(loc+6) ! work density
+       glb_sig_tens_gp(10,ptno) = glb_sig_gp(loc+6) - e_W_is(ptno)
 c
 c           Cauchy -> 1PK (non-symmetric).
 c           Scale work density to volume at t = 0.
@@ -445,7 +450,7 @@ c                                                              *
 c      dielem -> contains dielem_stresses_linear_form          *
 c                                                              *
 c        written by: rhd                                       *
-c        last modified: 3/30/2018 rhd                          *
+c        last modified: 6/18/2018 rhd                          *
 c                                                              *
 c***************************************************************
 c
@@ -455,6 +460,12 @@ c
 c
       integer :: ptno, loc
 c
+c           adjust energy density for user-defined initial
+c           state as required.
+c           position 10 is work density
+c
+c
+!DIR$ VECTOR ALIGNED
       do ptno = 1, ngpts
           loc = ( ptno-1 )  * numrow
           glb_sig_tens_gp(1,ptno)  = glb_sig_gp(loc+1)
@@ -466,7 +477,7 @@ c
           glb_sig_tens_gp(7,ptno)  = glb_sig_gp(loc+6)
           glb_sig_tens_gp(8,ptno)  = glb_sig_gp(loc+5)
           glb_sig_tens_gp(9,ptno)  = glb_sig_gp(loc+3)
-          glb_sig_tens_gp(10,ptno) = glb_sig_gp(loc+7)
+          glb_sig_tens_gp(10,ptno) = glb_sig_gp(loc+7) - e_W_is(ptno)
           gp_det_F(ptno) = one
       end do
 c
@@ -490,6 +501,7 @@ c
 c
       f = 2.0d0
 c
+!DIR$ VECTOR ALIGNED
       do enode = 1, nnode
          glb_eps_tens_enode(1,enode) = glb_eps_enode(1,enode)
          glb_eps_tens_enode(2,enode) = glb_eps_enode(4,enode)/f
@@ -671,6 +683,7 @@ c
       dstrain_x        = zero !   "
       dgrad_x          = zero !   "
 c
+!DIR$ VECTOR ALIGNED
       do enode = 1, nnode
        nx = dsf(enode,1,ptno) * jacobi(1,1,ptno) +
      &      dsf(enode,2,ptno) * jacobi(1,2,ptno) +
@@ -696,8 +709,10 @@ c
        dym_x    = dym_x  + nx * ym_nodes(enode)
        dnu_x    = dnu_x  + nx * nu_nodes(enode)
 c
+!DIR$ VECTOR ALIGNED
        dstrain_x(1:9) = dstrain_x(1:9) +
      &                   nx * crk_eps_tens_enode(1:9,enode)
+!DIR$ VECTOR ALIGNED
        dgrad_x(1:9) = dgrad_x(1:9) +
      &                   nx * crk_displ_grad_enode(1:9,enode)
 c
@@ -886,11 +901,14 @@ c
       j6_incr = temp1 + temp2
       jterm(6) = jterm(6) + temp1 + temp2
       neglect_term_j6 = fgm_node_values_defined .or. seg_curves_flag
+     &                  .or. process_initial_state
       include_term_j6 = .not. neglect_term_j6
       if( neglect_term_j6 ) jterm(6) = zero
       if( ldebug )
-     &  write(iout,955) process_temperatures, neglect_term_j6,
-     &                  dtheta_x, point_q, temp1, temp2, j6_incr
+     &  write(iout,955) process_temperatures, include_term_j6,
+     &                  dtheta_x, point_temp, dalpha_x1(1),
+     &                  point_q, temp1, temp2, j6_incr
+c      call die_abort
 c
 c              form jterm 7 & jterm 8 of J for explicit partial
 c              derivative terms
@@ -963,8 +981,9 @@ c
  922  format(10x,'drad_x tensor:'/,3(15x,3d14.6/))
  950  format(' >>> rho, pt. velocity, KE: ',3d14.6,/,
      &       '     j3_incr:               ',d14.6 )
- 955  format(' >>> proc_temps, neglect_j6:         ',2l2,/,
-     &       '     dtheta_x, point_q, temp1, temp2:',4d14.6,/,
+ 955  format(' >>> proc_temps, include_j6:         ',2l2,/,
+     &       '     dtheta_x, point_temp, dalpha_x1(1):',3d14.6,/,
+     &       '     point_q, temp1, temp2:',3d14.6,/,
      &       '     j6_incr:                       :',d14.6 )
  960  format(' >>> omit_J7_J8_front_elems, ptype, product:      ',
      &  l2,i2,d14.6,/,
@@ -1285,6 +1304,7 @@ c
       point_y                 = zero
       point_z                 = zero
 c
+!DIR$ VECTOR ALIGNED
       do enode = 1, nnode
          q         = q         + sf(enode) * eqvalues(enode)
          x_vel     = x_vel     + sf(enode) * evel(1,enode)
@@ -1429,6 +1449,7 @@ c
 c
       double precision :: crack(3), global(3), rot(3,3)
 c
+!DIR$ VECTOR ALIGNED
       crack = matmul( rot, global )
       return
       end subroutine dielrv_a
@@ -1462,8 +1483,11 @@ c
 c            for strains:
 c            global are element global strains
 c
+!DIR$ VECTOR ALIGNED
       trotate = transpose( rotate )
+!DIR$ VECTOR ALIGNED
       space   = matmul( rotate, global )
+!DIR$ VECTOR ALIGNED
       crack   = matmul( space, trotate )
 c
       return
@@ -1836,6 +1860,7 @@ c
 c            {cstress} = [q] * {stress}; 6x1 vectors and 6x6 q
 c             (Cauchy)         (u.r. Cauchy)
 c
+!DIR$ VECTOR ALIGNED
       cauchy_vector = matmul( q, unrotated_stress )
 c
 c            store cauchy stresses in 3x3 tensor form.
@@ -1890,6 +1915,7 @@ c             X -> coordinates at t = 0
 c
       debug = gdebug
 c
+!DIR$ VECTOR ALIGNED
       F = displ_grad
       F(1,1) = F(1,1) + one
       F(2,2) = F(2,2) + one
@@ -2044,12 +2070,14 @@ c
       res = zero
 c
       if( stepa .eq. 1 .and. stepb .eq. 1 ) then
-        do i = 1, nterms
+!DIR$ VECTOR ALIGNED
+       do i = 1, nterms
           res = res + veca(i)*vecb(i)
         end do
       else
         indexa = 1
         indexb = 1
+!DIR$ VECTOR ALIGNED
         do i = 1, nterms
           res = res + veca(indexa)*vecb(indexb)
           indexa = indexa + stepa

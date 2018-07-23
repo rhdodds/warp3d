@@ -4,7 +4,7 @@ c     *                      subroutine mm01                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/21/12                    *
+c     *                   last modified : 7/1/2018 rhd               *
 c     *                                                              *
 c     *     this subroutine performs the recovery of the             *
 c     *     unrotated cauchy stress for the rate-independent         *
@@ -24,7 +24,7 @@ c
       subroutine mm01( span, felem, gpn, step, iter, ym_n1, nu_n1,
      &                 beta, hprime_n1, lnelas, yld_n1, cgn, cgn1,
      &                 deps, history, history1, rtse, dtemps,
-     &                 ym_n, nu_n )
+     &                 ym_n, nu_n, local_out, eps_elas )
       implicit integer (a-z)
       include 'param_def'
 c
@@ -68,6 +68,7 @@ c          ym_n     -- young's modulus for elements
 c                      in the block at temperature for step n
 c          nu_n     -- poisson's ratio for elements
 c                      in the block at temperature for step n
+c          eps_elas -- elastic strain at end of step
 c
 c      Notes:
 c      ------
@@ -101,39 +102,38 @@ c
 c
 c                     parameters
 c
-      double precision
-     &     nu_n1(*), beta(*), hprime_n1(*), cgn(mxvl,*),
-     &     cgn1(mxvl,*), deps(mxvl,*), ym_n1(*), history(span,*),
-     &     yld_n1(*), history1(span,*), rtse(mxvl,*), dtemps(*),
-     &     ym_n(*), nu_n(*)
-      logical lnelas(*)
+      integer :: span, felem, gpn, step, iter
+      double precision ::
+     &   nu_n1(*), beta(*), hprime_n1(*), cgn(mxvl,*),
+     &   cgn1(mxvl,*), deps(mxvl,*), ym_n1(*), history(span,*),
+     &   yld_n1(*), history1(span,*), rtse(mxvl,*), dtemps(*),
+     &   ym_n(*), nu_n(*), eps_elas(span,6)
+      logical :: lnelas(*)
 c
 c                     locals on the stack: these are not dynamically
 c                     allocated because both mxvl and nstr
 c                     are defined as parameters in the include file
 c                     param_def
 c
-      double precision
-     &     yfn(mxvl), mrts(mxvl), alpha_n(mxvl,6), devstr_n1(mxvl,nstr),
-     &     shear_mod_n1(mxvl), lk(mxvl), kbar(mxvl), eps_vol_n1(mxvl),
-     &     zero
-      integer iostat(mxvl), instat(mxvl)
-      logical yield(mxvl), trcmat, local_debug, prior_linear(mxvl),
-     &        isothermal
-c
-      data zero / 0.0d00 /
+      integer :: i
+      double precision ::
+     &   yfn(mxvl), mrts(mxvl), alpha_n(mxvl,6), devstr_n1(mxvl,nstr),
+     &   shear_mod_n1(mxvl), lk(mxvl), kbar(mxvl), eps_vol_n1(mxvl)
+      double precision, parameter :: zero = 0.d0
+      integer :: iostat(mxvl), instat(mxvl)
+      logical :: yield(mxvl), trcmat, local_debug, prior_linear(mxvl),
+     &           isothermal
 c
 c                       get the current output device for any meesages.
 c                       set up history if this is an iteration during
 c                       load step 1.
 c
-      call iodevn( local_in, local_out, trcmat, 2 )
       local_debug = .false.
-      if ( local_debug ) then
+      if( local_debug ) then
         write(local_out,9000) span, felem, gpn, step, iter
       end if
 c
-      if ( step .eq. 1 )
+      if( step .eq. 1 )
      &   call mm01_set_history( history, history1, cgn, yld_n1,
      &                          hprime_n1, span, mxvl, ym_n1,
      &                          nu_n1 )
@@ -208,11 +208,12 @@ c
      &                     devstr_n1, deps, instat, history1,
      &                     eps_vol_n1, local_debug )
 c
-c                       update the plastic
-c                       work density for elements in the block.
+c                       get elastic strains at n + 1,
+c                       update the plastic work density for
+c                       elements in the block.
 c
-      call mm01_plastic_work( span, mxvl, cgn, cgn1, yield, deps,
-     &                              nu_n1, ym_n1, shear_mod_n1 )
+      call mm01_wrapup( span, mxvl, cgn, cgn1, yield, deps,
+     &                  nu_n1, ym_n1, shear_mod_n1, eps_elas )
 c
       return
  9000 format( '>> debugging in mm01. ',
@@ -225,7 +226,7 @@ c     *              subroutine mm01_set_history                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 10/1/00                     *
+c     *                   last modified: 7/1/2018 rhd                *
 c     *                                                              *
 c     *    for step 1, initialize the history data for this gauss pt *
 c     *    for all elements in the block                             *
@@ -234,27 +235,21 @@ c     ****************************************************************
 c
       subroutine mm01_set_history( history, history1, cgn, sigma_o,
      &                             hprime, span, mxvl, ym_n1, nu_n1 )
-      implicit integer (a-z)
+      implicit none
 c
 c                     parameters
 c
-      double precision
+      integer :: mxvl, span
+      double precision ::
      &     hprime(*), cgn(mxvl,*), history(span,*), sigma_o(*),
      &     history1(span,*), ym_n1(*), nu_n1(*)
 c
 c                     locals
 c
-      double precision
-     &   kn, dword
-      integer iword(2)
+      integer :: i, iword(2)
+      double precision ::  kn, dword
+      double precision, parameter :: root3=dsqrt(3.d0), zero = 0.d0
       equivalence ( dword, iword )
-c
-c                     numerical constants
-c
-      double precision
-     &   root3, zero
-c
-      data zero, root3 / 0.0d00, 1.73205080756888d00 /
 c
 c           set up the history vector for the material.
 c           (1) -- updated estimate for lamda * deltat
@@ -273,6 +268,7 @@ c           (6)-(11) -- back stress for kinematic hardening
 c
       iword(1) = 3
       iword(2) = 0
+!DIR$ VECTOR ALIGNED
       do i = 1, span
          kn           = sigma_o(i) / root3
          history(i,1) = zero
@@ -331,10 +327,10 @@ c
 c
 c                     parameters
 c
-      integer span, mxvl, iostat(*), instat(*), iter, iout
-      logical   prior_linear(*), isothermal, debug, yield(*),
-     &          lnelas(*)
-      double precision
+      integer :: span, mxvl, iostat(*), instat(*), iter, iout
+      logical :: prior_linear(*), isothermal, debug, yield(*),
+     &           lnelas(*)
+      double precision ::
      & deps(mxvl,*), history(span,*), cgn(mxvl,*), ym_n1(*),
      & shear_mod(*), alpha_n(mxvl,*), nu_n1(*), rtse(mxvl,*), dtemps(*),
      & lk(*), beta(*), hprime_n1(*), yld_n1(*), kbar(*), mrts(*), yf(*),
@@ -342,21 +338,18 @@ c
 c
 c                     locals
 c
-      double precision
-     & dword, three, eps_mean, de1, de2, de3, de4, de5, de6,
-     & one, two, temper_tol, htol, deps_vol,
-     & hbari_np1, hbark_np1, hbark_n, root3, root2, yld_tol,
+      double precision ::
+     & dword, eps_mean, de1, de2, de3, de4, de5, de6,
+     & deps_vol, hbari_np1, hbark_np1, hbark_n,
      & e_n, nu_n, g_n, een1, een2, een3, een4, een5, een6, e1, e2,
-     & e3, e4, e5, e6, e, nu, devstr_n1_elas(6), eps_mean_n, zero
+     & e3, e4, e5, e6, e, nu, devstr_n1_elas(6), eps_mean_n
 c
-      integer iword(2), i
+      integer :: iword(2), i
       equivalence ( dword, iword )
-      data one, two, three, temper_tol, htol, root3, root2, yld_tol,
-     &     zero
-     & / 1.0d00, 2.0d00, 3.0d00, 0.00001d00, 0.000001d00,
-     &   1.7320508075688d00,
-     &   1.414213562373095d00, 0.0000001d00, 0.0d00 /
-c
+      double precision, parameter :: zero = 0.d0, one = 1.d0,
+     &   two = 2.d0, three = 3.d0, temper_tol =  0.00001d00,
+     &   htol = 0.000001d00, root3 = dsqrt(3.d0), root2 = dsqrt(2.d0),
+     &   yld_tol = 0.0000001d00
 c
 c                       do the basic setup of the trial elastic stress
 c                       state, check for yielding, set flags, etc.
@@ -367,7 +360,7 @@ c                       we also track if the element block is isothermal
 c                       over step (enables simpler update process
 c                       later)
 c
-      if ( debug ) write(iout,*) ' ... debugging in mm01_init...'
+      if( debug ) write(iout,*) ' ... debugging in mm01_init...'
       isothermal = .true.
 c
       do i = 1, span
@@ -529,49 +522,63 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
-c     *                    subroutine mm01_plastic_work              *
+c     *                    subroutine mm01_wrapup                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 10/1/00                     *
+c     *                   last modified: 7/1/2018                    *
 c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm01_plastic_work( span, mxvl, cgn, cgn1, yield, deps,
-     &                              nu, ym, shear_mod )
+      subroutine mm01_wrapup( span, mxvl, cgn, cgn1, yield, deps,
+     &                              nu, ym, shear_mod, eps_elas )
      &
       implicit none
 c
 c                     parameters
 c
-      integer span, mxvl
-      double precision
-     & cgn(mxvl,*), cgn1(mxvl,*), deps(mxvl,*), nu(*), ym(*),
-     & shear_mod(*)
-      logical yield(*)
+      integer :: span, mxvl
+      double precision :: cgn(mxvl,*), cgn1(mxvl,*), deps(mxvl,*),
+     &                    nu(*), ym(*), shear_mod(*), eps_elas(span,6)
+      logical :: yield(*)
 c
 c                     locals
 c
-      integer i
-      double precision
-     & zero, deps_plas_bar, dsig(6), deps_plas(6), half, root2, three,
-     & two, factor1, factor2
+      integer :: i
+      double precision ::
+     &   deps_plas_bar, dsig(6), deps_plas(6), e_n1, nu_n1, g_n1, t1
+      double precision, parameter :: zero = 0.d0, half = 0.5d0,
+     &  three = 3.d0, two = 2.d0, one = 1.d0,
+     &  root23 = dsqrt( two/three )
 c
-      data zero, half, root2, three, two
-     &  / 0.0d00, 0.5d00, 1.414213562373095d00, 3.0d00, 2.0d00 /
-
+c              elastic strains at n + 1
 c
-c                       for plastic points, compute the updated
-c                       plastic work density and accumulated
-c                       (uniaxial) plastic strain
-c
-c
+!DIR$ VECTOR ALIGNED
       do i = 1, span
-       cgn1(i,8)        = cgn(i,8)
-       cgn1(i,9)        = cgn(i,9)
-       if ( yield(i) ) then
-         deps_plas_bar    = zero
+         e_n1  = ym(i)
+         nu_n1 = nu(i)
+         g_n1  = e_n1/two/(one+nu_n1)
+         eps_elas(i,1) = (cgn1(i,1)-nu_n1*(cgn1(i,2)+cgn1(i,3)))/e_n1
+         eps_elas(i,2) = (cgn1(i,2)-nu_n1*(cgn1(i,1)+cgn1(i,3)))/e_n1
+         eps_elas(i,3) = (cgn1(i,3)-nu_n1*(cgn1(i,1)+cgn1(i,2)))/e_n1
+         eps_elas(i,4) = cgn1(i,4) / g_n1
+         eps_elas(i,5) = cgn1(i,5) / g_n1
+         eps_elas(i,6) = cgn1(i,6) / g_n1
+      end do
+c
+c              for plastic points, compute the updated
+c              plastic work density and accumulated
+c              (uniaxial) plastic strain
+c
+c              d( epsbar ) = sqrt[ (2/3) deps^p_{ij} deps^p_{ij} ]
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+       cgn1(i,8) = cgn(i,8)
+       cgn1(i,9) = cgn(i,9)
+       if( .not. yield(i) ) cycle
+         deps_plas_bar = zero
          dsig(1) = cgn1(i,1) - cgn(i,1)
          dsig(2) = cgn1(i,2) - cgn(i,2)
          dsig(3) = cgn1(i,3) - cgn(i,3)
@@ -594,17 +601,13 @@ c
      &     + deps_plas(4) * (cgn1(i,4) + cgn(i,4))
      &     + deps_plas(5) * (cgn1(i,5) + cgn(i,5))
      &     + deps_plas(6) * (cgn1(i,6) + cgn(i,6)) )
-         factor1 = ( deps_plas(1) - deps_plas(2) )**2  +
-     &             ( deps_plas(2) - deps_plas(3) )**2  +
-     &             ( deps_plas(1) - deps_plas(3) )**2
-         factor2 = deps_plas(4)**2 +  deps_plas(5)**2 +
-     &             deps_plas(6)**2
-         deps_plas_bar =  (root2/three) * sqrt( factor1 +
-     &                    (three/two)*factor2 )
+         t1 = deps_plas(1)**2 + deps_plas(2)**2 + deps_plas(3)**2 +
+     &        half*(deps_plas(4)**2+deps_plas(5)**2+deps_plas(6)**2)
+         deps_plas_bar = root23 * sqrt( t1  )
          cgn1(i,9) = cgn(i,9) + deps_plas_bar
-        end if
       end do
 c
+ 9000 format(10x,2f15.6)
       return
       end
 c     ****************************************************************

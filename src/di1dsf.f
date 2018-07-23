@@ -14,6 +14,10 @@ c *                       routine replaces di_expan_coeff_setup,       *
 c *                       and the routine it calls, di_node_props,     *
 c *                       replaces di_node_expan_coeff.                *
 c *                                                                    *
+c *                       called only if temperatures have been        *
+c *                       at some point over the loading history       *
+c *                       see didriv for more discussion               *
+c *                                                                    *
 c *                       *** supports MPI execution ***               *
 c *                       written by:    mcw                           *
 c *                       last modified: 3/25/2018 rhd                 *
@@ -230,10 +234,11 @@ c
 c             for MPI:
 c             reduce counts to root and re-broadcast all
 c             reduce nodal alpha_ij values to root and re-broadcast all
-c             each rank computes nodal averages for all nodes in model
+c             for simplicity, each rank then computes nodal averages
+c             for all nodes in model
 c
-      call wmpi_reduce_all_int_inplace( count_alpha, nonode )
-      call wmpi_reduce_all_real_inplace( snode_alpha_ij, nonode*6 )
+      call wmpi_allreduce_int( count_alpha, nonode )
+      call wmpi_allreduce_real( snode_alpha_ij, nonode*6 )
 c
       do snode = 1,nonode
          if( count_alpha(snode) .ne. 0 ) then
@@ -254,15 +259,26 @@ c             for temperature-dependent material properties, we need to
 c             make sure that root has the array data from which to obtain
 c             e_front, nu_front, and alpha_front.
 c
-c             Fix a wacky bug where snode_alpha_ij gets messed up
-c             Note: not such if this is still needed but left
-c             in 3/19/2018 since no harm
+c             alpha_ij values are reduced to root, bcast and averaged on all
+c             ranks above - so root has the full, correct alpha_ij array.
 c
-      alpha_copy(1:6) = snode_alpha_ij(orig_node,1:6)
-      call wmpi_send_real_new( seg_snode_e( orig_node), 1)
-      call wmpi_send_real_new( seg_snode_nu(orig_node), 1 )
-      call wmpi_send_real_new( alpha_copy, 6 )
-      if( myid .eq. 0 ) snode_alpha_ij(orig_node,1:6) = alpha_copy(1:6)
+c             for temperature dependent stress-strain, each block
+c             above puts its e, nu value into the global snode
+c             locations - it does not add to what is there. We can't use
+c             sum overall ranks, bcast and average since not all ranks
+c             likely do not contribute to seg_snode_e, seg_snode_nu.
+c
+c             we use the MPI reduction operatore MAX which keeps on root
+c             the maximum value of each vector location sent by the workers.
+c             a neat solution here.
+c
+c             But we only need to do this for the crack front orig_node,
+c             not the whole nonode vector.
+c
+      if( process_temperatures ) then
+         call wmpi_reduce_real_max( seg_snode_e(orig_node), 1)
+         call wmpi_reduce_real_max( seg_snode_nu(orig_node), 1 )
+      end if
 c
       if( debug ) then
          write(out, 500)
@@ -565,7 +581,7 @@ c * at model nodes by extrapolation from element integration points    *
 c *                                                                    *
 c *                *** supports MPI execution ***                      *
 c *                   written by: mcw                                  *
-c *                last modified: 4/21/2018 rhd                        *
+c *                last modified: 6/15/2018 rhd                        *
 c *                                                                    *
 c **********************************************************************
 c
@@ -574,12 +590,13 @@ c
       use main_data, only: fgm_node_values, temperatures_ref,
      &                     fgm_node_values_defined,
      &                     fgm_node_values_used,
-     &                     initial_state_defined
+     &                     initial_state_option
       use global_data, only : nonode, out, temperatures, myid, nelblk
       use j_data, only: extrap_counts, swd_at_nodes, strain_at_nodes,
      &                  fgm_e, fgm_nu, comput_i, comput_j,
      &                  displ_grad_at_nodes, j_linear_formulation,
-     &                  j_geonl_formulation, block_seg_curves
+     &                  j_geonl_formulation, block_seg_curves,
+     &                  process_initial_state
       implicit none
 c
 c          parameters
@@ -610,10 +627,11 @@ c
       call wmpi_bcast_int( do_it )
       call wmpi_bcast_log( temperatures ) ! just in case
       call wmpi_bcast_log( temperatures_ref ) !    "
-      call wmpi_bcast_log( initial_state_defined ) ! "
+      call wmpi_bcast_log( initial_state_option ) ! "
       call wmpi_bcast_log( comput_j )
       call wmpi_bcast_log( comput_i )
       call wmpi_bcast_log( j_linear_formulation )
+      call wmpi_bcast_log( process_initial_state )
       j_geonl_formulation = .not. j_linear_formulation
 c
 c          if do_it = 2 -- deallocate all module J-data.
@@ -682,7 +700,7 @@ c
       if( fgm_node_values_used )            build_J7_J8_data = .true.
       if( comput_i .and. temperatures )     build_J7_J8_data = .true.
       if( comput_i .and. temperatures_ref ) build_J7_J8_data = .true.
-      if( initial_state_defined )           build_J7_J8_data = .true.
+      if( process_initial_state )           build_J7_J8_data = .true.
       if( allocated( block_seg_curves ) ) then
         if( any( block_seg_curves ) )       build_J7_J8_data = .true.
       end if
@@ -712,8 +730,11 @@ c
          call die_abort
       end if
       extrap_counts       = 0
+!DIR$ VECTOR ALIGNED
       swd_at_nodes        = zero
+!DIR$ VECTOR ALIGNED
       strain_at_nodes     = zero
+!DIR$ VECTOR ALIGNED
       displ_grad_at_nodes = zero
 c
       call di_node_vals( extrap_counts, swd_at_nodes, strain_at_nodes,
@@ -786,8 +807,6 @@ c
 c                loop over all structure elements. handle
 c                only elements whose data is owned by this processor.
 c
-c                threading this loop is slower than serial. :(
-c
       time_start = omp_get_wtime()
 c$OMP PARALLEL DO PRIVATE( elemno, blk )
       do elemno = 1, noelem
@@ -804,14 +823,14 @@ c$OMP ATOMIC
       end do  ! over structure elements
 c$ OMP END PARALLEL DO
       time_end = omp_get_wtime()
-      write(out,*) '... eleme loop time: ', time_end - time_start
+c      write(out,*) '... eleme loop time: ', time_end - time_start
 c
 c                reduce vectors to root then broadcast to all.
 c                compute nodal average values. each rank thus has a
 c                complete copy for all model nodes.
 c
-      call wmpi_reduce_all_int_inplace( extrap_counts, nonode )
-      call wmpi_reduce_all_dble_inplace( swd_at_nodes, nonode )
+      call wmpi_allreduce_int( extrap_counts, nonode )
+      call wmpi_allreduce_dble( swd_at_nodes, nonode )
 c
       do snode = 1, nonode
        if( extrap_counts(snode) .eq. 0 ) cycle
@@ -821,21 +840,22 @@ c
 
 c
       if( j_linear_formulation ) then
-        call wmpi_reduce_all_dble_inplace( strain_at_nodes, 6*nonode )
+        call wmpi_allreduce_dble( strain_at_nodes, 6*nonode )
         do snode = 1, nonode
           if( extrap_counts(snode) .eq. 0 ) cycle
           rc = one / dble( extrap_counts(snode) )
+!DIR$ VECTOR ALIGNED
           strain_at_nodes(1:6,snode) = strain_at_nodes(1:6,snode) * rc
         end do
       end if
 
 c
       if( j_geonl_formulation ) then
-       call wmpi_reduce_all_dble_inplace( displ_grad_at_nodes,
-     &                                     9*nonode )
+       call wmpi_allreduce_dble( displ_grad_at_nodes, 9*nonode )
         do snode = 1, nonode
           if( extrap_counts(snode) .eq. 0 ) cycle
           rc = one / dble( extrap_counts(snode) )
+!DIR$ VECTOR ALIGNED
           displ_grad_at_nodes(1:9,snode) =
      &        displ_grad_at_nodes(1:9,snode) * rc
         end do
@@ -850,7 +870,7 @@ c * di_nod_vals_one_elem - process 1 element to create element nodal   *
 c *         values &  add to model model nodes to average computations *
 c *                                                                    *
 c *                   written by: rhd                                  *
-c *                last modified: 6/1/2018 rhd                         *
+c *                last modified: 6/15/2018 rhd                        *
 c *                                                                    *
 c **********************************************************************
 c
@@ -862,8 +882,10 @@ c
      &                        scoords => c, sdispl => u, dstmap
       use main_data, only : incmap, crdmap, incid, elems_to_blocks,
      &                      trn, trnmat
-      use j_data, only : j_linear_formulation, j_geonl_formulation
-      use elem_block_data, only : urcs_n_blocks, eps_n_blocks
+      use j_data, only : j_linear_formulation, j_geonl_formulation,
+     &                   process_initial_state
+      use elem_block_data, only : urcs_n_blocks, eps_n_blocks,
+     &                            initial_state_data
 c
       implicit none
 c
@@ -887,12 +909,12 @@ c
      &     e_displ(3,mxndel), dsf(nrow_dsf,3), jacob(3,3), jacobi(3,3),
      &     enode_swd(mxndel), enode_strains(6,mxndel), rnum_gpts,
      &     rcount, enode_displ_grad(9,mxndel), xsi, eta,
-     &     zeta, weight, lg(mxgp), R(3,3), t(3),
+     &     zeta, weight, lg(mxgp), R(3,3), t(3), W0, eps_0(6),
      &     e_coords_n(3,mxndel), detvol_0, detvol_n, vol_0, vol_n,
      &     f_vec(9), f_tens(3,3), detf, factor, j_bar
       equivalence (f_vec, f_tens)
-      double precision, parameter :: zero=0.0d0, one=1.0d0
-      double precision, pointer :: urcs_n(:), eps_n(:)
+      double precision, parameter :: zero=0.0d0, one=1.0d0, two=2.d0
+      double precision, pointer :: urcs_n(:), eps_n(:), z(:,:)
       logical :: geonl, linearform, ok
       logical, parameter :: debug = .false.
 c
@@ -934,15 +956,30 @@ c
       sig_offset = (rel_elem - 1) * nstrs * num_gpts
       eps_offset = (rel_elem - 1) * nstr  * num_gpts
 c
-c             1. gather integration point work densities
+c             1. gather integration point work densities.
+c                adjust for plastic value at the user-defined
+c                initial state if required
 c
+!DIR$ VECTOR ALIGNED
       do gpn = 1, num_gpts
          swd_at_gpts(gpn) = urcs_n(sig_offset + 7)
          sig_offset       = sig_offset + nstrs
       end do
 c
+      if( process_initial_state ) then
+        associate( z => initial_state_data(blk)%W_plastic_nis_block )
+!DIR$ VECTOR ALIGNED
+        do gpn = 1, num_gpts
+           W0 = z(rel_elem,gpn)
+           swd_at_gpts(gpn) = swd_at_gpts(gpn) - W0
+        end do
+        end associate
+      end if
+c
 c             2. for small eps, gather strains at points.
-c                strains are in model global coordiantes
+c                strains are in model global coordinates.
+c                adjust for elastic strains at user-defined
+c                initial state as required.
 c
       if( j_linear_formulation ) then
         do gpn = 1, num_gpts
@@ -950,6 +987,20 @@ c
          strain_at_gpts(1:6,gpn) = eps_n(i:j)
          eps_offset = eps_offset + nstr
         end do
+        if( process_initial_state ) then
+         associate( z=>  initial_state_data(blk)%displ_grad_nis_block )
+!DIR$ VECTOR ALIGNED
+         do gpn = 1, num_gpts
+          eps_0(1) = z(1,rel_elem,gpn)
+          eps_0(2) = z(5,rel_elem,gpn)
+          eps_0(3) = z(9,rel_elem,gpn)
+          eps_0(4) = z(2,rel_elem,gpn) * two
+          eps_0(5) = z(8,rel_elem,gpn) * two
+          eps_0(6) = z(3,rel_elem,gpn) * two
+          strain_at_gpts(1:6,gpn) = strain_at_gpts(1:6,gpn) - eps_0
+         end do
+         end associate
+        end if
       end if
 c
 c             3. for large eps, compute displacement gradient tensor
@@ -960,6 +1011,9 @@ c                convert local node system {u} -> global as needed
 c                global = trans(R) local. displacement grads
 c                are in model global coordinates
 c
+c                adjust for elastic strains at user-defined initial
+c                state as required.
+
       if( j_geonl_formulation ) then
        do enode = 1, num_enodes
          snode = e_snodes(enode)
@@ -977,11 +1031,21 @@ c
            e_displ(2,enode) = R(1,2)*t(1) + R(2,2)*t(2) + R(3,2)*t(3)
            e_displ(3,enode) = R(1,3)*t(1) + R(2,3)*t(2) + R(3,3)*t(3)
          end if
-        end do
+       end do ! over enode
 c
-        call di_displ_grad_one_elem( elemno, etype, num_enodes,
-     &                               num_gpts, int_order, e_coords,
-     &                               e_displ, displ_grad_at_gpts )
+       call di_displ_grad_one_elem( elemno, etype, num_enodes,
+     &                              num_gpts, int_order, e_coords,
+     &                              e_displ, displ_grad_at_gpts )
+c
+       if( process_initial_state ) then
+         associate( z => initial_state_data(blk)%displ_grad_nis_block )
+         do gpn = 1, num_gpts
+!DIR$ VECTOR ALIGNED
+          displ_grad_at_gpts(1:9,gpn) = displ_grad_at_gpts(1:9,gpn) -
+     &                                  z(1:9,rel_elem,gpn)
+         end do
+         end associate
+       end if ! on initial_state
       end if ! on nlgeom
 c
       if( debug  .and. (elemno == 77 .or. elemno == 18000) ) then
@@ -994,8 +1058,11 @@ c
 c
 c             4. extrapolate integration point values to element nodes
 c
+!DIR$ VECTOR ALIGNED
       enode_swd        = zero  !  all terms    always
+!DIR$ VECTOR ALIGNED
       enode_strains    = zero  !     "         small eps only
+!DIR$ VECTOR ALIGNED
       enode_displ_grad = zero  !     "         large eps only
 c
       call di_extrap_to_nodes( elemno, etype, num_enodes, int_order,
@@ -1031,6 +1098,7 @@ c
       if( j_linear_formulation ) then
         do enode = 1, num_enodes
           snode = e_snodes(enode)
+!DIR$ VECTOR ALIGNED
           do k = 1, 6
 c$OMP ATOMIC
            strain_at_nodes(k,snode) = strain_at_nodes(k,snode) +
@@ -1040,8 +1108,9 @@ c$OMP ATOMIC
       end if
 c
       if( j_geonl_formulation ) then
-        do enode = 1, num_enodes
+      do enode = 1, num_enodes
          snode = e_snodes(enode)
+!DIR$ VECTOR ALIGNED
          do k = 1, 9
 c$OMP ATOMIC
           displ_grad_at_nodes(k,snode) =
@@ -1153,6 +1222,7 @@ c
         duz   = zero
         dvz   = zero
         dwz   = zero
+!DIR$ VECTOR ALIGNED
         do enode = 1, num_enodes
           nx = dsf_1(enode) * jacobi(1,1) + dsf_2(enode) * jacobi(1,2) +
      &         dsf_3(enode) * jacobi(1,3)
@@ -1195,8 +1265,10 @@ c                 Set displacement gradient tensor as F - I at
 c                 each integration point and leave.
 c
       if( etype .ne. 2 ) then ! 8-node hex is type 2
-        do ptno = 1, num_gpts
-           displ_grads(1:9,ptno) = F_vec(1:9,ptno)
+!DIR$ VECTOR ALIGNED
+      do ptno = 1, num_gpts
+!DIR$ VECTOR ALIGNED
+      displ_grads(1:9,ptno) = F_vec(1:9,ptno)
            displ_grads(1,ptno)   = F_vec(1,ptno) - one
            displ_grads(5,ptno)   = F_vec(5,ptno) - one
            displ_grads(9,ptno)   = F_vec(9,ptno) - one
@@ -1208,6 +1280,7 @@ c              4. for 8-node hex, replace F with F-bar
 c
       J_bar = sum_detF_dvel / vol_0
 c
+!DIR$ VECTOR ALIGNED
       do ptno = 1, num_gpts
         factor = (J_bar/ detf(ptno) ) ** third
         displ_grads(1,ptno) = (F_vec(1,ptno) * factor) - one
@@ -1315,14 +1388,16 @@ c
       x = one / dble( num_gpts )
 c
       do gpn = 1, num_gpts
-          enode_vals(1:nvalues,1) = enode_vals(1:nvalues,1) +
+!DIR$ VECTOR ALIGNED
+      enode_vals(1:nvalues,1) = enode_vals(1:nvalues,1) +
      &                              gpt_vals(1:nvalues,gpn)
       end do
 c
       enode_vals(1:nvalues,1) = enode_vals(1:nvalues,1) * x
 c
       do enode = 2, num_enodes
-          enode_vals(1:nvalues,enode) = enode_vals(1:nvalues,1)
+!DIR$ VECTOR ALIGNED
+      enode_vals(1:nvalues,enode) = enode_vals(1:nvalues,1)
       end do
 c
       return
@@ -1346,7 +1421,8 @@ c
        call oulgf( etype, xi, eta, zeta, lg, int_order )
 c
        do gpn = 1, num_gpts
-          enode_vals(1:nvalues,enode) =  enode_vals(1:nvalues,enode) +
+!DIR$ VECTOR ALIGNED
+       enode_vals(1:nvalues,enode) =  enode_vals(1:nvalues,enode) +
      &                        gpt_vals(1:nvalues,gpn) * lg(gpn)
          end do
 c

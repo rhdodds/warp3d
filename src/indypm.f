@@ -1,10 +1,11 @@
+
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/6/2016 rhd               *
+c     *                   last modified : 6/28/2018 rhd              *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -25,7 +26,8 @@ c
      &                      extrap_off_next_step, line_search,
      &                      ls_details, ls_min_step_length,
      &                      ls_max_step_length, ls_rho,
-     &                      ls_slack_tol, umat_serial
+     &                      ls_slack_tol, umat_serial,
+     &                      initial_state_option, initial_state_step
       use hypre_parameters
       use performance_data
       use distributed_stiffness_data, only : parallel_assembly_allowed,
@@ -97,6 +99,7 @@ c
       if( matchs('unloading',6)     ) go to 3300
       if( matchs('divergence',5)    ) go to 3400
       if( matchs_exact('line')      ) go to 3500 ! line search
+      if( matchs_exact('initial')   ) go to 3600 ! state
 c
 c                       no match with solutions parameters command.
 c                       return to driver subroutine to look for high
@@ -1401,6 +1404,48 @@ c
        call scan_flushline
        go to 10
 c
+c **********************************************************************
+c *                                                                    *
+c *                     user-specified initial state setup             *
+c *                                                                    *
+c **********************************************************************
+c
+ 3600  continue
+c
+      if( .not. matchs_exact('state') ) then
+         write(out,9530)
+         num_error = num_error + 1
+         go to 10
+      end if
+      if( matchs_exact( 'option' ) ) then
+         initial_state_option = .false.
+         if( matchs_exact( 'on' ) ) then
+             initial_state_option = .true.
+         elseif( matchs_exact( 'off' ) ) then
+             initial_state_option = .false.
+         else
+           write(out,9540)
+           num_error = num_error + 1
+         end if
+         if( ltmstp .ne. 0 ) then
+           write(out,9570)
+           num_error = num_error + 1
+         end if
+         go to 10
+      end if
+      if( matchs_exact( 'step' ) ) then
+        if( .not. numi( initial_state_step ) ) then
+           write(out,9550)
+           num_error = num_error + 1
+           go to 10
+        end if
+        go to 10
+      else
+        write(out,9560)
+        num_error = num_error + 1
+        go to 10
+      end if
+c
  9999 sbflg1 = .true.
       sbflg2 = .false.
 c
@@ -1438,7 +1483,13 @@ c
  9516 format(/1x,'>>>>> error: expecting min step length value: ',a,/)
  9518 format(/1x,'>>>>> error: expecting max step length value: ',a,/)
  9520 format(/1x,'>>>>> error: expecting slack tolerance value: ',a,/)
-c
+ 9530 format(/1x,'>>>>> error: expecting keyword: state as only',
+     &     ' option',/)
+ 9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
+ 9550 format(/1x,'>>>>> error: expecting step number',/)
+ 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
+ 9570 format(/1x,'>>>>> error: initial state option allowed only',
+     &       /1x,'             before solution of step 1',/)
       end
 c
 c
@@ -1459,10 +1510,9 @@ c
       use damage_data, only : perm_load_fact
 c
       implicit integer (a-z)
-      real value, zero, one
+      real :: value, zero, one
       character :: dums
-      double precision
-     &   dumd
+      double precision :: dumd
       include 'param_def'
       data zero, one / 0.0, 1.0 /
 c
@@ -1474,7 +1524,7 @@ c
         call errmsg(317,dum,dums,value,dumd)
         return
       end if
-      perm_load_fact = 1.0 / value
+      perm_load_fact = one / value
       return
 c
       end

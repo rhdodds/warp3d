@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/9/2018 rhd               *
+c     *                   last modified : 6/28/2018 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -45,7 +45,7 @@ c
      &                      fgm_node_values_defined,
      &                      fgm_node_values_used,
      &                      fgm_node_values_cols,
-     &                      initial_state_defined
+     &                      initial_state_option, initial_state_step
 c
       use stiffness_data
       use file_info
@@ -506,7 +506,8 @@ c
 c                       initialize variables for support of a user
 c                       defined initial state (J-integrals)
 c
-      initial_state_defined = .false.
+      initial_state_option = .false.
+      initial_state_step = int(1.0e09)
 c
 c                       initialize logical flags used throughout code
 c                       to indicate various characteristics of elements

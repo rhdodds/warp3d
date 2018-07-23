@@ -942,7 +942,7 @@ c     *                      subroutine initdm                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/8/2018 rhd               *
+c     *                   last modified : 6/23/2018 rhd              *
 c     *                                                              *
 c     *     initializes various variables and arrays                 *
 c     *     that define a domain for j-integral computations         *
@@ -1006,6 +1006,7 @@ c
       e33_front              = zero
       j_to_k                 = .false.
       crack_curvature(1:7)   = zero
+      temperatures_on_model  = .false.
 c
       return
       end

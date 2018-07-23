@@ -11,7 +11,7 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 4/14/2018 rhd                *
+c *                 last modified: 6/23/2018 rhd                *
 c *                                                             *
 c ***************************************************************
 c
@@ -19,31 +19,32 @@ c
       subroutine didriv
 c
       use global_data, only : out, nonode, noelem, nodof,
-     a  temperatures, dstmap, props, iprops, lprops, bits, nelblk,
+     a  dstmap, props, iprops, lprops, bits, nelblk,
      b  ltmstp, lsldnm, stname,
      c  scoords => c, sdispl => u, svelocities => v,
      d  saccel => a! old common.main
 c
       use main_data, only : incmap, incid, crdmap, output_packets,
      a                      packet_file_no, inverse_incidences,
-     b                      fgm_node_values, temperatures_ref,
+     b                      fgm_node_values,
      c                      elems_to_blocks, temper_nodes,
-     d                      temper_elems, initial_state_defined,
-     e                      fgm_node_values_used
+     d                      temper_elems, initial_state_option,
+     e                      fgm_node_values_used, initial_state_step
 c
       use j_data, only : debug_driver, domain_type, crack_plane_normal,
      a  front_order, q_values, max_exp_front, expanded_front_nodes,
      b  num_front_nodes, qvals_given, last_compr, front_element_list,
      c  comput_i, comput_j, front_q_area, front_length, compr_q_list,
      d  e_front, front_nodes, domain_min_i, front_list_length,
-     e  domain_min_j, nu_front, fgm_e, fgm_nu,
+     e  domain_min_j, nu_front, fgm_e, fgm_nu, process_initial_state,
      f  block_seg_curves, seg_snode_e, seg_snode_nu, domain_origin,
      g  snode_alpha_ij, print_elem_values, domain_max_j, print_totals,
      h  domain_max_j, domain_avg_j, domain_max_i, domain_avg_i,
      i  static_min, static_max, static_avg, first_domain, node_set,
      j  nowring, j_storage, i_storage, j_from_ks, ks_from_j, ring_list,
      k  max_domain_rings, q_element_maps, num_auto_rings, static_j,
-     l  j_geonl_formulation, j_linear_formulation
+     l  j_geonl_formulation, j_linear_formulation,
+     m  temperatures_on_model
 c
       implicit none
 c
@@ -63,6 +64,11 @@ c
 !                                    integers-reals mixed in same vector
 c
       if( debug_driver ) write(out,9000) ! set by user input
+c
+c               0. process user-defined initial state ?
+c
+      process_initial_state = initial_state_option .and.
+     &                        ltmstp >= initial_state_step
 c
 c               1. check validity of domain before starting computations.
 c
@@ -206,8 +212,10 @@ c                   integral computations to compute spatial derivatives
 c                   within the domain.
 c
 c
-      setup_node_props =  temperatures .or. temperatures_ref
-      if( initial_state_defined ) setup_node_props = .false.
+      temperatures_on_model = any( temper_nodes .ne. zero ) .or.
+     &                        any( temper_elems .ne. 0 )
+      setup_node_props =  temperatures_on_model
+      if( process_initial_state ) setup_node_props = .false.
 c
       if( setup_node_props ) call di_node_props_setup( 1 ) !  MPI parallel
 c
@@ -249,7 +257,7 @@ c
       nu_front  = props(8,elemno)
       if( fgm_e )  e_front  = fgm_node_values(orig_node,1)
       if( fgm_nu ) nu_front = fgm_node_values(orig_node,2)
-      if( temperatures .or. temperatures_ref ) then
+      if( temperatures_on_model ) then
            if( block_seg_curves(block) ) then
             e_front     = seg_snode_e(orig_node)
             nu_front    = seg_snode_nu(orig_node)
@@ -281,7 +289,7 @@ c
 c               12d. output info for domain about temperature at crack
 c                    front and alpha values. Also E, nu at front
 c
-      if( temperatures .or. temperatures_ref ) then
+      if( temperatures_on_model ) then
          write(out,9905) orig_node,
      &                   temper_nodes(orig_node) + temper_elems(elemno)
          write(out,9910) orig_node, (snode_alpha_ij(orig_node,i),i=1,6)
@@ -334,8 +342,7 @@ c                  releases on onther than rank 0 for MPI
 c
       call didrive_release( out )  ! only does rank 0 for MPI
 c
-      if( temperatures .or. temperatures_ref )
-     &               call di_node_props_setup( 2 )
+      if( temperatures_on_model ) call di_node_props_setup( 2 )
       call di_setup_J7_J8( 2)
 c
  9000 format(//,'>> Entered domain_driver...')

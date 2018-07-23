@@ -20,13 +20,14 @@ c
      a  print_elem_values, q_element_maps, q_values,
      b  front_element_list, comput_i, e_front, nu_front, comput_j,
      d  cf_traction_flags, expanded_front_nodes, front_q_area,
-     e  face_loading, static_j, process_temperatures,
+     e  face_loading, static_j,
      f  domain_min_j, domain_max_j,
      g  domain_min_i, domain_max_i, domain_avg_i, static_min,
      h  static_max, static_avg, ks_from_j, nowring, domain_avg_j,
      i  e33_front, domain_id, j_from_ks, print_totals, j_storage,
      j  i_storage, size_j_values, size_i_values,
-     k  j_geonl_formulation, j_linear_formulation
+     k  j_geonl_formulation, j_linear_formulation,
+     l  temperatures_on_model
 c
       implicit none
 c
@@ -474,7 +475,7 @@ c     *                      dicmj_do_a_blk                          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 5/31/2018 rhd              *
+c     *                   last modified : 6/23/2018 rhd              *
 c     *                                                              *
 c     *      Processing 1 domain and output values. Run MPI          *
 c     *      parallel over (mpi) domains, threads over blocks        *
@@ -489,30 +490,32 @@ c
      &                           message_count2 )
 c
       use global_data, only : myid, iout=>out, noelem, nonode, bits,
-     1                        iprops, props, lprops, elblks, mxndel,
-     2                        nstrs, mxgp, mxelpr, nstr,
-     3                        worker_processor, numprocs, temperatures,
-     5                        scoord=>c, sdispl=>u, sveloc=>v,
-     6                        saccel=>a
+     a                        iprops, props, lprops, elblks, mxndel,
+     b                        nstrs, mxgp, mxelpr, nstr,
+     c                        worker_processor, numprocs,
+     d                        scoord=>c, sdispl=>u, sveloc=>v,
+     e                        saccel=>a
       use main_data, only   : incmap, elems_to_blocks, incid,
-     1                        fgm_node_values, eq_node_force_indexes,
-     2                        temperatures_ref, trn, trnmat,
-     3                        temper_elems, temper_nodes,
-     4                        temper_nodes_ref, eq_node_forces,
-     5                        eq_node_force_len
+     a                        fgm_node_values, eq_node_force_indexes,
+     b                        trn, trnmat,
+     c                        temper_elems, temper_nodes,
+     d                        temper_nodes_ref, eq_node_forces,
+     e                        eq_node_force_len
       use elem_block_data, only : rot_n1_blocks,
-     1                            urcs_n_blocks, cdest_blocks,
-     2                            edest_blocks, eps_n_blocks
+     a                            urcs_n_blocks, cdest_blocks,
+     b                            edest_blocks, eps_n_blocks,
+     c                            initial_state_data
       use j_data, only : debug_driver, symmetric_domain,
      a  print_elem_values, q_element_maps, q_values, fgm_e, fgm_nu,
      b  block_seg_curves, seg_snode_nu, swd_at_nodes, strain_at_nodes,
      c  ignore_face_loads, omit_crack_front_elems, front_element_list,
      d  comput_i, cf_tractions, domain_rot, debug_elements,
      e  one_point_rule, e_front, nu_front, comput_j,
-     g  cf_traction_flags, face_loading, process_temperatures,
-     j  snode_alpha_ij, seg_snode_e, displ_grad_at_nodes,
-     n  size_j_values, size_i_values, front_list_length,
-     o  j_geonl_formulation, j_linear_formulation
+     f  cf_traction_flags, face_loading, process_temperatures,
+     g  snode_alpha_ij, seg_snode_e, displ_grad_at_nodes,
+     h  size_j_values, size_i_values, front_list_length,
+     i  j_geonl_formulation, j_linear_formulation,
+     j  process_initial_state, temperatures_on_model
 c
       implicit none
 c
@@ -533,7 +536,7 @@ c
      &   elem_uniform_temp, e_alpha_ij(6,mxndel), eq_load_modifier,
      &   dummy, elem_nod_strains(6,mxndel), elem_nod_swd(mxndel),
      &   elem_nod_displ_derivs(9,mxndel), e_strain(9,mxgp), sign,
-     &   e(mxndel), nu(mxndel), cf_load(3)
+     &   e(mxndel), nu(mxndel), cf_load(3), e_W_is(mxgp)
 c
       double precision :: e_jresults(size_j_values),
      &   e_iresults(size_i_values,size_i_values)
@@ -721,7 +724,7 @@ c
      a                e_force, e_stress, e_props, e_props, e_props,
      b                e_rots, domain_rot, e_jresults, e_node_temps,
      c                elem_temps, e_alpha_ij, ierr, element, geonl,
-     d                numrow_sig, snodes, elem_nod_swd,
+     d                numrow_sig, snodes, e_W_is, elem_nod_swd,
      e                elem_nod_strains, elem_nod_displ_derivs,
      f                omit_J7_J8_front_elems, fgm_e,
      f                fgm_nu, e_strain, e, e_front, nu, nu_front,
@@ -789,7 +792,7 @@ c                                                              *
 c      dicmj_do_a_blk -> contains dicmj_element_setup          *
 c                                                              *
 c        written by: rhd                                       *
-c        last modified: 5/31/2018 rhd                          *
+c        last modified: 6/23/2018 rhd                          *
 c                                                              *
 c***************************************************************
 c
@@ -797,6 +800,7 @@ c
       implicit none
 c
       integer :: incpos, k1, k2, i1, i2, i3, enode, snode
+      logical, parameter :: local_debug = .true.
 c
       seg_curves_flag = .false.
 c
@@ -804,6 +808,7 @@ c
       k1         = num_enodes
       k2         = 2*num_enodes
 c
+!DIR$ VECTOR ALIGNED
       do enode = 1, num_enodes
          e_coord(1,enode) = scoord(cdest(enode,rel_elem))
          e_coord(2,enode) = scoord(cdest(enode+k1,rel_elem))
@@ -827,7 +832,7 @@ c
          nu(enode)        = props(8,elemno)
          if( fgm_e )  e(enode)  = fgm_node_values(snode,1)
          if( fgm_nu ) nu(enode) = fgm_node_values(snode,2)
-         if( temperatures .or. temperatures_ref ) then
+         if( temperatures_on_model ) then
             if( block_seg_curves(blk) ) then
                seg_curves_flag = .true.
                e(enode)        = seg_snode_e(snode)
@@ -861,6 +866,7 @@ c
 c
 
       if( process_swd_derivs ) then
+!DIR$ VECTOR ALIGNED
         do enode = 1, num_enodes
           snode = incid(incpos+enode-1)
           elem_nod_swd(enode) = swd_at_nodes(snode)
@@ -870,6 +876,7 @@ c
       if( process_strain_derivs ) then
         do enode = 1, num_enodes
           snode = incid(incpos+enode-1)
+!DIR$ VECTOR ALIGNED
           elem_nod_strains(1:6,enode) = strain_at_nodes(1:6,snode)
         end do
       end if
@@ -877,31 +884,59 @@ c
       if( process_grad_derivs ) then
         do enode = 1, num_enodes
           snode = incid(incpos+enode-1)
+!DIR$ VECTOR ALIGNED
           elem_nod_displ_derivs(1:9,enode) =
      &               displ_grad_at_nodes(1:9,snode)
         end do
       end if
 c
 c        for problems with temperature loads, pull out
-c        temperatures of element nodes and set the thermal
+c        current temperatures of element nodes and set the thermal
 c        expansion coefficients at element nodes. remove reference
-c        temperatures of model nodes.
+c        temperatures of model nodes. the global temperatures flag
+c        refers to increment temps for step just completed. cannot use
+c        it since early application of temps may be followed by only
+c        mechanical loads
 c
       elem_temps = .false.
-      if( temperatures .or. temperatures_ref ) then
-         elem_uniform_temp = temper_elems(elemno)
-         do enode = 1, num_enodes
-            snode = incid(incpos + enode - 1)
-            e_node_temps(enode) = temper_nodes(snode)
-     &                          + elem_uniform_temp
-     &                          - temper_nodes_ref(snode)
-            if( abs(e_node_temps(enode)).gt.zero ) elem_temps=.true.
-         end do
-         do enode = 1, num_enodes
-            snode = incid( incpos + enode - 1 )
-            e_alpha_ij(1:6,enode) = snode_alpha_ij(snode,1:6)
-         end do
+      if( temperatures_on_model ) then
+        elem_uniform_temp = temper_elems(elemno)
+!DIR$ VECTOR ALIGNED
+        do enode = 1, num_enodes
+         snode = incid(incpos + enode - 1)
+         e_node_temps(enode) = temper_nodes(snode) + elem_uniform_temp
+     &                        - temper_nodes_ref(snode)
+         if( abs(e_node_temps(enode)) > zero ) elem_temps = .true.
+        end do
+        do enode = 1, num_enodes
+         snode = incid( incpos + enode - 1 )
+!DIR$ VECTOR ALIGNED
+         e_alpha_ij(1:6,enode) = snode_alpha_ij(snode,1:6)
+        end do
       end if
+c
+c        setup vector of energy density values at element
+c        integration points at user-defined initial state
+c        if required. otherwise set zero vector to eliminate
+c        logic in element computational routines.
+c
+      if( process_initial_state ) then
+        do gpn = 1, num_gpts
+         e_W_is(gpn) =
+     &     initial_state_data(blk)%W_plastic_nis_block(i_elem,gpn)
+        end do
+
+        if( local_debug .and.
+     &      (elemno == 8955 .or. elemno == 9060 ) ) then
+          write(iout,*) ' @ 1. dicmj_element_setup. elem: ',elemno
+          do gpn = 1, num_gpts
+           write(iout,9000)  gpn, e_W_is(gpn)
+          end do
+        end if
+      else
+          e_W_is = zero
+      end if
+ 9000 format(10x,i3,f15.8)
 c
       return
       end subroutine dicmj_element_setup
@@ -926,6 +961,7 @@ c
       eps_offset = (rel_elem - 1) * nstr * num_gpts
       associate( eps => eps_n_blocks(blk)%ptr )
 c
+!DIR$ VECTOR ALIGNED
       do gpn = 1, num_gpts
          e_strain(1,gpn) = eps(eps_offset + 1)
          e_strain(2,gpn) = eps(eps_offset + 4)/two
