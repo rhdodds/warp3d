@@ -16,6 +16,7 @@ testK
 testL
 testM
 testN
+testO
 }
 function testA {
 echo -e "\n>>> Test A (SET, LEFM, Thermal, 20-node, FGMs, Face Loading, P-strain)"
@@ -127,6 +128,13 @@ function testN {
 echo -e "\n>>> Test N (SEB, Small/NLGEOM, Bending, 8-node, 3D[3-layers], FGMs, blunt front)"
 echo      "    ============================================================================"
 cd testN
+./run_tests_and_check
+cd ..
+}
+function testO {
+echo -e "\n>>> Test O (SEB, residual, initial state, 8-node P Strain)"
+echo      "    ======================================================"
+cd testo
 ./run_tests_and_check
 cd ..
 }
@@ -271,6 +279,7 @@ m_testK="Test K: SE(T), Small/NLGEOM, Thermal, 8-node, P-strain, FGMs, blunt fro
 m_testL="Test L: SE(B), Small/NLGEOM, Bending, 20-node, P-strain, FGMs, blunt front, refined mesh"
 m_testM="Test M: SE(T), Small/NLGEOM, Thermal, 20-node, P-strain, FGMs, blunt front, refined mesh"
 m_testN="Test N: SE(B), Small/NLGEOM, Bending, 8-node, 3D:3-layers, FGMs, blunt front, refined mesh"
+m_testO="Test O: SE(B), Residual Stresses, Initial-State, 8-node, P. Strain"
 all="All problems"
 quit="Quit"
 PS3="Enter your choice (<return> to repeat menu): "
@@ -280,7 +289,7 @@ PS3="Enter your choice (<return> to repeat menu): "
      "$m_testD" \
      "$m_testE" \
      "$m_testF" "$m_testG" "$m_testH" "$m_testI" "$m_testJ" "$m_testK" "$m_testL" \
-     "$m_testM"  "$m_testN" "$quit"
+     "$m_testM"  "$m_testN"  "$m_testO"  "$quit"
 #
   do
    case $menu_list in
@@ -315,6 +324,8 @@ PS3="Enter your choice (<return> to repeat menu): "
              testM;;
           $m_testN)
              testN;;
+          $m_testO)
+             testO;;
           $quit)
            break;;
           *) printf "You can enter only 1, .....\n";;
