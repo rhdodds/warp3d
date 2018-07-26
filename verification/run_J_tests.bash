@@ -134,7 +134,7 @@ cd ..
 function testO {
 echo -e "\n>>> Test O (SEB, residual, initial state, 8-node P Strain)"
 echo      "    ======================================================"
-cd testo
+cd testO
 ./run_tests_and_check
 cd ..
 }
