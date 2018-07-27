@@ -13,25 +13,25 @@
 !     2) hold extension constant to let stresses relax over time
 !        to 80 hours w/ increasing time step sizes
 !
-!    Symmetry on planes X=Y=Z=0. 
+!    Symmetry on planes X=Y=Z=0.
 !    Interior nodes of the cube have no imposed constraints.
 !
-!    All integration points of all elements should have 
+!    All integration points of all elements should have
 !    the same solution.
 !
 !    The builtin "creep" material model in WARP3D is assigned these
 !    properties:
 !
-!      E = 200,000 MPa 
+!      E = 200,000 MPa
 !      n = 5  nu = 0.285
 !      creep coefficient: B = 4.0e-18
 !
 !
 !    The CP model uses Voce hardening with the alter_mode on so we
-!    can have constant multiplier in the power-law hardening on 
-!    each slip system. 
+!    can have constant multiplier in the power-law hardening on
+!    each slip system.
 !
-!    A few trials were made to select material parameter to give 
+!    A few trials were made to select material parameter to give
 !    a reasonable match to solution from the builtin creep model.
 !    See PDF with graph.
 !
@@ -56,8 +56,8 @@
 !
 !      During the fixed extension period, WARP3D would see there are
 !      no imposed, non-zero constraints or temperature changes.
-!      WARP3D is not aware of the time dependent creep strains that 
-!      occur inside the creep umat. 
+!      WARP3D is not aware of the time dependent creep strains that
+!      occur inside the creep umat.
 !
 !      With no apparent loading on the structure for constant
 !      hold time steps, WARP3D simply skips all computations and
@@ -66,14 +66,14 @@
 !      As a temporary fix, the axial extension during constant
 !      hold time steps is increased by an infinitesimal amount
 !      that forces WARP3D to proceed with computations as usual.
-!      
+!
 !
 !
  structure cube
 !
  material builtin_creep
    properties creep e 200000 nu 0.3 n_power 5.0 B 4.0e-18
-! 
+!
  crystal 1
       properties slip_type bcc48 elastic_type isotropic,
       hardening voce,
@@ -88,7 +88,7 @@
       crystal_input single crystal_type 1,
       orientation_input file filename 'angles.inp',
       debug off tolerance 1.0E-10
-!      
+!
  number nodes 64 elements 27
 !
  elements
@@ -98,7 +98,7 @@
           order 2x2x2 bbar short center
 !
  coordinates
-*echo off    
+*echo off
       1  0.000000000E+00  0.000000000E+00  0.000000000E+00
       2  0.333333343E+00  0.000000000E+00  0.000000000E+00
       3  0.666666687E+00  0.000000000E+00  0.000000000E+00
@@ -200,7 +200,7 @@
  constraints
    plane x=0 symmetry
    plane y=0 symmetry
-   plane z=0 symmetry 
+   plane z=0 symmetry
    plane z=1.0 w 1.0  $ 1 mm. see scaling in step definitions
 !
  loading unit_end $ for potential use in a traction load -> hold analysis
@@ -211,7 +211,7 @@ loading creep
     nonlinear
     step 1-10 constraints 0.0003
     step 11-100 constraints 1.0e-15 $ very small increase to trick WARP3D
-!    
+!
 nonlinear analysis parameters
    time step 0.5 $ hours
    solution technique direct sparse
@@ -223,9 +223,9 @@ nonlinear analysis parameters
    batch messages off
    bbar stabilization factor 0.0
    extrapolate off
-!   
-output commands use file "output_cmds.inp" steps all
-!   
+!
+output commands use file "output_cmds.inp" steps 1-200
+!
 compute displacements for loading creep step  10
 
 nonlinear analysis parameters
