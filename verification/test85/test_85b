@@ -13,10 +13,10 @@ c
  number of nodes 44  elements 3
 c
  elements
-  2 3 type q3disop linear material strong,
+  2 3 type q3disop nonlinear material strong,
      order 2x2x2 center_output short
 c
-  1 type q3disop linear material weak,
+  1 type q3disop nonlinear material weak,
      order 2x2x2 center_output short
 c
 coordinates
