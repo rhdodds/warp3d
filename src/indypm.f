@@ -5,7 +5,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 7/28/2018 rhd              *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -21,7 +21,7 @@ c
       use main_data, only : output_packets, packet_file_name,
      &                      run_user_solution_routine, cp_unloading,
      &                      divergence_check, diverge_check_strict,
-     &                      asymmetric_assembly,
+     &                      asymmetric_assembly, matprp, 
      &                      batch_mess_fname, extrapolate,
      &                      extrap_off_next_step, line_search,
      &                      ls_details, ls_min_step_length,
@@ -1421,6 +1421,7 @@ c
          initial_state_option = .false.
          if( matchs_exact( 'on' ) ) then
              initial_state_option = .true.
+             call indypm_chk_compat
          elseif( matchs_exact( 'off' ) ) then
              initial_state_option = .false.
          else
@@ -1490,7 +1491,40 @@ c
  9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
  9570 format(/1x,'>>>>> error: initial state option allowed only',
      &       /1x,'             before solution of step 1',/)
-      end
+c
+      contains
+c     ========
+c
+      subroutine indypm_chk_compat
+      implicit none
+      integer :: elem, matno, mat_type
+      logical :: bad, ok
+c
+c              check that material models used by elements in the
+c              model are compatible with the initial-state framework.
+c
+      bad = .false.
+      do elem = 1, noelem
+        matno = iprops(38,elem)
+        mat_type = matprp(9,matno)
+        ok = mat_type .eq. 1  .or.  mat_type .eq. 3  .or. 
+     &       mat_type .eq. 5 
+        if( ok ) cycle
+        bad = .true.
+      end do
+      if( .not. bad ) return
+      write(out,9000) 
+      num_error = num_error + 1
+      input_ok = .false.      
+c
+      return
+ 9000 format(/1x,'>>>>> error: one or more elements has a material',
+     & /,14x,'not currently available for initial-state computations.',
+     & /,14x,'currently supported models: bilinear, mises, cyclic.',
+     & /,14x,'more material models to be added.'/)
+c
+      end subroutine indypm_chk_compat
+      end subroutine indypm
 c
 c
 c     ****************************************************************
