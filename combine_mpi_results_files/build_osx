@@ -23,7 +23,7 @@ fi
 
 cd $WARP3D_HOME/combine_mpi_results_files
 ftrap="-init=snan"
-fopts="-O3 -inline-factor=2 -ip -fixed -72 -ftz -qopenmp -traceback "
+fopts="-O3 -xAVX -inline-factor=2 -ip -fixed -72 -ftz -qopenmp -traceback "
 #
 ifort $fopts $ftrap -c combine_mpi_results_driver.f 
 ifort $fopts $ftrap -c combine_mpi_results_flat_subs.f 
