@@ -26,7 +26,7 @@ cls
 ::   ==================================================================
 ::
 ::
-set fopts1=/O2 /fpconstant /fixed /traceback /QaxSSE4.2 /heap-arrays /static
+set fopts1=/O2 /fpconstant /fixed /traceback /QaxAVX /heap-arrays /static
 set fopts2=/F4000000
 set files=patwarp_module.f patwarp_windows_mac.f
 ifort %fopts1% %fopts2% %files% /o patwarp.exe

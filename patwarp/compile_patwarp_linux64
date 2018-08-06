@@ -21,7 +21,7 @@ hash ifort 2>&- || { echo >&2 "The Intel fortran compiler is required (ifort).  
 
 # Now proceed.
 echo "Compiling patwarp on Linux 64bit..."
-ifort -O2 -static-intel -fixed -traceback -fpe0 patwarp_module.f patwarp.f \
+ifort -O2 -xAVX -static-intel -fixed -traceback -fpe0 patwarp_module.f patwarp.f \
       $WARP3D_HOME/linux_packages/lib/libmetis.a -o $WARP3D_HOME/run_linux_em64t/patwarp.go
 
 echo "Executable is in run_linux_em64t"

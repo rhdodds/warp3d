@@ -15,7 +15,7 @@ hash ifort 2>&- || { echo >&2 "The Intel fortran compiler is required (ifort).  
 # Now proceed.
 
 echo "Compiling patwarp on OS X..."
-ifort -O2 -static-intel -w -traceback -fixed -fpe0 patwarp_module.f patwarp_windows_mac.f \
+ifort -O2 -xAVX -static-intel -w -traceback -fixed -fpe0 patwarp_module.f patwarp_windows_mac.f \
       -o $WARP3D_HOME/run_mac_os_x/patwarp.go
 
 echo "Executable is in run_mac_os_x..."
