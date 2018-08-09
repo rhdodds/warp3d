@@ -2,22 +2,21 @@
 
                Highest Level README for Windows Users
 
-                last Update: March 1, 2018
+                last Update: August 10, 2018
 
 ==========================================================================
 
 *** NOTES: ***
 
-WARP3D is built for Windows 10 Build 16299
-using the Intel Fortran Composer XE 18.0.1
-and MKL Version 18.0.1.
+WARP3D is built for Windows 10 Build 1803 using the Intel 
+Fortran Composer XE 18.0.3 and MKL Version 18.0.3.
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
 compiler is needed only if you intend to modify the source code and
 and re-build the executable.
 
-This distribution was built & verified on Windows 10 Build 16299.
+This distribution was built & verified on Windows 10 Build 1803.
 
 We build the executable using statically-linked MKL libraries.
 
@@ -118,12 +117,11 @@ Quick Start Using the Ready-to-Run Executable
    the Intel MKL sparse solver. WARP3D processes blocks of elements
    in parallel, e.g., during stiffness and stress updating. In the example
    here it is assumed that the computer has at least 4 cores available
-   for executing the WARP3D analysis. We recommend to NOT use the
-   hyper-threading option on newer machines.
+   for executing the WARP3D analysis.
 
    The above command sequence starts WARP3D execution with input
    taken from the file test_18a. All output is sent to a file
-   ==>> output directly to the Command Shell in Windows is very, very slow.
+   ==>> output directly to the Command Shell in Windows may be very slow.
         recommend output to a file, then load file into viewer/editor.
 
    Various Windows shell commands can also be placed into a *.bat
@@ -169,7 +167,7 @@ Re-Building the Windows Executable for WARP3D
    We make one of these with name Fortran.
 
 
-   2A.  For Fortran 2018.0.1, we access Properties of the command
+   2A.  For Fortran 2018.0.3, we access Properties of the command
         shell and set the Target as:
 
 
@@ -201,6 +199,18 @@ Re-Building the Windows Executable for WARP3D
 
    If your system has nmake.exe in a different location, please change the
    top commands in Makewarp.bat to use the correct location.
+
+   The standard nmake from Microsoft runs only 1 compile job at a time
+   regardless of the number of cores on the system.
+
+   A replacement for nmake that runs compiles in parallel is
+   available from http://wiki.qt.io/Jom.  It adds the -j option
+   as available for make in Linux.
+
+   We have the file: Makewarp_jom.bat  which uses the replacement 
+   nmake to compile in parallel. The script sets 2 variables:
+   jom_exec (set this to the location of the jom.exe)  and
+   jobs (set to the number of parallel compiles allowed).
 
 5. Other software tools are included in the distribution, e.g.
    the Patran -to- WARP3D translator program. Source code for each
@@ -236,7 +246,10 @@ Running Verification Suite of Analyses
 
    where # is replaced by the number of threads for parallel execution.
 
-6.  Run the shell script run_tests.bash and follow the interactive
-    prompts. The script runs selcted problems an checks output for
-    correctness.
-
+6. The Bash shell scripts: run_tests.bash and run_J_tests.bash 
+   run analyses using threads only  parallel execution. The script 
+   runs interactively and prompts for
+   various information. After an analysis is completed, the script examines
+   output files to insure the results match known good solutions.
+   Clear messages are output if the solutions do not match - shows the
+   computed value and the known good value.
