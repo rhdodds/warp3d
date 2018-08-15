@@ -5124,7 +5124,7 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine rstgp2_capture_is_eps( span, mxvl, felem, gpn,
+      subrout( span, mxvl, felem, gpn,
      &              strain_np1, elastic_strains_n1, blk_is_gradients )
       implicit none
 c
