@@ -5135,7 +5135,7 @@ c
      &                    elastic_strains_n1(span,6),
      &                    blk_is_gradients(9,span)
       double precision, parameter :: half = 0.5d0
-      logical, parameter :: local_debug = .true.
+      logical, parameter :: local_debug = .false.
       integer :: ielem
 c
 c              for small-strain formulation, save the symmetric
