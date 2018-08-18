@@ -3,7 +3,7 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: August 10, 2018
+                      Last Update: August 18, 2018
 
 *** LATE BREAKING NEWS ***
 
@@ -16,8 +16,13 @@ Ohio Supercomputer Center using 64 cluster nodes with 1600 total cores.
 
 The ready-to-run executables included in this distribution were built
 on RedHat 7.4 using Intel Composer XE Fortran, MKL and MPI 18.0.0.
+Given RedHat's approach to compatibility, we expect this executable
+will run on most, or all, 7.x releases. The current executable
+does  *not* on 6.x (incompatible libraries). Recompilation should
+resolve this.
 
-These executables also run on Ubuntu 16.04.2 LTS.
+These executables also run on Ubuntu 16.04.2 LTS, 17.x and should run
+on 18.04 LTS.
 
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).
