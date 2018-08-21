@@ -625,8 +625,9 @@ c
      & /14x,'scanning: ',a,//)
  9210 format(/1x,'>>>>> error: list of step numbers contains too ',
      & 'many entries.',//)
- 9220 format(/1x,'>>>>> error: no list of load steps found',
-     & /14x,'scanning: ',a,//)
+ 9220 format(/1x,'>>>>> error: no list of load steps found.',
+     & /14x,'scanning: ',a,
+     & /14x,'keyword: all, may not be allowed here',/)
  9300 format(
      & /1x, '>>>>> error: the specified output commands',
      & /14x,'file does not exist. file: ',a80,//)
