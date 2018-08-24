@@ -79,7 +79,7 @@ blocking automatic size = 128
    display tied mesh mpcs off
    user_routine off
    initial state option on
-   initial state step 1
+   initial state step 0
 !
  compute displacements for loading test step 1 $ equilibrium step
 !

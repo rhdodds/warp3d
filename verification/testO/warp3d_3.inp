@@ -1,15 +1,18 @@
 !
 !
 !      user specified residual stresses -> 
-!      introduce crack -> get J from crack opening 
-!      displacements and J using initial state
+!      introduce crack -> continue loading -> get J 
+!
+!      must use initial state 0 since initial
+!      conditions have residual stresses
 !
 !      elastic-plastic material
 !
 !      4 pt. SE(B) model in O'Dowd, et al.
 !      IJF, 
 !
-!      step 1 is equilibrium step with some yielding.
+!      step 1 is equilibrium step with no yielding after
+!      making two elements at roller support linear-elastic
 !
  structure beam
 !
@@ -18,7 +21,7 @@
         n_power 5 alpha 0 rho 0
 !
  material roller
-  properties mises e 100000 nu 0.3 yld_pt 60.0,
+  properties mises e 100000 nu 0.3 yld_pt 60.0e10,
         n_power 5 alpha 0 rho 0
 !
  number of nodes 7404 elements 3529
@@ -82,7 +85,7 @@ blocking automatic size = 128
    display tied mesh mpcs off
    user_routine off
    initial state option on
-   initial state step 1
+   initial state step 0
 !
  compute displacements for loading test step 1 $ equilibrium step
 !

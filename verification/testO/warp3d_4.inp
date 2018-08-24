@@ -12,7 +12,7 @@
         n_power 5 alpha 0 rho 0
 !
  material roller
-  properties mises e 100000 nu 0.3 yld_pt 60.0,
+  properties mises e 100000 nu 0.3 yld_pt 60.0e10,
         n_power 5 alpha 0 rho 0
 !
 material steelgp
@@ -101,7 +101,7 @@ blocking automatic size = 128
     front nodes 6455 5505 linear verify
     normal plane nx 0 ny 1 nz 0
     function type d
-    q-values automatic rings 10-15
+    q-values automatic rings 2-40
 !
   compute domain integral
  stop
