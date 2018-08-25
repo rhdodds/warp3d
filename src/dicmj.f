@@ -832,7 +832,8 @@ c
          nu(enode)        = props(8,elemno)
          if( fgm_e )  e(enode)  = fgm_node_values(snode,1)
          if( fgm_nu ) nu(enode) = fgm_node_values(snode,2)
-         if( temperatures_on_model ) then
+         if( temperatures_on_model .and. 
+     &       allocated( block_seg_curves ) ) then
             if( block_seg_curves(blk) ) then
                seg_curves_flag = .true.
                e(enode)        = seg_snode_e(snode)
@@ -908,11 +909,13 @@ c
      &                        - temper_nodes_ref(snode)
          if( abs(e_node_temps(enode)) > zero ) elem_temps = .true.
         end do
-        do enode = 1, num_enodes
-         snode = incid( incpos + enode - 1 )
+        if( allocated( snode_alpha_ij ) ) then
+         do enode = 1, num_enodes
+          snode = incid( incpos + enode - 1 )
 !DIR$ VECTOR ALIGNED
-         e_alpha_ij(1:6,enode) = snode_alpha_ij(snode,1:6)
-        end do
+          e_alpha_ij(1:6,enode) = snode_alpha_ij(snode,1:6)
+         end do
+        end if
       end if
 c
 c        setup vector of energy density values at element

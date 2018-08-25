@@ -207,8 +207,7 @@ c                               =1, temperature-dependent properties
 c                               =2, strain-rate dependent properties
 c
          bit_flags  = iprops(24,first_elem)
-         seg_alphas = .true.
-         if( iand(bit_flags,4) .eq. 0 ) seg_alphas = .false. ! bit 2
+         seg_alphas = iand( bit_flags,4 ) > 0
          if( seg_alphas ) then
             seg_alphas = .false.
             curve_set         = iprops(21,first_elem)

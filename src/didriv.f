@@ -257,10 +257,11 @@ c
       nu_front  = props(8,elemno)
       if( fgm_e )  e_front  = fgm_node_values(orig_node,1)
       if( fgm_nu ) nu_front = fgm_node_values(orig_node,2)
-      if( temperatures_on_model ) then
+      if( temperatures_on_model .and.
+     &    allocated(block_seg_curves) ) then
            if( block_seg_curves(block) ) then
-            e_front     = seg_snode_e(orig_node)
-            nu_front    = seg_snode_nu(orig_node)
+              e_front     = seg_snode_e(orig_node)
+              nu_front    = seg_snode_nu(orig_node)
            end if
       end if
 c
@@ -290,9 +291,11 @@ c               12d. output info for domain about temperature at crack
 c                    front and alpha values. Also E, nu at front
 c
       if( temperatures_on_model ) then
-         write(out,9905) orig_node,
-     &                   temper_nodes(orig_node) + temper_elems(elemno)
-         write(out,9910) orig_node, (snode_alpha_ij(orig_node,i),i=1,6)
+       write(out,9905) orig_node,
+     &                 temper_nodes(orig_node) + temper_elems(elemno)
+       if( allocated( snode_alpha_ij ) ) then
+        write(out,9910) orig_node, (snode_alpha_ij(orig_node,i),i=1,6)
+       end if
       end if
 c
       write(out,9900) orig_node, e_front, orig_node, nu_front
