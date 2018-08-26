@@ -8,26 +8,37 @@
 !       varying residual stress field.
 !
 !   4.  elements in the weld region are assigned anisotropic 
-!       expansion coefficients with a unit temperature 
-!       increase on all model nodes.
+!       expansion coefficients with a 0.5 temperature 
+!       increase on all model nodes. (a unit value
+!       creates too much plasticity in step 1)
 !
-!   5.  material properties are linear elastic.
+!   5.  material properties are nonlinear (simple mises, bilinear
+!       hardening).
 !
-!   6.  a crack exists in model at time 0.
+!   6.  no crack in model at time 0. crack is introduced
+!       after step 1 with 1 step to relax reaction forces to zero.
 !
-!   7.  J-values after step 1 are those for the residual stresses
-!       due to the eigenstrain field. temperature effects 
-!       are in the J_6 term.
+!   7.  step 2 has a very small mechanical load to satisfy 
+!       consistency checks.
 !
-!   8.  initial-state framework is *not* used here.
+!   8. J-values after step 2 are those for the residual stresses
+!      due to the eigenstrain field
+!
+!   9. steps 3 and 4 impose more mechanical (apex pinching)
+!      loads and more thermal loading
+!
+!
+!  10. initial-state framework is *NOT* used. there are no
+!      residual stresses defined via initial conditions. 
+!
 !
  structure pipe_weld
 !
  material weld
-    properties bilinear e 30000 nu 0.3 yld_pt 1.0E+20,
+    properties bilinear e 30000 nu 0.3 yld_pt 70,
                tan_e 400 beta 0.00
  material pipe
-    properties bilinear e 30000 nu 0.3 yld_pt 1.0E+20,
+    properties bilinear e 30000 nu 0.3 yld_pt 70,
                tan_e 500 beta 0.00
 !
  number of nodes 8076  elements  3692
@@ -44,9 +55,7 @@
 !
 !      anisotropic alpha_ij for elements
 !
-  *echo off
-    *input from file 'alpha_ij.inp'
-  *echo on
+  *input from file 'alpha_ij.inp'
 !
   *input from file 'coords.inp'
   *input from file 'incid.inp'
@@ -57,18 +66,26 @@
     nodal loads
        1-8076  temperature  1.0
 !
+ loading unit_pinch
+    nodal loads
+       7425 7426  force_y -1.0
+!
  constraints
     all w 0.0
     1281 1282 v 0.0
     1-10 u 0.0
-    *input from 'ligament_cons.inp'
+!    *input from 'ligament_cons.inp'
+!    *input from 'crack_face_cons.inp'
+    plane x=0 symmetry  $ all crack plane nodes
 !
 ! output patran neutral
 ! stop
 !
  loading test
     nonlinear
-       step 1 unit_temp 1.0
+       step 1 unit_temp 0.5
+       step 2 unit_pinch 0.000001 $ dummy to satisfy WARP3D checks
+       step 3-4 unit_pinch 0.01 unit_temp 0.5
 !
  nonlinear analysis parameters
    solution technique direct sparse
@@ -88,6 +105,13 @@
 !
  compute displacements for loading test step 1
 !
+ release constraints steps 1
+   *input from 'crack_face_release.inp'
+!
+ compute displacements load test step 2
+!
+ output displacements 3433 2929 2663 2371
+!
   domain position_1
     symmetric
     front nodes 3538 3537 linear verify
@@ -96,7 +120,19 @@
     q-values automatic rings 1-10
 !
  compute domain integral
-! 
+!
+ compute displacements load test step 4
+!
+ output displacements 3433 2929 2663 2371
+!
+  domain position_1
+    symmetric
+    front nodes 3538 3537 linear verify
+    normal plane nx -1 ny 0 nz 0
+    function type d
+    q-values automatic rings 1-10
+!
+ compute domain integral
  stop
 
 

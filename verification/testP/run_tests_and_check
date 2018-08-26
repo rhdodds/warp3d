@@ -8,7 +8,7 @@
 
 function cleanup_files {
 #
-/bin/rm -f  *_out out* we* wn* >& /dev/null
+/bin/rm -f  *_out out* *.neu* we* wn* >& /dev/null
 /bin/rm -f  *~ >& /dev/null
 /bin/rm -f energy  >& /dev/null
 /bin/rm -f *_db >& /dev/null
@@ -24,15 +24,21 @@ function cleanup_files {
 function run_and_compare {
 #
 echo "      Eigenstrain method to impose residual stresses"
-echo "  ... running testP_1...(pre-cracked)"
+echo "  ... running testP_1...(pre-cracked, linear-elastic)"
 "$warp3d_exe"  $num_threads < warp3d_1.inp > out_1
-echo "  ... running testP_2...(crack introduced after step 1)"
+echo "  ... running testP_2...(crack after step 1, linear-elastic)"
 "$warp3d_exe"  $num_threads < warp3d_2.inp > out_2
+echo "  ... running testP_3...(nonlinear, crack after step 1)"
+"$warp3d_exe"  $num_threads < warp3d_3.inp > out_3
+echo "  ... running testP_4...(nonlinear, same as 3 using residual stresses)"
+"$warp3d_exe"  $num_threads < warp3d_4.inp > out_4
 #
 echo "  ... WARP3D jobs completed..."
 #
 perl check_1.perl
 perl check_2.perl
+perl check_3.perl
+perl check_4.perl
 #
 cleanup_files
 #
