@@ -19,7 +19,7 @@ find_line( 1, " average      minimum " );
 #
 $line = <infile>;  @parts = split( / +/, $line);
 #
-$answer = "0.3330E-02";
+$answer = "0.3353E-02";
 $partno = 1;
 #
 $message = " ";

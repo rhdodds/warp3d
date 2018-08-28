@@ -30,7 +30,7 @@ echo "  ... running testP_2...(crack after step 1, linear-elastic)"
 "$warp3d_exe"  $num_threads < warp3d_2.inp > out_2
 echo "  ... running testP_3...(nonlinear, crack after step 1)"
 "$warp3d_exe"  $num_threads < warp3d_3.inp > out_3
-echo "  ... running testP_4...(nonlinear, same as 3 using residual stresses)"
+echo "  ... running testP_4...(nonlinear, using residual stresses)"
 "$warp3d_exe"  $num_threads < warp3d_4.inp > out_4
 #
 echo "  ... WARP3D jobs completed..."

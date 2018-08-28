@@ -4,22 +4,24 @@
 !
 !   2.  weld has a cap on inside and outside surface
 !
-!   3.  the eigenstrain method is used to impose a spatially
+!   3.  a crack exists in model at time 0.
+!
+!   4.  eigenstrain method is used to impose a spatially
 !       varying residual stress field.
 !
-!   4.  elements in the weld region are assigned anisotropic 
+!   5.  elements in the weld region are assigned anisotropic 
 !       expansion coefficients with a unit temperature 
 !       increase on all model nodes.
 !
-!   5.  material properties are linear elastic.
-!
-!   6.  a crack exists in model at time 0.
+!   6.  material properties are linear elastic.
 !
 !   7.  J-values after step 1 are those for the residual stresses
 !       due to the eigenstrain field. temperature effects 
 !       are in the J_6 term.
 !
-!   8.  initial-state framework is *not* used here.
+!
+!   ** The FE model does not have a focused mesh for crack front
+!   ** region.
 !
  structure pipe_weld
 !
@@ -61,7 +63,9 @@
     all w 0.0
     1281 1282 v 0.0
     1-10 u 0.0
+    *echo off
     *input from 'ligament_cons.inp'
+    *echo on
 !
 ! output patran neutral
 ! stop
@@ -93,7 +97,7 @@
     front nodes 3538 3537 linear verify
     normal plane nx -1 ny 0 nz 0
     function type d
-    q-values automatic rings 1-10
+    q-values automatic rings 2-10
 !
  compute domain integral
 ! 

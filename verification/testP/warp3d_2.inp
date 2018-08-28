@@ -4,26 +4,29 @@
 !
 !   2.  weld has a cap on inside and outside surface
 !
-!   3.  the eigenstrain method is used to impose a spatially
+!   3.  no crack exists in the model at t=0
+!
+!   4.  eigenstrain method is used to impose a spatially
 !       varying residual stress field.
 !
-!   4.  elements in the weld region are assigned anisotropic 
+!   5.  elements in the weld region are assigned anisotropic 
 !       expansion coefficients with a unit temperature 
 !       increase on all model nodes.
 !
-!   5.  material properties are linear elastic.
-!
-!   6.  no crack exists in the model at t=0
+!   6.  material properties are linear elastic.
 !
 !   7.  crack is created via node release after step 1
 !       with 1 step to relax reaction forces.
 !
 !   8.  step 2 has a very small dummy load to satisfy 
+!       consistency checks.
 !
 !   9.  the solution and J-values for this model are
 !       the same as warp3d_1.inp with a
 !       pre-existing crack and 1 step analysis.
 !
+!   ** The FE model does not have a focused mesh for crack front
+!   ** region.
 !
  structure pipe_weld
 !
@@ -78,7 +81,7 @@
  loading test
     nonlinear
        step 1 unit_temp 1.0
-       step 2 unit_pinch 0.000001
+       step 2-3 unit_pinch 0.000001
 !
  nonlinear analysis parameters
    solution technique direct sparse
@@ -95,6 +98,8 @@
    time step 1.0e06
    trace solution on
    extrapolate on
+   initial state option on $ not needed but included as example
+   initial state step 1    $  "       "
 !
  compute displacements for loading test step 1
 !
@@ -110,7 +115,7 @@
     front nodes 3538 3537 linear verify
     normal plane nx -1 ny 0 nz 0
     function type d
-    q-values automatic rings 1-10
+    q-values automatic rings 2-10
 !
  compute domain integral
 !
