@@ -643,7 +643,7 @@ c     *                subroutine drive_01_update                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 7/1/2018 rhd                    *
+c     *              last modified : 8/27/2018 rhd                   *
 c     *                                                              *
 c     *     drives material model #1 (bilinear) to                   *
 c     *     update stresses and history for all elements in the      *
@@ -679,7 +679,7 @@ c
 c
       double precision :: dtime, ddummy(1), gp_alpha, ymfgm, et
       double precision, allocatable :: eps_elas(:,:),
-     &  gp_temps(:), gp_rtemps(:), gp_dtemps(:),
+     &  gp_temps(:), gp_rtemps(:), gp_dtemps(:), eps_theta_n1(:,:),
      &  uddt_temps(:,:), uddt(:,:), cep(:,:,:)
       double precision, parameter :: zero = 0.d0
 c
@@ -841,13 +841,15 @@ c          get the thermal strain increment (actually negative of increment)
 c
 !DIR$ VECTOR ALIGNED
       uddt_temps = zero
-      if ( temperatures ) then
+      if ( temperatures ) then  ! incremental temps
         call gp_temp_eps( span, uddt_temps,
      &                    local_work%alpha_vec, gp_dtemps ,
      &                    gp_temps, gp_rtemps,
      &                    local_work%alpha_vec_n, type )
         if( local_debug ) write(iout,9050)
       end if
+
+      
 c
 c            uddt_displ - strain increment due to displacement increment
 c            uddt_temps - (negative) of strain increment just due
@@ -889,8 +891,12 @@ c            if requested.
      &            local_work%elem_hist1(1,1,gpn),
      &            local_work%elem_hist1(1,4,gpn), felem, iout )
        if( local_work%capture_initial_state ) then
+         allocate( eps_theta_n1(span,6) )
+         call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
+     &                        gp_temps, gp_rtemps, type )
 !DIR$ VECTOR ALIGNED
-         local_work%elastic_strains_n1 = eps_elas
+         local_work%elastic_strains_n1 = eps_elas + eps_theta_n1 ! 1:span,1:6
+         deallocate( eps_theta_n1 )
 !DIR$ VECTOR ALIGNED
           local_work%plastic_work_density_n1(1:span) =
      &          local_work%urcs_blk_n1(1:span,8,gpn)
@@ -1037,7 +1043,7 @@ c     *                 subroutine drive_02_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/27/2015 rhd             *
+c     *                   last modified : 8/27/2018 rhd              *
 c     *                                                              *
 c     *     this subroutine drives material model 02 to              *
 c     *     update stresses and history for all elements in the      *
@@ -1057,7 +1063,7 @@ c
 c
 c                      parameter declarations
 c
-      real ::    props(mxelpr,*)   ! all same but read only
+      real    :: props(mxelpr,*)   ! all same but read only
       logical :: lprops(mxelpr,*)
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
@@ -1074,6 +1080,7 @@ c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero,  gp_alpha, cep(mxvl,6,6), ddtse(mxvl,6), nowtemp
+      double precision, allocatable ::  eps_theta_n1(:,:)
 c
       logical :: geonl, local_debug, temperatures,
      &           temperatures_ref, fgm_enode_props, signal_flag
@@ -1172,8 +1179,7 @@ c          process iter > 0 or iter=0 and extrapolated du. mm02
 c          uses total strains adjusted for total
 c          temperature strains to compute stresses @ n+1.
 c
-      if( temperatures ) then
-         do i = 1, span
+      do i = 1, span
            nowtemp = gp_temps(i) - gp_rtemps(i)
            ddtse(i,1) = local_work%ddtse(i,1,gpn) -
      &                  local_work%alpha_vec(i,1)*nowtemp
@@ -1187,11 +1193,7 @@ c
      &                  local_work%alpha_vec(i,5)*nowtemp
            ddtse(i,6) = local_work%ddtse(i,6,gpn) -
      &                  local_work%alpha_vec(i,6)*nowtemp
-         end do
-         if( local_debug ) write(iout,9090)
-      else
-         ddtse = local_work%ddtse(1:span,1:6,gpn)
-      end if
+      end do
 c
       if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
          if( local_debug ) write(iout,9060)
@@ -1199,7 +1201,7 @@ c
      &           local_work%nu_vec, local_work%sigyld_vec,
      &           local_work%n_power_vec,local_work%urcs_blk_n(1,1,gpn),
      &           local_work%urcs_blk_n1(1,1,gpn),
-     &           ddtse(1,1),  ! total strain @ n+1
+     &           ddtse(1,1),  ! total mechanical strain @ n+1
      &           local_work%elem_hist(1,1,gpn),
      &           local_work%elem_hist1(1,1,gpn), span, iout,
      &           signal_flag )
@@ -1207,6 +1209,19 @@ c
      &               local_work%sigyld_vec, local_work%n_power_vec,
      &               ddtse, local_work%elem_hist1(1,1,gpn),
      &               cep, span, iout )
+         if( local_work%capture_initial_state ) then
+          allocate( eps_theta_n1(span,6) )
+          call gp_temp_eps_n1( span, eps_theta_n1, 
+     &                         local_work%alpha_vec,
+     &                         gp_temps, gp_rtemps, type )
+!DIR$ VECTOR ALIGNED
+         local_work%elastic_strains_n1(1:span,1:6) = ddtse(1:span,1:6)
+     &                   + eps_theta_n1(1:span,1:6) 
+         deallocate( eps_theta_n1 )
+!DIR$ VECTOR ALIGNED
+          local_work%plastic_work_density_n1(1:span) = zero
+        end if
+
       else
         if( local_debug ) write(iout,9070)
 !DIR$ VECTOR ALIGNED
@@ -1540,7 +1555,7 @@ c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 6/13/2018 rhd                    *
+c     *             last modified : 8/27/2018 rhd                    *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1582,7 +1597,7 @@ c                       locals automatically deallocated
 c
       double precision, allocatable :: ddt(:,:), q(:,:,:),
      &  stress_n(:,:), stress_n1(:,:), uddt_temps(:,:),
-     &  uddt(:,:), cep(:,:,:)
+     &  uddt(:,:), cep(:,:,:),  eps_theta_n1(:,:)
 c
       logical :: null_point(mxvl), cut_step, process_block,
      &           adaptive, geonl, bbar, material_cut_step,
@@ -1798,9 +1813,15 @@ c
         call drive_03_update_c( span, numrows_stress, stress_n1,
      &               local_work%urcs_blk_n1(1,1,gpn), mxvl )
         if( local_work%capture_initial_state ) then
+           allocate( eps_theta_n1(span,6) )
+           call gp_temp_eps_n1( span, eps_theta_n1, 
+     &                          local_work%alpha_vec,
+     &                          gp_temps, gp_rtemps, type )
 !DIR$ VECTOR ALIGNED
-          local_work%elastic_strains_n1(1:span,1:6) =
-     &          local_work%elem_hist1(1:span,10:15,gpn)
+           local_work%elastic_strains_n1(1:span,1:6) =
+     &          local_work%elem_hist1(1:span,10:15,gpn) + 
+     &          eps_theta_n1(1:span,1:6)
+           deallocate( eps_theta_n1 )
 !DIR$ VECTOR ALIGNED
           local_work%plastic_work_density_n1(1:span) =
      &          local_work%urcs_blk_n1(1:span,8,gpn)
@@ -2462,7 +2483,7 @@ c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/26/2017 rhd              *
+c     *                   last modified : 8/27/2018 rhd              *
 c     *                                                              *
 c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
@@ -2505,7 +2526,7 @@ c
      &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
      &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
       double precision, allocatable ::  uddt_temps(:,:), uddt(:,:), 
-     &                                  cep(:,:,:)
+     &                                  cep(:,:,:), eps_theta_n1(:,:)
 c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, adaptive_possible, geonl,
@@ -2666,10 +2687,15 @@ c          if required, compute and store the current elastic-strains.
 c          Otherwise - done
 c
       if( .not. local_work%capture_initial_state ) return
-      call rstgp1_eps_elastic( span, mxvl, 
+c
+      allocate( eps_theta_n1(span,6) )
+      call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
+     &                     gp_temps, gp_rtemps, type )
+      call rstgp1_eps_elastic( span, mxvl,
      &      local_work%urcs_blk_n1(1,1,gpn),  
      &      local_work%elastic_strains_n1,
-     &      local_work%e_vec, local_work%nu_vec )
+     &      local_work%e_vec, local_work%nu_vec, eps_theta_n1 )
+      deallocate( eps_theta_n1 )
 !DIR$ VECTOR ALIGNED
       local_work%plastic_work_density_n1(1:span) =
      &          local_work%urcs_blk_n1(1:span,8,gpn)
@@ -5763,19 +5789,21 @@ c     *                 subroutine rstgp1_eps_elastic                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/3/2018 rhd               *
+c     *                   last modified : 8/27/2018 rhd              *
 c     *                                                              *
 c     *                    elastic strains at n+ 1                   *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine rstgp1_eps_elastic( span, mxvl, stress_n1,
-     &                               eps_elas_n1, e_n1, nu_n1 )
+     &                               eps_elas_n1, e_n1, nu_n1,
+     &                               eps_theta_n1 )
       implicit none
 c
       integer :: span, mxvl
       double precision :: stress_n1(mxvl,6), eps_elas_n1(span,6),
-     &                    e_n1(span), nu_n1(span)
+     &                    e_n1(span), nu_n1(span), 
+     &                    eps_theta_n1(span,6)
 c
       integer :: i
       double precision :: g_n1(mxvl)
@@ -5783,16 +5811,16 @@ c
 c
 c              elastic strains at n + 1
 c
-      associate( x => eps_elas_n1, y => stress_n1 )
+      associate( x => eps_elas_n1, y => stress_n1, z => eps_theta_n1 )
 !DIR$ VECTOR ALIGNED
       do i = 1, span
-         g_n1(i)= e_n1(i)/two/(one+nu_n1(i))
-         x(i,1) = (y(i,1)-nu_n1(i)*(y(i,2)+y(i,3)))/e_n1(i)
-         x(i,2) = (y(i,2)-nu_n1(i)*(y(i,1)+y(i,3)))/e_n1(i)
-         x(i,3) = (y(i,3)-nu_n1(i)*(y(i,1)+y(i,2)))/e_n1(i)
-         x(i,4) = y(i,4) / g_n1(i)
-         x(i,5) = y(i,5) / g_n1(i)
-         x(i,6) = y(i,6) / g_n1(i)
+         g_n1(i)= e_n1(i)/two/(one+nu_n1(i)) 
+         x(i,1) = (y(i,1)-nu_n1(i)*(y(i,2)+y(i,3)))/e_n1(i) + z(i,1)
+         x(i,2) = (y(i,2)-nu_n1(i)*(y(i,1)+y(i,3)))/e_n1(i) + z(i,2)
+         x(i,3) = (y(i,3)-nu_n1(i)*(y(i,1)+y(i,2)))/e_n1(i) + z(i,3)
+         x(i,4) = y(i,4) / g_n1(i) + z(i,4)
+         x(i,5) = y(i,5) / g_n1(i) + z(i,5)
+         x(i,6) = y(i,6) / g_n1(i) + z(i,6)
       end do
       end associate
 c
