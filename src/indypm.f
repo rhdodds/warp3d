@@ -1507,7 +1507,8 @@ c
       do elem = 1, noelem
         matno = iprops(38,elem)
         mat_type = matprp(9,matno)
-        ok = mat_type .eq. 1  .or.  mat_type .eq. 3  .or. 
+        ok = mat_type .eq. 1  .or.  mat_type .eq. 2 .or.
+     &       mat_type .eq. 3  .or. 
      &       mat_type .eq. 5 
         if( ok ) cycle
         bad = .true.
