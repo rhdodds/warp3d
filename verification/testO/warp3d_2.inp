@@ -4,7 +4,11 @@
 !      introduce crack -> get J 
 !
 !      must use initial state 0 since initial
-!      conditions have residual stresses
+!      conditions have residual stresses to force
+!      J7, J8 computation.
+!
+!      WARP3D input processor set initial state values
+!      when processing initial stresses.
 !
 !      elastic-plastic material
 !
@@ -68,7 +72,7 @@ blocking automatic size = 128
    solution technique sparse direct
    time step 1.0e06
    maximum iterations 5 $  global Newton iterations
-   minimum iterations 2
+   minimum iterations 1
    extrapolate off
    line search off
    divergence check on
@@ -83,7 +87,6 @@ blocking automatic size = 128
    trace solution on
    display tied mesh mpcs off
    user_routine off
-   initial state option on
    initial state step 0
 !
  compute displacements for loading test step 1 $ equilibrium step

@@ -1,9 +1,12 @@
 !
 !
-!      reverse bend -> unload -> introduce crack 
+!      reverse bend with significant plastic deformation -> unload
+!       -> introduce crack 
 !
 !      load to 1.25 P_L, unload to zero, crack
 !
+!      102 steps used to apply reverse loading and then
+!      unload (for demonstration)
 !
  structure beam
 !

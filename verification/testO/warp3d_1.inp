@@ -6,8 +6,7 @@
 !
 !      linear elastic material
 !
-!      4 pt. SE(B) model in O'Dowd, et al.
-!      IJF, 
+!      4 pt. SE(B) model in O'Dowd, et al. IJF 
 !
  structure beam
 !
@@ -78,8 +77,6 @@ blocking automatic size = 128
    trace solution on
    display tied mesh mpcs off
    user_routine off
-   initial state option on
-   initial state step 0
 !
  compute displacements for loading test step 1 $ equilibrium step
 !
