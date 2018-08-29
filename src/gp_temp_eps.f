@@ -219,6 +219,78 @@ c
 c
       end
 
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine gp_temp_eps_n1               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 8/27/2018 rhd              *
+c     *                                                              *
+c     *     compute total thermal strains at gauss point for         *
+c     *     all elements of the block.                               *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine gp_temp_eps_n1( span, eps_theta_n1, alpha_n1, 
+     &                           gp_temps, gp_rtemps, etype  )
+      use main_data,  only : bar_types, link_types
+      implicit none
+      include 'param_def'
+c
+c                      parameter declarations
+c
+      integer :: span, etype
+      double precision :: eps_theta_n1(span,6), alpha_n1(mxvl,6),
+     &                    gp_temps(*), gp_rtemps(*)
+c
+c                     locals
+c
+      integer :: i
+      double precision :: dtn1
+      double precision, parameter :: zero = 0.0d0
+      logical :: is_bar_elem, is_link_elem
+      logical, parameter :: local_debug = .false.
+c
+      if( local_debug ) write(*,9100)
+c
+c            compute (total) thermal strain at n+1
+c
+      is_bar_elem  = bar_types(etype)
+      is_link_elem = link_types(etype)
+c
+c           instantaneous thermal strain is always just
+c           current temperature * current  CTEs
+c           adjust for reference temp.
+c           \alpha here can be anisotropic
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+         dtn1 = gp_temps(i) -  gp_rtemps(i)
+         eps_theta_n1(i,1) =  alpha_n1(i,1)*dtn1
+         eps_theta_n1(i,2) =  alpha_n1(i,2)*dtn1
+         eps_theta_n1(i,3) =  alpha_n1(i,3)*dtn1
+         eps_theta_n1(i,4) =  alpha_n1(i,4)*dtn1
+         eps_theta_n1(i,5) =  alpha_n1(i,5)*dtn1
+         eps_theta_n1(i,6) =  alpha_n1(i,6)*dtn1
+      end do
+c
+      if( is_bar_elem .or. is_link_elem ) 
+     &     eps_theta_n1(1:span,2:6) = zero
+c
+      if ( .not. local_debug ) return
+      write(*,*) '>> thermal strains @ n+1...'
+      do i = 1, span
+       write(*,9200) i, eps_theta_n1(i,1:6)
+      end do
+      return
+c
+ 9100 format(1x,'>> entering gp_temp_eps_n1...' )
+ 9200 format(10x,i3,6e17.6)
+c
+      end
+
 
 
 
