@@ -4,7 +4,7 @@ c     *                      subroutine inicon                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 09/21/2017 rhd             *
+c     *                   last modified : 8/27/2018 rhd              *
 c     *                                                              *
 c     *     supervises and conducts the input of the                 *
 c     *     desired initial conditions for the structure at time 0.  *
@@ -20,7 +20,9 @@ c
      &                      temper_nodes_ref, temperatures_ref,
      &                      inverse_incidences, initial_stresses,
      &                      initial_stresses_user_routine,
-     &                      initial_stresses_file
+     &                      initial_stresses_file,
+     &                      initial_state_option, 
+     &                      initial_state_step
       implicit none
 c
       logical :: sbflg1, sbflg2
@@ -70,6 +72,11 @@ c
            cond = 4
            call inicon_node_values
         elseif( matchs('stresses',4)  ) then
+           initial_state_option = .true.
+           initial_state_step   = 0
+           write(out,*) ' '
+           write(out,9000)
+           write(out,*) ' '
            cond = 5
            call inicon_initial_stresses
            if( scan_stat .eq. 1 ) call readsc
@@ -79,6 +86,14 @@ c
            return
         end if
       end do
+c
+      return
+c
+ 9000 format('>>>>> Note: the presence of initial stresses sets the',
+     & /     '            following solution parameters by default:',
+     & /     '             -> initial state option on',
+     & /,    '             -> initial state step 0' ) 
+c
 
       contains
 c     ========
