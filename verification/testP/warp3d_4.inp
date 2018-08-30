@@ -13,32 +13,35 @@
 !   5.  material properties are nonlinear (simple mises, bilinear
 !       hardening).
 !
+!       yield of 60 gives linear-elastic step 1, yielding during
+!       node release
+!
 !   6.  no crack in model at time 0. crack is introduced
 !       after step 1 with 1 step to relax reaction forces to zero.
 !
 !   7.  step 2 has a very small mechanical load to satisfy 
-!       consistency checks. same for step 1.
+!       consistency checks.
 !
-!   8. J-values after step 2 are those for the residual stresses
-!      due to the eigenstrain field. compare with results for
-!      warp3d_3.inp
+!   8.  J-values after step 2 are those for the residual stresses.
 !
-!   9. steps 3 and 4 impose more mechanical (apex pinching)
-!      loads and more thermal loading
+!   9.  steps 3 and 4 impose more mechanical (apex pinching)
+!       loads and more thermal loading
 !
 !  10. initial-state framework is automatically set by input 
 !      processors that read initial stresses
 !
-!   ** The FE model does not have a focused mesh for crack front
-!   ** region.
+! 
+!   Note:
+!     ** The FE model does not have a focused mesh for crack front
+!     ** region.
 !
  structure pipe_weld
 !
  material weld
-    properties bilinear e 30000 nu 0.3 yld_pt 70.,
+    properties bilinear e 30000 nu 0.3 yld_pt 60.,
                tan_e 400 beta 0.00
  material pipe
-    properties bilinear e 30000 nu 0.3 yld_pt 70.,
+    properties bilinear e 30000 nu 0.3 yld_pt 60.,
                tan_e 500 beta 0.00
 !
  number of nodes 8076  elements  3692
@@ -87,7 +90,7 @@
 !
  loading test
     nonlinear
-       step 1 unit_pinch 0.0000001 
+       step 1 unit_pinch 0.0000001  unit_temp 0.1
        step 2 unit_pinch 0.0000001 
        step 3-4 unit_pinch 0.01 unit_temp 0.5
 !
@@ -106,6 +109,8 @@
    time step 1.0e06
    trace solution on
    extrapolate on
+   initial state option on
+   initial state step 1
 !
  compute displacements for loading test step 1
 !
