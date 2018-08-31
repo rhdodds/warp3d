@@ -1,8 +1,7 @@
 !
 !
 !      user specified residual stresses -> 
-!      introduce crack -> get J from crack opening 
-!      displacements and J using initial state
+!      introduce crack -> get J
 !
 !      linear elastic material
 !

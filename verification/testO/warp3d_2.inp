@@ -3,13 +3,6 @@
 !      user specified residual stresses -> 
 !      introduce crack -> get J 
 !
-!      must use initial state 0 since initial
-!      conditions have residual stresses to force
-!      J7, J8 computation.
-!
-!      WARP3D input processor set initial state values
-!      when processing initial stresses.
-!
 !      elastic-plastic material
 !
 !      4 pt. SE(B) model in O'Dowd, et al.
@@ -17,6 +10,9 @@
 !
 !      step 1 is equilibrium step with no yielding after
 !      making two elements at roller support linear-elastic
+!
+!      set initial state step 1 for testing even though
+!      step 1 is linear elastic
 !
  structure beam
 !
@@ -87,7 +83,8 @@ blocking automatic size = 128
    trace solution on
    display tied mesh mpcs off
    user_routine off
-   initial state step 0
+   initial state option on
+   initial state step 1
 !
  compute displacements for loading test step 1 $ equilibrium step
 !

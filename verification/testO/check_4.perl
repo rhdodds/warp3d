@@ -16,7 +16,7 @@ print "\t   ... output file opened ...\n";
 find_line( 1, "average  " );
 $line = <infile>;  @parts = split( / +/, $line);
 #
-$answer = "0.3067E-02";
+$answer = "0.3277E-02";
 $partno = 1;
 #
 $message = " ";
