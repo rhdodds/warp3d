@@ -27,10 +27,25 @@
 !   9.  steps 3 and 4 impose more mechanical (apex pinching)
 !       loads and more thermal loading
 !
-!  10.  initial-state framework is used. the eigenstrains
-!       cause inelastic deformations in step 1 before the crack
-!       is created.  lower yield stress used to make step 1
-!       nonlinear for demonstration
+!  10.  all deformations are elastic with this material model.
+!       the use of initial state framework here is for checking.
+!
+!       total strains are elastic (recoverable), as are thermal strains
+!       and strains from user initial stresses.
+!       setting initial state step = 1 makes code run through
+!       all computations w/o knowing that all contributions
+!       of deformation are recoverable.
+!
+!       Small path dependency in J-values arises from the extrapolations
+!       to nodes, averaging and then differentiating to get the
+!       J7, J8 terms.
+! 
+!       Turn off initial state option below to see how J becomes
+!       more path independent using J6 (for temperatures) rather than
+!       J7, J8 (for initial state).  Possible to compare here 
+!       because solution with pre-existing crack and
+!       crack inserted after step 1 must be same for fully elastic
+!       materials.
 !
 !
 !   ** The FE model does not have a focused mesh for crack front
@@ -106,7 +121,7 @@
    time step 1.0e06
    trace solution on
    extrapolate on
-   initial state option off
+   initial state option on
    initial state step 1
 !
  compute displacements for loading test step 1

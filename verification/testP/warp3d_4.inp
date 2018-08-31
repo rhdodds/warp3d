@@ -5,7 +5,8 @@
 !   2.  weld has a cap on inside and outside surface
 !
 !   3.  residual stresses are input via initial conditions.
-!       values are -[D] * {eigenstrains}
+!       values are -[D] * {eigenstrains} computed in separate
+!       progam
 !
 !   4.  elements in the weld region are assigned anisotropic 
 !       expansion coefficients for loading after step 1.
@@ -27,8 +28,11 @@
 !   9.  steps 3 and 4 impose more mechanical (apex pinching)
 !       loads and more thermal loading
 !
-!  10. initial-state framework is automatically set by input 
+!  10. initial-state step is automatically set = 0 by input 
 !      processors that read initial stresses
+!      
+!      need to override with step = 1 since inelastic strains
+!      occur in step 1 for the lower yield stress.
 !
 ! 
 !   Note:
@@ -38,10 +42,10 @@
  structure pipe_weld
 !
  material weld
-    properties bilinear e 30000 nu 0.3 yld_pt 60.,
+    properties bilinear e 30000 nu 0.3 yld_pt 50.,
                tan_e 400 beta 0.00
  material pipe
-    properties bilinear e 30000 nu 0.3 yld_pt 60.,
+    properties bilinear e 30000 nu 0.3 yld_pt 50.,
                tan_e 500 beta 0.00
 !
  number of nodes 8076  elements  3692
