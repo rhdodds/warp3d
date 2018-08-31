@@ -1,0 +1,154 @@
+!
+!   1.  180-degree, plane-strain  model of circular pipe 
+!       with double V weld at top.
+!
+!   2.  weld has a cap on inside and outside surface
+!
+!   3.  residual stresses are input via initial conditions.
+!       values are -[D] * {eigenstrains} computed in separate
+!       progam
+!
+!   4.  elements in the weld region are assigned anisotropic 
+!       expansion coefficients for loading after step 1.
+!
+!   5.  material properties are nonlinear (generalized plasticity
+!       for testing )
+!
+!       yield of 60 gives linear-elastic step 1, yielding during
+!       node release
+!
+!   6.  no crack in model at time 0. crack is introduced
+!       after step 1 with 1 step to relax reaction forces to zero.
+!
+!   7.  step 2 has a very small mechanical load to satisfy 
+!       consistency checks.
+!
+!   8.  J-values after step 2 are those for the residual stresses.
+!
+!   9.  steps 3 and 4 impose more mechanical (apex pinching)
+!       loads and more thermal loading
+!
+!  10. initial-state step is automatically set = 0 by input 
+!      processors that read initial stresses
+!      
+!      need to override with step = 1 since inelastic strains
+!      occur in step 1 for the lower yield stress.
+!
+! 
+!   Note:
+!     ** The FE model does not have a focused mesh for crack front
+!     ** region.
+!
+ structure pipe_weld
+!
+ material weldgp
+    properties cyclic generalized_plasticity e 30000 nu 0.3,
+                  yld_pt 60,
+              gp_beta_u 200 gp_delta_u 0.010 gp_h_u 400,
+               gp_tau 0.0 sig_tol 0.0001
+!
+ material pipegp
+    properties cyclic generalized_plasticity e 30000 nu 0.3,
+                  yld_pt 60,
+              gp_beta_u 200 gp_delta_u 0.010 gp_h_u 400,
+               gp_tau 0.0 sig_tol 0.0001
+!
+ number of nodes 8076  elements  3692
+!
+ elements
+    1-1164 type l3disop linear material pipegp,
+           order 2x2x2 bbar center_output short
+!
+    1165-2444 type l3disop linear material pipegp,
+               order 2x2x2 bbar center_output short
+!
+    2445-3692 type l3disop linear material weldgp,
+              order 2x2x2 bbar center_output short
+!
+!      anisotropic alpha_ij for elements
+!
+  *input from file 'alpha_ij.inp'
+!
+  *input from file 'coords.inp'
+  *input from file 'incid.inp'
+!
+  blocking  automatic  $    scalar
+!
+ initial conditions
+   stresses
+      *input from 'residual_stresses.inp'
+!
+ loading unit_temp
+    nodal loads
+       1-8076  temperature  1.0
+!
+ loading unit_pinch
+    nodal loads
+       7425 7426  force_y -1.0
+!
+ constraints
+    all w 0.0
+    1281 1282 v 0.0
+    1-10 u 0.0
+!    *input from 'ligament_cons.inp'
+!    *input from 'crack_face_cons.inp'
+    plane x=0 symmetry  $ all crack plane nodes
+!
+! output patran neutral
+! stop
+!
+ loading test
+    nonlinear
+       step 1 unit_pinch 0.0000001  unit_temp 0.1
+       step 2 unit_pinch 0.0000001 
+       step 3-4 unit_pinch 0.01 unit_temp 0.5
+!
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   time step 1.0e06
+   trace solution on
+   extrapolate on
+   initial state option on
+   initial state step 1
+!
+ compute displacements for loading test step 1
+!
+ release constraints steps 1
+   *input from 'crack_face_release.inp'
+!
+ compute displacements load test step 2
+!
+ output displacements 3433 2929 2663 2371
+!
+  domain position_1
+    symmetric
+    front nodes 3538 3537 linear verify
+    normal plane nx -1 ny 0 nz 0
+    function type d
+    q-values automatic rings 2-10
+!
+ compute domain integral
+!
+ compute displacements load test step 4
+!
+ output displacements 3433 2929 2663 2371
+!
+  domain position_1
+    symmetric
+    front nodes 3538 3537 linear verify
+    normal plane nx -1 ny 0 nz 0
+    function type d
+    q-values automatic rings 2-10
+!
+ compute domain integral
+ stop
