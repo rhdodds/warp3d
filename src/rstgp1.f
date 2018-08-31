@@ -178,6 +178,8 @@ c
 c                 include initial stresses if present (only step 1)
 c
       if( local_work%process_initial_stresses )  then
+       write(*,*) ' .. rstgp1, process_initial_stresses:',
+     &   local_work%process_initial_stresses
        do i = 1, span
 !DIR$ VECTOR ALIGNED
         local_work%urcs_blk_n(i,1:6,gpn) =
@@ -643,7 +645,7 @@ c     *                subroutine drive_01_update                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 8/27/2018 rhd                   *
+c     *              last modified : 8/30/2018 rhd                   *
 c     *                                                              *
 c     *     drives material model #1 (bilinear) to                   *
 c     *     update stresses and history for all elements in the      *
@@ -680,11 +682,12 @@ c
       double precision :: dtime, ddummy(1), gp_alpha, ymfgm, et
       double precision, allocatable :: eps_elas(:,:),
      &  gp_temps(:), gp_rtemps(:), gp_dtemps(:), eps_theta_n1(:,:),
-     &  uddt_temps(:,:), uddt(:,:), cep(:,:,:)
+     &  uddt_temps(:,:), uddt(:,:), cep(:,:,:), eigenstrains(:,:)
       double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures, segmental,
-     &           temperatures_ref, fgm_enode_props
+     &           temperatures_ref, fgm_enode_props, nonlinear_update,
+     &           linear_elastic_update
 c
 c           vectorized mises plasticity model with constant hardening
 c           modulus. the model supports temperature dependence of
@@ -868,10 +871,14 @@ c
 c            now standard update process. use nonlinear update and [D]
 c            computation for iter = 0 and extrapolation or iter > 1
 c            for iter = 0 and no extrapolation, use linear-elastic [D]
-c            with props at n+1.  store elastic strains at n+1
-c            if requested.
-
-      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+c            with props at n+1.  store recoverable (elastic,
+c            thermal eigen from user defined initial stresses)
+c            strains at n+1 if requested.
+c
+      nonlinear_update = iter >= 1 .or. extrapolated_du
+      linear_elastic_update = .not. nonlinear_update
+c
+      if( nonlinear_update ) then !nonlinear update
        if( local_debug ) write(iout,9060)
        call mm01( span, felem, gpn, step, iter, local_work%e_vec,
      &           local_work%nu_vec, local_work%beta_vec,
@@ -890,18 +897,12 @@ c            if requested.
      &            local_work%elem_hist1(1,5,gpn), local_work%beta_vec,
      &            local_work%elem_hist1(1,1,gpn),
      &            local_work%elem_hist1(1,4,gpn), felem, iout )
-       if( local_work%capture_initial_state ) then
-         allocate( eps_theta_n1(span,6) )
-         call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
-     &                        gp_temps, gp_rtemps, type )
-!DIR$ VECTOR ALIGNED
-         local_work%elastic_strains_n1 = eps_elas + eps_theta_n1 ! 1:span,1:6
-         deallocate( eps_theta_n1 )
-!DIR$ VECTOR ALIGNED
-          local_work%plastic_work_density_n1(1:span) =
-     &          local_work%urcs_blk_n1(1:span,8,gpn)
-        end if
-      else  ! linear-elastic update
+      end if  
+c
+      if( nonlinear_update .and. local_work%capture_initial_state )
+     &   call drive_01_update_c
+c
+      if( linear_elastic_update) then
         if( local_debug ) write(iout,9070)
         call drive_01_update_a
       end if
@@ -933,6 +934,97 @@ c
 c
       contains
 c     ========
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_01_update_c                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 8/30/2018 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_01_update_c
+      implicit none
+c
+      integer :: k, m, i
+      logical, parameter :: local_debug = .false.
+      double precision :: one, two, e, nu, c1, c2, c3, gmod
+      data one, two / 1.0d00, 2.0d00 /
+c
+      if( local_debug ) then
+         write(iout,*) '.... mm01 capture initial state...'
+         write(iout,*) '    .... process_initial_stresses:', 
+     &                 local_work%process_initial_stresses
+      end if
+c          
+      allocate( eps_theta_n1(span,6), eigenstrains(span,6) )
+c
+c              1. get thermal strains for current temperatures and
+c                 expansion coefficients.
+c
+      call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
+     &                     gp_temps, gp_rtemps, type )
+c
+c              2. compute eigenstrains equivalent to user-specified 
+c                 initial (residual) stresses.
+c
+c                 residual stresses not yet supported for this 
+c                 model. code here will work once they are
+c                 implemented. 
+c
+      associate( eigen => eigenstrains, 
+     &           si    => local_work%initial_stresses,
+     &           epsr  => local_work%elastic_strains_n1  )
+!DIR$ VECTOR ALIGNED
+      eigen = zero
+c
+      if( local_work%process_initial_stresses ) then
+        if( local_debug ) write(iout,*) '... make eigenstrains'
+!DIR$ VECTOR ALIGNED
+        do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e    = local_work%e_vec(i)
+         nu   = local_work%nu_vec(i)
+         gmod = e / two / (one + nu )
+         c1   = one / e
+         c2   = - nu / e
+         c3   = one / gmod
+         eigen(i,1) = -(c1 * si(1,i) +  c2 * si(2,i) + c2 * si(3,i)) 
+         eigen(i,2) = -(c2 * si(1,i) +  c1 * si(2,i) + c2 * si(3,i))
+         eigen(i,3) = -(c2 * si(1,i) +  c2 * si(2,i) + c1 * si(3,i))
+         eigen(i,4) = -c3 * si(4,i)
+         eigen(i,5) = -c3 * si(5,i)
+         eigen(i,6) = -c3 * si(6,i)
+        end do
+      end if
+c
+c              3. compute the recoverable strains
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        epsr(i,1) = eps_elas(i,1) + eps_theta_n1(i,1) + eigen(i,1)
+        epsr(i,2) = eps_elas(i,2) + eps_theta_n1(i,2) + eigen(i,2)
+        epsr(i,3) = eps_elas(i,3) + eps_theta_n1(i,3) + eigen(i,3)
+        epsr(i,4) = eps_elas(i,4) + eps_theta_n1(i,4) + eigen(i,4)
+        epsr(i,5) = eps_elas(i,5) + eps_theta_n1(i,5) + eigen(i,5)
+        epsr(i,6) = eps_elas(i,6) + eps_theta_n1(i,6) + eigen(i,6)
+      end do
+c
+c              4. save current plastic work density for future
+c                 initial-state adjustment
+c
+!DIR$ VECTOR ALIGNED
+      local_work%plastic_work_density_n1(1:span) =
+     &          local_work%urcs_blk_n1(1:span,8,gpn)
+
+      end associate
+c
+      deallocate( eps_theta_n1, eigenstrains )
+c
+      return
+      end subroutine drive_01_update_c
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_01_update_a                 *
@@ -1079,13 +1171,14 @@ c
 c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero,  gp_alpha, cep(mxvl,6,6), ddtse(mxvl,6), nowtemp
-      double precision, allocatable ::  eps_theta_n1(:,:)
+     &  gp_alpha, cep(mxvl,6,6), ddtse(mxvl,6), nowtemp
+      double precision, allocatable ::  eps_theta_n1(:,:),
+     &                                  eigenstrains(:,:)
+      double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures,
-     &           temperatures_ref, fgm_enode_props, signal_flag
-c
-      data zero / 0.0d0 /
+     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           nonlinear_update, linear_elastic_update
 c
 c          deformation plasticity model. properties are invariant of
 c          temperature and loading rate. properties may vary spatially
@@ -1195,7 +1288,10 @@ c
      &                  local_work%alpha_vec(i,6)*nowtemp
       end do
 c
-      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+      nonlinear_update = iter >= 1 .or. extrapolated_du 
+      linear_elastic_update  = .not. nonlinear_update
+c
+      if( nonlinear_update ) then
          if( local_debug ) write(iout,9060)
          call mm02( step, iter, felem, gpn, local_work%e_vec,
      &           local_work%nu_vec, local_work%sigyld_vec,
@@ -1209,25 +1305,28 @@ c
      &               local_work%sigyld_vec, local_work%n_power_vec,
      &               ddtse, local_work%elem_hist1(1,1,gpn),
      &               cep, span, iout )
-         if( local_work%capture_initial_state ) then
-          allocate( eps_theta_n1(span,6) )
-          call gp_temp_eps_n1( span, eps_theta_n1, 
-     &                         local_work%alpha_vec,
-     &                         gp_temps, gp_rtemps, type )
-!DIR$ VECTOR ALIGNED
-         local_work%elastic_strains_n1(1:span,1:6) = ddtse(1:span,1:6)
-     &                   + eps_theta_n1(1:span,1:6) 
-         deallocate( eps_theta_n1 )
-!DIR$ VECTOR ALIGNED
-          local_work%plastic_work_density_n1(1:span) = zero
-        end if
+      end if
+c
+      if( nonlinear_update .and. local_work%capture_initial_state )
+     &     call  drive_02_update_c
+!          allocate( eps_theta_n1(span,6) )
+!          call gp_temp_eps_n1( span, eps_theta_n1, 
+!     &                         local_work%alpha_vec,
+!     &                         gp_temps, gp_rtemps, type )
+!!DIR$ VECTOR ALIGNED
+!         local_work%elastic_strains_n1(1:span,1:6) = ddtse(1:span,1:6)
+!     &                   + eps_theta_n1(1:span,1:6) 
+!         deallocate( eps_theta_n1 )
+!!DIR$ VECTOR ALIGNED
+!          local_work%plastic_work_density_n1(1:span) = zero
+!        end if
 
-      else
+      if(  linear_elastic_update  ) then
         if( local_debug ) write(iout,9070)
 !DIR$ VECTOR ALIGNED
         cep  = zero
         call drive_02_update_a
-      end if
+      end if 
 c
 c          save the [D] matrices (lower-triangle)
 c
@@ -1256,6 +1355,94 @@ c
 c
       contains
 c     ========
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_02_update_c                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 8/30/2018 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_02_update_c
+      implicit none
+c
+      integer :: i
+      logical, parameter :: local_debug = .true.
+      double precision :: e, nu, c1, c2, c3, gmod
+      double precision, parameter :: one = 1.d0, two = 2.d0
+c
+      if( local_debug ) then
+         write(iout,*) '.... mm02c capture initial state...'
+         write(iout,*) '    .... process_initial_stresses:', 
+     &                 local_work%process_initial_stresses
+      end if
+c          
+      allocate( eps_theta_n1(span,6), eigenstrains(span,6) )
+c
+c              1. get thermal strains for current temperatures and
+c                 expansion coefficients.
+c
+      call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
+     &                     gp_temps, gp_rtemps, type )
+c
+c              2. compute eigenstrains equivalent to user-specified 
+c                 initial (residual) stresses. 
+c
+      associate( eigen => eigenstrains, 
+     &           si    => local_work%initial_stresses,
+     &           epsr  => local_work%elastic_strains_n1,
+     &           ee    => ddtse  )
+!DIR$ VECTOR ALIGNED
+      eigen = zero
+c
+      if( local_work%process_initial_stresses ) then
+        if( local_debug ) write(iout,*) '... make eigenstrains'
+!DIR$ VECTOR ALIGNED
+        do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e    = local_work%e_vec(i)
+         nu   = local_work%nu_vec(i)
+         gmod = e / two / (one + nu )
+         c1   = one / e
+         c2   = - nu / e
+         c3   = one / gmod
+         eigen(i,1) = -(c1 * si(1,i) +  c2 * si(2,i) + c2 * si(3,i)) 
+         eigen(i,2) = -(c2 * si(1,i) +  c1 * si(2,i) + c2 * si(3,i))
+         eigen(i,3) = -(c2 * si(1,i) +  c2 * si(2,i) + c1 * si(3,i))
+         eigen(i,4) = -c3 * si(4,i)
+         eigen(i,5) = -c3 * si(5,i)
+         eigen(i,6) = -c3 * si(6,i)
+        end do
+      end if
+c
+c              3. compute the recoverable strains. ddtse has
+c                 strains at n+1
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        epsr(i,1) = ee(i,1) + eps_theta_n1(i,1) + eigen(i,1)
+        epsr(i,2) = ee(i,2) + eps_theta_n1(i,2) + eigen(i,2)
+        epsr(i,3) = ee(i,3) + eps_theta_n1(i,3) + eigen(i,3)
+        epsr(i,4) = ee(i,4) + eps_theta_n1(i,4) + eigen(i,4)
+        epsr(i,5) = ee(i,5) + eps_theta_n1(i,5) + eigen(i,5)
+        epsr(i,6) = ee(i,6) + eps_theta_n1(i,6) + eigen(i,6)
+      end do
+c
+c              4. all work is recoverable for this model. 
+c                 no plastic component.
+c
+!DIR$ VECTOR ALIGNED
+      local_work%plastic_work_density_n1(1:span) = zero
+c
+      end associate
+c
+      deallocate( eps_theta_n1, eigenstrains )
+c
+      return
+      end subroutine drive_02_update_c
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_02_update_a                 *
@@ -1555,7 +1742,7 @@ c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 8/27/2018 rhd                    *
+c     *             last modified : 8/30/2018 rhd                    *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1596,14 +1783,15 @@ c
 c                       locals automatically deallocated
 c
       double precision, allocatable :: ddt(:,:), q(:,:,:),
-     &  stress_n(:,:), stress_n1(:,:), uddt_temps(:,:),
-     &  uddt(:,:), cep(:,:,:),  eps_theta_n1(:,:)
+     &  stress_n(:,:), stress_n1(:,:), uddt_temps(:,:), uddt(:,:), 
+     &  cep(:,:,:),  eps_theta_n1(:,:), eigenstrains(:,:)
 c
       logical :: null_point(mxvl), cut_step, process_block,
      &           adaptive, geonl, bbar, material_cut_step,
      &           local_debug, signal_flag, adaptive_flag,
      &           power_law, temperatures, allow_cut, segmental,
-     &           model_update, temperatures_ref, fgm_enode_props
+     &           model_update, temperatures_ref, fgm_enode_props,
+     &           nonlinear_update, linear_elastic_update
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
      &           iter, now_blk, mat_type, number_points, curve_set,
@@ -1807,26 +1995,20 @@ c                perform a nonlinear stress update or a linear-elastic
 c                update. after nonlinear update, store elastic
 c                strains at n+1 if requested.
 c
-      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+      nonlinear_update = iter >= 1 .or. extrapolated_du
+      linear_elastic_update = .not. nonlinear_update
+
+      if( nonlinear_update ) then !nonlinear update
         if( local_debug ) write(iout,9060)
         call drive_03_update_a
         call drive_03_update_c( span, numrows_stress, stress_n1,
      &               local_work%urcs_blk_n1(1,1,gpn), mxvl )
-        if( local_work%capture_initial_state ) then
-           allocate( eps_theta_n1(span,6) )
-           call gp_temp_eps_n1( span, eps_theta_n1, 
-     &                          local_work%alpha_vec,
-     &                          gp_temps, gp_rtemps, type )
-!DIR$ VECTOR ALIGNED
-           local_work%elastic_strains_n1(1:span,1:6) =
-     &          local_work%elem_hist1(1:span,10:15,gpn) + 
-     &          eps_theta_n1(1:span,1:6)
-           deallocate( eps_theta_n1 )
-!DIR$ VECTOR ALIGNED
-          local_work%plastic_work_density_n1(1:span) =
-     &          local_work%urcs_blk_n1(1:span,8,gpn)
-        end if
-      else  ! linear-elastic update. no history updates
+      end if
+c
+      if( nonlinear_update .and. local_work%capture_initial_state ) 
+     &   call drive_03_update_f
+c
+      if( linear_elastic_update) then !no history updates
         if( local_debug ) write(iout,9070)
         call drive_03_update_b
       end if
@@ -1855,6 +2037,96 @@ c
 c
       contains
 c     ========
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_01_update_f                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 8/30/2018 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_03_update_f
+      implicit none
+c
+      integer :: k, m, i
+      logical, parameter :: local_debug = .false.
+      double precision :: one, two, e, nu, c1, c2, c3, gmod
+      data one, two / 1.0d00, 2.0d00 /
+c
+      if( local_debug ) then
+         write(iout,*) '.... mm03f capture initial state...'
+         write(iout,*) '    .... process_initial_stresses:', 
+     &                 local_work%process_initial_stresses
+      end if
+c          
+      allocate( eps_theta_n1(span,6), eigenstrains(span,6) )
+c
+c              1. get thermal strains for current temperatures and
+c                 expansion coefficients.
+c
+      call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
+     &                     gp_temps, gp_rtemps, type )
+c
+c              2. compute eigenstrains equivalent to user-specified 
+c                 initial (residual) stresses. 
+c
+      associate( eigen => eigenstrains, 
+     &           si    => local_work%initial_stresses,
+     &           epsr  => local_work%elastic_strains_n1,
+     &           ee    => local_work%elem_hist1  )
+!DIR$ VECTOR ALIGNED
+      eigen = zero
+c
+      if( local_work%process_initial_stresses ) then
+        if( local_debug ) write(iout,*) '... make eigenstrains'
+!DIR$ VECTOR ALIGNED
+        do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e    = local_work%e_vec(i)
+         nu   = local_work%nu_vec(i)
+         gmod = e / two / (one + nu )
+         c1   = one / e
+         c2   = - nu / e
+         c3   = one / gmod
+         eigen(i,1) = -(c1 * si(1,i) +  c2 * si(2,i) + c2 * si(3,i)) 
+         eigen(i,2) = -(c2 * si(1,i) +  c1 * si(2,i) + c2 * si(3,i))
+         eigen(i,3) = -(c2 * si(1,i) +  c2 * si(2,i) + c1 * si(3,i))
+         eigen(i,4) = -c3 * si(4,i)
+         eigen(i,5) = -c3 * si(5,i)
+         eigen(i,6) = -c3 * si(6,i)
+        end do
+      end if
+c
+c              3. compute the recoverable strains. elastic strains
+c                 from sig update:
+c                 local_work%elem_hist1(1:span,10:15,gpn)
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        epsr(i,1) = ee(i,10,gpn) + eps_theta_n1(i,1) + eigen(i,1)
+        epsr(i,2) = ee(i,11,gpn) + eps_theta_n1(i,2) + eigen(i,2)
+        epsr(i,3) = ee(i,12,gpn) + eps_theta_n1(i,3) + eigen(i,3)
+        epsr(i,4) = ee(i,13,gpn) + eps_theta_n1(i,4) + eigen(i,4)
+        epsr(i,5) = ee(i,14,gpn) + eps_theta_n1(i,5) + eigen(i,5)
+        epsr(i,6) = ee(i,15,gpn) + eps_theta_n1(i,6) + eigen(i,6)
+      end do
+c
+c              4. save current plastic work density for future
+c                 initial-state adjustment
+c
+!DIR$ VECTOR ALIGNED
+      local_work%plastic_work_density_n1(1:span) =
+     &          local_work%urcs_blk_n1(1:span,8,gpn)
+
+      end associate
+c
+      deallocate( eps_theta_n1, eigenstrains )
+c
+      return
+      end subroutine drive_03_update_f
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_03_update_b                  *
@@ -2483,7 +2755,7 @@ c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/27/2018 rhd              *
+c     *                   last modified : 8/30/2018 rhd              *
 c     *                                                              *
 c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
@@ -2526,12 +2798,15 @@ c
      &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
      &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
       double precision, allocatable ::  uddt_temps(:,:), uddt(:,:), 
-     &                                  cep(:,:,:), eps_theta_n1(:,:)
+     &  cep(:,:,:), eps_theta_n1(:,:), eigenstrains(:,:),
+     &  eps_elas_n1(:,:)
 c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, adaptive_possible, geonl,
      &           cut_step_size_now, fgm_enode_props,
-     &           segmental, nonlin_hard, generalized_pl
+     &           segmental, nonlin_hard, generalized_pl,
+     &           nonlinear_update, linear_elastic_update
+c
       data local_debug, zero / .false., 0.0d00 /
 c
 c                  NOTE:  at present, all elements in the block must be
@@ -2651,8 +2926,11 @@ c            now standard update process. use nonlinear update and [D]
 c            computation for iter = 0 and extrapolation or iter > 1
 c            for iter = 0 and no extrapolation, use linear-elastic [D]
 c            with props at n+1.
-
-      if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
+c
+      nonlinear_update = iter >= 1 .or. extrapolated_du
+      linear_elastic_update = .not. nonlinear_update
+c
+      if( nonlinear_update ) then !nonlinear update
        if( local_debug ) write(iout,9060)
        call drive_05_update_c
        if ( adaptive_possible .and. cut_step_size_now ) then
@@ -2672,7 +2950,12 @@ c            with props at n+1.
      &            local_work%gp_h_u_vec, local_work%gp_beta_u_vec,
      &            local_work%gp_delta_u_vec,
      &            gp_tau_vec )
-      else  ! linear-elastic update
+      end if
+c
+      if( nonlinear_update .and. local_work%capture_initial_state ) 
+     &   call drive_05_update_f
+c
+      if( linear_elastic_update) then ! no history updates
         if( local_debug ) write(iout,9070)
         call drive_05_update_a
       end if
@@ -2683,22 +2966,6 @@ c
      &         gbl_cep_blocks(now_blk)%vector, 21, cep )
       if( local_debug ) write(iout,9080)
 c
-c          if required, compute and store the current elastic-strains.
-c          Otherwise - done
-c
-      if( .not. local_work%capture_initial_state ) return
-c
-      allocate( eps_theta_n1(span,6) )
-      call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
-     &                     gp_temps, gp_rtemps, type )
-      call rstgp1_eps_elastic( span, mxvl,
-     &      local_work%urcs_blk_n1(1,1,gpn),  
-     &      local_work%elastic_strains_n1,
-     &      local_work%e_vec, local_work%nu_vec, eps_theta_n1 )
-      deallocate( eps_theta_n1 )
-!DIR$ VECTOR ALIGNED
-      local_work%plastic_work_density_n1(1:span) =
-     &          local_work%urcs_blk_n1(1:span,8,gpn)
       return
 c
  9000 format(1x,'.... debug mm05. felem, gpn, span: ',i7,i3,i3)
@@ -2718,6 +2985,103 @@ c
 c
       contains
 c     ========
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine drive_05_update_f                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 8/30/2018 rhd              *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine drive_05_update_f
+      implicit none
+c
+      integer :: k, m, i
+      logical, parameter :: local_debug = .false.
+      double precision :: one, two, e, nu, c1, c2, c3, gmod
+      data one, two / 1.0d00, 2.0d00 /
+c
+      if( local_debug ) then
+         write(iout,*) '.... mm05f capture initial state...'
+         write(iout,*) '    .... process_initial_stresses:', 
+     &                 local_work%process_initial_stresses
+      end if
+c
+      allocate( eps_theta_n1(span,6), eigenstrains(span,6),
+     &          eps_elas_n1(span,6) )     
+c
+c              1. get total elastic strain from current stress.
+c
+      call rstgp1_eps_elastic( span, mxvl,
+     &      local_work%urcs_blk_n1(1,1,gpn),  
+     &      eps_elas_n1, local_work%e_vec, local_work%nu_vec )
+c          
+c              2. get thermal strains for current temperatures and
+c                 expansion coefficients.
+c
+      call gp_temp_eps_n1( span, eps_theta_n1, local_work%alpha_vec,
+     &                     gp_temps, gp_rtemps, type )
+c
+c              3. compute eigenstrains equivalent to user-specified 
+c                 initial (residual) stresses. 
+c
+      associate( eigen => eigenstrains, 
+     &           si    => local_work%initial_stresses,
+     &           epsr  => local_work%elastic_strains_n1,
+     &           ee    => eps_elas_n1  )
+!DIR$ VECTOR ALIGNED
+      eigen = zero
+c
+      if( local_work%process_initial_stresses ) then
+        if( local_debug ) write(iout,*) '... make eigenstrains'
+!DIR$ VECTOR ALIGNED
+        do i = 1, span
+         if( local_work%killed_status_vec(i) ) cycle
+         e    = local_work%e_vec(i)
+         nu   = local_work%nu_vec(i)
+         gmod = e / two / (one + nu )
+         c1   = one / e
+         c2   = - nu / e
+         c3   = one / gmod
+         eigen(i,1) = -(c1 * si(1,i) +  c2 * si(2,i) + c2 * si(3,i)) 
+         eigen(i,2) = -(c2 * si(1,i) +  c1 * si(2,i) + c2 * si(3,i))
+         eigen(i,3) = -(c2 * si(1,i) +  c2 * si(2,i) + c1 * si(3,i))
+         eigen(i,4) = -c3 * si(4,i)
+         eigen(i,5) = -c3 * si(5,i)
+         eigen(i,6) = -c3 * si(6,i)
+        end do
+      end if
+c
+c              4. compute the recoverable strains.
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        epsr(i,1) = ee(i,1) + eps_theta_n1(i,1) + eigen(i,1)
+        epsr(i,2) = ee(i,2) + eps_theta_n1(i,2) + eigen(i,2)
+        epsr(i,3) = ee(i,3) + eps_theta_n1(i,3) + eigen(i,3)
+        epsr(i,4) = ee(i,4) + eps_theta_n1(i,4) + eigen(i,4)
+        epsr(i,5) = ee(i,5) + eps_theta_n1(i,5) + eigen(i,5)
+        epsr(i,6) = ee(i,6) + eps_theta_n1(i,6) + eigen(i,6)
+      end do
+c
+c              5. save current plastic work density for future
+c                 initial-state adjustment
+c
+!DIR$ VECTOR ALIGNED
+      local_work%plastic_work_density_n1(1:span) =
+     &          local_work%urcs_blk_n1(1:span,8,gpn)
+
+      end associate
+c
+      deallocate( eps_theta_n1, eigenstrains, eps_elas_n1 )
+c
+      return
+      end subroutine drive_05_update_f
+
+
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine drive_05_update_c                 *
@@ -5789,39 +6153,39 @@ c     *                 subroutine rstgp1_eps_elastic                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/27/2018 rhd              *
+c     *                   last modified : 8/30/2018 rhd              *
 c     *                                                              *
 c     *                    elastic strains at n+ 1                   *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine rstgp1_eps_elastic( span, mxvl, stress_n1,
-     &                               eps_elas_n1, e_n1, nu_n1,
-     &                               eps_theta_n1 )
+     &                               eps_elas_n1, e_n1, nu_n1 )
       implicit none
 c
       integer :: span, mxvl
       double precision :: stress_n1(mxvl,6), eps_elas_n1(span,6),
-     &                    e_n1(span), nu_n1(span), 
-     &                    eps_theta_n1(span,6)
+     &                    e_n1(span), nu_n1(span)
 c
       integer :: i
-      double precision :: g_n1(mxvl)
+      double precision :: g_n1
       double precision, parameter :: one = 1.d0, two = 2.d00
 c
-c              elastic strains at n + 1
+c              elastic strains at n + 1 from compliance and stress
 c
-      associate( x => eps_elas_n1, y => stress_n1, z => eps_theta_n1 )
+      associate( x => eps_elas_n1, y => stress_n1 )
+c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
-         g_n1(i)= e_n1(i)/two/(one+nu_n1(i)) 
-         x(i,1) = (y(i,1)-nu_n1(i)*(y(i,2)+y(i,3)))/e_n1(i) + z(i,1)
-         x(i,2) = (y(i,2)-nu_n1(i)*(y(i,1)+y(i,3)))/e_n1(i) + z(i,2)
-         x(i,3) = (y(i,3)-nu_n1(i)*(y(i,1)+y(i,2)))/e_n1(i) + z(i,3)
-         x(i,4) = y(i,4) / g_n1(i) + z(i,4)
-         x(i,5) = y(i,5) / g_n1(i) + z(i,5)
-         x(i,6) = y(i,6) / g_n1(i) + z(i,6)
+         g_n1= e_n1(i)/two/(one+nu_n1(i)) 
+         x(i,1) = (y(i,1)-nu_n1(i)*(y(i,2)+y(i,3)))/e_n1(i) 
+         x(i,2) = (y(i,2)-nu_n1(i)*(y(i,1)+y(i,3)))/e_n1(i) 
+         x(i,3) = (y(i,3)-nu_n1(i)*(y(i,1)+y(i,2)))/e_n1(i) 
+         x(i,4) = y(i,4) / g_n1 
+         x(i,5) = y(i,5) / g_n1 
+         x(i,6) = y(i,6) / g_n1 
       end do
+c
       end associate
 c
       return
