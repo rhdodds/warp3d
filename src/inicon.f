@@ -73,7 +73,7 @@ c
            call inicon_node_values
         elseif( matchs('stresses',4)  ) then
            initial_state_option = .true.
-           initial_state_step   = 0
+          initial_state_step   = 0
            write(out,*) ' '
            write(out,9000)
            write(out,*) ' '
@@ -92,7 +92,12 @@ c
  9000 format('>>>>> Note: the presence of initial stresses sets the',
      & /     '            following solution parameters by default:',
      & /     '             -> initial state option on',
-     & /,    '             -> initial state step 0' ) 
+     & /,    '             -> initial state step 0' 
+     & /,    '            this forces computation of J7, J8 terms',
+     & /,    '            for models with preexisting cracks.'
+     & /,    '            for models with cracks introduced after',
+     & /,    '            thermo-mechanical processing set initial',
+     & /,    '            step to correct value. See Appendix K') 
 c
 
       contains
