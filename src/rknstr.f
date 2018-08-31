@@ -188,7 +188,7 @@ c     *                   subroutine rknstr_initial_stresses         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/30/2018 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -239,7 +239,9 @@ c
       return
 c
  9000 format(//,'>>> Error: initial stresses not supported',
-     &  ' material model: ',a,
+     &  ' for material model: ',a,
+     &  /,      '           Please use equivalent eigenstrains imposed',
+     &  /,      '           via temperatures in step 1.',
      &  /,      '           job terminated....', //)
  9020 format(//,'>>> Fatal Error: routine rknstr_initial_stresses',
      &  /,      '                 job terminated....', //)
