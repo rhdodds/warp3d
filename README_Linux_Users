@@ -3,7 +3,7 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: August 18, 2018
+                      Last Update: September 5, 2018
 
 *** LATE BREAKING NEWS ***
 
@@ -15,7 +15,7 @@ The MPI version of WARP3D was been tested in Feb 2018 at the
 Ohio Supercomputer Center using 64 cluster nodes with 1600 total cores.
 
 The ready-to-run executables included in this distribution were built
-on RedHat 7.4 using Intel Composer XE Fortran, MKL and MPI 18.0.0.
+on RedHat 7.4 using Intel Composer XE Fortran, MKL and MPI 18.0.3.
 Given RedHat's approach to compatibility, we expect this executable
 will run on most, or all, 7.x releases. The current executable
 does  *not* on 6.x (incompatible libraries). Recompilation should
