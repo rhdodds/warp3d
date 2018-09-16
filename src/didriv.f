@@ -11,7 +11,7 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 6/23/2018 rhd                *
+c *                 last modified: 9/15/2018 rhd                *
 c *                                                             *
 c ***************************************************************
 c
@@ -29,7 +29,8 @@ c
      b                      fgm_node_values,
      c                      elems_to_blocks, temper_nodes,
      d                      temper_elems, initial_state_option,
-     e                      fgm_node_values_used, initial_state_step
+     e                      fgm_node_values_used, initial_state_step,
+     f                      initial_stresses_input
 c
       use j_data, only : debug_driver, domain_type, crack_plane_normal,
      a  front_order, q_values, max_exp_front, expanded_front_nodes,
@@ -195,8 +196,8 @@ c               11. Need to do this when temperatures have been
 c                   specified in model. Possibly leading to computation
 c                   of J_6
 
-c                   Not needed if the user has set an initial state for
-c                   J-processing to accommodate residual stresses,
+c                   Not needed if the user has input initial stresses
+c                   or set an initial state for  J-processing to accommodate
 c                   prior thermo-mechanical processing. In such
 c                   cases those effects, FGMs, thermal, .. will be
 c                   included thru J_7, J_8
@@ -215,7 +216,8 @@ c
       temperatures_on_model = any( temper_nodes .ne. zero ) .or.
      &                        any( temper_elems .ne. 0 )
       setup_node_props =  temperatures_on_model
-      if( process_initial_state ) setup_node_props = .false.
+      if( process_initial_state .or. initial_stresses_input ) 
+     &      setup_node_props = .false.
 c
       if( setup_node_props ) call di_node_props_setup( 1 ) !  MPI parallel
 c
@@ -223,7 +225,8 @@ c              12. Needed when FGM nodal properties are actually used
 c                  for elements in model, when the user
 c                  has defined an initial state, or temperature
 c                  dependent stress-strain curves are used (effectively
-c                  makes the material an FGM)
+c                  makes the material an FGM), or input initial
+c                  stresses.
 c
 c                  Needed for I integrals with temperatures in model.
 c

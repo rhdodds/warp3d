@@ -49,7 +49,8 @@ c
      k                    front_elem_flag, seg_curves_flag )
 c
       use global_data, only : mxgp, mxndel, myid, numprocs, out
-      use main_data, only : fgm_node_values_defined
+      use main_data, only : fgm_node_values_defined,
+     a                      initial_stresses_input
       use j_data, only : nj => size_j_values, ni => size_i_values,
      a                   one_point_rule, gdebug => debug_elements,
      b                   front_nodes, num_front_nodes, front_coords,
@@ -901,14 +902,14 @@ c
       j6_incr = temp1 + temp2
       jterm(6) = jterm(6) + temp1 + temp2
       neglect_term_j6 = fgm_node_values_defined .or. seg_curves_flag
-     &                  .or. process_initial_state
+     &                  .or. process_initial_state 
+     &                  .or. initial_stresses_input
       include_term_j6 = .not. neglect_term_j6
       if( neglect_term_j6 ) jterm(6) = zero
       if( ldebug )
      &  write(iout,955) process_temperatures, include_term_j6,
      &                  dtheta_x, point_temp, dalpha_x1(1),
      &                  point_q, temp1, temp2, j6_incr
-c      call die_abort
 c
 c              form jterm 7 & jterm 8 of J for explicit partial
 c              derivative terms

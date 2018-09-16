@@ -5,7 +5,7 @@ c     *                     elem_block_data                          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/5/2018 rhd               *
+c     *                   last modified : 9/15/2019 rhd              *
 c     *                                                              *
 c     *     define the data structures for element data stored       *
 c     *     in blocks                                                *
@@ -71,8 +71,6 @@ c
       type :: dgradnisblks
         double precision, allocatable, dimension(:,:) ::
      &                    W_plastic_nis_block
-        double precision, allocatable, dimension(:,:,:) ::
-     &                    displ_grad_nis_block
       end type
       type(dgradnisblks), save, allocatable,
      &                            dimension(:) :: initial_state_data

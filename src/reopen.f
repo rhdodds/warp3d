@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 9/15/2018 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -164,7 +164,7 @@ c
      &             divergence_check, diverge_check_strict,
      &             line_search, ls_details, initial_stresses_exist,
      &             initial_stresses_user_routine,
-     &             initial_state_option
+     &             initial_state_option, initial_stresses_input
       read(fileno) sparse_stiff_file_name, packet_file_name,
      &             initial_stresses_file
       call chk_data_key( fileno, 1, 1 )
@@ -1715,17 +1715,6 @@ c
            call die_abort
         end if
         read(fileno) x(blk)%W_plastic_nis_block
-c
-c             displacement gradients
-c
-        allocate( x(blk)%displ_grad_nis_block(9,span,ngp),
-     &            stat = alloc_stat )
-        if( alloc_stat .ne. 0 ) then
-           write(out,9900); write(out,9910) 3
-           call die_abort
-        end if
-        read(fileno) x(blk)%displ_grad_nis_block
-c
         call chk_data_key( fileno, 390, blk )
 c
       end do

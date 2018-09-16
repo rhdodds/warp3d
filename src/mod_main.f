@@ -465,7 +465,8 @@ c
 c
 
       double precision, allocatable :: initial_stresses(:,:)
-      logical ::  initial_stresses_user_routine
+      logical ::  initial_stresses_user_routine, 
+     &            initial_stresses_input
       character(len=100) :: initial_stresses_file
 c
 c                 support for the initial state concept

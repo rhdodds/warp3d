@@ -721,7 +721,7 @@ c     *                   subroutine recstr_allocate                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  6/13/20188 rhd            *
+c     *                   last modified :  9/15/2018 rhd             *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -838,19 +838,12 @@ c
 c
       if( local_work%capture_initial_state ) then
         span = local_work%span
-        allocate( local_work%elastic_strains_n1(span,nstr),
-     &            stat=error  )
-        if( error .ne. 0 ) then
-         write(out,9000) 51
-         call die_abort
-        end if
         allocate( local_work%plastic_work_density_n1(span),
      &            stat=error  )
         if( error .ne. 0 ) then
          write(out,9000) 52
          call die_abort
         end if
-        local_work%elastic_strains_n1 = zero
         local_work%plastic_work_density_n1 = zero
       end if
 c
@@ -1041,7 +1034,7 @@ c     *                   subroutine recstr_deallocate               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  6/13/2018 rhd             *
+c     *                   last modified :  9/15/2018 rhd             *
 c     *                                                              *
 c     *     release data structure in local_work for updating        *
 c     *     strains-stresses-internal forces.                        *
@@ -1159,11 +1152,6 @@ c
       end if
 c
       if( local_work%capture_initial_state ) then
-        deallocate( local_work%elastic_strains_n1, stat=error )
-        if( error .ne. 0 ) then
-         write(out,9000) 51
-         call die_abort
-        end if
         deallocate( local_work%plastic_work_density_n1, stat=error )
         if( error .ne. 0 ) then
          write(out,9000) 52
@@ -2293,7 +2281,7 @@ c     *                subroutine recstr_setup_displ_grad_nis        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 9/15/2018 rhd              *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -2342,15 +2330,6 @@ c
         span       = elblks(0,blk)
         ngp        = iprops(6,felem)
 c
-c             displacement gradients
-c
-        allocate( x(blk)%displ_grad_nis_block(9,span,ngp),
-     &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
-           write(out,9900); write(out,9910)
-           call die_abort
-        end if
-c
 c             plastic work densities
 c
         allocate( x(blk)%W_plastic_nis_block(span,ngp),
@@ -2360,7 +2339,6 @@ c
            call die_abort
         end if
 c
-        x(blk)%displ_grad_nis_block = zero
         x(blk)%W_plastic_nis_block  = zero
 c
       end do

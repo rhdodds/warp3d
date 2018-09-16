@@ -580,7 +580,7 @@ c * at model nodes by extrapolation from element integration points    *
 c *                                                                    *
 c *                *** supports MPI execution ***                      *
 c *                   written by: mcw                                  *
-c *                last modified: 6/15/2018 rhd                        *
+c *                last modified: 9/15/2018 rhd                        *
 c *                                                                    *
 c **********************************************************************
 c
@@ -589,7 +589,8 @@ c
       use main_data, only: fgm_node_values, temperatures_ref,
      &                     fgm_node_values_defined,
      &                     fgm_node_values_used,
-     &                     initial_state_option
+     &                     initial_state_option,
+     &                     initial_stresses_input
       use global_data, only : nonode, out, temperatures, myid, nelblk
       use j_data, only: extrap_counts, swd_at_nodes, strain_at_nodes,
      &                  fgm_e, fgm_nu, comput_i, comput_j,
@@ -700,7 +701,8 @@ c
       if( comput_i .and. temperatures )     build_J7_J8_data = .true.
       if( comput_i .and. temperatures_ref ) build_J7_J8_data = .true.
       if( process_initial_state )           build_J7_J8_data = .true.
-      if( allocated( block_seg_curves ) ) then
+      if( initial_stresses_input )          build_J7_J8_data = .true.
+            if( allocated( block_seg_curves ) ) then
         if( any( block_seg_curves ) )       build_J7_J8_data = .true.
       end if
 c
@@ -970,15 +972,13 @@ c
 !DIR$ VECTOR ALIGNED
         do gpn = 1, num_gpts
            W0 = z(rel_elem,gpn)
-           swd_at_gpts(gpn) = swd_at_gpts(gpn) - W0
+           swd_at_gpts(gpn) = swd_at_gpts(gpn)  - W0
         end do
         end associate
       end if
 c
 c             2. for small eps, gather strains at points.
 c                strains are in model global coordinates.
-c                adjust for elastic strains at user-defined
-c                initial state as required.
 c
       if( j_linear_formulation ) then
         do gpn = 1, num_gpts
@@ -986,20 +986,6 @@ c
          strain_at_gpts(1:6,gpn) = eps_n(i:j)
          eps_offset = eps_offset + nstr
         end do
-        if( process_initial_state ) then
-         associate( z=>  initial_state_data(blk)%displ_grad_nis_block )
-!DIR$ VECTOR ALIGNED
-         do gpn = 1, num_gpts
-          eps_0(1) = z(1,rel_elem,gpn)
-          eps_0(2) = z(5,rel_elem,gpn)
-          eps_0(3) = z(9,rel_elem,gpn)
-          eps_0(4) = z(2,rel_elem,gpn) * two
-          eps_0(5) = z(8,rel_elem,gpn) * two
-          eps_0(6) = z(3,rel_elem,gpn) * two
-          strain_at_gpts(1:6,gpn) = strain_at_gpts(1:6,gpn) - eps_0
-         end do
-         end associate
-        end if
       end if
 c
 c             3. for large eps, compute displacement gradient tensor
@@ -1010,9 +996,6 @@ c                convert local node system {u} -> global as needed
 c                global = trans(R) local. displacement grads
 c                are in model global coordinates
 c
-c                adjust for elastic strains at user-defined initial
-c                state as required.
-
       if( j_geonl_formulation ) then
        do enode = 1, num_enodes
          snode = e_snodes(enode)
@@ -1036,15 +1019,6 @@ c
      &                              num_gpts, int_order, e_coords,
      &                              e_displ, displ_grad_at_gpts )
 c
-       if( process_initial_state ) then
-         associate( z => initial_state_data(blk)%displ_grad_nis_block )
-         do gpn = 1, num_gpts
-!DIR$ VECTOR ALIGNED
-          displ_grad_at_gpts(1:9,gpn) = displ_grad_at_gpts(1:9,gpn) -
-     &                                  z(1:9,rel_elem,gpn)
-         end do
-         end associate
-       end if ! on initial_state
       end if ! on nlgeom
 c
       if( debug  .and. (elemno == 77 .or. elemno == 18000) ) then

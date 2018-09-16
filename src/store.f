@@ -178,7 +178,7 @@ c
      &              divergence_check, diverge_check_strict,
      &              line_search, ls_details, initial_stresses_exist,
      &              initial_stresses_user_routine,
-     &              initial_state_option
+     &              initial_state_option, initial_stresses_input
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
@@ -876,7 +876,6 @@ c
       do blk = 1, nelblk
         if( allocated( x(blk)%W_plastic_nis_block ) ) then
           write(fileno) x(blk)%W_plastic_nis_block
-          write(fileno) x(blk)%displ_grad_nis_block
           write(fileno) check_data_key
         else
           write(out,9010) blk
