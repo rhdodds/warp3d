@@ -992,7 +992,7 @@ c     *                      subroutine wmpi_send_basic              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 9/15/2018 rhd              *
 c     *                                                              *
 c     *       This subroutine allows the root processor to send      *
 c     *       basic model data, such as the coordinates, incidences, *
@@ -1013,7 +1013,8 @@ c
      &      matprp, lmtprp, imatprp, dmatprp, smatprp,
      &      nonlocal_analysis, asymmetric_assembly,
      &      initial_stresses_user_routine, initial_stresses_file,
-     &      initial_stresses, initial_state_option, initial_state_step
+     &      initial_stresses, initial_state_option, initial_state_step,
+     &      initial_stresses_input
 
       use elem_block_data, only: edest_blocks, cdest_blocks,
      &                           edest_blk_list, cdest_blk_list
@@ -1085,6 +1086,8 @@ c
       call MPI_BCAST( initial_state_option, 1, MPI_LOGICAL,
      &                0, MPI_COMM_WORLD, ierr)
       call MPI_BCAST( initial_state_step, 1, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr )
+      call MPI_BCAST( initial_stresses_input, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr )
 c
 c             static arrays:
@@ -3650,7 +3653,7 @@ c     *                subroutine wmpi_get_initial_state             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 9/16/2018 rhd              *
 c     *                                                              *
 c     *     makes all intiial state arrays present on rank 0         *
 c     *                                                              *
@@ -3698,8 +3701,6 @@ c
            count_to_receive = ngp * span
            if( .not. allocated( x(blk)%W_plastic_nis_block ) )
      &          allocate( x(blk)%W_plastic_nis_block(span,ngp) )
-           if( .not. allocated( x(blk)%displ_grad_nis_block ) )
-     &          allocate( x(blk)%displ_grad_nis_block(9,span,ngp) )
            call MPI_SEND( blk, 1, MPI_INTEGER, blk_owner, 21,
      &                    MPI_COMM_WORLD, ierr)
            call wmpi_check_error( 1, myid, ierr, out )
@@ -3707,14 +3708,6 @@ c
      &                    count_to_receive, MPI_VAL, blk_owner,
      &                    14, MPI_COMM_WORLD, status, ierr )
            call wmpi_check_error( 2, myid, ierr, out )
-           call MPI_GET_COUNT( status, MPI_VAL, received_count, ierr )
-           if( received_count .ne. count_to_receive )
-     &          call wmpi_get_initial_state_mess( 1 )
-           count_to_receive = 9 * span *  ngp
-           call MPI_RECV( x(blk)%displ_grad_nis_block(1,1,1),
-     &                    count_to_receive, MPI_VAL, blk_owner,
-     &                    15, MPI_COMM_WORLD, status, ierr )
-           call wmpi_check_error( 3, myid, ierr, out )
            call MPI_GET_COUNT( status, MPI_VAL, received_count, ierr )
            if( received_count .ne. count_to_receive )
      &          call wmpi_get_initial_state_mess( 1 )
@@ -3746,11 +3739,6 @@ c
      &                       count_to_send, MPI_VAL, 0, 14,
      &                       MPI_COMM_WORLD, ierr )
            call wmpi_check_error( 6, myid, ierr, out )
-           count_to_send  = 9 * ngp * span
-           call MPI_SEND( y(inblk)%displ_grad_nis_block(1,1,1),
-     &                       count_to_send, MPI_VAL, 0, 15,
-     &                       MPI_COMM_WORLD, ierr )
-           call wmpi_check_error( 7, myid, ierr, out )
           end do ! worker wait loop
 c
           end associate
@@ -3819,7 +3807,7 @@ c     *                 subroutine wmpi_send_reopen                  *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 7/1/2018 rhd               *
+c     *                   last modified : 9/16/2018 rhd              *
 c     *                                                              *
 c     *     this subroutine sends information that the               *
 c     *     workers need after a restart.                            *
@@ -3971,21 +3959,13 @@ c
              allocate( x(blk)%W_plastic_nis_block(span,ngp) )
              call MPI_RECV( x(blk)%W_plastic_nis_block(1,1), span*ngp,
      &           MPI_VAL, 0, 19, MPI_COMM_WORLD, status, ierr )
-             allocate( x(blk)%displ_grad_nis_block(9,span,ngp) )
-             call MPI_RECV( x(blk)%displ_grad_nis_block(1,1,1),
-     &           9*span*ngp, MPI_VAL, 0, 20, MPI_COMM_WORLD,
-     &           status, ierr )
              end associate
          else
              associate( x => initial_state_data )
              call MPI_send( x(blk)%W_plastic_nis_block(1,1), span*ngp,
      &           MPI_VAL, wrkr_rank, 19,
      &           MPI_COMM_WORLD, status, ierr )
-             call MPI_send( x(blk)%displ_grad_nis_block(1,1,1),
-     &           9*span*ngp, MPI_VAL, wrkr_rank, 20,
-     &           MPI_COMM_WORLD, status, ierr )
-             deallocate( x(blk)%W_plastic_nis_block,
-     &                   x(blk)%displ_grad_nis_block )
+             deallocate( x(blk)%W_plastic_nis_block )
              end associate
          end if
 c
