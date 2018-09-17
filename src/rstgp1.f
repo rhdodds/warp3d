@@ -3627,7 +3627,7 @@ c     *            subroutine drive_umat_update  (umat)              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/19/2017 rhd             *
+c     *                   last modified: 9/16/2018 rhd               *
 c     *                                                              *
 c     *     drives material model 08 (Abaqus umat) to update         *
 c     *     stresses and history for all elements in block at        *
@@ -3661,13 +3661,13 @@ c
      &           nprops, j, nj, start_loc, n
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, one, gp_alpha, ddsddt(6), drplde(6), drpldt,
+     &  zero, one, half, gp_alpha, ddsddt(6), drplde(6), drpldt,
      &  big, pnewdt, predef(1), dpred(1), time(2), dtime,
-     &  stress(6), stran(6), dstran(6),
-     &  abq_props(50), temp_n, dtemp,
+     &  stress(6), stran(6), dstran(6), avg_stress(6),
+     &  abq_props(50), temp_n, dtemp,  dstran_upd(6),
      &  statev(500), sse, spd, scd, coords(3), celent, rpl,
      &  dfgrd0(9), dfgrd1(9), dfgrd0_array(3,3), dfgrd1_array(3,3),
-     &  drot(9), ddsdde(6,6),
+     &  drot(9), ddsdde(6,6), total_work_n,
      &  gp_coords(mxvl,3), symm_part_ddsdde(21), total_work_np1,
      &  plastic_work_np1, identity(9), check_key, t5, t6,
      &  temp_0, temp_n_0, s1, s2, ps(3), an(3,3),
@@ -3684,8 +3684,8 @@ c
      &        process_flag
       integer :: map(6)
       character(len=8) :: cmname
-      data zero, one, big, check_key / 0.0d00, 1.0d00, 1.0d06,
-     &      -999999.9d00 /
+      data zero, one, big, check_key, half / 0.0d00, 1.0d00, 1.0d06,
+     &      -999999.9d00, 0.5d0 /
       data identity /1.0d00, 0.0d00, 0.0d00, 0.0d00, 1.0d00,
      &   0.0d00, 0.0d00, 0.0d00, 1.0d00 /
       data map / 1, 2, 3, 4, 6, 5 /
@@ -3851,7 +3851,7 @@ c                  point per call.
 c
  1000 continue
 c
-      do ielem = 1, span
+      do ielem = 1, span  !   start main loop over elements for this gpn
 
       noel = felem + ielem - 1
       debug_now = local_debug .and. ielem .eq. 1 .and. gpn .eq. 1
@@ -3880,6 +3880,7 @@ c
       abq_props(1:nprops) = local_work%umat_props(ielem,1:nprops)
       statev(1:nstatv)    = local_work%elem_hist(ielem,1:nstatv,gpn)
       statev(nstatv+1)    = check_key
+      if( step .eq. 1 ) statev(1:nstatv) = zero
 c
 c               5.3 set stresses at n, strains at n and strain
 c                   increment. adjust for thermal components and
@@ -3922,11 +3923,18 @@ c
 !DIR$ VECTOR ALIGNED
       ddsdde = zero
 c
-c               5.6 zero starting values of specific energy,
-c                   dissipation. afterwards update WARP3D data
-c                   to include increments from umat
+c               5.6 starting values of specific elastic energy, plastic,
+c                   creep dissipation. afterwards update WARP3D data
+c                   to include updated from umat.
 c
-      sse = zero; spd = zero; scd = zero
+c                   WARP3D ignores sse, scd at this time.
+c                   spd is maintained 8th stress entry for each 
+c                   integration point as part of WARP3D usual
+c                   data structures.
+c
+      sse = zero;
+      spd = local_work%urcs_blk_n(ielem,8,gpn)
+      scd = zero
 c
       if( debug_now ) then
        write(iout,9125) coords(1:3), celent
@@ -4052,13 +4060,23 @@ c
 c
 c               5.13 update WARP3D material point work/dissipation
 c                    values for increments from umat. total work
-c                    in position 7, total dissipation on 8.
+c                    in position 7, plastic dissipation on 8.
+c                    dstran was updated by umat to remove thermal
+c                    components
 c
-      total_work_np1   = local_work%urcs_blk_n(ielem,7,gpn) +
-     &                   sse + spd + scd
-      plastic_work_np1 = local_work%urcs_blk_n(ielem,8,gpn) + spd + scd
+      avg_stress(1:6) = half * ( local_work%urcs_blk_n(ielem,1:6,gpn) +
+     &                  local_work%urcs_blk_n1(ielem,1:6,gpn) )
+      total_work_n    = local_work%urcs_blk_n(ielem,7,gpn)
+      dstran_upd(1:4) = dstran(1:4)
+      dstran_upd(5)   = dstran(6)
+      dstran_upd(6)   = dstran(5)
+      total_work_np1  = total_work_n +
+     &                  dot_product( avg_stress, dstran_upd )
+      plastic_work_np1 = spd ! unchanged from umat value
       local_work%urcs_blk_n1(ielem,7,gpn) =  total_work_np1
       local_work%urcs_blk_n1(ielem,8,gpn) =  plastic_work_np1
+      if( local_work%capture_initial_state )
+     &    local_work%plastic_work_density_n1(ielem) = plastic_work_np1
 c
 c               5.14 put updated algorithmic tangent in the global
 c                    blocks of [Dt]s for the material point.
@@ -4129,7 +4147,7 @@ c
 c               5.16 end of loop over all elements in block at this
 c                    material point.
 c
-      end do
+      end do ! over elements
 
 c                    UMAT may have computed Cauchy stresses @ n+1
 c                    rather than unrotated Cauchy stresses. This
