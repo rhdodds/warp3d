@@ -4,7 +4,7 @@ c     *                      subroutine inicon                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/27/2018 rhd              *
+c     *                   last modified : 9/15/2018 rhd              *
 c     *                                                              *
 c     *     supervises and conducts the input of the                 *
 c     *     desired initial conditions for the structure at time 0.  *
@@ -21,8 +21,7 @@ c
      &                      inverse_incidences, initial_stresses,
      &                      initial_stresses_user_routine,
      &                      initial_stresses_file,
-     &                      initial_state_option, 
-     &                      initial_state_step
+     &                      initial_stresses_input
       implicit none
 c
       logical :: sbflg1, sbflg2
@@ -72,8 +71,7 @@ c
            cond = 4
            call inicon_node_values
         elseif( matchs('stresses',4)  ) then
-           initial_state_option = .true.
-          initial_state_step   = 0
+           initial_stresses_input = .true.
            write(out,*) ' '
            write(out,9000)
            write(out,*) ' '
@@ -89,15 +87,9 @@ c
 c
       return
 c
- 9000 format('>>>>> Note: the presence of initial stresses sets the',
-     & /     '            following solution parameters by default:',
-     & /     '             -> initial state option on',
-     & /,    '             -> initial state step 0' 
-     & /,    '            this forces computation of J7, J8 terms',
-     & /,    '            for models with preexisting cracks.'
-     & /,    '            for models with cracks introduced after',
-     & /,    '            thermo-mechanical processing set initial',
-     & /,    '            step to correct value. See Appendix K') 
+ 9000 format('>>>>> Note: the presence of initial stresses triggers',
+     & /     '            inclusion of J7, J8 terms in J-integral',
+     & /     '            computations. See Appendix K.' )
 c
 
       contains

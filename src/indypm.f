@@ -1509,7 +1509,8 @@ c
         mat_type = matprp(9,matno)
         ok = mat_type .eq. 1  .or.  mat_type .eq. 2 .or.
      &       mat_type .eq. 3  .or. 
-     &       mat_type .eq. 5 
+     &       mat_type .eq. 5  .or.
+     &       mat_type .eq. 8 
         if( ok ) cycle
         bad = .true.
       end do

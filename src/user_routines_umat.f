@@ -63,7 +63,7 @@ c
       info_vector(2) = 21                                                       
       info_vector(3) = 0                                                        
       info_vector(4) = 14                                                       
-c                                                                               
+c                                                                              
       return                                                                    
       end                                                                       
 c     ****************************************************************          
@@ -91,13 +91,14 @@ c
       double precision :: stress(*), statev(nstatv),                            
      1 ddsdde(ntens,ntens), ddsddt(ntens), drplde(ntens), stran(ntens),         
      2 dstran(ntens), predef(1), dpred(1), props(nprops), coords(3),            
-     3 drot(3,3), dfgrd0(3,3), dfgrd1(3,3), nonlocal_shared(nshared)            
+     3 drot(3,3), dfgrd0(3,3), dfgrd1(3,3), nonlocal_shared(nshared)
+c
+      logical :: yielding        
 c                                                                               
       double precision :: time, dtime, temp, dtemp, sse, spd, scd, rpl,         
      1                    drpldt, celent, pnewdt                                
                                                                                 
       character(len=8) :: cmname                                                
-                                                                                
 c                                                                               
 c                                                                               
 c           locals                                                              
@@ -111,15 +112,17 @@ c              oldpl  - plastic strains at start of increment
 c                                                                               
       integer :: k1, k2                                                         
       double precision :: eelas(6), eplas(6), alpha(6), flow(6),                
-     1                    olds(6), oldpl(6)                                     
-      logical, parameter ::  debug = .false.                                    
+     1                    olds(6), oldpl(6), avg_stress(6), 
+     2                    deps_plas(6), dsig(6)                                     
+      logical ::  debug                                    
       double precision :: cte, emod, enu, ebulk3, eg2, eg, eg3, elam,           
      1                    old_eqpl, deqpl, smises, syield, hard, shydro,        
-     2                    avg_stress, effg, effg2, effg3, efflam, effhrd        
+     2                    effg, effg2, effg3, efflam, effhrd        
       double precision :: state_np1, dspd, dsst                                 
       double precision, parameter :: zero=0.d0, one=1.d0, two=2.d0,             
      1                               three=3.d0, six=6.d0,                      
-     2                               enumax=.4999d0, toler=1.0d-6               
+     2                               enumax=.4999d0, toler=1.0d-6,
+     3                               half = 0.5d0               
 c                                                                               
                                                                                 
 c                                                                               
@@ -138,8 +141,10 @@ c                 for current model
 c                                                                               
 c ----------------------------------------------------------------              
 c                                                                               
-c                                                                               
-      if( debug ) write(kout,*) ' .... '                                        
+c      
+      debug =    .false. ! noel .eq. 2648 .and. npt .eq. 8                                                                      
+      if( debug ) write(kout,*) ' .... umat '    
+      if( debug ) write(kout,*) '... spd in: ', spd                                    
       cte = props(5)                                                            
       dstran(1) = dstran(1) - cte * dtemp                                       
       dstran(2) = dstran(2) - cte * dtemp                                       
@@ -166,7 +171,8 @@ c
       end do                                                                    
       ddsdde(4,4) = eg                                                          
       ddsdde(5,5) = eg                                                          
-      ddsdde(6,6) = eg                                                          
+      ddsdde(6,6) = eg   
+      yielding = .false.                                                       
 c                                                                               
 c           recover elastic strain, plastic strain and shift tensor             
 c           and rotate. note:                                                   
@@ -236,7 +242,8 @@ c
 c                 solve for equivalent plastic strain increment                 
 c                                                                               
          deqpl = (smises-syield)/(eg3+hard)                                     
-         state_np1 = one                                                        
+         state_np1 = one
+         yielding = .true.                                                        
 c                                                                               
 c                 update shift tensor, elastic and plastic strains              
 c                 and stress                                                    
@@ -252,13 +259,6 @@ c
            eplas(k1)  = eplas(k1)+three*flow(k1)*deqpl                          
            eelas(k1)  = eelas(k1)-three*flow(k1)*deqpl                          
            stress(k1) = alpha(k1)+flow(k1)*syield                               
-         end do                                                                 
-c                                                                               
-c                 calculate increment of plastic dissipation                    
-c                                                                               
-         do k1 = 1, 6                                                           
-           avg_stress = ( stress(k1) + olds(k1) ) / two                         
-           dspd = dspd +  avg_stress * ( eplas(k1) - oldpl(k1) )                
          end do                                                                 
 c                                                                               
 c                 formulate the jacobian (material tangent)                     
@@ -292,9 +292,23 @@ c
          statev(k1)    = eelas(k1)                                              
          statev(k1+6)  = eplas(k1)                                              
          statev(k1+12) = alpha(k1)                                              
-         avg_stress =  ( stress(k1) + olds(k1) ) / two                          
-         dsst = dsst + avg_stress * dstran(k1)                                  
-      end do                                                                    
+         avg_stress(k1) = ( stress(k1) + olds(k1) ) / two 
+         dsig(k1) = stress(k1) - olds(k1)                        
+         dsst = dsst + avg_stress(k1) * dstran(k1) 
+      end do   
+      if( yielding ) then
+         deps_plas(1) = dstran(1) -
+     &                  (dsig(1) - enu*(dsig(2)+dsig(3)))/emod
+         deps_plas(2) = dstran(2) -
+     &                  (dsig(2) - enu*(dsig(1)+dsig(3)))/emod
+         deps_plas(3) = dstran(3) -
+     &                  (dsig(3) - enu*(dsig(1)+dsig(2)))/emod
+         deps_plas(4) = dstran(4) - dsig(4) / eg
+         deps_plas(5) = dstran(5) - dsig(5) / eg
+         deps_plas(6) = dstran(6) - dsig(6) / eg
+         dspd = half * dot_product( deps_plas, avg_stress )
+      end if
+                                                                 
 c                                                                               
 c          store updated scalar plastic strain. material state                  
 c          = 0 (never yielded), = 1 actively yielding, = 2                      
@@ -309,6 +323,7 @@ c          update specific elastic energy and dissipatation.
 c                                                                               
       sse = sse + (dsst - dspd)                                                 
       spd = spd + dspd                                                          
+      if( debug ) write(kout,*) '... spd out: ', spd                                    
 c                                                                               
 c          fill nonlocal shared values for integration point with               
 c          the element number for testing purposes.                             
