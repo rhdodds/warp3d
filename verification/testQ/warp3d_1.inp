@@ -1,0 +1,160 @@
+!
+!
+!      same mesh used for the O'Dowd SE(B) simulations with reverse
+!      bending.
+!
+!      boundary conditions here will make the model into an M(T)
+!      specimen 2a/2W = 0.2 when nodes are released.
+!      
+!      y = 0 is a symmetry plane. x = -0.4 in. is the vertical M(T)
+!      symmetry plane.
+!
+!      nodes across top are free in this solution. fix them to
+!      increase tensile residual stresses where crack is introduced.
+!
+!      reference temperature all nodes is 75 F
+!
+!      increase temperature to 1575 F on nodes Y <=0.5 in. as
+!      as crude approximation of a welding process.
+!
+!      decrease temperature back to reference
+!
+!      release nodes to introduce crack. 2 steps are required
+!      for Newton convergence and they use subincrements.
+!
+!      impose increased remote tension to load the now M(T)
+!      configuration
+!
+!      units:  kips, inches, F
+!
+ structure crude_weld
+!
+!             temperature dependent properties for specially heat
+!             treated Hastelloy X to drive the generalized plasticity 
+!             material model
+!
+ stress-strain curve 1 temperature   70 e 29900 nu 0.32 alpha 7.7e-6,
+     gp_sigma_0 31.3 gp_h_u 1580 gp_beta_u 16.6 gp_delta_u 17700
+ stress-strain curve 2 temperature  400 e 28600 nu 0.32 alpha 8.0e-6,
+     gp_sigma_0 28.8 gp_h_u 1250 gp_beta_u 15.4 gp_delta_u 25600
+ stress-strain curve 3 temperature  800 e 27300 nu 0.32 alpha 8.2e-6,
+     gp_sigma_0 27.9 gp_h_u  830 gp_beta_u 13.3 gp_delta_u 16500
+ stress-strain curve 4 temperature 1000 e 26500 nu 0.32 alpha 8.4e-6,
+     gp_sigma_0 27.0 gp_h_u  750 gp_beta_u 12.1 gp_delta_u 27500
+ stress-strain curve 5 temperature 1200 e 25200 nu 0.32 alpha 8.6e-6,
+     gp_sigma_0 25.5 gp_h_u  730 gp_beta_u 12.0 gp_delta_u 35000
+ stress-strain curve 6 temperature 1400 e 23400 nu 0.32 alpha 8.8e-6,
+     gp_sigma_0 24.2 gp_h_u  700 gp_beta_u 11.8 gp_delta_u 16700
+ stress-strain curve 7 temperature 1600 e 22200 nu 0.32 alpha 8.9e-6,
+     gp_sigma_0 14.0 gp_h_u  670 gp_beta_u 11.3 gp_delta_u 19500
+ stress-strain curve 8 temperature 1800 e 18400 nu 0.32 alpha 9.1e-6,
+     gp_sigma_0  9.1 gp_h_u  650 gp_beta_u  5.4 gp_delta_u  5660
+ stress-strain curve 9 temperature 2000 e 12600 nu 0.32 alpha 9.2e-6,
+     gp_sigma_0  3.1 gp_h_u  630 gp_beta_u  3.6 gp_delta_u  3450
+!
+ material gp_hastelloy_x
+   properties cyclic generalized_plasticity curves 1-9,
+            rho 7.7e-7 gp_tau 0.05 sig_tol 0.001
+!
+ number of nodes 7404 elements 3529
+!
+ elements $ can also use linear displacement formulation
+  1- 3529 type l3disop linear material gp_hastelloy_x,
+           order 2x2x2 bbar center_output short
+!
+*input from './coords.inp'
+*input from './incid.inp'
+!
+ blocking automatic size = 128
+!
+!             need tolerance to catch nodes of collapsed front
+!             elements incident on Y = 0
+!  
+ list 'nodes_plane_y_0' y = 0 tolerance 1.0e-06 display
+!
+ constraints
+      all w 0.0
+      'nodes_plane_y_0' v = 0
+      plane x = -0.4 symmetry 
+!
+ loading dummy  $ used to meet syntax requirements
+  element loads
+      1599 face 3 pressure 1.0
+!
+ initial conditions
+     temperatures
+        nodes 1-7404 temperature 75.0
+!
+ *input from './unit_weld_temp.inp'
+!
+ loading unit_remote
+  element loads
+     2600-2629 face 5 pressure -1.0
+!
+ loading test
+  nonlinear
+   step 1-20 weld_unit 75. $ heat up weld region to 1575F
+   step 21-40 weld_unit -75. $ cool down to 75F
+   step 41-42 dummy 0.0000001 $ just so we don't have exactly zero load
+   step 43-48 unit_remote 10.0  $ total of 60 ksi
+!
+ output model flat patran convention text file "model"
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 5 $  global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   line search on
+   divergence check on
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+   initial state option on   $    <<<<<<<
+   initial state step 40     $    cool down complete
+!
+!              change as needed to get results
+!
+ output commands use file "get_output.inp" steps 500-1000
+!
+ compute displacements for loading test step 40
+!
+!              crack face tractions - for other analyses if
+!              needed
+!   
+! output noheader wide stresses  186,
+!       193  200  207  214  221  228  235 2773,
+!      2791 2809 2827 2845 2863 2881 2899 2917,
+!      2935 2953 2971 2989 3007 3025 3043 3061,
+!      3079 3097 3115 3133 3151 3169 3187 3205,
+!      3223 3241 3259 3277 3295 3313 3331 3349,
+!      3367 3385 3403 3421 3439 3457 3475 3493,
+!      3511 3529 2755 2737 2719 2701 2683 2665,
+!      2647
+!
+!             release v constraint on nodes to make a
+!             2a/2W = 0.20 M(T) configuration
+!
+ release constraints steps 2
+    *input from './nodes_to_be_released.inp'
+!
+ compute displacements for loading test step 42
+!
+ *input from 'get_J.inp'
+!
+ compute displacements for loading test step 48
+ *input from 'get_J.inp'
+! 
+ stop
+!
+
+

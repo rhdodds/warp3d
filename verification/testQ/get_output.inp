@@ -1,0 +1,6 @@
+!
+ output wide stresses 235 3421 1 260 404 488 500
+ output wide displacements 265
+ output flat stream displacements
+ output flat stream stresses
+!

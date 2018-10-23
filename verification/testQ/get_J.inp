@@ -1,0 +1,10 @@
+!
+  domain one
+    symmetric
+    front nodes 6455 5505 linear verify
+    normal plane nx 0 ny 1 nz 0
+    function type d
+    q-values automatic rings 1-48
+!
+  compute domain integral
+!
