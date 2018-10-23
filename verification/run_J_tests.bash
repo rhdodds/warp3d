@@ -18,6 +18,7 @@ testM
 testN
 testO
 testP
+testQ
 }
 function testA {
 echo -e "\n>>> Test A (SET, LEFM, Thermal, 20-node, FGMs, Face Loading, P-strain)"
@@ -143,6 +144,13 @@ function testP {
 echo -e "\n>>> Test P (Pipe, weld eigenstrain method, 8-node P Strain)"
 echo      "    ======================================================="
 cd testP
+./run_tests_and_check
+cd ..
+}
+function testQ {
+echo -e "\n>>> Test Q (Simulated weld, release nodes, load as M(T))"
+echo      "    ======================================================="
+cd testQ
 ./run_tests_and_check
 cd ..
 }
@@ -289,6 +297,7 @@ m_testM="Test M: SE(T), Small/NLGEOM, Thermal, 20-node, P-strain, FGMs, blunt fr
 m_testN="Test N: SE(B), Small/NLGEOM, Bending, 8-node, 3D:3-layers, FGMs, blunt front, refined mesh"
 m_testO="Test O: SE(B), Residual Stresses, Initial-State, 8-node, P. Strain"
 m_testP="Test P: Pipe, Weld, Eigenstrain, 8-node, P. Strain"
+m_testQ="Test Q: Simulated weld, release nodes, load as M(T), 8-node P. Strain"
 all="All problems"
 quit="Quit"
 PS3="Enter your choice (<return> to repeat menu): "
@@ -298,7 +307,7 @@ PS3="Enter your choice (<return> to repeat menu): "
      "$m_testD" \
      "$m_testE" \
      "$m_testF" "$m_testG" "$m_testH" "$m_testI" "$m_testJ" "$m_testK" "$m_testL" \
-     "$m_testM"  "$m_testN"  "$m_testO"  "$m_testP"  "$quit"
+     "$m_testM"  "$m_testN"  "$m_testO"  "$m_testP"   "$m_testQ" "$quit"
 #
   do
    case $menu_list in
@@ -337,6 +346,8 @@ PS3="Enter your choice (<return> to repeat menu): "
              testO;;
           $m_testP)
              testP;;
+          $m_testQ)
+             testQ;;
           $quit)
            break;;
           *) printf "You can enter only 1, .....\n";;
