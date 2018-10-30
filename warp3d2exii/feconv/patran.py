@@ -15,25 +15,25 @@ mats = []
 # list of the field names
 results_lookup = {
 		'r': ['Reactionx', 'Reactiony', 'Reactionz'],
-		'e': ['Strain-xx', 'Strain-yy', 'Strain-zz', 'Strain-xy', 'Strain-yz',
-			'Strain-xz', 'Effective mises strain', 'Strain invariant 1',
-			'Strain invariant 2', 'Strain invariant 3', 'Strain principle (min)',
-			'Strain principle (inter)', 'Strain principle (max)',
-			'Strain dir cosine l1', 'Strain dir cosine m1', 'Strain dir cosine n1',
-			'Strain dir cosine l2', 'Strain dir cosine m2', 'Strain dir cosine n2',
-			'Strain dir cosine l3', 'Strain dir cosine m3', 'Strain dir cosine n3'],
+		'e': ['Strain_xx', 'Strain_yy', 'Strain_zz', 'Strain_xy', 'Strain_yz',
+			'Strain_xz', 'Effective_mises_strain', 'Strain_invariant_1',
+			'Strain_invariant_2', 'Strain_invariant_3', 'Strain_principle_min',
+			'Strain_principle_inter', 'Strain_principle_max',
+			'Strain_dir_cosine_l1', 'Strain_dir_cosine_m1', 'Strain_dir_cosine_n1',
+			'Strain_dir_cosine_l2', 'Strain_dir_cosine_m2', 'Strain_dir_cosine_n2',
+			'Strain_dir_cosine_l3', 'Strain_dir_cosine_m3', 'Strain_dir_cosine_n3'],
 		'v': ['Velocityx', 'Velocityy', 'Velocityz'],
 		't': ['Temperature', 'Reference temperature'],
 		'a': ['Accelerationx', 'Accelerationy', 'Accelerationz'],
 		'd': ['Displacementx', 'Displacementy', 'Displacementz'],
-		's': ['Stress-xx', 'Stress-yy', 'Stress-zz', 'Stress-xy', 'Stress-yz',
-			'Stress-xz', 'Stress work density', 'mises stress', 'C1-Mat val',
-			'C2-Mat val', 'C3-Mat val', 'Stress invariant 1', 'Stress invariant 2',
-			'Stress invariant 3', 'Stress principle (min)', 'Stress principle (inter)',
-			'Stress principle (max)',
-			'Stress dir cosine l1', 'Stress dir cosine m1', 'Stress dir cosine n1',
-			'Stress dir cosine l2', 'Stress dir cosine m2', 'Stress dir cosine n2',
-			'Stress dir cosine l3', 'Stress dir cosine m3', 'Stress dir cosine n3']
+		's': ['Stress_xx', 'Stress_yy', 'Stress_zz', 'Stress_xy', 'Stress_yz',
+			'Stress_xz', 'Stress_work_density', 'mises_stress', 'C1_Mat_val',
+			'C2_Mat_val', 'C3_Mat_val', 'Stress_invariant_1', 'Stress_invariant_2',
+			'Stress_invariant_3', 'Stress_principle_min', 'Stress_principle_inter',
+			'Stress_principle_max',
+			'Stress_dir_cosine_l1', 'Stress_dir_cosine_m1', 'Stress_dir_cosine_n1',
+			'Stress_dir_cosine_l2', 'Stress_dir_cosine_m2', 'Stress_dir_cosine_n2',
+			'Stress_dir_cosine_l3', 'Stress_dir_cosine_m3', 'Stress_dir_cosine_n3']
 		}
 
 # Don't change, just compiles the regular expression
