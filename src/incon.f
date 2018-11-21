@@ -465,7 +465,7 @@ c
      &  convec(mxndof), trans(mxndof,mxndof), tval, cval, dumd, zero,
      &  one, d32460, rlen1, rlen2, rlen3, rottol, t11, t12, t13,
      &  t21, t22, t23, t31, t32, t33
-      real dumr
+      real dumr, rnode
       character dums, curtyp *1
       logical sbflg1, sbflg2, skew, inpflg(mxndof), defcon(3),
      &        cons_defined, rflag1, rflag2
@@ -908,7 +908,8 @@ c                       constrained.
 c
                if( cnstrn_in(dof) .ne. d32460 ) then
                   param= dof
-                  call errmsg(136,param,dums,dumr,dumd)
+                  rnode = node
+                  call errmsg(136,param,dums,rnode,dumd)
                   cycle
                end if
 c
