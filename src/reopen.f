@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 9/15/2018 rhd              *
+c     *                   last modified : 11/26/2018 rhd             *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -135,7 +135,7 @@ c
      &              coarsening, agg_levels, interpolation, relaxation,
      &              sweeps, cf, cycle_type, max_levels,
      &              one_crystal_hist_size, common_hist_size,
-     &              initial_state_step
+     &              initial_state_step, mxnmbl
       call chk_data_key( fileno, 1, 0 )
       call mem_allocate( 4 ) ! vectors based on # nodes
 c
@@ -217,7 +217,8 @@ c
       call init_maps( fileno, 5 )
       call init_maps( fileno, 6 )
       call init_maps( fileno, 7 )
-      call rd2d( fileno, elblks(0,1) , 4, 4, nelblk )
+      call mem_allocate( 17 )
+      call rd2d( fileno, elblks(0,1) , 4, 4, mxnmbl )
       call rdbk( fileno, cp, mxedof )
       call rdbk( fileno, dcp, mxedof )
       call rd2d( fileno, icp, mxutsz, mxutsz, 2 )

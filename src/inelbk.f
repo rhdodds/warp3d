@@ -5,7 +5,7 @@ c     *                      subroutine inelbk                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 5/12/2017 rhd              *          
+c     *                   last modified : 11/26/2018 rhd             *          
 c     *                                                              *          
 c     *     input of element blocking information. computations for  *          
 c     *     element blocking and optionally domains if requested     *          
@@ -41,7 +41,10 @@ c
 c                                                                               
 c                       initialize blocking data structures.                    
 c                                                                               
-      nelblk = 0                                                                
+      nelblk = 0                  
+      mxnmbl = noelem/128 + 1   ! starting size
+      call mem_allocate( 17 )
+c                                              
       do i = 1, mxnmbl                                                          
          elblks(0,i) = 0   ! number elements in block                           
          elblks(1,i) = 0   ! first element in block                             
@@ -49,11 +52,11 @@ c
          elblks(3,i) = -1  ! doesn't seem to be used elsewhere                  
       end do                                                                    
 c                                                                               
-      if( numprocs == 1 ) then ! mpi w/ one rank                                
+      if( numprocs == 1 ) then ! threads only, or mpi 1 domain                                
          do i = 1, mxnmbl                                                       
             elblks(2,i) = 0                                                     
          end do                                                                 
-      else  ! no domains                                                        
+      else                                                       
          do i = 1, mxnmbl                                                       
             elblks(2,i) = -1                                                    
          end do                                                                 
@@ -136,17 +139,18 @@ c                      line will be skipped.
 c                                                                               
       if( .not.integr(blk) ) exit                                               
 c                                                                               
-c                       valid block number ?                                    
+c                       valid block number ? resize                                    
 c                                                                               
-      if( blk > mxnmbl ) then                                                   
-         param = blk                                                            
-         call errmsg(74,param,dums,dumr,dumd)                                   
-         cycle                                                                  
-      end if                                                                    
       if( blk < 0 ) then                                                        
          param = blk                                                            
          call errmsg(76,param,dums,dumr,dumd)                                   
          cycle                                                                  
+      end if                                                                    
+      if( blk > mxnmbl ) then  
+         call inelbk_resize                                                 
+c         param = blk                                                            
+c         call errmsg(74,param,dums,dumr,dumd)                                   
+c         cycle                                                                  
       end if                                                                    
 c                                                                               
 c                      read in the block span and the first                     
@@ -314,7 +318,7 @@ c                        blocking in this first set of
 c                        features.                                              
 c                                                                               
 c                                                                               
-      nelblk       = 1   ! in common main                                       
+      nelblk       = 1   ! in global_data                                 
       current_size = 1                                                          
       felem        = 1                                                          
       elblks(1,1)  = 1  ! first element in block                                
@@ -348,9 +352,9 @@ c
          endif                                                                  
          nelblk = nelblk + 1                                                    
          if( nelblk .gt. mxnmbl ) then                                          
-            param = nelblk                                                      
-            call errmsg(74,param,dums,dumr,dumd)                                
-            call die_abort                                                      
+            call inelbk_resize                                                      
+c            call errmsg(74,param,dums,dumr,dumd)                                
+c            call die_abort                                                      
          end if                                                                 
          felem             = element                                            
          elblks(1,nelblk)  = felem                                              
@@ -532,4 +536,59 @@ c
       end subroutine inelbk_chk_match                                           
 c                                                                               
       end subroutine inelbk_simple_blocking                                     
-                                                                                
+c                                                                               
+c     ****************************************************************          
+c     *                                                              *          
+c     *                   subroutine inelbk_resize                   *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 11/26/2018 rhd             *          
+c     *                                                              *          
+c     *               increase size of blocking table                *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine inelbk_resize
+      use global_data ! old common.main
+      implicit none                                                             
+c
+c               current size is mxnmbl. reallocate to 1.x * current
+c               size. copy in existing table, added rows.
+c   
+      integer :: new_mxnmbl, i
+      integer, allocatable :: new_elblks(:,:)
+      logical, parameter :: local_debug = .false.
+c
+      new_mxnmbl = int( 1.2 * mxnmbl ) + 5
+      allocate( new_elblks(0:3,1:new_mxnmbl) )
+      if( local_debug ) then
+        write(out,*) "... resizing elblks. old, new: ", mxnmbl, 
+     &                new_mxnmbl
+      end if
+c
+      new_elblks(0:3,1:mxnmbl) =  elblks(0:3,1:mxnmbl)
+c
+      do i = mxnmbl + 1, new_mxnmbl
+         new_elblks(0,i) = 0   ! number elements in block                           
+         new_elblks(1,i) = 0   ! first element in block                             
+         new_elblks(2,i) = 0   ! optional domain  number for element                
+         new_elblks(3,i) = -1  ! doesn't seem to be used elsewhere     
+      end do 
+
+      if( numprocs > 1 ) then  ! mpi w/ domains used                               
+         do i = 1, mxnmbl + 1, new_mxnmbl                                                       
+            new_elblks(2,i) = -1                                                    
+         end do                                                                 
+      end if                                                                    
+c
+      if( local_debug ) write(out,*) '... moving allocation'
+      call move_alloc( new_elblks, elblks )
+      mxnmbl = new_mxnmbl
+c
+      return
+      end
+
+             
+       

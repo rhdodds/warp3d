@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 11/26/2018 rhd             *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -149,7 +149,7 @@ c
      &              coarsening, agg_levels, interpolation, relaxation,
      &              sweeps, cf, cycle_type, max_levels,
      &              one_crystal_hist_size, common_hist_size,
-     &              initial_state_step
+     &              initial_state_step, mxnmbl
       write (fileno) check_data_key
 c
 c
@@ -224,7 +224,7 @@ c
       call store_cmplx_int( fileno, 1 )
       call store_cmplx_int( fileno, 2 )
       call store_cmplx_int( fileno, 3 )
-      call wrt2d( fileno, elblks(0,1) , 4, 4, nelblk  )
+      call wrt2d( fileno, elblks(0,1) , 4, 4, mxnmbl  )
       call wrtbk( fileno, cp, mxedof )
       call wrtbk( fileno, dcp, mxedof )
       call wrt2d( fileno, icp, mxutsz, mxutsz, 2  )

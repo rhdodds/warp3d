@@ -4,7 +4,7 @@ c     *               subroutine mem_allocate                        *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                last modified : 2/8/2018 rhd                  *
+c     *                last modified : 11/26/2018 rhd                *
 c     *                                                              *
 c     *     provides the general allocation/deallocation of arrays   *
 c     *     during problem solution.                                 *
@@ -390,9 +390,16 @@ c
            load_pattern_factors(i,2) = zero
          end do
 c
-c              available.
+c              element blocking table.
 c
       case( 17 )
+       if( allocated( elblks ) ) deallocate( elblks )
+       allocate( elblks(0:3,1:mxnmbl), stat = alloc_stat )
+       if( alloc_stat .ne. 0 ) then
+          write(out,9900)
+          write(out,9908)
+          call die_abort
+       end if
 c
 c              available
 c
@@ -550,5 +557,6 @@ c
  9902 format('                 element equiv. forces')
  9904 format('                 contact forces')
  9906 format('                 contact causes')
+ 9908 format('                 element blocking/domains table')
 c
       end

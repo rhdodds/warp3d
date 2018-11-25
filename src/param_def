@@ -1,11 +1,11 @@
 c
-c      last modified:  2/10/2018 rhd
+c      last modified:  11/25/2018 rhd
 c
       integer mxel,mxndel, max_threads,
      &    mxlbel, mxndof, mxgp, nstr, mxlc,
      &    mxmat,mxlsz,mxelmp,mxstmp, mxstc,
      &    mxoupr,ntrc,mxconn,mxvl,mxnmgp,
-     &    mxblsz,mxnmbl,nparam,mxelpr,vclim,
+     &    mxblsz,nparam,mxelpr,vclim,
      &    mxmtpr,mxsepr,two16,ndim,max_tables,
      &    mxtim,nstrs,max_procs,mxndpr,max_crystals,max_slip_sys,
      &    max_uhard, mxcvtests,
@@ -18,7 +18,7 @@ c
      &    mxlbel=19,mxndof=3,mxgp=14,nstr=6,mxlc=5000,
      &    mxmat=500,mxlsz=5000,mxelmp=30,mxstmp=30, mxstc=10,
      &    mxoupr=30,ntrc=10,mxconn=100,mxvl=128,mxnmgp=10,
-     &    mxblsz=128,mxnmbl=2*(mxel+1)/64,nparam=3,mxelpr=43,vclim=28,
+     &    mxblsz=128,nparam=3,mxelpr=43,vclim=28,
      &    mxmtpr=300,mxsepr=16,two16=65536,ndim=3,max_tables=20,
      &    mxtim=50,nstrs=9,max_procs=128,mxndpr=8,max_crystals=1000,
      &    max_slip_sys=48, max_uhard=48, max_surfaces=100,
