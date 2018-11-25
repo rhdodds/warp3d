@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/15/2018 rhd              *
+c     *                   last modified : 11/26/2018 rhd             *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -727,6 +727,11 @@ c                       model initial stresses
 c
       initial_stresses_file = " "
       initial_stresses_user_routine = .false.
+c
+c                       blocking table initial size. now dynamically
+c                       allocated
+c
+      mxnmbl = 0
 c
       return
 c
