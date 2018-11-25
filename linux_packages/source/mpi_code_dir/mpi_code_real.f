@@ -992,7 +992,7 @@ c     *                      subroutine wmpi_send_basic              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/15/2018 rhd              *
+c     *                   last modified : 11/26/2018 rhd             *
 c     *                                                              *
 c     *       This subroutine allows the root processor to send      *
 c     *       basic model data, such as the coordinates, incidences, *
@@ -1045,6 +1045,7 @@ c
       call MPI_BCAST(noelem,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(nonode,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(nelblk,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(mxnmbl,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(nodof,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(beta_fact,1,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(inctop,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
@@ -1097,7 +1098,6 @@ c
       call MPI_BCAST(cp,mxedof,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(icp,mxutsz*2,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(dcp,mxedof,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      call MPI_BCAST(elblks,4*nelblk,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(num_seg_points,max_seg_curves,MPI_INTEGER,0,
      &               MPI_COMM_WORLD,ierr)
       call MPI_BCAST(seg_curves,max_seg_curves*max_seg_points*2,
@@ -1139,13 +1139,14 @@ c
 c                  allocated arrays:
 c
 c                  incidence data structures, inverse incidence
-c                  dta structures, inverse dof maps
+c                  dta structures, inverse dof maps, element blocking
 c
       if( worker_processor ) then
          call mem_allocate( 4 )  ! u, v, a, ... zeroed
          call mem_allocate(9)
          call init_maps ( 0, 1 )
          call init_maps ( 0, 2 )
+         call mem_allocate( 17 ) ! eleblks
       endif
       call MPI_BCAST(c,nodof,MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(dstmap,nonode,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
@@ -1155,6 +1156,9 @@ c
      &                ierr )
       call MPI_BCAST( invdst, nodof, MPI_INTEGER, 0, MPI_COMM_WORLD,
      &                ierr )
+      call MPI_BCAST( elblks, 4*mxnmbl, MPI_INTEGER, 0,
+     &                MPI_COMM_WORLD, ierr) 
+     
 c
 c            build a vector of no. of nodes on all elements and broadcast.
 c            this makes the process of building inverse incidences and
