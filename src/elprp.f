@@ -214,7 +214,7 @@ c
       if ( matprp(12,matnum) .ne. rzero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = 1.0e10 !  matprp(5,matnum) for linear elastic bar
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 ) ! bit 0
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -440,7 +440,7 @@ c
       props(21,elem)  = rbig
       props(22,elem)  = rbig
       props(23,elem)  = rbig
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       iprops(25,elem) = 1 ! must be = 1 for link -> bilinear
       props(26,elem)  = rbig
       props(27,elem)  = rbig
@@ -662,7 +662,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -899,7 +899,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -1131,7 +1131,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -1363,7 +1363,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -1596,7 +1596,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -1830,7 +1830,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -2061,7 +2061,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -2292,7 +2292,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -2525,7 +2525,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -2762,7 +2762,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -3006,7 +3006,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -3372,6 +3372,7 @@ c
 c                  debug flag, allow cutback request from material,
 c                  no segmental-type stress-strain curve.
 c
+      iprops(24,elem) = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -3617,7 +3618,7 @@ c
       if ( matprp(12,matnum) .ne. zero )
      &  props(22,elem) = one / matprp(12,matnum)
       props(23,elem)  = matprp(5,matnum)
-      props(24,elem)  = 0
+      iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -3823,6 +3824,7 @@ c
 c                  debug flag, allow cutback request from material,
 c                  no segmental-type stress-strain curve.
 c
+      iprops(24,elem) = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
@@ -4055,6 +4057,7 @@ c
 c                  debug flag, allow cutback request from material,
 c                  no segmental-type stress-strain curve.
 c
+      iprops(24,elem) = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
