@@ -3,18 +3,19 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: September 5, 2018
+                   Last Update: December 1, 2018
 
-                  Version 17.9.1 on all platforms
+                  Version 17.9.3 on all platforms
 
 Late breaking news:
 ==================
 
 See new part of description below: Components of WARP3D Distribution
 
-The ready-to-run executables are built using Intel Fortran/MKL 18.0.x
-with options that allow the executable to run on a wide-range of
-Intel 64 bit processors.
+The ready-to-run executables are built using Intel Fortran/MKL 18.0.3 (Linux)
+and 19.0.1 (Windows and OSX) with options that allow the executable 
+to run on a wide-range of Intel/AMD 64 bit processors. The Linux
+version may also be re-built with 19.0.x.
 
 Our ready-to-run executables now *require* that your processor(s)
 support the AVX (vector) instruction set as a minimum.
@@ -22,26 +23,24 @@ The included executables will not run on older processors.
 
 Processors with AVX support became available in early 2011 and include:
 
-  2nd Generation Intel® Core™ i7 Processors
-  2nd Generation Intel® Core™ i5 Processors
-  2nd Generation Intel® Core™ i3 Processors
-  Intel® Xeon® Processor E5 Family
-  Intel® Xeon® Processor E3 Family
+  2nd/3rd Generation Intel® Core™ i3, i5, i7, i9 Processors
+  Intel® Xeon® Processor E3/E5 Family
 
-  + all newer processors
+  and **  all newer processors **
 
  --> In future releases of WARP3D we plan to require processors with
      AVX2 instruction support.
 
 The best performance - especially on the newest processors -
-can be obtained only by re-compiling. If your processor
-supports the AVX2 or AVX512 instruction set, there will be a
-boost in performance across the entire code from the increased vector
-register lenghts in AVX2 and AVX512.
+can be obtained only by re-compiling on your computer. 
+If your processor supports the AVX2 or AVX512 instruction set, 
+there will be a boost in performance across the entire code 
+from the increased vector register lengths and additional
+instructions in AVX2 and AVX512.
 
 Re-building scripts provided in the distribution instruct 
-the compiler to optimize for the hardware on which the 
-compilation is executed.
+the compiler to optimize for best performance on the
+computer that performs the compilation.
 
 Contents:
 =========
@@ -74,7 +73,7 @@ Contents:
 The WARP3D system contains these components:
 
   - The WARP3D executable for Linux, Windows, MacOS.
-    This is the analysis "engine". It reads full model
+    This is the analysis engine. It reads full model
     descriptions from one or more text files (like Abaqus .inp files),
     performs the analysis as requested and outputs various types of
     results files for post-processing.
@@ -99,14 +98,14 @@ The WARP3D system contains these components:
 
     On Linux systems, patwarp also offers to partition the mesh into domains using
     Metis for specialized executions using the MPI+threads version of WARP3D.
-    (The default partitioning built-into WARP3D removes the need for this
+    (The default mesh partitioning built-into WARP3D now removes the need for this
     Metis partitioning for nearly all users).
 
   - The warp3d3exii Python program. This standalone program reads (1) a condensed
     description of the model (a text file written by WARP3D) and (2) condensed
     versions of computational results written by WARP3D (text or stream formats).
-    warp3d2exii then writes a *.exo (stream) file which can be post-processed
-    by a variety of free and commercial software. We use the free software
+    warp3d2exii then writes a *.exo (stream or text) file which can be post-processed
+    by a variety of free and commercial software. We use the excellent,free software
     ParaView for this purpose and recommend it highly.
 
   - The standalone program combine_mpi_result_files (for Linux).  When WARP3D
@@ -125,7 +124,7 @@ The WARP3D system contains these components:
   - The verification directory provides extensive suites of automatic
     testing for WARP3D - we use these test daily to confirm no code
     regressions. Users are encouraged to examine/execute these 
-    analyses.
+    analyses. The driver scripts are named run_...
 
 1. OBTAINING & INSTALLING WARP3D
 
@@ -148,8 +147,8 @@ Files for MacOS / Linux users:
     will be shown on the web site. Clicking the link will initiate
     the download.
 
- o  We recommend downloading the tar.gz file into /opt, /usr/local/share,
-    /usr/local/bin or into the home directory of a specific user.
+ o  We recommend downloading the tar.gz file into /opt, /usr/local/share
+    or into the home directory of a specific user.
 
     When installed into a user home directory, root access is
     *not* required.
@@ -182,7 +181,8 @@ Files for MacOS / Linux users:
 
  o  The ready-to-run executables for MacOS and Linux are included in the
     distribution. No other libraries, compilers, etc. are required (but
-    some minor configuration is required, see installation instructions).
+    some minor configuration of environment variables is required, 
+    see installation instructions).
 
     The MacOS and Linux versions are compiled to run only in 64-bit mode.
 
@@ -238,9 +238,14 @@ and README_Windows_Users to get started running WARP3D.
 
   Windows users:
      We provide a general building script, Makewarp.bat
-     The is a bat file executed in a command shell
+     The is a bat file executed in a command shell and uses nmake
+     supplied as part of windows. Source files are compiled sequentially.
      It compiles and binds a new executable using the Windows nmake program.
      **** This is the ONLY method you should use to build the code ****
+     
+     The file Makewarp_jom.bat makes use of the Jom version of nmake which
+     compiles source files in parallel (much faster!). Install this tool
+     from https://wiki.qt.io/Jom.
 
   Refer to the README file for each specific platform for full details on
   re-building the code.
@@ -395,6 +400,9 @@ and README_Windows_Users to get started running WARP3D.
 
          See additional discussion about Python requirements in the README
          file of this directory.
+
+         You will need to install the (free) fortranformat package into your 
+         Python environment. https://pypi.org/project/fortranformat/
 
 
   license_agreement  (a file)
@@ -581,15 +589,15 @@ and README_Windows_Users to get started running WARP3D.
 
    - Linux: Intel64 (EM64T) processors. We have tested the build
             process and executables on Red Hat/Centos 7.4 Server,
-            Ubuntu 16.04. The included executables
-            are built on RedHat 7.4 and verified on Ubuntu 16.04 LTS.
+            Ubuntu 18.04. The included executables
+            are built on Ubuntu 18.04 and verified on RedHat 7.4.
             There are 2 WARP3D executables:
                 - Parallel execution using only threads
                 - Parallel execution using a combination of MPI
                   and threads
 
    - OSX: on Intel 64-bit processors (Core 2 Duo and later).
-           The executable is built on 10.13.5.
+           The executable is built on 10.13.5 (High Sierra).
 
 ==========================================================================
 5.0 Changing source code and re-building the executables
@@ -607,25 +615,25 @@ and README_Windows_Users to get started running WARP3D.
  be installed. Re-building WARP3D requires only the Fortran Composer XE
  (not Intel C or C++).
 
- On Windows, we use Intel Visual Fortran Composer XE 2018 for Windows
-   which includes the Intel Math Kernel Library
+ On Windows, we use Intel Visual Fortran Composer XE 2019 for Windows
+   which includes the Intel Math Kernel Library (18.0.x also works)
 
  On Linux, we use Intel Fortran Composer XE 2018 for Linux
    which includes the Intel Math Kernel Library. The Intel MPI system
    must be installed to run and re-build the MPI + OpenMP version.
 
- On OSX, we use Intel Fortran Composer XE 2018 for OSX
-   which includes the Intel Math Kernel Library.
+ On OSX, we use Intel Fortran Composer XE 2019 for OSX
+   which includes the Intel Math Kernel Library. 18.0.x also works.
 
- The compile scripts (Makewarp.bash and Makewarp.bat) in the src
- directory verifies the required compiler system is installed.
+ The compile scripts (Makewarp.bash and Makewarp.bat, Makewarp_jom.bat) 
+ in the src directory verifies the required compiler system is installed.
 
- Use of the scripts Makewarp.bash (Linux, OSX) and Makwarp.bat (Windows)
- is the ONLY recommended process to re-build the executables. The
- Makewarp.bash script asks a few questions, then builds the executable.
+ Use of the these scripts is the ONLY recommended process to re-build 
+ the executables. The Makewarp.bash script asks a few questions, 
+ then builds the executable.
 
- Makewarp.bat asks no questions -- it just runs. Requires access to nmake
-    from Microsoft
+ Makewarp.bat, Makewarp_jom.bat scripts ask no questions -- they ust runs. 
+   Requires access to nmake from Microsoft
  Makewarp_jom.bat runs parallel compiles.  Requires replacement for 
     nmake to support -j option (see README_for_Windows_Users)
 

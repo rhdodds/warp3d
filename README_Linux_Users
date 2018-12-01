@@ -3,7 +3,7 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: September 5, 2018
+                      Last Update: December 1, 2018
 
 *** LATE BREAKING NEWS ***
 
@@ -18,11 +18,11 @@ The ready-to-run executables included in this distribution were built
 on RedHat 7.4 using Intel Composer XE Fortran, MKL and MPI 18.0.3.
 Given RedHat's approach to compatibility, we expect this executable
 will run on most, or all, 7.x releases. The current executable
-does  *not* on 6.x (incompatible libraries). Recompilation should
+does  *not* run on 6.x (incompatible libraries). Recompilation should
 resolve this.
 
-These executables also run on Ubuntu 16.04.2 LTS, 17.x and should run
-on 18.04 LTS.
+These executables also run on Ubuntu 18.04 and other current
+Linux distributions.
 
 Re-compiling (really re-linking) may be needed on other distributions of
 Linux (issues usually center of versions of gcc and OS runtime libraries).
@@ -149,7 +149,7 @@ B.  Installing the precompiled versions of WARP3D
 
 3.  Extract the tarball (for example, use: tar xvzf warp3d.....tar.gz).
 
-4.  This will create a directory called something like "warp3d-17.9.0".
+4.  This will create a directory called something like "warp3d-17.9.3".
 
 5.  Move this directory (which contains the complete WARP3D package) to the
     desired location on your filesystem. Change access permissions as desired.
@@ -178,7 +178,8 @@ B.  Installing the precompiled versions of WARP3D
     to run WARP3D.  Example wrapper scripts are provided (files are
     warp3d_script_*).
 
-9.  Pull various shared libraries from the WARP3D web site. In a bash shell,
+9.  If you are building code from source, pull various shared 
+    libraries from the WARP3D web site. In a bash shell,
 
        $ cd $WARP3D_HOME
        $ ./install_libs_from_remote

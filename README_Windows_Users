@@ -2,14 +2,15 @@
 
                Highest Level README for Windows Users
 
-                last Update: August 10, 2018
+                last Update: December 1, 2018
 
 ==========================================================================
 
 *** NOTES: ***
 
 WARP3D is built for Windows 10 Build 1803 using the Intel 
-Fortran Composer XE 18.0.3 and MKL Version 18.0.3.
+Fortran Composer XE 19.0.1 which include MKL Version 19.0.1.
+Rebuilding the executable on Composer XE 18.0.x also works fine.
 
 The Intel compiler is * NOT * required on your system to use the
 ready-to-run executable included in the distribution. The
@@ -167,11 +168,11 @@ Re-Building the Windows Executable for WARP3D
    We make one of these with name Fortran.
 
 
-   2A.  For Fortran 2018.0.3, we access Properties of the command
+   2A.  For Fortran 2019.0.1, we access Properties of the command
         shell and set the Target as:
 
+       C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\\parallel_studio_xe_2019.1.051\bin\psxevars.bat" intel64 vs2013"
 
-    C:\Windows\System32\cmd.exe /E:ON /V:ON /K ""C:\Program Files (x86)\IntelSWTools\parallel_studio_xe_2018.1.041\bin\psxevars.bat" intel64 vs2013"
 
     2B. and set the "Start In" directory as:
 
