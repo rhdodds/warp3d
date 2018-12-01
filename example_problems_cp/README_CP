@@ -39,5 +39,4 @@ features of the crystal plasticity (CP) model.
    from a separate flat file.
    Results files are generated for post-processing with ParaView.
    
-   ** The CP model does not function with MPI in the current release **
-   ====================================================================
+ 
