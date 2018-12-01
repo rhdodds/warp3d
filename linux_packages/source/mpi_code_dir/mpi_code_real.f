@@ -1093,6 +1093,7 @@ c
 c
 c             static arrays:
 c
+      if( worker_processor ) call mem_allocate( 11 )
       call MPI_BCAST(props,mxelpr*noelem,MPI_REAL,0,MPI_COMM_WORLD,
      &               ierr)
       call MPI_BCAST(cp,mxedof,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
