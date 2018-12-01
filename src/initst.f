@@ -732,6 +732,7 @@ c                       blocking table initial size. now dynamically
 c                       allocated
 c
       mxnmbl = 0
+      ptr_iprops = 0
 c
       return
 c

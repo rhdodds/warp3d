@@ -4,7 +4,7 @@ c     *                     module mpc_init                          *
 c     *                                                              *
 c     *                       written by : gvt                       *
 c     *                                                              *
-c     *                    last modified : 9/3/2017 rhd              *
+c     *                    last modified : 11/26/2018 rhd            *
 c     *                                                              *
 c     *  routine to initialize the multipoint constraint (mpc)       *
 c     *  data structure variables                                    *
@@ -161,7 +161,7 @@ c
       double precision
      &  nodecoord(dimnode,dimcoord)
 
-      real props(mxelpr,mxel),epsilon_mpc
+      real props(mxelpr,*),epsilon_mpc
 c
 c           variables:
 c
@@ -553,7 +553,7 @@ c
 
       real
      &  tiednodegaptolerance(maxtiednode),
-     &  props(mxelpr,mxel)
+     &  props(mxelpr,*)
 
       logical
      &  tiednodeadjustflag(maxtiednode)
@@ -1033,7 +1033,7 @@ c
 
       real
      &  tiednodegaptolerance(maxtiednode),
-     &  props(mxelpr,mxel)
+     &  props(mxelpr,*)
 
       logical
      &  tiednodeadjustflag(maxtiednode)
@@ -1271,7 +1271,7 @@ c
 
       real
      &  tiednodegaptolerance(maxtiednode),
-     &  props(mxelpr,mxel)
+     &  props(mxelpr,*)
 
       logical
      &  tiednodeadjustflag(maxtiednode)
@@ -2430,7 +2430,7 @@ c
       double precision
      &  tiednodeisocoord(maxtiednode,maxisodof)
 
-      real props(mxelpr,mxel),epsilon_mpc
+      real props(mxelpr,*),epsilon_mpc
 
       character(len=*) ::
      &  logfile,message
@@ -3257,7 +3257,7 @@ c
       double precision
      &  nodecoord(dimnode,dimcoord)
 
-      real props(mxelpr,mxel),
+      real props(mxelpr,*),
      &  tiednodegaptolerance(maxtiednode)
 
       logical

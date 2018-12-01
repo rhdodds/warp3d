@@ -1,7 +1,7 @@
 c
-c      last modified:  11/25/2018 rhd
+c      last modified:  11/26/2018 rhd
 c
-      integer mxel,mxndel, max_threads,
+      integer mxndel, max_threads,
      &    mxlbel, mxndof, mxgp, nstr, mxlc,
      &    mxmat,mxlsz,mxelmp,mxstmp, mxstc,
      &    mxoupr,ntrc,mxconn,mxvl,mxnmgp,
@@ -9,12 +9,12 @@ c
      &    mxmtpr,mxsepr,two16,ndim,max_tables,
      &    mxtim,nstrs,max_procs,mxndpr,max_crystals,max_slip_sys,
      &    max_uhard, mxcvtests,
-     &    mxecor, mxedof, mxtgp, mxndldcm, mxtnsz,
+     &    mxecor, mxedof, mxndldcm, mxtnsz,
      &    mxutsz, mxnusz, mxoupt, max_surfaces, max_tied_sets,
      &    max_packet_types, max_user_lists,
      &    nonlocal_shared_state_size, max_interface_props
 
-      parameter( mxel=3000000,mxndel=20,max_threads=128,
+      parameter( mxndel=20,max_threads=128,
      &    mxlbel=19,mxndof=3,mxgp=14,nstr=6,mxlc=5000,
      &    mxmat=500,mxlsz=5000,mxelmp=30,mxstmp=30, mxstc=10,
      &    mxoupr=30,ntrc=10,mxconn=100,mxvl=128,mxnmgp=10,
@@ -27,7 +27,7 @@ c
      &    max_interface_props=80 )
 c
       parameter( mxecor=3*mxndel,mxedof=mxndof*mxndel,
-     &  mxtgp=mxel*mxgp, mxndldcm=mxndof+1,
+     &  mxndldcm=mxndof+1,
      &  mxtnsz=ndim*ndim,
      &  mxutsz=(mxedof*mxedof+mxedof)/2,
      &  mxnusz=(mxndel*mxndel+mxndel)/2 )

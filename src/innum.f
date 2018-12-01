@@ -4,7 +4,7 @@ c     *                      subroutine innum                        *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 6/5/2017 rhd               *          
+c     *                   last modified : 11/26/2018 rhd             *          
 c     *                                                              *          
 c     *             translate input of model sizes                   *          
 c     *                                                              *          
@@ -108,7 +108,6 @@ c                          effective dynamic load, crdmap.  also
 c                          allocate diagonal stiffness if using serial          
 c                          version.                                             
 c                                                                               
-         if ( .not. use_mpi ) call mem_allocate(11)                             
          call mem_allocate( 12 )                                                
          call mem_allocate( 13 )                                                
          call mem_allocate( 14 )                                                
@@ -152,36 +151,29 @@ c
          go to 310                                                              
       end if                                                                    
 c                                                                               
-c                       input number of elements. check to make sure            
-c                       the maximum number of elements allowed is not           
-c                       exceeded and that the number of elements is             
-c                       greater than zero.                                      
-c                                                                               
-                                                                                
+c                       input number of elements.                              
 c                                                                               
       numel = .true.                                                            
       if( .not. integr(noelem) ) then                                           
          call errmsg(9,dum,dums,dumr,dumd)                                      
-         numel = .false.                                                        
-      else                                                                      
+         numel = .false.      
+         go to 9999                                                 
+      end if
 c                                                                               
-         if( noelem .le. 0 ) then                                               
+      if( noelem .le. 0 ) then                                               
             param = 2                                                           
             call errmsg(111,param,dums,dumr,dumd)                               
             fatal = .true.                                                      
             numel = .false.                                                     
             go to 9999                                                          
-         end if                                                                 
+      end if                         
+c
+c                       got valid number of elements.
+c
+c                       0. allocate global elements table (props)                        
+c        
+        call mem_allocate( 11 )                                           
 c                                                                               
-         if( noelem .gt. mxel ) then                                            
-            call errmsg(10,dum,dums,dumr,dumd)                                  
-            fatal = .true.                                                      
-            numel = .false.                                                     
-            go to 9999                                                          
-         end if                                                                 
-      end if                                                                    
-c                                                                               
-c                       got valid number of elements.                           
 c                       allocate and initialize  arrays dependent               
 c                       only upon the number of elements                        
 c                                                                               

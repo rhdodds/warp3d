@@ -19,6 +19,7 @@ c
 c
       implicit none
 c
+      include 'mkl.fi'
       integer :: itype, i, alloc_stat, k
       double precision, parameter :: zero=0.0d0
       logical, parameter :: local_debug=.false.
@@ -253,9 +254,17 @@ c
            call die_abort
          end if
 c
-c              available. deprecated allocate of diagonal stiffness
+c              global elements table (props, iprops, lprops )
+c              we use mkl_malloc to obtain a better aligned
+c              array. WARP3D must have mkl working so we can
+c              use mkl_malloc
 c
       case( 11 )
+         if( ptr_iprops .ne. 0 ) call mkl_free( ptr_iprops )
+         ptr_iprops = mkl_malloc( int8(4*noelem*mxelpr), 64 )
+         ptr_props  = ptr_iprops
+         ptr_lprops = ptr_iprops
+         mxel = noelem
 c
 c              allocate the diagonal mass vectors.
 c

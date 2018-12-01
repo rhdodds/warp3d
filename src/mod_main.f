@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 2/8/2018 rhd                    *
+c     *              last modified : 11/26/2018 rhd                  *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -33,6 +33,23 @@ c     ****************************************************************
       implicit none
 c
       include 'param_def'
+c
+c              --- global single precision elements table (props) ---
+c
+c                  we use Cray pointers with implicit equivalencing
+c                  so we can continue to use iprops, props, lprops
+c                  variable names for the same space. Fortran pointers
+c                  will not allow this effective equivalencing.
+c                  we'll set mxel = noelem should mxel actually be
+c                  used.
+c
+      integer :: mxel
+      integer :: iprops
+      real    :: props
+      logical :: lprops
+      pointer ( ptr_iprops, iprops(mxelpr,*) ),
+     &        ( ptr_props,  props(mxelpr,*) ),
+     &        ( ptr_lprops, lprops(mxelpr,*) )
 c
 c              --- double precision arrays/vectors ---
 c
@@ -52,8 +69,7 @@ c
 c
 c              --- real arrays/vectors/scalars ---
 c
-!dir$ attributes align: 64:: props, times
-      real :: props(mxelpr,mxel)
+!dir$ attributes align: 64::  times
       real :: times(mxtim,2)
       real :: strtm, time_limit
 c
@@ -73,42 +89,39 @@ c
      &    trace(ntrc), convrg(10)
 c
 !dir$ attributes align: 64 :: lprops
-      logical :: lprops(mxelpr,mxel) ! only for equivalencing to props
-      equivalence ( lprops, props )
 c
 c              --- integer arrays/vectors/scalars ---
 c
 !dir$ attributes align: 64 :: dstmap,cstmap
       integer, allocatable, dimension (:) :: dstmap, cstmap
 
-!dir$ attributes align: 64 :: gpmap, cp, dcp, icp,
-     &    matlst, lodlst, prslst, plrlst, stprng, state, bits, outmap,
-     &    elblks, blk_ptr_head, MPI_DOF_LOCAL, num_dof_local,
+!dir$ attributes align: 64 :: cp, dcp, icp,
+     &    matlst, lodlst, prslst, plrlst, stprng, bits, outmap,
+     &    blk_ptr_head, MPI_DOF_LOCAL, num_dof_local,
      &    proc_pids
-      integer :: gpmap(mxtgp),
+!dir$ attributes align: 64 :: elblks
+      integer, allocatable, dimension (:,:) :: elblks
+c
+      integer ::  !   gpmap(mxtgp),
      &    cp(mxedof), dcp(mxedof), icp(mxutsz,2), matlst(mxmat),
      &    lodlst(mxlc), prslst(mxlsz), plrlst(mxlsz), stprng(mxlc,2),
-     &    state(mxtgp), bits(31),  outmap(mxlbel,mxelmp),
-     &    elblks(0:3,mxnmbl), blk_ptr_head(0:max_procs - 1),
+     &    bits(31), outmap(mxlbel,mxelmp),
+     &    blk_ptr_head(0:max_procs - 1),
      &    MPI_DOF_LOCAL(0:max_procs-1), num_dof_local(0:max_procs-1),
      &    proc_pids(1:max_procs-1)     ! end of arrays
 c
-      integer :: noelem, nonode, nummat, nogp, numcol,
+      integer :: noelem, nonode, nummat, numcol,
      &    nodof, nlibel, numlod, nprs, nplrs, numstc, nelblk, numgrp,
      &    lgnmcn, mxiter, mniter, lgoump, mxlitr, num_term_ifv,
      &    num_term_loads, mathed, csthed,  lodhed, inctop, crdtop,
      &    in, out, histep, lowstp, ltmstp, num_warn, num_error,
      &    num_fatal, solver_flag, old_solver_flag, solver_memory,
      &    num_threads,  max_mpc, max_mpc_tied,
-     &    myid, numprocs, MPI_VAL, douextdb
+     &    myid, numprocs, MPI_VAL, douextdb, mxnmbl
 c
 c                  counters to shut off error messages at some point
 c
       integer, save :: msg_count_1, msg_count_2   ! needs atomic update
-c
-!dir$ attributes align:64 :: iprops
-      integer :: iprops(mxelpr,mxel) ! only for equiv with props
-      equivalence ( iprops, props )
 c
 c              --- character arrays/vectors/scalars ---
 c

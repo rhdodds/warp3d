@@ -4,7 +4,7 @@ c     *                      subroutine insurf                       *
 c     *                                                              *          
 c     *                       written by : bjb                       *          
 c     *                                                              *          
-c     *                   last modified : 04/05/03                   *          
+c     *                   last modified : 11/26/2018                 *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *         surfaces that define regions of mesh tieing          *          
@@ -17,7 +17,7 @@ c
       use global_data ! old common.main
 c                                                                               
       use mod_mpc, only : surface_table                                         
-      parameter (max_ele=mxel/10)                                               
+c      parameter (max_ele=mxel/10)                                               
       integer  ele, nelem, face, dumi, errnum, icn, iplist, count,              
      &         len, err                                                         
       integer, allocatable, dimension (:) :: faces, elems                       
@@ -28,7 +28,8 @@ c
       logical  label, matchs, integr, true, bad_surf,                           
      &         abaqus_face_flag                                                 
       dimension  intlst(mxlsz)                                                  
-c                                                                               
+c  
+      max_ele = max( 5000, mxel/10 )                                                                             
       allocate (surface_table(max_surfaces),                                    
      &          faces(max_ele), elems(max_ele), stat=err)                       
       if (err .ne. 0) then                                                      

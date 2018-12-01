@@ -135,7 +135,7 @@ c
      &              crdtop, nummat, numcol, histep,
      &              lowstp, ltmstp, nlibel, numlod, mxiter,
      &              mniter, lodhed, lgnmcn, mxlitr,
-     &              nogp, nprs, nplrs, nelblk, numgrp, lgoump,
+     &              nprs, nplrs, nelblk, numgrp, lgoump,
      &              max_current_pts, max_current_curves,
      &              num_seg_curve_sets,
      &              solver_flag, old_solver_flag, solver_memory,
@@ -211,12 +211,10 @@ c
       call wrtbk( fileno, invdst, nodof )
       call wrtbk( fileno, plrlst, mxlsz )
       call wrtbk( fileno, stprng, mxlc*2 )
-      call wrtbk( fileno, gpmap,  nogp )
       call wrtbk( fileno, incmap, noelem )
       call wrtbk( fileno, crdmap, nonode )
       call wrtbk( fileno, dstmap, nonode )
       call wrtbk( fileno, cstmap, nodof )
-      call wrtbk( fileno, state,  nogp )
       call wrtbk( fileno, incid,  inctop )
       call wrtbk( fileno, prslst, mxlsz )
       call wrtbk( fileno, lodlst, mxlc )

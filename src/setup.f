@@ -4,7 +4,7 @@ c     *                      subroutine setup                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/5/2017 rhd               *
+c     *                   last modified : 11/26/2018 rhd             *
 c     *                                                              *
 c     *     this subroutine sets necessary mapping vectors and       *
 c     *     arrays and various other necessary data in preparation   *
@@ -207,21 +207,6 @@ c
          load(i)  = zero
          rload(i) = zero
       end do
-c
-c
-c                       set the gauss point mapping and the total
-c                       number of gauss points in the structure.
-c
-c
-      nogp = 0
-      do elem = 1, noelem
-         ngp = iprops(6,elem)
-         do gpn = nogp+1, nogp+ngp
-            gpmap(gpn) = elem*two16 + (gpn-nogp)
-         end do
-         nogp = nogp+ngp
-      end do
-c
 c
 c                       set the maximum output map entry to be accessed.
 c

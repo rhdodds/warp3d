@@ -3,7 +3,7 @@ c     *                      suboutine errmsg                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/20/2018 rhd             *
+c     *                   last modified : 11/26/2018 rhd             *
 c     *                                                              *
 c     *     this subroutine prints assorted error messages in re-    *
 c     *     ponse to calls from all over the program. virtually all  *
@@ -166,12 +166,7 @@ c
 c
 c
  100  continue
-      num_error = num_error + 1
-      write(out,9009) noelem,mxel
- 9009 format(/1x,'>>>>> error: ',i7,': the number of elements in the ',
-     &           'structure exceeds'/14x,i7,': the maximum number of',
-     &         'elements allowed. execution'/14x,'will be terminated.'/)
-      input_ok = .false.
+c                 available     
       go to 9999
 c
 c
@@ -819,11 +814,7 @@ c
 c
 c
  740  continue
-      num_error = num_error + 1
-      write(out,9172) param,noelem
- 9172 format(/1x,'>>>>> error: ',i6,': the current block number ',
-     &           ' exceeds ',i6,':'/14x,'the maximum number of bloc',
-     &           'ks allowed. it will be ignored.'/)
+c               available
       go to 9999
 c
 c
