@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/28/2018 rhd              *
+c     *                   last modified : 12/1/2018 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -94,7 +94,7 @@ c
       if( osx_os )     char_os = 'OSX 64-bit'
 
       write (*,9000) char_os, build_number, compile_date,
-     &               compile_time, sdate_ , mxel
+     &               compile_time, sdate_ 
 c
 c                       read a high level command
 c
@@ -1026,8 +1026,8 @@ c
      &     ' Display Text      **',/,
      &     '    **                                             ',
      &     '                  **',/,
-     &     '    **     Limits (nodes, elements): none,',i10,
-     &     '                 **',/,
+     &     '    **     Limits (nodes, elements): none as of 17.9.3',
+     &     '               **',/,
      &     '    **                                             ',
      &     '                  **',/,
      &     '    ***********************************************',
