@@ -3,7 +3,7 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: December 1, 2018
+                   Last Update: December 2, 2018
 
                   Version 17.9.3 on all platforms
 
@@ -12,13 +12,14 @@ Late breaking news:
 
 See new part of description below: Components of WARP3D Distribution
 
-The ready-to-run executables are built using Intel Fortran/MKL 18.0.3 (Linux)
-and 19.0.1 (Windows and OSX) with options that allow the executable 
+The ready-to-run executables are built using Intel Fortran/MKL 18.0.3 
+(Linux, RedHat 7.4), 19.0.1 (Windows 10), and 19.0.1 (OSX, 10.13.5)
+with options that allow the executable 
 to run on a wide-range of Intel/AMD 64 bit processors. The Linux
 version may also be re-built with 19.0.x.
 
 Our ready-to-run executables now *require* that your processor(s)
-support the AVX (vector) instruction set as a minimum.
+support the AVX (vector) instruction set as a ** minimum **.
 The included executables will not run on older processors.
 
 Processors with AVX support became available in early 2011 and include:
@@ -589,8 +590,8 @@ and README_Windows_Users to get started running WARP3D.
 
    - Linux: Intel64 (EM64T) processors. We have tested the build
             process and executables on Red Hat/Centos 7.4 Server,
-            Ubuntu 18.04. The included executables
-            are built on Ubuntu 18.04 and verified on RedHat 7.4.
+            Ubuntu 18.04.1. The included executables
+            are built on RedHat 7.4 and verified on Ubuntu 18.04.1.
             There are 2 WARP3D executables:
                 - Parallel execution using only threads
                 - Parallel execution using a combination of MPI

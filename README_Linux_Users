@@ -3,7 +3,7 @@
                   Highest Level Read Me for Linux (Intel64) Users
                   -----------------------------------------------
 
-                      Last Update: December 1, 2018
+                      Last Update: December 2, 2018
 
 *** LATE BREAKING NEWS ***
 
@@ -11,7 +11,7 @@
 See updated notes about running  MPI version with DAPL communication
 protocol. Recent WARP3D fix eanbles use of DAPL optimizations.
 
-The MPI version of WARP3D was been tested in Feb 2018 at the
+The MPI version of WARP3D was tested in Feb 2018 at the
 Ohio Supercomputer Center using 64 cluster nodes with 1600 total cores.
 
 The ready-to-run executables included in this distribution were built
@@ -21,7 +21,7 @@ will run on most, or all, 7.x releases. The current executable
 does  *not* run on 6.x (incompatible libraries). Recompilation should
 resolve this.
 
-These executables also run on Ubuntu 18.04 and other current
+These executables also run on Ubuntu 18.04.1 and other current
 Linux distributions.
 
 Re-compiling (really re-linking) may be needed on other distributions of
@@ -314,7 +314,6 @@ D.  Quickstart: Precompiled Type-2 (MPI+threads)
        export I_MPI_SCALABLE_OPTIMIZATION=enable
        export I_MPI_DYNAMIC_CONNECTION=ON
        export I_MPI_DEBUG=0  # set =2 for fabric info on starrtup
-
 
     The first line sets a short path to run the correct WARP3D
     executable.
