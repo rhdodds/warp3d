@@ -1,0 +1,18 @@
+!
+domain J1  $ phi =   0.0000
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  tangent vector  tx  0.000000 ty -1.000000 tz  0.000000
+  symmetric
+  front nodes       1     43    l3disop verify
+  q-values automatic rings    1-10
+  function type a
+  compute domain integral
+!
+domain J2  $ phi =   0.0200
+  normal plane  nx  0.000000 ny  0.000000 nz  1.000000
+  tangent vector  tx  0.000000 ty -1.000000 tz  0.000000
+  symmetric
+  front nodes       1     43    l3disop verify
+  q-values automatic rings    1-10
+  function type c
+  compute domain integral

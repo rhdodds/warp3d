@@ -1,0 +1,80 @@
+!
+!
+!           test of J-integral computations for plane-strain
+!           SSY model with crystal plasticity material.
+!
+!           units: MPA, m, secs
+!
+!           1 layer SSY model, plane strain, 8-node bricks.
+!           collapsed elements at front that open with loading.
+!           R = 1.0 m, B = 0.02 m
+!
+!           model orientation: Mode I symmetry plane Z = 0
+!           crack extension direction +X 
+!
+!           crystal properties are typical of an Al-Li alloy.
+!           each integration point has the same crystal with
+!           25 random orientations to simulate an isotropic
+!           response for testing here.
+!  
+ structure ssy2d
+! 
+ crystal 1
+  properties slip_type fcc elastic_type isotropic,
+  e 78811.2 nu 0.33,
+  mu_0 29628.3 D_0 0.0 T_0 204.0 harden_n 20,
+  theta_0 180.0,
+  b 3.5E-7 boltz 1.3806E-20,
+  tau_a 0.0,
+  tau_hat_y 155.0 g_0_y 0.007808 q_y 2.0 p_y 0.5,
+  eps_dot_0_y 1.0E13,
+  tau_hat_v 25.0 g_0_v 0.00488 q_v 2.0 p_v 0.5,
+  eps_dot_0_v 1.0E7, 
+  hardening mts k_0 10.0
+!
+ material al_li
+   properties cp alpha 1.08E-5 rho 0.0 angle_convention kocks,
+   n_crystals 25 angle_type degrees, 
+   crystal_input single crystal_type 1,
+   orientation_input file filename 'angles_1400',
+   debug off tolerance 1.0E-10
+!
+  material a515_70 $ not used now. was for testing
+    properties mises  e 76362.30,
+        nu 0.422 yld_pt 400.0 n_power 10.  rho 0.0
+!        
+ number of nodes 2982 elements 1400
+!
+ elements
+   1-1400 type l3disop  material al_li,
+                    order 2x2x2  short  bbar
+!
+*echo off
+*input "coordinates.inp"
+*input "incidences.inp"
+ blocking automatic 32
+!
+*input "constraints.inp" $ K_I = 1.0 MPa sqrt(m)
+*echo on
+!
+ loading test
+    nonlinear
+       steps 1-10 constraints 10.0 $ K_I = 100
+!
+  nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   time step  1.0e06
+   trace solution on
+   line search on
+   adaptive solution on
+   batch messages off
+   bbar stabilization factor 0.0
+   extrapolate on
+!
+ compute displacement loading test step 10
+!    
+*input "get_domain_J.inp"
+ stop
