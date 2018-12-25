@@ -10,5 +10,5 @@ c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-c              ** deprecated **. copies moved to each .f where needed
+c              ** deprecated **. copies moved to each   .f where needed
 c                                to allow inlining.
