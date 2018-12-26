@@ -1132,7 +1132,6 @@ c
    convergence test norm residual loads tolerance 0.01
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    extrapolate on
 c
    time step 1000000        $ static analysis

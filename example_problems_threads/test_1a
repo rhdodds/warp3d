@@ -138,15 +138,13 @@ c
     step 3-7  unit 0.2
 c
 c
-  dynamic analysis parameters
+  nonlinear analysis parameters
    solution technique direct sparse
-   stiffness updates before iterations all
    maximum iterations 5
    minimum iterations 1
    convergence test norm res tol 0.05 maximum residual tol 0.5
    time step  1000000
    trace solution on
-   linear stiffness iteration one off
    adaptive solution on
    batch messages off
    extrapolate on

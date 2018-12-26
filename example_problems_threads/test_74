@@ -33650,7 +33650,6 @@ c
    convergence test norm res tol 0.01
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    bbar stabilization factor 0.0
    consistent q-matrix off
    time step 1.0e06

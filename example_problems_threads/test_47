@@ -567,7 +567,6 @@ c
    minimum iterations 2
    convergence test norm res tol 0.05
    nonconvergent solutions stop
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages off
@@ -599,12 +598,10 @@ c
  output strains 64
 c
  nonlinear analysis parameters
-   linear stiffness for iteration one on
    extrapolate off
  compute displacements for loading test step 51
 
 nonlinear analysis parameters
-   linear stiffness for iteration one off
    extrapolate on
  compute displacements for loading test step 100
  output displacements 125
@@ -612,12 +609,10 @@ nonlinear analysis parameters
  output strains 64
 
 nonlinear analysis parameters
-   linear stiffness for iteration one on
    extrapolate off
  compute displacements for loading test step 101
 
 nonlinear analysis parameters
-   linear stiffness for iteration one off
     extrapolate on
 compute displacements for loading test step 150
  output displacements 125
@@ -625,12 +620,10 @@ compute displacements for loading test step 150
  output strains 64
 
 nonlinear analysis parameters
-   linear stiffness for iteration one on
    extrapolate off
  compute displacements for loading test step 151
 
 nonlinear analysis parameters
-   linear stiffness for iteration one off
     extrapolate on
 compute displacements for loading test step 200
  output displacements 125
@@ -638,12 +631,10 @@ compute displacements for loading test step 200
  output strains 64
 
 nonlinear analysis parameters
-   linear stiffness for iteration one on
    extrapolate off
  compute displacements for loading test step 201
 
 nonlinear analysis parameters
-   linear stiffness for iteration one off
    extrapolate on
  compute displacements for loading test step 250
  output displacements 125
@@ -651,12 +642,10 @@ nonlinear analysis parameters
  output strains 64
 
 nonlinear analysis parameters
-   linear stiffness for iteration one on
    extrapolate off
  compute displacements for loading test step 251
 
 nonlinear analysis parameters
-   linear stiffness for iteration one off
    extrapolate on
  compute displacements for loading test step 300
  output displacements 125

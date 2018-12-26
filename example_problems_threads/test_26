@@ -87,7 +87,6 @@ c
      nonconvergent solutions stop
      consistent q-matrix on
      bbar stabilization factor 0.0
-     linear stiffness iteration one on $ helps convergence at high loads
 c  
    crack growth parameters
       type of crack growth smcs

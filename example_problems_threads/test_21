@@ -810,7 +810,7 @@ c
 c 
 c          Solution Parameters 
 c
- dynamic analysis parameters
+ nonlinear parameters
    solution technique direct sparse
    maximum iterations 10
    convergence test norm res tol .01

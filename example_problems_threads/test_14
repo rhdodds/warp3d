@@ -1,5 +1,5 @@
 C ***********************************************************************
-C              dynamic analysis of a curved, trapezoidal
+C              nonlinear of a curved, trapezoidal
 C              box girder bridge (1 span). concrete
 C              properties are used for the material
 C

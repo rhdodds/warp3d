@@ -123,7 +123,6 @@ c
    convergence test norm res tol 0.05 maximum residual tol 0.5
    time step  1.0e10
    trace solution on
-   linear stiffness iteration one off
 c
  compute displacements for loading axial_tension step 1
 c

@@ -215,7 +215,7 @@ c
       step 1-150 dummy 1.0
 c 
 c 
- dynamic analysis parameters
+ nonlinear parameters
   solution technique direct sparse
   adaptive solution off
   maximum iterations 20

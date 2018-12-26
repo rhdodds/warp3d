@@ -135,7 +135,6 @@ c
    extrapolate on
    consistent q-matrix on
    bbar stabilization factor 0.0
-c   linear stiffness iteration one off 
 c
 c
  crack growth parameters

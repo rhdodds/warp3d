@@ -68,7 +68,6 @@ c
    convergence test norm res tol 0.001
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
    batch messages off
    cpu time limit off
    material messages on

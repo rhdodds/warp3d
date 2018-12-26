@@ -380,7 +380,7 @@ c
     step 1  face_pressures 1.0 body_forces 1.0
 c
 c
-  dynamic analysis parameters
+  nonlinear parameters
    solution technique sparse   $ all platforms
    maximum iterations 10
    minimum iterations 1

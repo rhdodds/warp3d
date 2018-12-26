@@ -3944,7 +3944,6 @@ c
    convergence test norm res tol 0.01 
    time step 1000000
    trace solution on
-   linear stiffness iteration one on
    consistent q-matrix on
    bbar stabilization factor 0.0
 c
@@ -4059,14 +4058,13 @@ c
    *input test_22_get_j
 c
 c
-  dynamic analysis parameters
+  nonlinear parameters
    solution technique direct sparse
    adaptive solution on
    maximum iterations 15
    convergence test norm res tol 0.01 
    time step 100000
    trace solution on
-   linear stiffness iteration one on
    extrapolate off
 c
 c

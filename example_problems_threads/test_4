@@ -2274,7 +2274,7 @@ c
 c 
 c 
 c 
- dynamic analysis parameters
+ nonlinear parameters
   solution technique direct sparse
   maximum iterations 5
   minimum iterations 1

@@ -139,7 +139,7 @@ constraints
    extrapolate on
    binary packets on file 'packets.tst'
 !
-output commands use file "test_1_get_output" steps all
+output commands use file "test_1_get_output" steps 1-100
 compute displacements for loading end_shear step 7
 ! 
 !

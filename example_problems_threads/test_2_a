@@ -144,13 +144,12 @@ c
     step 3-7  unit 0.2
 c
 c
-  dynamic analysis parameters
+  nonlinear parameters
    solution technique direct sparse
    maximum iterations 5
    convergence test norm res tol 0.05
    time step  0.0005
    trace solution on
-   linear stiffness iteration one off
    adaptive solution on
    batch messages off
    bbar stabilization factor 0.05

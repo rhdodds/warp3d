@@ -4952,7 +4952,7 @@ c
     step 4 push 1.0
 c
 c
- dynamic analysis parameters
+ nonlinear parameters
   solution technique sparse iterative
   maximum iterations 20
   convergence test norm res tol .01

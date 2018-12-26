@@ -1917,7 +1917,7 @@ c
     step 1-100  dummy 1.0
 c
 c
-  dynamic analysis parameters
+  nonlinear parameters
    solution technique direct sparse
    maximum iterations 20
    convergence test norm res tol 0.01 max res tol 0.5
@@ -1927,7 +1927,6 @@ c
    extrapolate on
    trace solution on
    consistent q-matrix on
-   linear stiffness iteration one off
    batch messages off
    material messages off
 c

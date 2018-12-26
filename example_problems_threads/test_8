@@ -3429,7 +3429,6 @@ c
    nonconvergent solutions continue
    time step 100000
    trace solution on l
-   linear stiffness iteration one off
    batch messages on
    extrapolate on
 

@@ -5545,7 +5545,6 @@ c
    convergence test norm res tol 0.05 maximum residual tol 0.5
    time step  1.0e10
    trace solution on
-   linear stiffness iteration one off
    batch messages off
    bbar stabilization factor 0.0
 c
