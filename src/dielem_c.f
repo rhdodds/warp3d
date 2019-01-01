@@ -484,7 +484,7 @@ c    subroutine to calculate surface-traction integral for             *
 c    i-integral, iterm(8,j).                                           *
 c                                                                      *
 c                                 written by: mcw                      *
-c                              last modified: 9/18/03                  *
+c                              last modified: 1/1/2019 rhd             *
 c                                                                      *
 c***********************************************************************
 c
@@ -864,7 +864,7 @@ c
             end if
             iterm(8,j) = iterm(8,j) + termu + termv + termw
             if ( debug ) then
-               write(out,9945) j
+               write(out,9945) j, 0
                write(out,9955) termu, termv, termw, iterm(8,j)
             end if
          end do
@@ -910,26 +910,27 @@ c
          end if
 c
 c             14. calculate ui,1 at current node by extrapolating gp value:
-c                 (ui,1)node = sum [ (N)gp * (ui,1)gp ]
+c                 (ui,1)node = sum [ (N)gp * (ui,1)gp ]. contributions
+c                 from tractions t_2 and t_3 are known = 0.
+c                 see manual section on surface integral evaluation for
+c                 T-stress.
 c
          do j = 1,7
             dux = zero
             dvx = zero
             dwx = zero
             dux = dieldp( lg, cderiv_aux(1,1,j), ngpts_face, 1, 1 )
-            dvx = dieldp( lg, cderiv_aux(1,2,j), ngpts_face, 1, 1 )
-            dwx = dieldp( lg, cderiv_aux(1,3,j), ngpts_face, 1, 1 )
 c
 c             surface traction term is given by (-) product of nodal
 c             q-values, the equivalent nodal loads, and auxiliary
 c             displacement derivatives.
 c
             termu = - eloads(1,enode) * qvals(enode) * dux
-            termv = - eloads(2,enode) * qvals(enode) * dvx
-            termw = - eloads(3,enode) * qvals(enode) * dwx
+            termv = zero ! - eloads(2,enode) * qvals(enode) * dvx
+            termw = zero ! - eloads(3,enode) * qvals(enode) * dwx
             iterm(8,j) = iterm(8,j) + termu + termv + termw
             if ( debug ) then
-               write(out,9945) j
+               write(out,9945) j, 1
                write(out,9950) dux, dvx, dwx
                write(out,9955) termu, termv,
      &              termw, iterm(8,j)
@@ -962,7 +963,7 @@ c
  9940 format('       >> xsi, eta:',2(2x,e13.6),/,
      &       '       >> shape functions:')
  9942 format(10x,'gpt ',i2,2(2x,e13.6))
- 9945 format(/,'           >> j: ',2x,i2)
+ 9945 format(/,'           >> j: ',2x,2i2)
  9950 format('           >> dux, dvx, dwx:',46x,3(2x,e13.6))
  9955 format('           >> termu_aux, termv_aux,',
      &       ' termw_aux, iterm(8,j)',4(2x,e13.6),/)
