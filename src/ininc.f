@@ -271,6 +271,7 @@ c
 c
 c              open file. note use of "segmented" record type for
 c              binary to support extremely long records.
+c              segmented option in Intel only. removed.
 c
       ifile = warp3d_get_device_number()
       if( stream ) then
@@ -278,8 +279,7 @@ c
      &         form="unformatted" )
       else
          open( unit=ifile, file=filename, status='old',
-     &         access='sequential',form='unformatted',
-     &         recordtype='segmented' )
+     &         access='sequential',form='unformatted' )
       end if
 c
       write(out,9000)
