@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 5/16/2018 rhd               *
+c     *                   last modified: 12/23/2018 rhd              *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -17,13 +17,11 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-c
       subroutine mnralg( mf, mf_nm1, mf_ratio_change, step, ldnum )
       use global_data ! old common.main
 c
       use main_data, only : mdiag, pbar, cnstrn, dload,
-     &     max_loddat_blks, convergence_history, umat_used,
-     &     divergence_check, asymmetric_assembly, creep_model_used,
+     &     divergence_check, asymmetric_assembly,
      &     non_zero_imposed_du, extrapolated_du, extrapolate,
      &     extrap_off_next_step, line_search, ls_details,
      &     ls_min_step_length, ls_max_step_length, ls_rho,
@@ -40,21 +38,25 @@ c
      &                            d_lagrange_forces,
      &                            i_lagrange_forces
 c
-      implicit integer (a-z)
+      implicit none
+c
+      integer :: step, ldnum
       double precision :: mf, mf_nm1, dt_original
       logical :: mf_ratio_change
-      double precision :: sumrr, sumdd
 c
 c           local variables
 c
+      integer :: dum, i, iout, iter, now_step
+      real :: dumr
       double precision ::
      &  mgres1, magdu1, zero, one, mgload, ext_tol,
-     &  scaling_load, mag
+     &  scaling_load, dumd
       double precision, allocatable, dimension(:) ::u_n_local
 c
       logical :: dynamic, material_cut_step, emit_extrap_msg,
      & emit_forced_linear_k_for_step, ls_request_adaptive,
-     & diverging_flag, user_extrapolation_on, user_extrapolation_off
+     & diverging_flag, user_extrapolation_on, user_extrapolation_off,
+     & setup_lagrange_data
 c
       character (len=1) :: dums
       logical :: local_debug, first_solve, first_subinc,
@@ -358,7 +360,8 @@ c
 c          setup nodal forces that enforce for MPCs. we call them
 c          Lagrange forces. See comments in module stiffness_data.
 c
-      if( mpcs_exist .or. tied_con_mpcs_constructed ) then
+      setup_lagrange_data = mpcs_exist .or. tied_con_mpcs_constructed
+      if( setup_lagrange_data ) then
         if( .not. allocated( total_lagrange_forces ) ) then
            allocate( total_lagrange_forces(nodof) )
            total_lagrange_forces = zero
@@ -369,7 +372,14 @@ c
         if( .not. allocated( i_lagrange_forces ) )
      &            allocate( i_lagrange_forces(nodof) )
         i_lagrange_forces = zero
-      end if
+      else
+        if( allocated( total_lagrange_forces ) ) 
+     &      deallocate( total_lagrange_forces ) 
+        if( allocated( d_lagrange_forces ) )
+     &      deallocate( d_lagrange_forces ) 
+        if( allocated( i_lagrange_forces ) )
+     &      deallocate( i_lagrange_forces )
+      end if 
 c
 c          compute the effective load increment to start load step
 c          including real applied (nodal) load increments, estimated
@@ -653,7 +663,7 @@ c
 c          get total displacement change over n -> n+1. du
 c          will not be this if adaptive was used over n -> n+1
 c
-      du(1:nodof) = u(1:nodof) - u_n_local(1:dof)
+      du(1:nodof) = u(1:nodof) - u_n_local(1:nodof)
       deallocate( u_n_local )
 c
       return  ! back to stpdrv
@@ -662,10 +672,6 @@ c
      & ' mf_ratio_change: ',i7,2f10.6, l2)
  9002 format(/,1x,'... mnralg:  mf_nm1, scaling_load',
      & 2f10.6)
- 9100 format(7x,
-     & '>> updating strains/stress/forces step, iteration: ',i7,i3)
- 9110 format(7x,
-     & '>> updating internal forces step, iteration:       ',i7,i3)
  9150 format(/,7x,
      & '>> starting global newton solution for step:       ',i7)
  9152 format(7x,
@@ -701,8 +707,6 @@ c
  9600 format(/,'... mnralg:',
      & /,8x,'scaling_load, scaling_adapt, scaling_factor ',
      &             3e16.6,// )
- 9610 format(3x,i8,2x,e14.6)
- 9700 format(10x,i4, 2x, e14.6, 2x, e14.6)
  9715 format(/,'>> ERROR: tied contact and/or multi-point constraints',
      &    /, '          cannot be used with the asymmetric assembly-',
      &    /, '          solver process' )
@@ -745,7 +749,7 @@ c
       double precision, allocatable :: du0(:)
 
       logical :: ls_debug, no_line_search, line_search_details
-      integer :: ls_ell, i
+      integer :: ls_ell
       character(len=1) :: ls_flag
       data zero, one / 0.0d00, 1.0d00 /
 c
@@ -888,9 +892,6 @@ c
      & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
  9210 format(7x,
      & '>> updating strains/stress/forces step, iteration: ',i7,i3)
- 9220 format(7x,
-     & '      ... finished line search. iterations, step length: ',
-     &   i2,1x,f7.4)
 c
       end subroutine mnralg_ls
 c     ****************************************************************
@@ -920,7 +921,7 @@ c
       double precision, allocatable :: du0(:)
 
       logical :: ls_debug, no_line_search, line_search_details
-      integer :: ls_ell, i, curve_type, bug
+      integer :: ls_ell, curve_type, bug
       character(len=1) :: ls_flag
       data zero, one / 0.0d00, 1.0d00 /
 c
@@ -1009,36 +1010,23 @@ c
      & '      ... LS r-values curve type: ',i3)
  8900 format(6x,'.... entered line search routine. step, iter: ',
      &  i7,i3)
- 8910 format(10x,'.... start new ls iteration, alpha: ',i2,f10.4)
- 8920 format(20x,'satisfied search tolerance of: ',f10.3)
  8930 format(//,7x,
      & '>> begin line search ' )
- 9000 format(3x,'       ... s0 value: ', e14.6)
  9010 format(7x,
      &      '>> line search s0 value:',f8.3,' > 0.',14x,i7,i3,
      & /,7x,'   using step length 1.0 this iteration')
- 9030 format(20x,'new s, r:  ',2f10.4)
- 9100 format(7x,
-     &    '>> line search did not converge. iterations: ',i3,3x,i7,i3,
-     &/7x,'      r-ratio: ',f8.2,' step length:', f6.3,a2)
- 9200 format(7x,
-     & '>> line search completed. step length: ',f6.3,a2,4x,i7,i3)
  9205 format(7x,
      & '     line search iteration, alpha, r-value: ',i2,f6.3,f7.3)
  9210 format(7x,
      & '>> updating strains/stress/forces step, iteration: ',i7,i3)
- 9220 format(7x,
-     & '      ... finished line search. iterations, step length: ',
-     &   i2,1x,f7.4)
 c
       end subroutine mnralg_ls_instrumented
 c
       subroutine mnralg_ls_instrumented_a( npts, yvalues, xvalues,
      &                      curve_type, iout, bug )
       implicit none
-      integer npts,curve_type, i, first_min, iout, bug
-      double precision yvalues(*), xvalues(*), alpha,
-     &                 ymin
+      integer npts,curve_type, i, iout, bug
+      double precision :: yvalues(*), xvalues(*)
       if( bug .eq. 1 ) then
       write(iout,*) '<<< num points: ', npts
       do i = 1, npts
@@ -1608,8 +1596,7 @@ c
       use adaptive_steps, only : adapt_temper_fact ! set in adapt_check
       implicit integer (a-z)
 c
-      double precision
-     &   mag, zero, f
+      double precision :: zero, f
       double precision, dimension (:), save, allocatable ::
      & dtemp_nodes_step, dtemp_elems_step
        data zero /0.0d00/
@@ -1700,7 +1687,7 @@ c     *               subroutine mnralg_release_con_forces           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 2/24/2014 rhd              *
+c     *                   last modified : 12/23/2018 rhd             *
 c     *                                                              *
 c     *     adjust global load vector if there are user-specified    *
 c     *     constrained dof being released. see routine              *
@@ -1713,16 +1700,16 @@ c
       use global_data ! old common.main
       use main_data, only : release_cons_table, dload
 c
-      implicit integer (a-z)
+      implicit none
 c
 c           local variables
 c
-      double precision ::
-     &  one, factor, reaction, dload_before, zero
+      double precision :: factor, reaction, dload_before,
+     &                    load_before
+      double precision, parameter :: zero = 0.d0, one = 1.d0
       integer :: inode, idof, sdof, n1, n2
-c
-      logical local_debug, found
-      data zero, one, local_debug / 0.0d00, 1.0d00, .false. /
+      logical :: found
+      logical, parameter :: local_debug = .false.
 c
       if( local_debug ) write(out,9000)
 c
@@ -1744,28 +1731,32 @@ c          during pass thru table, see if there are any more releases
 c          to be done. if not, delete the release_cons_table.
 c
       if( local_debug ) write(out,9100)
+c
+      associate( x => release_cons_table )
+c
       do inode = 1, nonode
         do idof = 1, 3  ! over u, v, w components
-         n1 = release_cons_table(idof,inode)%num_release_steps
-         n2 =
-     &     release_cons_table(idof,inode)%remaining_steps_for_release
-         if( n2 .ne. 0 ) then
-           factor = one / real(n1)
-           reaction = release_cons_table(idof,inode)%reaction_force
-           sdof = 3 * (inode-1) + idof
-          load(sdof) = load(sdof) - factor * reaction
-             dload_before =  dload(sdof)
-             dload(sdof) = dload(sdof) - factor * reaction
-           release_cons_table(idof,inode)%remaining_steps_for_release =
-     &         n2 - 1
-           if( n2 - 1 .gt. 0 ) found = .true.
-           if( local_debug )
+         n1 = x(idof,inode)%num_release_steps
+         n2 = x(idof,inode)%remaining_steps_for_release
+         if( n2 .eq. 0 ) cycle
+         factor = one / real(n1)
+         reaction = x(idof,inode)%reaction_force
+         sdof = 3 * (inode-1) + idof
+         load_before = load(sdof)
+         load(sdof) = load(sdof) - factor * reaction
+         dload_before =  dload(sdof)
+         dload(sdof) = dload(sdof) - factor * reaction
+         x(idof,inode)%remaining_steps_for_release = n2 - 1
+         if( n2 - 1 .gt. 0 ) found = .true.
+         if( local_debug )
      &       write(out,9110) inode, idof, n1, n2,
      &                      sdof, reaction, found, factor,
+     &                      load_before, load(sdof), 
      &                      dload_before, dload(sdof)
-          end if
-         end do
-       end do
+         end do ! over idof
+       end do !  over inode
+c
+       end associate
 c
        if( .not. found ) then
          if( local_debug ) write(out,9120)
@@ -1779,9 +1770,11 @@ c
  9000 format(1x,'.... entered  mnralg_release_con_forces ....' )
  9010 format(1x,'.... leaving  mnralg_release_con_forces ....' )
  9100 format(1x,'inode',3x'idof',2x,'n1',3x,
-     & 'n2',2x,'sdof',4x,'reaction',4x,'found',4x,'factor',4x,
-     & 'dload before', 4x,'dload after')
- 9110 format(1x, i7, i5, i5, i5, i7, e14.6, l5, f10.3, f15.3, f15.3 )
+     & 'n2',2x,'sdof',4x,'reaction',4x,'found',4x,'factor',7x,
+     & 'load before', 4x,'load after',4x,'dload before', 4x,
+     &  'dload after')
+ 9110 format(1x, i7, i5, i5, i5, i7, e14.6, l5, e15.6, e15.6, e15.6,
+     &  e15.6, e15.6 )
  9120 format(10x,'.... delete release_cons_table on return .....')
 c
       end
