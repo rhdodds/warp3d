@@ -361,7 +361,7 @@ c
       integer i, history_length, info_vector(10)
       double precision
      & half, zero, one, three, e, tol, forty, initial,
-     & beta, ds1, ds2, dn, tn_n1, dn_n1, tshear,
+     & ds1, ds2, dn, tn_n1, dn_n1, tshear,
      & intfmat(mxvl,3), ppr_support(mxvl,30),
      & top_surf_mean_stress, top_surf_mean_eps,
      & bott_surf_mean_stress, bott_surf_mean_eps, comp_multiplier
@@ -505,8 +505,8 @@ c             then dividing by current total displacement jump. this
 c             could be re-designed to simplify w/o introducing the
 c             secant stiffness.
 c
-       call mm04_exp1_secant( span, felem, intfprps, reladis,
-     &                        history,  history1, intfmat,
+       call mm04_exp1_secant( span, intfprps, reladis,
+     &                        history, history1, intfmat,
      &                        elem_killed, mxvl )
 c
 c             diagonal secant stiffness avaiable.  use it to 
@@ -595,7 +595,7 @@ c
       end select
 c
       return
- 1111 format(6(F16.8))
+c
  9100 format('>>>> FATAL ERROR: ramp model not implemented',
      & /,    '                  use exponential model.',
      & /,    '                  job terminated by mm04' )
@@ -663,7 +663,7 @@ c             variables declared here are local to this routine.
 c      
       logical :: here_debug, debug_set_props
 c
-      double precision ::  l_nr, a_now, third, one, dword
+      double precision :: third, one, dword
       integer :: iword(2)
       equivalence (dword, iword)
 c 
@@ -724,9 +724,9 @@ c             elements in block at this integration point
 c
       if( here_debug ) write(iout,9015)
       call mm04_cavit_sig_update( 
-     &     step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
-     &     nonlocal, bcp, intfprps,
-     &     trac_n, trac_n1, reladis, delrlds, history, history1,
+     &     step, span, felem, gpn, iout, mxvl, dtime,
+     &     bcp, intfprps,
+     &     trac_n1, reladis, delrlds, history, history1,
      &     top_surf_stresses_n, bott_surf_stresses_n,
      &     top_nonlocal_vars, bott_nonlocal_vars, 
      &     local_debug, history_length )
@@ -824,7 +824,7 @@ c             locals
 c
       integer :: i
       double precision ::
-     & pi, one_eighty, zero, one, three, four, psi, x, half,
+     & pi, one_eighty, zero, one, three, four, x, half,
      & onept5, user_input_n_power, two
 c      
       data  zero, one,  pi, one_eighty, half, three, four, onept5, two
@@ -975,7 +975,7 @@ c             locals
 c
 
       double precision ::
-     & pi, one_eighty, zero, one, three, four, psi, x, half,
+     & pi, one_eighty, one, three, four, x, half,
      & onept5
       integer :: i, gb_no, abs_elem
       logical :: here_debug, debug_this_elem
@@ -1176,9 +1176,9 @@ c    *                                                              *
 c    ****************************************************************
 c
       subroutine mm04_cavit_sig_update(
-     & step, iter, span, felem, gpn, iout, mxvl, time_n, dtime,
-     & nonlocal, blk_cavity_props, intfprps,
-     & trac_n, trac_n1, reladis, delrlds, history, history1,
+     & step, span, felem, gpn, iout, mxvl, dtime,
+     & blk_cavity_props, intfprps,
+     & trac_n1, reladis, delrlds, history, history1,
      & top_surf_stresses_n, bott_surf_stresses_n,
      & top_nonlocal_vars, bott_nonlocal_vars, local_debug,
      & history_len )
@@ -1189,14 +1189,13 @@ c
 c
 c             parameter declarations
 c
-      integer :: step, iter, span, iout, mxvl, felem, gpn, history_len
+      integer :: step, span, iout, mxvl, felem, gpn, history_len
       double precision ::
-     1 trac_n(mxvl,*), delrlds(mxvl,*), intfprps(mxvl,*),
+     1 delrlds(mxvl,*), intfprps(mxvl,*),
      2 trac_n1(mxvl,*), reladis(mxvl,*), history(span,history_len),
-     3 history1(span,history_len), time_n, dtime,
+     3 history1(span,history_len), dtime,
      4 top_surf_stresses_n(mxvl,6), bott_surf_stresses_n(mxvl,6),
      5 top_nonlocal_vars(mxvl,*), bott_nonlocal_vars(mxvl,*)
-      logical nonlocal
 c      
       type( props_for_cavit), dimension(:) :: blk_cavity_props(mxvl)
       type( props_for_cavit) :: props
@@ -1204,23 +1203,21 @@ c
 c
 c             local variables
 c
-      integer :: i, abs_elem, iter_count, iword(2), old_state,
+      integer :: i, abs_elem, iword(2), 
      &           new_state, current_state, ielem
       double precision ::
      & dword, zero, three, one, toler, six, 
      & half, four, two, third, onept5,
-     & top_surf_mean_stress, top_surf_mean_eps,
-     & bott_surf_mean_stress, bott_surf_mean_eps,
      & sigma_e, sigma_m, term1,term3, triax,
-     & v2_dot, pi, c_0, c_1, c_2, f_0, q,
+     & v2_dot, pi, c_0, c_1, f_0, q,
      & d_strain, c_strain,
      & delta_c_dot, oldreldis, Tn_solid,
-     & comp_multiplier, top_sigma_e, bott_sigma_e,
+     & top_sigma_e, bott_sigma_e,
      & top_sigma_m, bott_sigma_m, sig_top(6), sig_bott(6), 
      & N_n, a_n, b_n, V_n, T_n, ratio_1, ratio_2, f_factor,
-     & q_factor, Lnr, S, pm, delta_T, T_new, v1_dot, V_new, a_new,
+     & q_factor, Lnr, S, pm, T_new, v1_dot, V_new, a_new,
      & N_new, b_new, N_dot, stiff_normal, stiff_shear,
-     & max_ab_ratio, stiff_linear, mark, trial_T_new, LNR_toler,
+     & max_ab_ratio, stiff_linear, mark, LNR_toler,
      & tshear_1, tshear_2, f_sd, ab_ratio, ab_sd_ratio, v_toler,
      & min_c1
 c
@@ -1228,9 +1225,9 @@ c
 c
       double precision, external :: mm04_cavit_mises
 c
-      logical :: elem_killed(mxvl), local_debug, converged, 
+      logical :: local_debug, 
      & nucleation_active, debug_span_loop, compute_solid_local,
-     & iterative_solve, opening, closing, switch_to_linear,
+     & opening, closing, switch_to_linear,
      & debug_newton, open, neutral, penetrated
       logical :: degrade_shear, VVNT, modify_q, include_nucleation,
      &           include_cavity_growth, small_new_cavities,
@@ -1492,7 +1489,6 @@ c
 c
 9000  format(10x,'.... mm04 cavit update. elem, gpn: ',i6,i2)
 9100  format('...... entered mm04_cavit_sig_update ....') 
-9110  format(15x,'i, hist1(i,6), hist1(i,7): ', i4,2f20.9)   
 9200  format(15x,"N_n:                               ",e14.5,
      &     /,15x, "a_n, b_n, V_n:                    ",3e14.5,
      &     /,15x, "T_n, sigma_m, sigma_e:            ",3e14.5,
@@ -1534,7 +1530,7 @@ c
       rotate(1:3,2)  = intfprps(ie,54:56)    ! normal. dir 3 is local
       rotate(1:3,3)  = intfprps(ie,57:59)    ! normal
 c
-      call mm04_tn_solid( rotate, work, Tn_solid, iout, .false. )
+      call mm04_tn_solid( rotate, work, Tn_solid )
 c
       return
       end subroutine mm04_compute_solid_local
@@ -1752,7 +1748,6 @@ c
      &    2e14.5,f4.1,2e14.5 )
 9220  format(15x, "S, nuc active:                    ",e14.5, 5x, l1,
      &    /,15x,  "c_0, c_1:                         " 2e14.5 )
-9230  format(15x, "delta_T, T_(n+1), Newton iters:   ",2e14.5,i5 )
 9232  format(15x, "linear solve, T_(n+1):            ",e14.5)
 9240  format(15x, "v1_dot, V_new:                    ",2e14.5,
      &    /,15x,  "a_new, b_new:                     ",2e14.5,
@@ -1767,17 +1762,7 @@ c
 9320  format(15x, "v1_dot, v2_dot, V_new, a_new, b_new:     ",5e14.5)
 9321  format(15x, "T_new_nuc, Active nucleation?:     ",1e14.5, l1)
 9330  format(15x, "switch to linear stiffness path")
-9600  format(4e14.5)
-
-9800  format('>>>> FATAL ERROR. routine mm04_cavit_sig_update.',
-     & /,    '                  iterations in mm04_nr_itr did not',
-     & /,    '                  converge. ',
-     & /,15x,"element, gpn:                     ",i6,i5,
-     & /,15x,"c_0, c_1:                    ",2e14.5,
-     & /,15x,"delta_c_dot, dtime:               ",2e14.5,
-     & /,15x,"Sigma_0:                          ",e14.5,
-     & /,    "                  job terminated.", // )
-      
+c      
       end subroutine mm04_cavit_std_update
 c
 c    ****************************************************************
@@ -1800,7 +1785,6 @@ c
      &      v1_dot_L, v1_dot_H,
      &      v2_dot_L, v2_dot_H,
      &      v_h_term, beta_signed
-          integer :: L_or_H ! = 0 if L, 1 if H
 c
 c             compute v2_dot_L and v2_dot_H
 c
@@ -1874,7 +1858,6 @@ c
      &    /,15x,  "sigma_m, sigma_e,                           ",2e14.5,
      &    /,15x,  "a, b                                        ",2e14.5,
      &    /,15x,  "beta_signed, v_h_term                       ",2E14.5)
-9201   format("kbc: ", 2i6, i2, 8e14.5) 
 c
       end subroutine mm04_cavit_dV_L_or_H
 c
@@ -1967,8 +1950,6 @@ c
 9000  format('>>>> FATAL ERROR. routine mm04_cavit_qfactor.',
      & /,    '                  a_n .ge. b_n',
      & /,    '                  job terminated.', 2e14.5,// )
-9001  format('elm, gpn, f, q_factor:', i4, 1x, i2, 1x, e14.5, 
-     &   1x, e14.5)
 c
       end subroutine mm04_cavit_qfactor
 c
@@ -2102,80 +2083,6 @@ c
 c
 c    ****************************************************************
 c    *                                                              *
-c    *               subroutine mm04_cavit_newton                   *
-c    *                                                              *
-c    *               written by cj 7/14/2013                        *
-c    *               updated by rhd 11/13/2014                      *
-c    *                                                              *
-c    *     local newton iteration support for cavit option          *
-c    *                                                              *
-c    ****************************************************************
-c
-c
-      subroutine mm04_cavit_newton( iout, c_2, c_1, c_0, T_n,
-     &                        delta_c_dot, delta_T, dtime, Sigma_0, 
-     &                        converged, local_debug, iter_count )
-      implicit none
-c
-c             parameters
-c
-      double precision ::
-     & c_2, c_1, c_0, T_n, delta_c_dot, delta_T, dtime, zero, Sigma_0
-      integer :: iout, iter_count
-      logical :: converged, local_debug
-c
-c             locals
-c
-      double precision ::
-     & toler, delta_T_old, delta_T_new, f, df, two, f_small
-      logical :: test1, test2
-      integer :: max_newton, iter
-      data max_newton, toler, zero, two / 20, 1.d-5, 0.0d0, 2.0d0 /
-c
-c      if( local_debug ) write(iout,9000)
-      converged   = .true.
-      delta_T_old = zero
-      f_small     = toler * abs( c_0 - delta_c_dot + 
-     &              c_1*(T_n + delta_T_old) + 
-     &              c_2*(T_n + delta_T_old)**2 )   
-c      
-      do iter = 1, max_newton
-        f = c_0 - delta_c_dot + c_1*(T_n + delta_T_old) +
-     &      c_2*(T_n + delta_T_old)**2    
-        df = c_1 + two * c_2 * (T_n + delta_T_old) 
-        delta_T_new = delta_T_old - f / df
-        test1 = abs( f ) .le. f_small
-        test2 = abs( delta_T_new - delta_T_old ) .lt. 
-     &           toler*Sigma_0
-c        if( local_debug ) then
-c           write(iout,9010) iter, delta_T_old, f, df, delta_T_new, 
-c     &                      test1, test2, f_small, toler*Sigma_0
-c        end if
-        if( test1 .and. test2 )then
-            delta_T = delta_T_new
-            iter_count = iter
-            return
-        else
-            delta_T_old = delta_T_new
-        end if    
-      end do
-c
-      converged = .false.
-c
-      return
-c    
-9000  format(10x,"... inside  mm04_cavit_newton ...") 
-9010  format(15x, "iter, delta_T_old:                ",i3,e14.5,
-     &    /,15x,  "f, df, delta_T_new:               ",3e14.5,
-     &    /,15x,  "test1, test2, f_small:            ",2l3,e14.5
-     &    /,15x,  "toler*Sigma_0:                    ",e14.5 )
-c
-      end
-      
-
-c
-c    ****************************************************************
-c    *                                                              *
 c    *               subroutine mm04_init                           *
 c    *                                                              *
 c    *                last modified:  8/13/2015 rhd                 *
@@ -2263,7 +2170,7 @@ c   intfprps( ,50) - N_max
 c
 c
       subroutine mm04_init( iout, span, first_elem_in_blk,
-     &                      props, lprops, iprops,
+     &                      props, iprops,
      &                      cohes_type, intfprps, matprp,
      &                      global_to_element_rot )
       implicit none
@@ -2279,7 +2186,6 @@ c
 c
       integer iout, span, first_elem_in_blk, cohes_type
       real props(mxelpr,*)      ! note it is single precision !!!
-      logical lprops(mxelpr,*)  ! same space as props
       integer iprops(mxelpr,*)  ! same space as props
       real matprp(*)            ! note it is single precision !!!
       double precision
@@ -2287,7 +2193,7 @@ c
 c
 c                     locals
 c
-      integer i, j, iand, dummy, innum, cavit_loc, start_col, nvalues
+      integer i, j, iand, cavit_loc, start_col, nvalues
       logical is_ppr, local_debug, is_cavit, bad
       double precision
      &    zero, one, value
@@ -2445,7 +2351,7 @@ c    *     Ref. IJNME 44,1267-1282 (1999)                           *
 c    *                                                              *
 c    ****************************************************************
 c
-      subroutine mm04_exp1_secant( span, felem, intfprps, dis,
+      subroutine mm04_exp1_secant( span, intfprps, dis,
      &                             history, history1, cohmat,
      &                             elem_killed, mxvl )
       implicit integer (a-z)
@@ -2614,14 +2520,13 @@ c
      &        Gam_n, Gam_t, Tn_m, Tt_m, dn, dt, alph, beta, m, n,
      &        dGtn, dGnt, dnb, dtb,
      &        deln, delt, deln_max, delt_max, Tn, Tt, dTn, zero, tol,
-     &        dtol, one, two, Dtt, Dnn, comp_multiplier
+     &        dtol, one, two, comp_multiplier
       logical :: compression
       data zero, one, two, tol / 0.0d00, 1.0d00, 2.0d00, 0.00001d00 /
 c
 c              regular (nonlinear) stress updating
 c              -----------------------------------
 c
- 100  continue
       do i = 1, span
         trac_n1(i,1) = zero
         trac_n1(i,2) = zero
@@ -2732,7 +2637,6 @@ c
       end if
 c
       return
- 9100 format('... compute PPR tractions, step 1, iter 0')
  9200 format('... updated tractions, element in block: ', i4, /,
      &    10x, ' del(1-3):  ',3f15.10,/
      &    10x, ' tract(1-3):',3f15.4 )
@@ -3024,7 +2928,7 @@ c
       integer :: relem, elnum, hist_size, blockno, cohesive_elem,
      &           cohesive_type
       integer :: elem_type, felem, mat_type, int_points, span
-      logical :: do_a_block, do_block, local_debug
+      logical :: do_a_block, local_debug
       double precision :: zero
       data zero / 0.0d00 /
 c      
@@ -3210,7 +3114,7 @@ c
       state_labels(8)  = "Tn (max)"
       state_labels(9)  = "Tshear"
       state_labels(10) = "Ts (max)"
-      state_labels(11) = "v2_dot/v1_dot"      
+      state_labels(11) = "v2d/v1d"      
 c      
       state_descriptors(1)  = "Normalized cavity density"
       state_descriptors(2)  = "Normalized cavity radius"
@@ -3251,18 +3155,16 @@ c *                                                                 *
 c *******************************************************************
 c
 c
-      subroutine mm04_tn_solid( rotate, gsig, tn_solid, iout, debug )
+      subroutine mm04_tn_solid( rotate, gsig, tn_solid )
       implicit none
 c
-      integer :: iout      
       double precision :: 
      & rotate(3,3), gsig(6), tn_solid
-      logical ::   debug
 c
 c                       locals
 c
       double precision :: 
-     & nx, ny, nz, tx, ty, tz, tn   
+     & nx, ny, nz, tx, ty, tz   
 c
 c      global(1,1) = gsig(1)   !  comments for reference to ordering
 c      global(2,1) = gsig(4) ! xy
@@ -3626,7 +3528,7 @@ c
       debug_exp1 = .false.
       call cnst4_exp1_tan( span, mxvl, felem, elem_killed,
      &                        intfprps, reladis,
-     &                        history, history1, intfmat,
+     &                        history, intfmat,
      &                        debug_exp1, iout )
 c
       do i = 1, span
@@ -3654,7 +3556,7 @@ c
       call mm04_init_ppr( span, intfprps, ppr_support,
      &                    elem_killed, iout, mxvl )
       call cnst4_ppr( span, ppr_support, reladis, history,
-     &                history1, intfmat, elem_killed,
+     &                intfmat, elem_killed,
      &                debug_ppr, felem, iout, mxvl )
       do i = 1, span
         cep(i,1:3,1:3) = intfmat(i,1:3,1:3)
@@ -3743,14 +3645,14 @@ c    ****************************************************************
 c
       subroutine cnst4_exp1_tan( span, mxvl, felem, elem_killed,
      &                           intfprps, dis, history,
-     &                           history1, tanmat, local_debug, iout )
+     &                           tanmat, local_debug, iout )
       implicit integer (a-z)
 c
 c                   parameter declarations
 c
       double precision
      & intfprps(mxvl,*), tanmat(mxvl,3,3), dis(mxvl,*),
-     & history(span,*), history1(span,*)
+     & history(span,*)
        logical local_debug, elem_killed(*)
 c
 c                   locally defined
@@ -3933,13 +3835,13 @@ c    *                                                              *
 c    ****************************************************************
 c
       subroutine cnst4_ppr( span, ppr_support, del, history,
-     &                      history1, tanmat, elem_killed,
+     &                      tanmat, elem_killed,
      &                      local_debug, felem, iout, mxvl )
       implicit none
       integer :: i, span, mxvl, felem, iout
       double precision
      &        ppr_support(mxvl,*), del(mxvl,*), tanmat(mxvl,3,3),
-     &        history(span,*), history1(span,*)
+     &        history(span,*)
       logical elem_killed(*), local_debug
 c
       double precision
@@ -4184,7 +4086,7 @@ c                   locally defined. some are automatic arrays
 c
       integer :: i
       double precision ::
-     & zero, e, beta, one, ppr_support(mxvl,20)
+     & zero, e, one, ppr_support(mxvl,20)
       logical :: elem_killed(mxvl), local_debug
 c
       data zero, e, one / 0.0d0, 2.7182818284d0, 1.0d0 /
@@ -4334,7 +4236,7 @@ c             Option 6: PPR cohesive model.
 c             Ref. JMPS 57 (6), 891-908 (2009)
 c
       call lcnst4_ppr( span, cep, intfprps, ppr_support,
-     &                 elem_killed, iout, mxvl, nstr )
+     &                 elem_killed, iout, mxvl )
 c
 c
       case( 7 )
@@ -4344,7 +4246,7 @@ c             Option 7: cavitation-based cohesive model.
 c             Ref. JMPS. 1998;47:99–139
 c
       call lcnst4_cavit( span, cep, dtime, intfprps,
-     &                   iout, mxvl, nstr, gpn, felem )
+     &                   iout, mxvl, gpn, felem )
 c
 c
       case default
@@ -4365,17 +4267,12 @@ c
 c
       return
 c
- 9100 format('>>>> FATAL ERROR: ramp option not implemented',
-     & /,    '                  use ppr or exponential option.',
-     & /,    '                  job terminated by lcnst4' )
  9200 format('>>>> FATAL ERROR: bilinear option not implemented',
      & /,    '                  use ppr or exponential option.',
      & /,    '                  job terminated by lcnst4' )
  9110 format('>>>> FATAL ERROR: exponential 2 model not implemented',
      & /,    '                  use ppr or exponential option.',
      & /,    '                  job terminated by lcnst4' )
- 9300 format(/," ...... calling lcnst4_cavit")
- 9310 format(/," ...... returned from lcnst4_cavit")
  9500 format(/," ...... entered lcnst4 .....",
      1 /,10x,"step, cohes_type, span, mxvl, nstr: ",i6,i3,i4,i4,i3,
      2 /,10x,"gpn, felem, time_n, dtime: ",i3,i8, e14.6,1x,e14.6 )
@@ -4401,10 +4298,10 @@ c    *                                                              *
 c    ****************************************************************
 c
       subroutine lcnst4_ppr( span, cep, intfprps, ppr_support,
-     &                       elem_killed, iout, mxvl, nstr )
+     &                       elem_killed, iout, mxvl )
       implicit none
 c
-      integer :: i, span, mxvl, nstr, iout
+      integer :: i, span, mxvl, iout
       double precision ::
      &         cep(mxvl,6,6), intfprps(mxvl,*),
      &         ppr_support(mxvl,20)
@@ -4463,7 +4360,7 @@ c    ****************************************************************
 c
 
       subroutine lcnst4_cavit( span, cep, dtime, intfprps, 
-     &                         iout, mxvl, nstr, gpn, felem )
+     &                         iout, mxvl, gpn, felem )
 c     
       use mod_mm04_cavity, only : props_for_cavit
 c      
@@ -4471,7 +4368,7 @@ c
 c
 c             parameters
 c
-      integer :: span, mxvl, nstr, iout, gpn, felem
+      integer :: span, mxvl, iout, gpn, felem
       double precision ::
      & cep(mxvl,6,6), dtime, intfprps(mxvl,*)
 c     
@@ -4624,13 +4521,13 @@ c
 c              local variables
 c
       integer :: diskin, kout, read_flg, ie, igb, elem, 
-     &           i, j, nowline, nlines_read, gb_num
+     &           i, j, nowline, gb_num
       double precision :: zero, 
      &                    a_0, b_0, eta_b, diffusion,
      &                    n_power, psi_angle, sigma_0, f_n, n_max, 
      &                    nuc_stress_power, comp_mult, lin_stiff
 c        
-      logical :: process_now, debug_local, ok, ok1, ok2, ok3,
+      logical :: process_now, debug_local, ok, ok1, ok2,
      &           messages, logs(10)
       character :: gb_data_file_name*100, work_str*200,
      &             uexternal_file_name*100, marker*2, asterik*1
@@ -4871,13 +4768,10 @@ c
      & /,10x,"lop, lrestart: ",2i3,
      & /,10x,"time(1),(2): ",2e16.6,2x,"dtime: ",e16.6,
      & /,10x,"kstep, kinc: ",2i3,//)
- 9060 format( 5x,"... completed reading file: ",a )
- 9100 format( a )
  9200 format(/,'>>>>> FATAL ERROR: in uexternaldb for ANL-Cavity. No',
      & ' available device numbers',/,
      &         '                   job aborted.'//)
- 9208 format(/,'>>>> Error: file: ',a,
-     & /,11x,' does not exist. No ANL-Cavity solution possible...'//)
+
  9210 format(/,'>>>> Error: file for GB data: ',a,
      & /,11x,' does not exist. No ANL-Cavity solution possible...'//)
  9300 format(/,'>>>> FATAL ERROR: replacement of ~/ in file name',
@@ -4890,10 +4784,6 @@ c
      & /,18x,
      & 'error in reading GB data file. Fortran I/O error:       ',i10,
      & /,18x,'at or very near data file line:                   ',i10,
-     & /,18x,'job aborted.'//)
- 9400 format(/,'>>>> FATAL ERROR: in uexternaldb for ANL cavity',
-     & /,18x,
-     & 'incremental time is <= 1.0d-03 : ',e14.6,
      & /,18x,'job aborted.'//)
  9405 format(3x,"... GB data file opened: ",a )
  9410 format(3x,"... number of model elements:      ",i10,
