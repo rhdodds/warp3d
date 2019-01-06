@@ -58,13 +58,13 @@ c
       type(crystal_state) :: cc_n, cc_np1
 c
       integer :: i, c, now_element, iloop, number_crystals, crys_no
-      double precision :: sig_avg(6), se(6), p_strain_ten_c(6),
+      double precision :: sig_avg(6), p_strain_ten_c(6),
      &                    p_strain_ten(6),
      &                    tang_avg(6,6), tang_avg_vec(36), ! see equiv
      &                    slip_avg(length_comm_hist(5))
       double precision :: t_work_inc, p_work_inc,p_strain_inc,
      &                    n_avg, p_strain_avg
-      logical :: debug, gpall, locdebug, mat_debug
+      logical :: debug, locdebug, mat_debug
       equivalence( tang_avg, tang_avg_vec )
 c
       debug = .false.
@@ -482,7 +482,7 @@ c
       double precision :: history(span,*), angles(*),
      &                    user_initial_stresses(*)
 c
-      integer :: a, sh, eh, sh2, eh2, len1, len2
+      integer :: sh, eh, sh2, eh2, len1, len2
       double precision :: work_hist1(hist_size),
      &                    work_hist2(hist_size) ! automatics
 c
@@ -673,8 +673,8 @@ c                 locals
 c
       integer :: len, i, info, gpp
       logical :: debug, gpall, locdebug
-      double precision, dimension(6,6) :: J11, JJ, JR, JA, JB, JK
-      double precision, dimension(6) :: d_mod, d_barp, tw, work_vec
+      double precision, dimension(6,6) :: J11, JJ, JR, JA, JB
+      double precision, dimension(6) :: work_vec
       double precision, dimension(6,props%num_hard) :: ed, J12
       double precision, dimension(props%num_hard,6) :: J21
       double precision, dimension(props%num_hard,12) :: beta
@@ -688,7 +688,6 @@ c
       double precision, dimension(6,props%nslip) :: dgammadd
       double precision,
      &    dimension(props%num_hard,props%num_hard) :: J22, alpha
-      double precision :: alpha1
 c!DIR$ ASSUME_ALIGNED Jmat:64
 c
       debug    = .false.     ! props%debug
@@ -836,7 +835,7 @@ c
 c
 c              locals
 c
-      integer :: i, j, k, s, t
+      integer :: i, t
       double precision :: RE(6,6), rw(3,3), rwc(3,3), trans_nRp(3,3),
      &                    curv(3,3,3), cn(3), tm(3), const, t1, t2,
      &                    work(3,3), work_vec(3)
@@ -1176,8 +1175,7 @@ c
       type (crystal_state) :: n, np1
 c
       double precision, dimension(3,3) :: full_rot, work1
-      double precision :: psiK, phiK, thetaK, psi, phi, theta,
-     &                    pps, pms
+      double precision :: psiK, phiK, thetaK, psi, phi, theta
       double precision, external :: mm10_atan2
       double precision, parameter :: tol=1.0d-16
 c
@@ -1568,7 +1566,7 @@ c
      &                    onerot(9), local_jac(3,3), local_Rps(9),
      &                    grads_vec(27)
       equivalence( grads, grads_vec )
-      double precision :: weight, fact
+      double precision :: weight
 c
 c                 constants
 c
@@ -2647,7 +2645,7 @@ c
 c              locals
 c
       type(crystal_state) :: curr
-      integer :: cuts, i, gpp,  faili(10), len1
+      integer :: cuts, gpp,  faili(10), len1
       double precision :: stress(6), ostress(6), R1(6), frac, step,
      &                    failr(10), temp1, temp2
       logical :: debug, gpall, locdebug
@@ -2880,13 +2878,11 @@ c
 c
 c                 locals
 c
-      integer :: iter, miter, info, ls, gpp, ttind, maxfev,
-     &           nfev, njev, i
-      double precision :: nR, inR, atol, rtol, uB, alpha, ls1, ls2,
+      integer :: iter, miter, info, ls, gpp, ttind, maxfev
+      double precision :: nR, inR, atol, rtol, alpha, ls1, ls2,
      &                    nlsx, nRs, dt, cos_ang, xetol, xtol1,
-     &                    zerotol, dxerr, nR1, inR1, atol1, rtol1,
-     &                    factor, mm10_enorm, t1, t2, dtrace,
-     &                    stepmx
+     &                    dxerr, nR1, inR1, atol1, rtol1,
+     &                    t1, t2, dtrace
 c
       double precision, dimension(6,6) :: J11
 c
@@ -2896,7 +2892,7 @@ c
 c                 automatic vectors-arrays
 c
       double precision, dimension(6+props%num_hard) :: R, x, dx,
-     &                xnew, g, work_vec1
+     &                xnew, work_vec1
       integer, dimension(6+props%num_hard) :: ipiv
       double precision, dimension(props%num_hard) :: x2
       double precision :: trans_J(ncJ,nrJ), minus_J(nrJ,ncJ)
@@ -3315,7 +3311,7 @@ c
       type(crystal_state) :: np1, n
 c
       double precision :: wbarp(3), wbarp_full(3,3), expw(3,3),
-     &                    vec1(max_uhard), vec2(max_uhard), w(3,3)
+     &                    vec1(max_uhard), vec2(max_uhard)
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64
 c
       call mm10_form_wbarp( props, np1, n, vec1, vec2, np1%stress,
@@ -3384,7 +3380,6 @@ c
       double precision, dimension(3,3), intent(in) :: w
       double precision, dimension(3,3), intent(out) :: a
       double precision :: alpha
-      integer :: i
 c!DIR$ ASSUME_ALIGNED w:64, a:64
 c
 c              compute alpha
@@ -3508,11 +3503,12 @@ c     Compute manually
             ed = ed + dif_slp(i)*np1%ms(1:6,i)
           end do
 c     Isotropic diffusion
-        work_vec1 = zero
-	if ( abs(props%cp_031-one)<1.0e-5 ) then
-	  call mm10_halite_formRpp( props, work_vec1, np1%stress, np1%tinc )
-          ed = ed - work_vec1 ! Ran's value is negative
-	end if
+      work_vec1 = zero
+      if ( abs(props%cp_031-one)<1.0e-5 ) then
+       call mm10_halite_formRpp( props, work_vec1, 
+     &                           np1%stress, np1%tinc )
+       ed = ed - work_vec1 ! Ran's value is negative
+      end if
       np1%ed = ed / np1%tinc
 c          store the plastic strain increment for nonlocal averages
       t1 = ed(1)**2 + ed(2)**2 + ed(3)**2
@@ -3805,7 +3801,6 @@ c
       subroutine mm10_a_mult_type_2t( a, b, c )
       implicit none
       double precision :: a(6), b(6,6), c(6)
-      integer :: j
 c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64
 c
 c                     a = trans( [b] ) * c
@@ -3958,8 +3953,8 @@ c
       subroutine mm10_a_copy_vector( a, b, nterms )
       implicit none
       integer :: nterms
-      double precision :: a(nterms), b(nterms), c(nterms)
-c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64
+      double precision :: a(nterms), b(nterms)
+c!DIR$ ASSUME_ALIGNED a:64, b:64
 c
       a = b
 c
