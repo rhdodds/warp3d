@@ -728,13 +728,13 @@ c
 c                                                                               
 c        3                                                                      
 c         o                                                                     
-c         |  \                                                                  
-c         |    \                                                                
-c         |      \                                                              
-c         |        \                                                            
-c         |          \                                                          
-c         |            \                                                        
-c         |              \                                                      
+c         |\
+c         |    \
+c         |      \
+c         |      \
+c         |       \
+c         |         \
+c         |           \
 c         o - - - - - - -  o                                                    
 c        1                  2                                                   
 c                                                                               
@@ -794,13 +794,13 @@ c   6-noded bottom surface of the 12-noded triangular element:
 c                                                                               
 c       3                                                                       
 c         o                                                                     
-c         |  \                                                                  
-c         |    \                                                                
+c         | \
+c         |  \
 c         |      \  5                                                           
 c       6 o        o                                                            
-c         |          \                                                          
-c         |            \                                                        
-c         |              \                                                      
+c         |         \
+c         |          \
+c         |            \
 c         o - - - o - - - o                                                     
 c        1        4        2                                                    
 c                                                                               
