@@ -93,7 +93,7 @@ c ***** START: Add new Constitutive Models into this block *****
      &                      tt, h, gp )
         case( 8 ) !Armstrong-Frederick
            call mm10_h_arfr( props, np1, n, vec1, vec2, stress,
-     &                      tt, h, gp )
+     &                      tt, h )
         case( 9 ) ! DJGM
            call mm10_h_DJGM( props, np1, n, vec1, vec2, stress,
      &                      tt, h )
@@ -194,7 +194,6 @@ c
       double precision, dimension(6,props%nslip) :: symtqmat
       double precision, dimension(props%nslip) :: dgammadtau
       double precision :: wp(3), work_vec(6), Iw(6,6)
-      double precision :: rs
 c!DIR$ ASSUME_ALIGNED vec1:64, vec2:64, arr1:64, arr2:64, stress:64
 c!DIR$ ASSUME_ALIGNED tt:64, J11:64
 cc
@@ -244,10 +243,10 @@ c
       call mm10_IW (wp, Iw )
       J11 = J11 + Iw
 c
-c	add J of creep strain due to pressure precipitation (Ran)
-	if ( abs(props%cp_031-one)<1.0e-5 ) then
-		call mm10_halite_formJpp( props, J11, np1%tinc )
-	end if
+c      add J of creep strain due to pressure precipitation (Ran)
+      if ( abs(props%cp_031-one)<1.0e-5 ) then
+            call mm10_halite_formJpp( props, J11, np1%tinc )
+      end if
 c
       do i = 1, 6
         J11(i,i) = J11(i,i) + one
@@ -286,8 +285,6 @@ c
 c
       integer :: i, len
       logical :: debug
-      double precision :: dgam, mm10_slipinc
-      double precision, dimension(6) :: symTW
       double precision, dimension(6) :: tempmat
       double precision :: work_vec(max_uhard)
 c
@@ -605,7 +602,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
-      integer :: i, k
+      integer :: k
       logical :: debug
 c
       complex(kind=real64), dimension(6) :: A, Ri
@@ -672,7 +669,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       complex(kind=real64), dimension(max_uhard) :: ivec1,ivec2
 c
-      integer :: i, k
+      integer :: k
       logical :: debug
 c
       complex(kind=real64), dimension(6) :: Ri, A
@@ -738,7 +735,7 @@ c
       double precision, dimension(props%num_hard,6) :: J21
       double precision, dimension(props%num_hard) :: tt
       complex(kind=real64), dimension(max_uhard) :: ivec1,ivec2
-      integer :: i, k
+      integer :: k
       logical :: debug
 c
       complex(kind=real64), dimension(6) :: A
@@ -804,7 +801,7 @@ c
       double precision, dimension(props%num_hard) :: tt
       complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
 c
-      integer :: i, k
+      integer :: k
       logical :: debug
 c
       complex(kind=real64), dimension(6) :: A
@@ -1086,13 +1083,13 @@ c
       call mm10_symSW( stress, wp, symTW) 
 c
       work_vec1 =  np1%D - dbarp
-	if ( abs(props%cp_031-one)<1.0e-5 ) then
-	  call mm10_halite_formRpp( props, work_vec1, stress, np1%tinc )
-	end if
+      if ( abs(props%cp_031-one)<1.0e-5 ) then
+        call mm10_halite_formRpp( props, work_vec1, stress, np1%tinc )
+      end if
       call mm10_b_mult_type_2( work_vec2, props%stiffness, work_vec1 )
       R1 = stress - n%stress - work_vec2 + two * symTW
 c
-c              original code
+c            original code
 c      
 c      R1 = stress - n%stress - matmul(props%stiffness, work_vec1) 
 c     &      + two * symTW
@@ -1735,7 +1732,6 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: rs
       double precision, dimension(props%nslip) :: dgammadtau
       double precision, dimension(props%num_hard) :: tt
 c
@@ -1810,7 +1806,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, slipinc
+      double precision :: tt(*), slipinc
       integer :: i
 c
       double precision :: rs
@@ -1818,7 +1814,7 @@ c
 c!DIR$ ASSUME_ALIGNED stress:64
 c
       rs = mm10_rs( props, np1, n, stress, tt, i )
-      slipinc = np1%dg/tt * dabs(rs/tt)**(props%rate_n-one)*rs
+      slipinc = np1%dg/tt(1) * dabs(rs/tt(1))**(props%rate_n-one)*rs
 c
       return
       end
@@ -1842,7 +1838,7 @@ c
       type(crystal_state) :: np1, n
 c
       integer :: i      
-      double precision :: stress(6), tt
+      double precision :: stress(6), tt(*)
 c
       double precision :: mm10_rs
 c!DIR$ ASSUME_ALIGNED stress:64
@@ -1865,7 +1861,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       integer :: i
-      complex(kind=real64) :: stress(6), tt
+      complex(kind=real64) :: stress(6), tt(*)
 c
       complex(kind=real64) :: mm10_rsi
 c!DIR$ ASSUME_ALIGNED stress:64
@@ -1895,7 +1891,6 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(1) :: tt, h
       double precision :: h_term
-      double precision :: dg
       integer :: i
 c
       double precision :: slipinc
@@ -1956,18 +1951,20 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(1) :: tt
-      double precision :: etau, h_term
+      double precision, dimension(*) :: tt
+      double precision :: h_term
+      double precision, 
+     &      dimension(props%num_hard,props%num_hard) :: etau
 c
       double precision :: slipinc
       integer :: i
 c
-      etau = zero
+      etau(1,1) = zero
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
         h_term = one - (tt(1)-props%tau_y)/props%tau_v
      &           + np1%tau_l(i)/(tt(1)-props%tau_y)
-        etau = etau + ( props%voche_m * 
+        etau(1,1) = etau(1,1) + ( props%voche_m * 
      &      (-one/props%tau_v - np1%tau_l(i)/
      &      (tt(1)-props%tau_y)**2) * abs(slipinc)/abs(h_term)
      &      - abs(slipinc) * props%rate_n/tt(1) * 
@@ -1975,8 +1972,8 @@ c
      &      * sign(one,slipinc) ) * (abs(h_term)**props%voche_m)
       end do
 
-      etau = props%theta_0*etau
-      etau = one - etau
+      etau(1,1) = props%theta_0 * etau(1,1)
+      etau(1,1) = one - etau(1,1)
 c
       return
       end subroutine
@@ -1990,11 +1987,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(1) :: tt
+      double precision, dimension(*) :: tt
       double precision, dimension(6) :: ed
-c
-      double precision, dimension(1) :: h
-      double precision, dimension(6) :: d_mod
 c
       ed = zero
 c
@@ -2010,7 +2004,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, rs
+      double precision :: tt(*), rs
       double precision, dimension(props%nslip) :: dgammadtau
 c
       double precision :: mm10_rs
@@ -2020,7 +2014,7 @@ c
       do s=1,props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, s)
         dgammadtau(s) = dabs(rs)**(props%rate_n-one)
-        dgammadtau(s) = np1%dg*props%rate_n/tt**(props%rate_n)
+        dgammadtau(s) = np1%dg*props%rate_n/tt(1)**(props%rate_n)
      &     *dgammadtau(s)
 c   additional term for diffusion
         dgammadtau(s) = dgammadtau(s) + np1%tinc*props%iD_v
@@ -2037,16 +2031,13 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, dgam
+      double precision :: tt(*), dgam
       double precision, dimension(props%nslip,1) :: dgammadtt
-c
-      double precision :: slipinc
-c
       integer :: s
 c
       do s=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, s, dgam)
-        dgammadtt(s,1) = -props%rate_n/tt * dgam
+        dgammadtt(s,1) = -props%rate_n/tt(1) * dgam
       end do
 c
       return
@@ -2061,8 +2052,8 @@ c           Derivative of sliprate wrt strain increment
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, D, d_mod
-      double precision :: tt, alpha, dgam
+      double precision, dimension(6) :: stress, D
+      double precision :: tt(*)
       double precision, dimension(props%nslip,6) :: dgammadd
 c
       dgammadd = zero
@@ -2119,7 +2110,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt
+      double precision :: tt(*)
       double precision, dimension(6) :: et
 c
       double precision :: mm10_rs
@@ -2128,7 +2119,8 @@ c
       integer :: i
 c
       cta = (props%mu_0/
-     &      np1%mu_harden)*tt - (props%mu_0/np1%mu_harden)*props%tau_a -
+     &      np1%mu_harden)*tt(1) -
+     &      (props%mu_0/np1%mu_harden)*props%tau_a -
      &      np1%tau_y
       ct = one - cta/np1%tau_v
       et = zero
@@ -2140,7 +2132,7 @@ c
 
       et =  props%theta_0 * 
      &      (np1%mu_harden/props%mu_0)*et*props%rate_n*
-     &      np1%dg/tt**props%rate_n
+     &      np1%dg/tt(1)**props%rate_n
 
 c
       return
@@ -2155,32 +2147,33 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, etau
+      double precision :: tt(*)
+      double precision, 
+     &      dimension(props%num_hard,props%num_hard) :: etau
 c
-      double precision :: slipinc
-c
-      double precision :: ur, s, ct, cta
       integer :: i
+      double precision :: slipinc, ur, ct, cta
 c
       cta = (props%mu_0/
-     &      np1%mu_harden)*tt - (props%mu_0/np1%mu_harden)*props%tau_a -
+     &      np1%mu_harden)*tt(1) -
+     &      (props%mu_0/np1%mu_harden)*props%tau_a -
      &      np1%tau_y
       ct = one - cta/np1%tau_v
 c
       ur = np1%mu_harden / props%mu_0
 c
-      etau = zero
+      etau(1,1) = zero
       do i=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, i, slipinc)
-        etau = etau+(props%voche_m*(one/np1%tau_v+np1%tau_l(i)/
-     &         cta**2)*
-     &      (ct+np1%tau_l(i)/cta)**(-one) + ur*props%rate_n/tt)*
+        etau(1,1) = etau(1,1) + (props%voche_m*
+     &    (one/np1%tau_v+np1%tau_l(i)/ cta**2)*
+     &      (ct+np1%tau_l(i)/cta)**(-one) + ur*props%rate_n/tt(1))*
      &      (ct+np1%tau_l(i)/cta)**(props%voche_m)*
      &      dabs(slipinc)
       end do
 c
-      etau = -props%theta_0*etau
-      etau = one - etau
+      etau(1,1) = -props%theta_0 * etau(1,1)
+      etau(1,1) = one - etau(1,1)
 
       return
       end subroutine
@@ -2194,12 +2187,12 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt
+      double precision :: tt(*)
       double precision, dimension(6) :: ed
 c
       double precision :: slipinc
 c
-      double precision :: dslip, lnv, lny, dgc, ty, tv, mnp0, m0np, sc
+      double precision :: lnv, lny, dgc, ty, tv, mnp0, sc
       double precision, dimension(6) :: d_mod, dydd, dvdd
       integer :: s
 c
@@ -2238,7 +2231,7 @@ c
 c     Form a couple more common components
 c
       mnp0 = np1%mu_harden / props%mu_0
-      sc = tt/mnp0 - props%tau_a/mnp0 - np1%tau_y
+      sc = tt(1)/mnp0 - props%tau_a/mnp0 - np1%tau_y
 c
 c     Glue everything together
 c
@@ -2272,7 +2265,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, rs
+      double precision :: tt(*), rs
       double precision, dimension(props%nslip) :: dgammadtau
 c
       double precision :: mm10_rs
@@ -2282,7 +2275,7 @@ c
       do s=1,props%nslip
         rs = mm10_rs(props, np1, n, stress, tt, s)
         dgammadtau(s) = dabs(rs)**(props%rate_n-one)
-        dgammadtau(s) = np1%dg*props%rate_n/tt**(props%rate_n)
+        dgammadtau(s) = np1%dg*props%rate_n/tt(1)**(props%rate_n)
      &     *dgammadtau(s)
       end do
 c
@@ -2297,16 +2290,13 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision :: tt, dgam
+      double precision :: tt(*), dgam
       double precision, dimension(props%nslip,1) :: dgammadtt
-c
-      double precision :: slipinc
-c
       integer :: s
 c
       do s=1,props%nslip
         call mm10_slipinc(props, np1, n, stress, tt, s, dgam)
-        dgammadtt(s,1) = -props%rate_n/tt * dgam
+        dgammadtt(s,1) = -props%rate_n/tt(1) * dgam
       end do
 c
       return
@@ -2322,11 +2312,8 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress, D, d_mod
-      double precision :: tt, alpha, dgam
+      double precision :: tt(*), alpha, dgam
       double precision, dimension(6,props%nslip) :: dgammadd
-c
-      double precision :: slipinc
-c
       integer :: s
 c
       d_mod = D
@@ -2386,7 +2373,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha
       double precision :: slipinc
@@ -2420,7 +2407,7 @@ c
       type(crystal_state) :: np1, n
       integer both      
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
@@ -2460,7 +2447,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       complex(kind=real64), dimension(6) :: stress
-      complex(kind=real64), dimension(props%num_hard) :: tt, h
+      complex(kind=real64), dimension(props%num_hard) :: tt
       complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
       complex(kind=real64) :: slipinc
@@ -2484,11 +2471,11 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
-      double precision :: h, slipinc, mm10_rs
+      double precision :: slipinc, mm10_rs
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
+     &  p_e, q_e, Qslip, v_attack, rs,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
@@ -2562,8 +2549,8 @@ c
       logical :: mat_debug
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rs,
+     &  rhoF, rhoP, tpass, rho,
      &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4
@@ -2657,12 +2644,12 @@ c
       type(crystal_state) :: np1, n
       complex(kind=real64), dimension(6) :: stress
       complex(kind=real64), dimension(props%num_hard) :: tt, temp
-      complex(kind=real64) :: h, slipinc, mm10_rsi
-      integer :: alpha, i
+      complex(kind=real64) :: slipinc, mm10_rsi
+      integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44
-      complex(kind=real64) :: rs,
+     &  p_e, q_e, Qslip, v_attack
+      complex(kind=real64) :: rs, bb,
      &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
@@ -2710,11 +2697,11 @@ c
 c            Evaluate the slip rate equation
         if(dreal(fract).gt.one) then
             ! linear extrapolation past the too-high stress (rs) value
-            b = gamma_0
+            bb = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta))
+            m = bb * (-q_e*(Qslip/k/theta))
      &         * (- p_e) * dsign(one,dreal(rs))/tcut
-            y = m*x + b
+            y = m*x + bb
             slipinc = dt * y
         elseif(dabs(dreal(rs)).gt.zero) then
         slipinc = dt * gamma_0 * dsign(one,dreal(rs))
@@ -2742,10 +2729,10 @@ c
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
+     &  rho_n, 
      &  c4, c5, c6, c7, c8, v, Qbulk
       complex(kind=real64) :: rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rhoF, rhoP, tpass, rho,
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
      &  tem1, tem2, tem3
@@ -2836,7 +2823,7 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, zerosV
-      double precision :: h, slipinc, mm10_rs
+      double precision :: slipinc
       integer :: alpha
 c
       complex(kind=real64), dimension(6) :: stressi
@@ -2871,9 +2858,9 @@ c
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rs,
+     &  rhoF, rhoP, tpass, rho,
+     &  c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -2978,9 +2965,9 @@ c
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rs,
+     &  rhoF, rhoP, tpass, rho,
+     &  c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM
@@ -3119,12 +3106,12 @@ c
       double precision :: rs
       double precision, dimension(props%nslip) :: dgammadtau
       double precision, dimension(props%num_hard) :: tt,rhoFs,rhoPs
-      double precision :: h, slipinc, mm10_rs
+      double precision ::  mm10_rs
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  p_e, q_e, Qslip, v_attack, dfract,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, m,
      &  dslipinc, slipexp
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
@@ -3213,8 +3200,8 @@ c
       integer :: alpha, beta
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, dfract,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  p_e, q_e, Qslip, v_attack, dfract,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract,
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
      &  dtcut, dtpass
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -3368,7 +3355,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha
       double precision :: slipinc
@@ -3400,7 +3387,7 @@ c
       type(crystal_state) :: np1, n
       integer :: both
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
@@ -3440,7 +3427,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       complex(kind=real64), dimension(6) :: stress
-      complex(kind=real64), dimension(props%num_hard) :: tt, h
+      complex(kind=real64), dimension(props%num_hard) :: tt
       complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       integer :: alpha
       complex(kind=real64) :: slipinc
@@ -3464,12 +3451,12 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt
-      double precision :: h, slipinc, mm10_rs
+      double precision :: slipinc, mm10_rs
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, tau0, 
-     &  p_e, q_e, Qslip, v_s, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  p_e, q_e, Qslip, v_s, rs,
+     &  rhoP, gamma_0, tpass, tcut, fract, x, y, m,
      &  fM, lamda, G0, rhoM
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
@@ -3549,14 +3536,14 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h,
+      double precision, dimension(props%num_hard) :: tt(*), h,
      &   rhoFs,rhoPs
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha, gp
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rs,
+     &  rhoF, rhoP, tpass, rho,
      &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  tem1, tem2, tem3, tem4, G0
@@ -3648,14 +3635,14 @@ c
       type(crystal_state) :: np1, n
       complex(kind=real64), dimension(6) :: stress
       complex(kind=real64), dimension(props%num_hard) :: tt, temp
-      complex(kind=real64) :: h, slipinc, mm10_rsi
-      integer :: alpha, i
+      complex(kind=real64) :: slipinc, mm10_rsi
+      integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, tau0, 
-     &  p_e, q_e, Qslip, v_s, K11, K12, K44
+     &  p_e, q_e, Qslip, v_s, G0
       complex(kind=real64) :: rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
-     &  fM, lamda, G0, rhoM
+     &  rhoP, gamma_0, tpass, tcut, fract, x, y, m, bb,
+     &  fM, lamda, rhoM
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
 c
@@ -3707,11 +3694,11 @@ c
 c Evaluate the slip rate equation
         if(dreal(fract).gt.one) then
             ! linear extrapolation past the too-high stress (rs) value
-            b = gamma_0
+            bb = gamma_0
             x = fract
-            m = b * (-q_e*(Qslip/k/theta))* (- p_e) *
+            m = bb * (-q_e*(Qslip/k/theta))* (- p_e) *
      &           dsign(one,dreal(rs))/tcut
-            y = m*x + b
+            y = m*x + bb
             slipinc = dt * y
         elseif(dabs(dreal(rs)).eq.zero) then
             slipinc = zero
@@ -3742,13 +3729,13 @@ c
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rho_n, 
+     &  rho_n, G0,
      &  c4, c5, c6, c7, c8, v, Qbulk
       complex(kind=real64) :: rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
+     &  rhoF, rhoP, tpass, rho,
      &  mm10_rsi,
      &  ddipole, rhoM, slipinc, gammadot, 
-     &  tem1, tem2, tem3, G0
+     &  tem1, tem2, tem3
        !double precision, dimension(props%num_hard,props%num_hard)
        !&   :: Gmat, Hmat
 c Load some material parameters
@@ -3838,7 +3825,7 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, zerosV
-      double precision :: h, slipinc, mm10_rs
+      double precision :: slipinc
       integer :: alpha
 c
       complex(kind=real64), dimension(6) :: stressi
@@ -3873,10 +3860,9 @@ c
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rs,
+     &  rhoF, rhoP, tpass, rho,
+     &  c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, G0
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -3983,9 +3969,9 @@ c
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
       double precision :: dt, k, theta, G, b, c1, c2, c3, 
-     &  p_e, q_e, Qslip, v_attack, K11, K12, K44, rs,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, rho,
-     &  rho_n, c4, c5, c6, c7, c8, v, mm10_rs,
+     &  rs,
+     &  rhoF, rhoP, tpass, rho,
+     &  c4, c5, c6, c7, c8, v, mm10_rs,
      &  ddipole, rhoM, slipinc, gammadot, Qbulk,
      &  dddipole, dslipinc, badterm, deltaij,
      &  drhoF, drhoP, drhoM,G0
@@ -4131,12 +4117,12 @@ c
       double precision :: rs
       double precision, dimension(props%nslip) :: dgammadtau
       double precision, dimension(props%num_hard) :: tt,rhoFs,rhoPs
-      double precision :: h, slipinc, mm10_rs
+      double precision ::  mm10_rs
       integer :: alpha
 c
       double precision :: dt, k, theta, G, b, c1, c2, tau0, 
-     &  p_e, q_e, Qslip, v_s, K11, K12, K44, dfract,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  p_e, q_e, Qslip, v_s, dfract,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, m,
      &  dslipinc, slipexp, G0, fM, lamda, rhoM, p2
 c
 c Load some material parameters
@@ -4236,8 +4222,8 @@ c
       integer :: alpha, beta
 c
       double precision :: dt, k, theta, G, b, c1, c2, tau0, 
-     &  p_e, q_e, Qslip, v_s, K11, K12, K44, dfract,
-     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, x, y, m,
+     &  p_e, q_e, Qslip, v_s, dfract,
+     &  rhoF, rhoP, gamma_0, tpass, tcut, fract, 
      &  dslipinc, slipexp, drhoF, drhoP, dgamma_0,
      &  dtcut, dtpass, G0, fM, rhoM, lamda, drhoM, p2
        !double precision, dimension(props%num_hard,props%num_hard)
@@ -4385,7 +4371,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha
       double precision :: slipinc
@@ -4419,7 +4405,7 @@ c
       type(crystal_state) :: np1, n
       integer :: both
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
@@ -4466,8 +4452,7 @@ c
       integer :: alpha
 c
       double precision :: dt, tau, g_alpha
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha
+      double precision ::  gamma_dot_tilde, m_alpha
         
         ! Load hard coded material parameters
         ! q=Gmat matrix is loaded at top of mm10
@@ -4493,8 +4478,8 @@ c
 c
 c     Hardening function for arfr model
 c
-      subroutine mm10_h_arfr(props, np1,
-     &             n,vec1,vec2, stress, tt, g)
+      subroutine mm10_h_arfr( props, np1,
+     &             n, vec1, vec2, stress, tt, g )
 c
       use mm10_defs
       use mm10_constants
@@ -4505,10 +4490,10 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, g, h
       double precision, dimension(max_uhard) :: vec1, vec2
-      double precision :: slipinc, mm10_rs
+      double precision :: slipinc
       integer :: slip_a, slip_b
 c
-      double precision :: dt, tau, g_alpha
+      double precision :: dt
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
      &     g_s, gamma_dot, temp, g_n, g_dot
@@ -4569,7 +4554,7 @@ c           Derivative of hardening fn wrt stress
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, dtdstress, ms
+      double precision, dimension(6) :: stress, dtdstress
       double precision, dimension(props%num_hard) :: tt,h,dh
       double precision, dimension(props%num_hard,6) :: et
       double precision, dimension(max_uhard) :: vec1, vec2
@@ -4578,7 +4563,7 @@ c
       double precision :: dt, slipinc
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, g_n, g_dot, dg_s, dslip
+     &     g_s, gamma_dot, temp, dg_s, dslip
       double precision, dimension(props%nslip) :: dslipinc
       integer :: slip_a, slip_b
       
@@ -4651,7 +4636,7 @@ c           Derivative of hardening fn wrt hardening
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, dtdstress, ms
+      double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt,h,dh
       double precision, dimension(props%num_hard,props%num_hard) :: etau
       double precision, dimension(max_uhard) :: vec1, vec2
@@ -4660,7 +4645,7 @@ c
       double precision :: dt, slipinc, deltaij
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, g_n, g_dot, dg_s, dslip
+     &     g_s, gamma_dot, temp, dg_s, dslip
       double precision, dimension(props%nslip,props%num_hard)
      &        :: dslipinc
       integer :: slip_a, slip_b
@@ -4755,8 +4740,7 @@ c     *     system, for use in J11 in material integration. ARFR     *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_dgdt_arfr(props, np1,
-     &      n, stress, tt, dgdt)
+      subroutine mm10_dgdt_arfr(props, np1,  n, stress, tt, dgdt)
       use mm10_defs
       implicit none
 c
@@ -4764,12 +4748,11 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, dgdt
-      double precision :: slipinc, mm10_rs
+      double precision :: mm10_rs
       integer :: slip_a
 c
       double precision :: dt, tau, g_alpha
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
+      double precision :: gamma_dot_tilde, m_alpha
         
 c Deka, Dhyanjyoti, et al. "Crystal plasticity modeling of deformation and 
 c creep in polycrystalline Ti-6242." Metallurgical and materials 
@@ -4820,12 +4803,11 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(props%num_hard,props%num_hard)
      &                 :: dgammadtt
-      double precision :: slipinc, mm10_rs, dslipinc
+      double precision :: mm10_rs, dslipinc
       integer :: slip_a, slip_b
 c
       double precision :: dt, tau, g_alpha
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
+      double precision ::  gamma_dot_tilde, m_alpha
         
         dgammadtt = 0.d0
         
@@ -4886,7 +4868,7 @@ c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       integer :: alpha
       double precision :: slipinc
@@ -4920,7 +4902,7 @@ c
       type(crystal_state) :: np1, n
       integer :: both
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt, h
+      double precision, dimension(props%num_hard) :: tt
       double precision, dimension(max_uhard) :: vec1, vec2
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
 c
@@ -4967,8 +4949,7 @@ c
       integer :: alpha
 c
       double precision :: dt, tau, g_alpha
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha
+      double precision :: gamma_dot_tilde, m_alpha
         
         ! Load hard coded material parameters
         ! q=Gmat matrix is loaded at top of mm10
@@ -5006,10 +4987,10 @@ c
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, g, h
       double precision, dimension(max_uhard) :: vec1, vec2
-      double precision :: slipinc, mm10_rs
+      double precision :: slipinc
       integer :: slip_a, slip_b
 c
-      double precision :: dt, tau, g_alpha
+      double precision :: dt
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
      &     g_s, gamma_dot, temp, g_n, g_dot
@@ -5070,7 +5051,7 @@ c           Derivative of hardening fn wrt stress
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, dtdstress, ms
+      double precision, dimension(6) :: stress, dtdstress
       double precision, dimension(props%num_hard) :: tt,h,dh
       double precision, dimension(props%num_hard,6) :: et
       double precision, dimension(max_uhard) :: vec1, vec2
@@ -5079,7 +5060,7 @@ c
       double precision :: dt, slipinc
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, g_n, g_dot, dg_s, dslip
+     &     g_s, gamma_dot, temp, dg_s, dslip
       double precision, dimension(props%nslip) :: dslipinc
       integer :: slip_a, slip_b
       
@@ -5152,7 +5133,7 @@ c           Derivative of hardening fn wrt hardening
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
-      double precision, dimension(6) :: stress, dtdstress, ms
+      double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt,h,dh
       double precision, dimension(props%num_hard,props%num_hard) :: etau
       double precision, dimension(max_uhard) :: vec1, vec2
@@ -5161,7 +5142,7 @@ c
       double precision :: dt, slipinc, deltaij
       double precision :: h_0_alpha, gamma_dot_tilde,
      &     g_tilde, r_alpha, n_alpha, m_alpha, g_0_alpha,
-     &     g_s, gamma_dot, temp, g_n, g_dot, dg_s, dslip
+     &     g_s, gamma_dot, temp, dslip, dg_s
       double precision, dimension(props%nslip,props%num_hard)
      &        :: dslipinc
       integer :: slip_a, slip_b
@@ -5256,8 +5237,7 @@ c     *     system, for use in J11 in material integration. DJGM     *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_dgdt_DJGM(props, np1,
-     &      n, stress, tt, dgdt)
+      subroutine mm10_dgdt_DJGM(props, np1, n, stress, tt, dgdt)
       use mm10_defs
       implicit none
 c
@@ -5265,12 +5245,11 @@ c
       type(crystal_state) :: np1, n
       double precision, dimension(6) :: stress
       double precision, dimension(props%num_hard) :: tt, dgdt
-      double precision :: slipinc, mm10_rs
+      double precision :: mm10_rs
       integer :: slip_a
 c
       double precision :: dt, tau, g_alpha
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
+      double precision ::  gamma_dot_tilde, m_alpha
         
 c Deka, Dhyanjyoti, et al. "Crystal plasticity modeling of deformation and 
 c creep in polycrystalline Ti-6242." Metallurgical and materials 
@@ -5321,12 +5300,11 @@ c
       double precision, dimension(props%num_hard) :: tt
       double precision, dimension(props%num_hard,props%num_hard)
      &                 :: dgammadtt
-      double precision :: slipinc, mm10_rs, dslipinc
+      double precision :: mm10_rs, dslipinc
       integer :: slip_a, slip_b
 c
       double precision :: dt, tau, g_alpha
-      double precision :: h_0_alpha, gamma_dot_tilde,
-     &     g_tilde_alpha, r_alpha, n_alpha, m_alpha, g_0_alpha
+      double precision :: gamma_dot_tilde, m_alpha
         
         dgammadtt = 0.d0
         
@@ -5369,86 +5347,86 @@ c
 c
 c     Halite/diffusion functions
 c
-c		formR for pressure-precipitation model
-	subroutine mm10_halite_formRpp( props, work_vec1, stress, tinc )
+c            formR for pressure-precipitation model
+      subroutine mm10_halite_formRpp( props, work_vec1, stress, tinc )
       use mm10_defs
       use mm10_constants
       implicit none
 c
-c	global variables
+c      global variables
       type(crystal_props) :: props
       double precision, dimension(6) :: stress, work_vec1
       double precision :: tinc
-c	local variables
-	double precision :: I_dev(6, 6), eps_norton(6), temp(6)
+c      local variables
+      double precision :: I_dev(6, 6), eps_norton(6), temp(6)
 c
-	I_dev(1:3, 4:6) = zero
-	I_dev(4:6, 1:3) = zero
-	I_dev(1, 1) = two/three
-	I_dev(1, 2) = -one/three
-	I_dev(1, 3) = -one/three
-	I_dev(2, 1) = -one/three
-	I_dev(2, 2) = two/three
-	I_dev(2, 3) = -one/three
-	I_dev(3, 1) = -one/three
-	I_dev(3, 2) = -one/three
-	I_dev(3, 3) = two/three
-	I_dev(4, 4) = one
-	I_dev(4, 5) = zero
-	I_dev(4, 6) = zero
-	I_dev(5, 4) = zero
-	I_dev(5, 5) = one
-	I_dev(5, 6) = zero
-	I_dev(6, 4) = zero
-	I_dev(6, 5) = zero
-	I_dev(6, 6) = one
-	call mm10_b_mult_type_2( temp, I_dev, stress )
-	eps_norton = three/two * props%cp_033 * tinc * temp
-	eps_norton(4:6) = eps_norton(4:6) * two
-	work_vec1 = work_vec1 - eps_norton
-	end subroutine
+      I_dev(1:3, 4:6) = zero
+      I_dev(4:6, 1:3) = zero
+      I_dev(1, 1) = two/three
+      I_dev(1, 2) = -one/three
+      I_dev(1, 3) = -one/three
+      I_dev(2, 1) = -one/three
+      I_dev(2, 2) = two/three
+      I_dev(2, 3) = -one/three
+      I_dev(3, 1) = -one/three
+      I_dev(3, 2) = -one/three
+      I_dev(3, 3) = two/three
+      I_dev(4, 4) = one
+      I_dev(4, 5) = zero
+      I_dev(4, 6) = zero
+      I_dev(5, 4) = zero
+      I_dev(5, 5) = one
+      I_dev(5, 6) = zero
+      I_dev(6, 4) = zero
+      I_dev(6, 5) = zero
+      I_dev(6, 6) = one
+      call mm10_b_mult_type_2( temp, I_dev, stress )
+      eps_norton = three/two * props%cp_033 * tinc * temp
+      eps_norton(4:6) = eps_norton(4:6) * two
+      work_vec1 = work_vec1 - eps_norton
+      end subroutine
 c
-c		formJ for pressure-precipitation model
-	subroutine mm10_halite_formJpp( props, J11, tinc )
+c            formJ for pressure-precipitation model
+      subroutine mm10_halite_formJpp( props, J11, tinc )
       use mm10_defs
       use mm10_constants
       implicit none
 c
       type(crystal_props) :: props
-	double precision :: J11(6, 6)
-	double precision :: tinc
-c	local variables
-	double precision :: I_dev(6, 6), temp(6, 6)
-	integer :: i
+      double precision :: J11(6, 6)
+      double precision :: tinc
+c      local variables
+      double precision :: I_dev(6, 6), temp(6, 6)
+      integer :: i
 c
-	I_dev(1:3, 4:6) = zero
-	I_dev(4:6, 1:3) = zero
-	I_dev(1, 1) = two/three
-	I_dev(1, 2) = -one/three
-	I_dev(1, 3) = -one/three
-	I_dev(2, 1) = -one/three
-	I_dev(2, 2) = two/three
-	I_dev(2, 3) = -one/three
-	I_dev(3, 1) = -one/three
-	I_dev(3, 2) = -one/three
-	I_dev(3, 3) = two/three
-	I_dev(4, 4) = one
-	I_dev(4, 5) = zero
-	I_dev(4, 6) = zero
-	I_dev(5, 4) = zero
-	I_dev(5, 5) = one
-	I_dev(5, 6) = zero
-	I_dev(6, 4) = zero
-	I_dev(6, 5) = zero
-	I_dev(6, 6) = one
-	do i = 1, 6
+      I_dev(1:3, 4:6) = zero
+      I_dev(4:6, 1:3) = zero
+      I_dev(1, 1) = two/three
+      I_dev(1, 2) = -one/three
+      I_dev(1, 3) = -one/three
+      I_dev(2, 1) = -one/three
+      I_dev(2, 2) = two/three
+      I_dev(2, 3) = -one/three
+      I_dev(3, 1) = -one/three
+      I_dev(3, 2) = -one/three
+      I_dev(3, 3) = two/three
+      I_dev(4, 4) = one
+      I_dev(4, 5) = zero
+      I_dev(4, 6) = zero
+      I_dev(5, 4) = zero
+      I_dev(5, 5) = one
+      I_dev(5, 6) = zero
+      I_dev(6, 4) = zero
+      I_dev(6, 5) = zero
+      I_dev(6, 6) = one
+      do i = 1, 6
         call mm10_b_mult_type_2(temp(1:6, i), 
      &            props%stiffness, I_dev(1:6, i))
       end do
-	temp(4:6, 1:6) = temp(4:6, 1:6) * two
-	J11 = J11 + three/two*props%cp_033*temp*tinc
+      temp(4:6, 1:6) = temp(4:6, 1:6) * two
+      J11 = J11 + three/two*props%cp_033*temp*tinc
 c
-	end subroutine
+      end subroutine
 c
 c     ****************************************************************
 c     *                                                              *
@@ -5623,7 +5601,6 @@ c
       subroutine mm10_b_mult_type_2t( a, b, c )
       implicit none
       double precision :: a(6), b(6,6), c(6)
-      integer :: j
 c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
 c
 c                     a = trans( [b] ) * c
@@ -5776,8 +5753,8 @@ c
       subroutine mm10_b_copy_vector( a, b, nterms )
       implicit none
       integer :: nterms
-      double precision :: a(nterms), b(nterms), c(nterms)
-c!DIR$ ASSUME_ALIGNED a:64, b:64, c:64      
+      double precision :: a(nterms), b(nterms)
+c!DIR$ ASSUME_ALIGNED a:64, b:64
 c
       a = b
 c
