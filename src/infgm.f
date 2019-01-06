@@ -15,7 +15,7 @@ c
 c                                                                               
       subroutine infgm( sbflg1, sbflg2 )                                        
       use global_data ! old common.main
-      use main_data, only: fgm_node_values, fgm_node_values_defined,            
+      use main_data, only: fgm_node_values_defined,            
      &                     fgm_node_values_cols                                 
       implicit integer (a-z)                                                    
       double precision                                                          
@@ -241,11 +241,10 @@ c
      &                        alpha, vol_fract_ductile, rho, tan_e,             
      &                        yld_pt, n_power, prop_flags)                      
       use global_data ! old common.main
-      use main_data, only: fgm_node_values, fgm_node_values_defined,            
-     &                     fgm_node_values_cols                                 
+      use main_data, only: fgm_node_values
       implicit integer (a-z)                                                    
       real dumr, young_mod, poisson_ratio, alpha, vol_fract_ductile,            
-     &     rho, tan_e, yld_pt, n_power, zero                                    
+     &     rho, tan_e, yld_pt, n_power                                   
       double precision                                                          
      &     dumd                                                                 
       logical prop_flags(*)                                                     
@@ -307,7 +306,7 @@ c
       use main_data, only: fgm_node_values, fgm_node_values_defined             
       implicit integer (a-z)                                                    
       real young_mod, poisson_ratio, alpha, vol_fract_ductile,                  
-     &     rho, tan_e, yld_pt, n_power, zero                                    
+     &     rho, tan_e, yld_pt, n_power                                
 c                                                                               
 c                       for each node, print the fgm material values            
 c                                                                               
