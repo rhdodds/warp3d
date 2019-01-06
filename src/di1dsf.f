@@ -1608,7 +1608,7 @@ c
 c
 c             T-stress T11 & T33, plane stress and plane strain
 c
-         if( face_loading ) write(out,9054)
+c         if( face_loading ) write(out,9054) removed 12/18/18
 c
          if( out_pstress ) then
             write(out,9107)
@@ -1713,9 +1713,9 @@ c
  9053 format(//,1x,'>>>>> warning: thermal loading detected.',
      &       /,16x,'Interaction Integral results below for K and T'
      &       ' do not currently include thermal effects.')
- 9054 format(//,1x,'>>>>> warning: crack-face loading detected.',
-     &       /,16x,'Interaction Integral results below for T'
-     &       ' do not include crack-face loading effects.')
+c 9054 format(//,1x,'>>>>> warning: crack-face loading detected.',
+c     &       /,16x,'Interaction Integral results below for T'
+c     &       ' do not include crack-face loading effects.')
  9055 format(/,1x,30x,'I-integral components',
      &       /,26x,'-- KI = 1, KII = 0, KIII = 0, plane stress --',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
