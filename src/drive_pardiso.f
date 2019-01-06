@@ -26,9 +26,10 @@ c
 c
 c                local for pardiso
 c
-      integer :: maxfct, mnum, mtype, perm, nrhs, msglvl, error, phase
+      integer :: maxfct, mnum, mtype, perm, nrhs, msglvl, error, phase,
+     &           mkl_ooc_flag 
       integer, save :: pt(64), iparm(64), num_calls
-      logical :: mkl_ooc_flag, direct_solve
+      logical :: direct_solve
       logical, save :: pardiso_mat_defined
       data num_calls, pardiso_mat_defined / 0, .false. /
 c
@@ -40,7 +41,7 @@ c
       perm   = 0 ! will be dummy
       nrhs   = 1
       msglvl = 0 ! no printed stats from inside Pardiso
-      mkl_ooc_flag = .false. ! not supported for unsymmetric
+      mkl_ooc_flag = 0 ! not supported for unsymmetric
       direct_solve = .not. use_iterative
 c
 c                solution types (itype):
@@ -256,8 +257,7 @@ c
      &                        sol_vec, eqn_coeffs, k_pointers,
      &                        k_indices, print_cpu_stats, itype, out,
      &                        solver_out_of_core, solver_memory,
-     &                        solver_scr_dir, solver_mkl_iterative,
-     &                        suggested_new_precond )
+     &                        solver_scr_dir, solver_mkl_iterative )
 c
       use performance_data, only : t_performance_start_pardiso,
      &                             t_performance_end_pardiso
@@ -269,14 +269,13 @@ c
      &                     eqn_coeffs(*)
       integer :: k_pointers(*), k_indices(*)
       logical :: print_cpu_stats, solver_out_of_core,
-     &           solver_mkl_iterative, suggested_new_precond
+     &           solver_mkl_iterative
       integer :: itype, out, neq, ncoeff, solver_memory
       character (len=*) ::  solver_scr_dir
 c
 c                locally defined.
 c
       real, external :: wcputime
-      character(len=150) solver_directory
       logical ::  pardiso_mat_defined, use_iterative, direct_solve
       integer ::  mkl_ooc_flag
       save num_calls, pardiso_mat_defined
@@ -284,7 +283,7 @@ c
 c                local for pardiso
 c
       integer(kind=8), save :: pt(64)
-      integer, save :: handle, iparm(64), msglvl, mtype
+      integer, save :: iparm(64), msglvl, mtype
       integer :: maxfct, mnum, phase, nrhs, error, idum, num_calls
       double precision :: ddum
 c
@@ -310,7 +309,7 @@ c
         if( use_iterative ) call pardiso_symmetric_iterative
         if( direct_solve )  call pardiso_symmetric_direct
       case( 2 )
-        call pardiso_symmetric_map( neq, ncoeff, k_diag, rhs,
+        call pardiso_symmetric_map( neq, ncoeff, k_diag,
      &                              eqn_coeffs, k_pointers, k_indices )
         if( use_iterative ) call pardiso_symmetric_iterative
         if( direct_solve )  call pardiso_symmetric_direct
@@ -356,7 +355,7 @@ c
 c
 c              map vss to csr equation storage
 c
-      call pardiso_symmetric_map( neq, ncoeff, k_diag, rhs, eqn_coeffs,
+      call pardiso_symmetric_map( neq, ncoeff, k_diag, eqn_coeffs,
      &                            k_pointers, k_indices )
 c
 c             if previously sovled a set of equations,release memory.
@@ -456,7 +455,6 @@ c
       call thyme( 25, 1 )
       phase     = 23 ! iterative solve for displ
       iparm(4)  = 52
-c        if( suggested_new_precond ) iparm(4) = 0 ! new factorization
       call warp3d_pardiso_mess( 9, out,  error, mkl_ooc_flag,
      &                         print_cpu_stats, iparm )
       call pardiso( pt, maxfct, mnum, mtype, phase, neq,
@@ -695,12 +693,12 @@ c     *  written by: rh   modified by: rhd  last modified: 3/16/2017 *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine pardiso_symmetric_map( neq, ncoeff, diag, rhs, amat,
+      subroutine pardiso_symmetric_map( neq, ncoeff, diag, amat,
      &                                  kpt, kind )
 c
       implicit none
 c
-      double precision :: diag(*), rhs(*), amat(*)
+      double precision :: diag(*), amat(*)
       integer :: neq, ncoeff, kpt(*), kind(*)
 c
 c      This sub maps arrays needed for the NASA sparse solver to
