@@ -48,7 +48,7 @@ c
      &     press_set(numfaces), constraint_factor,
      &     pist_set(numfaces), abaqus_face_flag, string
       logical :: matchs, endcrd, true, label, numd, scanms,
-     &           numi, integr
+     &           integr
       logical, parameter :: debug = .false.
       real :: dumr, force(mxndldcm)
 c
@@ -206,7 +206,6 @@ c *                                                                    *
 c **********************************************************************
 c
 c
- 808  continue
       elndld = .false.
       call readsc
  810  continue
@@ -447,7 +446,8 @@ c
          if( numd(mpfact) ) then
             if ( constraint_factor ) then
               do i = 1, step_count
-                user_cnstrn_stp_factors(list_of_steps(i)) = mpfact
+                user_cnstrn_stp_factors(list_of_steps(i)) = 
+     &        sngl( mpfact )
               end do
             else
               step_load_list(num_patterns)    = lodn
@@ -639,7 +639,7 @@ c
             go to 865
          end if
          inpflg(dofn) = .true.
-         force(dofn)  = forval
+         force(dofn)  = sngl( forval )
 c
       end if
       go to 865
@@ -826,7 +826,7 @@ c
       elem_temper = zero
       go to 920
 c
- 910  call readsc   ! top of loop to keep reading element loads
+      call readsc   ! top of loop to keep reading element loads
 c
 c                       branch on load type input.  If end of line,
 c                       store the loadings in a temporary structure.
@@ -1225,7 +1225,7 @@ c                       store the vector of body force and face loading
 c                       magnitudes in temporary force arrays.  Check all
 c                       values for errors.
 c
- 10   icn    = 0
+      icn    = 0
       iplist = 1
 c
  20   continue
@@ -1250,20 +1250,22 @@ c                       now branch on the loading types
 c                       1) body forces
 c
       do dof = 1, mxndof
-       if ( body_inpflg(dof) ) temp_body(stelem,dof) = body_force(dof)
+       if ( body_inpflg(dof) )
+     &       temp_body(stelem,dof) = sngl( body_force(dof) )
       end do
 c
 c                       2) face forces
 c
       do face = 1, numfaces
          if ( press_set(face) ) then
-            temp_press(stelem,face) = press_force(face)
+            temp_press(stelem,face) = sngl( press_force(face) )
          elseif ( pist_set(face) ) then
             temp_piston(stelem,face) = pist_tabn
          else
             do dof = 1, mxndof
                if ( face_inpflg(face,dof) ) then
-                  temp_face(stelem,face,dof) = face_force(face,dof)
+                  temp_face(stelem,face,dof) =
+     &                sngl( face_force(face,dof) )
                end if
             end do
          end if
@@ -1271,7 +1273,7 @@ c
 c
 c                       3) element temperature change
 c
-      temp_temper(stelem) = elem_temper
+      temp_temper(stelem) = sngl( elem_temper )
 c
 c
  1000 if( iplist.ne.0 ) go to 20
