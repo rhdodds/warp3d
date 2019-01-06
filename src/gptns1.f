@@ -16,7 +16,6 @@ c
       subroutine gptns1( cp, icp, gpn, props, iprops, glb_ek_blk,               
      &                   local_work )                                           
       use main_data, only: asymmetric_assembly                                  
-      use elem_block_data, only : global_cep_blocks => cep_blocks               
       implicit none                                                             
       include 'param_def'                                                       
       include 'include_tan_ek'                                                  
@@ -32,14 +31,14 @@ c
 c                     locals                                                    
 c                                                                               
       integer :: etype, span, felem, utsz, nnode, totdof, mat_type,             
-     &           iter, int_order, local_iout, nrow_ek, drive_cnst,
+     &           iter, int_order, local_iout, drive_cnst,
      &           stiff_type 
-      double precision :: eps_bbar, weight, rad(mxvl), dummy,
-     &                    factors(mxvl), bar_areas_0(mxvl), 
+      double precision :: eps_bbar, weight, rad(mxvl),
+     &                    bar_areas_0(mxvl), 
      &                    bar_areas_n1(mxvl), bar_volumes(mxvl)    
       double precision, parameter :: one = 1.0d0             
       logical :: include_qbar, geonl, bbar, first, qbar_flag, convert,                            
-     &           temps_to_process, iscp, symmetric_assembly
+     &           temps_to_process, symmetric_assembly
 c                                                                               
 c                       set local versions of the data structure                
 c                       scalars. set logical to include/not include the         
@@ -373,7 +372,7 @@ c                     local variables
 c                                                                               
       integer :: i, j                                 
       double precision :: dx, dy, dz, len, cx, cy, cz, area, const,
-     &                    const2, force
+     &                    force
       double precision, allocatable, dimension (:) :: x1, x2, y1, y2,
      &                                                z1, z2
       double precision, allocatable :: kfull(:,:,:)
@@ -634,17 +633,6 @@ c
       return
       end subroutine gptns3_d 
 c      
-      subroutine gptns3_cross_prod( vec1, vec2, vec_out ) 
-      implicit none
-      double precision :: vec1(3), vec2(3), vec_out(3)                                         
-c                                                                               
-      vec_out(1) = vec1(2)*vec2(3) - vec2(2)*vec1(3)                                                      
-      vec_out(2) = vec2(1)*vec1(3) - vec1(1)*vec2(3)                                                      
-      vec_out(3) = vec1(1)*vec2(2) - vec2(1)*vec1(2)                                                      
-c                                                                               
-      return                                                                    
-      end subroutine gptns3_cross_prod                                                                      
-c         
       end subroutine gptns3                  
 c     ****************************************************************          
 c     *                                                              *          
@@ -978,7 +966,6 @@ c
 c                                                                               
       subroutine drive_04_cnst( gpn, iout, local_work )                         
 c                                                                               
-      use main_data, only : matprp, lmtprp                                      
       use elem_block_data, only : gbl_cep_blocks => cep_blocks                  
       implicit none                                                             
       include 'param_def'                                                       
@@ -1193,7 +1180,7 @@ c
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
-      integer :: gpn, iout                                                      
+      integer :: gpn                                                   
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -1355,10 +1342,6 @@ c
       if( debug_now ) write(iout,9900)                                          
       return                                                                    
 c                                                                               
- 9000 format('>> Enter UMAT cnst driver...')                                    
- 9001 format(5x,'span, felem, gpn, iter: ',i4,i10,i3,i4 )                       
- 9002 format(5x,'integration weight: ',f10.5)                                   
- 9006 format(5x,'num history terms: ',i4 )                                      
  9100 format(5x,'... processing i, elem, gpn: ',i4,i10, i3)                     
  9110 format(5x,'symd 1-4: ',4e14.6)                                            
  9900 format('>> Leave UMAT cnst driver...')                                    
@@ -1381,9 +1364,7 @@ c
 c                                                                               
       subroutine drive_10_cnst( gpn, iout, local_work )                         
 c                                                                               
-      use main_data, only : matprp, lmtprp                                      
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks                  
-      use mm10_defs, only : indexes_common, index_crys_hist                     
+      use mm10_defs, only : indexes_common                    
 c                                                                               
       implicit none                                                             
       include 'param_def'                                                       
@@ -1396,7 +1377,7 @@ c
 c                     local variables                                           
 c                                                                               
       integer :: span, felem, iter, now_blk,                                    
-     &           start_loc, k, i, j, eh, sh                                     
+     &           k, i, j, eh, sh                                     
       double precision ::                                                       
      & weight, f, cep(6,6), cep_vec(36), tol                                    
       logical :: local_debug                                                    
@@ -1482,8 +1463,6 @@ c
 c                                                                               
       subroutine drive_11_cnst( gpn, iout, local_work )                         
 c                                                                               
-      use main_data, only : matprp, lmtprp                                      
-      implicit integer (a-z)                                                    
       include 'param_def'                                                       
       include 'include_tan_ek'                                                  
 c                                                                               
@@ -1531,14 +1510,14 @@ c
 c                                                                               
 c                       parameter declarations                                  
 c                                                                               
-      integer :: span, mxvl, mxedof, ncol_ek, nstr, totdof                      
+      integer :: span, mxvl, mxedof, ncol_ek, totdof                      
       double precision ::                                                       
      &   b(mxvl,mxedof,6), ek_full(span,ncol_ek), d(mxvl,6,6),                  
      &   bd(mxvl,mxedof,6)                                                      
 c                                                                               
 c                       locals                                                  
 c                                                                               
-      integer :: i, j, k, row, col                                              
+      integer :: i, j, row, col                                              
 c                                                                               
 c              perform multiplication of [D]*[B-mat].                           
 c              assumes full [D] and [B]full matrix.                             
@@ -1654,7 +1633,7 @@ c
 c                                                                               
 c                       locals                                                  
 c                                                                               
-      integer :: i, j, k, row, col                                              
+      integer :: i, j, row, col                                              
 c                                                                               
 c              perform multiplication of [D]*[B-mat].                           
 c              assumes full [D] and [B]full matrix.                             
