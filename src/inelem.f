@@ -4,7 +4,7 @@ c     *                      subroutine inelem                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 08/20/2017 rhd             *
+c     *                   last modified : 12/15/2018 rhd             *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of     *
 c     *     element type and properties.                             *
@@ -16,7 +16,32 @@ c
       subroutine inelem( sbflg1, sbflg2 )
 c
       use global_data ! old common.main
-      use main_data, only: matprp, imatprp
+      use main_data, only: matprp, imatprp,
+     & id_node,   ! 4hNODE,
+     & id_curr,   ! 4hCURR,
+     & id_cent,   ! 4hCENT,
+     & id_defa,   ! 4hDEFA,
+     & id_true,   ! 4hTRUE,
+     & id_flse,   ! 4hFLSE
+     & id_o222,   ! 4hO222,
+     & id_o14p,   ! 4hO14P,
+     & id_o09p,   ! 4hO09P,
+     & id_shrt,   ! 4hSHRT,
+     & id_long,   ! 4hLONG
+     & id_o06p,   ! 4hO06P,
+     & id_o01p,   ! 4hO01P,
+     & id_o03p,   ! 4hO03P,
+     & id_o04p,   ! 4hO04P,
+     & id_o05p,   ! 4hO05P,
+     & id_o060,   ! 4hO06P,
+     & id_o07p,   ! 4hO07p,
+     & id_o111,   ! 4hO111,
+     & id_o333,   ! 4hO333,
+     & id_o3mp,   ! 4hO3MP,
+     & id_o22n,   ! 4hO22N,
+     & id_o22g,   ! 4hO22G,
+     & id_pcm,     ! 4hpcm,
+     & id_gaus   
 c
       implicit none
       logical :: sbflg1, sbflg2
@@ -156,13 +181,13 @@ c                       initialize the output location of stresses,
 c                       strains, etc. and stress type to be output
 c                       to default values.
 c
-      outloc= 4HDEFA
-      strcon= 4HCURR
-      intord= 4HDEFA
-      outfmt= 4HDEFA
-      geonl = 4HFLSE
-      bbar  = 4hTRUE
-      surf  = 4HDEFA
+      outloc= id_defa
+      strcon= id_curr
+      intord= id_defa
+      outfmt= id_defa
+      geonl = id_flse
+      bbar  = id_true
+      surf  = id_defa
       defmat= .true.
       area = 0.0e0
 c
@@ -246,31 +271,31 @@ c
 c
  530  continue
       if(matchs('3x3x3',5)) then
-         intord= 4HO333
+         intord= id_o333
       else if(matchs('2x2x2',5)) then
-         intord= 4HO222
+         intord= id_o222
       else if(matchs('2x2ndl',5)) then
-         intord= 4HO22N
+         intord= id_o22n
       else if(matchs('2x2gs',5)) then
-         intord= 4HO22G
+         intord= id_o22g
       else if(matchs('14pt_rule',4)) then
-         intord= 4HO14P
+         intord= id_o14p
       else if(matchs('9pt_rule',3)) then
-         intord= 4HO09P
+         intord= id_o09p
       else if(matchs('1pt_rule',3)) then
-         intord= 4HO01P
+         intord= id_o01p
       else if(matchs('4pt_rule',3)) then
-         intord= 4HO04P
+         intord= id_o04p
       else if(matchs('3pt_rule',3)) then
-         intord= 4HO03P
+         intord= id_o03p
       else if(matchs('3mpt_rule',4)) then
-         intord= 4HO3MP
+         intord= id_o3mp
       else if(matchs('5pt_rule',3)) then
-         intord= 4HO05P
+         intord= id_o05p
       else if(matchs('6pt_rule',3)) then
-         intord= 4HO06P
+         intord= id_o06p
       else if(matchs('7pt_rule',3)) then
-         intord= 4HO07P
+         intord= id_o07p
       else
          call errmsg(28,dum,'ordr',dumr,dumd)
       end if
@@ -292,20 +317,20 @@ c
 c                       output location is gauss points
 c
  540  continue
-      outloc= 4HGAUS
+      outloc= id_gaus
       go to 520
 c
 c                       output location is node points
 c
  550  continue
-      outloc= 4HNODE
+      outloc= id_node
       go to 520
 c
 c                       output location is element center. only
 c                       one set of values per element
 c
  555  continue
-      outloc= 4HCENT
+      outloc= id_cent
       go to 520
 c
 c
@@ -325,7 +350,7 @@ c                       output stress type is cauchy stresses.
 c                       this is the default for geonl.
 c
  560  continue
-      strcon= 4HCURR
+      strcon= id_curr
       go to 520
 c
 c                       output stress type is 2nd_pk stresses.
@@ -351,13 +376,13 @@ c
 c                       output format is short.
 c
  570  continue
-      outfmt= 4HSHRT
+      outfmt= id_shrt
       go to 520
 c
 c                       output format is long.
 c
  575  continue
-      outfmt= 4HLONG
+      outfmt= id_long
       go to 520
 c
 c
@@ -429,7 +454,7 @@ c **********************************************************************
 c
 c
  585  continue
-      geonl= 4HFLSE
+      geonl= id_flse
       go to 520
 c
 c
@@ -441,7 +466,7 @@ c **********************************************************************
 c
 c
  586  continue
-      geonl= 4HTRUE
+      geonl= id_true
       go to 520
 c
 c
@@ -454,10 +479,10 @@ c **********************************************************************
 c
 c
  587  continue
-      bbar = 4HTRUE
+      bbar = id_true
       go to 520
  588  continue
-      bbar = 4HFLSE
+      bbar = id_flse
       go to 520
 c
 c
@@ -470,11 +495,11 @@ c **********************************************************************
 c
  595  continue
       if(matchs('top',3)) then
-         surf = 4HO111
+         surf = id_o111
       else if(matchs('middle',3)) then
-         surf = 4HO222
+         surf = id_o222
       else if(matchs('bottom',3)) then
-         surf = 4HO333
+         surf = id_o333
       else
          call errmsg(318,dum,'surface',dumr,dumd)
       end if
