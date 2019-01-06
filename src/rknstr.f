@@ -332,7 +332,7 @@ c
      &                           local_work )
 c
         case ( 4 )
-          call mm04_init( iout, span, felem, props, lprops, iprops,
+          call mm04_init( iout, span, felem, props, iprops,
      &                    local_work%cohes_type,
      &                    local_work%intf_prp_block,
      &                    matprp(1,local_work%matnum),
