@@ -160,7 +160,7 @@ c
       use file_info                                                             
       implicit integer (a-z)                                                    
       character(len=80) :: file_name                                            
-      logical ok, now_open                                                      
+      logical now_open                                                      
       integer ierror                                                            
                                                                                 
 c                                                                               
