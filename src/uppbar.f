@@ -110,7 +110,7 @@ c
 c                                                                               
       write(out,9020) nodof, nfac1, nfac2, adapt_load_fact                      
       write(out,9030)                                                           
-      do i = 1, nodof                                                           
+      do i = 1, nodof ! 10                                                          
         force_lag = zero                                                        
         inertia   = mdiag(i) * ( nfac1*accel(i) + nfac2*veloc(i) )              
         if( have_mpcs ) force_lag = total_lagrange_forces(i)                    
