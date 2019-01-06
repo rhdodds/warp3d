@@ -420,7 +420,7 @@ c
                end if                                                           
             end do                                                              
             dlen = dep_ptr(row)                                                 
-            call mpc_heapsort(dlen, eqn_row(row)%loc_list(1) )                  
+            call mpc_heapsort(dlen, eqn_row(row)%loc_list )                  
             if (dlen .gt. max_len)  max_len = dlen                              
             do dptr = 1, dlen                                                   
                eqn = eqn_row(row)%loc_list(dptr)                                
