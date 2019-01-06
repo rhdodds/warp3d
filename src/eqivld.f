@@ -4,7 +4,7 @@ c     *                      subroutine eqivld                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/17/2016 rhd             *
+c     *                   last modified : 12/14/2018 rhd             *
 c     *                                                              *
 c     *     compute the applied total load vector at end of current  *
 c     *     step based on user specified definition of the load step.*
@@ -25,15 +25,15 @@ c
      &                   lodnum )
       use global_data ! old common.main
 c
-      use main_data, only : dtemp_nodes, dtemp_elems, temper_elems,
-     &                      rload, dload, inverse_incidences,
+      use main_data, only : dtemp_nodes, dtemp_elems,
+     &                      rload, 
      &                      load_pattern_factors, elem_eq_loads,
      &                      eq_node_force_indexes, eq_node_forces,
      &                      node_load_defs, crdmap, cnstrn_in,
      &                      temper_nodes_ref, total_user_nodal_forces,
      &                      user_cnstrn_stp_factors
 c
-      implicit integer (a-z)
+      implicit none
 c
 c
 c      step       - load step number for which loads are required
@@ -69,10 +69,14 @@ c                   saved across restarts. user_routines may
 c                   provide any spatial or temporal varition of
 c                   incremental (nodal) forces and nodal temperatures.
 c
-      double precision ::
-     &  mf, mf_nm1, mf_tot, mf_nm1_tot, mf_ratio,
-     &  step_factor, total_factor, dummy
-      logical :: mf_ratio_change, user_mf_ratio_change
+      integer :: step, lodnum 
+      double precision :: mf_tot, mf_nm1_tot
+      logical :: mf_ratio_change
+c
+      integer :: count, i, how_defined, ldcond, ncols
+      double precision ::  mf,  step_factor, 
+     &                     total_factor, dummy
+      logical :: user_mf_ratio_change
       character(len=80) :: user_file_name
       double precision, parameter :: zero = 0.0d00
       logical, parameter :: debug = .false.
@@ -179,8 +183,8 @@ c
      &            debug  )
             if( user_mf_ratio_change ) mf_ratio_change = .true.
          case default
-            write(iout,*) '>>> invalid loading condition type'
-            write(iout,*) '    in routine eqivld'
+            write(out,*) '>>> invalid loading condition type'
+            write(out,*) '    in routine eqivld'
             call die_abort
          end select
       end do
@@ -247,7 +251,7 @@ c
 c
 c        local variables
 c
-      integer :: num_model_nodes, step_np1, kout, node, dloc, i
+      integer :: num_model_nodes, step_np1, kout, node, dloc
       character(len=8) :: load_name
       logical :: forces_set, temps_set, process
       double precision ::
@@ -790,7 +794,7 @@ c
       double precision :: rload(*)
       logical :: debug
 c
-      integer :: node, dptr, ndof, i
+      integer :: node, dptr, ndof
       double precision ::
      &  ndlod(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof)
       logical :: loads_found, trne(mxvl,mxndel)
@@ -879,18 +883,18 @@ c
      &                       packet_file_no, actual_cnstrn_stp_factors
 c
       implicit integer (a-z)
-      double precision
-     &     step_factor, total_factor, zero, sum
+      double precision ::
+     &     step_factor, total_factor, dzero, sum
       character(len=12) pattern_names(3)
-      real tfacts(3)
-      data zero / 0.0 /
+      real :: tfacts(3)
+      data dzero / 0.0d0 /
 c
       write(out,9000) ltmstp+1
 c
 c           sum up the constraint factors through the current load
 c           step
 c
-      sum = zero
+      sum = dzero
       do i = 1, ltmstp+1
         sum = sum + actual_cnstrn_stp_factors(i)
       end do
@@ -909,10 +913,10 @@ c
         end if
         step_factor  = load_pattern_factors(i,2)
         total_factor = load_pattern_factors(i,1)
-        if ( total_factor .ne. zero ) then
+        if ( total_factor .ne. dzero ) then
           line_count                = line_count + 1
           pattern_names(line_count) = lodnam(i)
-          tfacts(line_count)        = total_factor
+          tfacts(line_count)        = sngl( total_factor )
           pattern_count = pattern_count + 1
         end if
       end do
@@ -920,7 +924,7 @@ c
       line_count = line_count + 1
       pattern_count = pattern_count + 1
       pattern_names(line_count) = 'constraints'
-      tfacts(line_count) = sum
+      tfacts(line_count) = sngl( sum )
       write(out,9010) (pattern_names(i), tfacts(i), i=1,line_count)
       write(out,*) ' '
 c
@@ -932,7 +936,7 @@ c
       write(packet_file_no) 24, pattern_count, ltmstp+1, 0
       do i = 1, numlod
         total_factor = load_pattern_factors(i,1)
-        if ( total_factor .ne. zero ) then
+        if ( total_factor .ne. dzero ) then
            pattern_names(1) = lodnam(i)
            write(packet_file_no) pattern_names(1), total_factor
         end if
