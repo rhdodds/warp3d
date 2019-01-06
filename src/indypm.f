@@ -68,7 +68,7 @@ c
 c                       branch on type of dynamic analysis parameter
 c                       command.
 c
- 20   if( matchs('print',5)         ) go to 100
+      if( matchs('print',5)         ) go to 100
       if( matchs('newmark',4)       ) go to 300
       if( matchs('time',4)          ) go to 400
       if( matchs('extrapolate',7)   ) go to 500
@@ -887,7 +887,7 @@ c
          if( matchs('reduction',4) ) then
            if( matchs('factor',4) ) call splunj
            if ( numr(dumr) ) then
-               call insave_value( dumr, dum, 1 )
+               call insave_value( dumr, 1 )
            else
                call errmsg(5,dum,dums,dumr,dumd)
            end if
@@ -1467,11 +1467,6 @@ c
      &   /16x,'with threads-only execution.'/)
  9210 format(/1x,'>>>>> Error: hypre solver not compatible ',
      &   /16x,'with threads-only execution.'/)
- 9500 format(/1x,'>>>>> Warning:  the predict/extrapolate nonlinear',
-     &      /,1x,'                solution with a user specified',
-     &  ' factor is',
-     &      /,1x '                no longer supported. command',
-     &     ' ignored...',/)
  9510 format(/1x,'.... dump of line search values ....',
      &      /,10x,'line_search:          ', l1,
      &      /,10x,'ls_details:           ', l1,
@@ -1506,7 +1501,7 @@ c
       bad = .false.
       do elem = 1, noelem
         matno = iprops(38,elem)
-        mat_type = matprp(9,matno)
+        mat_type = int( matprp(9,matno) )
         ok = mat_type .eq. 1  .or.  mat_type .eq. 2 .or.
      &       mat_type .eq. 3  .or. 
      &       mat_type .eq. 5  .or.
@@ -1541,7 +1536,7 @@ c     *     set a value in the crack growth module block             *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine  insave_value( value, ivalue, action )
+      subroutine  insave_value( value, action )
 c
       use damage_data, only : perm_load_fact
 c
