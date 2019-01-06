@@ -47,42 +47,173 @@ c *******************************************************************
 c *******************************************************************           
 c **********************************************************************        
 c *                                                                    *        
-c * scan                                                               *        
+c * scan  modules                                                      *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine scan                                                           
+c
+c
+      module scaner
+c     -------------
+      implicit none
+c
+      save 
+      real :: value
+      real :: entity(20)
+      integer :: ival(2), mode, nchar, nwd, icolmn, ispace,
+     &           ientity(20), ivalue
+      logical :: next
+      double precision :: dvalue
+      character(len=80) :: scaner_string = " "    
+      character(len=1) :: xentit(80)                                          
+      equivalence ( ival, value, ivalue ), 
+     &            ( entity, ientity, scaner_string, xentit )
+c
+      data ival/2*0/, mode/0/, nchar/0/,                    
+     1     nwd/0/, next/.false./, icolmn/0/                                     
+c
+      end module scaner
+c
+c
+      module scanim
+c     -------------
+      implicit none
+c
+      integer :: ncpw, intzer, intnin, intc, intcom, intblk,
+     &           intlcc, inttab, intstar
+      real :: blank
+      character(len=4) :: scanim_blank = " "
+      equivalence ( blank, scanim_blank ) 
 c                                                                               
+      data ncpw /4/, intzer/48/, intnin/58/, intc/67/,                    
+     1     intcom/44/, intblk/32/, intlcc/99/, inttab/9/,                       
+     2     intstar/42/                                                          
+c
+      end module scanim
+c
+c
+      module scanln
+c     -------------
+      implicit none
+c
+      save
+      integer :: col, jump, nent, pstate, skip, incol, jstart(80),
+     &           ibuff(81), jbuff(81), idigit(81), card(81)
+      logical :: doread, isct
+      real :: rcard(81)
+      character(len=81*4) :: string_card = " "
+      character(len=1) :: xcard(320)  
+      character(len=1) :: xbuff(640) !  xcard(640),                              
+      equivalence  ( xbuff(1), jbuff(1) ),                 
+     &             ( card, string_card, xcard, rcard )
+c
+      data col/0/, jump/1/, nent/1/, pstate/0/, skip/1/,                        
+     1     doread/.true./, incol/80/, jstart/80*0/,                             
+     2     ibuff/81*9/, jbuff/81*9/, idigit/81*0/
+c
+      end module scanln
+c
+c
+      module scanio
+c     -------------
+      implicit none
+c
+      save
+      integer :: inunit = 5, iout = 6, files(1:10) = 0, filpt = 0, 
+     &           fillim = 10, inremo = 5, iotrem = 6          
+c
+      end module scanio
+c 
+c
+      module scantb
+c     -------------
+      implicit none
+c
+      integer, save ::  nseptb, nclass, itab(256), iclass(256) 
+      data nseptb/256/, nclass/256/                                             
+c                 0,1,2,3,4,5,6,7    0,1,2,3,4,5,6,7                            
+      data iclass/8*8,               8*8,                                       
+     2            8*8,               8*8,                                       
+     4            9,8,6,8,8,8,8,6,   8,8,8,2,8,3,7,8,                           
+     6            8*1,               1,1,8,8,8,8,8,8,                           
+     8            8,5,5,5,5,4,5,5,   8*5,                                       
+     a            8*5,               5,5,5,8,8,8,8,5,                           
+     c            8,5,5,5,5,4,5,5,   8*5,                                       
+     e            8*5,               5,5,5,8,8,8,8,8,                           
+     1            8*8,               8*8,                                       
+     3            8*8,               8*8,                                       
+     5            9,8,6,8,8,8,8,6,   8,8,8,2,8,3,7,8,                           
+     7            8*1,               1,1,8,8,8,8,8,8,                           
+     9            8,5,5,5,5,4,5,5,   8*5,                                       
+     b            8*5,               5,5,5,8,8,8,8,5,                           
+     d            8,5,5,5,5,4,5,5,   8*5,                                       
+     f            8*5,               5,5,5,8,8,8,8,8/                           
+c                 0,1,2,3,4,5,6,7    0,1,2,3,4,5,6,7                            
 c                                                                               
-c         scan                                                                  
+c               00,01,02,03,04,05,06,07   00,01,02,03,04,05,06,07               
+      data itab/8*0,                      8*0,                                  
+     2          8*0,                      8*0,                                  
+     4          00,00,26,22,09,17,07,24,  04,11,10,05,16,03,02,15,              
+     6          8*0,                      00,00,21,12,00,25,19,20,              
+     8          23,00,00,00,00,00,00,00,  8*0,                                  
+     a          8*0,                      00,00,00,01,00,08,13,00,              
+     c          8*0,                      8*0,                                  
+     e          8*0,                      00,00,00,00,06,00,00,00,              
+     1          8*0,                      8*0,                                  
+     3          8*0,                      8*0,                                  
+     5          00,00,26,22,09,17,07,24,  04,11,10,05,16,03,02,15,              
+     7          8*0,                      00,00,21,12,00,25,19,20,              
+     9          23,00,00,00,00,00,00,00,  8*0,                                  
+     b          8*0,                      00,00,00,01,00,08,13,00,              
+     d          8*0,                      8*0,                                  
+     f          8*0,                      00,00,00,00,06,00,00,00/              
+c
+      end module scantb
+c
+c
+      module scanct
+c     -------------
+      implicit none
+c
+      save
+      integer:: ilabel, limit, mark, recsiz
+      real :: echar = real( Z'20202024', kind=kind(echar) ) ! $
+      logical :: echo, promt, point, init, leof, eol, menu,                        
+     1           commnt, autord, signed, autoct                                    
+      data  echo/.true./, ilabel/0/, limit/80/, mark/80/,            
+     1     point/.false./, recsiz/80/, init/.false./, leof/.false./,            
+     2     eol/.true./, menu/.false./, autord/.false./,                         
+     3     commnt/.true./, signed/.false./, promt/.true./, 
+     4     autoct/.true./                       
+c
+      end module scanct
+c
+c      
+c **********************************************************************        
+c *                                                                    *        
+c * scan  routines                                                     *        
+c *                                                                    *        
+c **********************************************************************        
+c
+c
+      subroutine scan    
+      use scanio   
+      use scantb 
+      use scanct 
+      use scaner 
+      use scanln  
+      use scanim   
+c
+      implicit none                                            
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
-      common /scantb/ nseptb, nclass, itab(256), iclass(256)                    
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
       dimension istate(110)                                                     
-      integer istate, state, exp, ocol, scanmn                                  
-      double precision dvalue,flt,f,ten,one,zero,tenth                          
+      integer istate, state, exp, ocol, int, iptlc1, iptlc2, isig, 
+     &        lim, nblank, ndot, nsig
+      integer, external :: scanmn                                  
+      double precision flt,f,ten,one,zero,tenth                          
       data ocol/0/, ndot/0/                                                     
       data isig/1/,nsig/1/,int/0/,f/.1/,exp/0/                                  
       data iptlc1/1/, iptlc2/6/                                                 
-      data ten/10.0/,one/1.0/,zero/0.0/,tenth/0.1/                              
+      data ten/10.0d0/,one/1.0d0/,zero/0.0d0/,tenth/0.1d0/                              
 c                                                                               
 c                              d   +   -  e    a   q   .   s   b   $            
 c                              i               l   u       e   l                
@@ -122,7 +253,7 @@ c
       nchar = 0                                                                 
       state = pstate                                                            
       nblank = 0                                                                
-      entity(1) = blank                                                         
+      entity(1) = blank                                                        
       jstart(nent)=0                                                            
       ocol=col                                                                  
       lim=limit                                                                 
@@ -293,7 +424,7 @@ c
          endif                                                                  
       endif                                                                     
 c                                                                               
-   75 nchar = 0                                                                 
+      nchar = 0                                                                 
       nwd = 0                                                                   
       nblank = 0                                                                
       state = pstate                                                            
@@ -319,7 +450,7 @@ c
   100 continue                                                                  
       f = tenth                                                                 
       dvalue = flt                                                              
-      value = flt                                                               
+      value = sngl( flt  )                                                              
       isig = 1                                                                  
       int = 0                                                                   
       flt = zero                                                                
@@ -455,7 +586,7 @@ c            start string
 c                                                                               
   300 state = 9                                                                 
       mode = 7                                                                  
-  305 jstart(nent) = col                                                        
+      jstart(nent) = col                                                        
       go to 20                                                                  
 c                                                                               
 c            set beginning col number                                           
@@ -487,15 +618,13 @@ c *                                                                    *
 c * rdline                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine rdline                                                         
+      subroutine rdline      
+      use scanln      
+c
+      implicit none                                             
 c                                                                               
 c         read a card                                                           
 c                                                                               
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
       jump = 1                                                                  
       call scanrd                                                               
       return                                                                    
@@ -505,16 +634,14 @@ c *                                                                    *
 c * scanmn                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      integer function scanmn( point1, point2 )                                 
+      integer function scanmn( point1, point2 )  
+      use scaner 
+c 
+      implicit none                              
 c                                                                               
 c         menuing routine interface                                             
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
       integer point1, point2                                                    
-      double precision dvalue                                                   
 c                                                                               
 c         dummy routine                                                         
 c                                                                               
@@ -526,13 +653,13 @@ c *                                                                    *
 c * scanm                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine scanm( errno )                                                 
+      subroutine scanm( errno )
+      use scanio                                                 
+c 
+      implicit none                              
 c                                                                               
 c         issue error messages                                                  
 c                                                                               
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
       integer errno                                                             
 c                                                                               
 c         send error message and return                                         
@@ -563,13 +690,14 @@ c *                                                                    *
 c * setin                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine setin(in)                                                      
+      subroutine setin(in)  
+      use scanio                                                    
+c 
+      implicit none                              
 c                                                                               
 c         set scan input unit                                                   
-c                                                                               
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
+c           
+      integer :: in                                                                    
       inunit = in                                                               
       return                                                                    
       end                                                                       
@@ -578,14 +706,14 @@ c *                                                                    *
 c * setout                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine setout(out)                                                    
+      subroutine setout(out)   
+      use scanio                                                 
+c 
+      implicit none                              
 c                                                                               
 c         set scan echo output unit                                             
 c                                                                               
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
-      integer out                                                               
+      integer :: out                                                               
       iout = out                                                                
       return                                                                    
       end                                                                       
@@ -594,14 +722,15 @@ c *                                                                 *
 c * setrem                                                          *           
 c *                                                                 *           
 c *******************************************************************           
-      subroutine setrem( iunit, ounit )                                         
+      subroutine setrem( iunit, ounit )
+      use scanio                                         
+c 
+      implicit none                              
 c                                                                               
 c          set the remote unit for prompting                                    
 c                                                                               
-      integer ounit                                                             
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
+      integer :: iunit, ounit                                                             
+c
       inremo = iunit                                                            
       iotrem = ounit                                                            
       return                                                                    
@@ -611,15 +740,17 @@ c *                                                                    *
 c * setfil                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine setfil(filist,nfiles)                                          
+      subroutine setfil( filist, nfiles )    
+      use scanio                                      
+c 
+      implicit none                              
 c                                                                               
 c         stack a list of input files                                           
-c                                                                               
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
-      dimension filist(10)                                                      
-      integer filist                                                            
+c 
+
+      integer :: filist(10), nfiles 
+      integer :: nfil, j, k
+c                                                         
       nfil = nfiles                                                             
       if(filpt+nfil.le.fillim) go to 10                                         
       nfil=fillim-filpt                                                         
@@ -639,20 +770,19 @@ c * scinit                                                             *
 c *                                                                    *        
 c **********************************************************************        
       subroutine scinit(nblank, reclen, endchr, promsw, echosw, comsw,          
-     1                  atrdsw, eolsw, eofsw, menusw, ptsw, signsw )            
+     1                  atrdsw, eolsw, eofsw, menusw, ptsw, signsw )   
+      use scanct 
+c
+      implicit none        
 c                                                                               
 c         initialize                                                            
 c                                                                               
-c                                                                               
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
-      logical promsw, echosw, comsw, atrdsw, eolsw, eofsw, ptsw,                
-     1        menusw, signsw                                                    
-      integer reclen                                                            
+c      
+      integer :: nblank, reclen
+      real :: endchr                                                                         
+      logical :: promsw, echosw, comsw, atrdsw, eolsw, eofsw, ptsw,                
+     1           menusw, signsw                                                    
+c                                                        
       init = .true.                                                             
       echar = endchr                                                            
       echo = echosw                                                             
@@ -674,16 +804,15 @@ c *                                                                    *
 c * addlab                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine addlab(label)                                                  
+      subroutine addlab(label)  
+      use scanct                                                
+c
+      implicit none        
 c                                                                               
 c         add label for scan echo                                               
-c                                                                               
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
+c                       
+      integer :: label
+c                                                        
       ilabel = label                                                            
       return                                                                    
       end                                                                       
@@ -692,15 +821,15 @@ c *                                                                    *
 c * backsp                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine backsp(nument)                                                 
+      subroutine backsp(nument)   
+      use scanln                                              
+c
+      implicit none        
 c                                                                               
 c         backspace the scanner                                                 
+c
+      integer :: nument
 c                                                                               
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
       if(nent.lt.nument) go to 10                                               
       nent = nent - nument                                                      
       col = jstart(nent + 1)                                                    
@@ -715,15 +844,13 @@ c *                                                                    *
 c * getstr                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine getstr                                                         
+      subroutine getstr 
+      use scanln                                                        
+c
+      implicit none        
 c                                                                               
 c         parse a string                                                        
 c                                                                               
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
       col = jstart(nent)                                                        
       pstate = 1                                                                
       jump = 2                                                                  
@@ -734,22 +861,15 @@ c *                                                                    *
 c * reset                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine reset                                                          
+      subroutine reset 
+      use scaner     
+      use scanln 
+      use scanim                                                   
+c
+      implicit none        
 c                                                                               
 c         start line over                                                       
 c                                                                               
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
       col = 0                                                                   
       jump = 2                                                                  
       nent = 0                                                                  
@@ -761,15 +881,13 @@ c *                                                                    *
 c * skpstr                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine skpstr                                                         
+      subroutine skpstr   
+      use scanln                                                      
+c
+      implicit none        
 c                                                                               
 c         skip to end of string                                                 
 c                                                                               
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
       col = skip                                                                
       return                                                                    
       end                                                                       
@@ -778,12 +896,16 @@ c *                                                                    *
 c * septab                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine septab(newtab)                                                 
+      subroutine septab(newtab) 
+      use scantb                                                
+c
+      implicit none        
 c                                                                               
 c         change seperator table                                                
 c                                                                               
-      dimension newtab(1)                                                       
-      common /scantb/ nseptb, nclass, itab(256), iclass(256)                    
+      integer :: newtab(*)    !  must be 256 long      
+      integer :: i                                             
+c
       do i = 1, nseptb                                                          
         itab(i) = newtab(i)                                                     
       end do                                                                    
@@ -794,15 +916,15 @@ c *                                                                    *
 c * doscan                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function doscan(dummy)                                            
+      logical function doscan(dummy)
+      use scaner                                            
+c
+      implicit none        
 c                                                                               
 c          advance the scanner now                                              
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c         
+      integer :: dummy 
+c                                                                      
       if(next)call scan                                                         
       next = .false.                                                            
       doscan = .true.                                                           
@@ -813,15 +935,15 @@ c *                                                                    *
 c * endcrd                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function endcrd(dummy)                                            
+      logical function endcrd(dummy)  
+      use scaner                                          
+c
+      implicit none        
 c                                                                               
 c         is the current scan entity an end of line                             
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c    
+      real :: dummy
+      integer :: modeol                                                                           
       data modeol/9/                                                            
 c                                                                               
       if( mode .eq. modeol ) then                                               
@@ -843,17 +965,17 @@ c *                                                                    *
 c * endfil                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function endfil(last)                                             
+      logical function endfil( last )   
+      use scaner                                          
+c
+      implicit none        
 c                                                                               
 c        is the current scan entity an end of file                              
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      logical last                                                              
-      data modeof/10/                                                           
+      logical :: last      
+      integer :: modeof                                                        
+      data modeof/10/  
+c                                                         
       if(.not.next)go to 10                                                     
       if ( mode .ne. iabs ( modeof) )call scan                                  
       next = .false.                                                            
@@ -870,21 +992,19 @@ c *                                                                    *
 c * entit                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine entit(text,nc,nw)                                              
+      subroutine entit( text, nc, nw )    
+      use scaner                                          
+c
+      implicit none        
 c                                                                               
 c          return the current characters from entity                            
-c                                                                               
-      dimension text(1)                                                         
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c        
+      integer :: nc, nw                                                                      
+      real :: text(*)                                                         
+c
       nc = nchar                                                                
       nw = nwd                                                                  
-      do i = 1, nw                                                              
-       text(i) = entity(i)                                                      
-      end do                                                                    
+      text(1:nw) = entity(1:nw)                                                      
       return                                                                    
       end                                                                       
 c **********************************************************************        
@@ -892,26 +1012,22 @@ c *                                                                    *
 c * entits                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine entits(cstr,nc)                                                
+      subroutine entits( cstr, nc )  
+      use scaner                                              
+c
+      implicit none        
 c                                                                               
 c         return the contents of the scanner in a string                        
-c                                                                               
+c 
+      integer :: nc
       character(len=*) :: cstr                                                  
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      double precision dvalue                                                   
-      character(len=80) :: string                                               
-      equivalence ( string,entity )                                             
 c                                                                               
 c                       get the hollerith from scan and convert                 
 c                       to a string.  simply use equivalence of hollerith       
 c                       and characters.                                         
 c                                                                               
       nc = min0 (len(cstr),nchar)                                               
-      do i = 1,nc                                                               
-      cstr(i:i) = string(i:i)                                                   
-      end do                                                                    
+      cstr(1:nc) = scaner_string(1:nc)                                                   
 c                                                                               
       return                                                                    
       end                                                                       
@@ -920,15 +1036,14 @@ c *                                                                    *
 c * integr                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function integr(integ)                                            
+      logical function integr( integ )  
+      use scaner                                          
+c
+      implicit none
 c                                                                               
 c         is the current scan entity an integer                                 
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c 
+      integer :: integ, modint                                                                               
       data modint /1/                                                           
 c                                                                               
       if(.not.next)go to 10                                                     
@@ -946,16 +1061,17 @@ c *                                                                    *
 c * label                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function label(dummy)                                             
+      logical function label( dummy )
+      use scaner                                             
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a label                                    
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      data modlab/3/                                                            
+c  
+      real :: dummy
+      integer :: modlab                                                                             
+      data modlab/3/ 
+c                                                           
       if(.not.next)go to 10                                                     
       call scan                                                                 
       next = .false.                                                            
@@ -972,17 +1088,16 @@ c *                                                                    *
 c **********************************************************************        
 c                                                                               
 c                                                                               
-      logical function match(string,nc)                                         
+      logical function match( string, nc )   
+      use scaner                                      
+c
+      implicit none
 c                                                                               
 c         match a hollerith array against the current scan entity               
-c                                                                               
-      integer string(*)                                                         
-      logical scanmc                                                            
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c           
+      integer :: nc                                                                   
+      real :: string(*)                                                         
+      logical, external :: scanmc                                                            
 c                                                                               
       match = .false.                                                           
       if(.not.next)go to 10                                                     
@@ -1001,19 +1116,18 @@ c *                                                                    *
 c **********************************************************************        
 c                                                                               
 c                                                                               
-      logical function match_exact( string, nc )                                
+      logical function match_exact( string, nc )  
+      use scaner                              
+c
+      implicit none
 c                                                                               
 c         exact match a character string against the current scan               
 c         entity. input entity must have exactly the same                       
 c         number of characters as the input string cstr.                        
-c                                                                               
-      integer string(*)                                                         
-      logical scanmc                                                            
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c                   
+      integer :: nc                                                            
+      real :: string(*)                                                         
+      logical, external :: scanmc                                                            
 c                                                                               
       match_exact = .false.                                                     
       if( .not. next ) go to 10                                                 
@@ -1033,13 +1147,16 @@ c *                                                                    *
 c **********************************************************************        
 c                                                                               
 c                                                                               
-      logical function matchs(cstr,nc)                                          
+      logical function matchs( cstr, nc )                                          
+c
+      implicit none
 c                                                                               
 c         match a character array against the current scan entity               
-c                                                                               
+c     
+      integer :: nc                                                                          
       character(len=*) :: cstr, text*80                                         
-      integer  string(20)                                                       
-      logical match                                                             
+      real ::  string(20)                                                       
+      logical, external :: match                                                             
       equivalence ( string, text )                                              
 c                                                                               
 c                                                                               
@@ -1062,13 +1179,16 @@ c **********************************************************************
 c                                                                               
 c                                                                               
       logical function matchs_exact( cstr )                                     
+c
+      implicit none
 c                                                                               
 c         exact match a character array against the current                     
 c         scan entity                                                           
-c                                                                               
+c    
+      integer :: nc                                                                           
       character(len=*) :: cstr, text*80                                         
-      integer  string(20)                                                       
-      logical match_exact                                                       
+      real :: string(20)                                                       
+      logical, external :: match_exact                                                       
       equivalence ( string, text )                                              
 c                                                                               
 c                                                                               
@@ -1076,14 +1196,12 @@ c                       convert the string to hollerith
 c                                                                               
       text(1:80) = ' '                                                          
       nc = len(cstr)                                                            
-      do 10 i = 1, nc                                                           
-      text(i:i) = cstr(i:i)                                                     
-   10 continue                                                                  
+      text(1:nc) = cstr(1:nc)                                                     
 c                                                                               
 c                       call the hollerith match routine to do                  
 c                       the work                                                
 c                                                                               
-      matchs_exact = match_exact ( string, nc )                                 
+      matchs_exact = match_exact( string, nc )                                 
       return                                                                    
       end                                                                       
 c **********************************************************************        
@@ -1091,16 +1209,17 @@ c *                                                                    *
 c * name                                                               *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function name(dummy)                                              
+      logical function name( dummy )  
+      use scaner                                             
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a name                                     
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      data modnam/4/                                                            
+c 
+      real :: dummy
+      integer :: modnam                                                                              
+      data modnam/4/  
+c                                                          
       if(.not.next)go to 10                                                     
       call scan                                                                 
       next = .false.                                                            
@@ -1115,15 +1234,15 @@ c *                                                                    *
 c * noscan                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function noscan(dummy)                                            
+      logical function noscan( dummy ) 
+      use scaner                                           
+c
+      implicit none
 c                                                                               
 c         do not advance the scanner                                            
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c     
+      real :: dummy
+c                                                                          
       next = .false.                                                            
       noscan = .true.                                                           
       return                                                                    
@@ -1133,22 +1252,22 @@ c *                                                                    *
 c * numi                                                               *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function numi(integr)                                             
+      logical function numi( integr )  
+      use scaner                                           
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a number, convert to integer               
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      data modrel/2/                                                            
+c
+      integer :: integr, modrel                                                                               
+      data modrel/2/          
+c                                                  
       if(.not.next)go to 10                                                     
       call scan                                                                 
       next = .false.                                                            
    10 numi = .false.                                                            
       if (mode .gt. modrel)  go to 20                                           
-      if (mode .eq. modrel ) integr = value                                     
+      if (mode .eq. modrel ) integr = int( value )                                 
       if (mode .ne. modrel ) integr = ivalue                                    
       numi = .true.                                                             
       next = .true.                                                             
@@ -1159,25 +1278,24 @@ c *                                                                    *
 c * numd                                                               *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function numd(double)                                             
+      logical function numd( double_value )     
+      use scaner                                        
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a number, convert to double                
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue, double                                           
+      double precision :: double_value
+      integer :: modrel, modint                                          
       data modrel/2/, modint/1/                                                 
 c                                                                               
-      iout = 6                                                                  
       if(.not.next)go to 10                                                     
       call scan                                                                 
    10 next = .false.                                                            
       numd = .false.                                                            
       if (mode .gt. modrel) go to 20                                            
-      if (mode .eq. modint ) double = real(ivalue)                              
-      if (mode .ne. modint ) double = dvalue                                    
+      if (mode .eq. modint ) double_value = dble(ivalue)                              
+      if (mode .ne. modint ) double_value = dvalue                                    
       numd = .true.                                                             
       next = .true.                                                             
    20 continue                                                                  
@@ -1188,15 +1306,15 @@ c *                                                                    *
 c * numr                                                               *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function numr(real)                                               
+      logical function numr( real_value )
+      use scaner                                               
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a number, convert to real                  
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c    
+      real :: real_value
+      integer :: modrel, modint                                                                           
       data modrel/2/, modint/1/                                                 
 c                                                                               
       if(.not.next)go to 10                                                     
@@ -1204,8 +1322,8 @@ c
    10 next = .false.                                                            
       numr = .false.                                                            
       if (mode .gt. modrel) go to 20                                            
-      if (mode .eq. modint ) real = ivalue                                      
-      if (mode .ne. modint ) real = value                                       
+      if (mode .eq. modint ) real_value = real( ivalue )                                    
+      if (mode .ne. modint ) real_value = value                                       
       numr = .true.                                                             
       next = .true.                                                             
    20 return                                                                    
@@ -1215,16 +1333,14 @@ c *                                                                    *
 c * point                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function point(point1,point2)                                     
+      logical function point( point1, point2 ) 
+      use scaner                                    
+c
+      implicit none
 c                                                                               
 c         is the scan entity a point                                            
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      integer point1, point2                                                    
+      integer :: point1, point2, modpt                                                  
       data modpt/11/                                                            
 c                                                                               
       if(.not.next)go to 10                                                     
@@ -1243,21 +1359,15 @@ c *                                                                    *
 c * readsc                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine readsc                                                         
+      subroutine readsc   
+      use scanct  
+      use scaner    
+c
+      implicit none
 c                                                                               
 c         advance the scanner now                                               
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
+c              
+      integer :: modeol                                                                 
       data modeol/9/                                                            
 c                                                                               
       if(.not.autord.or.(autord.and.mode.ne.modeol))call rdline                 
@@ -1269,15 +1379,15 @@ c *                                                                    *
 c * realn                                                              *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function realn(real)                                              
+      logical function realn( real_value ) 
+      use scaner                                              
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a real                                     
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c          
+      real :: real_value   
+      integer :: modrel                                                                  
       data modrel/2/                                                            
 c                                                                               
       if(.not.next)go to 10                                                     
@@ -1285,7 +1395,7 @@ c
       next = .false.                                                            
    10 realn = .false.                                                           
       if(mode.ne.modrel)go to 20                                                
-      real = value                                                              
+      real_value = value                                                              
       realn = .true.                                                            
       next = .true.                                                             
    20 return                                                                    
@@ -1295,16 +1405,14 @@ c *                                                                    *
 c * sep                                                                *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function sep(septyp)                                              
+      logical function sep( septyp ) 
+      use scaner                                             
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a seperator                                
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      integer septyp                                                            
+      integer :: septyp, modsep                                                           
       data modsep/6/                                                            
 c                                                                               
       if(.not.next)go to 10                                                     
@@ -1322,15 +1430,15 @@ c *                                                                    *
 c * isstring - do not touch next variable                              *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function isstring(dummy)                                          
+      logical function isstring( dummy )      
+      use scaner                                    
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a string                                   
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c
+      real :: dummy
+      integer :: modstr                                                                               
       data modstr/7/                                                            
 c                                                                               
       isstring = .false.                                                        
@@ -1342,15 +1450,15 @@ c *                                                                    *
 c * string                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function string(dummy)                                            
+      logical function string( dummy ) 
+      use scaner                                           
+c
+      implicit none
 c                                                                               
 c         is the current scan entity a string                                   
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c        
+      real :: dummy
+      integer :: modstr                                                                       
       data modstr/7/                                                            
 c                                                                               
       if(.not.next)go to 10                                                     
@@ -1367,15 +1475,15 @@ c *                                                                    *
 c * true                                                               *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function true(dummy)                                              
+      logical function true( dummy ) 
+      use scaner                                             
+c
+      implicit none
 c                                                                               
 c         advance the scanner before the next test                              
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
+c   
+      real :: dummy
+c                                                                            
       next = .true.                                                             
       true = .true.                                                             
       return                                                                    
@@ -1385,7 +1493,10 @@ c *                                                                 *
 c * integerlist                                                     *           
 c *                                                                 *           
 c *******************************************************************           
-      subroutine trscan_list ( list, mlist, iall, nlist, ierr )                 
+      subroutine trscan_list ( list, mlist, iall, nlist, ierr ) 
+      use scaner
+c
+      implicit none                
 c                                                                               
 c          scan action to input a list of integer terms                         
 c              each action may be delimitted by a comma                         
@@ -1414,9 +1525,6 @@ c                                   = 1 - no error
 c                                   = 2 - parse rules failded                   
 c                                   = 3 - list overflow                         
 c                                   = 4 - list not found                        
-c                                                                               
-c         common blocks                                                         
-c              labelled common /scaner/                                         
 c                                                                               
 c         called subprograms                                                    
 c              scan                                                             
@@ -1460,18 +1568,14 @@ c                         8 = save 1, done
 c                         9 = test overflow                                     
 c                        10 = save iteration increment                          
 c                                                                               
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      dimension list(mlist), ifsa(6,6), nstate(6,6)                             
-      integer entity                                                            
-      logical istart, iovfl                                                     
-      logical scanmc                                                            
-      dimension iby(1), ito(1), jall(1)                                         
-      data iby/2hby/, ito/2hto/, jall/3hall/                                    
+c      
+      integer :: mlist, list(mlist), iall, nlist, ierr                                                                         
+      integer :: ifsa(6,6), nstate(6,6), istate, iclass, iact                             
+      logical :: istart, iovfl                                                     
+      logical, external :: scanmc                                                            
+      real :: rby(1)  = real( Z'20207962', kind=kind(rby) ) ! by
+      real :: rto(1)  = real( Z'20206F74', kind=kind(rto) ) ! to
+      real :: rall(1) = real( Z'206C6C61', kind=kind(rall) ) ! all
 c                                                                               
 c         transfer table                                                        
 c                                                                               
@@ -1512,9 +1616,9 @@ c
       if(ivalue.eq.16)iclass = 4                                                
       go to 140                                                                 
  120  if( mode.ne.3 )go to 130                                                  
-      if( scanmc(entity(1),iby,2) .and. nchar.eq.2 ) iclass = 3                 
-      if( scanmc(entity(1),ito,2) .and. nchar.eq.2 ) iclass = 2                 
-      if( scanmc(entity(1),jall,3) .and. istart .and. iall.ne.0                 
+      if( scanmc(entity,rby,2) .and. nchar.eq.2 ) iclass = 3                 
+      if( scanmc(entity,rto,2) .and. nchar.eq.2 ) iclass = 2                 
+      if( scanmc(entity,rall,3) .and. istart .and. iall.ne.0                 
      &    .and. nchar.eq.3 ) go to 350                                          
       go to 140                                                                 
  130  if(mode.ne.1)go to 140                                                    
@@ -1633,8 +1737,12 @@ c *                                                                 *
 c * alpha match                                                     *           
 c *                                                                 *           
 c *******************************************************************           
-      subroutine tramat ( word, mchar, matchl, loc, scnact )                    
-c                                                                               
+      subroutine tramat ( word, mchar, matchl, loc, scnact )   
+      use scaner  
+      use scanim    
+c
+      implicit none
+c                                                                         
 c         alphamatch                                                            
 c         match a word against a list of words                                  
 c                                                                               
@@ -1657,16 +1765,12 @@ c                                         readline & scan
 c                                   = else - noscan                             
 c                                                                               
 c                                                                               
-      dimension word(1), matchl(1)                                              
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-      integer scnact                                                            
-      logical scanmc                                                            
+      real :: word(*)
+      integer :: matchl(*), mchar, loc, scnact                                             
+      integer :: iword(1), n, j, i, l                                                            
+      logical, external :: scanmc
+      real :: rword(1)   
+      equivalence ( rword, iword )                                                          
 c                                                                               
 c         go through the list to find the match                                 
 c                                                                               
@@ -1675,8 +1779,9 @@ c
       j = 2                                                                     
       do 10 i = 1, n                                                            
       l = matchl(j)                                                             
-      if(l.gt.nchar)go to 10                                                    
-      if(scanmc(word,matchl(j+1),l))go to 20                                    
+      if(l.gt.nchar)go to 10 
+      iword(1) = matchl(j+1)
+      if(scanmc(word,rword,l))go to 20                                    
       j = j+(l+ncpw-1)/ncpw+1                                                   
    10 continue                                                                  
       return                                                                    
@@ -1698,7 +1803,11 @@ c *                                                                 *
 c * alpha list                                                      *           
 c *                                                                 *           
 c *******************************************************************           
-      subroutine tralst ( matchl, ifound, nmax, nfound, ierror )                
+      subroutine tralst ( matchl, ifound, nmax, nfound, ierror )
+      use scaner
+      use scanim
+c
+      implicit none
 c                                                                               
 c         alpha list                                                            
 c         match alpha input against a list of words                             
@@ -1718,15 +1827,11 @@ c                                   = 2 = syntax
 c                                   = 3 - overflow of ifound                    
 c                                                                               
 c                                                                               
-      dimension matchl(1), ifound(1)                                            
-      logical scanmc                                                            
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
+      integer :: matchl(*), ifound(*), nmax, nfound, ierror                                            
+      logical, external :: scanmc                                                            
+      integer :: iword(1), n, j, i, l
+      real :: rword(1)
+      equivalence ( iword, rword )                        
 c                                                                               
 c         go through the list to look for a match                               
 c                                                                               
@@ -1738,8 +1843,9 @@ c
    10 j = 2                                                                     
       do 20 i = 1, n                                                            
       l = matchl(j)                                                             
-      if(l.gt.nchar)go to 20                                                    
-      if(scanmc(entity(1),matchl(j+1),l))go to 30                               
+      if(l.gt.nchar)go to 20    
+      iword(1) = matchl(j+1)                                             
+      if(scanmc(entity,rword,l))go to 30                               
       j = j+(l+ncpw-1)/ncpw+1                                                   
   20  continue                                                                  
       if(nfound.gt.nmax)ierror = 3                                              
@@ -1772,6 +1878,8 @@ c * next on integer list                                            *
 c *                                                                 *           
 c *******************************************************************           
       subroutine trxlst ( list, nl, iplist, icn, next )                         
+c
+      implicit none
 c                                                                               
 c         polo action to determine next entry on an integerlist                 
 c                                                                               
@@ -1789,7 +1897,8 @@ c                                   output - next iteration count
 c              next      (output) - next item on list to be proccessed          
 c                                                                               
 c                                                                               
-      dimension list(nl)                                                        
+      integer :: nl, list(nl), iplist, icn, next
+      integer :: ir
 c                                                                               
 c         get result                                                            
 c                                                                               
@@ -1834,12 +1943,14 @@ c * iszlst - size of a list                                         *
 c *                                                                 *           
 c *******************************************************************           
       integer function iszlst ( list, nl )                                      
-c                                                                               
+c
+      implicit none
 c                                                                               
 c          determine the number of terms in an integerlist                      
-c                                                                               
-c                                                                               
-      dimension list(nl)                                                        
+c 
+      integer :: nl, list(nl)
+      integer :: ip, ir
+c                                                                                                                                                             
       ip = 0                                                                    
       ir = 0                                                                    
    10 if ( ip.ge.nl ) go to 20                                                  
@@ -1857,29 +1968,16 @@ c *                                                                 *
 c * scandb                                                          *           
 c *                                                                 *           
 c *******************************************************************           
-      subroutine scandb                                                         
+      subroutine scandb
+      use scanio  
+      use scanct 
+      use scaner 
+      use scanln                                                    
+c
+      implicit none
 c                                                                               
 c         debug - all character output at 4 per word                            
 c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
       write(iout,1001)                                                          
       write(iout,1002)recsiz, limit, mark, echar, echo, promt, ilabel,          
      1                init, point, menu, leof, eol, autord, commnt,             
@@ -1948,31 +2046,23 @@ c *                                                                    *
 c * scancl                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine scancl                                                         
-c                                                                               
+      subroutine scancl    
+      use scantb  
+      use scanct
+      use scanln 
+      use scanim                                                  
+c
+      implicit none
+c
 c       classify the input characters                                           
-c                                                                               
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
-      common /scantb/ nseptb, nclass, itab(256), iclass(256)                    
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-      character(len=1) :: xcard(640), xbuff(640)                                
-      equivalence ( xcard(1), card(1) ), ( xbuff(1), jbuff(1) )                 
+c        
+      integer :: j, k, nn, i     
+c                                                                  
       j = 1                                                                     
       k = ncpw                                                                  
       nn = min0(incol,mark)                                                     
-      nn = nn+1                                                                 
-      card(nn)   = echar                                                        
+      nn = nn + 1                                                                 
+      card(nn) = transfer( echar, j )                                                       
 c                                                                               
 c                                                                               
 c         the loop first constructs xbuff, where each character is              
@@ -1991,7 +2081,7 @@ c
      &        idigit(i) = jbuff(i)-intzer                                       
          if(jbuff(i).eq.inttab) jbuff(i) = intblk                               
          ibuff(i) = iclass(jbuff(i)+1)                                          
-         if(card(i).eq.echar)ibuff(i) = 10                                      
+         if(card(i).eq.transfer(echar,j))ibuff(i) = 10                                      
          j = j+ncpw                                                             
          k = k+ncpw                                                             
  10   continue                                                                  
@@ -2002,21 +2092,21 @@ c *                                                                    *
 c * scanin                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine scanin(in,buff,reclen,errcod)                                  
+      subroutine scanin( in, buff, reclen, errcod ) 
+      use scanln    
+      use scanim                             
+c
+      implicit none
 c                                                                               
 c         input a record from a device                                          
 c                                                                               
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
-      integer reclen, errcod, recsiz                                            
-      dimension buff(80)                                                        
+      integer :: in, reclen, errcod, recsiz                                            
+      real :: buff(80)                                                        
       character(len=1) :: chartab(4)                                            
-      equivalence (holtab, chartab(1))                                          
+      equivalence ( holtab, chartab(1) )
+c
+      integer :: i  
+      real :: holtab
 c                                                                               
 c             create a holerith tab for checking for tabs                       
 c                                                                               
@@ -2038,7 +2128,7 @@ c
             go to 40                                                            
          endif                                                                  
          reclen = reclen - 1                                                    
-      enddo                                                                     
+      end do                                                                     
       reclen = 0                                                                
       return                                                                    
 c                                                                               
@@ -2059,25 +2149,17 @@ c *                                                                    *
 c * scanpk                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      subroutine scanpk                                                         
+      subroutine scanpk 
+      use scaner 
+      use scanln 
+      use scanim                                                      
+c
+      implicit none
 c                                                                               
 c           pack the scaner result in entity at 4 characters per word           
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-      character(len=1) :: xentit(80), xcard(320)                                
-      equivalence ( xentit(1), entity(1) ), ( xcard(1), card(1) )               
-c                                                                               
+c 
+      integer :: i, istart
+c                                                                              
       nwd = (nchar+ncpw-1)/ncpw                                                 
       if(nwd.le.0)nwd = 1                                                       
       entity(nwd) = blank                                                       
@@ -2100,38 +2182,23 @@ c * scanrd                                                             *
 c *                                                                    *        
 c **********************************************************************        
       subroutine scanrd                                                         
-      use file_info                                                             
+      use file_info   
+      use scanio   
+      use scanct
+      use scaner  
+      use scanln
+      use scanim                                                     
+c
+      implicit none
 c                                                                               
 c         input for scan                                                        
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-      logical reread, comlin                                                    
-      logical matchs                                                            
+c         
+      integer :: inthash, intexclam, ierr, dum, in, i, nn, kk, jj, ii
+      logical :: reread, comlin, comlin2, nowopen                                                  
+      logical, external :: matchs   
+      real :: dumr       
+      double precision :: dumd                                                  
       character(len=1) :: dums                                                  
-c                                                                               
-      logical comlin2                                                           
-                                                                                
-      logical nowopen                                                           
       character(len=80) :: nowname                                              
       data inthash / 33 /, intexclam / 35 /                                     
 c                                                                               
@@ -2143,7 +2210,7 @@ c
       incol = recsiz                                                            
       if (  promt .and. ( inunit .eq. inremo ) )                                
      1                call wrnocr( 3h > , iotrem )                              
-      call scanin( inunit, card, incol, ierr )                                  
+      call scanin( inunit, rcard, incol, ierr )                                  
       if ( incol .eq. 0 ) go to 10                                              
       if( ierr < 0 ) go to 20                                                   
       if( ierr == 0 ) go to 40                                                  
@@ -2232,7 +2299,6 @@ c         if there is an asterisk, then call star_com to
 c         process the star command, then read the next line.                    
 c         if there isn't an asterisk, then rest scan and go on.                 
 c                                                                               
- 80   continue                                                                  
       if (isct) then                                                            
          goto 85                                                                
       endif                                                                     
@@ -2286,7 +2352,6 @@ C
       return                                                                    
  1001 format(1x,i5,1x,80a1)                                                     
  1002 format(7x,      80a1)                                                     
- 1003 format(3h ? )                                                             
  1005 format('>>>> Fatal Error: non-blank data in columns beyond 80.',          
      &   /,  '                  job terminated to prevent subsequent',          
      &   /,  '                  errors.',//)                                    
@@ -2296,19 +2361,23 @@ c *                                                                    *
 c * scanmc                                                             *        
 c *                                                                    *        
 c **********************************************************************        
-      logical function scanmc(texta,textb,nchar)                                
+      logical function scanmc( texta, textb, nchar )
+      use scanim                               
+c
+      implicit none
 c                                                                               
 c         character match of a and b for nchars.  ignores                       
 c         case of characters during compare.  this routine                      
 c         depends on use of the ascii character set in scan.                    
-c                                                                               
-      dimension texta(1), textb(1)                                              
-      real ja, jb, jc, jd                                                       
-      integer char1, char2                                                      
+c
+      real :: texta(*), textb(*)
+      integer :: nchar                                                                                
+c
+      integer :: nw, nr, i, ii
+      real :: ja, jb, jc, jd                                                       
+      integer :: char1, char2                                                      
       character(len=1) :: aa(4), bb(4), cc(4), dd(4)                            
       equivalence (aa(1),ja), (bb(1),jb), (cc(1),jc), (dd(1),jd)                
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
 c                                                                               
       scanmc = .false.                                                          
       nw = nchar/ncpw                                                           
@@ -2360,8 +2429,12 @@ c         texta and textb are GUARANTEED to be declared
 c         in the calling program as type character so that                      
 c         their lengths and memory alignment are correct.                       
 c                                                                               
-      implicit integer (a-z)                                                    
-      character(len=*) :: texta, textb                                          
+      implicit none
+c                                                    
+      integer :: nchar
+      character(len=*) :: texta, textb 
+c
+      integer :: lena, lenb, i, char1, char2  
 c                                                                               
       scanms = .false.                                                          
       lena   = len( texta )                                                     
@@ -2384,11 +2457,6 @@ c
       scanms = .true.                                                           
       return                                                                    
 c                                                                               
- 9000 format(/,                                                                 
-     & '>> ERROR:  text string mismatch in scanms....',/,                       
-     & '           lena, lenb, nchar: ',3i6,/,                                  
-     & '           program terminated.....',//)                                 
-c                                                                               
       end                                                                       
 c **********************************************************************        
 c *                                                                    *        
@@ -2398,120 +2466,17 @@ c **********************************************************************
 c                                                                               
 c                                                                               
       subroutine wrnocr( prompt, outrem )                                       
+c
+      implicit none
 c                                                                               
 c                write a prompt to a terminal without a carriage                
 c                return.                                                        
 c                                                                               
-      integer   outrem, prompt                                                  
+      integer :: outrem, prompt                                                  
       write(outrem,fmt='(a3$)' ) prompt                                         
       return                                                                    
       end                                                                       
-c **********************************************************************        
-c *                                                                    *        
-c * block data                                                         *        
-c *                                                                    *        
-c **********************************************************************        
-       block data                                                               
 c                                                                               
-c          initialze the scanner                                                
-c                                                                               
-      common /scaner/ entity(20), ival(2), mode, nchar, nwd, next,              
-     1                icolmn, ispace, dvalue                                    
-      equivalence (ival(1),value,ivalue)                                        
-      logical next                                                              
-      double precision dvalue                                                   
-      common /scanct/ echar, echo, ilabel, limit, mark, promt,                  
-     1                point, recsiz, init, leof, eol, menu,                     
-     2                autord, commnt, signed, autoct                            
-      integer recsiz                                                            
-      logical echo, promt, point, init, leof, eol, menu,                        
-     1        commnt, autord, signed, autoct                                    
-      common /scanio/ inunit, iout, files(10), filpt, fillim, inremo,           
-     1                iotrem                                                    
-      integer files, filpt, fillim                                              
-      common /scanln/ col, jump, nent, pstate, skip, doread,                    
-     1                incol, jstart(80), ibuff(81), jbuff(81),                  
-     2                idigit(81), card(81), isct                                
-      integer col, skip, pstate                                                 
-      logical doread, isct                                                      
-      common /scantb/ nseptb, nclass, itab(256), iclass(256)                    
-      common /scanim/ ncpw, blank, intzer, intnin, intc, intcom,                
-     &                intblk, intlcc, inttab, intstar                           
-c                                                                               
-c         /scaner/                                                              
-c                                                                               
-      data entity/20*4h     /, ival/2*0/, mode/0/, nchar/0/,                    
-     1     nwd/0/, next/.false./, icolmn/0/                                     
-c                                                                               
-c         /scanct/                                                              
-c                                                                               
-      data echar/1h$/, echo/.true./, ilabel/0/, limit/80/, mark/80/,            
-     1     point/.false./, recsiz/80/, init/.false./, leof/.false./,            
-     2     eol/.true./, menu/.false./, autord/.false./,                         
-     3     commnt/.true./, signed/.false./, promt/.true./                       
-c                                                                               
-c         /scanio/                                                              
-c                                                                               
-      data inunit/5/, iout/6/, files/10*0/, filpt/0/, fillim/10/,               
-     1     inremo/5/, iotrem/6/                                                 
-c                                                                               
-c         /scanln/                                                              
-c                                                                               
-      data col/0/, jump/1/, nent/1/, pstate/0/, skip/1/,                        
-     1     doread/.true./, incol/80/, jstart/80*0/,                             
-     2     ibuff/81*9/, jbuff/81*9/, idigit/81*0/,                              
-     3     card/81*4h     /                                                     
-c                                                                               
-c         /scantb/                                                              
-c                                                                               
-      data nseptb/256/, nclass/256/                                             
-c                 0,1,2,3,4,5,6,7    0,1,2,3,4,5,6,7                            
-      data iclass/8*8,               8*8,                                       
-     2            8*8,               8*8,                                       
-     4            9,8,6,8,8,8,8,6,   8,8,8,2,8,3,7,8,                           
-     6            8*1,               1,1,8,8,8,8,8,8,                           
-     8            8,5,5,5,5,4,5,5,   8*5,                                       
-     a            8*5,               5,5,5,8,8,8,8,5,                           
-     c            8,5,5,5,5,4,5,5,   8*5,                                       
-     e            8*5,               5,5,5,8,8,8,8,8,                           
-     1            8*8,               8*8,                                       
-     3            8*8,               8*8,                                       
-     5            9,8,6,8,8,8,8,6,   8,8,8,2,8,3,7,8,                           
-     7            8*1,               1,1,8,8,8,8,8,8,                           
-     9            8,5,5,5,5,4,5,5,   8*5,                                       
-     b            8*5,               5,5,5,8,8,8,8,5,                           
-     d            8,5,5,5,5,4,5,5,   8*5,                                       
-     f            8*5,               5,5,5,8,8,8,8,8/                           
-c                 0,1,2,3,4,5,6,7    0,1,2,3,4,5,6,7                            
-c                                                                               
-c                                                                               
-c               00,01,02,03,04,05,06,07   00,01,02,03,04,05,06,07               
-      data itab/8*0,                      8*0,                                  
-     2          8*0,                      8*0,                                  
-     4          00,00,26,22,09,17,07,24,  04,11,10,05,16,03,02,15,              
-     6          8*0,                      00,00,21,12,00,25,19,20,              
-     8          23,00,00,00,00,00,00,00,  8*0,                                  
-     a          8*0,                      00,00,00,01,00,08,13,00,              
-     c          8*0,                      8*0,                                  
-     e          8*0,                      00,00,00,00,06,00,00,00,              
-     1          8*0,                      8*0,                                  
-     3          8*0,                      8*0,                                  
-     5          00,00,26,22,09,17,07,24,  04,11,10,05,16,03,02,15,              
-     7          8*0,                      00,00,21,12,00,25,19,20,              
-     9          23,00,00,00,00,00,00,00,  8*0,                                  
-     b          8*0,                      00,00,00,01,00,08,13,00,              
-     d          8*0,                      8*0,                                  
-     f          8*0,                      00,00,00,00,06,00,00,00/              
-c                                                                               
-c         /scanim/                                                              
-c                                                                               
-      data blank/4h     /, intzer/48/, intnin/58/, intc/67/,                    
-     1     intcom/44/, intblk/32/, intlcc/99/, inttab/9/,                       
-     2     intstar/42/                                                          
-      data ncpw /4/                                                             
-c                                                                               
-c                                                                               
-      end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
 c     *            subroutine check_to_prompt                        *          
@@ -2525,10 +2490,13 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine check_to_prompt( prompt )                                      
-      logical prompt                                                            
+      subroutine check_to_prompt( prompt )  
+c
+      implicit none
+c                                    
+      logical :: prompt    
+c                                                        
       prompt =  .false.                                                         
-                                                                                
       return                                                                    
       end                                                                       
 c     ****************************************************************          
@@ -2547,8 +2515,11 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine scan_flushline                                                 
-      integer  dum                                                              
-      logical  endcrd, true                                                     
+c
+      implicit none
+c                                                                             
+      real :: dum                                                              
+      logical, external :: endcrd, true                                                     
 c                                                                               
       do                                                                        
        if( endcrd(dum) ) return                                                 
