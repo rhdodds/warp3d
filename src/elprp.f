@@ -59,11 +59,8 @@ c
       integer :: elem, type
 c
       integer :: intord, outloc, iloc, geonl, matnum, iword
-      character(len=1) :: dums
-      real :: e, et, h,  dumr, rword
+      real :: e, et, h, rword
       real, parameter :: rzero = 0.0, one = 1.0
-      double precision :: dumd
-      logical :: fgm
       equivalence( iword, rword )
 c
 c                       note: data stored in the element properties
@@ -100,9 +97,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -116,7 +113,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -212,7 +209,7 @@ c
       props(21,elem)  = matprp(11,matnum)
       props(22,elem)  = rzero
       if ( matprp(12,matnum) .ne. rzero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = 1.0e10 !  matprp(5,matnum) for linear elastic bar
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -221,7 +218,7 @@ c
      &                         ior( iprops(24,elem), 2 ) ! bit 1
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 ) ! bit 2
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int( matprp(9,matnum) )
       props(26,elem)  = rzero
       props(27,elem)  = rzero
       props(28,elem)  = rzero
@@ -271,11 +268,8 @@ c
       integer :: elem, type
 c
       integer :: intord, outloc, iloc, geonl, matnum, iword
-      character(len=1) :: dums
-      real :: e, et, h,  dumr, rword
+      real :: rword
       real, parameter :: rzero = 0.0, one = 1.0, rbig = -1.0e20
-      double precision :: dumd
-      logical :: fgm
       equivalence( iword, rword )
 c
 c                       note: data stored in the element properties
@@ -480,12 +474,9 @@ c
       implicit integer (a-z)
 c
       character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      logical fgm
-      data zero, one
-     &    / 0.0, 1.0 /
+      real :: e, et, h,  dumr, rzero
+      double precision :: zero, one, dumd
+      data zero, one, rzero / 0.0d0, 1.0d0, 0.0 /
 c
 c
 c                       note: data stored in the element properties
@@ -513,13 +504,13 @@ c                       ordering permitted is the 14 pt rule.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -535,9 +526,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -546,7 +537,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -556,7 +547,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -658,9 +649,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = rzero
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( sngl( one / matprp(12,matnum) ) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -669,7 +660,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int( matprp(9,matnum) )
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -714,12 +705,11 @@ c
       implicit integer (a-z)
 c
       character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
+      real :: rzero, e, et, h,  dumr
+      double precision :: zero, one, dumd
       logical local_debug
-      data zero, one, local_debug
-     &    / 0.0, 1.0, .true. /
+      data zero, one, local_debug, rzero
+     &    / 0.0d0, 1.0d0, .true., 0.0 /
 c
 c
 c                       note: data stored in the element properties
@@ -745,10 +735,10 @@ c                       the default value is 2x2x2.
 c
       intord= elstor(3,elem)
 c
-      if(intord.eq.4HDEFA.OR.INTORD.EQ.4HO222) then
+      if(intord.eq.id_defa.OR.INTORD.EQ.id_o222) then
          iprops(5,elem)= 1
          iprops(6,elem)= 8
-      else if(intord.eq.4HO06P) then
+      else if(intord.eq.id_o06p) then
          iprops(5,elem)= 2
          iprops(6,elem)= 6
       else
@@ -764,9 +754,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -776,7 +766,7 @@ c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
 c
-      if(outfmt.eq.4HDEFA.OR.OUTFMT.EQ.4HSHRT) then
+      if(outfmt.eq.id_defa.OR.OUTFMT.EQ.id_shrt) then
          lprops(16,elem)= .false.
       else
          lprops(16,elem)= .true.
@@ -787,7 +777,7 @@ c                       the default value is on.
 c
       geonl= elstor(7,elem)
 c
-      if(geonl.eq.4HDEFA.OR.GEONL.EQ.4HTRUE) then
+      if(geonl.eq.id_defa.OR.GEONL.EQ.id_true) then
          lprops(18,elem)= .true.
       else
          lprops(18,elem)= .false.
@@ -798,7 +788,7 @@ c                       the default value is on.
 c
       bbar = elstor(8,elem)
 c
-      if(bbar.eq.4HTRUE) THEN
+      if(bbar.eq.id_true) THEN
          LPROPS(19,ELEM)= .TRUE.
       ELSE
          LPROPS(19,ELEM)= .FALSE.
@@ -895,9 +885,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -906,7 +896,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -982,13 +972,13 @@ c                       the default value is 2x2x2.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -1004,9 +994,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -1015,7 +1005,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -1025,7 +1015,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -1127,9 +1117,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -1138,7 +1128,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -1215,13 +1205,13 @@ c                       the default value is 2x2x2.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -1237,9 +1227,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -1248,7 +1238,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -1258,7 +1248,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -1359,9 +1349,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -1370,7 +1360,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -1447,13 +1437,13 @@ c                       the default value is 2x2x2.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -1469,9 +1459,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -1480,7 +1470,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -1490,7 +1480,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -1592,9 +1582,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -1603,7 +1593,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -1682,13 +1672,13 @@ c                       orders have 1, 4, or 5 points
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO04P ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o04p ) then
          iprops(5,elem) = 4
          iprops(6,elem) = 4
-      else if( intord.eq.4HO01P ) then
+      else if( intord.eq.id_o01p ) then
          iprops(5,elem) = 1
          iprops(6,elem) = 1
-      else if( intord.eq.4HO05P ) then
+      else if( intord.eq.id_o05p ) then
          iprops(5,elem) = 5
          iprops(6,elem) = 5
       else
@@ -1704,9 +1694,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -1715,7 +1705,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -1725,7 +1715,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -1826,9 +1816,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -1837,7 +1827,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -1913,13 +1903,13 @@ c                       the default value is 2x2x2.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -1935,9 +1925,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -1946,7 +1936,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -1956,7 +1946,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -2057,9 +2047,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -2068,7 +2058,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -2145,13 +2135,13 @@ c                       the default value is 2x2x2.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -2167,9 +2157,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -2178,7 +2168,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -2188,7 +2178,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -2288,9 +2278,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -2299,7 +2289,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -2376,13 +2366,13 @@ c                       the default value is 2x2x2.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO222 ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
          iprops(5,elem) = 8
          iprops(6,elem) = 8
-      else if( intord.eq.4HO14P ) then
+      else if( intord.eq.id_o14p ) then
          iprops(5,elem) = 9
          iprops(6,elem) = 14
-      else if( intord.eq.4HO09P ) then
+      else if( intord.eq.id_o09p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 9
       else
@@ -2398,9 +2388,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -2409,7 +2399,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -2419,7 +2409,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -2521,9 +2511,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -2532,7 +2522,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -2614,13 +2604,13 @@ c                       gauss integration.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO09P ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o09p ) then
          iprops(5,elem) = 3
          iprops(6,elem) = 9
-      else if( intord.eq.4HO01P ) then
+      else if( intord.eq.id_o01p ) then
          iprops(5,elem) = 1
          iprops(6,elem) = 1
-      else if( intord.eq.4HO04P ) then
+      else if( intord.eq.id_o04p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 4
       else
@@ -2636,9 +2626,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -2647,7 +2637,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -2657,7 +2647,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -2758,9 +2748,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -2769,7 +2759,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -2849,19 +2839,19 @@ c                       possible integration order = 1,3,4,6,7
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO03P ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o03p ) then
          iprops(5,elem) = 3
          iprops(6,elem) = 3
-      else if( intord.eq.4HO01P ) then
+      else if( intord.eq.id_o01p ) then
          iprops(5,elem) = 1
          iprops(6,elem) = 1
-      else if( intord.eq.4HO04P ) then
+      else if( intord.eq.id_o04p ) then
          iprops(5,elem) = 4
          iprops(6,elem) = 4
-      else if( intord.eq.4HO06P ) then
+      else if( intord.eq.id_o06p ) then
          iprops(5,elem) = 6
          iprops(6,elem) = 6
-       else if( intord.eq.4HO07P ) then
+       else if( intord.eq.id_o07p ) then
          iprops(5,elem) = 7
          iprops(6,elem) = 7
       else
@@ -2881,9 +2871,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -2892,7 +2882,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -2902,7 +2892,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -3002,9 +2992,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -3013,7 +3003,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -3098,13 +3088,13 @@ c
       intord = elstor(3,elem)
 c
 c
-      if( intord.eq.4HDEFA .or. intord.eq.4HO22G ) then
+      if( intord.eq.id_defa .or. intord.eq.id_o22g ) then
          iprops(5,elem) = 5
          iprops(6,elem) = 4
-      else if( intord.eq.4HO22N ) then
+      else if( intord.eq.id_o22n ) then
          iprops(5,elem) = 4
          iprops(6,elem) = 4
-      else if( intord.eq.4HO01P ) then
+      else if( intord.eq.id_o01p ) then
          iprops(5,elem) = 6
          iprops(6,elem) = 1
       else
@@ -3120,9 +3110,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -3131,7 +3121,7 @@ c                       output format. the default value is short.
 c                       -- cohesive element can output only in short fmt.
 c
       outfmt = elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .false.
@@ -3141,7 +3131,7 @@ c                       geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -3156,11 +3146,11 @@ c                       reference surface
 c                       for geometrical update for the cohesive element
 c
       surf = elstor(10, elem)
-      if( surf.eq.4HDEFA .or. surf.eq.4HO222 ) then
+      if( surf.eq.id_defa .or. surf.eq.id_o222 ) then
          iprops(26,elem) = 2
-      else if( surf.eq.4HO111 ) then
+      else if( surf.eq.id_o111 ) then
          iprops(26,elem) = 1
-      else if( surf.eq.4HO333 ) then
+      else if( surf.eq.id_o333 ) then
          iprops(26,elem) = 3
       else
          iprops(26,elem) = 2
@@ -3343,28 +3333,28 @@ c                 if user has input a non-consistent value, serve a warning
 c                 and set a correct default value.
 c
       props(23,elem)   = matprp(42,matnum)
-      iprops(27,elem)  = matprp(44,matnum)
+      iprops(27,elem)  = int( int( matprp(44,matnum) ) )
       lprops(10,elem)  = .true.
       exponential_type = iprops(27,elem) .eq. 4
       ppr_type         = iprops(27,elem) .eq. 6
       cavit_type       = iprops(27,elem) .eq. 7
 c
 c      if( exponential_type ) then
-c        if ( surf.eq.4HO111 .and. matprp(42,matnum) .ne. zero ) then
+c        if ( surf.eq.id_o111 .and. matprp(42,matnum) .ne. zero ) then
 c       call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
-c         props(23,elem) = zero
+c         props(23,elem) = sngl(zero)
 c        end if
-c        if ( surf.eq.4HO333 .and. matprp(42,matnum) .ne. zero ) then
+c        if ( surf.eq.id_o333 .and. matprp(42,matnum) .ne. zero ) then
 c       call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
-c         props(23,elem) = zero
+c         props(23,elem) = sngl(zero)
 c        end if
 c      end if
 c
 c      if( ppr_type ) then
-c        if ( surf.eq.4HO111 .and. matprp(42,matnum) .eq. zero ) then
+c        if ( surf.eq.id_o111 .and. matprp(42,matnum) .eq. zero ) then
 c       call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
 c        end if
-c        if ( surf.eq.4HO333 .and. matprp(42,matnum) .eq. zero ) then
+c        if ( surf.eq.id_o333 .and. matprp(42,matnum) .eq. zero ) then
 c       call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
 c        end if
 c      end if
@@ -3377,7 +3367,7 @@ c
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 2 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
 c
 c                      mark element killable if user has that
 c                      property set for material.
@@ -3470,13 +3460,13 @@ c                       orders have 1, 4, or 5 points
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA.or.intord.eq.4HO01P ) then
+      if( intord.eq.id_defa.or.intord.eq.id_o01p ) then
          iprops(5,elem) = 1
          iprops(6,elem) = 1
-      else if( intord.eq.4HO04P ) then
+      else if( intord.eq.id_o04p ) then
          iprops(5,elem) = 4
          iprops(6,elem) = 4
-      else if( intord.eq.4HO05P ) then
+      else if( intord.eq.id_o05p ) then
          iprops(5,elem) = 5
          iprops(6,elem) = 5
       else
@@ -3492,9 +3482,9 @@ c                       are element or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -3503,7 +3493,7 @@ c                       store data concerning the output format for
 c                       output. the default value is short.
 c
       outfmt= elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .true.
@@ -3513,7 +3503,7 @@ c                       store data concerning the geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -3614,9 +3604,9 @@ c
       lprops(17,elem) = lmtprp(8,matnum)
       props(20,elem)  = matprp(10,matnum)
       props(21,elem)  = matprp(11,matnum)
-      props(22,elem)  = zero
+      props(22,elem)  = sngl(zero)
       if ( matprp(12,matnum) .ne. zero )
-     &  props(22,elem) = one / matprp(12,matnum)
+     &  props(22,elem) = sngl( one / matprp(12,matnum) )
       props(23,elem)  = matprp(5,matnum)
       iprops(24,elem)  = 0
       if ( lmtprp(13,matnum) ) iprops(24,elem) =
@@ -3625,7 +3615,7 @@ c
      &                         ior( iprops(24,elem), 2 )
       if ( lmtprp(24,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 4 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
       props(26,elem)  = matprp(14,matnum)
       props(27,elem)  = matprp(15,matnum)
       props(28,elem)  = matprp(16,matnum)
@@ -3702,13 +3692,13 @@ c
       intord = elstor(3,elem)
 c
 c
-      if( intord.eq.4HDEFA .or. intord.eq.4HO3MP ) then
+      if( intord.eq.id_defa .or. intord.eq.id_o3mp ) then
          iprops(5,elem) = 3
          iprops(6,elem) = 3
-      else if( intord.eq.4HO03P ) then
+      else if( intord.eq.id_o03p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 3
-      else if( intord.eq.4HO01P ) then
+      else if( intord.eq.id_o01p ) then
          iprops(5,elem) = 1
          iprops(6,elem) = 1
       else
@@ -3724,9 +3714,9 @@ c                       are nodes or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -3735,7 +3725,7 @@ c                       output format. the default value is short.
 c                       -- cohesive element can output only in short fmt.
 c
       outfmt = elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .false.
@@ -3745,7 +3735,7 @@ c                       geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -3762,11 +3752,11 @@ c                       reference surface
 c                       for geometrical update for the cohesive element
 c
       surf = elstor(10, elem)
-      if( surf.eq.4HDEFA .or. surf.eq.4HO222 ) then
+      if( surf.eq.id_defa .or. surf.eq.id_o222 ) then
          iprops(26,elem) = 2
-      else if( surf.eq.4HO111 ) then
+      else if( surf.eq.id_o111 ) then
          iprops(26,elem) = 1
-      else if( surf.eq.4HO333 ) then
+      else if( surf.eq.id_o333 ) then
          iprops(26,elem) = 3
       else
          iprops(26,elem) = 2
@@ -3795,28 +3785,28 @@ c                 if user has input a non-consistent value, serve a warning
 c                 and set a correct default value.
 c
       props(23,elem)   = matprp(42,matnum)
-      iprops(27,elem)  = matprp(44,matnum)
+      iprops(27,elem)  = int( int( matprp(44,matnum) ) )
       lprops(10,elem)  = .true.
       exponential_type = iprops(27,elem) .eq. 4
       ppr_type         = iprops(27,elem) .eq. 6
       cavit_type       = iprops(27,elem) .eq. 7
 c
       if( exponential_type ) then
-        if ( surf.eq.4HO111 .and. matprp(42,matnum) .ne. zero ) then
+        if ( surf.eq.id_o111 .and. matprp(42,matnum) .ne. zero ) then
        call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
-         props(23,elem) = zero
+         props(23,elem) = sngl(zero)
         end if
-        if ( surf.eq.4HO333 .and. matprp(42,matnum) .ne. zero ) then
+        if ( surf.eq.id_o333 .and. matprp(42,matnum) .ne. zero ) then
        call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
-         props(23,elem) = zero
+         props(23,elem) = sngl(zero)
         end if
       end if
 c
       if( ppr_type ) then
-        if ( surf.eq.4HO111 .and. matprp(42,matnum) .eq. zero ) then
+        if ( surf.eq.id_o111 .and. matprp(42,matnum) .eq. zero ) then
        call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
         end if
-        if ( surf.eq.4HO333 .and. matprp(42,matnum) .eq. zero ) then
+        if ( surf.eq.id_o333 .and. matprp(42,matnum) .eq. zero ) then
        call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
         end if
       end if
@@ -3829,7 +3819,7 @@ c
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 2 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
 c
 c                      mark element killable if user has that
 c                      property set for material.
@@ -3837,7 +3827,7 @@ c
       iprops(30,elem) = 0
       if ( lmtprp(23,matnum) ) iprops(30,elem) =
      &                         ior( iprops(30,elem), 2 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
 c
 c                      mark element killable if user has that
 c                      property set for material.
@@ -3927,22 +3917,22 @@ c                       a 1 point rule.
 c
       intord = elstor(3,elem)
 c
-      if( intord.eq.4HDEFA .or. intord.eq.4HO07P ) then
+      if( intord.eq.id_defa .or. intord.eq.id_o07p ) then
          iprops(5,elem) = 7
          iprops(6,elem) = 7
-      else if( intord.eq.4HO06P ) then
+      else if( intord.eq.id_o06p ) then
          iprops(5,elem) = 6
          iprops(6,elem) = 6
-      else if( intord.eq.4HO04P ) then
+      else if( intord.eq.id_o04p ) then
          iprops(5,elem) = 4
          iprops(6,elem) = 4
-      else if( intord.eq.4HO3MP ) then
+      else if( intord.eq.id_o3mp ) then
          iprops(5,elem) = 3
          iprops(6,elem) = 3
-      else if( intord.eq.4HO03P ) then
+      else if( intord.eq.id_o03p ) then
          iprops(5,elem) = 2
          iprops(6,elem) = 3
-      else if( intord.eq.4HO01P ) then
+      else if( intord.eq.id_o01p ) then
          iprops(5,elem) = 1
          iprops(6,elem) = 1
       else
@@ -3958,9 +3948,9 @@ c                       are nodes or element center.
 c
       outloc = elstor(4,elem)
       iloc   = 1
-      if ( outloc .eq. 4hNODE ) then
+      if ( outloc .eq. id_node ) then
          iloc = 2
-      else if ( outloc .eq. 4hCENT ) then
+      else if ( outloc .eq. id_cent ) then
          iloc = 3
       end if
       iprops(12,elem) = iloc
@@ -3969,7 +3959,7 @@ c                       output format. the default value is short.
 c                       -- cohesive element can output only in short fmt.
 c
       outfmt = elstor(6,elem)
-      if( outfmt .eq. 4HDEFA .or. outfmt .eq. 4HSHRT ) then
+      if( outfmt .eq. id_defa .or. outfmt .eq. id_shrt ) then
          lprops(16,elem) = .false.
       else
          lprops(16,elem) = .false.
@@ -3979,7 +3969,7 @@ c                       geometric nonlinearity flag.
 c                       the default value is on.
 c
       geonl= elstor(7,elem)
-      if( geonl .eq. 4HDEFA .or. geonl .eq. 4HTRUE ) then
+      if( geonl .eq. id_defa .or. geonl .eq. id_true ) then
          lprops(18,elem) = .true.
       else
          lprops(18,elem) = .false.
@@ -3995,11 +3985,11 @@ c                       reference surface
 c                       for geometrical update for the cohesive element
 c
       surf = elstor(10, elem)
-      if( surf.eq.4HDEFA .or. surf.eq.4HO222 ) then
+      if( surf.eq.id_defa .or. surf.eq.id_o222 ) then
          iprops(26,elem) = 2
-      else if( surf.eq.4HO111 ) then
+      else if( surf.eq.id_o111 ) then
          iprops(26,elem) = 1
-      else if( surf.eq.4HO333 ) then
+      else if( surf.eq.id_o333 ) then
          iprops(26,elem) = 3
       else
          iprops(26,elem) = 2
@@ -4028,28 +4018,28 @@ c                 if user has input a non-consistent value, serve a warning
 c                 and set a correct default value.
 c
       props(23,elem)   = matprp(42,matnum)
-      iprops(27,elem)  = matprp(44,matnum)
+      iprops(27,elem)  = int( int( matprp(44,matnum) ) )
       lprops(10,elem)  = .true.
       exponential_type = iprops(27,elem) .eq. 4
       ppr_type         = iprops(27,elem) .eq. 6
       cavit_type       = iprops(27,elem) .eq. 7
 c
       if( exponential_type ) then
-        if ( surf.eq.4HO111 .and. matprp(42,matnum) .ne. zero ) then
+        if ( surf.eq.id_o111 .and. matprp(42,matnum) .ne. zero ) then
        call errmsg2(33,elem,'top',matprp(42,matnum),dumd)
-         props(23,elem) = zero
+         props(23,elem) = sngl(zero)
         end if
-        if ( surf.eq.4HO333 .and. matprp(42,matnum) .ne. zero ) then
+        if ( surf.eq.id_o333 .and. matprp(42,matnum) .ne. zero ) then
        call errmsg2(33,elem,'bottom',matprp(42,matnum),dumd)
-         props(23,elem) = zero
+         props(23,elem) = sngl(zero)
         end if
       end if
 c
       if( ppr_type ) then
-        if ( surf.eq.4HO111 .and. matprp(42,matnum) .eq. zero ) then
+        if ( surf.eq.id_o111 .and. matprp(42,matnum) .eq. zero ) then
        call errmsg2(78,elem,'top',matprp(42,matnum),dumd)
         end if
-        if ( surf.eq.4HO333 .and. matprp(42,matnum) .eq. zero ) then
+        if ( surf.eq.id_o333 .and. matprp(42,matnum) .eq. zero ) then
        call errmsg2(78,elem,'bottom',matprp(42,matnum),dumd)
         end if
       end if
@@ -4062,7 +4052,7 @@ c
      &                         ior( iprops(24,elem), 1 )
       if ( lmtprp(22,matnum) ) iprops(24,elem) =
      &                         ior( iprops(24,elem), 2 )
-      iprops(25,elem) = matprp(9,matnum)
+      iprops(25,elem) = int(matprp(9,matnum))
 c
 c                      mark element killable if user has that
 c                      property set for material.
@@ -4142,7 +4132,7 @@ c                 first curve in the set.
 c
       if ( .not. lmtprp(24,matnum) )  return
 c
-      curve_set = matprp(45,matnum)
+      curve_set = int( matprp(45,matnum) )
       if ( curve_set .le. 0 .or. curve_set .gt.
      &                  num_seg_curve_sets ) then
          call errmsg( 223, curve_set, dums, dumr, dumd )
@@ -4152,7 +4142,7 @@ c
 c
       iprops(21,elem)  = curve_set
       curve_one        = seg_curve_table(2,curve_set)
-      props(23,elem)   = seg_curves(1,2,curve_one)
+      props(23,elem)   = sngl( seg_curves(1,2,curve_one) )
       if ( local_debug ) then
            write(*,*) '>> set up segmental curve set. element: ',elem
            write(*,*) '   > curve_set, curve_one, props(23,elem): ',
