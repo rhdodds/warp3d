@@ -225,8 +225,6 @@ c
      & /,10x,3e15.6,/,10x,4e15.6,                                               
      & /,    '    history : ',f4.1,f10.3,e14.4,                                 
      & /,    '    epseff, epsyld, epslim: ',3e14.6 )                            
- 9200 format('    updated elastic stresses: ',                                  
-     & /,10x,3e15.6,/,10x,4e15.6 )                                              
  9250 format(//,'>>> Fatal error in mm02',                                      
      &        /,'    mm02es failed to converge for',                            
      &        /,'    element, point: ',i8,i2,                                   
@@ -837,10 +835,7 @@ c
      & /,10x,3e15.6,/,10x,3e15.6,                                               
      & /,    '    history : ',f4.1,f10.3,f10.6 )                                
  9008 format(3x,6e14.4)                                                         
- 9020 format(//,5x,'>> update [d] element, point: ',2i6)                        
  9034 format('    elasto-plastic d matrix: ' )                                  
- 9038 format('    point is elastic.  epseff, sigeff: ',e15.6,                   
-     & f10.3 )                                                                  
 c                                                                               
       end                                                                       
 c ********************************************************************          
