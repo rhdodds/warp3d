@@ -603,13 +603,13 @@ c        tri node scheme                  tet node scheme
 c        ---------------                  ---------------                       
 c        3                                c                                     
 c         o                               o                                     
-c         |  \                            |  \                                  
-c         |    \                          |    \                                
+c         |   \                           |   \
+c         |     \                         |     \
 c         |      \  5                     |      \  e                           
 c       6 o        o                    f o        o                            
-c         |          \                    |          \                          
-c         |            \                  |            \                        
-c         |              \                |              \                      
+c         |         \                     |        \
+c         |          \                    |         \
+c         |            \                  |           \
 c         o - - - o - - - o               o - - - o - - - o                     
 c        1        4        2             a        d         b                   
 c                                                                               
