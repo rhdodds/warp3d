@@ -66,12 +66,12 @@ c
      &               mat_type .eq. 10
 c
       call rp_scstr( local_work%urcs_blk_n1,
-     &            urcs_n1_blocks(blk)%ptr(1), ngp, nstrs,  span)
+     &            urcs_n1_blocks(blk)%ptr, ngp, nstrs,  span)
       if( local_debug_sums )
      &   block_stress_sums(blk) =
      &          norm2( urcs_n1_blocks(blk)%ptr(1:ngp*nstrs*span) )
 c
-      call rp_scstr( local_work%ddtse, eps_n1_blocks(blk)%ptr(1),
+      call rp_scstr( local_work%ddtse, eps_n1_blocks(blk)%ptr,
      &               ngp, nstr, span )
       if( local_debug_sums )
      &   block_strain_sums(blk) =
@@ -79,14 +79,14 @@ c
 c
       if( iter .gt. 0 .and. geonl )
      &      call rp_scstr( local_work%rot_blk_n1,
-     &               rot_n1_blocks(blk)%ptr(1), ngp, 9, span )
+     &               rot_n1_blocks(blk)%ptr, ngp, 9, span )
 c
       save_history_1 = process_hist .and. iter > 0
       save_history_2 = mat_type .eq. 10 ! [D] is hidden in history ...
       if( save_history_1  .or.  save_history_2 ) then
         hist_size = history_blk_list(blk)
         call rp_scstr_history( local_work%elem_hist1(1,1,1),
-     &                      history1_blocks(blk)%ptr(1), ngp,
+     &                      history1_blocks(blk)%ptr, ngp,
      &                      hist_size, span )
       end if
 c
