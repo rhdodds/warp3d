@@ -1955,7 +1955,7 @@ c     ****************************************************************
 c
       subroutine inmat_inter(matnum)
       use global_data ! old common.main
-      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
+      use main_data, only : lmtprp, imatprp, dmatprp, smatprp
       implicit integer (a-z)
       integer, intent(in) :: matnum
       integer :: dumi, nc
@@ -2607,9 +2607,6 @@ c
       integer :: ierrno, nchars
       character(len=*) :: errstrng
 c
-      character(len=50) :: erprms
-c
-c
       select case( ierrno )
 c
       case( 1 )
@@ -2708,7 +2705,7 @@ c
       logical  local_debug, true, matchs, matchs_exact, endcrd, numr,
      &         ltrue, lfalse, local_exp1_type, local_ppr_type,
      &         local_linear_type, local_fgm_type, local_cavit_type
-      real  dumr, rword, value, fgm_mark, rtrue, rfalse
+      real  dumr, fgm_mark, rtrue, rfalse
       double precision
      &   dumd
       equivalence (lfalse, rfalse), (rtrue, ltrue)
@@ -3529,14 +3526,12 @@ c
  9216 format(2x,'sigma_star:   ',f15.6)
  9218 format(2x,'lambda_7:     ',f15.6)
  9220 format(2x,'eta_b:        ',f15.6)
- 9222 format(2x,'r_i:          ',f15.6)
  9224 format(2x,'sigma_0:      ',f15.6)
  9226 format(2x,'t_c:          ',f15.6)
  9228 format(2x,'d:            ',f15.6)
  9230 format(2x,'a_0:          ',f15.6)
  9232 format(2x,'b_0:          ',f15.6)
  9234 format(2x,'psi_angle:    ',f15.6)
- 9236 format(2x,'n_i:          ',f15.6)
  9238 format(2x,'f_n:          ',f15.6)
  9240 format(2x,'n:            ',f15.6)
  9242 format(2x,'n_max:        ',f15.6)
