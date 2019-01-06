@@ -21,7 +21,7 @@ c
       use erflgs
       implicit none
 c
-      integer :: return_type, nsn, lsn, idummy, nc, param, path,
+      integer :: nsn, lsn, idummy, nc, param, path,
      &           build_number, olddof, chkprm
       real :: t1, dumr
       real, external :: wcputime
@@ -858,7 +858,6 @@ c
          debug2 = .true.
          debug = .true.
       endif
- 2210 continue
       sbflg1 = .true.
       sbflg2 = .true.
       goto 10
@@ -934,7 +933,7 @@ c
 c                       table definition
 c
  3000 continue
-      call intab(sbflg1,sbflg2,chkprm,path)
+      call intab(sbflg1,sbflg2,chkprm)
       if(sbflg1) then
          go to 20
       else
@@ -1009,7 +1008,7 @@ c
      &     '    **                                             ',
      &     '                  **',/,
      &     '    **     ',a21,'      -rel-    Release: ',
-     &     ' 17.9.3      **',/,
+     &     ' 17.9.4      **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
@@ -1140,7 +1139,6 @@ c
 c
       use global_data
       use file_info
-      use main_data, only : output_packets
       use performance_data, only : time_assembly, assembly_total,
      &            ntimes_assembly,  t_performance_eoj,
      &            t_performance_eoj_pardiso
@@ -1148,13 +1146,8 @@ c
       implicit none
 c
       integer :: i
-      real :: t1, dumr, warptime, pardiso_time
+      real :: t1, warptime, pardiso_time
       real, external :: wcputime
-      character(len=8) :: stcnam, dums, sdate_*24
-      character(len=80) :: name, stflnm, rtflnm
-      logical :: hilcmd, sbflg1, sbflg2
-      logical :: endcrd, label, matchs, debug1, debug2, debug, endfil,
-     &           string, matchs_exact
       logical, parameter :: output_1_thread_cpu_times = .false.
 c
 c
