@@ -94,8 +94,13 @@ c
          go to 9999
       end if
 c
+#ifdef __INTEL_COMPILER
       open( fileno, file=dbname, status='old', access='sequential',
      &     form='unformatted', recordtype='segmented' )
+#else
+      open( fileno, file=dbname, status='old', access='sequential',
+     &     form='unformatted' )
+#endif
 c
 c                       rewind the data base to insure positioning
 c                       before the first record.
@@ -928,9 +933,7 @@ c
      &                            cep_blocks, cep_blk_list
 c
       implicit integer (a-z)
-      double precision
-     &    dummy(1)
-      integer matl_info(10)
+      double precision :: dummy(1)
       logical myblk
 c
 c
@@ -1041,15 +1044,15 @@ c
         end if
 c
         if ( proc_type .eq. 1 ) then
-          call ro_zero_vec( history_blocks(blk)%ptr(1), block_size )
-          call ro_zero_vec( history1_blocks(blk)%ptr(1), block_size )
+          call ro_zero_vec( history_blocks(blk)%ptr, block_size )
+          call ro_zero_vec( history1_blocks(blk)%ptr, block_size )
         end if
 c
         if ( proc_type .eq. 2 ) then
                read(fileno) history_blocks(blk)%ptr(1:block_size)
                call chk_data_key( fileno, 200, blk )
-               call vec_ops( history1_blocks(blk)%ptr(1),
-     &                       history_blocks(blk)%ptr(1),
+               call vec_ops( history1_blocks(blk)%ptr,
+     &                       history_blocks(blk)%ptr,
      &                       dummy, block_size, 5 )
         end if
 c
@@ -1677,7 +1680,7 @@ c
 c
       integer :: fileno
 c
-      integer :: alloc_stat, blk, felem, span, ngp, iflag
+      integer :: alloc_stat, blk, felem, span, ngp
 c
       if( allocated( initial_state_data ) ) then
           write(out,9920)  ! should not happen  .....
@@ -2292,7 +2295,7 @@ c
       end do
 c
       if( nonlocal_analysis ) then   ! inconsistency in data values
-        write(iout,9300)
+        write(out,9300)
         call die_abort
       end if
       return
