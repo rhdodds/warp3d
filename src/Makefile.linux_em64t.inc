@@ -69,7 +69,7 @@ MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
 DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
 MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE)
 #
-FCOPTS = -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
+FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
          $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
