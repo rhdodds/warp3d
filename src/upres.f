@@ -80,7 +80,7 @@ c
 c                                                                               
       write(iout,9000) norm_load                                                
       write(iout,9100)                                                          
-      do i = 1, nodof                                                           
+      do i = 1, nodof ! nodof                                                          
        write(iout,9200) i, cstmap(i),  res(i), pbar(i),                         
      &               -mdiag(i)*du(i)*nfac,                                      
      &               contact_force(i), -ifv(i)                                  
@@ -191,7 +191,7 @@ c
 c                                                                               
       if( local_debug ) then                                                    
         write(iout,9400); write(iout,9405)                                      
-        do i = 1, nodof                                                         
+        do i = 1, nodof  ! 10                                                       
           force_lag = zero                                                      
           if( have_mpc_equations ) force_lag = d_lagrange_forces(i)             
           total_external = pbar(i) + contact_force(i) +                         
