@@ -16,7 +16,6 @@ c
       subroutine initst( sbflg1, sbflg2 )
       use global_data ! old common.main
 c
-      use ifport
       use elem_load_data, only : elem_loads
       use segmental_curves
       use main_data, only : output_packets, packet_file_name,
@@ -46,9 +45,10 @@ c
      &                      fgm_node_values_used,
      &                      fgm_node_values_cols,
      &                      initial_state_option, initial_state_step,
-     &                      initial_stresses_input
+     &                      initial_stresses_input,
+     &                      id_dollar, force_solver_rebuild
 c
-      use stiffness_data
+      use stiffness_data 
       use file_info
       use contact
       use damage_data
@@ -66,7 +66,7 @@ c
       implicit none
 c
       integer :: nblank, reclen, endchr, lword, rword, i, strtop,
-     &           strstp, rottop, env_length, k
+     &           strstp, rottop, k
       integer, external :: omp_get_max_threads
       logical :: promsw, echosw, comsw, atrdsw, eolsw, eofsw, menusw,
      &           ptsw, signsw, sbflg1, sbflg2
@@ -74,7 +74,6 @@ c
      &            fourth=0.25d0, ten_billion=1.0e10,
      &            hundredth=0.01d0, twentyth=0.05d0,
      &            thousandth=0.001d0
-      character(len=80) :: env_val
 c
 c                       initialize the file input and output parameters
 c
@@ -133,7 +132,7 @@ c
       call setout(out)
       nblank= 80
       reclen= 80
-      endchr= 1h$
+      endchr= id_dollar
       promsw= .false.
       echosw= .true.
       comsw= .false.
@@ -239,6 +238,8 @@ c
 c
       new_constraints = .false.
       new_analysis_param = .false.
+      force_solver_rebuild = .false.  ! global flag to force solver to rebuild
+
 c
 c                       initialize the existence of non-zero, reference
 c                       (nodal) tempertures.
@@ -885,7 +886,6 @@ c     ****************************************************************
 c
       integer function warp3d_matl_num( material_model_id, nc )
 c
-      use main_data, only : material_model_names
       implicit none
       include 'param_def'
 c
