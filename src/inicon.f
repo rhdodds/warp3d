@@ -28,15 +28,15 @@ c
 c
 c                       local declarations
 c
-      integer :: i, j, cond, lenlst, errnum, param, dofn, icn,
+      integer :: i, cond, lenlst, errnum, param, dofn, icn,
      &           iplist, node, elem, type, nedof, idum, nc, scan_stat
       integer, allocatable :: intlst(:)
       real :: dumr
-      double precision :: cval, mpfact, dumd
+      double precision :: cval, dumd
       double precision, allocatable :: edva(:,:), trnmte(:,:,:)
       double precision, parameter :: zero = 0.0d0
-      character name*80, iclnam*8, dums, curtyp*1
-      logical :: found, dvaflg(mxndof), dump
+      character :: dums, curtyp*1
+      logical :: found, dvaflg(mxndof)
       logical, allocatable :: trne(:,:)
       logical, external :: matchs, endcrd, true, label, numd, scanms,
      &                     string
