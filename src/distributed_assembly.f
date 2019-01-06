@@ -286,8 +286,8 @@ c
       subroutine distribute_from_assembled( neq, ncoeff, k_diag, rhs,           
      &                  sol_vec, eqn_coeffs, k_pointers, k_indices,             
      &                  full,mapping, itype, out)                               
-                                                                                
-      end subroutine                                                            
+      return
+      end                                                            
 c                                                                               
 c                                                                               
 c     ***********************************************************************   
@@ -304,8 +304,8 @@ c     *                                                                     *
 c     ***********************************************************************   
 c                                                                               
       subroutine determine_local_sparsity()                                     
-                                                                                
-      end subroutine                                                            
+      return                                                                          
+      end                                                           
 c                                                                               
 c     ***********************************************************************   
 c     *                                                                     *   
@@ -331,8 +331,8 @@ c     *                                                                     *
 c     ***********************************************************************   
 c                                                                               
       subroutine determine_initial_map                                          
-                                                                                
-      end subroutine                                                            
+      return                                                                          
+      end                                                           
 c                                                                               
 c     ***********************************************************************   
 c     *                                                                     *   
@@ -347,8 +347,8 @@ c     *                                                                     *
 c     ***********************************************************************   
 c                                                                               
       subroutine assemble_sparsity                                              
-c                                                                               
-      end subroutine                                                            
+      return                                                                               
+      end 
                                                                                 
 c                                                                               
 c     ***********************************************************************   
@@ -368,8 +368,8 @@ c     *                                                                     *
 c     ***********************************************************************   
 c                                                                               
       subroutine determine_ordering                                             
-c                                                                               
-      end subroutine                                                            
+      return
+      end                                                             
 c                                                                               
 c     *******************************************************************       
 c     *                                                                 *       
@@ -385,8 +385,8 @@ c     *                                                                 *
 c     *******************************************************************       
 c                                                                               
       subroutine move_sparsity                                                  
-c                                                                               
-      end subroutine                                                            
+      return                                                                               
+      end                                                             
 c                                                                               
 c     *******************************************************************       
 c     *                                                                 *       
@@ -400,8 +400,8 @@ c     *                                                                 *
 c     *******************************************************************       
 c                                                                               
       subroutine assemble_coefs                                                 
-                                                                                
-      end subroutine                                                            
+      return                                                                                
+      end                                                            
 c                                                                               
 c     *******************************************************************       
 c     *                                                                 *       
@@ -414,8 +414,8 @@ c     *                                                                 *
 c     *******************************************************************       
 c                                                                               
       subroutine assem_load_vec                                                 
-                                                                                
-      end subroutine                                                            
+      return                                                                          
+      end                                                     
 c                                                                               
 c     *******************************************************************       
 c     *                                                                 *       
@@ -430,8 +430,8 @@ c     *                                                                 *
 c     *******************************************************************       
 c                                                                               
       subroutine dist_final_setup                                               
-                                                                                
-      end subroutine                                                            
+      return                                                                       
+      end                                                           
 c                                                                               
 c     *******************************************************************       
 c     *                                                                 *       
@@ -443,14 +443,10 @@ c     *     written by: mcm 11/11                                       *
 c     *                                                                 *       
 c     *******************************************************************       
 c                                                                               
-      integer function curr_neqns                                               
-            implicit none                                                       
-                                                                                
-            curr_neqns = -1                                                     
-                                                                                
-            return                                                              
-                                                                                
-      end function                                                              
+      integer function curr_neqns()        
+      curr_neqns = -1                                                     
+      return
+      end                                                              
                                                                                 
 c                                                                               
 c     *******************************************************************       
@@ -465,8 +461,8 @@ c     *                                                                 *
 c     *******************************************************************       
 c                                                                               
       subroutine reorder_soln_vec(u_vec)                                        
-                                                                                
-      end subroutine                                                            
+      return
+      end                                                         
 c                                                                               
 c     *******************************************************************       
 c     *                                                                 *       
@@ -481,4 +477,5 @@ c
       subroutine convert_to_full( neq, ncoeff,                                  
      &       eqn_coeffs, k_pointers,k_indices)                                  
                                                                                 
+      return
       end                                                                       
