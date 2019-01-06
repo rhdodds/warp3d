@@ -378,7 +378,7 @@ c            on entry, cu_upd stores the current
 c           (ie deformed) coords of element nodes in following form:            
 c                                                                               
 c   ce_upd = |        |                                                         
-c            |   X    | \                                                       
+c            !   X    |\
 c            | coor   |   \|    | node   1   of bottom surface      |           
 c            |        |   -'    | node   2   of bottom surface      |           
 c            |--------|         |    .............                  |           
@@ -455,7 +455,7 @@ c      reflected surface - bottom.
 c      change ce_upd such that on exit it has following structure.              
 c                                                                               
 c   ce_upd = |        |                                                         
-c            |   X    | \                                                       
+c            |   X    |\
 c            | coor   |   \|   | node   1   of reference (top) surface|         
 c            |        |   -'   | node   2   of reference (top) surface|         
 c            |--------|        |    .............                     |         
@@ -502,7 +502,7 @@ c
 c      change ce_upd such that on exit it has following structure.              
 c                                                                               
 c   ce_upd = |        |                                                         
-c            |   X    | \                                                       
+c            |  X     |\
 c            | coor   |   \|   | node   1   of reference surface|               
 c            |        |   -'   | node   2   of reference surface|               
 c            |--------|        |    .............               |               
@@ -560,7 +560,7 @@ c      reflect surface - top.
 c      ce_upd already has following structure. no change required.              
 c                                                                               
 c   ce_upd = |        |                                                         
-c            |   X    | \                                                       
+c            |   X    |\
 c            | coor   |   \|   | node   1   of reference (bot) surface|         
 c            |        |   -'   | node   2   of reference (bot) surface|         
 c            |--------|        |    .............                     |         
