@@ -858,7 +858,6 @@ c             (a) expansion coefficients * derivative of temperature
 c                 w.r.t. crack x
 c             (b) temperature * derivative of expansion coefficients
 c                 w.r.t. crack x
-d
 c            stresses can be non-symmetric. thermal expansion coeffs.
 c            have been rotated to crack coordinates and are symmetric.
 c
