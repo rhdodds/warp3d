@@ -35,7 +35,7 @@ c
       character(len=1) :: dums                                                  
       real dumr                                                                 
       external true                                                             
-      logical debug, duml, true                                                 
+      logical debug, true                                                 
 c                                                                               
 c         do some initialization                                                
 c                                                                               
@@ -51,7 +51,6 @@ c         branch on the crack growth parameter command
 c                                                                               
  10   call readsc                                                               
 c                                                                               
- 20   continue                                                                  
       if ( matchs('type',4)    )        go to 200                               
       if ( matchs('critical',4) )       go to 300                               
       if ( matchs('release',4) )        go to 400                               
@@ -1514,7 +1513,7 @@ c
          dam_print_list(list_entry) = elem                                      
       end if                                                                    
 c                                                                               
- 580  if ( iplist.ne.0 ) goto 570                                               
+      if ( iplist.ne.0 ) goto 570                                               
 c                                                                               
       if ( debug ) then                                                         
          write (out,*) '>>>>> dam_print_list:'                                  
@@ -1569,7 +1568,7 @@ c
      &        elem                                                              
       end if                                                                    
 c                                                                               
- 680  if ( iplist.ne.0 ) goto 670                                               
+      if ( iplist.ne.0 ) goto 670                                               
 c                                                                               
       if ( debug ) then                                                         
          write (out,*) '>>>>> kill_order_list:'                                 
@@ -1629,7 +1628,7 @@ c
      &        node                                                              
       endif                                                                     
 c                                                                               
- 680  if ( iplist.ne.0 ) goto 670                                               
+      if ( iplist.ne.0 ) goto 670                                               
 c                                                                               
       if ( debug ) then                                                         
          write (out,*) '>>>>> master_nodes:'                                    
@@ -1704,15 +1703,12 @@ c
 c                                                                               
       use node_release_data, only : master_nodes, num_neighbors,                
      &     neighbor_nodes, inv_crkpln_nodes, master_lines                       
-      use main_data, only : cnstrn, cnstrn_in                                   
+      use main_data, only : cnstrn_in                                   
       use damage_data                                                           
 c                                                                               
       implicit integer (a-z)                                                    
-      logical debug, reached_end                                                
-      double precision                                                          
-     &  dumd, d32460                                                            
-      real dumr                                                                 
-      character(len=1) :: dums                                                  
+      logical debug                                                
+      double precision :: d32460                                                            
       data d32460, debug / 32460.0, .false. /                                   
 c                                                                               
       if (debug) write (*,*) '>>> in init_ctoa_back'                            
@@ -1789,10 +1785,7 @@ c
 c                                                                               
       implicit integer (a-z)                                                    
       logical debug, reached_end                                                
-      double precision                                                          
-     &  dumd, d32460                                                            
-      real dumr                                                                 
-      character(len=1) :: dums                                                  
+      double precision :: d32460                                                            
       data d32460, debug / 32460.0, .false. /                                   
 c                                                                               
       if (debug) write (*,*) '>>> in find_master_line'                          
@@ -1849,10 +1842,6 @@ c
       implicit integer (a-z)                                                    
       logical debug, reached_end, found_new_node                                
       dimension shared_elems(2)                                                 
-      double precision                                                          
-     &  dumd                                                                    
-      real dumr                                                                 
-      character(len=1) :: dums                                                  
       data debug / .false. /                                                    
 c                                                                               
       if (debug) then                                                           
