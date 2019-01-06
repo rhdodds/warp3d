@@ -4,7 +4,7 @@ c     *              f-90 module segmental_curves                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                    last modified : 5/20/2017 rhd             *          
+c     *                    last modified : 12/13/2018 rhd            *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     segmental stress-strain curves                           *          
@@ -13,11 +13,13 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      module segmental_curves                                                   
+      module segmental_curves  
+      implicit none                                                 
 c                                                                               
-      parameter (max_seg_points=20, max_seg_curves=20,                          
-     &           max_seg_curve_sets=10)                                         
-c                                                                               
+      integer, parameter :: max_seg_curve_sets=10
+      integer, parameter :: max_seg_points=20
+      integer, parameter :: max_seg_curves=20
+
 c          This module has two sets of variables. The first                     
 c          set down to the next comments are used to store the                  
 c          data from user input to define various segmental                     
@@ -29,11 +31,12 @@ c          been verified. they are shared read-only across threads
 c                                                                               
 c                     double precision/reals                                    
 c                                                                               
-!dir$ attributes align: 64 :: seg_curves, seg_curves_min_stress,                
-     & seg_curves_value, seg_curves_ym, seg_curves_nu,                          
-     & seg_curves_alpha, seg_curves_gp_sigma_0,                                 
-     & seg_curves_gp_h_u,seg_curves_gp_beta_u,                                  
-     & seg_curves_gp_delta_u                                                    
+!dir$ attributes align: 64 :: seg_curves, seg_curves_min_stress                
+!dir$ attributes align: 64 :: seg_curves_value, seg_curves_ym
+!dir$ attributes align: 64 :: seg_curves_nu                          
+!dir$ attributes align: 64 :: seg_curves_alpha, seg_curves_gp_sigma_0                                 
+!dir$ attributes align: 64 :: seg_curves_gp_h_u,seg_curves_gp_beta_u                                 
+!dir$ attributes align: 64 :: seg_curves_gp_delta_u 
 c                                                                               
        double precision ::                                                      
      & seg_curves(max_seg_points,2,max_seg_curves),                             
@@ -49,8 +52,8 @@ c
 c                                                                               
 c                     integers                                                  
 c                                                                               
-!dir$ attributes align: 64 :: num_seg_points, seg_curves_type,                  
-     &   seg_curve_table                                                        
+!dir$ attributes align: 64 :: num_seg_points, seg_curves_type                  
+!dir$ attributes align: 64 :: seg_curve_table                                                        
 c                                                                               
        integer ::                                                               
      &   num_seg_points(max_seg_curves),                                        
