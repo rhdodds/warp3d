@@ -320,7 +320,6 @@ c
       real  dumr                                                                
       double precision  dumd                                                    
       character(len=16) :: setid                                                
-      character(len=1) :: dums                                                  
 c                                                                               
       nxt_set: do set = 1, num_tied_sets                                        
          if (setid .eq. tied_contact_table(set)%id) then                        
