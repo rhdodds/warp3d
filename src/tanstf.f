@@ -17,9 +17,6 @@ c
       subroutine tanstf( first, now_step, now_iter )                            
       use global_data ! old common.main
 c                                                                               
-      use elem_block_data, only : estiff_blocks, edest_blocks                   
-      use main_data,       only : asymmetric_assembly                           
-c                                                                               
       implicit none                                                             
 c                                                                               
 c                       parameter dclarations                                   
@@ -122,7 +119,7 @@ c
 c                                                                               
       use elem_block_data,   only : estiff_blocks, cdest_blocks,                
      &                              edest_blocks                                
-      use elem_extinct_data, only : dam_blk_killed, dam_state                   
+      use elem_extinct_data, only : dam_state                   
 c                                                                               
       use main_data,         only : trn, incid, incmap,                         
      &                              cohesive_ele_types, link_types,                         
@@ -131,7 +128,6 @@ c
      &                              axisymm_ele_types, bar_types,                         
      &                              nonlocal_analysis,                          
      &                              asymmetric_assembly,                        
-     &                              dmatprp, imatprp,                           
      &                              temperatures_ref,                           
      &                              fgm_node_values_defined                     
 c                                                                               
@@ -149,7 +145,6 @@ c
 c                       local declarations                                      
 c                                                                               
       include 'include_tan_ek'                                                  
-      double precision :: lambda(mxvl,3,3) ! on stack  
       double precision, parameter :: zero = 0.0d0
       logical :: geo_non_flg, bbar_flg,                            
      &           symmetric_assembly, block_is_killable 
@@ -283,8 +278,8 @@ c
       call tanstf_allocate( local_work )                                        
 c                                                                               
       call dptstf( span,                                                        
-     &             edest_blocks(blk)%ptr(1,1),                                  
-     &             cdest_blocks(blk)%ptr(1,1),                                  
+     &             edest_blocks(blk)%ptr,                                  
+     &             cdest_blocks(blk)%ptr,                                  
      &             incid(incmap(felem)),                                        
      &             felem,                                                       
      &             num_int_points,                                              
@@ -323,7 +318,7 @@ c
                                                                                 
       ispan  = span   ! just protects span value                                
       call rktstf( props(1,felem), iprops(1,felem),                             
-     &             lprops(1,felem), estiff_blocks(blk)%ptr(1,1),                
+     &             lprops(1,felem), estiff_blocks(blk)%ptr,                
      &             nrow_ek, ispan, local_work )                                 
 c                                                                               
 c             check if this block has any killed elements -- if so,             
@@ -675,9 +670,8 @@ c
      &   mat_type, local_work )                                                 
       use global_data ! old common.main
 c                                                                               
-      use elem_block_data, only:  history_blocks,                               
-     &                            rot_n1_blocks, history1_blocks,               
-     &                            eps_n1_blocks, urcs_n1_blocks,                
+      use elem_block_data, only:  rot_n1_blocks, history1_blocks,               
+     &                            urcs_n1_blocks,                
      &                            history_blk_list                              
 c                                                                               
       implicit none                                                             
@@ -709,13 +703,13 @@ c                This makes it possible to pass a 2-D array slice for
 c                all elements of the block for a single gauss point.            
 c                                                                               
       if( geonl )  call tanstf_gastr( local_work%rot_blk_n1,                    
-     &                rot_n1_blocks(blk)%ptr(1), ngp, 9, span )                 
+     &                rot_n1_blocks(blk)%ptr, ngp, 9, span )                 
 c                                                                               
       hist_size = history_blk_list(blk)                                         
       local_work%hist_size_for_blk = hist_size                                  
 c                                                                               
       call tanstf_gastr( local_work%urcs_blk_n1,                                
-     &        urcs_n1_blocks(blk)%ptr(1), ngp, nstrs, span )                    
+     &        urcs_n1_blocks(blk)%ptr, ngp, nstrs, span )                    
 c                                                                               
 c                                                                               
 c                                                                               
@@ -735,7 +729,7 @@ c
          allocate( local_work%elem_hist1(span,hist_size,ngp),                   
      &             local_work%elem_hist(span,hist_size,ngp) )                   
          call dptstf_copy_history(                                              
-     &     local_work%elem_hist1(1,1,1), history1_blocks(blk)%ptr(1),           
+     &     local_work%elem_hist1, history1_blocks(blk)%ptr,           
      &     ngp, hist_size, span )                                               
 c                                                                               
       case default                                                              
