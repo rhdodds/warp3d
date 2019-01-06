@@ -14,7 +14,7 @@ c
 c
       use elem_block_data, only : edest_blocks
       use main_data, only : repeat_incid, modified_mpcs,
-     &                      asymmetric_assembly
+     &                      asymmetric_assembly, force_solver_rebuild
       use stiffness_data, only : ncoeff, big_ncoeff, k_coeffs,
      &                           k_indexes,
      &                           ncoeff_from_assembled_profile
@@ -46,7 +46,7 @@ c
       logical :: new_size
       logical, save :: cpu_stats, save_solver
       logical, parameter :: local_debug = .false.,
-     &                      local_debug2 = .false.
+     &     local_debug2 = .false., local_debug3 = .false.
 c
       real, external :: wcputime
       double precision, parameter :: zero = 0.0d00
@@ -61,6 +61,17 @@ c
       num_enode_dof  = iprops(4,1) ! always = 3 in warp3d
       num_struct_dof = nonode * num_enode_dof
       new_size       = .false.
+c
+c              new capability for any part of code to force
+c              reconstruction of all data structures for the solver.
+c              E.g. releasing of MPCs where this chance cannot
+c              be detected -- essentially a massive data reconstruction.
+c
+      if( force_solver_rebuild ) then
+          new_size = .true.
+          force_solver_rebuild = .false.
+          cpu_stats = .true.
+      end if
 c
 c              stiffness data structure development. can skip
 c              if not 1st solution for this load(time) step.
@@ -180,8 +191,7 @@ c
      &                          u_vec, k_coeffs, k_ptrs, k_indexes,
      &                          cpu_stats, itype, out,
      &                          solver_out_of_core, solver_memory,
-     &                          solver_scr_dir, solver_mkl_iterative,
-     &                          suggested_new_precond )
+     &                          solver_scr_dir, solver_mkl_iterative )
         if( local_debug ) write(*,*) '... drive_assem_solve @ 5b'
 
       case( 8 ) ! asymmetric pardiso
@@ -764,7 +774,7 @@ c
 c              4. set the rhs of the equations. p_vec has the
 c                 neqns terms for unconstrained dof from res.
 c
-      if( local_debug2 ) then
+      if( local_debug3 ) then
          write(out,9500)
          i_offset = 0
          do i = 1, nonode
