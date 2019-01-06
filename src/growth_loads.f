@@ -66,18 +66,15 @@ c
       use global_data ! old common.main
 c                                                                               
       use elem_extinct_data, only : dam_ifv, dam_state, dam_dbar_elems          
-      use main_data,         only : dload                                       
       use damage_data                                                           
 c                                                                               
       implicit integer (a-z)                                                    
 c                                                                               
       double precision                                                          
      &  dbar_now, refer_deform, now_fraction, last_fraction,                    
-     &  fraction, dbar_zero, ldincr, zero, one, dumd                            
-      real dumr                                                                 
+     &  fraction, dbar_zero, ldincr, zero, one                       
       logical debug, no_print                                                   
       integer edest(mxedof)                                                     
-      character(len=1) :: dums                                                  
       data zero, one / 0.0, 1.0 /                                               
 c                                                                               
 c          - For Gurson Crack Growth:                                           
@@ -175,14 +172,6 @@ c
       num_elements_in_force_release = rcount                                    
 c                                                                               
       return                                                                    
- 9000 format('  > current gurson release type 2 parameters: ',                  
-     & /,10x,'element:     ',i7,                                                
-     & /,10x,'elem_ptr:    ',i7,                                                
-     & /,10x,'dbar_now,  dbar_zero: ',2f10.6,                                   
-     & /,10x,'refer_deform, now_fraction, last_fraction, fraction',             
-     & /,10x,5x,4f10.6 )                                                        
- 9100 format('  > updated load for element:')                                   
- 9150 format(10x,i3,i8,e14.6)                                                   
  9200 format(/1x,'  >> force release information for killed elements:')         
  9300 format(1x,'       element: ',i7,'. forces released (%): ',f5.1)           
  9400 format(1x,'        *no forces are currently being released*')             
