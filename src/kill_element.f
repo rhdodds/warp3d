@@ -26,14 +26,15 @@ c
       use main_data                                                             
       use elem_block_data, only : history_blocks, urcs_n_blocks,                
      &                            urcs_n1_blocks, history_blk_list              
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     zero,word                                                            
+      implicit integer (a-z)   
+c                                                 
+      double precision ::  zero, word                                                            
       double precision,                                                         
-     &   dimension(:), pointer :: history, urcs_n1, urcs_n                      
+     &   dimension(:), pointer :: history, urcs_n1, urcs_n 
+      real, parameter :: rzero = 0.0                     
 c                                                                               
-      integer iword(2)                                                          
-      logical debug, cohesive_elem                                              
+      integer :: iword(2)                                                          
+      logical :: debug, cohesive_elem                                              
       equivalence ( iword , word )                                              
       data zero / 0.0 /                                                         
       data iword(1), iword(2) /-1,0/                                            
@@ -51,14 +52,14 @@ c
       elem_type = iprops(1,ielem)                                               
       cohesive_elem = cohesive_ele_types(elem_type)                             
       if ( .not. cohesive_elem ) then                                           
-         props(7,ielem) = zero                                                  
-         props(8,ielem) = zero                                                  
+         props(7,ielem) = rzero                                                  
+         props(8,ielem) = rzero                                                  
       else                                                                      
-         props(7,ielem) = zero                                                  
-         props(8,ielem) = zero                                                  
-         props(9,ielem) = zero                                                  
-         props(20,ielem) = zero                                                 
-         props(21,ielem) = zero                                                 
+         props(7,ielem) = rzero                                                  
+         props(8,ielem) = rzero                                                  
+         props(9,ielem) = rzero                                                  
+         props(20,ielem) = rzero                                                 
+         props(21,ielem) = rzero                                                 
          iprops(32,ielem) = 1                                                   
       end if                                                                    
 c                                                                               
