@@ -14,7 +14,6 @@ c
       subroutine incomp
       use global_data ! old common.main
       use main_data, only : incid
-      use contact, only : use_contact
       implicit integer (a-z)
       double precision
      &   zero
@@ -129,11 +128,8 @@ c
      & '>> Done MPI toplogy setup, worker init  @',f10.2)
  9150 format(/,7x,
      & '>> computing structural diagonal mass (@ t=0)')
- 9800 format('>>> FATAL ERROR: routine incomp. send to WARP3D',
-     & /,    '                 developers. Job terminated.',/)
  9900 format('>>> FATAL ERROR: memory allocate failure...')
  9994 format('                 incid re-allocate failure. incomp')
- 9999 return
       end
 c     ****************************************************************
 c     *                                                              *
