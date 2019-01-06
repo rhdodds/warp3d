@@ -4,8 +4,7 @@ c     *                      subroutine equiv_strain                 *
 c     *                                                              *          
 c     *                       written by : kck                       *          
 c     *                                                              *          
-c     *                   last modified : 10/04/94                   *          
-c     *                                   06/02/95 kck               *          
+c     *                   last modified : 12/14/2018 rhd             *          
 c     *                                                              *          
 c     *     this subroutine computes mises yield function value      *          
 c     *     at the nodes/elem after the primary values have          *          
@@ -13,11 +12,14 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine equiv_strain ( results, maxnum, num )                          
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     results(maxnum,*),  root23, onep5                                    
-      data root23, onep5 / 0.471404, 1.5 /                                      
+      subroutine equiv_strain( results, maxnum, num )                          
+      implicit none  
+c
+      integer :: maxnum, num                                                  
+      double precision :: results(maxnum,*)
+c
+      integer :: i
+      double precision, parameter :: root23=0.471404d0, onep5=1.5d0                                      
 c                                                                               
       do i = 1, num                                                             
         results(i,7) = root23 * sqrt(                                           
