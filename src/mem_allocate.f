@@ -16,11 +16,13 @@ c
 c
       use main_data
       use contact, only : contact_cause, maxcontact, contact_force
+      use ISO_FORTRAN_ENV
 c
       implicit none
 c
-      include 'mkl.fi'
       integer :: itype, i, alloc_stat, k
+      integer (kind=int64) :: mkl_malloc, local_isize
+      external :: mkl_malloc
       double precision, parameter :: zero=0.0d0
       logical, parameter :: local_debug=.false.
 c
@@ -261,7 +263,8 @@ c              use mkl_malloc
 c
       case( 11 )
          if( ptr_iprops .ne. 0 ) call mkl_free( ptr_iprops )
-         ptr_iprops = mkl_malloc( int8(4*noelem*mxelpr), 64 )
+         local_isize = 4*noelem*mxelpr
+         ptr_iprops = mkl_malloc( local_isize, 64 )
          ptr_props  = ptr_iprops
          ptr_lprops = ptr_iprops
          mxel = noelem
@@ -541,7 +544,6 @@ c
       end select
 c
  9800 format('                 bad case select')
- 9810 format('                 mdiag allocate failure')
  9820 format('                 pbar allocate failure')
  9830 format('                 crdmap allocate failure')
  9840 format('                 cnstrn allocate failure')
@@ -553,7 +555,6 @@ c
  9930 format('                 array already allocated. type: ',
      &      i3 )
  9940 format('                 node constraint transformations')
- 9960 format('                 nodlod tables')
  9962 format('                 node_load_defs table')
  9963 format('                 loddat_blocks table')
  9970 format('                 elstor tables')
