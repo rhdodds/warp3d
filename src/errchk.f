@@ -73,7 +73,7 @@ c
 c         ******** Loading was specified********
 c
  800  continue
-      call errchk_8( chkprm, debug1 )
+      call errchk_8( chkprm )
       goto 9999
 c
 c         ******** Display command ********
@@ -201,7 +201,7 @@ c
       real, parameter :: fgm_mark = -99.0
       character :: dums
       double precision :: dumd
-      logical :: is_matl_cohesive, is_umat, is_matl_cp
+      logical :: is_matl_cohesive, is_matl_cp
       character(len=50) erprms
 c
       erprms = ' '
@@ -700,14 +700,13 @@ c     *  this subroutine checks the loading input for constistency.  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine errchk_8( chkprm, debug1 )
+      subroutine errchk_8( chkprm )
       use global_data ! old common.main
       use main_data, only : stpchk
       implicit none
 c
       integer :: i, chkprm, lodnum, step
       logical, external :: scanms
-      logical :: debug1
 c
 c                       branch on time step versus regular loadings.
 c                       chkprm is the loading number.
@@ -768,10 +767,6 @@ c
       use global_data ! old common.main
       implicit integer (a-z)
       logical :: found
-      real dumr
-      character :: dums
-      double precision
-     &   dumd
 c
 c                       at least one convergence test must be defined.
 c                       otherwise stop.
@@ -800,7 +795,7 @@ c     ****************************************************************
 c
       subroutine errchk_18 (debug1)
       use global_data ! old common.main
-      use main_data, only : elstor, incmap, incid
+      use main_data, only : incmap, incid
       use erflgs
 c
       implicit none
@@ -1090,9 +1085,6 @@ c
 c
             end if
 c
-c
- 10         continue
-c
          end if
 c
          if( input_ok ) call dam_init_release
@@ -1179,11 +1171,7 @@ c
      &                    num_contact
       implicit integer (a-z)
       include 'param_def'
-      real dumr
-      character :: dums
-      double precision
-     &   dumd, zero
-      data zero /0.0/
+      double precision, parameter :: zero = 0.0d0
 c
       use_contact = .false.
 c
@@ -1197,7 +1185,7 @@ c
          end if
       end do
 c
-      if ( .not. use_contact ) then
+      if( .not. use_contact ) then
          write (*,*) '>>> No contact planes defined.'
       end if
 c
@@ -1208,7 +1196,6 @@ c                return
 c
       call wmpi_send_contact (.false.)
 c
- 9999 continue
       return
       end
 
@@ -1228,15 +1215,15 @@ c     ****************************************************************
 c
       subroutine chk_cp(matnum)
       use global_data ! old common.main
-      use main_data, only: matprp, lmtprp, imatprp, dmatprp, smatprp
+      use main_data, only: imatprp, dmatprp, smatprp
       use crystal_data, only: c_array
       implicit integer (a-z)
       integer, intent(in) :: matnum
-      integer, dimension(2) :: chksz
-      logical :: valid, exists
+      logical :: exists
       character :: matname*24
 c
       matname = matnam(matnum)
+c
 c           I'm just going to handle errors in this subroutine, the
 c           error subroutine is getting way too long.
 c
@@ -1307,9 +1294,6 @@ c           Check for file
 
  1005 format(/1x,'>>>> Fatal error in material ', a24,
      &            ': file ', a24, ' not found.'/)
- 1006 format(/1x,'>>>> Fatal error in material ', a24,
-     &            ': offset element ', i7,
-     &            ' is not valid'/)
  1007 format(/1x,'>>>> Fatal error in material ', a24,
      &            ': invalid crystal #',i3,/)
       end subroutine
@@ -1566,8 +1550,6 @@ c           User, just exit
 
  9001 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
      &            a8, ' must be greater than zero.'/)
- 9002 format(/1x,'>>>> Fatal error in crystal ', i3, '. Nu must be ',
-     &            'less than 0.5.'/)
  9003 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
      &            a8, ' must not be less than zero.'/)
 
