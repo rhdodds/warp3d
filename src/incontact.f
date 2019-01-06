@@ -18,11 +18,11 @@ c
       implicit integer (a-z)                                                    
 c                                                                               
 c                                                                               
-      logical numd, numi, sbflg1, sbflg2, rate, point_set, norm_set,            
-     &    matchs, outside, inside                                                               
-      character :: name*80, string*80, dums*1                                   
-      double precision                                                          
-     &     zero, dot, stiff, fric, point(3,3), mag1, mag2,                      
+      logical :: numd, numi, sbflg1, sbflg2, point_set, norm_set,            
+     &          matchs, outside, inside                                                               
+      character :: dums*1                                   
+      double precision ::                                                         
+     &     zero, dot, stiff, fric, point(3,3),                      
      &     tol_val, rate_val(3), depth, dumd, radius, length,                   
      &     ten_billion, norm(3)                                                 
       real dumr                                                                 
