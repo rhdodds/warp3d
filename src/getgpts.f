@@ -128,7 +128,7 @@ c                3-node line -- - used for various
 c                purposes - not a real element
 c
 1700  continue
-      call line3( order, gpn, xi, eta, zeta, weight )
+      call line3( order, gpn, xi, weight )
       return                                                                               
 c                                                                                                                                                            
 c                2-node bar element                                   
@@ -641,10 +641,8 @@ c
 c                                                                               
       subroutine quad2( order, gpn, xi, eta, zeta, w )                          
       implicit integer (a-z)                                                    
-      double precision                                                          
-     &  xi,eta,zeta,w,l1,w1,l2                                                  
-      double precision                                                          
-     &  zero, one, three, four, root33                                          
+      double precision :: xi,eta,zeta,w,l1,w1                                                  
+      double precision :: zero, one, three, four, root33                                          
       data zero, one, three, four, root33                                       
      & / 0.0d0, 1.0d0, 3.0d0, 4.0d0, 0.5773502691896257645d0 /                  
 c                                                                               
@@ -2166,18 +2164,17 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine line3( order, gpn, xi, eta, zeta, w )                          
+      subroutine line3( order, gpn, xi, w )                          
       implicit none                                                             
 c                                                                               
 c             dummy variables                                                   
 c                                                                               
-      integer order, gpn                                                        
-      double precision                                                          
-     &     xi, eta, zeta, w                                                     
+      integer :: order, gpn                                                        
+      double precision :: xi, w                                                     
 c                                                                               
 c             local variables                                                   
 c                                                                               
-      double precision                                                          
+      double precision ::                                                        
      &     op2, p6, zero, one, two, three, four, five, six, seven,              
      &     eight, nine                                                          
       data op2, p6, zero, one, two, three, four, five, six, seven,              
@@ -2185,7 +2182,7 @@ c
      & / 0.2d0, 0.6d0, 0.d0, 1.d0, 2.d0, 3.d0, 4.d0, 5.d0, 6.d0,                
      &   7.d0, 8.d0, 9.d0 /                                                     
 c                                                                               
-      if ( order.lt.1 .or. order.gt.4 ) then                                    
+      if( order.lt.1 .or. order.gt.4 ) then                                    
          write(*,9000) order                                                    
          stop                                                                   
       end if                                                                    
