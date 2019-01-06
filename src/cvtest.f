@@ -4,7 +4,7 @@ c     *                      subroutine cvtest                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/11/2018 rhd              *
+c     *                   last modified : 12/26/2018 rhd             *
 c     *                                                              *
 c     *     perform convergence tests specified                      *
 c     *     by the user. if any one of the convergence criteria is   *
@@ -167,7 +167,7 @@ c                test to see if convergence has been met.
 c                compute the magnitude of residual load vector
 c                for unconstrained dof only and compare it to
 c                mgload. if norm of the residual load vector
-c                and the applied load is < 1.0e-08, we assume
+c                and the applied load is < 1.0e-05, we assume
 c                convergence no matter  what the tolerance.
 c
          testvl(2) = sum
@@ -177,7 +177,7 @@ c
          else
              ratio(2) = (testvl(2)/mgload)*hundred
              if( ratio(2) .le. tol(2) ) local_flags(2) = .true.
-             if ( mgload .le. 1.0e-08 .and.  testvl(2) .le.
+             if ( mgload .le. 1.0e-05 .and.  testvl(2) .le.
      &            1.0e-08 ) then
                    local_flags(2) = .true.
                    local_flags(6) = .true.
