@@ -418,10 +418,6 @@ c                 and elasticity tensors
      &                  f123,f213,f312
                   double precision :: C11,C22,C44,C55,C66
                   double precision :: C12,C33,C13,C23
-                  integer :: i,j,info
-                  double precision, dimension(600) :: work
-                  integer, dimension(600) :: lwork
-                  integer, dimension(6) :: ipiv
 c
                   if (num .gt. max_crystals) then
                         write (out,*)
@@ -2024,10 +2020,10 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine read_simple_angles
+      use global_data ! old common.main
       use main_data
       use crystal_data, only: simple_angles, nangles, srequired,
      &      mc_array
-      use global_data ! old common.main
       implicit integer (a-z)
 c
       integer :: inter_mat, nlines, avail_device
@@ -2111,10 +2107,10 @@ c
      &            data_offset, defined_crystal
       use main_data
       use global_data ! old common.main
-      implicit integer (a-z)
+      implicit none
 c
-      integer :: mxcry, nelem, ncry matnum, el, i, iodev, p_matnum
-      integer :: avail_device
+      integer :: mxcry, nelem, ncry, matnum, el, iodev, p_matnum,
+     &           mattype
       integer, external :: warp3d_get_device_number
       logical :: countme, crystalsl, anglesl, open_file, send_mess
       character(len=24) :: filen
@@ -2134,7 +2130,7 @@ c
       nelem = 0
       do el=1,noelem
             matnum = elstor(2,el)
-            mattype = matprp(9,matnum)
+            mattype = int(matprp(9,matnum))
             if (mattype .eq. 10) then
                   countme = (imatprp(104,matnum) .eq. 2) .or.
      &                  (imatprp(107,matnum) .eq. 2)
@@ -2234,8 +2230,6 @@ c
             integer :: n, d, i
             integer, dimension(ncry), intent(out) :: results_cry
 c
-            character(len=24) :: fmat
-
 c           Scan the file until we find the first entry which matches el
             do
 c                 Read into dummy variables just in case
@@ -2350,7 +2344,7 @@ c     *                      subroutine avg_cry_elast_props          *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 4/5/12 mcm                 *
+c     *                   last modified : 12/13/2018 rhd             *
 c     *                                                              *
 c     *      Set average elastic properties.  For elastic materials  *
 c     *           this will be exact, for anisotropic materials we   *
@@ -2359,11 +2353,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine avg_cry_elast_props
-      use crystal_data, only : angle_input, crystal_input,
+      use crystal_data, only : crystal_input,
      &            data_offset, c_array, defined_crystal
       use main_data
       use global_data !  old common.main
-      implicit integer (a-z)
+      implicit none
 c
       integer :: i, j, k, ncrystals, cnum, osn, num, ecount
       real :: e_avg, nu_avg
@@ -2412,16 +2406,16 @@ c
               e_avg = e_avg + SNGL(c_array(cnum)%e)
               nu_avg = nu_avg + SNGL(c_array(cnum)%nu)
             end do
-            e_avg = e_avg / SNGL(ncrystals)
-            nu_avg = nu_avg / SNGL(ncrystals)
+            e_avg = e_avg / real(ncrystals)
+            nu_avg = nu_avg / real(ncrystals)
             props(7,j) = e_avg
             props(8,j) = nu_avg
             matprp(1,i) = matprp(1,i) + e_avg
             matprp(2,i) = matprp(2,i) + nu_avg
           end if
         end do
-        matprp(1,i) = matprp(1,i) / SNGL(ecount)
-        matprp(2,i) = matprp(2,i) / SNGL(ecount)
+        matprp(1,i) = matprp(1,i) / real(ecount)
+        matprp(2,i) = matprp(2,i) / real(ecount)
       end if
       end do
 c
@@ -2441,7 +2435,7 @@ c
      & '>>>> System error: unexpected input type in avg_elast_props!',
      &       ' Aborting.'/)
 
-      end subroutine
+      end subroutine 
 c
 c
 c
@@ -2459,7 +2453,9 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine init_random_seed()
+#ifdef __INTEL_COMPILER
       use ifport, only: getpid
+#endif
       implicit none
       integer, allocatable :: seed(:)
       integer :: i, n, un, istat, dt(8), pid, t(2), s
