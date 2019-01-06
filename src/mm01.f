@@ -121,7 +121,7 @@ c
      &   shear_mod_n1(mxvl), lk(mxvl), kbar(mxvl), eps_vol_n1(mxvl)
       double precision, parameter :: zero = 0.d0
       integer :: iostat(mxvl), instat(mxvl)
-      logical :: yield(mxvl), trcmat, local_debug, prior_linear(mxvl),
+      logical :: yield(mxvl), local_debug, prior_linear(mxvl),
      &           isothermal
 c
 c                       get the current output device for any meesages.
@@ -135,8 +135,7 @@ c
 c
       if( step .eq. 1 )
      &   call mm01_set_history( history, history1, cgn, yld_n1,
-     &                          hprime_n1, span, mxvl, ym_n1,
-     &                          nu_n1 )
+     &                          hprime_n1, span, mxvl )
 c
 c                       do the basic setup of the trial elastic stress
 c                       state, deviators at n, pull backstress at n from
@@ -149,7 +148,7 @@ c
      &                ym_n1, nu_n1, shear_mod_n1, alpha_n,
      &                rtse, isothermal, dtemps, local_debug,
      &                lk, beta, hprime_n1, yld_n1, kbar,
-     &                mrts, yfn, instat, yield, iter, lnelas,
+     &                mrts, yfn, instat, yield, lnelas,
      &                eps_vol_n1, ym_n, nu_n )
 c
 c                       compute updated yield surface size, updated
@@ -165,13 +164,12 @@ c      if ( isothermal ) then
 c           call mm01_simple1( span, mxvl, history, history1,
 c     &                        kbar, mrts, shear_mod_n1,
 c     &                        hprime_n1, beta, rtse, devstr_n1,
-c     &                        yield, local_debug )
+c     &                        yield )
 c      else
           call mm01_general( span, mxvl, history, history1,
      &                       kbar, mrts, shear_mod_n1,
      &                       hprime_n1, beta, rtse, devstr_n1,
-     &                       yield, lk, local_debug, dtemps,
-     &                       local_out )
+     &                       yield, lk, local_debug, local_out )
 c      end if
 c
 c                       update elements that are linear elastic at this
@@ -234,7 +232,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm01_set_history( history, history1, cgn, sigma_o,
-     &                             hprime, span, mxvl, ym_n1, nu_n1 )
+     &                             hprime, span, mxvl )
       implicit none
 c
 c                     parameters
@@ -242,7 +240,7 @@ c
       integer :: mxvl, span
       double precision ::
      &     hprime(*), cgn(mxvl,*), history(span,*), sigma_o(*),
-     &     history1(span,*), ym_n1(*), nu_n1(*)
+     &     history1(span,*)
 c
 c                     locals
 c
@@ -322,12 +320,12 @@ c
      &                      rtse, isothermal, dtemps, debug,
      &                      lk, beta, hprime_n1, yld_n1,
      &                      kbar, mrts, yf, instat, yield,
-     &                      iter, lnelas, eps_vol_n1, ym_n, nu_nn )
+     &                      lnelas, eps_vol_n1, ym_n, nu_nn )
       implicit none
 c
 c                     parameters
 c
-      integer :: span, mxvl, iostat(*), instat(*), iter, iout
+      integer :: span, mxvl, iostat(*), instat(*), iout
       logical :: prior_linear(*), isothermal, debug, yield(*),
      &           lnelas(*)
       double precision ::
@@ -342,7 +340,7 @@ c
      & dword, eps_mean, de1, de2, de3, de4, de5, de6,
      & deps_vol, hbari_np1, hbark_np1, hbark_n,
      & e_n, nu_n, g_n, een1, een2, een3, een4, een5, een6, e1, e2,
-     & e3, e4, e5, e6, e, nu, devstr_n1_elas(6), eps_mean_n
+     & e3, e4, e5, e6, devstr_n1_elas(6), eps_mean_n
 c
       integer :: iword(2), i
       equivalence ( dword, iword )
@@ -607,7 +605,6 @@ c
          cgn1(i,9) = cgn(i,9) + deps_plas_bar
       end do
 c
- 9000 format(10x,2f15.6)
       return
       end
 c     ****************************************************************
@@ -638,7 +635,7 @@ c
 c
 c                     locals
 c
-      integer i, iword(2), k
+      integer i, iword(2)
       double precision
      & sig_mean_np1, one, two, three, half, dword
       equivalence ( dword, iword )
@@ -702,13 +699,13 @@ c
       subroutine mm01_simple1( span, mxvl, history, history1,
      &                         kbar, mrts, shear_mod_n1,
      &                         hprime_n1, beta, rtse, devstr_n1,
-     &                         yield, debug )
+     &                         yield )
       implicit none
 c
 c                     parameters
 c
       integer  mxvl, span
-      logical debug, yield(*)
+      logical  yield(*)
       double precision
      & history(span,*), history1(span,*), kbar(*),
      & mrts(*), shear_mod_n1(*), hprime_n1(*), beta(*),
@@ -716,14 +713,14 @@ c
 c
 c                     locals
 c
-      integer j, i
+      integer i
       double precision
      & lambda_deltat, k_np1, hbark_np1, const1, hbari_np1, const2
 c
 c                     numerical constants
 c
       double precision
-     & root2, twthrd, one, two, three, root23, root3
+     & root2, twthrd, one, two, three, root23
       data root2, twthrd, one, two, three, root23
      & / 1.414213562373095d00, 0.666666666666667d00, 1.0d00,
      &   2.0d00, 3.0d00, 0.816496580927d00 /
@@ -800,7 +797,7 @@ c
       subroutine mm01_general( span, mxvl, history, history1,
      &                         kbar, mrts, shear_mod_n1,
      &                         hprime_n1, beta, rtse, devstr_n1,
-     &                         yield, lk, debug, dtemps, iout )
+     &                         yield, lk, debug, iout )
       implicit none
 c
 c                     parameters
@@ -810,13 +807,13 @@ c
       double precision
      & history(span,*), history1(span,*), kbar(*),
      & mrts(*), shear_mod_n1(*), hprime_n1(*), beta(*),
-     & rtse(mxvl,*), devstr_n1(mxvl,*), lk(*), dtemps(*)
+     & rtse(mxvl,*), devstr_n1(mxvl,*), lk(*)
 c
 c                     locals
 c
-      integer j, i
+      integer i
       double precision
-     & lambda_deltat, hbark_np1, const1, term1, term2,
+     & lambda_deltat, hbark_np1, const1, 
      & hbari_np1, const2, a, b, d, vbar, wbar, vwbar,
      & t1, t2, t3, hbark_n, discr, qroot1, qroot2, hbari_n
 c
