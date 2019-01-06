@@ -66,7 +66,7 @@ c
 c                       branch on sub-command to define aspects of
 c                       a domain
 c
- 20   if( matchs('normal',5)    ) go to 100
+      if( matchs('normal',5)    ) go to 100
       if( matchs('symmetric',5) ) go to 200
       if( matchs('front',5)     ) go to 300
       if( matchs('q',1)         ) go to 400
@@ -874,7 +874,6 @@ c
  9310 format(8x,'Rings to be computed/printed:')
  9320 format(15x,i8)
  9500 format(/,5x,'** end of domain definition **' )
- 9700 format ( /'Node set ',i4,' :',20i6)
  9710 format(8x,'Tangent vector direction cosines: ',3f10.6 )
  9720 format(8x,'Tangent vector defined: ',l1 )
       return
