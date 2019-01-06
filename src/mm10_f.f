@@ -870,7 +870,6 @@ c
         write(iout,9030) 2
         call die_gracefully
       end if
-d
       if( do_print ) then
         do i = 1, num_states_here
           write(iout,9010) i, state_labels(i), state_descriptors(i)
