@@ -250,9 +250,9 @@ c
             if( p0 .eq. 1 .or. p0 .eq. 2 ) zguess = front_coords(3,2)
             if( p0 .eq. 3 .or. p0 .eq. 4 ) zguess = front_coords(3,4)
          end if
-         call di_calc_distance( crack_curvature, front_order,
-     &              num_front_nodes, domain_type, zguess,
-     &              point_x, point_z, base, x_local, out, debug )
+         call di_calc_distance( crack_curvature, front_order, zguess,
+     &                          point_x, point_z, base, x_local, out,
+     &                          debug )
       end if
 c
       r1 = ( base*base + height*height )**half
@@ -348,10 +348,10 @@ c
 c
 c             dummy variables
 c
-      integer caseno, out
-      double precision
+      integer :: caseno, out
+      double precision ::
      & zguess, point_x, point_z, base, x_local, crack_curvature(*)
-      logical debug
+      logical :: debug
 c
 c             local variables
 c
