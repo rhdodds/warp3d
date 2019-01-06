@@ -255,7 +255,7 @@ c
 c                                                                               
 c                local declarations                                             
 c                                                                               
-      logical matchs, matchs_exact, numd,  new_line, local_debug,               
+      logical matchs_exact, numd, local_debug,               
      &        endcrd, ym_input, nu_input, alpha_input, ok,                      
      &        gp_sigma_0_input, gp_h_u_input,                                   
      &        gp_beta_u_input, gp_delta_u_input,                                
