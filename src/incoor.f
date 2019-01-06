@@ -72,7 +72,6 @@ c *                                                                    *
 c **********************************************************************
 c
 c
- 410  continue
       if ( matchs('dump',4) ) then
         write(out,9500)
         do node = 1, nonode
@@ -450,6 +449,8 @@ c
 c
 c              open file. note use of "segmented" record type for
 c              binary to support extremely long records.
+c              segmented is an Intel extension. removed
+c              to support gfortran.
 c
       cfile = warp3d_get_device_number()
       if( stream ) then
@@ -457,8 +458,7 @@ c
      &         form="unformatted" )
       else
          open( unit=cfile, file=filename, status='old',
-     &         access='sequential',form='unformatted',
-     &         recordtype='segmented' )
+     &         access='sequential',form="unformatted")
       end if
 c
       write(out,9000)
