@@ -63,7 +63,7 @@ DEFAULT_MACHINE_TYPE = /QxHOST /align:array64byte
 MACHINE_TYPE         = $(DEFAULT_MACHINE_TYPE)
 #
 F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
-F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback
+F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback /fpp
 F3 = $(INLINEOPT) $(MACHINE_TYPE) $(PARALLEL) $(STACKSIZE)
 #
 F90 = ifort $(F1) $(F2) $(F3)
