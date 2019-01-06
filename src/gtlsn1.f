@@ -205,7 +205,7 @@ c
 c                                                                               
 c                      parameter declarations                                   
 c                    
-      integer :: span, etype, gpn, felem, iout, nstr, mxvl                                                         
+      integer :: span, etype, felem, iout, nstr, mxvl                                                         
       double precision :: due(mxvl,*), deps(mxvl,nstr), 
      &                    strain_np1(mxvl,nstr), ce(mxvl,*)
 c                                                                               
@@ -340,7 +340,6 @@ c     &                       bar_areas_n1(i)
       end do 
 c
       return
- 9000 format(10x,'element, len0, len,vol,area(n1):', i8,4f15.6)      
       end
 c                                                                               
 c     ****************************************************************          
@@ -367,8 +366,7 @@ c
 c                                                                               
 c                      parameter declarations                                   
 c                    
-      integer :: span, mxelpr, etype, gpn, felem, iout, nstr, nstrs,
-     &           mxvl  
+      integer :: span, mxelpr, etype, felem, iout, nstr, nstrs, mxvl  
       real :: props(mxelpr,span)                                                       
       double precision :: due(mxvl,*), deps(mxvl,nstr), 
      &                    strain_np1(mxvl,nstr), stress_n(mxvl,nstrs),
