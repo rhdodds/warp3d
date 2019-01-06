@@ -66,7 +66,7 @@ MVC      = mv -f
 #
 #              ==> we use the simplest (static) linking method for MKL
 #
-COMPILER = ifort
+COMPILER = ifort 
 OPENMP   = -qopenmp -reentrancy -mkl=parallel -static-intel -qopenmp-link=static
 FTRAP    =
 OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
@@ -82,7 +82,7 @@ DEFAULT_MACHINE_TYPE  = -xAVX2  -align array64byte
 DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte  -qopt-zmm-usage=high
 MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
 #
-FCOPTS   =  -O3 -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
+FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
             -module $(ODIR) -ftz  $(MACHINE_TYPE)  $(FTRAP) $(INLINE) $(OPENMP) \
             $(CHECKFLOAT)
 FOR      = $(COMPILER) $(FCOPTS)
