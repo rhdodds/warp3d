@@ -26,7 +26,6 @@ c
       double precision :: dumd                                                  
       logical :: auto_blking, ok, display, auto_domains                         
       logical, external :: matchs, integr, endcrd                               
-      logical, save :: first_proc = .true.                                      
       character :: dums*1, item*80                                              
 c                                                                               
 c                       if the subroutine has been previously                   
@@ -298,13 +297,10 @@ c
       integer ::  blk_matmodel, matmodel, blk_eletype, eletype,                 
      &            blk_intord, intord, blk_intnum, intnum, i,                    
      &            blk_matnum, matnum, current_size, felem,                      
-     &            element, param, idomain, hblk, lblk, blks_per_domain,         
+     &            element,idomain, hblk, lblk, blks_per_domain,         
      &            blk, domain                                                   
       integer ::  counts_blks_ea_domain(0:max_procs-1,2)                        
-      character(len=1) :: dums                                                  
-      double precision :: dumd                                                  
-      real :: dumr                                                              
-c                                                                               
+c
 c                     first generation of automatic assignment of               
 c                     elements to blocks.                                       
 c                                                                               
