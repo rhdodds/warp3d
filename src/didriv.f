@@ -638,7 +638,7 @@ c *                                                             *
 c * domain_check  - exhaustive testing of domain defintiion for *
 c *                 consistency                                 *
 c *                                                             *
-c *                last modified: 3/8/2018 rhd                  *
+c *                last modified: 12/14/2018 rhd                *
 c *                                                             *
 c ***************************************************************
 c
@@ -657,13 +657,13 @@ c
 c
 c              locals
 c
-      integer :: numfrn, frtint, node_id, i, node_err, dtype, ftype
+      integer :: numfrn, frtint, node_id, i, j, node_err, dtype, ftype
       double precision :: x, y, z, x1, y1, z1, distance, cum_distance
-      real, parameter :: rzero=0.0
-      double precision, parameter :: zero=0.0d0
-      integer, parameter :: inttbl(3,7) = [ 4,0,0,  1,0,0,  3,1,0,
-     &                                      4,0,1,  4,3,0,  4,0,0,
-     &                                      4,4,3 ]
+      real, parameter :: rzero = 0.0
+      double precision, parameter :: zero = 0.0d0
+      integer inttbl(3,7)
+      data  ((inttbl(i,j),i=1,3),j=1,7) 
+     & / 4,0,0, 1,0,0,  3,1,0,  4,0,1,  4,3,0,  4,0,0,  4,4,3 /
       character(len=1), parameter :: labs(4) = [ 'a','b','c','d' ]
       logical :: consis, linear, quad, cubic, header, ok, user_def_ct
 c
