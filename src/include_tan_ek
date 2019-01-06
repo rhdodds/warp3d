@@ -23,7 +23,6 @@ c
        real (h_prec), allocatable :: volume_block(:)          ! mxvl
        real (h_prec), allocatable :: jac_block(:,:,:)         ! mxvl,3,3
        real (h_prec), allocatable :: b_block(:,:,:)           ! mxvl,mxedof,nstr
-!       real (h_prec), allocatable :: bt_block(:,:,:)          ! mxvl,nstr,mxedof
        real (h_prec), allocatable :: bd_block(:,:,:)          ! mxvl,mxedof,nstr
        real (h_prec), allocatable :: ue(:,:)                  ! mxvl,mxedof
        real (h_prec), allocatable :: due(:,:)                 ! mxvl,mxedof
