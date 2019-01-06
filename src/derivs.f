@@ -896,13 +896,13 @@ c 6-node triangle element:
 c                                                                               
 c                  3                                                            
 c                 o                                                             
-c                /  \                                                           
-c               /     \                                                         
-c              /        \                                                       
+c                /   \
+c               /     \
+c              /        \
 c           6 o           o 5                                                   
-c            /              \                                                   
-c           /                 \                                                 
-c          /                    \                                               
+c            /              \
+c           /                 \
+c          /                    \
 c         o - - - - - o - - - - - o                                             
 c        1            4             2                                           
 c                                                                               
@@ -1123,13 +1123,13 @@ c         3-node bottom surface of the 6-node interface element:
 c                                                                               
 c        3                                                                      
 c         o                                                                     
-c         |  \                                                                  
-c         |    \                                                                
-c         |      \                                                              
+c         |  \
+c         |    \
+c         |      \
 c         |        \   corresponding nodes 4-6 on top surface                   
-c         |          \                                                          
-c         |            \                                                        
-c         |              \                                                      
+c         |          \
+c         |           \
+c         |             \
 c         o - - - - - - -  o                                                    
 c        1                  2                                                   
 c                                                                               
@@ -1213,13 +1213,13 @@ c         6-node bottom surface of the 12-node interface element:
 c                                                                               
 c       3                                                                       
 c         o                                                                     
-c         |  \                                                                  
-c         |    \                                                                
+c         | \
+c         |    \
 c         |      \  5                                                           
 c       6 o        o          corresponding nodes 7-12 on top surface           
-c         |          \                                                          
-c         |            \                                                        
-c         |              \                                                      
+c         |          \
+c         |           \
+c         |             \
 c         o - - - o - - - o                                                     
 c        1        4        2                                                    
 c                                                                               
