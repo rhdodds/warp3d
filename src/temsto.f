@@ -20,7 +20,7 @@ c
      &                   type, macrointer, minum, area )
 c
       use global_data ! old common.main
-      use main_data, only : elstor
+      use main_data, only : elstor, id_defa
 c
       implicit none
 c
@@ -88,7 +88,7 @@ c                       the new order. default's cannot override
 c                       previous data.
 c
  21   if( elstor(1,elem) .ne. 0 ) then
-         if( intord .eq. 4HDEFA ) go to 22
+         if( intord .eq. id_defa ) go to 22
       end if
       elstor(3,elem) = intord
 c
@@ -99,7 +99,7 @@ c                       the new location. default's cannot override
 c                       previous data.
 c
  22   if( elstor(1,elem) .ne. 0 ) then
-         if( outloc .eq. 4HDEFA ) go to 23
+         if( outloc .eq. id_defa ) go to 23
       end if
       elstor(4,elem) = outloc
 c
@@ -110,7 +110,7 @@ c                       the new stress type. default's cannot override
 c                       previous data.
 c
  23   if( elstor(1,elem) .ne. 0 ) then
-         if( strcon .eq. 4HDEFA ) go to 24
+         if( strcon .eq. id_defa ) go to 24
       end if
       elstor(5,elem) = strcon
 c
@@ -121,7 +121,7 @@ c                       ignore the new output format. default's cannot
 c                       override previous data.
 c
  24   if( elstor(1,elem) .ne. 0 ) then
-         if( outfmt .eq. 4HDEFA ) go to 25
+         if( outfmt .eq. id_defa ) go to 25
       end if
       elstor(6,elem) = outfmt
 c
@@ -131,7 +131,7 @@ c                       the new flag is the default, then ignore the new flag.
 c                       default's cannot override previous data.
 c
  25   if( elstor(1,elem) .ne. 0 ) then
-         if( geonl .eq. 4HDEFA ) go to 26
+         if( geonl .eq. id_defa ) go to 26
       end if
       elstor(7,elem) = geonl
 c
@@ -152,7 +152,7 @@ c                       the new flag is the default, then ignore the new flag.
 c                       default's cannot override previous data.
 c
  27   if( elstor(1,elem) .ne. 0 ) then
-         if( bbar .eq. 4HDEFA ) go to 28
+         if( bbar .eq. id_defa ) go to 28
       end if
       elstor(8,elem) = bbar
 c
@@ -162,7 +162,7 @@ c                       and the new flag is the default, then ignore the new
 c                       flag. default's cannot override previous data.
 c
  28   if( elstor(1,elem) .ne. 0 ) then
-         if( surf .eq. 4HDEFA ) go to 30
+         if( surf .eq. id_defa ) go to 30
       end if
       elstor(10,elem) = surf
 c
@@ -172,7 +172,6 @@ c
       rword = area
       elstor(12,elem) = iword
 c
- 100  continue
       if( iplist .ne. 0 ) go to 20
 c
 c
