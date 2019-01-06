@@ -13,7 +13,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine intab( sbflg1, sbflg2, tabnum, path )                          
+      subroutine intab( sbflg1, sbflg2, tabnum )                          
       use global_data ! old common.main
       use main_data, only : tables                                              
       implicit integer (a-z)                                                    
@@ -24,8 +24,8 @@ c
 c                                                                               
 c                       local declarations                                      
 c                                                                               
-      double precision :: forval, dumd                                          
-      character :: name*80, lname*24, stlnam*8, dums*1, curtyp*4                
+      double precision :: dumd                                          
+      character :: name*80, lname*24, dums*1               
       logical, external :: matchs, endcrd, label, scanms, numi                  
       logical :: debug, complete                                                
       real :: dumr                                                              
@@ -194,7 +194,7 @@ c **********************************************************************
 c **********************************************************************        
 c                                                                               
 c                                                                               
- 9995 sbflg1= .true.                                                            
+      sbflg1= .true.                                                            
       sbflg2= .true.                                                            
       if (debug) write (*,*) '9995'                                             
       go to 9999                                                                
@@ -208,11 +208,6 @@ c
       sbflg2= .false.                                                           
       if (debug) write (*,*) '9997'                                             
       go to 9999                                                                
-c                                                                               
- 9998 sbflg1= .true.                                                            
-      sbflg2= .false.                                                           
-      if (debug) write (*,*) '9998'                                             
-c                                                                               
 c                                                                               
  9999 continue                                                                  
       if ( debug ) write (*,*) ' >>> leaving intab'                             
@@ -235,7 +230,6 @@ c
       use main_data, only : tables                                              
       implicit integer (a-z)                                                    
 c                                                                               
-      real rzero                                                                
       double precision dzero                                                    
       logical fill, debug                                                       
 c                                                                               
@@ -329,11 +323,11 @@ c                       local declarations
 c                                                                               
       double precision                                                          
      &  dumd                                                                    
-      character name*80, lname*8, stlnam*8, dums*1, curtyp*4                    
-      logical matchs, endcrd, true, numr, scanms, debug,                        
+      character :: dums*1                  
+      logical matchs, endcrd, true, numr, debug,                        
      &     pist_def(8), consistent                                              
       dimension pist_order(8)                                                   
-      real dumr, rwtime, rwtime_prv, zero, pist_load(8), pist_val,              
+      real dumr, zero, pist_val,              
      &  tnm1, tn, mx, my, mz, norm                                              
       data debug, zero / .false., 0.0 /                                         
 c                                                                               
@@ -352,8 +346,7 @@ c **********************************************************************
 c                                                                               
 c                                                                               
       call readsc                                                               
- 1000 continue                                                                  
-c                                                                               
+c
       if( matchs('columns',3) ) call splunj                                     
       pnow = 1                                                                  
       pist_def(1:8) = .false.                                                   
