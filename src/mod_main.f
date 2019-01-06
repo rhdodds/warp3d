@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 11/26/2018 rhd                  *
+c     *              last modified : 12/12/2018 rhd                  *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -47,9 +47,9 @@ c
       integer :: iprops
       real    :: props
       logical :: lprops
-      pointer ( ptr_iprops, iprops(mxelpr,*) ),
-     &        ( ptr_props,  props(mxelpr,*) ),
-     &        ( ptr_lprops, lprops(mxelpr,*) )
+      pointer ( ptr_iprops, iprops(mxelpr,1) ),
+     &        ( ptr_props,  props(mxelpr,1) ),
+     &        ( ptr_lprops, lprops(mxelpr,1) )
 c
 c              --- double precision arrays/vectors ---
 c
@@ -95,10 +95,11 @@ c
 !dir$ attributes align: 64 :: dstmap,cstmap
       integer, allocatable, dimension (:) :: dstmap, cstmap
 
-!dir$ attributes align: 64 :: cp, dcp, icp,
-     &    matlst, lodlst, prslst, plrlst, stprng, bits, outmap,
-     &    blk_ptr_head, MPI_DOF_LOCAL, num_dof_local,
-     &    proc_pids
+!dir$ attributes align: 64 :: cp, dcp, icp
+!dir$ attributes align: 64 :: matlst, lodlst, prslst, plrlst, stprng 
+!dir$ attributes align: 64 :: bits, outmap, blk_ptr_head 
+!dir$ attributes align: 64 :: MPI_DOF_LOCAL, num_dof_local
+!dir$ attributes align: 64 :: proc_pids
 !dir$ attributes align: 64 :: elblks
       integer, allocatable, dimension (:,:) :: elblks
 c
@@ -487,9 +488,44 @@ c
       logical :: initial_state_option
       integer :: initial_state_step
 c
+c                 support for global forcing solver rebuild
+c
+      logical :: force_solver_rebuild
+c
+c                 hollerith constants so current compilers
+c                 stop complaining about stms such as
+c
+c                 if( ix .eq. 4hCENT ) ...
+c
+      integer, parameter :: id_node   = 4hNODE,
+     & id_cent   = 4hCENT,
+     & id_curr   = 4hCURR,
+     & id_defa   = 4hDEFA,
+     & id_true   = 4hTRUE,
+     & id_flse   = 4hFLSE,
+     & id_o222   = 4hO222,
+     & id_o14p   = 4hO14P,
+     & id_o09p   = 4hO09P,
+     & id_shrt   = 4hSHRT,
+     & id_long   = 4hLONG,
+     & id_o06p   = 4hO06P,
+     & id_o01p   = 4hO01P,
+     & id_o03p   = 4hO03P,
+     & id_o04p   = 4hO04P,
+     & id_o05p   = 4hO05P,
+     & id_o060   = 4hO06P,
+     & id_o07p   = 4hO07p,
+     & id_o111   = 4hO111,
+     & id_o333   = 4hO333,
+     & id_o3mp   = 4HO3MP,
+     & id_o22n   = 4HO22N,
+     & id_o22g   = 4HO22G,
+     & id_pcm    = 4Hpcm ,  ! requires blank after pcm to make 4 chars
+     & id_gaus   = 4HGAUS,
+     & id_dollar = 4H$      !  requires 3 blanks after $  
+
+
       end module
-
-
 
 
 
