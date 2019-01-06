@@ -4,7 +4,7 @@ c     *                subroutine release_constraints                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 6/20/2016 rhd               *
+c     *                   last modified: 12/23/2018 rhd              *
 c     *                                                              *
 c     *     read/store data for the release constraints command      *
 c     *                                                              *
@@ -17,51 +17,151 @@ c
 c
       use main_data, only : cnstrn_in, release_cons_table,
      &                      release_cons_steps, mdiag, rload
+      use mod_mpc, only:    num_user_mpc, user_mpc_table
 c
-      implicit integer (a-z)
+      implicit none
 c
-c                       parameters
+c              parameters
 c
       logical :: sbflg1, sbflg2
 c
-c                       locals
+c              locals
 c
-      integer :: intlst(mxlsz), lenlst, param, errnum, dummy,
-     &           iplist, icn, node, idof, dof, nsteps, i
+      integer :: intlst(mxlsz), mpc_intlst(mxlsz), lenlst, 
+     &           mpc_lenlst, warn_mess_num_steps
       integer, save :: count_stored
-      logical :: release_flags(3), found_list, bad_list, bad
-      logical, external :: match, matchs, endcrd, true, numd, integr,
-     &         realn, match_exact
-      logical :: debug
+      integer, allocatable :: user_mpc_col_list(:)
+      logical ::  found_list, bad_list, release_flags(3), debug,
+     &            compact_mpc_table, warn
       logical, save :: delete_release_cons
-      real ::  dumr
-      double precision :: dumd, zero, d32460, react
-      character :: dums*1, curtyp *1, dof_names(3)*1
-      data dof_names / 'u', 'v', 'w' /
-      data  d32460, zero /  32460.0d00, 0.0d00 /
 c
-c                       if sub flag 1 is on, there is re-entry
-c                       after an error in input. if we have bad
-c                       input somewhere here,
-c                       release the data structure on exit
+c              if sub flag 1 is on, there is re-entry after an error
+c              in input. if we have bad input somewhere here,
+c              release the data structure on exit
 c
       debug = .false.
-      count_stored = 0
-c
       if( debug ) then
          write(out,*) '... entered release_constraints ...'
          write(out,*) '    sbflg1, sbflg2: ', sbflg1, sbflg2
       end if
+c 
+      count_stored      = 0
+      compact_mpc_table = .false.
+      warn_mess_num_steps = 0
+c
+      if( num_user_mpc > 0 ) then
+        allocate( user_mpc_col_list(max_mpc) )
+      else
+        allocate( user_mpc_col_list(1) )
+      end if
+      user_mpc_col_list = 0
 c
       if( sbflg1 ) then
          write(out,9000) ; num_error = num_error + 1
-         go to 100
       else
          delete_release_cons = .false.
       end if
 c
-c                       get number of steps used to release reaction
-c                       forces to zero. default = 1 step
+c              get number of steps used to release reaction
+c              forces to zero. default = 1 step
+c
+      if( .not. sbflg1 ) call release_cons_init 
+c
+      do !   outer read loop over lines of node lists and dofs
+c
+        call readsc
+        call release_cons_scan
+        if( .not. found_list ) exit  ! out of read loop. back to main
+        if( bad_list ) then
+          delete_release_cons = .true.
+          cycle
+        end if
+c
+c              input line looks ok. update data structures
+c              for the releases. only 1 release step
+c              allowed for MPCs
+c
+        if( mpc_lenlst == 0 ) then  ! cmd had only absolute constraints
+          call release_cons_abs
+        else
+          if( num_user_mpc .eq. 0 ) then  ! cmd had MPC but none defined
+             write(out,9100)
+             delete_release_cons = .true.
+             num_error = num_error + 1
+          else
+             warn = warn_mess_num_steps .eq. 0 .and. 
+     &              release_cons_steps .ne. 1
+             if( warn ) then
+               warn_mess_num_steps = warn_mess_num_steps + 1
+               write(out,9110)
+             end if
+             call release_cons_mpc
+          end if
+        end if
+c
+      end do  ! get next input line
+c
+c              all release commands read/processed. cleanup.
+c
+      sbflg1         = .true.
+      sbflg2         = .true.
+c
+      if( debug ) then
+         write(out,*) '... count_stored: ',count_stored
+         write(out,*) '... delete_release_cons: ', delete_release_cons
+         write(out,*) '... compact_mpc_table: ', compact_mpc_table
+      end if
+c
+      if( delete_release_cons ) then
+        if( allocated( release_cons_table ) )
+     &      deallocate( release_cons_table )
+      end if
+c
+      call release_empty_cons_table
+c
+      if( compact_mpc_table ) then
+        if( debug ) then
+           write(out,*) '.. ready to compact. num_user_mpc: ',
+     &                  num_user_mpc
+           write(out,*) '.. user_mpc_col_list: ',
+     &                  user_mpc_col_list(1:num_user_mpc)
+         end if
+         call incon_mpcs_resize( 2, user_mpc_col_list )
+      end if
+      if( debug ) write(out,*) '... leaving release_constraints ...'
+c
+      return
+c
+ 9000 format(/1x,'>>>>> error: syntax error in release constraints',
+     &   /,14x,'input. read new line ...',/)
+ 9100 format(/1x,'>>>>> error: no user MPCs defined for model.',
+     &   ' read new line ...',/)
+ 9110 format(/1x,'>>>>> Warning: only 1 release step allowed for ',
+     &   'MPCs.',
+     &  /,14x,'Using 1 step',/)
+c
+      contains
+c     ========
+c     ****************************************************************
+c     *                                                              *
+c     *              subroutine release_cons_init                    *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/20/2018 rhd             *
+c     *                                                              *
+c     *           initialize the release cons table                  *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+c
+      subroutine release_cons_init
+      implicit none
+c
+      integer :: i, dummy
+      logical, external :: matchs, endcrd, integr
+      double precision, parameter :: zero = 0.d0
 c
       release_cons_steps = 1
       if( matchs( 'constraints', 4 ) ) call splunj
@@ -86,117 +186,12 @@ c
         end do
       end if
 c
- 100  continue
-      do !   outer read loop over lines of node lists and dofs
-c
-c                       get a list of nodes and the released
-c                       directions (u,v,w)
-c
-      call readsc
-      call release_cons_scan
-      if( .not. found_list ) exit  ! out of read loop. back to main
-      if( bad_list ) then
-        delete_release_cons = .true.
-        cycle
-      end if
-c
-c                       list of nodes and release directions appears to
-c                       be ok. Process node list to store reactions
-c                       in release constraints data structure
-c
-      icn    = 0
-      iplist = 1
-      do while ( iplist .ne. 0 )
-         call trxlst( intlst, lenlst, iplist, icn, node )
-c
-c                       check that the list node does not exceed
-c                       the number of nodes in the structure
-c                       and is positive.
-c
-         if( node .gt. nonode ) then
-            param = node
-            call errmsg(16,param,dums,dumr,dumd)
-            cycle
-         end if
-         if( node .le. 0 )  then
-            param = node
-            call errmsg(58,param,dums,dumr,dumd)
-            cycle
-         end if
-c
-c                       before storing make sure the dof for node has
-c                       (1) is not already in release, (2) has a
-c                       constraint imposed
-c
-         bad = .false.
-         do idof = 1, 3
-           curtyp = dof_names(idof)
-           if( .not. release_flags(idof) ) cycle
-           nsteps = release_cons_table(idof,node)%num_release_steps
-           if( nsteps .ne. 0 ) then
-              write(out,9100) node, dof_names(1)
-              bad = .true.
-           end if
-           dof = dstmap(node) + idof - 1
-           if( cnstrn_in(dof) .eq. d32460 ) then
-              write(out,9110) node, curtyp
-              bad = .true.
-           end if
-         end do
-c
-         if( bad ) then
-           num_error = num_error + 1
-           cycle
-         end if
-c
-c                       pull reaction values from global load vector
-c                       and store. remove constraint from constraints
-c                       data structure.
-c
-         do idof = 1, 3
-           if( .not. release_flags(idof) ) cycle
-           dof = 3 * (node-1) + idof
-           release_cons_table(idof,node)%num_release_steps =
-     &            release_cons_steps
-           release_cons_table(idof,node)%remaining_steps_for_release =
-     &            release_cons_steps
-           react = -rload(dof) + ifv(dof) + mdiag(dof)*a(dof)
-           release_cons_table(idof,node)%reaction_force = react
-           call release_cons_update_constraints( dof )
-           count_stored = count_stored + 1
-         end do
-c
-      end do  ! while loop to process nodes in list
-c
-      end do  ! get next input line
-c
-c
-      sbflg1         = .true.
-      sbflg2         = .true.
-      if( debug ) then
-         write(out,*) '... count_stored: ',count_stored
-         write(out,*) '... delete_release_cons: ', delete_release_cons
-      end if
-      if( delete_release_cons ) then
-        if( allocated( release_cons_table ) )
-     &      deallocate( release_cons_table )
-      end if
-      call release_empty_cons_table
-      if( debug ) write(out,*) '... leaving release_constraints ...'
-c
       return
 c
- 9000 format(/1x,'>>>>> error: syntax error in release constraints',
-     &   /,14x,'input. read new line ...')
- 9100 format(/1x,'>>>>> error: node: ',i7,' dof: ',a1,
-     &  /14x,'already in release')
- 9110 format(/1x,'>>>>> error: node: ',i7,' dof: ',a1,
-     &  /14x,'has no constraint to release')
  9120 format(/1x,'>>>>> error: invalid number of release steps',
      &   /,14x,'input. read new line ...')
-
-      contains
-c     ========
+c
+      end subroutine release_cons_init
 
 c     ****************************************************************
 c     *                                                              *
@@ -204,7 +199,7 @@ c     *              subroutine release_cons_scan                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/222104 RHD              *
+c     *                   last modified : 12/20/2018 rhd             *
 c     *                                                              *
 c     *     scan/store list of nodes and constraint directions to    *
 c     *     be released                                              *
@@ -215,34 +210,59 @@ c
 c
       subroutine release_cons_scan
 c
-c                       locals
+c              locals
 c
-      integer :: strlng
-      character :: string*80
-      logical :: ok
+      integer :: strlng, errnum, param, dummy
+      logical :: ok, done_input
+      logical, external :: matchs, match_exact, endcrd, integr, true
+      character :: dums*1, string*80
+      real :: dumr
+      double precision :: dumd
 c
+      if( debug ) write(out,*) ' '
       if( debug ) write(out,*) '    ... entered release_cons_scan ...'
 c
-c                       input node list
+c              command format:
+c
+c                <node list> [ dof ]   absolute cons
+c                <node list a> [ dof] <node list b>        MPCs
+c
+c              for MPC, the 1st entry in list a must match 1st entry
+c              in list b in the user-defined MPC equations for model.
+c              same for 2nd, 3rd, 4th, .. entries in each list.
+c              each such node pair order does not have to match the
+c              user-defined MPC equation. For MPC
+c
+c                - 4823 1.0 u + 9954 1.0 u  = 0.0
+c
+c              these forms are ok for in the release input
+c                  4823 u 9954
+c                  9954 u 4823
+c
+c              the processors here *assume* the MPC is always of the
+c              type   node_a/dof = node_b/dof  
 c
       if( matchs( 'plane', 5 ) ) call splunj ! implement later
-      call trlist( intlst, mxlsz, nonode, lenlst, errnum)
 c
-c                       branch on the return code from trlist. a
-c                       value of 1 indicates no error. a value of
-c                       2 indicates that the parse rules failed in
-c                       the list. a value of 3 indicates that the
-c                       list overflowed its maximum length of mxlsz.
-c                       in these last two cases, the illegal list
-c                       will be ignored and a new node list will
-c                       be sought. a value of 4 indicates that no list
-c                       was found. in this case, release cons input
-c                       has ceased.
+      mpc_lenlst = 0
+c
+      call trlist( intlst, mxlsz, nonode, lenlst, errnum )
+c
+c              branch on the return code from trlist. a
+c              value of 1 indicates no error. a value of
+c              2 indicates that the parse rules failed in
+c              the list. a value of 3 indicates that the
+c              list overflowed its maximum length of mxlsz.
+c              in these last two cases, the illegal list
+c              will be ignored and a new node list will
+c              be sought. a value of 4 indicates that no list
+c              was found. in this case, release cons input
+c              has ceased.
 c
       if( debug ) write(out,*)
-     & '    ... trlist done, errnum, lenlst: ',errnum,lenlst
+     & '    ... trlist done, errnum, lenlst: ', errnum, lenlst
 c
-      bad_list = .false.
+      bad_list   = .false.
       found_list = .false.
 c
       if( errnum .eq. 4 ) return
@@ -276,10 +296,9 @@ c
       release_flags(1:3) = .false.
       do
          if( match_exact( ',',1 ) ) then
-           call splunj ! do nothing forces compiler to execute
-           cycle
+             call splunj ! do nothing forces compiler to execute
+             cycle
          end if
-         if( endcrd(dummy) ) exit
          if( match_exact( 'u',1 ) ) then
              release_flags(1) = .true.
              cycle
@@ -292,19 +311,66 @@ c
              release_flags(3) = .true.
              cycle
          end if
-c
-         bad_list = .true.
-         num_error = num_error + 1
-         call entits( string, strlng )
-         write(out,9010) string(1:strlng)
-         call scan_flushline
-         return
+         if( endcrd(dummy) ) then
+             done_input = .true.
+             exit
+         end if
+         call trlist( mpc_intlst, mxlsz, nonode, mpc_lenlst, errnum )
+         if( errnum .eq. 4 ) then ! no list found but not endcrd
+           bad_list = .true.
+           num_error = num_error + 1
+           call entits( string, strlng )
+           write(out,9010) string(1:strlng)
+           call scan_flushline
+           return
+         else
+           exit  ! list found but could have list syntax errors
+           done_input = .false.
+        end if
       end do
 c
       ok = release_flags(1) .or. release_flags(2) .or. release_flags(3)
-      if( ok ) return
-      write(out,9020)
-      num_error = num_error + 1
+      if( .not. ok ) then
+          write(out,9020)
+          num_error = num_error + 1
+          call scan_flushline
+          return
+      end if
+c
+c              done or is this an MPC release ?
+c
+      if( debug ) write(out,9030) release_flags, done_input
+      if( done_input ) return
+c
+c              we found an integerlist following the list of u, v, w
+c
+      bad_list = .false.
+      if( debug ) write(out,*)
+     & '    ... trlist found for mpc nodes, errnum, mpc_lenlst: ',
+     &      errnum,lenlst
+      if( errnum .eq. 2 ) then
+         param = 1
+         call errmsg(24,param,dums,dumr,dumd)
+         bad_list = .true.
+         call scan_flushline
+         return
+      end if
+c
+      if( errnum .eq. 3 ) then
+         param = 2
+         call errmsg(24,param,dums,dumr,dumd)
+         bad_list = .true.
+         call scan_flushline
+         return
+      end if
+c
+      if( errnum .eq. 1 ) then
+         call backsp(1)
+         if( true(dummy) ) call splunj
+      else
+         write(out,9000)
+         call die_abort
+      end if
 c
       return
 c
@@ -313,9 +379,362 @@ c
  9010 format(/1x,'>>>>> error: unrecognized data in list of released',
      &  /14x,'dof. scanning: ', a )
  9020 format(/1x,'>>>>> error: no valid components to release found')
+ 9030 format(5x,"... release flags, done_input:",4l3)
 c
       end subroutine release_cons_scan
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine release_cons_abs                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/20/2018 rhd             *
+c     *                                                              *
+c     *     process list of absolute constraints to release          *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine release_cons_abs
+      implicit none
+c
+      integer :: icn, iplist, node, param, idof, nsteps, sdof
+      character :: dums*1, dof_names(3)*1
+      real :: dumr
+      double precision :: dumd, react
+      double precision, parameter :: d32460 = 32460.0d00 
+      logical :: bad
+      data dof_names / 'u', 'v', 'w' /
+c
+c              process list of nodes in release command for 
+c              absolute constraints. list entries must be valid
+c              node number, not already in release and have
+c              requested release dof  defined in global constraint table.
+c
+      icn    = 0
+      iplist = 1
+c
+      do while ( iplist .ne. 0 )
+c
+         call trxlst( intlst, lenlst, iplist, icn, node )
+         if( node .gt. nonode ) then
+            param = node
+            call errmsg(16,param,dums,dumr,dumd)
+            cycle
+         end if
+         if( node .le. 0 )  then
+            param = node
+            call errmsg(58,param,dums,dumr,dumd)
+            cycle
+         end if
+c
+         bad = .false.
+         do idof = 1, 3
+c
+           if( .not. release_flags(idof) ) cycle
+           nsteps = release_cons_table(idof,node)%num_release_steps
+           if( nsteps .ne. 0 ) then
+              write(out,9100) node, dof_names(idof)
+              bad = .true.
+           end if
+           sdof = dstmap(node) + idof - 1
+           if( cnstrn_in(sdof) .eq. d32460 ) then ! no constraint exists
+              write(out,9110) node,  dof_names(idof)
+              bad = .true.
+           end if
+c
+         end do ! over idof = 1,2,3
+c
+         if( bad ) then
+           num_error = num_error + 1
+           cycle
+         end if
+c
+c              valid node and currently constrained dofs. pull reaction
+c              values from global load vector and store for gradual
+c              reduction to zero of specified release steps.
+c              remove absolute constraint from constraints data
+c              structure.
+c
+         do idof = 1, 3
+c
+           if( .not. release_flags(idof) ) cycle
+           sdof = 3 * (node-1) + idof
+           release_cons_table(idof,node)%num_release_steps =
+     &            release_cons_steps
+           release_cons_table(idof,node)%remaining_steps_for_release =
+     &            release_cons_steps
+           react = -rload(sdof) + ifv(sdof) + mdiag(sdof)*a(sdof)
+           release_cons_table(idof,node)%reaction_force = react
+           call release_cons_update_constraints( sdof )
+           count_stored = count_stored + 1
+c
+         end do ! over idof  = 1,2,3
+c
+      end do  ! over loop to process nodes in list
+c
+      return
+c
+ 9100 format(/1x,'>>>>> error: node: ',i0,' dof: ',a1,
+     &  /14x,'already in release')
+ 9110 format(/1x,'>>>>> error: node: ',i0,' dof: ',a1,
+     &  /14x,'has no constraint to release')
+c
+      end subroutine release_cons_abs
 
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine release_cons_mpc                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/23/2018 rhd             *
+c     *                                                              *
+c     *     process list of mpc constraints to release               *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine release_cons_mpc
+c
+      use stiffness_data, only : total_lagrange_forces, 
+     &                           d_lagrange_forces, i_lagrange_forces                        
+c
+      implicit none
+c
+      integer, external :: iszlst
+      integer :: nodes_lst_a, nodes_lst_b, icn, iplist, node, count,
+     &           node_a, node_b, i, j, idof, param, 
+     &           nsteps_a, nsteps_b, node_1, node_2, mpc_dof_1,
+     &           mpc_dof_2, minab, maxab, min12, max12, sdof
+      integer, allocatable :: list_a(:), list_b(:)
+      double precision, parameter :: d32460 = 32460.0d00, zero = 0.d0 
+      double precision :: dumd, react
+      logical :: badlist, bad, t1, t2, found_mpc_entry, ok,
+     &           local_debug1 
+      real :: dumr, mpc_constant
+      character :: dof_names(3)*1, dums*1
+      data dof_names / 'u', 'v', 'w' /
+c
+c              the two node lists must have the same number of terms.
+c
+      local_debug1 = .false.
+      if( debug ) write(out,9000)
+c
+      nodes_lst_a = iszlst( intlst, lenlst )
+      nodes_lst_b = iszlst( mpc_intlst, mpc_lenlst )
+      if( nodes_lst_a .ne. nodes_lst_b ) then
+           write(out,9130) nodes_lst_a, nodes_lst_b
+           num_error = num_error + 1
+           return
+      end if
+c
+c              expand each list of nodes. check for invalid entries
+c
+      if( local_debug1 ) write(out,9010) lenlst
+      allocate( list_a(lenlst), list_b(lenlst) )
+c
+      icn    = 0
+      iplist = 1
+      count  = 1
+      badlist = .false.
+      do while ( iplist .ne. 0 )
+         call trxlst( intlst, lenlst, iplist, icn, node )
+         if( node .gt. nonode ) then
+            param = node
+            badlist = .true.
+            call errmsg(16,param,dums,dumr,dumd)
+            cycle
+         end if
+         if( node .le. 0 )  then
+            param = node
+            badlist = .true.
+            call errmsg(58,param,dums,dumr,dumd)
+            cycle
+         end if
+         list_a(count) = node
+         count = count + 1
+      end do  ! while loop to process nodes in list
+      if( badlist ) return
+c
+      icn    = 0
+      iplist = 1
+      count  = 1
+      badlist = .false.
+      do while ( iplist .ne. 0 )
+         call trxlst( mpc_intlst, mpc_lenlst, iplist, icn, node )
+         if( node .gt. nonode ) then
+            param = node
+            badlist = .true.
+            call errmsg(16,param,dums,dumr,dumd)
+            cycle
+         end if
+         if( node .le. 0 )  then
+            param = node
+            badlist = .true.
+            call errmsg(58,param,dums,dumr,dumd)
+            cycle
+         end if
+         list_b(count) = node
+         count = count + 1
+      end do  ! while loop to process nodes in list
+      if( badlist ) return
+c
+      if( local_debug1 ) then
+         write(out,9019)
+         do i = 1, lenlst
+           write(out,9020) list_a(i), list_b(i)
+         end do
+      end if
+c
+c              process each pair of MPC nodes for each released dof. 
+c               1. loop over nodes in the list (both lists already 
+c                  checked for same number entries)
+c               2. loop over 3 dof (u,v,w). skip if dof not listed
+c                  for release in the command
+c               3. verify neither node & dof are currently being 
+c                  released.
+c               4. search the table of user-defined MPC equations
+c                   - a valid entry can only have 2 nodes
+c                   - node pairs of the MPC must match user defined
+c                     pair. see comments in release_cons_scan
+c                   - node pairs and dof must match with release
+c                     input
+c                   - add both nodes that dof to the lists of nodes
+c                     and dof to be released. this is same as adding
+c                     two absolute constraints to the table since the
+c                     MPC "force" on each node must be relaxed to zero.
+c               5. columns in the user_mpc_table are marked for
+c                  deletion. Set num terms = 0. table will be 
+c                  compacted when all done.
+c
+      if( .not. allocated ( total_lagrange_forces ) ) then
+        write(out,9120)  ! we're in a really bad condition
+        call die_abort
+      end if                         
+c
+      do i = 1, nodes_lst_a  ! same # as in list b
+c
+       node_a = list_a(i)
+       node_b = list_b(i)
+       minab  = min( node_a, node_b )
+       maxab  = max( node_a, node_b )
+       bad    = .false.
+       if( local_debug1 ) write(out,9040) minab, maxab
+c
+       do idof = 1, 3  ! over u, v, w
+c
+         if( .not. release_flags(idof) ) cycle ! not mentioned in cmd
+         nsteps_a = release_cons_table(idof,node_a)%num_release_steps
+         nsteps_b = release_cons_table(idof,node_b)%num_release_steps
+         t1 = nsteps_a .ne. 0
+         t2 = nsteps_b .ne. 0
+         if( t1 .or. t2 ) then  ! already being released
+              write(out,9100) node_a, node_b, dof_names(idof)
+              bad = .true.
+              cycle
+         end if
+c
+         found_mpc_entry = .false.
+         do j = 1, num_user_mpc
+c
+           if( user_mpc_table(j)%num_terms .ne. 2 ) cycle
+           mpc_dof_1 = user_mpc_table(j)%dof_list(1)
+           mpc_dof_2 = user_mpc_table(j)%dof_list(2)
+           if( debug ) write(out,9050) j, mpc_dof_1, mpc_dof_2
+           ok = mpc_dof_1 .eq. idof  .and.  mpc_dof_2 .eq. idof
+           if( .not. ok ) cycle ! not same dof as release cmd
+           node_1 = user_mpc_table(j)%node_list(1)
+           node_2 = user_mpc_table(j)%node_list(2)
+           mpc_constant = user_mpc_table(j)%constant
+           min12 = min( node_1, node_2 ) ! use min,max for easy check
+           max12 = max( node_1, node_2 ) ! if 2 release nodes are same
+           ok =  minab .eq. min12  .and.  maxab .eq. max12
+           if( local_debug1 ) write(out,9060) min12, max12
+           if( .not. ok ) cycle ! no match w/ release node pair
+c
+c                        release cmd node pair and dof matches 
+c
+           sdof = 3 * (node_a-1) + idof
+           release_cons_table(idof,node_a)%num_release_steps =
+     &            release_cons_steps
+           release_cons_table(idof,node_a)%remaining_steps_for_release =
+     &            release_cons_steps
+           react = -total_lagrange_forces(sdof) + ifv(sdof)
+           total_lagrange_forces(sdof) = zero
+           d_lagrange_forces(sdof) = zero
+           i_lagrange_forces(sdof) = zero
+           release_cons_table(idof,node_a)%reaction_force = react
+           count_stored = count_stored + 1
+c
+           sdof = 3 * (node_b-1) + idof
+           release_cons_table(idof,node_b)%num_release_steps =
+     &            release_cons_steps
+           release_cons_table(idof,node_b)%remaining_steps_for_release =
+     &            release_cons_steps
+           react = -total_lagrange_forces(sdof) + ifv(sdof)
+           total_lagrange_forces(sdof) = zero
+           d_lagrange_forces(sdof) = zero
+           i_lagrange_forces(sdof) = zero
+           release_cons_table(idof,node_b)%reaction_force = react
+           count_stored = count_stored + 1
+c
+           user_mpc_col_list(j) = 1
+           compact_mpc_table = .true.
+           found_mpc_entry = .true.
+           if( local_debug1 ) write(out,9030) node_a, node_b,
+     &                        dof_names(idof)
+c
+           if( local_debug1 ) then
+             if( idof .eq. 2 .and. 
+     &          (node_a .eq. 1 .or. node_a .eq. 85) ) then
+              write(out,*) '.... data for node 1 v release...'
+              sdof = 3 * (1-1) + idof
+              react = release_cons_table(idof,node_a)%reaction_force
+              write(out,*) '.......sdof,rload,ifv, LF:',sdof,
+     &             rload(sdof),ifv(sdof), react
+              write(out,*) '.... data for node 85 v release...'
+              sdof = 3 * (85-1) + idof
+              react = release_cons_table(idof,node_b)%reaction_force
+              write(out,*) '.......sdof,rload,ifv, LF:',sdof,
+     &              rload(sdof),ifv(sdof), react
+             end if
+           end if ! on local_debug1
+c                 
+         end do ! over user_mpc_table entries  
+c
+         if( found_mpc_entry ) cycle
+         write(out,9110) node_a, node_b, dof_names(idof)
+         bad = .true.
+c
+       end do ! over idof = 1, 2, 3list of release MPC node pairs
+c
+       if( bad )  num_error = num_error + 1
+c
+      end do  ! over nodes in lists           
+c
+      return
+c
+ 9000 format(2x,"... entered release_cons_mpc ...")
+ 9010 format(10x,"... num nodes in each list: ",i0)
+ 9019 format(10x,"... paired nodes in lists")
+ 9020 format(20x,2i8)
+ 9030 format(15x,"... releasing nodes: ",i0,1x,i0,' dof: ', a1)
+ 9040 format(15x,"... minab, maxab: ",i0,1x,i0)
+ 9050 format(15x,"j, mpc_dof_1, mpc_dof_2:",3(1x,i0))
+ 9060 format(15x,"... min12, max12: ",2(1x,i0))
+ 9100 format(/1x,'>>>>> error: nodes: ',2(1x,i0),'dof: ',a1,'.',
+     & /14x,'already in release state' )
+ 9110 format(/1x,'>>>>> error: nodes: ',i0,1x,i0,' dof: ',a1,'.',
+     & ' do not have a defined MPC in constraints input.',/ )
+ 9120 format(/1x,'>>>>> fatal error: inconsistent data structures',
+     &  /14x,'in release_cons_mpc. job terminated.',// )
+ 9130 format(/1x,'>>>>> error: the number of nodes in each list is ',
+     & 'not identical.....'
+     & /14x,'1st and 2nd list terms: ',2i7,/)
+c
+      end subroutine release_cons_mpc
+c
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine release empty table               *
@@ -331,7 +750,7 @@ c
 c
       subroutine release_empty_cons_table
 c
-c                       delete an empty release constraints table
+c              delete an empty release constraints table
 c
       logical :: found_entry
       integer :: i, n1, n2, n3
@@ -356,9 +775,8 @@ c
       return
 c
       end subroutine release_empty_cons_table
-c
-      end subroutine release_constraints
 
+      end subroutine release_constraints
 c     ****************************************************************
 c     *                                                              *
 c     *           subroutine release_cons_update_constraints         *
@@ -367,7 +785,8 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 02/24/03                   *
 c     *                                                              *
-c     * remove constraint on 1 dof from constraint data structure    *
+c     * remove absolute constraint on 1 dof from constraint data     *
+c     * structure                                                    *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -386,19 +805,19 @@ c
       double precision :: d32460
       data d32460 / 32460.0d00 /
 c
-c             traverse the singly-linked list of constraints in the
-c             model. If the user has input new constraints, then some
-c             of the previously released nodes may be re-constrained.
-c             If a released node has been re-constrained, remove the
-c             constraint.
+c               traverse the singly-linked list of constraints in the
+c               model. If the user has input new constraints, then some
+c               of the previously released nodes may be re-constrained.
+c               If a released node has been re-constrained, remove the
+c               constraint.
 c
-c                set up indexes for constraint linked list
+c               set up indexes for constraint linked list
 c
       cst_ptr   = csthed
       above_ptr = -1
 c
-c                enter top of constraint linked list loop. run till
-c                dof is found or end of constraints.
+c               enter top of constraint linked list loop. run till
+c               dof is found or end of constraints.
 c
       do while ( cst_ptr .ne. -1 )
 c
@@ -443,7 +862,7 @@ c     *                      subroutine incon                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 06/22/2016 rhd             *
+c     *                   last modified : 12/22/2018 rhd             *
 c     *                                                              *
 c     *     input of nodal displacement constraints                  *
 c     *                                                              *
@@ -452,8 +871,8 @@ c
       subroutine incon( sbflg1, sbflg2, olddof )
       use global_data ! old common.main
 c
-      use main_data, only : trn, trnmat, cnstrn, cnstrn_in,
-     &                      inverse_incidences
+      use main_data, only : trn, trnmat, cnstrn_in,
+     &                      inverse_incidences, force_solver_rebuild
       use mod_mpc, only : mpcs_exist, num_user_mpc, user_mpc_table
       use damage_data, only : csttail
 c
@@ -469,7 +888,7 @@ c
       character dums, curtyp *1
       logical sbflg1, sbflg2, skew, inpflg(mxndof), defcon(3),
      &        cons_defined, rflag1, rflag2
-      logical matchs, endcrd, true, numd, integr, realn
+      logical matchs, endcrd, true, numd
       dimension intlst(mxlsz)
       data zero, one, d32460, cons_defined / 0.0, 1.0, 32460.0,
      &                                       .false. /
@@ -496,6 +915,8 @@ c                       be re-defined....  deallocate also deletes
 c                       allocatable sub-objects (F2003)
 c
       new_constraints = .true.
+      force_solver_rebuild = .true.
+c
       if ( cons_defined ) then
          call errmsg(224,dum,dums,dumr,dumd)
          call errmsg2(59,dum,dums,dumr,dumd)
@@ -569,9 +990,15 @@ c                       look for a command to start input of multi-point
 c                       constraint equations. returns when line does not
 c                       start with an integer. Did a reset, true before
 c                       return.
+c                       delete data if no mpc equations actually input
+c                       correctly.
 c
       if ( matchs('multipoint',5) ) then
          call incon_mpcs
+         if( num_user_mpc == 0 ) then
+           mpcs_exist = .false.
+           deallocate( user_mpc_table )
+         end if
          go to 711
       end if
 c
@@ -977,7 +1404,7 @@ c
       subroutine inconplane( olddof, defcon )
       use global_data ! old common.main
 c
-      use main_data, only : cnstrn, cnstrn_in, crdmap
+      use main_data, only : cnstrn_in, crdmap
 c
       implicit integer (a-z)
 c
@@ -989,8 +1416,8 @@ c
 c                       locally allocated
 c
       double precision
-     & convec(mxndof), tval, cval, dumd, zero, proximity_distance,
-     & one, d32460, xmin, xmax, ymin, ymax, zmin, zmax, x, y, z,
+     & convec(mxndof), dumd, zero, proximity_distance,
+     & d32460, xmin, xmax, ymin, ymax, zmin, zmax, x, y, z,
      & coordtol(3), plane_coord, ctol, coordvec(3)
       real dumr
       character(len=1) :: dums
@@ -1238,6 +1665,8 @@ c
       use mod_mpc, only : mpcs_exist, num_user_mpc, user_mpc_table
       use main_data, only : modified_mpcs
 c
+      implicit none
+c
 c              locals
 c
       integer, parameter :: max_trm = 100 ! limit on terms per mpc eqn
@@ -1249,14 +1678,15 @@ c
       double precision ::  dumd
       character(len=1) :: dums
       logical, external :: matchs, realn, numr, integr, endcrd, true
+      logical, parameter :: debug = .false.
 c
 c              local storage for translating, checking
 c
       real :: pre_term_multiplier, now_term_coeff, eqn_rhs_constant,
      &        rtemp
       integer, dimension(:) :: eqn_nodes(max_trm), eqn_dofs(max_trm)
-      integer :: now_dof, ierr
-      logical found_mpc
+      integer :: now_dof, ierr, idummy(1), now_node, nterm, nmpc
+      logical :: found_mpc, found_rigid
       real, dimension(:) :: eqn_coeffs(max_trm)
 c
 c              Set a flag so that we know later on the constraints have
@@ -1288,9 +1718,13 @@ c               loop to process next mpc equation. line must start
 c               with an +, - or integer. if not, treat as end of
 c               mpc equations
 c
-      do    ! over mpc equations
+      do    ! over mpc equations in inout
          call readsc
          found_mpc = .false.
+         call incon_mpcs_rigid ! process rigid option separately
+         if( found_rigid ) cycle
+         call reset
+         call scan
          if( matchs('+',1) ) then
             found_mpc = .true.
          elseif( matchs('-',1) ) then
@@ -1302,7 +1736,7 @@ c
          end if
 c
          call reset
-         if( true(dum) )  call splunj
+         if( true(idummy) )  call splunj
          if( .not. found_mpc ) return
 c
 c              loop across line to extract each node number, its
@@ -1323,7 +1757,7 @@ c
          now_dof        = 0
          now_term_coeff = 0.0
          nmpc = nmpc + 1
-         if( nmpc .gt. max_mpc ) call  incon_mpcs_resize
+         if( nmpc .gt. max_mpc ) call  incon_mpcs_resize( 1, idummy ) 
 c
          do ! all terms for this mpc eqn
 c
@@ -1363,7 +1797,7 @@ c
                if( now_node .gt. nonode .or. now_node .le. 0  ) then
                   call errmsg2( 34, now_node, dums, dumr, dumd )
                   call reset
-                  if( true(dum) ) call splunj
+                  if( true(dumi) ) call splunj
                   call incon_flushline
                   nmpc = nmpc - 1
                   exit ! from processing this mpc eqn
@@ -1379,7 +1813,7 @@ c
             else
              call errmsg( 319, 1, dums, dumr, dumd )
              call reset
-             if( true(dum) ) call splunj
+             if( true(dumi) ) call splunj
              call incon_flushline
              nmpc = nmpc - 1
              exit ! from processing this mpc eqn
@@ -1398,7 +1832,7 @@ c
             if( now_dof. eq. 0 ) then
              call errmsg( 210, 1, dums, dumr, dumd )
              call reset
-             if( true(dum) ) call splunj
+             if( true(dumi) ) call splunj
              call incon_flushline
              nmpc = nmpc - 1
              exit ! from processing this mpc eqn
@@ -1408,7 +1842,7 @@ c
 c                comma followed by eol is continuation of current mpc
 c
             if( matchs(',',1) ) then
-               if( endcrd(dum) ) then
+               if( endcrd(dumi) ) then
                   call readsc
                   cycle  ! top of loop looking for terms in this mpc
                end if
@@ -1429,6 +1863,11 @@ c          effectively makes the equation non-homogeneous.
 c
 c      (c) equations must be normalized so that the multiplier
 c          stored for the leading term is -1.0
+c
+c      (d) a simple form is available to rigidly couple nodes
+c          (make u, v, w identical).
+c
+c           <node list> rigid <node list>
 c
 c    The tied-contact capability was implemented before user
 c    defined mpcs. The tied contact arrangement of equations has
@@ -1496,14 +1935,199 @@ c    While storing into the global MPC data structure that Brian's
 c    code uses, scale the coefficients so that the leading term
 c    multiplier is -1.0.
 c
-      end
+      contains
+c     ========
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine incon_mpcs_rigid                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 12/24/2018 rhd             *
+c     *                                                              *
+c     *     scan and store rigid constraints between 2 node lists    *
+c     *                                                              *
+c     ****************************************************************
+      subroutine incon_mpcs_rigid()
+c
+      logical, external :: match_exact, true, iszlst
+      integer :: errnum, lenlst_a, lenlst_b, param, dumi,
+     &           intlst_a(mxlsz), intlst_b(mxlsz), nodes_lst_a,
+     &           nodes_lst_b, nterms, node_list(2), idof,
+     &           icn_a, icn_b, iplist_a, iplist_b, node_a, node_b,
+     &           dof_list(2)
+      real :: dumr, constant, multipliers(2)
+      double precision :: dumd
+      character * 1 :: dums
+c
+c              <node list> rigid <node list>
+c
+c              line must start with integerlist and keyword rigid
+c              otherwise reset to start of line for likely
+c              processing of regular MPC equation of node with MPCs
+c
+      if( debug ) write(out,*) '..... entered incon_mpcs_rigid'
+      found_rigid = .false.
+c
+      call scan
+      call trlist( intlst_a, mxlsz, nonode, lenlst_a, errnum )
+c
+c              branch on the return code from trlist. a
+c              value of 1 indicates no error. a value of
+c              2 indicates that the parse rules failed in
+c              the list. a value of 3 indicates that the
+c              list overflowed its maximum length of mxlsz.
+c              in these last two cases, the illegal list
+c              will be ignored and a new node list will
+c              be sought. a value of 4 indicates that no list
+c              was found. in this case, release cons input
+c              has ceased.
+c
+      if( debug ) write(out,9010) errnum, lenlst_a
+      if( errnum .eq. 4 ) return
+      if( errnum .eq. 2 ) then
+         param = 1
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline
+         return
+      end if
+c
+      if( errnum .eq. 3 ) then
+         param = 2
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline
+         return
+      end if
+c
+      if( errnum .eq. 1 ) then
+          call backsp(1)
+          if( true(dumi) ) call splunj
+      else
+         write(out,9000)
+         call die_abort
+      end if
+c
+      if( .not. match_exact( 'rigid', 5 ) ) return
+c
+c              we appear to have a rigid constraint line. get the
+c              matching list of nodes. both lists must have
+c              the same number of terms.
+c
+      found_rigid = .true.
+c
+      call scan
+      call trlist( intlst_b, mxlsz, nonode, lenlst_b, errnum )
+      if( debug ) write(out,9010) errnum, lenlst_b
+      if( errnum .eq. 4 ) return
+      if( errnum .eq. 2 ) then
+         param = 1
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline
+         return
+      end if
+      if( errnum .eq. 3 ) then
+         param = 2
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline
+         return
+      end if
+      if( errnum .eq. 1 ) then
+          call backsp(1)
+          if( true(dumi) ) call splunj
+      else
+         write(out,9000)
+         call die_abort
+      end if
+c
+      nodes_lst_a = iszlst( intlst_a, lenlst_a )
+      nodes_lst_b = iszlst( intlst_b, lenlst_b )
+      if( debug ) write(out,9020) nodes_lst_a, nodes_lst_b
+      if( nodes_lst_a .ne. nodes_lst_b ) then
+           write(out,9100)  nodes_lst_a, nodes_lst_a
+           num_error = num_error + 1
+           return
+      end if
+c
+c              traverse each list to extract pairs of nodes
+c              and insert rigid constraint on u, v, w
+c
+      if( debug ) write(out,9030) nmpc
+      icn_a    = 0
+      iplist_a = 1
+      icn_b    = 0
+      iplist_b = 1
+c 
+      do while ( iplist_a .ne. 0 )  ! both lists same # terms
+c
+        call trxlst(intlst_a,lenlst_a,iplist_a,icn_a,node_a)
+        call trxlst(intlst_b,lenlst_b,iplist_b,icn_b,node_b)
+        if( debug ) write(out,*) '... node_a, node_b', node_a, node_b
+c
+        if( node_a .gt. nonode ) then
+            param = node_a
+            call errmsg(16,param,dums,dumr,dumd)
+            cycle
+        end if
+        if( node_a .le. 0 )  then
+            param = node_a
+            call errmsg(58,param,dums,dumr,dumd)
+            cycle
+        end if
+        if( node_b .gt. nonode ) then
+            param = node_b
+            call errmsg(16,param,dums,dumr,dumd)
+            cycle
+        end if
+        if( node_b .le. 0 )  then
+            param = node_b
+            call errmsg(58,param,dums,dumr,dumd)
+            cycle
+        end if
+c
+        nterms         = 2
+        constant       = 0.0   !  real not double
+        node_list(1)   = node_a
+        node_list(2)   = node_b
+        multipliers(1) = -1.0  !  real not double
+        multipliers(2) = 1.0
+c
+        do idof = 1, 3   !  u, v, w
+          nmpc = nmpc + 1          
+          if( nmpc .gt. max_mpc ) call incon_mpcs_resize( 1, idummy ) 
+          dof_list(1) = idof
+          dof_list(2) = idof
+          call incon_mpcs_store( nterms, constant, node_list, 
+     &                           dof_list, multipliers )
+        end do ! over idof
+c
+      end do ! over node pair extraction
+c
+      if( debug ) write(out,9040) nmpc
+c
+      return
+c
+ 9000 format(/1x,'>>>>> error: invalid return on trlist in ',
+     &  /14x,'release_cons_scan. system error. job aborted.',//)
+ 9010 format('.... trlist done, errnum, lenlst: ',2i4)
+ 9020 format('.... nodes_lst_a and _b: ',2i6)
+ 9030 format('.... insert rigid MPOCs, nmpc now: ',i6)
+ 9040 format('.... leaving... updated nmpc: ',i6)
+ 9100 format(/1x,'>>>>> error: the number of nodes in each list is ',
+     & 'not the same.',
+     &  /14x,'1st and 2nd lists: ',2i7)
+c
+      end subroutine incon_mpcs_rigid
+c
+      end subroutine incon_mpcs
+c
+c
 c     ****************************************************************
 c     *                                                              *
 c     *                  subroutine incon_mpcs_resize                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/22/2017 rhd              *
+c     *                   last modified : 12/21/2018 rhd             *
 c     *                                                              *
 c     *     increase size of the user_mpc_table. make larger one,    *
 c     *     deep copy old -> new, move allocation. release old table *
@@ -1511,23 +2135,62 @@ c     *                                                              *
 c     ****************************************************************
 c
 
-      subroutine incon_mpcs_resize
+      subroutine incon_mpcs_resize( type, user_mpc_col_list )
       use global_data ! old common.main
-      use mod_mpc, only : user_mpc_table, mpc_eqn
+      use main_data, only : modified_mpcs, force_solver_rebuild
+      use mod_mpc, only : mpcs_exist, user_mpc_table, mpc_eqn, 
+     &                    num_user_mpc
       implicit none
 c
-      integer :: old_mpc_size, i, j, nt
+c               type = 1 create new larger table. copy old into new
+c               type = 2 make new table but omit zeroed entries
+c                        in current table
+c
+      integer :: old_mpc_size, i, j, nt, type, inew,
+     &           user_mpc_col_list(*) 
       logical, parameter :: local_debug = .false.
       type (mpc_eqn), allocatable, dimension (:) :: new_mpc_table
 c
       if( local_debug ) then
-         write(*,*) '...  resizing mpc user table.....'
+         write(*,*) '...  resizing/compressing mpc user table.....'
          write(*,*) '       old_max_mpc: ', max_mpc
       end if
 c
       old_mpc_size = max_mpc
-      max_mpc = 2 * old_mpc_size
+      if( type == 1 ) max_mpc = 2 * old_mpc_size
       allocate( new_mpc_table(max_mpc) )
+c
+c              initialize new table. 
+c
+      do i =  1, max_mpc
+          new_mpc_table(i)%num_terms = 0
+          new_mpc_table(i)%constant = 0.0
+          new_mpc_table(i)%node_list => null()
+          new_mpc_table(i)%dof_list  => null()
+          new_mpc_table(i)%multiplier_list  => null()
+      end do ! on i
+c
+      if( type .eq. 1 ) call incon_mpcs_resize_1
+      if( type .eq. 2 ) call incon_mpcs_resize_2
+c
+      return
+c
+      contains
+c     ========
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine incon_mpcs_resize_1              *
+c     *                                                              *
+c     *                       written by :rhd                        *
+c     *                                                              *
+c     *                   last modified : 12/22/2018 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine incon_mpcs_resize_1
+      implicit none
 c
 c              deep copy as required
 c
@@ -1566,7 +2229,76 @@ c
       call move_alloc( new_mpc_table, user_mpc_table )
 c
       return
-      end
+      end subroutine incon_mpcs_resize_1
+
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                  subroutine incon_mpcs_resize_2              *
+c     *                                                              *
+c     *                       written by :rhd                        *
+c     *                                                              *
+c     *                   last modified : 12/22/2018 rhd             *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine incon_mpcs_resize_2
+      implicit none
+c
+c              deep copy as required
+c
+      inew = 0
+      do i = 1,  num_user_mpc
+        if( user_mpc_col_list(i) .eq. 1 ) cycle
+        modified_mpcs = .true.
+        inew = inew + 1
+        nt = user_mpc_table(i)%num_terms
+        new_mpc_table(inew)%num_terms = nt
+        new_mpc_table(inew)%constant = user_mpc_table(i)%constant
+        allocate( new_mpc_table(inew)%node_list(nt),
+     &              new_mpc_table(inew)%dof_list(nt),
+     &              new_mpc_table(inew)%multiplier_list(nt)  )
+        do j = 1, nt
+           new_mpc_table(inew)%node_list(j) =
+     &                   user_mpc_table(i)%node_list(j)
+           new_mpc_table(inew)%dof_list(j) =
+     &                   user_mpc_table(i)%dof_list(j)
+           new_mpc_table(inew)%multiplier_list(j) =
+     &                   user_mpc_table(i)%multiplier_list(j)
+        end do ! on j
+      end do ! on i over prior number user mpcs
+c
+      num_user_mpc = inew
+c
+c              we could have released all user-defined MPCs in this
+c              process. delete prior user_mpc. A new multipoints
+c              command will cause new one to be created.
+c
+c              if we still have user MOCS remaing, release old table 
+c              and move allocation. F2003 &
+c              later does a deep release on derived types. move_alloc
+c              does a deep release on new_mpc_table
+c
+      if( num_user_mpc == 0 ) then
+         deallocate( user_mpc_table )
+         new_constraints = .true.
+         mpcs_exist = .false. 
+      else
+         deallocate( user_mpc_table )
+         call move_alloc( new_mpc_table, user_mpc_table )
+         modified_mpcs = .true.
+         mpcs_exist = .true.
+         new_constraints = .true.
+      end if
+c
+      force_solver_rebuild = .true.
+c
+      return 
+      end subroutine incon_mpcs_resize_2
+c
+      end subroutine incon_mpcs_resize
+c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -1574,9 +2306,9 @@ c     *                  subroutine incon_mpcs_store                 *
 c     *                                                              *
 c     *                       written by : bjb                       *
 c     *                                                              *
-c     *                   last modified : 8/22/2017 rhd              *
+c     *                   last modified : 12/22/2018 rhd             *
 c     *                                                              *
-c     *     stores a user-definite MPC equation into global data     *
+c     *     stores a user-defined MPC equation into global data      *
 c     *     data structure                                           *
 c     *                                                              *
 c     ****************************************************************
@@ -1585,6 +2317,8 @@ c
       subroutine incon_mpcs_store( nterm, const, node, dof, multi )
       use mod_mpc, only : num_user_mpc, user_mpc_table
       use global_data, only : max_mpc
+c
+      implicit none
       include 'param_def'
 c
 c              parameters
@@ -1594,13 +2328,14 @@ c
 c
 c              locals
 c
-      integer ::  err, dumi
+      integer ::  err, dumi, idummy(1), i
       real ::     dumr, factor
       double precision :: dumd
       character(len=1) :: dums
 c
       num_user_mpc = num_user_mpc + 1
-      if( num_user_mpc .gt. max_mpc )  call incon_mpcs_resize
+      if( num_user_mpc .gt. max_mpc ) 
+     &       call incon_mpcs_resize( 1, idummy ) 
 c
       user_mpc_table(num_user_mpc)%num_terms = nterm
       user_mpc_table(num_user_mpc)%constant  = const
@@ -1645,7 +2380,7 @@ c
 c
       subroutine incon_flushline
       integer  dum
-      logical  matchs, realn, integr, endcrd, true
+      logical  matchs, endcrd, true
 c
       call readsc
       do
