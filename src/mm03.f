@@ -298,10 +298,6 @@ c
  9064 format(/,'>> process block flag: ',l1)
  9070 format(/,'>> updated energy densities for linear elements:')
  9072 format(i4,f10.6)
- 9100 format('>> trial elastic state computation: ',
-     &  /,   '      e, nu: ',f10.2,f10.3 )
- 9110 format('      deps     dsigel       sigel ',
-     & 6(/,1x,3f11.4) )
 c
       contains
 c     ========
@@ -442,12 +438,12 @@ c
      &                   mpoweri, nucleation, nuc_s_n, nuc_e_n,
      &                   nuc_f_n, ebarp_new, sbar_new, f_new, h_new,
      &                   iout, debug, segmental,
-     &                   power_law, converge, first_time )
+     &                   power_law, converge )
       implicit double precision (a-h,o-z)
       double precision
      &  n_power, m_power, mpoweri, nuc_s_n, nuc_e_n, nuc_f_n
       logical debug, consth, nucleation, rate_depen,
-     &         segmental, power_law, converge, first_time
+     &         segmental, power_law, converge
       data    max_iterations / 10 /
       data    zero, one, tol / 0.0, 1.0, 0.000001 /
 c
@@ -474,7 +470,7 @@ c
       call mm03sb( sbar_new, h_new, ebarp_new, ebarp, consth,
      &             sigma_o, h_constant, e, n_power,m_power,
      &             dt, eps_ref, rate_depen, mpoweri, iout,
-     &             debug, segmental, power_law, first_time )
+     &             debug, segmental, power_law )
 c
 c           for nucleation, get the A function and the derivative
 c           of A wrt ebarp at the current estimate for ebarp_new.
@@ -561,15 +557,14 @@ c
      &                   mpoweri, nucleation, nuc_s_n, nuc_e_n,
      &                   nuc_f_n, ebarp_new, sbar_new, f_new, h_new,
      &                   elenum, ptno, iout, debug, segmental,
-     &                   power_law, converge, first_time )
+     &                   power_law, converge )
       implicit double precision (a-h,o-z)
       double precision
      &  n_power, m_power, mpoweri, nuc_s_n, nuc_e_n, nuc_f_n,
      &  sfactors(5)
       integer  elenum, ptno
       logical  local_debug, debug, consth, nucleation, rate_depen,
-     &         segmental, power_law, converge, debug_mm03sb,
-     &         first_time
+     &         segmental, power_law, converge, debug_mm03sb
       data    local_debug, debug_mm03sb
      &        / .false., .false. /
       data    zero, half, one, two, tol / 0.0, 0.5, 1.0, 2.0, 0.00001 /
@@ -617,7 +612,7 @@ c
         call mm03sb( sbar_new, h_new, ebarp_big, ebarp, consth,
      &             sigma_o, h_constant, e, n_power, m_power,
      &             dt, eps_ref, rate_depen, mpoweri, iout,
-     &             debug_mm03sb, segmental, power_law, first_time )
+     &             debug_mm03sb, segmental, power_law )
         a_nuc   = zero
         a_prime = zero
         if ( nucleation ) then
@@ -684,7 +679,7 @@ c
       call mm03sb( sbar_new, h_new, ebarp_new, ebarp, consth,
      &             sigma_o, h_constant, e, n_power,m_power,
      &             dt, eps_ref, rate_depen, mpoweri, iout,
-     &             debug_mm03sb, segmental, power_law, first_time )
+     &             debug_mm03sb, segmental, power_law )
 c
 c           for nucleation, get the A function and the derivative
 c           of A wrt ebarp at the current estimate for ebarp_new.
@@ -754,8 +749,7 @@ c
       call mm03sb( sbar_new, h_new, ebarp_new, ebarp, consth,
      &             sigma_o, h_constant, e, n_power,m_power,
      &             dt, eps_ref, rate_depen, mpoweri, iout,
-     &             debug_mm03sb, segmental, power_law, first_time )
-c
+     &             debug_mm03sb, segmental, power_law )
 c           for nucleation, get the A function and the derivative
 c           of A wrt ebarp at the current estimate for ebarp_new.
 c
@@ -804,7 +798,7 @@ c
        call mm03sb( sbar_new, h_new, ebarp_new, ebarp, consth,
      &             sigma_o, h_constant, e, n_power,m_power,
      &             dt, eps_ref, rate_depen, mpoweri, iout,
-     &             debug_mm03sb, segmental, power_law, first_time )
+     &             debug_mm03sb, segmental, power_law )
        a_nuc   = zero
        a_prime = zero
        if ( nucleation ) then
@@ -833,10 +827,6 @@ c
  9200 format(/,6x,'>> Starting iteration: ',i3,
      &        ' to find ebarp, f, sbar...' )
  9300 format(10x,i4,i3,' f_new < 0 during update')
- 9400 format(10x,i7,i3,' failed to bracket ebarp_new.',
-     &   /,12x,'ebarp, p_new, dep, q_new, deq: ',f12.8, f10.3,
-     &         f12.8, f10.3, f12.8,
-     &   /,12x,'starting estimate for ebarp_new: ',f12.8 )
  9420 format(/,8x,' >> mm03ss. ebarp_new bracketed., setup of',
      &       /,8x,'    newton-bisection iterations...',
      &       /,8x,'    r_low, r_high: ',2f10.6,
@@ -868,8 +858,7 @@ c
       subroutine mm03sb( sbar_new, h_new, ebarp_new, ebarp, consth,
      &                   sigma_o, h_constant, e, n_power,
      &                   m_power, dt, eps_ref, rate_depen, mpoweri,
-     &                   iout, debug, segmental, power_law,
-     &                   first_time )
+     &                   iout, debug, segmental, power_law )
       implicit none
 c
 c                 parameters
@@ -878,8 +867,7 @@ c
       double precision :: sbar_new, h_new, ebarp_new, ebarp,
      &                    sigma_o, h_constant, e, n_power,
      &                    m_power, dt, eps_ref, mpoweri
-      logical :: consth, debug, rate_depen, segmental, power_law,
-     &           first_time
+      logical :: consth, debug, rate_depen, segmental, power_law
 c
 c                locals
 c
@@ -907,7 +895,7 @@ c
            h_inviscid    = h_constant
       else if (power_law) then
            sbar_inviscid = mm03is( ebarp_new, sigma_o, e, n_power,
-     &                             h_inviscid, iout )
+     &                             h_inviscid )
         else if ( segmental ) then
            d_ebarp = ebarp_new - ebarp
            sbar_inviscid = mm03sc( ebarp_new, h_inviscid, d_ebarp,
@@ -972,14 +960,13 @@ c *                                                                      *
 c ************************************************************************
 c
 c
-      function mm03is( eps_pls, sigma_o, e, power, hprime, iout )
+      function mm03is( eps_pls, sigma_o, e, power, hprime )
      &              result( value )
 c
       implicit none
 c
 c              parameters
 c
-      integer :: iout
       double precision :: eps_pls, sigma_o, e, power, hprime, value
 c
 c              locals
@@ -1086,12 +1073,8 @@ c
 c
       return
 c
- 9020 format (1x,'>>  Iteration number : ',i2,
-     &   /,10x, 'strain, stress_new, fprime: ',f10.6,f10.3,f10.3,
-     &   /,10x, 'resid, deps, strain_new:    ',f10.6,f10.6,f10.6 )
-c
       end
-cc *******************************************************************
+c *******************************************************************
 c *                                                                 *
 c *      material model # 03 routine -- mm03ap                      *
 c *                                                                 *
@@ -1497,6 +1480,7 @@ c
         write(*,*) '  i,x,y: ',i,x(i),y(i)
       end do
       call die_abort
+      return
 c
       end
 
@@ -1994,13 +1978,13 @@ c
       double precision
      &  e, nu, f0, eps_ref, sigma_o, m_power, n_power, h_fixed,
      &  q1, q2, q3, nuc_s_n, nuc_e_n, nuc_f_n,
-     &  stime, ftime, sbar, dmeps(6), ebarp, ebarp_new,
-     &  dtauel(6), f2, smel, std(6), deps_sub(6), stress_start(6),
+     &  sbar, ebarp, ebarp_new,
+     &  dtauel(6), smel, std(6), deps_sub(6), stress_start(6),
      &  p_new, q_new, shear_mod, dep_last_sub, deq_last_sub,
-     &  et, h, g, f, p_trial, q_trial, deq, dep,
+     &  h, f, p_trial, q_trial, deq, dep,
      &  h_new, f_new, time_incr, newyld,
-     &  senerg, threeg, mpoweri, dt_eref, h_constant,
-     &  dsenrg, oldsig(6), dep_old, deq_old,
+     &  senerg, threeg, mpoweri, h_constant,
+     &  dsenrg, dep_old, deq_old,
      &  bulk_mod, sbar_new, dep_n, deq_n, equiv_eps,
      &  eps_o, h_inviscid, inviscid_stress, dword, zero, half,
      &  one, two, three, third, six, hprime_init,
@@ -2009,13 +1993,13 @@ c
 
 c
       logical  debug, plastic_loading, nucleation, gurson,
-     &         unload, signal, uloadp, rate_depen,
-     &         consth, lword(2), null_point,
+     &         signal, rate_depen,
+     &         consth, lword(2),
      &         power_law, segmental, first_time
       logical  allow_cut
 c
       integer  element, gpn, relem
-      integer  state, dbele, dbptno, iword(2), elenum, ptno,
+      integer  state, iword(2), elenum, ptno,
      &         gt_converge, vm_converge, iout, iterno
 c
       real  rword(2)
@@ -2410,8 +2394,6 @@ c
      & /,10x,3e15.6,/,10x,4e15.6
      & /,    '    gurson, f1, p_trial : ',l1,2f10.3,
      & /,    '    q_trial: ',f10.3 )
- 9001 format('Updated plastic strain rates. ele, gpn, old, new:',
-     & i6,i3,2f15.5)
  9012 format(//, 5x, 'history vector data:',
      &        /, 8x, 'current yield stress', f10.3,
      &        /, 8x, 'total plastic strain', f10.7,
@@ -2426,9 +2408,7 @@ c
      &        f12.3 ,
      &  /,5x, 24hstrain energy density = ,f10.4/)
  9017 format(10x,i5,i3,' point yields.  f    = ',f12.3 )
- 9020 format(10x,i5,i3,' reversed plastic yielding. dot, f =',2f12.3 )
  9021 format(10x,i5,i3,' large strain incr. / eps_o =',f12.3 )
- 9022 format(16x,' excessive reversed plasticity in step' )
  9030 format(10x,i5,i3,' elastic unloading f = ',f12.3 )
  9036 format( //, 5x, 'point is unloading'
      &         /, 8x, 'current yield stress = ', f10.2,
@@ -2443,12 +2423,6 @@ c
      &/,3x,'>> Warning: strain increment too large.',
      &/,3x,'            load step reduction not enabled.,'
      &/,3x,'            analysis terminated.' )
- 9044 format(
-     &/,3x,'>> Warning: strain increment too large.',
-     &/,3x,'            load step reduction not enabled for',
-     &/,3x,'            loads computation due to imposed',
-     &/,3x,'            displacements at start of step.',
-     &/,3x,'            this may cause problems later...')
  9050 format(
      &/,3x,'>> Warning: iterations for gurson model failed.',
      &/,3x,'            material model requesting step size reduction.',
@@ -2572,7 +2546,7 @@ c
      &             mpoweri, nucleation, nuc_s_n, nuc_e_n,
      &             nuc_f_n, ebarp_new, sbar_new, f_new, h_new,
      &             iout, debug, segmental,
-     &             power_law, converge, first_time )
+     &             power_law, converge )
       if ( .not. converge ) then
          call mm03ss( p_new, dep, q_new, deq, ebarp, f, sbar,
      &                consth, sigma_o, eps_o, h_constant, e,
@@ -2580,7 +2554,7 @@ c
      &                mpoweri, nucleation, nuc_s_n, nuc_e_n,
      &                nuc_f_n, ebarp_new, sbar_new, f_new, h_new,
      &                elenum, ptno, iout, debug, segmental,
-     &                power_law, converge, first_time )
+     &                power_law, converge )
       end if
       if ( .not. converge ) then
        gt_converge = 1
@@ -2823,7 +2797,7 @@ c
         deplas_high = ( q_trial - sig_cur_min_val ) /
      &                ( threeg + hprime_init )
       end if
-      call mm03qq( deplas_high, newyld_high, resid_high, first_time, 1 )
+      call mm03qq( deplas_high, newyld_high, resid_high, 1 )
 c
       fl = resid_low
       fh = resid_high
@@ -2858,7 +2832,7 @@ c                         current mid-point of bracketed range.
 c                         compute Ridder's "magic" factor:)
 c
       deplas_mid = half * ( deplas_low + deplas_high )
-      call mm03qq( deplas_mid, newyld_mid, resid_mid, first_time, 1 )
+      call mm03qq( deplas_mid, newyld_mid, resid_mid, 1 )
       sridder = sqrt( resid_mid**2 - resid_low*resid_high )
       if ( sridder .eq. zero ) then
         write(iout,9310)
@@ -2882,7 +2856,7 @@ c                         convergence of the actual residual
 c                         function.
 c
       deplas_riddr =  deplas_new
-      call mm03qq( deplas_riddr, newyld, resid_new, first_time, 1 )
+      call mm03qq( deplas_riddr, newyld, resid_new, 1 )
       if ( abs(resid_new) .le. sig_tol*newyld ) then
          iconverge = 4
          deplas = deplas_new
@@ -2944,7 +2918,7 @@ c
 c
  1000 continue
       if ( iconverge .eq. 3 .or. iconverge .eq. 5 .or. segmental )
-     &  call mm03qq( deplas, newyld, resid, first_time, 2 )
+     &  call mm03qq( deplas, newyld, resid, 2 )
       if ( deplas .le. zero ) then
         if ( abs(deplas) .gt. 0.001*eps_o ) vm_converge = 3
       end if
@@ -2990,15 +2964,11 @@ c
      & /,      '    newyld, ebarp_new: ',f10.3,f12.9,
      & /,      '    h_new, h_inviscid: ',2e10.3 )
  9130 format(/,' >> Updated stresses:',6(/,3x,f10.3) )
- 9200 format(/,6x,'>> Starting iteration: ',i3,
-     &        ' to find deplas...' )
  9300 format(/,3x,'>> Error: deplas not properly bracketed in',
      &  /,7x,'mises stress update.')
  9310 format(/,3x,'>> Error: divide by zero in mises update')
  9420 format(/,3x,'>> Error: failed to make new bracket',
      &       /,3x,'          for mises update of deplas')
- 9500 format(2x,'   >> resid, deplas_new, newyld: ',f10.6,2f13.8)
- 9700 format('** loops, iconverge, resid: ',i3,i3,f20.7)
 c
       end subroutine mm03q
 c ********************************************************************
@@ -3008,16 +2978,14 @@ c *                                                                  *
 c ********************************************************************
 c
 c
-      subroutine mm03qq( deplas, sig_bar, resid_now,
-     &                   first_iter, caseh )
+      subroutine mm03qq( deplas, sig_bar, resid_now, caseh )
       implicit none
 c
 c                    parameter declarations (and functions called)
 
-      double precision
+      double precision ::
      &   mm03is, mm03sc, deplas, sig_bar, resid_now
       integer caseh
-      logical first_iter
 c
 c
 c              This routine accesses the variables defined in the
@@ -3026,8 +2994,7 @@ c              feature.
 c
 c                   local variables in this routine
 c
-      double precision
-     & factor
+      double precision :: factor
 c
 c              caseh tells the segmental routine to compute (=2) or
 c              not compute (=1) the plastic modulus. This takes
@@ -3039,7 +3006,7 @@ c
         h_inviscid      = h_constant
       elseif ( power_law ) then
         inviscid_stress = mm03is( ebarp+deplas, sigma_o, e,
-     &                            n_power, h_inviscid, iout )
+     &                            n_power, h_inviscid )
       else
         inviscid_stress = mm03sc( ebarp+deplas, h_inviscid,
      &                            deplas, time_incr, caseh )
@@ -3188,7 +3155,7 @@ c
      & e13, m1, m2, c7, c8, c9, d10, d11, d12, d13,
      & cap_a21, cap_a22, cap_b2, cap_c2, denom, h10, h11, h12, h13,
      & con_1, con_2, con_3
-      logical ::  nonlinear_points, debug, ldummy
+      logical ::  nonlinear_points, debug
       integer ::  iword(mxvl*2), state(mxvl), i, j, nonlin_point,
      &            inc_factor
       equivalence (iword, dword )
@@ -3685,30 +3652,9 @@ c
      & /,    '    nuc_s_n, nuc_e_n, nuc_f_n : ',3f10.3,
      & /,    '    trial elastic stresses @ n+1 :',
      & /,10x,3e15.6,/,10x,3e15.6 )
- 9030 format(//,5x,'>> point is elastic, [cep] = [delas]')
  9500 format('  >>>> [cep]: ', /)
  9510 format(2x,6e14.6)
  9520 format(//)
- 9100 format('  >> update [cep].  current trial stress data: ',
-     & /,    '      sigx    :',e14.6,
-     & /,    '      sigy    :',e14.6,
-     & /,    '      sigz    :',e14.6,
-     & /,    '      sigxy   :',e14.6,
-     & /,    '      sigyz   :',e14.6,
-     & /,    '      sigxz   :',e14.6,
-     & /,    '      sm      :',e14.6,
-     & /,    '      sx      :',e14.6,
-     & /,    '      sy      :',e14.6,
-     & /,    '      sz      :',e14.6,
-     & /,    '      sl      :',e14.6,
-     & /,    '      nx      :',e14.6,
-     & /,    '      ny      :',e14.6,
-     & /,    '      nz      :',e14.6,
-     & /,    '      nxy     :',e14.6,
-     & /,    '      nyz     :',e14.6,
-     & /,    '      nxz     :',e14.6,
-     & /,    '      q       :',e14.6,
-     & /,    '      p       :',e14.6, // )
  9109 format('  >> debugging for element in block: ',i4)
  9110 format('  >> arguments   passed: ',
      & /,    '      shear_mod    :',e14.6,
@@ -3740,69 +3686,6 @@ c
      & /,    '      nxy     :',e14.6,
      & /,    '      nyz     :',e14.6,
      & /,    '      nxz     :',e14.6, // )
- 9200 format('  >> terms in section (4): ',
-     & /,    '      beta         :',e14.6,
-     & /,    '      ch           :',e14.6,
-     & /,    '      sh           :',e14.6,
-     & /,    '      pgp          :',e14.6,
-     & /,    '      pgq          :',e14.6,
-     & /,    '      pgsbar       :',e14.6,
-     & /,    '      pgf          :',e14.6,
-     & /,    '      cap_a11      :',e14.6,
-     & /,    '      cap_a12      :',e14.6,
-     & /,    '      cap_b1       :',e14.6,
-     & /,    '      cap_c1       :',e14.6,
-     & /,    '      h1           :',e14.6,
-     & /,    '      h2           :',e14.6,
-     & /,    '      h3           :',e14.6,
-     & /,    '      h4           :',e14.6,
-     & /,    '      h5           :',e14.6,
-     & /,    '      h6           :',e14.6,
-     & /,    '      h7           :',e14.6,
-     & /,    '      h8           :',e14.6,
-     & /,    '      d1           :',e14.6,
-     & /,    '      d2           :',e14.6,
-     & /,    '      d3           :',e14.6,
-     & /,    '      d4           :',e14.6,
-     & /,    '      anuc         :',e14.6,
-     & /,    '      anuc_prime   :',e14.6,
-     & /,    '      b1           :',e14.6,
-     & /,    '      b2           :',e14.6,
-     & /,    '      a1           :',e14.6,
-     & /,    '      a2           :',e14.6,
-     & /,    '      a3           :',e14.6,
-     & /,    '      a4           :',e14.6,
-     & /,    '      a5           :',e14.6, // )
- 9300 format('  >> terms in section (5): ',
-     & /,    '      cap_a21      :',e14.6,
-     & /,    '      cap_a22      :',e14.6,
-     & /,    '      cap_b2       :',e14.6,
-     & /,    '      cap_c2       :',e14.6,
-     & /,    '      d10          :',e14.6,
-     & /,    '      d11          :',e14.6,
-     & /,    '      d12          :',e14.6,
-     & /,    '      d13          :',e14.6,
-     & /,    '      m1           :',e14.6,
-     & /,    '      m2           :',e14.6,
-     & /,    '      c7           :',e14.6,
-     & /,    '      c8           :',e14.6,
-     & /,    '      c9           :',e14.6,
-     & /,    '      e10          :',e14.6,
-     & /,    '      e11          :',e14.6,
-     & /,    '      e12          :',e14.6,
-     & /,    '      e13          :',e14.6,
-     & /,    '      c5           :',e14.6,
-     & /,    '      c6           :',e14.6, //)
- 9400 format('  >> terms in section (6): ',
-     & /,    '      denom        :',e14.6,
-     & /,    '      h10          :',e14.6,
-     & /,    '      h11          :',e14.6,
-     & /,    '      h12          :',e14.6,
-     & /,    '      h13          :',e14.6,
-     & /,    '      mpi          :',e14.6,
-     & /,    '      mpn          :',e14.6,
-     & /,    '      mqi          :',e14.6,
-     & /,    '      mqn          :',e14.6, //)
 c
         end
 
