@@ -27,9 +27,7 @@ c
 c          local declarations - make allocatable
 c          to reduce stack size
 c
-      integer :: span, felem, type, order, nnode, gpn, i,
-     &           now_elem, step
-      double precision :: xi, eta, zeta
+      integer :: span, felem, type, order, nnode, gpn, step
       double precision, parameter :: zero = 0.0d0, one = 1.0d0
       double precision, allocatable :: rnh(:,:,:), fnh(:,:,:),
      &                                 theta(:,:), dfh(:), dfn(:)
@@ -225,7 +223,7 @@ c
 c
 c                      locals
 c
-      integer :: i, now_elem
+      integer :: i
       double precision :: j_bar, factor
       double precision, parameter :: third = 1.0d0/3.0d0
 c
@@ -576,7 +574,6 @@ c
 c                      locally allocated
 c
       integer :: i
-      integer, save :: msg_count = 0
       double precision :: f1(mxvl), f2(mxvl), f3(mxvl)
 c
       double precision, parameter :: zero_check=1.0d-20, one=1.0d00
@@ -1104,18 +1101,7 @@ c
 c
 c                 locals
 c
-      integer :: bel, i
-C     double precision ::
-C    &  m11, m12, m13, m22, m23, m33, e1, e2, e3,
-C    &  swap1, swap2, swap3, zero,
-C    &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi,
-C    &  one, two, three, third, oneptfive, thirteenptfive,
-C    &  twentyseven, quarter, sixpt75, oneroot3
-C     data zero, one, two, three / 0.0d0, 1.0d0, 2.0d0, 3.0d0 /
-C     data third, oneptfive / 0.3333333333333333333d0, 1.5d0 /
-C     data thirteenptfive, twentyseven / 13.5d0, 27.0d0 /
-C     data quarter, sixpt75, oneroot3
-C    &     / 0.25d0, 6.75d0, 0.5773502691896258d0 /
+      integer :: bel
       double precision ::
      &  m11, m12, m13, m22, m23, m33, e1, e2, e3,
      &  swap1, swap2, swap3,
