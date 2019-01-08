@@ -1,0 +1,116 @@
+!
+!         Linear-elastic analysis of a surface crack in a flat plate
+!         loaded by uniform opening pressure on the crack face elements.
+!         
+!         Computation of J and T-stress around the crack front.
+!         
+!         Reference:
+!           X. Wang and R. Bell. Elastic T-stress solutions for semi-elliptical
+!             surface cracks in finite thickness plates subject to 
+!             non-uniform stress distributions. Engineering Fracture Mechanics, 
+!             vol. 71, no. 9, pp. 1477 – 1496, 2004.
+!         
+!         Units: kips, inches
+!         
+!         E = 30000, nu =.03
+!         
+!         Dimensions (in paper nomenclature):
+!           w = 16, h = 16, a = 0.4, c = 1.0
+!           a/t = 0.4, a/c = 0.4
+!           solution in Table 3 of paper V_0
+!         
+!         8-node elements B-bar. Wang used 20-node elements. Present values
+!         are 1-3% smaller than Wang values. Swap 20-node elements for present
+!         8-node elements and T-stress values agree with Wang.
+!         
+!         1/4 quarter model of Fig. 1 in paper.
+!         
+!         uniform opening pressure 1 ksi applied to
+!         crack face elements.
+!         
+!         mesh generated using FEACrack.
+!
+ structure surface_crack
+!  
+ number of nodes 65403 elements 59018
+!
+ material linear_elastic
+  properties mises e 30000 nu 0.3 yld_pt 1.e10
+!  
+ elements
+   1-59018 type l3disop  linear  material linear_elastic,
+      order 2x2x2  gausspts short 
+!
+ *input from 'coordinates.inp
+ *input from 'incidences.inp'
+ blocking automatic
+ *input from 'constraints.inp
+ *input from 'crack_face_loading.inp    
+!
+!            lists that can be useful in some analyses
+!
+!          List name  = crack_face_nodes
+!          List count = 351
+!
+ *echo on
+ list "crack_face_nodes" 14 28 42 56 70 84 98 112 126 140 154 168 182 196 210,
+ 224 238 252 266 280 294 439 440 441 442 443 444 445 446 447 448 449 450 523,
+ 524 525 526 527 528 601 602 603 604 605 606 679 680 681 682 683 684 757 758,
+ 759 760 761 762 835 836 837 838 839 840 913 914 915 916 917 918 991 992 993,
+ 994 995 996 1069 1070 1071 1072 1073 1074 1147 1148 1149 1150 1151 1152,
+ 1225 1226 1227 1228 1229 1230 1303 1304 1305 1306 1307 1308 1381 1382 1383,
+ 1384 1385 1386 1459 1460 1461 1462 1463 1464 1537 1538 1539 1540 1541 1542,
+ 1615 1616 1617 1618 1619 1620 1693 1694 1695 1696 1697 1698 1771 1772 1773,
+ 1774 1775 1776 1849 1850 1851 1852 1853 1854 1927 1928 1929 1930 1931 1932,
+ 1969 1970 1971 2008 2009 2010 2047 2048 2049 2086 2087 2088 2125 2126 2127,
+ 2164 2165 2166 2203 2204 2205 2242 2243 2244 2281 2282 2283 2320 2321 2322,
+ 2359 2360 2361 2398 2399 2400 2437 2438 2439 2476 2477 2478 2515 2516 2517,
+ 2554 2555 2556 2593 2594 2595 2632 2633 2634 2671 2672 2673 2710 2711 2712,
+ 2749 2750 2751 2752 2753 2754 2755 2756 2757 2758 2759 2760 2761 2762 2763,
+ 2764 2765 2766 2767 2768 2769 2770 2771 2772 3025 3026 3027 3028 3029 3030,
+ 3031 3032 3033 3034 3035 3036 3037 3038 3039 3040 3041 3042 3043 3044 3045,
+ 10648 10649 10650 10651 10652 10653 10654 10655 10656 10657 10658 10659,
+ 10660 10661 10662 10663 10664 10665 10666 10667 10668 10669 10670 10671,
+ 10672 10673 10674 10675 10676 10677 10678 10679 10680 10681 10682 10683,
+ 10684 10685 10686 10687 10688 10689 10690 10691 10692 10693 10694 10695,
+ 10696 10697 10698 10699 10700 10701 10702 10703 10704 10705 10706 10707,
+ 10708 10709 10710 14050 14051 14052 14053 14054 14055 14056 14057 14058,
+ 14059 14060 14061 14062 14063 14064 14065 14066 14067 14068 14069 14070,
+ 14071 14072 14073 14074 14075 14076 14077 14078 14079 14080 14081 14082,
+ 14083 14084 14085
+!
+!          List name  = crack_front_nodes
+!          List count = 21
+!
+ list "crack_front_nodes" 1 15 29 43 57 71 85 99 113 127 141 155 169 183 197,
+  211 225 239 253 267 281
+ *echo on
+! 
+ loading test
+  nonlinear
+   step 1 face 1.0
+!
+ nonlinear analysis parameters
+  solution technique direct sparse
+  maximum iterations 2
+  minimum iterations 1
+  nonconvergent solutions stop
+  convergence test norm residual tolerance 0.03
+  time step 1.0e06
+  adaptive solution on
+  batch messages off
+  cpu time limit off
+  extrapolate off
+  show details on
+  material messages off
+  bbar stabilization factor 0.0000
+  consistent q-matrix off
+!
+ compute displacements for loading test step 1
+!
+!       domains starting at phee = 0 (free surface) to
+!       phee = 90-degrees (1.57 radians) at max depth.
+!
+ *input from 'domain_defs.inp'
+!
+ stop
