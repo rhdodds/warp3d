@@ -1,7 +1,7 @@
 !
 !
 !   plane strain model of SE(B) with functionally graded
-!   linear an nonlinear material properties with J-integral
+!   linear and nonlinear material properties with J-integral
 !   computation.
 !
 !   tests J-computation when explicit partial derivatives are needed to
