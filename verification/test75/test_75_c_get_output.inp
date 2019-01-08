@@ -1,0 +1,4 @@
+ output flat stream displacements
+ output flat stream element stresses
+ output displacements 5253 18408 11856 24960
+ output stresses 67

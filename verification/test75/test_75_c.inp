@@ -1,0 +1,181 @@
+!
+!          test release of MPCs to introduce a Mode I crack after
+!          reverse bending and unloading. creates tension where crack
+!          is introduced.
+!
+!          tests releasing relative constraints, initial state
+!          framework, J w/o use of symmetry
+!
+!          SE(B). units inches, kips
+!          length: 5.0, W = 1.0 a = 0.5, B = 0.1
+!          long direction along X-axis
+!          -2.5 <= X < = 2.5, all Y, Z >= 0
+!
+!          End X = -2.5, 2.5 simple supports.
+!
+!          1 layer of 8-node elements. *no* plane-strain
+!          constraints.
+!
+!          MPCs hold crack closed until released.
+!
+!          linear varying pressure on X = -2.5, 2.5 imposes
+!          pure bending with Y = 2.0 fiber is compression.
+!          pressure is 1.0 compression at top, 1.0 tension
+!          at bottom.
+!
+!          reverse bend to cause lots of thru depth (Y)
+!          yielding then unload. material for Y >~ 1.6
+!          in tension (sig-xx).
+!
+!          release the MPC constraints Y = 1.62 -> 2.0 to
+!          create a crack.
+!
+!          compute J for residual plastic-strain-stress loading.
+!
+!          must use initial state framework to remove
+!          plastic work density that exists just before
+!          releasing nodes.
+!
+!          use geonl just to test more features.
+!          
+!
+ structure set
+! 
+ material steel
+    properties bilinear e 30000 nu 0.3 yld_pt 50 tan_e 1000
+! 
+ number of nodes 26310  elements 12900
+!
+ elements
+   1-12900 type l3disop geonl material steel,
+            order 2x2x2 bbar center_output short
+! 
+*input from 'test_75_c_coordinates.inp'
+*input from 'test_75_c_incidences.inp'
+ blocking automatic size = 128
+! 
+!         100 nodes on each side of where crack will be made
+!
+ list 'nodes_X+'  4028 4053 4078 4103 4128 4153 4178 4203,
+    4228    4253    4278    4303    4328    4353    4378    4403,
+    4428    4453    4478    4503    4528    4553    4578    4603,
+    4628    4653    4678    4703    4728    4753    4778    4803,
+    4828    4853    4878    4903    4928    4953    4978    5003,
+    5028    5053    5078    5103    5128    5153    5178    5203,
+    5228    5253   10631   10656   10681   10706   10731   10756,
+   10781   10806   10831   10856   10881   10906   10931   10956,
+   10981   11006   11031   11056   11081   11106   11131   11156,
+   11181   11206   11231   11256   11281   11306   11331   11356,
+   11381   11406   11431   11456   11481   11506   11531   11556,
+   11581   11606   11631   11656   11681   11706   11731   11756,
+   11781   11806   11831   11856
+!
+ list 'nodes_X-' 17183 17208 17233 17258 17283 17308 17333 17358,
+  17383 17408 17433 17458 17483 17508 17533 17558,
+  17583 17608 17633 17658 17683 17708 17733 17758,
+  17783 17808 17833 17858 17883 17908 17933 17958,
+  17983 18008 18033 18058 18083 18108 18133 18158,
+  18183 18208 18233 18258 18283 18308 18333 18358,
+  18383 18408 23735 23760 23785 23810 23835 23860,
+  23885 23910  23935 23960  23985 24010  24035 24060,
+  24085 24110  24135 24160  24185 24210  24235 24260,
+  24285 24310  24335 24360  24385 24410  24435 24460,
+  24485 24510  24535 24560  24585 24610  24635 24660,
+  24685 24710  24735 24760  24785 24810  24835 24860,
+  24885 24910  24935 24960
+!
+ constraints
+    25035 18458 11931 5303 v 0
+    18458 5303 w 0
+    25035 18458 u 0
+   multipoint
+    'nodes_X+' rigid 'nodes_X-'
+!
+ *input from 'unit_bend.inp' 
+!
+ loading test
+  nonlinear
+    step 1-5 unit_bend 18.0
+    step 6-10 unit_bend -18.0
+    step 11 unit_bend 1.0e-06
+! 
+! output model flat patran convention text file "model"
+!
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   time step 1.0e06 
+   maximum iterations 6 $ global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   convergence test norm res tol 0.01
+   line search on
+   divergence check on 
+   nonconvergent solutions continue
+   adaptive off  $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+   initial state option on
+   initial state step 10
+!  
+! output commands use file "get_output.inp" steps 1-1000
+!
+ compute displacements for loading test step 10
+!
+ release constraints steps 1
+           17933 u v w  4778  $ 1.6200000100000000 (Y)
+           17958 u v w  4803  $ 1.6399999900000000
+           17983 u v w  4828  $ 1.6599999700000001
+           18008 u v w  4853  $ 1.6799999500000000
+           18033 u v w  4878  $ 1.7000000500000001
+           18058 u v w  4903  $ 1.7200000300000000
+           18083 u v w  4928  $ 1.7400000099999999
+           18108 u v w  4953  $ 1.7599999900000001
+           18133 u v w  4978  $ 1.7799999700000000
+           18158 u v w  5003  $ 1.7999999499999999
+           18183 u v w  5028  $ 1.8200000500000000
+           18208 u v w  5053  $ 1.8400000299999999
+           18233 u v w  5078  $ 1.8600000100000000
+           18258 u v w  5103  $ 1.8799999900000000
+           18283 u v w  5128  $ 1.8999999800000000
+           18308 u v w  5153  $ 1.9199999599999999
+           18333 u v w  5178  $ 1.9400000600000000
+           18358 u v w  5203  $ 1.9600000399999999
+           18383 u v w  5228  $ 1.9800000200000001
+           18408 u v w  5253  $ 2.0000000000000000
+           24485 u v w 11381  $ 1.6200000100000000
+           24510 u v w 11406  $ 1.6399999900000000
+           24535 u v w 11431  $ 1.6599999700000001
+           24560 u v w 11456  $ 1.6799999500000000
+           24585 u v w 11481  $ 1.7000000500000001
+           24610 u v w 11506  $ 1.7200000300000000
+           24635 u v w 11531  $ 1.7400000099999999
+           24660 u v w 11556  $ 1.7599999900000001
+           24685 u v w 11581  $ 1.7799999700000000
+           24710 u v w 11606  $ 1.7999999499999999
+           24735 u v w 11631  $ 1.8200000500000000
+           24760 u v w 11656  $ 1.8400000299999999
+           24785 u v w 11681  $ 1.8600000100000000
+           24810 u v w 11706  $ 1.8799999900000000
+           24835 u v w 11731  $ 1.8999999800000000
+           24860 u v w 11756  $ 1.9199999599999999
+           24885 u v w 11781  $ 1.9400000600000000
+           24910 u v w 11806  $ 1.9600000399999999
+           24935 u v w 11831  $ 1.9800000200000001
+           24960 u v w 11856  $ 2.0000000000000000 
+!
+ compute displacements for loading test step 11
+!
+ domain J1 
+  normal plane  nx 1.0 ny 0 nz 0 
+  front nodes  4753 11356 l3disop verify
+  q-values automatic rings 1-15
+  function type d
+  compute domain integral
+!
+stop

@@ -1,0 +1,111 @@
+!
+ *echo off
+!
+!     remote pure bending at each end X= -2.5, X = 2.5
+!     pressure loading puts top fibers Y = 2.0 in compression of -1.0
+!
+ loading unit_bend  
+   element loads
+         1 face 6 pressure   0.980
+         2 face 6 pressure   0.940
+         3 face 6 pressure   0.900
+         4 face 6 pressure   0.860
+         5 face 6 pressure   0.820
+         6 face 6 pressure   0.780
+         7 face 6 pressure   0.740
+         8 face 6 pressure   0.700
+         9 face 6 pressure   0.660
+        10 face 6 pressure   0.620
+        11 face 6 pressure   0.580
+        12 face 6 pressure   0.540
+        13 face 6 pressure   0.500
+        14 face 6 pressure   0.460
+        15 face 6 pressure   0.420
+        16 face 6 pressure   0.380
+        17 face 6 pressure   0.340
+        18 face 6 pressure   0.300
+        19 face 6 pressure   0.260
+        20 face 6 pressure   0.220
+        21 face 6 pressure   0.180
+        22 face 6 pressure   0.140
+        23 face 6 pressure   0.100
+        24 face 6 pressure   0.060
+        25 face 6 pressure   0.020
+        26 face 6 pressure  -0.020
+        27 face 6 pressure  -0.980
+        28 face 6 pressure  -0.060
+        29 face 6 pressure  -0.940
+        30 face 6 pressure  -0.100
+        31 face 6 pressure  -0.900
+        32 face 6 pressure  -0.140
+        33 face 6 pressure  -0.860
+        34 face 6 pressure  -0.180
+        35 face 6 pressure  -0.820
+        36 face 6 pressure  -0.220
+        37 face 6 pressure  -0.780
+        38 face 6 pressure  -0.260
+        39 face 6 pressure  -0.740
+        40 face 6 pressure  -0.300
+        41 face 6 pressure  -0.700
+        42 face 6 pressure  -0.340
+        43 face 6 pressure  -0.660
+        44 face 6 pressure  -0.380
+        45 face 6 pressure  -0.620
+        46 face 6 pressure  -0.420
+        47 face 6 pressure  -0.580
+        48 face 6 pressure  -0.460
+        49 face 6 pressure  -0.540
+        50 face 6 pressure  -0.500
+      6451 face 3 pressure   0.980
+      6452 face 3 pressure   0.940
+      6453 face 3 pressure   0.900
+      6454 face 3 pressure   0.860
+      6455 face 3 pressure   0.820
+      6456 face 3 pressure   0.780
+      6457 face 3 pressure   0.740
+      6458 face 3 pressure   0.700
+      6459 face 3 pressure   0.660
+      6460 face 3 pressure   0.620
+      6461 face 3 pressure   0.580
+      6462 face 3 pressure   0.540
+      6463 face 3 pressure   0.500
+      6464 face 3 pressure   0.460
+      6465 face 3 pressure   0.420
+      6466 face 3 pressure   0.380
+      6467 face 3 pressure   0.340
+      6468 face 3 pressure   0.300
+      6469 face 3 pressure   0.260
+      6470 face 3 pressure   0.220
+      6471 face 3 pressure   0.180
+      6472 face 3 pressure   0.140
+      6473 face 3 pressure   0.100
+      6474 face 3 pressure   0.060
+      6475 face 3 pressure   0.020
+      6476 face 3 pressure  -0.020
+      6477 face 3 pressure  -0.980
+      6478 face 3 pressure  -0.060
+      6479 face 3 pressure  -0.940
+      6480 face 3 pressure  -0.100
+      6481 face 3 pressure  -0.900
+      6482 face 3 pressure  -0.140
+      6483 face 3 pressure  -0.860
+      6484 face 3 pressure  -0.180
+      6485 face 3 pressure  -0.820
+      6486 face 3 pressure  -0.220
+      6487 face 3 pressure  -0.780
+      6488 face 3 pressure  -0.260
+      6489 face 3 pressure  -0.740
+      6490 face 3 pressure  -0.300
+      6491 face 3 pressure  -0.700
+      6492 face 3 pressure  -0.340
+      6493 face 3 pressure  -0.660
+      6494 face 3 pressure  -0.380
+      6495 face 3 pressure  -0.620
+      6496 face 3 pressure  -0.420
+      6497 face 3 pressure  -0.580
+      6498 face 3 pressure  -0.460
+      6499 face 3 pressure  -0.540
+      6500 face 3 pressure  -0.500
+!
+ *echo on
+
