@@ -26,12 +26,15 @@ function cleanup_files {
 
 function run_and_compare {
 #
-echo "  ... running test_75..."
+echo "  ... running test_75 (release absolute cons) ..."
 "$warp3d_exe" $num_threads  < test_75_b > test_75_b_out
 #
+echo "  ... running test_75 (release relative cons) ..."
+"$warp3d_exe" $num_threads  < test_75_c.inp > test_75_c_out
 echo "  ... WARP3D jobs completed..."
 #
 perl check_75.perl
+perl check_75_c.perl
 #
 cleanup_files
 #
