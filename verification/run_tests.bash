@@ -34,6 +34,8 @@ test82
 test83
 test84
 test85
+test86
+test87
 }
 function test14 {
 echo -e "\n>>> Test 14 (Linear elastic impact, sparse iterative solver)"
@@ -295,6 +297,22 @@ cd test85
 cd ..
 }
 
+function test86 {
+echo -e "\n>>> Test 86 (FGMs compute J. explicit terms needed)"
+echo      "    ==============================================="
+cd test86
+./run_tests_and_check
+cd ..
+}
+
+function test87 {
+echo -e "\n>>> Test 87 (T-stress. face loading. surface cracked plate)"
+echo      "    ======================================================="
+cd test87
+./run_tests_and_check
+cd ..
+}
+
 
 
 function get_num_threads {
@@ -444,7 +462,7 @@ m_test71="Test 71: (piston loading for unsteady aerodynamic pressures)"
 m_test72="Test 72: (user-defined integer lists of nodes-elements)"
 m_test73="Test 73: (UMAT included in WARP3D - bilinear mises, kinematic hardening)"
 m_test74="Test 74: (Crystal plasticity and restart)"
-m_test75="Test 75: (Release constraints)"
+m_test75="Test 75: (Release constraints: absolute and relative)"
 m_test76="Test 76: (User-defined multi-point constraints)"
 m_test77="Test 77: (Finite strain transformations/output)"
 m_test78="Test 78: (High-rate loading panel with hole. 20-node, rate plasticity)"
@@ -454,6 +472,8 @@ m_test82="Test 82: (Crystal Plasticity options)"
 m_test83="Test 83: (bar2 element)"
 m_test84="Test 84: (link2 element; Periodic Boundary Conditions)"
 m_test85="Test 85: (user-defined initial-stresses)"
+m_test86="Test 86: (FGMs compute J. explicit terms needed for path independence)"
+m_test87="Test 87: (T-stress. surface cracked plate. face loading)"
 
 all="All problems"
 quit="Quit"
@@ -488,6 +508,8 @@ PS3="Enter your choice (<return> to repeat menu): "
      "$m_test83" \
      "$m_test84" \
      "$m_test85" \
+     "$m_test86" \
+     "$m_test87" \
      "$quit"
 #
   do
@@ -558,7 +580,11 @@ PS3="Enter your choice (<return> to repeat menu): "
           $m_test84)
              test84;;
           $m_test85)
+             test86;;
+          $m_test86)
              test85;;
+          $m_test87)
+             test87;;
           $quit)
            break;;
           *) printf "You can enter only 1, .....\n";;
