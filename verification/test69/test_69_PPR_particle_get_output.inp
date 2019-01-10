@@ -1,0 +1,5 @@
+ output displacements 5453 4352 $ interface nodes on X=0
+ output stresses 5090 5289 $ interface element on Y=0 and X=0
+ output stresses 8681 $ solid element at (0,0)
+ output totals reactions 'top_nodes'
+ output eformat displacement 1480 $ top node on X=0

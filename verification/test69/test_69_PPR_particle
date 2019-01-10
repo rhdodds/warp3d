@@ -1,0 +1,119 @@
+!
+!
+!
+!  Elastic particle embedded in an elastic matrix.
+!  Interface elements (8-node) with PPR cohesive
+!  material
+!
+!  Same test case as in Fig. 12 of paper by Park and Paulino,
+!  EFM Vol. 93, 2012, pp. 239-262.
+!
+!  model is 0 <= X,Y <= 22.9 mm; 0 <= Z <= 2 mm
+!           0 <= X,Y <= 0.90157 in.; 0 <= Z < 0.07874020 in. 
+!  particle radius 20 mm, 0.7874 in.
+!  area fraction of particle : 0.6 
+!
+!  Units here are inches, kips
+!
+!  Paper used meters, N, with plots in MPa vs mm
+!
+!  See accompanying python script and data file to
+!  make plot of remote traction vs. remote extension that
+!  matches plot in paper figure 13
+!
+!  3D model with plane strain boundary conditions in Z
+!  Equal axial tension in X and Y.
+!  Interface debonds with increase remote extension.
+!
+!                     SI               English used here
+!  E (particle)       40 GPa           5801.31  ksi
+!  E (matrix)         20 GPa           2900.65  ksi
+!  nu (particle)      0.25             0.25
+!  nu (matrix)        0.25             0.25
+!  Phee_n             100 N/m          0.000571  kip/in
+!  Phee_t             100 N/m          0.000571  kip/in
+!  sigma_max          10 MPa           1.4503 ksi
+!  tau_max            10 MPa           1.4503 ksi
+!  alpha               3                3  shape parameter
+!  beta                3                3  shape parameter
+!  lambda_n           0.001            0.001 initial slope parameter
+!  lambda_t           0.001            0.001 initial slope parameter
+!
+! 
+ structure particle
+!
+ material particle
+  properties bilinear e 5801.31 nu 0.25 yld_pt 1.0e06
+!
+ material matrix
+  properties bilinear e 2900.65 nu 0.25 yld_pt 1.0e06
+!
+ material ppr_matl 
+  properties cohesive ppr,
+    sig_peak 1.45033 tau_peak 1.45033 G_normal 0.00057099,
+    G_shear 0.00057099 shape_normal 3.0 shape_shear 3.0,
+    ratio_normal 0.001 ratio_shear 0.001,
+     compression_multiplier 1.0,
+     killable  $ so we can get nice traction-separation output
+!
+ number of nodes 18048  elements 8916
+!
+ elements
+   1-5089 type l3disop linear material matrix,
+                       order 2x2x2 bbar center_output short
+   5290-8916 type l3disop linear material particle,
+                       order 2x2x2 bbar center_output short
+   5090-5289 type inter_8 linear material ppr_matl order '2x2gs'
+! 
+*input from 'test_69_PPR_particle_coords.inp'
+*input from 'test_69_PPR_particle_incidences.inp'
+blocking automatic size = 128
+! 
+*echo on
+! 
+ constraints
+   plane x = 0 symmetry
+   plane y = 0 symmetry
+   plane z = 0 symmetry
+   plane z = 0.07874020 symmetry
+   plane x = 0.901575 u 1.0
+   plane y = 0.901575 v 1.0
+!
+ loading test
+  nonlinear $ total macrostrain 0.06%
+    step 1-60 constraints 9.105750e-06  $ delta-eps = 1.0e-05
+! 
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   time step 1.0e06 
+   maximum iterations 10 $ global Newton iterations
+   minimum iterations 1
+   extrapolate on
+   convergence test norm res tol 0.01
+   line search on    
+   divergence check on 
+   nonconvergent solutions stop
+   adaptive on   $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix on
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+crack growth parameters  $ just so we can get cohesive status
+   type of crack growth cohesive
+   ppr displacement fracture for extinction 0.99
+   print status on order elements 5090-5289
+   force release type steps
+   release steps 5
+! 
+ list "top_nodes"  y =  0.901575
+ output commands use file "test_69_PPR_particle_get_output.inp",
+      steps 60 $  1-1000 for all steps
+!
+ compute displacements for loading test step 60
+! 
+ stop
