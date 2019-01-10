@@ -989,7 +989,7 @@ c
       use main_data, only : user_lists
       implicit integer(a-z)
       include 'param_def'
-      dimension list(*)
+      dimension list(mlist)
       character lname*24, name*80
       logical isstring, scanms, debug
       data debug / .false. /
@@ -997,6 +997,7 @@ c
 c          if we have a regular <integerlist> just process as before and
 c          return
 c
+      list = 0 ! all entries
       call trscan_list( list, mlist, iall, nlist, ierr )
       if( ierr .ne. 4 ) return
 c
