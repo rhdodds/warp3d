@@ -5,7 +5,7 @@ c     *                      subroutine mm10_solveB                  *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 10/23/2016 rhd              *
+c     *                   last modified: 1/12/2019 rhd               *
 c     *                                                              *
 c     *              solve for stress/hardening using interface      *
 c     *              to "nwnleq" solver package                      *
@@ -29,7 +29,7 @@ c
       double precision, dimension(max_uhard,max_uhard) :: arr1, arr2
       complex(kind=real64), dimension(max_uhard) :: ivec1, ivec2
       double precision, dimension(6) :: stress
-      double precision, dimension(props%num_hard) :: tt
+      double precision, dimension(size_num_hard) :: tt
       logical :: fail
       integer, dimension(10) :: faili
       double precision, dimension(10) :: failr
@@ -41,23 +41,18 @@ c
       include 'include_mm10'
       type(mm10_working_data) :: solve_work
 c
-      double precision :: nR, inR, atol, rtol, uB, alpha, ls1, ls2,
-     &      nlsx, nRs, dt, cos_ang, xetol, xtol1, zerotol,
-     &      dxerr, nR1, inR1, atol1, rtol1, dp1
-      double precision, dimension(6) :: R1, x1, dx1, xnew1, d1, d2
-      double precision, dimension(6,6) :: J11
-      integer :: miter, info, ls, mmin, gpp, ttind
+      double precision :: nR, atol, rtol,   
+     &      dt, cos_ang, xetol, xtol1, zerotol,
+     &      nR1, inR1, atol1, rtol1, dp1
+      double precision, dimension(6) :: x1, d1, d2
+      integer :: miter, gpp, ttind
       logical :: debug, gpall, locdebug, jaccheck, numerjac, predict_ok,
      &           update_ok 
 c
 c               automatics
 c
-      double precision, dimension(6+props%num_hard) :: R, x, dx, 
-     &                                                 xnew, g
-      double precision, 
-     & dimension(6+props%num_hard,6+props%num_hard) :: J
-      double precision, dimension(props%num_hard) :: x2
-      integer, dimension(6+props%num_hard) :: ipiv
+      double precision, dimension(six_plus_num_hard) :: x
+      double precision, dimension(size_num_hard) :: x2
 c      
 c               local for solver package
 c
@@ -69,14 +64,14 @@ c
 c      
 c               automatics for solver package
 c
-      double precision ::  xp(6+props%num_hard),fp(6+props%num_hard),
-     &                     gp(6+props%num_hard),
-     &                     rjac(6+props%num_hard,2*(6+props%num_hard)),
-     &                     rwork(9*(6+props%num_hard)),
-     &                     rcdwrk(3*(6+props%num_hard)),
-     &                     qrwork(props%num_hard*(6+props%num_hard)),
-     &                     scalex(6+props%num_hard)
-      integer  :: icdwrk(6+props%num_hard)
+      double precision ::  xp(six_plus_num_hard),fp(six_plus_num_hard),
+     &                     gp(six_plus_num_hard),
+     &                     rjac(six_plus_num_hard,2*six_plus_num_hard),
+     &                     rwork(9*six_plus_num_hard),
+     &                     rcdwrk(3*six_plus_num_hard),
+     &                     qrwork(size_num_hard*six_plus_num_hard),
+     &                     scalex(six_plus_num_hard)
+      integer  :: icdwrk(six_plus_num_hard)
 c
 c               convergence parameters: Newton w/ geometric line search
 c
@@ -97,7 +92,7 @@ c!DIR$ ASSUME_ALIGNED ivec2:64, stress:64, tt:64
       miter = props%miter
       zerotol = 1.0d-12
       ttind = 1 ! index of tt to print while debugging
-c234567890123456
+c
 c              tang_calc: variable to denote Jacobian calculation
 c              set this variable INSIDE mod_crystals.f
 c                   0 for user supplied, no checking
@@ -953,46 +948,45 @@ c     *                      subroutine mm10_fvec                    *
 c     *                                                              *
 c     *                       written by : tjt                       *
 c     *                                                              *
-c     *                   last modified: 11/3/2016 rhd               *
+c     *                   last modified: 1/14/2019 rhd               *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_fveci( solve_work, x, fz, n, j )
+      subroutine mm10_fveci( solve_work, x, fz, n, j, param_num_hard )
 c
       use iso_Fortran_env
       use mm10_defs
       use mm10_constants
       implicit none
 c      
-      integer :: n, j
+      integer :: n, j, param_num_hard
       complex(kind=real64), dimension(n) :: x, fz
 
       include 'include_mm10'
       type(mm10_working_data) :: solve_work
 c
       integer :: length
-      complex(kind=real64), dimension (solve_work%props%num_hard) :: x2i !  was dimension(n-6) :: x2i
-      double precision, dimension(solve_work%props%num_hard) :: zero2 ! was dimension(n-6) :: zero2
+      complex(kind=real64), dimension (param_num_hard) :: x2i !  was dimension(n-6) :: x2i
+      double precision, dimension(param_num_hard) :: zero2 ! was dimension(n-6) :: zero2
+c      
 c!DIR$ ASSUME_ALIGNED x:64, fz:64
       if( solve_work%solvfnc == 1 ) then
         zero2 = zero
         length = solve_work%props%num_hard
-        x2i(1:length) = cmplx(solve_work%x2(1:length),zero2)
+        x2i(1:length) = dcmplx(solve_work%x2(1:length),zero2)
         call mm10_formvecsi( solve_work%props, solve_work%np1,
      &                    solve_work%np0, x(1), x2i, 
      &                    solve_work%ivec1, solve_work%ivec2 )
         call mm10_formR1i( solve_work%props, solve_work%np1, 
      &                     solve_work%np0, solve_work%ivec1, 
-     &                     solve_work%ivec2, x(1), x2i, fz, 
-     &                     solve_work%gaspt)
+     &                     solve_work%ivec2, x(1), x2i, fz )
       else
         call mm10_formvecsi( solve_work%props, solve_work%np1,
      &                       solve_work%np0, x(1), x(7), 
      &                       solve_work%ivec1, solve_work%ivec2)
         call mm10_formR1i( solve_work%props, solve_work%np1, 
      &                     solve_work%np0, solve_work%ivec1, 
-     &                     solve_work%ivec2, x(1),x(7), fz(1), 
-     &                     solve_work%gaspt)
+     &                     solve_work%ivec2, x(1),x(7), fz(1) )
         call mm10_formR2i( solve_work%props, solve_work%np1, 
      &                     solve_work%np0, solve_work%ivec1, 
      &                     solve_work%ivec2, x(1), x(7), fz(7) )
@@ -1128,7 +1122,6 @@ c     Nuzero sets all elements of x to 0.
 c     Does nothing when n <= 0
 
       double precision, parameter :: Rzero = 0.0d0
-      integer i
 c
       x(1:n) = Rzero
 c
@@ -1556,8 +1549,8 @@ c-----------------------------------------------------------------------------
       return
       end
 
-      subroutine mm10_nwbjac(rjac,r,ldr,n,xc,fc,fq,solve_work,epsm,jacflg,
-     *                  wrk1,wrk2,wrk3,priter,
+      subroutine mm10_nwbjac(rjac,r,ldr,n,xc,fc,fq,solve_work,epsm,
+     *                  jacflg, wrk1,wrk2,wrk3,priter,
      *                  xscalm,scalex,gp,cndtol,rcdwrk,icdwrk,dn,
      *                  qtf,rcond,qrwork,qrwsiz,njcnt,iter,fstjac,ierr)
 
@@ -1870,7 +1863,7 @@ c
 c-----------------------------------------------------------------------
 
       integer gcnt,retcd,ierr
-      double precision  dum(2),dlt0,fcnorm,rcond
+      double precision  dum(10),dlt0,fcnorm,rcond
       logical fstjac
       logical jacevl,jacupd
       logical stepadj
@@ -1912,8 +1905,8 @@ c     jacobian, if requested
         if( outopt(2) .eq. 1 ) then
            fstjac = .true.
            njcnt = njcnt + 1
-           call mm10_nwfjac(xc,scalex,fc,fq,n,epsm,jacflg,solve_work,rjac,
-     *                 ldr,wrk1,wrk2,wrk3,priter)
+           call mm10_nwfjac(xc,scalex,fc,fq,n,epsm,jacflg,solve_work,
+     *                 rjac, ldr,wrk1,wrk2,wrk3,priter)
 c      write(*,*) 'solve_work%solvfnc brsolv', solve_work%solvfnc
            call mm10_chkjac(rjac,ldr,xc,fc,n,epsm,jacflg,scalex,
      *                 fq,wrk1,wrk2,solve_work,termcd)
@@ -1976,8 +1969,8 @@ c     check stopping criteria for input xc
          iter = iter+1
 
          if( jacevl ) then
-            call mm10_nwbjac(rjac,r,ldr,n,xc,fc,fq,solve_work,epsm,jacflg,
-     *                  wrk1,wrk2,wrk3,priter,
+            call mm10_nwbjac(rjac,r,ldr,n,xc,fc,fq,solve_work,epsm,
+     *                  jacflg,wrk1,wrk2,wrk3,priter,
      *                  xscalm,scalex,gp,cndtol,rcdwrk,icdwrk,dn,
      *                  qtf,rcond,qrwork,qrwsiz,njcnt,iter,fstjac,ierr)
 
@@ -2508,7 +2501,7 @@ c-------------------------------------------------------------------------
       integer i, gcntmax
       double precision  dnlen,ssdlen,alpha,beta,lambda,fpred
       double precision  sqalpha,eta,gamma,fpnsav,oarg(7)
-      double precision  dnrm2,ddot, xpr(n)
+      double precision  dnrm2, ddot
       logical nwtstep
       integer dtype
 
@@ -2746,7 +2739,7 @@ c-------------------------------------------------------------------------
       double precision  alpha,slope,rsclen,oarg(4)
       double precision  lambda,lamhi,lamlo
       double precision  ddot,dnrm2, mm10_nudnrm, ftarg
-      double precision  dlen,xpr(n)
+      double precision  dlen
 
       integer idamax
 
@@ -2908,7 +2901,7 @@ c-------------------------------------------------------------------------
 
       integer i, gcntmax
       double precision  dnlen,glen,ssdlen,alpha,beta,mu,fpred
-      double precision  fpnsav,oarg(6)
+      double precision  fpnsav, oarg(6)
       double precision  dnrm2
       logical nwtstep
       integer dtype
@@ -3116,7 +3109,7 @@ c-----------------------------------------------------------------------
       logical fstjac
       double precision  epsm, cndtol, rcond
       double precision  rjac(ldr,*)
-      double precision  xc(*),fc(*),dn(*),xpr(n)
+      double precision  xc(*),fc(*),dn(*)
       double precision  wrk1(n),wrk2(n),wrk3(*)
       double precision  qtf(*),gp(*),fq(*)
       double precision  scalex(*)
@@ -3368,7 +3361,7 @@ c
 c-----------------------------------------------------------------------
 
       integer gcnt,retcd,ierr
-      double precision  dum(2),fcnorm,rcond, xpr(n)
+      double precision  dum(10),fcnorm,rcond
       logical fstjac
       integer priter
 
@@ -3910,7 +3903,7 @@ c-------------------------------------------------------------------------
       double precision  alpha,slope,rsclen,oarg(4)
       double precision  lambda,lamhi,lamlo,t
       double precision  ddot,dnrm2, mm10_nudnrm, ftarg
-      double precision  dlen, xpr(n)
+      double precision  dlen
 
       integer idamax
 
@@ -4541,8 +4534,7 @@ c-------------------------------------------------------------------------
       double precision  ndigit,p,h,xcj,dinf
       double precision, dimension(n) :: zeroN
       complex(kind=real64), dimension(n) :: xwc, fzc
-      double precision  tol
-      complex(kind=real64)  mm10_rnudifi
+      double precision  tol, t1, t2
       integer idamax
 
       integer MAXERR
@@ -4585,7 +4577,7 @@ c      write(*,*) 'solve_work1%solvfnc', solve_work1%solvfnc
       do j=1,n
          h = p + p * abs(real(xwc(j)))
          xcj   = real(xwc(j))
-         xwc(j) = cmplx(xcj, h)
+         xwc(j) = dcmplx(xcj, h)
 
 c        avoid (small) rounding errors
 c        h = xc(j) - xcj but not here to avoid clever optimizers
@@ -4593,9 +4585,10 @@ c        h = xc(j) - xcj but not here to avoid clever optimizers
 c         h = mm10_rnudifi(xwc(j), xcj)
 
 c      write(*,*) 'before call', j
-         call mm10_fveci(solve_work1,xwc,fzc,n,j)
+         call mm10_fveci(solve_work1, xwc, fzc, n, j,
+     &                   solve_work%props%num_hard)
 c      write(*,*) 'after call', j
-         xwc(j) = cmplx(xcj, 0.d0)
+         xwc(j) = dcmplx(xcj, 0.d0)
 
          do i=1,n
             wa(i) = aimag(fzc(i))/h
@@ -5849,12 +5842,8 @@ c
 c
       type(crystal_props) :: props1
 c
-      if( allocated(props1%Gmat) ) then
-      deallocate( props1%Gmat  )
-      end if
-      if( allocated(props1%Hmat) ) then
-      deallocate( props1%Hmat )
-      end if
+      if( allocated(props1%Gmat) ) deallocate( props1%Gmat  )
+      if( allocated(props1%Hmat) ) deallocate( props1%Hmat )
 c
       return
       end
@@ -5902,7 +5891,7 @@ c-----------------------------------------------------------------------
 
       subroutine mm10_c_copy_darray(A,n,B)
 c
-      integer :: n, i
+      integer :: n
       double precision, dimension(n) :: A,B
 c
       B(1:n) = A(1:n)

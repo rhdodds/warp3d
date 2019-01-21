@@ -32,7 +32,7 @@ c
       use main_data
       implicit none
 c
-      integer :: i, j, k, ncrystals, cnum, osn, num, ecount,
+      integer :: i, j, k, ncrystals, cnum, osn, ecount,
      &  total_hist_size, crystal,
      &  loc_start, loc_cauchy, loc_euler, loc_pls_R, loc_uddt,
      &  loc_els_eps, loc_cur_slip_incr, loc_tau_tilde, loc_user_hist,
@@ -398,7 +398,7 @@ c
      &           info_vector(*)
 c
       logical, parameter :: here_debug = .false.
-      integer :: num_output_values, n
+      integer :: n
 c
 c        set info data for state variable output only
 c

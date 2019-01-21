@@ -6217,8 +6217,8 @@ c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine mm10_DJGM_GH(local_work,s_type,num_hard,G,H,
-     &                        i,c)
+      subroutine mm10_DJGM_GH( local_work, s_type, num_hard, G, H,
+     &                        i, c )
       use mm10_defs ! to get definition of cc_props
       implicit none
       include 'include_sig_up'
