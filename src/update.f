@@ -18,7 +18,7 @@ c
 c                                                                               
       use main_data, only :  temper_nodes, temper_elems,                        
      &                       dtemp_nodes, dtemp_elems, mdiag,                   
-     &                       nonlocal_analysis, pbar                            
+     &                       nonlocal_analysis                            
       use elem_block_data, only : history_blocks, history1_blocks,              
      &                            eps_n_blocks, eps_n1_blocks,                  
      &                            urcs_n_blocks, urcs_n1_blocks,                
@@ -36,7 +36,7 @@ c
      &    dlf, tlf                                                              
 c                                                                               
       integer :: blk, felem, span, ngp, hblock_size, eblock_size,               
-     &           ublock_size, k, n, i, dof                                      
+     &           ublock_size, n, i, dof                                      
       logical :: chk, update_lag_forces                                         
       logical, parameter :: local_debug = .false.                               
 c                                                                               
@@ -154,11 +154,6 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 9200 format(10x,i5,3f15.5)                                                     
- 9190 format(15x,"pbar",10x,"bob_lag",10x,"dlag")                               
-      return                                                                    
-c                                                                               
- 9000 format(3x,i5, 2e14.6)                                                     
  9100 format(">>>>> FATAL ERROR. update. nonlocal. elem: ",i8,                  
      &      /,"      Job terminated." )                                         
  9205 format(5x,"... updating Lagrange forces to n+1 ...")                      

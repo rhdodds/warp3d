@@ -34,8 +34,6 @@ c
       double precision, parameter :: zero = 0.0d00,                             
      &                               one  = 1.0d00                              
       logical, parameter :: local_debug = .false.                               
-                                                                                
-      integer :: chknode, chkdof                                                
 c                                                                               
 c                                                                               
 c              set the residual load vector at iter = 0 just before             
@@ -139,7 +137,7 @@ c
 c                                                                               
 c              locals                                                           
 c                                                                               
-      integer :: i, chknode, chkdof                                             
+      integer :: i                                             
       double precision ::                                                       
      &  nfac, zero, one, two, accel_n1, term_load, nfac1, nfac2,                
      &  force_lag, total_external, inertia_contact                              
@@ -249,7 +247,6 @@ c
      &  t51, "contact force",                                                   
      &  t70, "dlagrange", t82, "inertia adjust",t101,"total ext",t120,          
      &   "ifv" )                                                                
- 9990 format('... bugs: ',i6,2f15.6)                                            
 c                                                                               
       end                                                                       
                                                                                 

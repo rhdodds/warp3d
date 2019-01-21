@@ -27,7 +27,7 @@ c
 c
 c           local variables
 c
-      integer i,debug_level
+      integer :: debug_level
 
       logflag = 0                  ! set = 0 for no debugging log file
       logunit = warp3d_get_device_number()
@@ -410,7 +410,7 @@ c
       tiednodeisocoord = zero
       tiednodeglobalcoord = zero
       tiednodeadjustflag = .false.
-      tiednodegaptolerance = zero
+      tiednodegaptolerance = 0.0 ! single
 
       if(logflag.ge.1)then
         open(unit=logunit,file=logfile,position='append')
@@ -2814,13 +2814,13 @@ c               save the slave node id and slave node local dof to
 c               the tied_con_mpc_table() array
 c
           numlist = 1
-          tied_con_mpc_table(num_tied_con_mpc)%constant = zero
+          tied_con_mpc_table(num_tied_con_mpc)%constant = 0.0 ! single
           tied_con_mpc_table(num_tied_con_mpc)%node_list(numlist) =
      &      node_id
           tied_con_mpc_table(num_tied_con_mpc)%dof_list(numlist) =
      &      local_dof
           tied_con_mpc_table(num_tied_con_mpc)%multiplier_list(numlist)=
-     &      -one
+     &      -1.0 ! single
 c
 c               check that the master element face nodes have active
 c               global equations for the current local dof; note that
@@ -2886,7 +2886,7 @@ c
               tied_con_mpc_table(num_tied_con_mpc)%dof_list(numlist) =
      &          local_dof
               tied_con_mpc_table(num_tied_con_mpc)%
-     &          multiplier_list(numlist) = shapefunc(column)
+     &          multiplier_list(numlist) = real( shapefunc(column) )
 
             else if(master_eqn.gt.0 .and.
      &      ABS(shapefunc(column)).le.epsilon_mpc)then
@@ -2971,7 +2971,7 @@ c
             do i=2,numlist
               tied_con_mpc_table(num_tied_con_mpc)%multiplier_list(i) =
      &        tied_con_mpc_table(num_tied_con_mpc)%multiplier_list(i)*
-     &        norm_mult
+     &        real( norm_mult )
             end do
           else
             norm_mult = zero
@@ -3452,7 +3452,7 @@ c
      &    ' array (tied_nodeassign).'
           goto 900
         end if
-        masternodelist = zero
+        masternodelist = 0
       end if
 
       sum_elem_dist = zero

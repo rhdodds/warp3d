@@ -356,7 +356,6 @@ c
 c                                                                               
 c                       locals                                                  
 c                                                                               
-      integer :: i                                                              
 c                                                                               
       num_states = 14                                                           
       num_comment_lines = 5                                                     
@@ -412,8 +411,6 @@ c
      & statev(*), output_statev(*)                                              
 c                                                                               
 c                       locals                                                  
-c                                                                               
-      integer :: k, k1                                                          
 c                                                                               
       nvals = 14                                                                
 c                                                                               

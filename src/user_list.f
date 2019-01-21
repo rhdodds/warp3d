@@ -10,10 +10,10 @@ c     ****************************************************************
 c
       subroutine trwlist( sbflg1, sbflg2 )
       use global_data ! old common.main
-      use main_data, only : user_lists, crdmap
+      use main_data, only : user_lists
       implicit integer (a-z)
       logical  :: debug, string, scanms, matchs, do_display,
-     &        found, match_exact, matchs_exact, true, display_coords,
+     &        found, matchs_exact, true, display_coords,
      &        endcrd
       character :: lname*24, name*80
 c
@@ -267,7 +267,6 @@ c     ****************************************************************
 c
       subroutine ulist_error( message )
       use global_data ! old common.main
-      use main_data, only : user_lists
       implicit integer(a-z)
       character(len=80) :: string
 c
@@ -475,7 +474,7 @@ c
       implicit integer(a-z)
 c
       double precision
-     &   value, xvalue, yvalue, zvalue, tolerance, temp_t, zero,
+     &   xvalue, yvalue, zvalue, tolerance, temp_t, zero,
      &   xcoord, ycoord, zcoord, x_toler, y_toler, z_toler
       logical :: do_display, xdefined, ydefined, zdefined, matchs,
      &           numd, endcrd, matchs_exact, debug, display_coords
@@ -628,9 +627,6 @@ c
      & /,5x,'x, y, z values: ',3f15.5,
      & /,5x,'tolerance, do_display: ',f15.8, l5,
      & //)
- 9100 format(2x,".... tolerances for comparing coordinates ....",
-     & /,5x,"nonode: ",i8,
-     & /,5x,"x, y, z tolerance: ", 3e15.8, //)
  9200 format(1x,">>>>> number of nodes placed inlist: ", i8 )
  9210 format(1x,">>>>> WARNING: no nodes match the line/point ",
      & " specification")
@@ -931,9 +927,6 @@ c
      & /,5x,"nx, ny, nz: ",3f15.6,
      & /,5x,"radius_tol: ",f15.6,
      & //)
- 9100 format(2x,".... tolerances for comparing coordinates ....",
-     & /,5x,"nonode: ",i8,
-     & /,5x,"x, y, z tolerance: ", 3e15.8, //)
  9200 format(1x,">>>>> number of nodes placed in list: ", i8 )
  9210 format(1x,">>>>> no nodes match the cylinder specification")
  9220 format(1x,">>>>> physical distance for proximity checks: ",
@@ -1079,7 +1072,7 @@ c
      &   tolerance, temp_t, zero, dot,
      &   x_toler, y_toler, z_toler, pt(3),
      &   flag, normvec(3), length, rel_tol,
-     &   dx, dy, dz, d12, norm_tol
+     &   dx, dy, dz, norm_tol
       logical :: do_display, matchs, check,
      &           numd, endcrd, matchs_exact, debug, display_coords
       dimension matchlist(max_list_size)
@@ -1253,8 +1246,6 @@ c
  9222 format(1x,">>>>> physical distance for proximity checks: ",
      &          f15.8  )
  9210 format(1x,">>>>> no nodes match the plane specification")
- 9300 format( 5x, i7, 4f15.6)
- 9310 format( 15x, 4f15.6)
 c
       end
 
@@ -1410,9 +1401,6 @@ c
      & /,5x,"radius, tolerance: ",2f15.6,
      & /,5x,"do_display: ",l5,
      & //)
- 9100 format(2x,".... tolerances for comparing coordinates ....",
-     & /,5x,"nonode: ",i8,
-     & /,5x,"x, y, z tolerance: ", 3e15.8, //)
  9200 format(1x,">>>>> number of nodes in list: ", i8 )
  9210 format(1x,">>>>> no nodes match the sphere specification")
  9220 format(1x,">>>>> physical distance for proximity checks: ",
