@@ -15,8 +15,10 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine oulgf( etype, xi, eta, zeta, sf, iorder )                      
-      implicit integer (a-z)                                                    
-      double precision                                                          
+      implicit none      
+c
+      integer :: etype, iorder
+      double precision ::                                                         
      &     xi, eta, zeta, sf(*)                                                 
 c                                                                               
       if ( etype .le. 0 .or. etype .gt. 5 ) then                                
@@ -79,14 +81,15 @@ c
 c                                                                               
 c                                                                               
       subroutine oulgr1( r, s, t, lg, ord )                                     
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     r,s,t,lg(*),p,q,p3,p6,pq4,p2q2,rmp,rpp,smp,spp,tmp,tpp,              
-     &     rmq,rpq,smq,spq,tmq,tpq,                                             
+      implicit none 
+c
+      integer :: ord
+      double precision ::                                                        
+     &     r,s,t,lg(*),p,p3,p6,rmp,rpp,smp,spp,tmp,tpp,              
      &     p774, eight, four, two, zero, p577, p758                             
       data p774, eight, four, two, zero, p577, p758                             
-     &     /0.774596669241483, 8.0, 4.0, 2.0, 0.0,                              
-     &     0.577350269189626, 0.758786911/                                      
+     &     /0.774596669241483d0, 8.0d0, 4.0d0, 2.0d0, 0.0d0,                              
+     &     0.577350269189626d0, 0.758786911d0/                                      
 c                                                                               
 c                                                                               
 c                       branch on the order of quadrature. possible             
@@ -222,12 +225,14 @@ c
 c                                                                               
 c                                                                               
       subroutine oulgr2( r, s, t, lg, ord )                                     
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     r,s,t,lg(*),p,p3,rmp,rpp,smp,spp,tmp,tpp,                            
+      implicit none
+c      
+      integer :: ord
+      double precision ::                                                       
+     &     r,s,t,lg(*),p,p2, p3,rmp,rpp,smp,spp,tmp,tpp,                            
      &     p557, eight, p795, two                                               
       data p557, eight, p795, two                                               
-     &     /0.577350269189626, 8.0, 0.795822426, 2.0/                           
+     &     /0.577350269189626d0, 8.0d0, 0.795822426d0, 2.0d0/                           
 c                                                                               
 c                                                                               
 c                       branch on the order of quadrature. possible             
@@ -306,12 +311,15 @@ c
 c                                                                               
 c                                                                               
       subroutine oulgr3( r, s, lg, ord )                                        
-      implicit integer (a-z)                                                    
-      double precision                                                          
+      implicit none
+c      
+      integer :: ord
+      double precision ::                                                   
      &     r, s, lg(*), p, p2, p4, ppr, pmr, pps, pms, p557, p774,              
-     &     one, four, eight                                                     
+     &     one, four, eight, two                                                    
       data p557, p774, one, two, four, eight                                    
-     &     / 0.577350269189626, 0.774596669241483, 1.0, 2.0, 4.0, 8.0 /         
+     &     / 0.577350269189626d0, 0.774596669241483d0, 1.0d0, 
+     &       2.0d0, 4.0d0, 8.0d0 /         
 c                                                                               
 c                       branch on the order of quadrature. possible             
 c                       integration schemes are :                               

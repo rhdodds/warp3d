@@ -19,8 +19,6 @@ c
       subroutine rstgp1( props, lprops, iprops, local_work )
 c
       use segmental_curves, only : max_seg_points
-      use main_data, only : initial_stresses, initial_stresses_file,
-     &                      initial_stresses_user_routine
       use elem_block_data,  only : initial_state_data
 c
       implicit none
@@ -36,15 +34,15 @@ c
 c                       locally defined variables
 c
       integer :: i, k, span, felem, type, order, gpn, ngp, nnode, ndof,
-     &           step, iter, mat_type, iout, error, ielem, nowblk
+     &           step, iter, mat_type, iout, error, nowblk
       double precision :: internal_energy, beta_fact, eps_bbar,
      &                    plastic_work, bar_volumes(mxvl),
      &                    bar_areas_0(mxvl), bar_areas_mid(mxvl)
       double precision, parameter :: zero = 0.0d0
       double precision, allocatable :: ddt(:,:), uddt(:,:),
      &                                 qnhalf(:,:,:), qn1(:,:,:)
-      logical :: cut_step, adaptive, geonl, bbar, material_cut_step,
-     &           adaptive_flag, isnan
+      logical :: adaptive, geonl, bbar, material_cut_step,
+     &           adaptive_flag
       logical, parameter :: local_debug = .false.
 c
       internal_energy   = local_work%block_energy
@@ -359,8 +357,6 @@ c
       subroutine rstgp2( props, lprops, iprops, local_work )
       use segmental_curves, only : max_seg_points, max_seg_curves
 c
-      use main_data, only : initial_stresses, initial_stresses_file,
-     &                      initial_stresses_user_routine
       use elem_block_data,  only : initial_state_data
       implicit none
       include 'param_def'
@@ -375,8 +371,8 @@ c
 c                       locally defined variables
 c
       integer :: span, felem, type, order, gpn, ngp, nnode, ndof, step,
-     &           iter, mat_type, number_points, curve_step, iout,
-     &           curve_set, i, k, nowblk, ielem
+     &           iter, mat_type, number_points, iout,
+     &           curve_set, i, k, nowblk
       double precision :: internal_energy, beta_fact, eps_bbar,
      &  uddt(mxvl,nstr), plastic_work, dummy_q(1), dummy_dfn1(1),
      &  bar_volumes(mxvl), bar_areas_0(mxvl), bar_areas_nx(mxvl)
@@ -629,7 +625,7 @@ c
      &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du
 c
       implicit none
       include 'param_def'
@@ -949,7 +945,7 @@ c
       subroutine drive_01_update_a
       implicit none
 c
-      integer :: k, m, i
+      integer :: i
       double precision :: one, two, e, nu, c1, c2, c3, c4
       data one, two / 1.0d00, 2.0d00 /
 c
@@ -1059,7 +1055,7 @@ c
      &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du
 c
       implicit none
       include 'param_def'
@@ -1076,7 +1072,7 @@ c
 c
 c                       locally defined variables
 c
-      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+      integer :: span, felem, type, order, nnode, ndof, step,
      &           iter, now_blk, elem_type, mat_type,
      &           hist_size_for_blk, i
 c
@@ -1295,7 +1291,7 @@ c
       subroutine drive_02_update_a
       implicit none
 c
-      integer :: k, m, i
+      integer :: i
       double precision :: one, two, e, nu, c1, c2, c3, c4
       data one, two / 1.0d00, 2.0d00 /
 c
@@ -1432,7 +1428,7 @@ c                       locally defined variables
 c
       double precision
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  ddummy(1), zero, gp_alpha, ddtse(mxvl,6), nowtemp
+     &  zero, gp_alpha, ddtse(mxvl,6), nowtemp
       logical signal_flag, fgm_enode_props, local_debug,
      &        temperatures, temperatures_ref
       data local_debug, zero / .false., 0.0 /
@@ -1595,7 +1591,7 @@ c
       use segmental_curves, only : max_seg_points, max_seg_curves,
      &                             now_blk_relem, sigma_curve_min_values
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du
 c
       implicit none
       include 'param_def'
@@ -1613,7 +1609,7 @@ c                       locally defined variables
 c
       double precision ::
      &  dtime, internal_energy, beta_fact, eps_bbar,
-     &  p_trial(mxvl), q_trial(mxvl), dfn1(mxvl),
+     &  p_trial(mxvl), q_trial(mxvl),
      &  yld_func(mxvl), step_scale_fact, plastic_work, gp_temps(mxvl),
      &  gp_dtemps(mxvl), plastic_eps_rates(mxvl), gp_rtemps(mxvl),
      &  zero, gp_alpha, et, ymfgm, copy_sigyld_vec(mxvl),
@@ -1625,11 +1621,11 @@ c
      &  stress_n(:,:), stress_n1(:,:), uddt_temps(:,:), uddt(:,:), 
      &  cep(:,:,:)
 c
-      logical :: null_point(mxvl), cut_step, process_block,
+      logical :: null_point(mxvl), process_block,
      &           adaptive, geonl, bbar, material_cut_step,
      &           local_debug, signal_flag, adaptive_flag,
      &           power_law, temperatures, allow_cut, segmental,
-     &           model_update, temperatures_ref, fgm_enode_props,
+     &           temperatures_ref, fgm_enode_props,
      &           nonlinear_update, linear_elastic_update
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
@@ -1920,7 +1916,7 @@ c
       subroutine drive_03_update_b
       implicit none
 c
-      integer :: k, m, i
+      integer :: i
       double precision :: one, two, e, nu, c1, c2, c3, c4
       data one, two / 1.0d00, 2.0d00 /
 c
@@ -2281,8 +2277,7 @@ c
 c
       subroutine drive_04_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
-      use main_data, only : matprp, lmtprp, extrapolated_du,
-     &                      non_zero_imposed_du
+      use main_data, only : extrapolated_du
       use segmental_curves, only : max_seg_points
       use elem_block_data, only  : gbl_cep_blocks => cep_blocks
 c
@@ -2546,11 +2541,10 @@ c
 c
       subroutine drive_05_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use main_data, only : matprp, lmtprp
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du
 c
       implicit none
       include 'param_def'
@@ -2567,14 +2561,13 @@ c
 c
 c                       locally defined variables
 c
-      integer :: span, felem, type, order, ngp, nnode, ndof, step,
+      integer :: span, felem, type, order, nnode, ndof, step,
      &           iter, now_blk, mat_type, number_points, curve_set,
-     &           hist_size_for_blk, curve_type, elem_type, i,
-     &           matnum
+     &           hist_size_for_blk, curve_type, i, matnum
 c
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime, sig_tol, ddummy,
+     &  zero, dtime, sig_tol, ddummy,
      &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
      &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
       double precision, allocatable ::  uddt_temps(:,:), uddt(:,:), 
@@ -2808,6 +2801,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine drive_05_update_c
+      use main_data, only : matprp
       implicit none
 c
 c            build local data vectors for nonlinear_hardening option
@@ -3029,7 +3023,7 @@ c
       subroutine drive_05_update_a
       implicit none
 c
-      integer :: k, m, i
+      integer :: i
       double precision :: one, two, e, nu, c1, c2, c3, c4
       data one, two / 1.0d00, 2.0d00 /
 c
@@ -3136,8 +3130,7 @@ c
 c
       subroutine drive_06_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use main_data, only : matprp, lmtprp, extrapolated_du,
-     &                      non_zero_imposed_du
+      use main_data, only : extrapolated_du
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
@@ -3157,11 +3150,11 @@ c                       locally defined variables
 c
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime, real_npts, uddt_temps(mxvl,nstr),
+     &  zero, dtime, real_npts, uddt_temps(mxvl,nstr),
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_ref, process, compute_creep_strains
+     &           temperatures_ref, compute_creep_strains
       data zero /  0.0d00 /
 c
       dtime             = local_work%dt
@@ -3369,7 +3362,7 @@ c
      &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du
 c
       implicit none
       include 'param_def'
@@ -3385,16 +3378,15 @@ c
 c
 c                       locally defined variables
 c
-      integer :: span, felem, type, order, ngp, nnode, ndof, step,
-     &           iter, now_blk, mat_type, number_points, curve_set,
-     &           hist_size_for_blk, curve_type, elem_type, i
+      integer :: span, felem, type, order, nnode, ndof, step,
+     &           iter, now_blk, mat_type, hist_size_for_blk, i
 c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha,  uddt_temps(mxvl,nstr),
+     &  zero, uddt_temps(mxvl,nstr),
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
-      logical :: geonl, local_debug, temperatures, segmental,
+      logical :: geonl, local_debug, temperatures, 
      &           temperatures_ref, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
@@ -3528,7 +3520,7 @@ c
       subroutine drive_07_update_a
       implicit none
 c
-      integer :: k, m, i
+      integer :: i
       double precision :: one, two, e, nu, c1, c2, c3, c4
       data one, two / 1.0d00, 2.0d00 /
 c
@@ -3637,7 +3629,7 @@ c     ****************************************************************
 c
 c
       subroutine drive_umat_update( gpn, local_work, uddt, qn1, iout )
-      use main_data, only : matprp, lmtprp, nonlocal_analysis,
+      use main_data, only : nonlocal_analysis,
      &                      extrapolated_du, non_zero_imposed_du
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1,
@@ -3661,7 +3653,7 @@ c
      &           nprops, j, nj, start_loc, n
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, one, half, gp_alpha, ddsddt(6), drplde(6), drpldt,
+     &  zero, one, half, ddsddt(6), drplde(6), drpldt,
      &  big, pnewdt, predef(1), dpred(1), time(2), dtime,
      &  stress(6), stran(6), dstran(6), avg_stress(6),
      &  abq_props(50), temp_n, dtemp,  dstran_upd(6),
@@ -3669,7 +3661,7 @@ c
      &  dfgrd0(9), dfgrd1(9), dfgrd0_array(3,3), dfgrd1_array(3,3),
      &  drot(9), ddsdde(6,6), total_work_n,
      &  gp_coords(mxvl,3), symm_part_ddsdde(21), total_work_np1,
-     &  plastic_work_np1, identity(9), check_key, t5, t6,
+     &  plastic_work_np1, identity(9), check_key, 
      &  temp_0, temp_n_0, s1, s2, ps(3), an(3,3),
      &  unrotated_cauchy(mxvl,6), real_npts,
      &  nonloc_ele_values(nonlocal_shared_state_size),
@@ -4227,7 +4219,7 @@ c
      &                            local_work, uddt_displ, iout )
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
-      use main_data, only : extrapolated_du, non_zero_imposed_du
+      use main_data, only : extrapolated_du
 c
       implicit none
       include 'param_def'
@@ -4243,16 +4235,15 @@ c
 c
 c                       locally defined variables
 c
-      integer :: span, felem, type, order, ngp, nnode, ndof, step,
-     &           iter, now_blk, mat_type, number_points, curve_set,
-     &           hist_size_for_blk, curve_type, elem_type, i
+      integer :: span, felem, type, order, nnode, ndof, step,
+     &           iter, now_blk, mat_type, hist_size_for_blk, i
 c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha,  uddt_temps(mxvl,nstr),
-     &  uddt(mxvl,nstr), cep(mxvl,6,6), weight, dj(128)
+     &  zero, uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
-      logical :: geonl, local_debug, temperatures, segmental,
+      logical :: geonl, local_debug, temperatures,
      &           temperatures_ref, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
@@ -4276,6 +4267,7 @@ c
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut
+      local_debug       = .false.
 c
       if( local_debug ) then
         write(iout,9000) felem, gpn, span
@@ -4383,7 +4375,7 @@ c
       subroutine drive_09_update_a
       implicit none
 c
-      integer :: k, m, i
+      integer :: i
       double precision :: one, two, e, nu, c1, c2, c3, c4
       data one, two / 1.0d00, 2.0d00 /
 c
@@ -4490,11 +4482,10 @@ c
 c
       subroutine drive_10_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp,
-     &                      extrapolated_du, non_zero_imposed_du
+      use main_data, only : imatprp, dmatprp,
+     &                      extrapolated_du
       use segmental_curves, only : max_seg_points
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks,
-     &                            nonlocal_flags, nonlocal_data_n1
+      use elem_block_data, only : nonlocal_flags, nonlocal_data_n1
 c
       implicit none
       include 'param_def'
@@ -4511,13 +4502,13 @@ c
 c
 c                       locally defined variables
 c
-      integer :: ncrystals, iter, span, felem, step, type, order,
+      integer :: iter, span, felem, step, type, order,
      &           nnode, hist_size_for_blk, now_blk,
-     &           i, j, matnum, k, start_loc, m, n, igp
+     &           i, j, matnum, k, igp
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, one, gp_alpha, dtime, uddt_temps(mxvl,nstr),
-     &  uddt(mxvl,nstr), cep(mxvl,6,6), cep_vec(36), tol
+     &  zero, one, dtime, uddt_temps(mxvl,nstr),
+     &  uddt(mxvl,nstr), cep(mxvl,6,6), tol
 c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, check_D, iter_0_extrapolate_off
@@ -4757,7 +4748,7 @@ c     ****************************************************************
      &                         data_offset
       implicit none
 c
-      integer :: i, elnum, ci, osn, cnum, ati, aci, tc, a, b
+      integer :: i, elnum, ci, osn, cnum, ati, aci, tc
       double precision, allocatable :: cp_stiff(:,:,:,:),
      &                                 cp_g_rot(:,:,:,:)
       double precision :: angles(3), totalC(6,6), Cci(6,6), Srot(6,6),
@@ -4977,7 +4968,6 @@ c
 c
       subroutine drive_11_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
-      use main_data, only : matprp, lmtprp
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
 c
@@ -4998,7 +4988,7 @@ c                       locally defined variables
 c
       double precision
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, dtime
+     &  zero, dtime
 c
       logical signal_flag, local_debug, temperatures,
      &        temperatures_ref
@@ -5328,7 +5318,7 @@ c
       double precision :: matrix(6,6), symm_vector(21)
 c
       double precision :: tp(6,6), symm_version(6,6), half
-      integer :: i, j, k, map(6)
+      integer :: i, j, map(6)
       data half / 0.5d00 /
       data map / 1,2,3,4,6,5 /
 c

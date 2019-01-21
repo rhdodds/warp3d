@@ -17,15 +17,22 @@ c
      &                      stream_file, text_file, compressed  )               
       use global_data ! old common.main
       use main_data, only : incmap, incid, cohesive_ele_types                   
-      implicit integer (a-z)                                                    
-      logical stress, oubin, ouasc, flat_file,                                  
-     &        stream_file, text_file, compressed                                
+      implicit none
+c      
+      logical :: stress, oubin, ouasc, flat_file,                                  
+     &           stream_file, text_file, compressed                                
 c                                                                               
 c                local declarations                                             
 c                                                                               
-      logical  bbar_flg, geo_non_flg, long_out_flg, nodpts_flg,                 
-     &         center_output, cohesive_elem, do_average, serial                 
-      integer elem_out_map(mxelmp)                                              
+      logical :: bbar_flg, geo_non_flg, long_out_flg, nodpts_flg,                 
+     &           center_output, cohesive_elem, do_average, serial                 
+      integer  :: i, j, iblk, node, blk, span, felem, elem_type,  
+     &            int_order, mat_type, num_enodes, num_enode_dof,
+     &            totdof, num_short_stress, num_short_strain,
+     &            num_vals, ifelem, snode, count, map, num_int_points,
+     &            output_loc, elem_out_map(mxelmp)      
+      real :: rn_count
+      real, parameter :: zero = 0.0
 c                                                                               
 c                data structure for averaged nodal results. vector              
 c                of derived types. global vector allocated for all              
@@ -147,7 +154,7 @@ c
             nodal_values(snode)%count = 1                                       
             cycle                                                               
          end if                                                                 
-         rn_count = dble(count)                                                 
+         rn_count = real(count)                                                 
          snode_values => nodal_values(snode)%node_values                        
          do j = 1, num_vals                                                     
            map = elem_out_map(j)                                                

@@ -389,7 +389,7 @@ c
 c                                                                               
       integer :: type                                                           
                                                                                 
-      integer :: iok, idummy, iout, dummy, blk, felem, num_enodes,              
+      integer :: iok, blk, felem, num_enodes,              
      &           num_enode_dof, totdof, span, utsz, chksize,
      &           blk_owner, count_msg, nrow_block                      
       logical :: myblk, makeblk, blk_exists
@@ -610,8 +610,6 @@ c
  9310  format('>> FATAL ERROR: estiff_allocate, inconsistent sizes at ',                  
      &  /,   '                block: ',i6,' @ ',i3,' myid: ',i4,
      &  /,   '                job terminated' )                                 
- 9320  format('>> FATAL ERROR: estiff_allocate, missing  ',                  
-     &  /,   '                @ 3 block: ',i6,5x,' job terminated' )                                 
  9400  format('>> FATAL ERROR: estiff_allocate, internal error @ ',i3,  
      & ' myid: ', i4,                
      &  /,   '                job terminated' )                                 

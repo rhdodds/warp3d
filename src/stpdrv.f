@@ -19,7 +19,7 @@ c
       use main_data, only : cnstrn, cnstrn_in, temp_nodmap, temp_nodlod,
      &                      output_packets, run_user_solution_routine,
      &                      output_command_file, max_step_limit,
-     &                      output_step_bitmap_list, stpchk,
+     &                      stpchk,
      &                      user_cnstrn_stp_factors
 c
       use damage_data, only : growth_by_kill, growth_by_release
@@ -157,11 +157,10 @@ c
 c
 c          locals
 c
-      logical :: matchs, sflag_1, sflag_2, here_debug, is_iostat_end,
-     &           output_this_step
+      logical :: matchs, sflag_1, sflag_2, here_debug, is_iostat_end
       logical, external :: ouchk_map_entry
       character(len=80) :: line
-      integer :: read_status, word, bit
+      integer :: read_status
 c
 c          check to see if the user has chosen to use the
 c
@@ -243,10 +242,6 @@ c
  9100 format(
      & /1x, '>>>>> error: while processing file of output commands.',
      & /14x,'only output commands and comment lines allowed.',
-     & /14x,'job terminated...',//)
- 9200 format(
-     & /1x, '>>>>> error: no list of steps exists for output commands',
-     & /14x,'file: ',a80,
      & /14x,'job terminated...',//)
 c
       end subroutine stpdrv_output
@@ -383,8 +378,6 @@ c
      &       /1x,'                   is not defined for loading: ',a8,
      &       /1x,'                   job terminated....')
 
- 9160 format(7x,
-     & '>> computing first element stiffness matrices (@ t=0)')
 c
       end subroutine stpdrv_one_step
 c
@@ -531,7 +524,7 @@ c          current vector, re-allocate to possibly new size and load
 c          updated values from user routine.
 c
       user_cnstrn_stp_factors(now_step) =
-     &    next_step_loading%constraints_multiplier
+     &    real( next_step_loading%constraints_multiplier )
 c
       num_patt = next_step_loading%number_load_patt
       step_load_data(now_step)%num_load_patterns = num_patt

@@ -15,8 +15,7 @@ c
       subroutine store( savnam, savfil, sbflg1, sbflg2 )
       use global_data ! old common.main
 c
-      use elem_block_data, only: nonlocal_flags, nonlocal_data_n1,
-     &                           initial_state_data
+      use elem_block_data, only: nonlocal_flags, nonlocal_data_n1
       use elem_extinct_data
       use node_release_data
       use elem_load_data
@@ -55,7 +54,7 @@ c
       character :: dbname*100
       logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
      &           initial_stresses_exist
-      real :: dumr, rsum
+      real :: dumr
       real, parameter :: rzero = 0.0
       double precision :: dumd
       double precision, parameter :: dzero=0.0d0
@@ -780,7 +779,6 @@ c
       sbflg2= .false.
 c
 c
- 1000 format ( 3x, e16.6 )
  9000 format(15x,'> scalars written...')
  9010 format(15x,'> integer arrays written...')
  9020 format(15x,'> logical & character arrays written...')

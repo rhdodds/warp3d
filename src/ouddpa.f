@@ -126,7 +126,7 @@ c
 c                       flat files: just use double precision
 c                       values
 c
-        sgl_vals(1:nwidth) = edva(1,1:nwidth)
+        sgl_vals(1:nwidth) = sngl( edva(1,1:nwidth) )
         if( patran_file .and. oubin ) write(bnfile) nod,
      &                                sgl_vals(1:nwidth)
         if( patran_file .and. ouasc ) write(fmfile,920) nod,
