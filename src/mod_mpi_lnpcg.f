@@ -11,7 +11,7 @@ c     *     version of lnpcg.                                        *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
+c                ***      DEPRECATED     ****                                       
 c                                                                               
       module mpi_lnpcg                                                          
 c                                                                               
