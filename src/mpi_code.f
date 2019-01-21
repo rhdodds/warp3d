@@ -676,8 +676,6 @@ c
 c
       subroutine die_abort
 c
-      use ifcore
-      call tracebackqq('... warp3d stop ...',1)
       stop
 c
       return
