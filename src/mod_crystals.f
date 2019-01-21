@@ -5,7 +5,7 @@ c     *                       module mm10_defs                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified: 12/20/2016 tjt              *
+c     *                   last modified: 1/12/2019 rhd               *
 c     *                                                              *
 c     *       small module to hold crystal update data structs       *
 c     *       also hold integer indexes into history vector for      *
@@ -15,7 +15,7 @@ c     ****************************************************************
 c
       module mm10_defs
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c              includes all key size limits for WARP3D (e.g. mxvl)
 c
@@ -92,6 +92,13 @@ c
      &                        length_comm_hist(:)
       integer :: num_common_indexes, num_crystal_terms,
      &           one_crystal_hist_size, common_hist_size
+c
+c              sizes to overcome variable declarations of the
+c              form:  vec(6+props%num_hard) which gfortran
+c              seems to not handle. each thread needs private copy
+c
+      integer :: six_plus_num_hard, size_num_hard, size_nslip
+c$OMP THREADPRIVATE( six_plus_num_hard, size_num_hard, size_nslip )
 c
       end module
       

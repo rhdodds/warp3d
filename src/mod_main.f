@@ -47,9 +47,9 @@ c
       integer :: iprops
       real    :: props
       logical :: lprops
-      pointer ( ptr_iprops, iprops(mxelpr,1) ),
-     &        ( ptr_props,  props(mxelpr,1) ),
-     &        ( ptr_lprops, lprops(mxelpr,1) )
+      pointer ( ptr_iprops, iprops(mxelpr,10000000) ),
+     &        ( ptr_props,  props(mxelpr,10000000) ),
+     &        ( ptr_lprops, lprops(mxelpr,10000000) )
 c
 c              --- double precision arrays/vectors ---
 c
