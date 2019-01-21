@@ -184,7 +184,7 @@ c
       iter = 0
       num_lines = 0
       step = 0
-      last_step = 0
+      last_step = -1
 
 c
 c             Binary packet file is probably open. Close it,
