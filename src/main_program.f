@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/1/2018 rhd              *
+c     *                   last modified : 1/22/2019 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -21,13 +21,13 @@ c
       use erflgs
       implicit none
 c
-      integer :: nsn, lsn, idummy, nc, param, path,
-     &           build_number, olddof, chkprm
+      integer :: nsn, lsn, idummy, nc, param, path, lastc,
+     &           build_number, olddof, chkprm, build_sys
       real :: t1, dumr
       real, external :: wcputime
       character :: stcnam*8, dums*8, sdate_*24
       character(len=80) :: name, stflnm, rtflnm
-      character(len=21) :: char_os
+      character(len=30) :: char_os
       character(len=11) :: compile_date
       character(len=8) :: compile_time
       logical :: hilcmd, sbflg1, sbflg2, os_ok
@@ -80,6 +80,12 @@ c
 #ifdef Build
       build_number = Build
 #endif
+
+      build_sys = 1  ! Intel Fortran
+#ifdef gfortran
+      build_sys = 0
+#endif
+
 c
       os_ok = windows_os .or. linux_os .or. osx_os
       if( .not. os_ok ) then
@@ -88,11 +94,14 @@ c
          call die_abort
       end if
 c
-      char_os = ' '
+      char_os = ' '            !   123456789012345678901234567890
       if( windows_os ) char_os = 'Windows 64-bit'
       if( linux_os )   char_os = 'Linux 64-bit'
       if( osx_os )     char_os = 'OSX 64-bit'
-
+      lastc = len_trim( char_os ) + 1
+      if( build_sys == 0 ) char_os(lastc:) = ' (gfortran)'
+      if( build_sys == 1 ) char_os(lastc:) = ' (Intel Fortran)'
+c
       write (*,9000) char_os, build_number, compile_date,
      &               compile_time, sdate_ 
 c
@@ -981,7 +990,7 @@ c
 c                       output timings. end execution.
 c
  9999 continue
-      call warp3d_normal_stop
+      call warp3d_normal_stop 
 c
  9000 format('    ********************************************',
      &       '***********************',/,
@@ -1007,8 +1016,8 @@ c
      &     '   33333  DDDD    **',/,
      &     '    **                                             ',
      &     '                  **',/,
-     &     '    **     ',a21,'      -rel-    Release: ',
-     &     ' 17.9.4      **',/,
+     &     '    **     ',a30,' -rel-    Release: ',
+     &     ' 17.9.4  **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
