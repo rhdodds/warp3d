@@ -4,7 +4,7 @@ c     *                      subroutine oustpa                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/30/2017 rhd              *
+c     *                   last modified : 1/31/2019 rhd              *
 c     *                                                              *
 c     *     output stress or strain nodal results to (1) patran file *
 c     *     in either binary or formatted forms, or (2) flat file    *
@@ -148,7 +148,8 @@ c
       if( text_file ) then
         quantity = 1
         if( stress ) quantity = 2
-        call ouddpa_flat_header( 2, quantity, flat_file_number )
+        call ouddpa_flat_header( 2, quantity, flat_file_number,
+     &                           num_vals, '(30e15.6)' )
       end if
 c
       if( use_mpi .and. numprocs .gt.1 ) then

@@ -4,7 +4,7 @@ c     *                      subroutine ouddpa                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/11/2017 (rhd)            *
+c     *                   last modified : 1/31/2019 rhd              *
 c     *                                                              *
 c     *     write nodal displacements, velocities, accelerations,    *
 c     *     reactions, temperatures to (1) patran file in            *
@@ -72,7 +72,8 @@ c                        write info at head of file
 c
       if( patran_file ) call ouddpa_patran_header
       if( flat_file .and. text_file )
-     &   call ouddpa_flat_header( 1, dva, flat_file_number )
+     &   call ouddpa_flat_header( 1, dva, flat_file_number, 3,
+     &                            '(3e15.6)' )
 c
 c                       loop over the all nodes & write records
 c
@@ -231,18 +232,20 @@ c     *             subroutine ouddpa_flat_header                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/16/2014 (rhd)            *
+c     *                   last modified : 1/31/2019 rhd              *
 c     *                                                              *
 c     *     Write header lines for flat text files                   *
 c     *                                                              *
 c     ****************************************************************
 
       subroutine ouddpa_flat_header( type, quantity,
-     &                               flat_file_number )
+     &                               flat_file_number, num_values,
+     &                               format_string )
       use global_data ! old common.main
       implicit none
 
-      integer :: type, quantity, flat_file_number
+      integer :: type, quantity, flat_file_number, num_values
+      character(len=*) :: format_string
 c
 c                       local declarations
 c
@@ -275,12 +278,14 @@ c
         write(flat_file_number,9010) vector_types(quantity)
       end if
       if( type .eq. 2 ) then
-        write(flat_file_number,9010) tensor_types(quantity)
+        write(flat_file_number,9011) tensor_types(quantity),
+     &                               num_values, format_string
       end if
       if( type .eq. 3 ) then
-        write(flat_file_number,9012) tensor_types(quantity)
+        write(flat_file_number,9012) tensor_types(quantity),
+     &                               num_values, format_string
       end if
-      if( type .eq. 4 ) then
+      if( type .eq. 4 ) then 
         write(flat_file_number,9014) scalar_types(quantity)
       end if
       write(flat_file_number,9020) stname
@@ -293,8 +298,11 @@ c
       return
 c
  9000 format('#')
- 9010 format('#  WARP3D nodal results: ',a15)
- 9012 format('#  WARP3D element results: ',a15)
+ 9010 format('#  WARP3D nodal results: ',a15 )
+ 9011 format('#  WARP3D nodal results: ',a15, ' no. data cols: ', i3,
+     &        ' format: ',a)
+ 9012 format('#  WARP3D element results: ',a15, ' no. data cols: ', i3,
+     &        ' format: ',a)
  9014 format('#  WARP3D element results: ',a15)
  9020 format('#  Structure name: ',a8 )
  9030 format('#  Model nodes, elements: ',2i8)

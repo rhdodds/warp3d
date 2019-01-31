@@ -4,7 +4,7 @@ c     *                      subroutine oust_elem                    *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 2/10/2017 rhd              *
+c     *                   last modified : 1/31/2019 rhd              *
 c     *                                                              *
 c     *     output element (center) stress or strain results         *
 c     *     to (1) patran file in either binary or formatted forms   *
@@ -90,7 +90,8 @@ c
         if( flat_file .and. text_file ) then
           quantity = 1
           if( stress ) quantity = 2
-          call ouddpa_flat_header( 3, quantity, fileno )
+          call ouddpa_flat_header( 3, quantity, fileno, num_vals,
+     &                             '(30e15.6)' )
         end if
 c
         if( use_mpi .and. flat_file ) then
