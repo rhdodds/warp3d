@@ -3944,7 +3944,7 @@ c
 c
 c
   nonlinear analysis parameters
-   solution technique direct cluster
+   solution technique cluster $ direct sparse
    adaptive solution on
    maximum iterations 5
    convergence test norm res tol 0.005
