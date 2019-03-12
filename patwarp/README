@@ -1,5 +1,5 @@
-Updated August 2018
-===================
+Updated March 2019
+==================
 
 
 Patwarp directory
@@ -9,9 +9,10 @@ In this directory are the source code and compile scripts (bash
 for Linux and OSX, .bat for Windows) for the patwarp program.
 
 The patwarp program converts patran neutral files into WARP3D input
-files. On Linux with MPI execution
-it also uses the METIS subroutine library to partition
-a mesh for efficient parallel computation.
+files. 
+
+On Linux with MPI execution it also uses the METIS subroutine 
+library to partition a mesh for efficient parallel computation.
 
 Files in this directory are:
 
@@ -21,18 +22,17 @@ patwarp_module.f  -- Fortran module for the patwarp source
 
 compile_patwarp_osx -- script that compiles patwarp for OS X
 
-compile_patwarp_linux64 -- script that compiles patwarp for
-                           64-bit Linux
-
+compile_patwarp_linux -- script that compiles patwarp for Linux (64-bit)
+                         
 patwarp.f -- patwarp source for Linux platforms
 
-compile_patwarp_windows.bat --compile script Windows XP/Vista/Windows 7
+compile_patwarp_windows.bat --compile script Windows W10
 
 patwarp_windows_mac.f -- patwarp source for Windows and Mac OS X
                          platforms.
 NOTE: Windows and OS X versions of patwarp do not permit
       mesh partitioning for MPI-based parallel execution,
-       because metis requires a C compiler on PC.
+      because metis requires a C compiler on PC.
 
 metis-4.0 -- version 4.0 of the metis library.  METIS requires a C
              compiler, thus is not used on PC or OS X platforms.
@@ -44,6 +44,8 @@ Note:
 
   Building patwarp on Windows PCs and OS X requires the Intel
   Fortran compiler (any version).
+
+  The script could be changed to use gfortran on all platforms.
 
 Running patwarp
 ---------------
@@ -64,7 +66,7 @@ into domains if requested for MPI-based parallel exectution.
 The METIS software is freely distributable; see details
 in the metis-4.0 directory. Patwarp enables output of patran element
 results files which indicate processor partitioning and blocking.
-This function is not supported on Windows and OS X platforms, where
+This function is not supported on Windows and OSX platforms, where
 METIS is untested and requires a separate C compiler.
 
 More information about running patwarp can be found in the Appendix to
