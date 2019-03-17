@@ -11,12 +11,24 @@ fi
 cd $WARP3D_HOME
 
 
-file_1="https://www.dropbox.com/s/le4sbt3yltevwc8/warp3d_external_libs.tar.gz?dl=0"
+file_1="https://www.dropbox.com/s/ij2fcutmbadhm7g/warp3d_external_libs_2019.tar.gz?dl=0"
 
-#wget http://warp3d.googlecode.com/files/warp_external_libs.tar.gz $file_1
-wget --no-check-certificate -O warp_external_libs.tar.gz $file_1
-tar xvzf warp_external_libs.tar.gz
-cp -a ./warp3d_external_libs/include ./linux_packages/
-cp -a ./warp3d_external_libs/lib ./linux_packages/
-#
-/bin/rm -r ./warp3d_external_libs
+wget --no-check-certificate -O warp3d_external_libs_2019.tar.gz $file_1
+
+tar xvzf warp3d_external_libs_2019.tar.gz
+
+mkdir ./linux_packages >& /dev/null
+
+cd warp3d_external_libs_2019
+cp -a include $WARP3D_HOME/linux_packages/
+cp -a lib $WARP3D_HOME/linux_packages/
+cp -a OSX_MKL_files $WARP3D_HOME
+
+cd $WARP3D_HOME
+
+/bin/rm -r ./warp3d_external_libs_2019
+/bin/rm -r ./warp3d_external_libs_2019.tar.gz
+
+exit
+
+
