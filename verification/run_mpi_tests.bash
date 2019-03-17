@@ -7,6 +7,8 @@ test3
 test4
 test5
 test6
+test7
+test8
 }
 
 function test1 {
@@ -92,9 +94,9 @@ if [ "${machine:0:5}" != 'Linux' ]; then
 fi
 
 # Make sure our run script exists
-name="$WARP3D_HOME/warp3d_script_linux_hybrid"
+name="$WARP3D_HOME/warp3d_script_linux_Intel_hybrid"
 if [ ! -f "$name" ]; then
-      printf "\n>> Expecting to find a script warp3d_script_linux_hybrid that runs the\n"
+      printf "\n>> Expecting to find a script warp3d_script_linux_Intel_hybrid that runs the\n"
       printf   "   MPI+OpenMP version of WARP3D.\n"
       printf   "   Exiting...\n"
       exit 1

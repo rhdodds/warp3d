@@ -181,7 +181,7 @@ function set_platform {
 #
 if [ "${machine:0:6}" = 'Darwin' ]; then
     printf " ---->>> this machine is OSX...\n"
-    name="$WARP3D_HOME/warp3d_script_mac_os_x"
+    name="$WARP3D_HOME/warp3d_script_mac_os_x_intel"
     if [ ! -f "$name" ]
      then
        printf "\n>> Expecting to find a warp3d_script_mac_os_x file that runs WARP3D\n"
@@ -206,13 +206,14 @@ fi
 #
 if [ "${machine:0:5}" = 'Linux' ]; then
     printf " --->>> this machine is Linux...\n"
-    name="$WARP3D_HOME/warp3d_script_linux_openmp"
+    name="$WARP3D_HOME/warp3d_script_linux_Intel_openmp"
     if [ ! -f "$name" ]
      then
-       printf "\n>> Expecting to find a warp3d_script_linux_openmp file that runs WARP3D\n"
-       printf   "   Linux version of WARP3D, and that takes 1 parameter to set\n"
+       printf "\n>> Expecting to find the bash shell script:\n"
+       printf   "   warp3d_script_linux_Intel_openmp in WARP3D_HOME directory.\n"
+       printf   "   Script takes 1 parameter to set\n"
        printf   "   the number of threads for execution...\n"
-       printf   ">> File name: "
+       printf   ">> File name(full path): "
        read name
        if [ ! -f "$name" ]
          then
