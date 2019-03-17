@@ -88,10 +88,6 @@ echo "  ... running $input ..."
 input="test_69_PPR_patch_shear"
 echo "  ... running $input ..."
 "$warp3d_exe" $num_threads  < $input > $input$out
-#
-input="test_69_PPR_particle"
-echo "  ... running $input (a bit longer solution, particle-matrix debonding) ..."
-"$warp3d_exe" $num_threads  < $input > $input$out
 
 #
 echo "  ... WARP3D jobs completed..."
@@ -110,7 +106,6 @@ perl check_69_compression_b.perl
 perl check_69_compression_c.perl
 perl check_69_PPR_patch_uniaxial.perl
 perl check_69_PPR_patch_shear.perl
-perl check_69_PPR_particle.perl
 #
 cleanup_files
 #
