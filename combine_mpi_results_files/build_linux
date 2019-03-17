@@ -32,7 +32,7 @@ ifort $ftrap -ip -ftz -qopenmp -traceback combine_mpi*.o -o z
 #
 /bin/rm -f *.mod
 /bin/rm -r combine_mpi*.o 
-cd ../run_linux_em64t
+cd ../run_linux
 /bin/rm -f combine_mpi_results.go &> /dev/null
 mv ../combine_mpi_results_files/z ./combine_mpi_results.go
 chmod ugo+rwx combine_mpi_results.go
