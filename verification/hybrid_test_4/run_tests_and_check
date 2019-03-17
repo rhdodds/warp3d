@@ -36,10 +36,10 @@ echo "  ... running MPI + combine partial results files ..."
 echo "  ... WARP3D job completed ..."
 #
 echo "  ... Running combine MPI results ..."
-combiner="$WARP3D_HOME/run_linux_em64t/combine_mpi_results.go"
+combiner="$WARP3D_HOME/run_linux/combine_mpi_results.go"
 if [ ! -f "$combiner" ]; then
       printf "\n>> Expecting to find the MPI combine program executable\n"
-      printf   "   in the run_linux_em64t directory.\n"
+      printf   "   in the run_linux directory.\n"
       printf   "   Exiting...\n"
       exit 1
 fi
