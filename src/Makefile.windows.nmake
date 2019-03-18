@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: September 5, 2018 RHD
+#   Last modifications: 2/2/2019 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -9,7 +9,7 @@
 #    Makewarp.bat or Makewarp_jom.bat (which sets the 64-bit
 #    mode for use here)
 #
-#    Tested with Intel Fortran 17.0.2 and included MKL
+#    Tested with Intel Fortran 19.0.1 and included MKL
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
@@ -41,7 +41,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 3500
+BUILDNUM = 3800
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows_64
@@ -135,6 +135,7 @@ OBJ =	 \
 	$(OD)/dielem_c$O	 \
 	$(OD)/drive_assemble_solve$O	 \
 	$(OD)/drive_pardiso$O	 \
+	$(OD)/drive_pardiso_asym$O	 \
 	$(OD)/diexp4$O	 \
 	$(OD)/dptstf$O	 \
 	$(OD)/drive_eps_sig_internal_forces$O	 \
@@ -477,6 +478,10 @@ $(OD)/drive_assemble_solve$O : drive_assemble_solve.f param_def \
 $(OD)/drive_pardiso$O : drive_pardiso.f
 	$(F90) /O3 /Qip  /c drive_pardiso.f
 	$(MVC) drive_pardiso$O $@
+	
+$(OD)/drive_pardiso_asym$O : drive_pardiso_asym.f
+	$(F90) /O3 /Qip  /c drive_pardiso_asym.f
+	$(MVC) drive_pardiso_asym$O $@
 
 $(OD)/distributed_assembly$O : distributed_assembly.f \
                                  $(OD)/mod_local_stiffness$O  \
@@ -1219,7 +1224,7 @@ $(OD)/reopen$O : reopen.f param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
                  $(OD)/mod_main$O $(OD)/mod_mpc$O $(OD)/distributed_assembly$O\
                  $(OD)/mod_contact$O  \
                  $(OD)/mod_segmental_curves$O $(OD)/mod_crystals$O
-	$(F90) /O3 /Qip  /c reopen.f
+	$(F90)  /$(PRE) /D$(OSNAME) /O3 /Qip  /c reopen.f
 	$(MVC) reopen$O $@
 
 $(OD)/rknifv$O : rknifv.f $(OD)/mod_main$O \
@@ -1313,7 +1318,7 @@ $(OD)/store$O : store.f param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
                    $(OD)/mod_main$O $(OD)/distributed_assembly$O \
                    $(OD)/mod_hypre$O \
                    $(OD)/mod_segmental_curves$O $(OD)/mod_mpc$O
-	$(F90) /O3 /Qip  /c store.f
+	$(F90) /$(PRE) /D$(OSNAME) /O3 /Qip  /c store.f
 	$(MVC) store$O $@
 
 $(OD)/store_ifv$O : store_ifv.f $(OD)/mod_crack_growth$O \

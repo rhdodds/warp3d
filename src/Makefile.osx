@@ -5,27 +5,39 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 9-5/2018 RHD
+#   Last modifications: 1/22/2019 rhd
+#
+#   How to run:
+#
+#       make BUILD_SYS=gfortran  -f Makefile.osx
+#
+#       make BUILD_SYS=Intel_Composer -f Makefile.osx
 #
 #   Description:
 #
 #     Build OMP version of WARP3D (64-bit) running on
 #     Mac OS X, Intel 64-bit processors.
 #
+#     Build with either gfortran or Intel Composer Fortran.
+#     Link with the (free) Intel MKL library to access the PARDISO
+#     solver and LAPACK/BLAS routines
 #
-#     See README for Mac OS X for description of req'd compilers that
-#     must be installed.
+#     Build tested with gfortran version 8.1.0 and MKL 19.1.0
+#     on OSX 10.3.5 (High Sierra)
 #
 #
 #     Notes
 #
-#       1. We specify the -xHost  -align array64byte ifort options.
+#       1. By default, we specify here -march=native for gfortran and
+#          -xHOST Intel Composer Fortran.
 #
-#       2. The compiler will generate code for the highest level
+#          The compiler will generate code for the highest level
 #          instruction set available in your processor(s).
 #
-#       3. WARP3D code ** requires ** that your processor support the
+#       2. The distributed executables for WARP3D ** requires ** 
+#          that your processor support the
 #          AVX instruction set as a minimum.
+#          Set MACHINE_TYPE below to MINIMUM_MACHINE_TYPE 
 #
 #          These processors became available in early 2011 and include:
 #             2nd Generation Intel® Core™ i7 Processors
@@ -35,10 +47,10 @@
 #             Intel® Xeon® Processor E3 Family
 #             + all newer processors
 #
-#           During he next year, we plan to require processors
+#           During the next year, we plan to require processors
 #           that support the AVX2 instruction set.
 #
-#       4. We build a static executable including MKL and threads
+#       3. We build a static executable including MKL and threads
 #          support libraries.
 #
 #
@@ -46,10 +58,17 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3500
+BUILDNUM := 3800
 #
-ODIR = ././../obj_mac_os_x
-EXE_NAME = warp3d.omp
+ifeq  ($(BUILD_SYS), gfortran)
+  ODIR = ././../obj_mac_os_x_gfortran
+  EXE_NAME = warp3d_gfortran.omp
+  BUILD_FLAG := -Dgfortran
+else
+  ODIR = ././../obj_mac_os_x_intel
+  EXE_NAME = warp3d.omp
+  BUILD_FLAG := 
+endif
 #
 #                Define extension for relocatable object code files,
 #                macros for the remove command and the move command.
@@ -59,39 +78,64 @@ OD       = $(ODIR)
 RMC      = rm -f
 MVC      = mv -f
 #
-#              Common options other than used here:
-#                      FTRAP = -ftrapuv -check uninit
-#                     INLINE = -inline-level=0
-#                    PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
-#              ==> we use the simplest (static) linking method for MKL
+ifeq  ($(BUILD_SYS), gfortran) #   gfortran options
+  COMPILER = gfortran
+  OPENMP   =  
+  FTRAP    = 
+  FTRAP    = -ffpe-trap=zero,overflow -ffpe-summary=none
+  OPT_REPORT = 
+  OPT_REPORT =
+  INLINE   = 
+  INLINE   = -finline-small-functions  #   might be able to remove this restriction
+  PROFILE  = -pg
+  PROFILE  =
+  CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
+  CHECKFLOAT =
+  MINIMUM_MACHINE_TYPE  = -march=sandybridge
+  DEFAULT_MACHINE_TYPE  = -march=native
+  MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
+  FCOPTS   =  -O3 $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form  \
+              -fcray-pointer -fopenmp  \
+             -fdec -cpp $(FTRAP) $(INLINE) -J$(ODIR) 
+  OSX_LIBDIR = ../OSX_MKL_files
+  LINKOPS1  = -static-libgfortran  -Wl,-rpath,${OSX_LIBDIR}/libiomp5.a \
+              ${OSX_LIBDIR}/libmkl_intel_lp64.a \
+              ${OSX_LIBDIR}/libmkl_intel_thread.a \
+              ${OSX_LIBDIR}/libmkl_core.a \
+               ${OSX_LIBDIR}/libiomp5.a -lpthread -lm -ldl
+  LINKOPS   = $(LINKOPS1)
+else  #  Intel Composer options
+  COMPILER = ifort 
+  OPENMP   = -qopenmp -reentrancy -mkl=parallel -static-intel \
+             -qopenmp-link=static
+  FTRAP    =
+  OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
+  OPT_REPORT =
+  INLINE   = -inline-level=0
+  INLINE   = -no-inline-factor
+  PROFILE  = -pg
+  PROFILE  =
+  CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
+  CHECKFLOAT =
+  MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
+  DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte  -qopt-zmm-usage=high
+  MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
+  FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
+              $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
+              $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
+endif
 #
-COMPILER = ifort 
-OPENMP   = -qopenmp -reentrancy -mkl=parallel -static-intel -qopenmp-link=static
-FTRAP    =
-OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
-OPT_REPORT =
-INLINE   = -inline-level=0
-INLINE   = -no-inline-factor
-PROFILE  = -pg
-PROFILE  =
-CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
-CHECKFLOAT =
-MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
-DEFAULT_MACHINE_TYPE  = -xAVX2  -align array64byte
-DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
 #
-FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) $(OPT_REPORT)  \
-            -module $(ODIR) -ftz  $(MACHINE_TYPE)  $(FTRAP) $(INLINE) $(OPENMP) \
-            $(CHECKFLOAT)
 FOR      = $(COMPILER) $(FCOPTS)
 LINK     = $(COMPILER) $(FCOPTS)
-
 #
-#                all system level module files that appear as separate *.f in WARP3D
-#                => does not include the user routine module .f for Abaqus
-#                    compatible routines
+#
+#               all system level module files that appear as separate *.f
+#               in WARP3D
+#               => does not include the user routine module .f for Abaqus
+#                  compatible routines. see it later down in this file.
+#
 #
 MODS     := $(OD)/mod_adaptive_steps.o \
 			$(OD)/mod_contact.o       \
@@ -183,6 +227,7 @@ OBJ =	 \
 	$(OD)/drive_eps_sig_internal_forces.o	 \
 	$(OD)/drive_assemble_solve.o	 \
 	$(OD)/drive_pardiso.o	 \
+	$(OD)/drive_pardiso_asym.o	 \
 	$(OD)/dupmas.o	 \
 	$(OD)/dupstr.o	 \
 	$(OD)/elmas1.o	 \
@@ -350,7 +395,7 @@ OBJ =	 \
 	$(OD)/zero_vol.o
 #
 $(EXE_NAME) : $(OBJ)           # target is warp3d executable
-	$(LINK) $(OBJ) -o $@
+	$(LINK) $(OBJ) -o $@  $(LINKOPS)
 	$(MVC) $@ ./../run_mac_os_x/$@
 	chmod ugo+rx  ./../run_mac_os_x/$@
 #
@@ -358,7 +403,8 @@ $(EXE_NAME) : $(OBJ)           # target is warp3d executable
 #            ===============================
 #
 #            => for simplicity we assume all the *.f depend on all
-#               modules, includes, param_def
+#               modules, includes, param_def. causes the circular
+#               dependency warnings.
 #
 $(OD)/%.o : %.f $(MODS) $(INCLUDES)
 	$(RMC)  $@
@@ -368,41 +414,72 @@ $(OD)/%.o : %.f $(MODS) $(INCLUDES)
 #       ---  main_program.f gets special ifort options ------
 #            =========================================
 #
+#
 $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
-	$(FOR) -D$(OSNAME) -DBuild=$(BUILDNUM) -fpp  $< -c -o $@
+	$(FOR) -D$(OSNAME) -DBuild=$(BUILDNUM) $(BUILD_FLAG)  $< -c -o $@
 #
 #       ---  any .f files that require non-std compile options ------
 #            =================================================
 #
-$(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
+ifneq  ($(BUILD_SYS), gfortran)
+    $(OD)/mm10_b$O : mm10_b.f  $(MODS) $(INCLUDES) 
 	$(RMC)  $@
-	$(FOR) -inline-level=1  $< -c -o $@
+	$(FOR) -inline-level=1  $< -c -o $@  # ifort has inline bug - ugh!
+endif
+
 #
 #       ---  Abaqus compatible user routines. Listed explicitly for clarity ------
 #            ==============================================================
 #
-$(ODIR)/user_routines_module$O : user_routines_module.f
+ifeq ($(BUILD_SYS), gfortran) # gfortran
+  $(ODIR)/user_routines_module$O : user_routines_module.f
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
 
-$(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
+  $(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
+	$(RMC)  $@
+	$(FOR)  -fno-inline  $< -c -o $@
+
+  $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
+                                     $(OD)/user_routines_module$O
+	$(RMC)  $@
+	$(FOR)  $< -c -o $@
+
+  $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
+                               $(OD)/user_routines_module$O
+	$(RMC)  $@
+	$(FOR)  $< -c -o $@
+
+  $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
+                                $(OD)/user_routines_module$O
+	$(RMC)  $@
+	$(FOR)  $< -c -o $@
+else  # Intel Composer
+  $(ODIR)/user_routines_module$O : user_routines_module.f
+	$(RMC)  $@
+	$(FOR)  $< -c -o $@
+
+  $(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR)  -inline-level=1  $< -c -o $@
 
-$(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
+  $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
                                      $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR) -heap-arrays $< -c -o $@
 
-$(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
+  $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
                                $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR) -heap-arrays  $< -c -o $@
 
-$(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
+  $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
                                 $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
+endif
+#
+#
 #
 #    ------   system level module files ----------------
 #             =========================

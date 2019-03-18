@@ -1,22 +1,156 @@
 #!/bin/bash
-
-# *****************************************************************************
 #
-#     Makewarp.bash (third version)
+#     Makewarp.bash (4th version)
 #
-#     modified: Dec 2016 RHD
+#     modified: Jan 2019 RHD
 #
 #     Description:
+#
 #           Bash script to interactively drive compilation of Linux and Mac
-#           versions of WARP3D.  For Windows, prints message and quits,
-#           for Mac, does not allow customization, just hunts down the MKL
-#           files, checks intel compilers, and compiles openmp version.  For
+#           versions of WARP3D.  For Windows, we print message and quit.
+#           Run in a Bash shell:  Makewarp.bash
+#
+#           Mac: only user selectable option is to use gfortran or Intel Fortran.
+#                script hunts down the MKL files, checks for versions
+#                of gfortran or Intel compilers, and runs the makefile
+#                to build the threads (OpenMP) executable.
+#
+#           Linux: .....  For
 #           Linux can either do that (simple mode) or prompt interactively for
 #           the libraries, compiler, etc.
 #
-# *****************************************************************************
+#           Jan 2019. Now supports gfortran and Intel Fortran.
+#                     Uses (free) MKL library from Intel
+#
+#
+#      Main program (function) at bottom of this script
+#
+# ****************************************************************************
+#
+#   Function: select Fortran compile to build WARP3D
+#
+# ****************************************************************************
 
+function select_Fortran_compiler
+{
+printf "\nSelect build compiler to use:\n"
+PS3="Select choice: "
+select opt in 'gfortran' 'Intel Fortran' 'Exit'
+do
+      case $REPLY in
+            1 )   printf "\n"
+                  GFORTRAN=yes
+                  INTEL_FORTRAN=no
+                  break
+                  ;;
+            2 )   printf "\n"
+                  GFORTRAN=no
+                  INTEL_FORTRAN=yes
+                  break
+                  ;;
+            3 )   exit 0
+                  ;;
+      esac
+done
+#
+return
+}
 
+# ****************************************************************************
+#
+#   Function: Check Intel Fortran compiler exists & version
+#
+# ****************************************************************************
+#
+function check_Intel_Fortran_setup
+{
+if [ "$INTEL_FORTRAN" = "no" ]; then
+ return
+fi
+#
+hash ifort 2>&- || {
+printf "[ERROR]\n"
+printf "... Cannot find the Intel Fortran compiler (ifort) in your PATH.\n"
+printf "... See Intel Fortran install documentation. Most often a line of\n"
+printf "... the form: source /opt/intel/compilers_and_libraries/... intel64 is placed\n"
+printf "... in the /etc/bashrc our your ~/.bashrc file.\n"
+printf "Quitting...\n\n"
+exit 1
+}
+version=$(echo `ifort --version` | cut -c 15-16)
+if [ "$version" -lt "18" ]; then
+    printf "\n... ERROR: ifort must be version 18 or newer"
+    echo -e  "\n...        you have version: " $version
+    printf "...        from:  ifort --version"
+    printf "\n... Quitting...\n\n"
+    exit 1
+fi
+if [ -z "$MKLROOT" ]; then
+    printf "[ERROR]\n"
+    printf "... Environment variable MKLROOT is not set.\n"
+    printf "... See Intel Fortran install documentation. Most often a line of\n"
+    printf "... the form: source /opt/intel/compilers_and_libraries/... intel64 is placed \n"
+    printf "... in the /etc/bashrc our your ~/.bashrc file.\n"
+    printf "Quitting...\n"
+    exit 1
+ fi
+#
+#         The MKL libraries must be accesible.
+#
+if [ ! -d "$MKLROOT/lib" ]; then
+    printf "[ERROR]\n"
+    printf "... Directory MKLROOT/lib does not exist.\n"
+    printf "Quitting...\n\n"
+    exit 1
+fi
+#
+# Fortran libraries must be accessible for our makefile to function properly.
+# We have to use a small kludge by locating them from the MKL directory. Intel
+# does not provide an environment variable to locate them.
+#
+if [ ! -d $MKLROOT/../compiler/lib/intel64 ]; then
+    printf "[ERROR]\n"
+    printf "... Could not find the Intel Fortran library directory.\n"
+    printf "... by examining $MKLROOT/../compiler/lib/intel64\n"
+    printf "Quitting...\n\n"
+    exit 1
+fi
+#
+return
+}
+
+# ****************************************************************************
+#
+#   Function: Check gfortran exists and version 
+#
+# ****************************************************************************
+#
+function check_gfortran_setup
+{
+if [ "$GFORTRAN" = "no" ]; then
+    return
+fi
+#
+hash gfortran 2>&- || {
+  printf "[ERROR]\n"
+  printf "... Cannot find the gfortran compiler in your PATH.\n"
+  printf "Quitting...\n\n"
+  exit 1
+}
+#
+version=$(echo `gfortran --version` | cut -c 18-19)
+#
+if [ "$version" -lt "7" ]; then
+      printf "\n... ERROR: gfortran must be version 7 or newer"
+      echo -e  "\n...        you have version: " $version
+      printf "...        from:  gfortran --version"
+      printf "\n... Quitting...\n\n"
+      exit 1
+fi
+#
+return
+#
+}
 # ****************************************************************************
 #
 #   Function: Install MPI code
@@ -141,40 +275,62 @@ function linux_main
 #
 # These are common defaults for hybrid and openmp
 #
-      HYPRE_ROOT=$WARP3D_HOME/linux_packages
-
-      MKLQ=yes
+HYPRE_ROOT=$WARP3D_HOME/linux_packages
+INTEL_FORTRAN=no
+GFORTRAN=no
+MKLQ=yes
 #
 # Branch on mpi/openmp
 #
-      printf "Compile OpenMP-only version or hybrid (MPI/OpenMP) version?\n"
-      PS3="Select choice: "
-      LIST="OpenMP Hybrid Exit"
-      select OPT in $LIST
-      do
-            case $OPT in
-                  "Hybrid")
-                        printf "\n"
-                        COMPILER=mpiifort
-                        ALTCOMPILER=mpiifort
-                        MAKEFILE=Makefile.linux_em64t.mpi_omp
-                        MPIQ=yes
-                        break
-                        ;;
-                  "OpenMP")
-                        printf "\n"
-                        COMPILER=ifort
-                        ALTCOMPILER=ifort
-                        MAKEFILE=Makefile.linux_em64t.omp
-                        MPIQ=no
-                        break
-                        ;;
-                  "Exit")
-                        printf "\n"
-                        exit 0
-                        ;;
-            esac
-      done
+printf "Compile OpenMP-only version or hybrid (MPI/OpenMP) version?\n"
+PS3="Select choice: "
+LIST="OpenMP Hybrid Exit"
+select OPT in $LIST
+do
+      case $OPT in
+            "Hybrid")
+                  printf "\n"
+                  COMPILER=mpiifort
+                  ALTCOMPILER=mpiifort
+                  MAKEFILE=Makefile.linux_Intel.mpi_omp
+                  INTEL_FORTRAN=yes
+                  MPIQ=yes
+                  break
+                  ;;
+            "OpenMP")
+                  printf "\n"
+                  COMPILER=ifort    # default
+                  ALTCOMPILER=ifort
+                  MAKEFILE=Makefile.linux_Intel.omp
+                  MPIQ=no
+                  break
+                  ;;
+            "Exit")
+                  printf "\n"
+                  exit 0
+                  ;;
+          esac
+done
+#
+if [ $OPT = "OpenMP" ]; then
+  select_Fortran_compiler
+  if [ $GFORTRAN = "yes" ]; then
+     COMPILER=gfortran
+     ALTCOMPILER=gfortran
+     MAKEFILE=Makefile.linux_gfortran.omp
+  fi
+fi      
+check_Intel_Fortran_setup
+check_gfortran_setup
+#
+# handle gfortran separately since only OpenMP available.
+#
+if [ $GFORTRAN = "yes" ]; then
+    compile_linux_gfortran_OpenMP
+    return
+fi      
+#
+# Intel Fortran for build OpenMP or MPI + OpenMP.
 #
 # Branch on whether we want simple or interactive mode
 #
@@ -204,8 +360,8 @@ function linux_main
                         ;;
             esac
       done
+return      
 }
-
 # ****************************************************************************
 #
 #     Function:   Prints a help message for the linux compiles
@@ -224,7 +380,7 @@ function linux_help
       printf "2) Advanced\n"
       printf "3) Help\n"
       printf "4) Exit\n"
-
+return
 }
 
 # ****************************************************************************
@@ -257,21 +413,6 @@ function linux_simple
       else
             HYPQ=no
       fi
-#
-#   Intel Fortran Composer XE system must be installed  
-#
-      hash ifort 2>&- || {
-            printf "[ERROR]\n"
-            printf "[ERROR]\n"
-            printf "... Cannot find the Intel Fortran compiler (ifort) in your PATH.\n"
-            printf "... See Intel Fortran install documentation. Most often a line of\n"
-            printf "... the form: source /opt/intel/composerxe/... is placed\n"
-            printf "... in the /etc/bash.bashrc file on your system or in your \n"
-            printf "... ~/.bashrc file\n"
-            printf "Quitting...\n\n"
-            exit 1
-      }
-
 #
 # Test existence of mpi compiler if required
 #
@@ -332,7 +473,52 @@ function linux_advanced
             [ -n "$OPT" ] && HYPRE_ROOT=$OPT
             printf "\n"
       fi
+}
 
+# ****************************************************************************
+#
+#     Function:   Compile WARP3D for linux using gfortran (OpenMP)
+#
+# ****************************************************************************
+
+function compile_linux_gfortran_OpenMP
+{
+#
+# Start by going through the packages and installing them if required
+#
+printf "... Building OpenMP Linux w/ grfortran ...\n"
+uninstall_mpi
+uninstall_hypre
+#
+# Setup the directory structure if required
+#
+if [ ! -d ../run_linux ]; then
+    mkdir ../run_linux
+    printf ">> Making run_linux directory...\n"
+fi
+if [ ! -d ../obj_linux_gfortran_omp ]; then
+    mkdir ../obj_linux_gfortran_omp
+    printf ">> Making obj_linux_gfortran_omp directory...\n"
+fi
+#
+#   prompt the user for the number of concurrent compile processes to use
+#
+printf " \n"
+read -p " > Number of concurrent compile processes allowed? (default 1): " JCOMP
+   [ -z "$JCOMP" ] && JCOMP=1
+#
+#   touch main program so it will always be re-compiled (will include compile
+#   date & time in warp3d hearder block)
+#
+touch main_program.f  
+#
+#   run the makefile for Linux. we now pass more parameters to the makefile
+#
+printf "... Starting make program for Linux  OpenMP w/ gfortran.... \n\n"
+echo "makefile: " $MAKEFILE
+make -j $JCOMP -f $MAKEFILE 
+#
+return
 }
 
 
@@ -342,7 +528,7 @@ function linux_advanced
 #
 # ****************************************************************************
 
-function compile_linux {
+function compile_linux_Intel {
 	
 #
 # Start by going through the packages and installing them if required
@@ -364,17 +550,17 @@ function compile_linux {
 #
 # Setup the directory structure if required
 #
-      if [ ! -d ../run_linux_em64t ]; then
-            mkdir ../run_linux_em64t
-            printf ">> Making run_linux_em64t directory...\n"
+      if [ ! -d ../run_linux ]; then
+            mkdir ../run_linux
+            printf ">> Making run_linux directory...\n"
       fi
-      if [ ! -d ../obj_linux_em64t ]; then
-            mkdir ../obj_linux_em64t
-            printf ">> Making obj_linux_em64t directory...\n"
+      if [ ! -d ../obj_linux_Intel_omp ]; then
+            mkdir ../obj_linux_Intel_omp
+            printf ">> Making obj_linux_Intel_omp directory...\n"
       fi
-      if [ ! -d ../obj_linux_em64t_mpi ]; then
-            mkdir ../obj_linux_em64t_mpi
-            printf ">> Making obj_linux_em64t_mpi directory...\n"
+      if [ ! -d ../obj_linux_Intel_mpi ]; then
+            mkdir ../obj_linux_Intel_mpi
+            printf ">> Making obj_linux_Intel_mpi directory...\n"
       fi
 #
 #   prompt the user for the number of concurrent compile processes to use
@@ -407,6 +593,28 @@ MAKEFILE=Makefile.osx
 MKLQ=yes
 MPIQ=no
 HYPQ=no
+GFORTRAN=no
+INTEL_FORTRAN=no
+#
+printf "\nSelect build compiler to use:\n"
+PS3="Select choice: "
+select opt in 'gfortran' 'Intel Fortran' 'Exit'
+do
+      case $REPLY in
+            1 )   printf "\n"
+                  GFORTRAN=yes
+                  INTEL_FORTRAN=no
+                  break
+                  ;;
+            2 )   printf "\n"
+                  GFORTRAN=no
+                  INTEL_FORTRAN=yes
+                  break
+                  ;;
+            3 )   exit 0
+                  ;;
+      esac
+done
 #
 printf ".... Running a series of tests to ensure\n"
 printf ".... your system is correctly configured to build WARP3D.\n"
@@ -419,54 +627,60 @@ printf "[ERROR]\n"
 printf "This is not a Mac OS X system.\n Quitting...\n\n"
 exit 1
 fi
+
+check_Intel_Fortran_setup
+check_gfortran_setup
+
 #
-# Intel Fortran Composer XE system must be installed 
+# The MKL libraries must be present in WARP3D distribution directory
 #
-hash ifort 2>&- || {
-printf "[ERROR]\n"
-printf "... Cannot find the Intel Fortran compiler (ifort) in your PATH.\n"
-printf "... See Intel Fortran install documentation. Most often a line of\n"
-printf "... the form: source /opt/intel/composerxe/... is placed\n"
-printf "... in the /etc/bashrc file on your Mac.\n"
+if [ ! -d "$WARP3D_HOME/OSX_MKL_files" ]; then
+printf "\n[ERROR]\n"
+printf "... Directory OSX_MKL_files does not exist in WARP3D\n"
+printf "    distribution directory. Run this shell command to\n" 
+printf "    download:  install_OSX_libs_from_remote\n  "
 printf "Quitting...\n\n"
 exit 1
-}
+fi
 #
-#
+##
+# To use Intel Fortran, the usual required environment variables must be set.
 # The MKLROOT environment variable must be set. This is normally
 # done by the user's login script or system shell initialization
 # script, e.g., source /opt/intel/composerxe/bin/compilervars.sh intel64
 # Often best to put this in /etc/bashrc
 #
-if [ -z "$MKLROOT" ]; then
-printf "[ERROR]\n"
-printf "... Environment variable MKLROOT is not set.\n"
-printf "... See Intel Fortran install documentation. Most often a line of\n"
-printf "... the form: source /opt/intel/composerxe/... is placed\n"
-printf "... in the /etc/bashrc file on your Mac.\n"
-printf "Quitting...\n"
-exit 1
-fi
+if [ "$INTEL_FORTRAN" = "yes" ]; then
+   if [ -z "$MKLROOT" ]; then
+     printf "[ERROR]\n"
+     printf "... Environment variable MKLROOT is not set.\n"
+     printf "... See Intel Fortran install documentation. Most often a line of\n"
+     printf "... the form: source /opt/intel/compilers_and_libraries/mac/bin/compilervars.sh intel64\n"
+     printf "... in the /etc/bashrc file on your Mac.\n"
+     printf "Quitting...\n"
+     exit 1
+   fi
 #
-# The MKL libraries must be accesible.
+#         The MKL libraries must be accesible.
 #
-if [ ! -d "$MKLROOT/lib" ]; then
-printf "[ERROR]\n"
-printf "... Directory MKLROOT/lib does not exist.\n"
-printf "Quitting...\n\n"
-exit 1
-fi
+    if [ ! -d "$MKLROOT/lib" ]; then
+     printf "[ERROR]\n"
+     printf "... Directory MKLROOT/lib does not exist.\n"
+     printf "Quitting...\n\n"
+     exit 1
+    fi
 #
 # Fortran libraries must be accessible for our makefile to function properly.
 # We have to use a small kludge by locating them from the MKL directory. Intel
 # does not provide an environment variable to locate them.
 #
-if [ ! -d $MKLROOT/../compiler/lib/intel64 ]; then
-printf "[ERROR]\n"
-printf "... Could not find the Intel Fortran library directory.\n"
-printf "... by examining $MKLROOT/../compiler/lib/intel64\n"
-printf "Quitting...\n\n"
-exit 1
+    if [ ! -d $MKLROOT/../compiler/lib/intel64 ]; then
+      printf "[ERROR]\n"
+      printf "... Could not find the Intel Fortran library directory.\n"
+      printf "... by examining $MKLROOT/../compiler/lib/intel64\n"
+      printf "Quitting...\n\n"
+      exit 1
+    fi
 fi
 #
 # Done with all checks. Looks good for a build process.
@@ -495,13 +709,12 @@ printf " \n"
 #
 # setup the directory structure object and executable if required
 #
-if [ ! -d ../run_mac_os_x ]; then
-mkdir ../run_mac_os_x
-printf ">> Making run_mac_os_x directory...\n"
+mkdir ../run_mac_os_x 2> /dev/null
+if [ "$INTEL_FORTRAN" = "yes" ]; then
+   mkdir ../obj_mac_os_x_intel 2> /dev/null
 fi
-if [ ! -d ../obj_mac_os_x ]; then
-mkdir ../obj_mac_os_x
-printf ">> Making obj_mac_os_x directory...\n"
+if [ "$GFORTRAN" = "yes" ]; then
+   mkdir ../obj_mac_os_x_gfortran 2> /dev/null
 fi
 #
 # prompt the user for the number of concurrent compile processes to use
@@ -510,18 +723,27 @@ printf " \n"
 read -p "... Number of concurrent compile processes allowed? (default 1): " JCOMP
 [ -z "$JCOMP" ] && JCOMP=1
 #
-touch main_program.f   # so thecompile date is always current
+touch main_program.f   # so the compile date is always current
 #
 #
 # run the makefile for Mac OS
 #
 printf "... Starting make program for Mac OS.... \n"
-make  -j $JCOMP -f Makefile.osx
+#
+if [ "$INTEL_FORTRAN" = "yes" ]; then
+  make  BUILD_SYS=Intel -j $JCOMP -f Makefile.osx
+fi
+if [ "$GFORTRAN" = "yes" ]; then
+   make  BUILD_SYS=gfortran -j $JCOMP -f Makefile.osx
+fi
+#
 }
+
+
 
 # ****************************************************************************
 #
-#     Function:   main
+#   main
 #
 # ****************************************************************************
 #
@@ -531,7 +753,7 @@ make  -j $JCOMP -f Makefile.osx
 #  names
 #
 printf "\n"
-printf "** Driver shell script to build WARP3D on Linux and Mac OS **\n"
+printf "** Driver shell script to build WARP3D on Linux and Mac OSX **\n"
 #
 if [ -z "$WARP3D_HOME" ]; then
    printf "\n\n[ERROR]\n"
@@ -542,9 +764,9 @@ if [ -z "$WARP3D_HOME" ]; then
 fi
 #
 cd $WARP3D_HOME/src
-mkl_dir=$WARP3D_HOME/mkl_solver_dir
 mpi_dir=$WARP3D_HOME/linux_packages/source/mpi_code_dir
 hypre_dir=$WARP3D_HOME/linux_packages/source/hypre_code_dir
+osx_mkl_dir=$WARP3D_HOME/OSX_MKL_files
 #
 #  Prompt user for platform choice
 #
@@ -555,7 +777,9 @@ do
       case $REPLY in
             1 )   printf "\n"
                   linux_main
-                  compile_linux
+                  if [ "$INTEL_FORTRAN" = "yes" ]; then
+                     compile_linux_Intel
+                  fi 
                   break
                   ;;
             2 )   printf "\n"
@@ -571,5 +795,7 @@ do
                   ;;
       esac
 done
+exit
+
 
 
