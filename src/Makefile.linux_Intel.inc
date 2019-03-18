@@ -1,31 +1,40 @@
 #
 # ****************************************************************************
 #
-#   File: Header.linux_em64t.inc
+#   File: Makefile.linux.inc
 #
-#   Last modifications: Feb 28, 2018
+#   Developer: rdodds
+#
+#   Last modifications: 3/10/2019  rhd
+#
+#   This is invoked by a higher-level makefile:
+#         Makefile.linux_Intel.omp        for threads-only executable
+#         Makefile.linux_Intel.mpi_omp    for MPI + threads executable
+#
+#         Set before this makefile: COMPILER, HYINC, HYLIB, MPILIB, ODIR
 #
 #   Description:
 #
-#     Common parts of makefile for building WARP3D on Linux
-#     This file is used to build the OpenMP and MPI + OpenMP versions when
-#     invoked by one of the two drivers (Makefile.linux_em64t.omp or
-#     Makefile.linux_em64t.mpi_omp)
+#     Build OMP version of WARP3D (64-bit) running on
+#     Intel/AMD 64-bit processors.
+#   
+#     Use Intel Fortran Compiler and possibly Intel MPI libraries
 #
-#     Variables set on entry by the pre makefiles: Makefile.linux_em64t.omp
-#     and Makefile.linux_em64t.mpi
-#
-#     ODIR, COMPILER, HYINC, HYLIB, MPIOPT, MKLROOT
+#     Includes the (free) Intel MKL library to 
+#     access the PARDISO solver and LAPACK/BLAS routines. Those
+#     routines are included in the WARP3D distribution directory
+#     linux_packages/lib
 #
 #     Notes
 #
-#       1. We specify the -xHost  -align array64byte ifort options.
+#       1. We specify:  -xHOST  as a default
 #
-#       2. The compiler will generate code for the highest level
+#          The compiler will generate code for the highest level
 #          instruction set available in your processor(s).
 #
-#       3. WARP3D code ** requires ** that your processor support the
-#          AVX instruction set as a minimum.
+#       2. The distributed executable for WARP3D ** requires ** 
+#          that your processor support the AVX instruction set as a minimum.
+#          Set MACHINE_TYPE below to MINIMUM_MACHINE_TYPE 
 #
 #          These processors became available in early 2011 and include:
 #             2nd Generation Intel® Core™ i7 Processors
@@ -35,9 +44,14 @@
 #             Intel® Xeon® Processor E3 Family
 #             + all newer processors
 #
+#           During the next year, we plan to require processors
+#           that support the AVX2 instruction set.
+#
+#       3. We build an executable using shared libraries for 
+#          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 3500
+BUILDNUM := 3800
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -52,15 +66,16 @@ RMC      = /bin/rm -f
 MVC      = /bin/mv -f
 #
 #              common options other than used here:
-#                      FTRAP = -ftrapuv -check uninit
-#                     INLINE = -inline-level=0
-#                    PROFILE = -pg for use with gprof, -g for Intel Adviser
+#                 FTRAP = -ftrapuv -check uninit
+#                 INLINE = -inline-level=0
+#                 PROFILE = -pg for use with gprof, -g for Intel Adviser
 #
 FTRAP      =
 INLINE     = -no-inline-factor # -fno-inline
 PROFILE    = -g
 PROFILE =
-OPT_REPORT = # -qopt-report=5 -qopt-report-annotate=html -qopt-report-phase=vec
+OPT_REPORT = -qopt-report=5 -qopt-report-annotate=html -qopt-report-phase=vec
+OPT_REPORT = 
 OPENMP     = -qopenmp -reentrancy
 CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
 CHECKFLOAT =
@@ -70,7 +85,7 @@ DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
 MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE)
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
-         $(MACHINE_TYPE) -module $(ODIR) -I$(MKLROOT)/include $(HYINC) $(FTRAP) \
+         $(MACHINE_TYPE) -module $(ODIR) $(HYINC) $(FTRAP) \
          $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
 FOR      = $(COMPILER) $(OPT_REPORT) $(FCOPTS)
@@ -104,11 +119,12 @@ INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
             include_usr_parm
 #
 #                MKL libraries to include at link time. Needed MPI
-#                library for CPardiso set by invoking makefile.
+#                library for CPardiso set by invoking makefile (MPILIB).
+#                The MKL files are part of WARP3D distribution
 #
-LIBMKL =  -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core \
+MKL_LIBS = ../linux_packages/lib
+LIBMKL =  -L$(MKL_LIBS) -lmkl_intel_lp64 -lmkl_core \
           -lmkl_intel_thread -lpthread -lm
-#
 LIBS = $(LIBMKL) $(LIBMPI)  $(HYLIB)
 #
 #                all *.o files for linking.  module files are listed
@@ -177,6 +193,7 @@ OBJ =	 \
 	$(OD)/drive_eps_sig_internal_forces.o	 \
 	$(OD)/drive_assemble_solve.o	 \
 	$(OD)/drive_pardiso.o	 \
+	$(OD)/drive_pardiso_asym.o	 \
 	$(OD)/dupmas.o	 \
 	$(OD)/dupstr.o	 \
 	$(OD)/elmas1.o	 \
@@ -224,7 +241,7 @@ OBJ =	 \
 	$(OD)/innum.o	 \
 	$(OD)/intab.o	 \
 	$(OD)/iodevn.o	 \
-        $(OD)/iterative_sparse_hypre.o \
+    $(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
 	$(OD)/kill_element.o	 \
 	$(OD)/license.o	 \
@@ -345,8 +362,8 @@ OBJ =	 \
 #
 $(EXE_NAME) : $(OBJ)
 	$(LINK) $(OBJ) $(LIBS) -o $@
-	$(MVC) $@ ./../run_linux_em64t/$@
-	chmod ugo+rx  ./../run_linux_em64t/$@
+	$(MVC) $@ ./../run_linux/$@
+	chmod ugo+rx  ./../run_linux/$@
 #
 #       ---  default rule to make .o from .f ------
 #            ===============================
