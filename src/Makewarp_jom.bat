@@ -60,13 +60,13 @@ set build_mode=64
 ::
 ::	Create directories for object code and executable files as needed
 ::
-  if not exist ..\run_windows_%build_mode% (
-     md ..\run_windows_%build_mode%
+  if not exist ..\run_windows (
+     md ..\run_windows
      echo -- Making windows executable file directory...
      echo.
      )
-  if not exist ..\obj_windows_%build_mode% (
-     md ..\obj_windows_%build_mode%
+  if not exist ..\obj_windows (
+     md ..\obj_windows
      echo -- Making windows object file directory...
      echo.
      )

@@ -1,6 +1,6 @@
 #
 #
-#   Last modifications: 2/2/2019 rhd
+#   Last modifications: 3/19/2019 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -44,8 +44,8 @@ OSNAME   = Windows
 BUILDNUM = 3800
 PRE      = fpp
 #
-ODIR   = .\.\..\obj_windows_64
-EXEDIR = .\..\run_windows_64
+ODIR   = .\.\..\obj_windows
+EXEDIR = .\..\run_windows
 #
 EXE_NAME = warp3d.exe
 MKLIB    = $(ODIR)
