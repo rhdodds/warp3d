@@ -26,9 +26,9 @@ c
       module distributed_stiffness_data                                         
 c            use local_stiffness_mod                                            
             implicit none                                                       
-c                         Parameters (user input or otherwise)                    
+c                       Parameters (user input or otherwise)                    
             logical :: parallel_assembly_allowed                                
-            logical :: parallel_assembly_used                                         
+            logical :: parallel_assembly_used                                   
             logical :: distributed_stiffness_used                               
             integer :: initial_map_type                                         
             integer :: final_map_type                                           
