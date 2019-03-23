@@ -6124,7 +6124,7 @@ c
         call cpardiso_symmetric_solve
       case( 2 )
         if( master ) call pardiso_symmetric_map( neq, ncoeff, k_diag,
-     &                       rhs, eqn_coeffs, k_pointers, k_indices )
+     &                       eqn_coeffs, k_pointers, k_indices )
         call cpardiso_symmetric_solve
       case( 3 ) ! release all CPardiso data and return
         if( worker ) return
@@ -6169,9 +6169,9 @@ c
       subroutine cpardiso_symmetric_setup
       implicit none
 c
-      if( master ) then
+      if( master ) then 
           call pardiso_symmetric_map( neq, ncoeff, k_diag,
-     &             rhs, eqn_coeffs, k_pointers, k_indices )
+     &              eqn_coeffs, k_pointers, k_indices )
           if( cpardiso_mat_defined ) then
              phase = -1 ! release internal memory
              call cluster_sparse_solver( pt, maxfct, mnum, mtype,
