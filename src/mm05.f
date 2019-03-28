@@ -9,7 +9,7 @@ c
       subroutine mm05(
      &  step, iter, felem, gpn, mxvl, hist_size, nstrs, nstrn, span,
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
-     &  nonlin_hard, generalized_pl, sig_tol, mm_props, e_vec_np1,
+     &  nonlin_hard, generalized_pl, mm_props, e_vec_np1,
      &  e_vec_n,
      &  nu_vec_np1, nu_vec_n, sigyld_gp_vec_np1, sigyld_gp_vec_n,
      &  h_gp_np1, h_gp_n, beta_gp_np1, beta_gp_n,
@@ -32,7 +32,7 @@ c
      &   nonlin_hard, generalized_pl, do_nonlocal
 c
       double precision
-     & sig_tol,  mm_props(mxvl,6), e_vec_np1(mxvl), e_vec_n(mxvl),
+     & mm_props(mxvl,10), e_vec_np1(mxvl), e_vec_n(mxvl), 
      & nu_vec_np1(mxvl), nu_vec_n(mxvl),
      & sigyld_gp_vec_np1(mxvl), sigyld_gp_vec_n(mxvl),
      & h_gp_np1(mxvl), h_gp_n(mxvl),
@@ -90,6 +90,10 @@ c                         load step (minus increment of thermal strain)
 c (**)history_n         : history values at start of load step (n) for all
 c                         elements in block for this gauss point
 c (*) history_np1       : history values at end of load step (n+1) for all
+c                         elements in block for this gauss point
+c     do_nonlocal       : logical flag indicating if nonlocal_state variables 
+c                         are requested (i.e. need to be updated)
+c (*) nonlocal_state    : nonlocal state values at end of load step (n+1) for all
 c                         elements in block for this gauss point
 c
 c     Arrays used by the generalized plasticity model:
@@ -197,6 +201,8 @@ c     (3) FA -> H_bar,
 c     (4) FA and GP -> type (if type < 0 use GP model, otherwise use FA)
 c     (5) FA -> gamma,
 c     (6) FA and GP -> sigtol
+c     (7-10) available -- see inmat_cyclic() subroutine
+c 
 c
 c   history ordering (at n and n+1)
 c     (1) lambda (consistency parameter)
@@ -298,7 +304,7 @@ c
      &   signal_flag, adaptive_possible, cut_step_size_now
 c
       double precision
-     & mm_props(mxvl,5), e_vec(mxvl), nu_vec(mxvl),
+     & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), stress_n(mxvl,nstrs),
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
      & trial_elas_stress_np1(mxvl,nstrn), history_n(span,hist_size),
@@ -424,7 +430,7 @@ c
      &   mxvl, span
 c
       double precision
-     & mm_props(mxvl,5), sigyld_vec(mxvl),  stress_n(mxvl,*),
+     & mm_props(mxvl,10), sigyld_vec(mxvl),  stress_n(mxvl,*), 
      &  history_n(span,*)
 c
 c                  local parameters
@@ -648,7 +654,7 @@ c                    ----------------------
        logical yield(*), debug, adaptive_possible, cut_step_size_now,
      &         signal_flag, prior_linear(*)
       double precision
-     & history_n(span,*), history_np1(span,*), mm_props(mxvl,*),
+     & history_n(span,*), history_np1(span,*), mm_props(mxvl,10),
      & sigyld_vec(*), stress_n(mxvl,*),deps(mxvl, *),
      & stress_np1(mxvl,*), shear_mod_vec(*),
      & trial_stress(mxvl, *), e_vec(*)
@@ -1488,7 +1494,7 @@ c
      &   signal_flag, adaptive_possible, cut_step_size_now
 c
       double precision
-     & mm_props(mxvl,5), e_vec(mxvl), nu_vec(mxvl),
+     & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), stress_n(mxvl,nstrs),
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
      & trial_elas_stress_np1(mxvl,nstrn), history_n(span,hist_size),
@@ -1564,7 +1570,7 @@ c
      &  span, felem, gpn, iter, iout, mxvl, nstrn
 c
       double precision
-     & mm_props(mxvl,6), e_vec(mxvl), nu_vec(mxvl),
+     & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & sig_trial(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
      & stress_np1(mxvl,nstrn), h_gp_np1(mxvl), beta_gp_np1(mxvl),
@@ -1885,7 +1891,7 @@ c
      &   signal_flag, adaptive_possible, cut_step_size_now
 c
       double precision
-     & mm_props(mxvl,5), e_vec_np1(mxvl), e_vec_n(mxvl),
+     & mm_props(mxvl,10), e_vec_np1(mxvl), e_vec_n(mxvl), 
      & nu_vec_np1(mxvl), nu_vec_n(mxvl),
      & sigyld_vec_np1(mxvl), sigyld_vec_n(mxvl),
      & h_gp_np1(mxvl), h_gp_n(mxvl), beta_gp_np1(mxvl), beta_gp_n(mxvl),
@@ -2050,7 +2056,7 @@ c
      &   mxvl, span
 c
       double precision
-     & mm_props(mxvl,5), sigyld_vec_n(mxvl),  stress_n(mxvl,*),
+     & mm_props(mxvl,10), sigyld_vec_n(mxvl),  stress_n(mxvl,*), 
      &  history_n(span,*)
 c
 c                  local parameters
@@ -2366,7 +2372,7 @@ c                    ----------------------
        logical yield(*), debug, adaptive_possible, cut_step_size_now,
      &         signal_flag, prior_linear(*)
       double precision
-     & history_n(span,*), history_np1(span,*), mm_props(mxvl,*),
+     & history_n(span,*), history_np1(span,*), mm_props(mxvl,10),
      & sigyld_vec_np1(*), sigyld_vec_n(*), stress_np1(mxvl,*),
      & stress_n(mxvl,*), deps(mxvl,*), g_vec_np1(*), g_vec_n(*),
      & trial_stress(mxvl,*), h_gp_n(mxvl), h_gp_np1(mxvl),
@@ -3485,7 +3491,7 @@ c
      &   signal_flag, adaptive_possible, cut_step_size_now
 c
       double precision
-     & mm_props(mxvl,5), e_vec_np1(mxvl), nu_vec_np1(mxvl),
+     & mm_props(mxvl,10), e_vec_np1(mxvl), nu_vec_np1(mxvl),
      & sigyld_vec_np1(mxvl), stress_n(mxvl,nstrs),
      & e_vec_n(mxvl), nu_vec_n(mxvl), sigyld_vec_n(mxvl),
      & h_gp_np1(mxvl), h_gp_n(mxvl), beta_gp_np1(mxvl), beta_gp_n(mxvl),

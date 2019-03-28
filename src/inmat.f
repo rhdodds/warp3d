@@ -2138,7 +2138,7 @@ c     *                      subroutine inmat_cyclic                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/30/2011                  *
+c     *                   last modified : 3/27/2019 V. Pericoli      *
 c     *                                                              *
 c     *     input properties for the cyclic plasticty model (#5)     *
 c     *                                                              *
@@ -2146,7 +2146,7 @@ c     ****************************************************************
 c
       subroutine inmat_cyclic( matprp, lmtprp )
 c
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameter declarations (the column of the
 c                       table is passed for this material)
@@ -2156,13 +2156,15 @@ c
 c
 c                       local declarations
 c
+      real :: dumr, value
+      integer :: i, dummy, cyclic_start, option_set, dum, 
+     &           curve_set_no
       logical :: local_debug, true, matchs, matchs_exact, endcrd,
      &           numr
-      real ::  dumr
       double precision :: dumd
-      real root23, onept5, value, twothrds
       character(len=1) :: dums
-      data root23, onept5, twothrds / 0.81649, 1.5, 0.6666667 /
+      real, parameter :: 
+     &     root23 = sqrt(2.0/3.0), onept5 = 1.5, twothrds = 2.0/3.0
 c
 c                       enter here having seen the properties and
 c                       cyclic keywords at the beginning of a line.
@@ -2217,12 +2219,21 @@ c                     59        gamma_u         gp_delta_u
 c                     60 sig_tol
 c                     61-64 <available>
 c
+c                  note: to use 61-64, see mm_props array in mm05. 
+c
       local_debug = .false.
       if( local_debug ) write(*,*) '.... entered inmat_cyclic ....'
       cyclic_start = 55
 c
+c                       initialize matprp storage
+c                         note that defaults for Y.M. and poisson 
+c                         ratio are already set. 
+c 
       matprp(cyclic_start:cyclic_start-1+6) = 0.0
       matprp(cyclic_start-1+4) = 0.0
+      matprp(cyclic_start-1+6) = 0.001 ! default sig_tol param
+c
+c                       continue reading keywords
 c
       call reset
       if( true( dummy ) ) call splunj

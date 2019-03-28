@@ -2530,7 +2530,7 @@ c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/30/2018 rhd              *
+c     *                   last modified : 3/287/2019 V. Pericoli     *
 c     *                                                              *
 c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
@@ -2567,7 +2567,7 @@ c
 c
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, dtime, sig_tol, ddummy,
+     &  zero, dtime, ddummy,
      &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
      &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
       double precision, allocatable ::  uddt_temps(:,:), uddt(:,:), 
@@ -2796,7 +2796,7 @@ c     *                 subroutine drive_05_update_c                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/31/2015 rhd             *
+c     *                   last modified : 3/27/2019 V. Pericoli      *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -2823,7 +2823,6 @@ c
 c
       nonlin_hard      = matprp(58,matnum) .gt. zero
       generalized_pl   = matprp(58,matnum) .lt. zero
-      sig_tol          = matprp(60,matnum)
 c
 c
 c            available data for passing to cyclic model
@@ -2887,7 +2886,6 @@ c     gp_beta_u_vec_n   : gp model. beta_u at n
 c     gp_delta_u_vec_n  : gp model. delta_u at n
 c
 c     mm05_props(mxvl,10)    : values loaded from matprp by rknstr.f
-c                              can we delete after James new code ???
 c
 c
 c     In local space for this routine
@@ -2899,10 +2897,6 @@ c     nh_h_u_vec         : nh model. h_u stress at n+1
 c     nh_gamma_u_vec     : nh model. gamma_u at n+1
 c
 c     gp_tau_vec         : gp model tau values
-c
-c     sig_tol            : user defined tolerance for adaptive
-c                          stress computations. Same for all
-c                          elements in block.
 c
 c
 c     NOTE:  the above data structures make it possible to have code
@@ -2920,7 +2914,7 @@ c
       call mm05( step, iter, felem, gpn, mxvl, hist_size_for_blk,
      &           nstrs, nstr, span, iout,
      &           signal_flag, adaptive_possible, cut_step_size_now,
-     &           nonlin_hard, generalized_pl, sig_tol,
+     &           nonlin_hard, generalized_pl,
      &           local_work%mm05_props,
      &           local_work%e_vec,    !  at n+1
      &           local_work%e_vec_n,
