@@ -29,6 +29,18 @@ if [ -z "$WARP3D_HOME" ]; then
    exit 1
 fi
 #
+#           gfortran must be installed. WARP3D needs shared libraries
+#           that are part of gfotran. hope to make static executable
+#           at some point.
+#
+gfort_present=`which gfortran | wc -l`
+if (( $gfort_present == 0 )); then
+   printf "[ERROR]\n"
+   printf "... gfortran must be installed on your system.\n"
+   printf "Quitting...\n"
+   exit 1
+fi
+#
 #           location of WARP3D distribution linux_packages directory
 #           with MKL files.
 #           set executable file name for OpenMP + MKL sparse solver
