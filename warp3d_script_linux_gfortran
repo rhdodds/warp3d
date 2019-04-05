@@ -46,7 +46,7 @@ fi
 #           set executable file name for OpenMP + MKL sparse solver
 #           version of warp3d
 #
-export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$GNU_LIB64:$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 warp3d_exe="$WARP3D_HOME/run_linux/warp3d_gfortran.omp"
 #
 #           set the number of threads for WARP3D execution and
