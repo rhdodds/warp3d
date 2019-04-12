@@ -1,19 +1,16 @@
 
-Last Update: September 11, 2017
--------------------------------
+Last Update: April 15, 2019
+---------------------------
+
+See also: Workflow_WARP3D_to_ParaView on Downloads page of
+          www.warp3d.net
 
 Python 2.7.x is required for warp3d2exii
 
 warp3d2exII is a stand-alone Python program (see also last Section here).
 (a copy is also named pat2xii to remain the older naming for a while longer)
 
-warp3d2exii reads in:
-
-  1) a flat model description file and flat results files
-  
-  or
-  
-  2) a MSC Patran style neutral file and flat results files
+warp3d2exii reads in a flat model description file and flat results files
 
 And generates an Exodus II (.exo) file.
 
@@ -63,11 +60,9 @@ the following information:
    automatically appends .exo to the end of the name if not
    already included.
 
-2) The path and filename to the flat model description file or
-   the Patran neutral file.  For example:
+2) The path and filename to the flat model description file 
 
       /path/to/file/flat_model_file.text
-      /path/to/file/neutralfile.out
 
 3) The path to the directory containing the flat results files.
    Example
@@ -102,9 +97,7 @@ the following information:
 Efficiency:
 
    Reading of a flat model description file is very fast.   
-   Reading of a Patran style neutral file for the model is 
-     quite slow for a large model.
-   
+
    Reading of flat results files, especially stream format, is very fast.
    
    Writing of the final .exo file is reasonably fast with this version.
@@ -140,11 +133,6 @@ These mostly standard packages will be imported when warp3d2exii starts up:
    import re
    import itertools
    import scipy as sp
-
-The fortranformat (free) package may need to be included in your Python
-environment. This package is not routinely installed with Python.
-
-https://pypi.python.org/pypi/fortranformat
 
 Use easy_install or pip as needed for your Python implementation
 as required to install fortranformat.  
