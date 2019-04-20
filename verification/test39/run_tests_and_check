@@ -15,7 +15,7 @@ function cleanup_files {
 /bin/rm -f *_db >& /dev/null
 /bin/rm -f wn*  >& /dev/null
 /bin/rm -f we*  >& /dev/null
-/bin/rm -f *_out >& /dev/null
+/bin/rm -f *_out* >& /dev/null
 #
 }
 
@@ -27,13 +27,16 @@ function cleanup_files {
 
 function run_and_compare {
 #
-echo "  ... running test_39..."
-"$warp3d_exe" $num_threads  < test_39 > test_39_out
+echo "  ... running test_39a (CTOA growth)..."
+"$warp3d_exe" $num_threads  < test_39a > test_39_outa
+#
+echo "  ... running test_39b (SMCS growth)..."
+"$warp3d_exe" $num_threads  < test_39b > test_39_outb
 #
 echo "  ... WARP3D jobs completed..."
 #
-perl check_39.perl
-#
+perl check_39a.perl
+perl check_39b.perl
 cleanup_files
 #
 }
