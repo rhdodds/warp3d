@@ -74,6 +74,9 @@ BUILD_FLAG := -Dgfortran
 #                Define extension for relocatable object code files,
 #                macros for the remove command and the move command.
 #
+#                to get a real symbol traceback, use -g -Og
+#                -g -O1,2,3 will sometimes work
+#
 O        = .o
 OD       = $(ODIR)
 RMC      = rm -f

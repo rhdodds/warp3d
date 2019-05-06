@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/26/2018 rhd             *
+c     *                   last modified : 04/20/2019 rhd             *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -412,9 +412,10 @@ c
       crack_growth_type     = 0
       growth_by_kill        = .false.
       growth_by_release     = .false.
-      porosity_limit    = .20d0
-      smcs_alpha            = 1.0
-      smcs_beta             = 1.5
+      porosity_limit        = 0.20d0
+      smcs_alpha            = one
+      smcs_beta             = 1.5d0
+      smcs_gamma            = zero
       max_dam_state         = 5
       num_kill_elem         = 0
       print_status          = .false.
@@ -422,7 +423,7 @@ c
       release_type          = 1
       crk_pln_normal_idx    = 0
       gurson_cell_size      = zero
-      release_fraction      = 0.1
+      release_fraction      = 0.1d0
       critical_angle        = zero
       init_crit_ang         = zero
       num_crack_plane_nodes = 0
@@ -439,8 +440,8 @@ c
       perm_load_fact        = one
       min_steps_for_release = 6
       max_porosity_change   = zero
-      max_deff_change       = 0.20
-      critical_cohes_deff_fract = 5.0
+      max_deff_change       = 0.20d0
+      critical_cohes_deff_fract = 5.0d0
       max_plast_strain_change = hundredth
       g_stp_cntrl_allocated = .false.
       load_size_control_crk_grth = .false.
@@ -461,7 +462,9 @@ c
       killed_ele_pls_work   = zero
       enforce_node_release  = .false.
       num_elements_in_force_release = 0
-      ppr_kill_displ_fraction = 0.90
+      ppr_kill_displ_fraction = 0.90d0
+      num_user_kill_elems = 0
+      killed_element_limit = 100000000
 c
 c                       initialize the segmental stress strain curve definitions
 c

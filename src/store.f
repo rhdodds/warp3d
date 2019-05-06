@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/26/2018 rhd             *
+c     *                   last modified : 4/29/2019 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -461,7 +461,7 @@ c
      &              crack_plane_coord, release_fraction,
      &              critical_angle, char_length, release_height,
      &              crack_plane_sign, init_crit_ang, smcs_alpha,
-     &              smcs_beta, CTOA_range, perm_load_fact,
+     &              smcs_beta, smcs_gamma, CTOA_range, perm_load_fact,
      &              max_porosity_change, max_plast_strain_change,
      &              init_ctoa_dist, ctoa_dist, crkpln_srch_tol,
      &              max_deff_change, critical_cohes_deff_fract,
@@ -480,6 +480,13 @@ c
          call wrtbk( fileno, dam_state, num_kill_elem )
          call wrtbk( fileno, dam_blk_killed, nelblk )
 c
+         if( crack_growth_type .eq. 3 ) then   ! smcs
+               call wrtbk( fileno, smcs_weighted_T,
+     &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_old_epsplas,
+     &              prec_fact * num_kill_elem )
+         end if
+c           
          if ( print_status ) then
             call wrtbk( fileno, dam_print_list, num_print_list )
             call wrtbk( fileno, old_mises, num_print_list*prec_fact )

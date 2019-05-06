@@ -30,7 +30,7 @@ c
      &                 history_np1, local_work, uddt, gp_temps,
      &                 gp_temp_inc, iout, display_matl_messages,
      &                 do_nonlocal, nonlocal_state, maxnonlocal,
-     &                 iter_0_extrapolate_off )
+     &                 iter_0_extrapolate_off, killed_status )
 c
       use segmental_curves, only: max_seg_points
       use mm10_defs
@@ -44,7 +44,8 @@ c
       integer, intent(in) :: gp, span, hist_sz, iout, maxnonlocal,
      &                       ncrystals(mxvl)
       logical, intent(in) :: display_matl_messages, do_nonlocal,
-     &                       iter_0_extrapolate_off
+     &                       iter_0_extrapolate_off,
+     &                       killed_status(mxvl)
 c
       double precision, intent(in) ::
      &      uddt(mxvl,nstr), gp_temps(mxvl), gp_temp_inc(mxvl)
@@ -299,6 +300,8 @@ c
       sh5  = indexes_common(5,1)
       eh5  = indexes_common(5,2)
       len  = eh5 - sh5 + 1
+c
+      if( killed_status(iloop) ) tang_avg_vec = zero
 c
       local_work%urcs_blk_n1(iloop,1:6,gp) = sig_avg(1:6)
       history_np1(iloop,sh3:eh3) = local_work%rot_blk_n1(iloop,1:9,gp)

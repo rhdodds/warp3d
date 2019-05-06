@@ -5,7 +5,7 @@ c     *                   subroutine gurson_cut_step                 *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 1/14/2010 rhd              *          
+c     *                   last modified : 4/128/2019 rhd             *          
 c     *                                   adaptive during release of *          
 c     *                                   forces on killed eleemnts  *          
 c     *                                                              *          
@@ -29,7 +29,7 @@ c           local declarations
 c                                                                               
       double precision                                                          
      &     new_porosity, two, dumd1, dumd2, dumd3, dumd4, max_del_poros,        
-     &     zero, dumd5, dumd6                                                   
+     &     zero, dumd5, dumd6, dumd7                                                   
       logical not_cut, duml, all_killed,                                        
      &        no_adaptive_during_force_release                                  
       character(len=1) :: dums                                                  

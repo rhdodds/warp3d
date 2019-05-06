@@ -2,7 +2,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- cyclic plasticity model            *
 c *                                                                 *
-c *        mm05.f  -- last modified 9/29/2017 rhd                   *
+c *        mm05.f  -- last modified 5/2/2019 rhd                    *
 c *                                                                 *
 c *******************************************************************
 c
@@ -18,20 +18,20 @@ c
      &  bu_nl_np1, bu_nl_n, hu_nl_np1, hu_nl_n, gu_nl_np1, gu_nl_n,
      &  trial_elas_stress_np1, stress_n, stress_np1,
      &  deps, history_n, history_np1, do_nonlocal, nonlocal_state,
-     &  maxnonlocal )
+     &  maxnonlocal, killed_status )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
-      integer
+      integer ::
      &  step, iter, felem, gpn, mxvl, hist_size, span,
      &  iout, nstrs, nstrn, maxnonlocal
 c
-      logical
+      logical ::
      &   signal_flag, adaptive_possible, cut_step_size_now,
-     &   nonlin_hard, generalized_pl, do_nonlocal
+     &   nonlin_hard, generalized_pl, do_nonlocal, killed_status(span)
 c
-      double precision
+      double precision ::
      & mm_props(mxvl,10), e_vec_np1(mxvl), e_vec_n(mxvl), 
      & nu_vec_np1(mxvl), nu_vec_n(mxvl),
      & sigyld_gp_vec_np1(mxvl), sigyld_gp_vec_n(mxvl),
@@ -243,7 +243,7 @@ c
      &      sigyld_gp_vec_np1, sigyld_gp_vec_n, h_gp_np1, h_gp_n,
      &      beta_gp_np1, beta_gp_n, delta_gp_np1, delta_gp_n, tau,
      &      trial_elas_stress_np1, stress_n, stress_np1,
-     &      deps, history_n, history_np1 )
+     &      deps, history_n, history_np1, killed_status )
       end if
 c
       if ( nonlin_hard ) then
@@ -252,7 +252,7 @@ c
      &      iout, signal_flag, adaptive_possible, cut_step_size_now,
      &      mm_props, e_vec_np1, nu_vec_np1, sigyld_nl_vec_np1,
      &      trial_elas_stress_np1, stress_n, stress_np1,
-     &      deps, history_n, history_np1 )
+     &      deps, history_n, history_np1, killed_status )
       end if
 c
 c                       if needed, set nonlocal state variables for
@@ -290,20 +290,19 @@ c
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
      &  mm_props, e_vec, nu_vec, sigyld_vec,
      &  trial_elas_stress_np1, stress_n, stress_np1,
-     &  deps, history_n, history_np1 )
+     &  deps, history_n, history_np1, killed_status )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
-     &  step, iter, felem, gpn, mxvl, hist_size, span,
-     &  iout, nstrs, nstrn
+      integer :: step, iter, felem, gpn, mxvl, hist_size, span,
+     &           iout, nstrs, nstrn
 c
-      logical
-     &   signal_flag, adaptive_possible, cut_step_size_now
+      logical :: signal_flag, adaptive_possible, cut_step_size_now, 
+     &           killed_status(span)
 c
-      double precision
+      double precision ::
      & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & sigyld_vec(mxvl), stress_n(mxvl,nstrs),
      & stress_np1(mxvl,nstrs), deps(mxvl,nstrn),
@@ -355,7 +354,7 @@ c
      &   prior_linear, history_n, stress_n, e_vec, nu_vec, signal_flag,
      &   shear_mod_vec, alpha_n,
      &   trial_elas_stress_np1, debug, gpn,sigyld_vec, instat, yield,
-     &   iter, trace_eps_np1, yf_vec, step )
+     &   iter, trace_eps_np1, yf_vec, step, killed_status )
 c
 c
 c              compute stresses and internal variables at n+1
@@ -369,7 +368,8 @@ c       write(*,*) 'sigy: ', sigyld_vec(1)
      &    mm_props, sigyld_vec, yield, e_vec, iter,
      &    stress_n, stress_np1, shear_mod_vec,
      &    adaptive_possible, cut_step_size_now, signal_flag,
-     &    gpn, felem, step, deps, prior_linear, trial_elas_stress_np1 )
+     &    gpn, felem, step, deps, prior_linear, trial_elas_stress_np1,
+     &    killed_status)
 c
        if ( cut_step_size_now ) then
           return
@@ -379,7 +379,8 @@ c                   update elastic elements
 c                   -----------------------
 c
        do i = 1, span
-          if (yield(i) ) cycle
+          if( killed_status(i) ) cycle
+          if( yield(i) ) cycle
           history_np1(i,1)    = zero
           history_np1(i,2)    = history_n(i,2)
           history_np1(i,3)    = history_n(i,3)
@@ -393,9 +394,9 @@ c    compute total update stresses, calculate the energy density
 c    -----------------------------------------------------------
 c
        call mm05_final(
-     &                  span, mxvl, stress_n, stress_np1, e_vec,
-     &                  nu_vec, shear_mod_vec, deps, instat,
-     &                  history_np1, trace_eps_np1, debug, iout )
+     &     span, mxvl, stress_n, stress_np1, e_vec, nu_vec, 
+     &     shear_mod_vec, deps, instat, history_np1, trace_eps_np1,
+     &     debug, iout, killed_status )
 c
 c
 c                        plastic work update
@@ -403,7 +404,8 @@ c                        -------------------
 c
       if ( iter .gt. 0 )
      &     call mm05_plastic_work( iout, span, mxvl, stress_n,
-     &     stress_np1, yield, deps, nu_vec, e_vec, shear_mod_vec )
+     &     stress_np1, yield, deps, nu_vec, e_vec, shear_mod_vec,
+     &     killed_status )
 c
 c       write(*,*) 'exiting fa code'
        return
@@ -488,14 +490,16 @@ c *******************************************************************
       subroutine mm05_fa_init( span, mxvl, iout, deps, iostat, felem,
      & prior_linear, history_n, stress_n, e_vec, nu_vec, signal_flag,
      & shear_mod_vec, alpha_n, trial_elas_stress_np1, debug, gpn,
-     & sigyld_vec, instat, yield, iter, trace_eps_np1, yf_vec, step )
+     & sigyld_vec, instat, yield, iter, trace_eps_np1, yf_vec, step,
+     & killed_status )
       implicit none
 c
 c               parameter declarations
 c               ----------------------
-      integer span, mxvl, iout, iostat(*), instat(*), iter, step,
-     &              gpn, felem
-      logical debug, prior_linear(*), yield(*), signal_flag
+      integer :: span, mxvl, iout, iostat(*), instat(*), iter, step,
+     &           gpn, felem
+      logical :: debug, prior_linear(*), yield(*), signal_flag,
+     &           killed_status(span) 
       double precision
      & deps(mxvl, *), history_n(span,*), stress_n(mxvl,*),  yf_vec(*),
      & e_vec(*), shear_mod_vec(*), alpha_n( mxvl, *), nu_vec(*),
@@ -515,6 +519,7 @@ c
      & / 0.0, 1.0, 2.0, 3.0, 0.00001 /
 c
        do i = 1, span
+          if( killed_status(i) ) cycle
           dword  = history_n(i, 4)
           iostat(i) = iword(1)
           prior_linear(i) = iostat(i) .eq. 3
@@ -645,14 +650,15 @@ c *******************************************************************
      &    mm_props, sigyld_vec, yield, e_vec, iter,
      &    stress_n, stress_np1, shear_mod_vec,
      &    adaptive_possible, cut_step_size_now, signal_flag,
-     &    gpn, felem, step, deps, prior_linear, trial_stress )
+     &    gpn, felem, step, deps, prior_linear, trial_stress,
+     &    killed_status )
        implicit none
 c
 c                    parameter declarations
 c                    ----------------------
-       integer span, mxvl, iout, gpn, felem, step, iter
-       logical yield(*), debug, adaptive_possible, cut_step_size_now,
-     &         signal_flag, prior_linear(*)
+      integer :: span, mxvl, iout, gpn, felem, step, iter
+      logical :: yield(*), debug, adaptive_possible, cut_step_size_now,
+     &           signal_flag, prior_linear(*), killed_status(span)
       double precision
      & history_n(span,*), history_np1(span,*), mm_props(mxvl,10),
      & sigyld_vec(*), stress_n(mxvl,*),deps(mxvl, *),
@@ -662,8 +668,8 @@ c
 c                    local parameters
 c                    ----------------
 c
-       integer i, j, s, nsubinc, l
-       logical local_debug
+      integer i, j, s, nsubinc, l
+      logical local_debug
       double precision
      & gamma, Q_bar, b, H_bar,
      & g,sig_tol, k_n, rel_tol, eta, error,a, bb,
@@ -680,6 +686,7 @@ c
 c
        do i = 1, span
          local_debug = .false.
+         if( killed_status(i) ) cycle
 c
          if( .not. yield(i) ) cycle
 c
@@ -1560,16 +1567,16 @@ c
      &  span, felem, gpn, iter, iout, mxvl, nstrn,
      &  e_vec, nu_vec, mm_props, sig_trial, history_n,
      &  history_np1, stress_np1, dmat,
-     &  h_gp_np1, beta_gp_np1, delta_gp_np1, tau )
+     &  h_gp_np1, beta_gp_np1, delta_gp_np1, tau, killed_status )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
-     &  span, felem, gpn, iter, iout, mxvl, nstrn
+      integer :: span, felem, gpn, iter, iout, mxvl, nstrn
+      logical :: killed_status(span)
 c
-      double precision
+      double precision ::
      & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & sig_trial(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
@@ -1672,6 +1679,7 @@ c
       end do
 c
       do i = 1, span
+         if( killed_status(i) ) cycle
          if( yield(i) ) cycle
          dmat(i,1,4) = zero
          dmat(i,1,5) = zero
@@ -1718,6 +1726,7 @@ c
       end do
 c
       do i = 1, span
+       if( killed_status(i) ) cycle
        if( .not. yield(i) ) cycle
        fact = 1.0d00
        g     = e_vec(i)/(two*(1+nu_vec(i)))
@@ -1877,7 +1886,7 @@ c
      &  nu_vec_n, sigyld_vec_np1, sigyld_vec_n, h_gp_np1, h_gp_n,
      &  beta_gp_np1, beta_gp_n, delta_gp_np1, delta_gp_n, tau,
      &  trial_elas_stress_np1, stress_n, stress_np1,
-     &  deps, history_n, history_np1 )
+     &  deps, history_n, history_np1, killed_status )
       implicit none
 c
 c                   parameter declarations
@@ -1888,7 +1897,8 @@ c
      &  iout, nstrs, nstrn
 c
       logical
-     &   signal_flag, adaptive_possible, cut_step_size_now
+     &   signal_flag, adaptive_possible, cut_step_size_now, 
+     &   killed_status(span)
 c
       double precision
      & mm_props(mxvl,10), e_vec_np1(mxvl), e_vec_n(mxvl), 
@@ -1945,7 +1955,7 @@ c
      &   g_vec_np1, g_vec_n, alpha_n, trial_elas_stress_np1, debug,
      &   gpn, sigyld_vec_np1, sigyld_vec_n, instat, yield, iter,
      &   trace_eps_np1, step, h_gp_np1, h_gp_n, tau,
-     &   e_vec_np1, e_vec_n, nu_vec_np1, nu_vec_n )
+     &   e_vec_np1, e_vec_n, nu_vec_np1, nu_vec_n, killed_status )
 c
 c
 c              compute stresses and internal variables at n+1
@@ -1958,7 +1968,7 @@ c
      &   cut_step_size_now, signal_flag, g_vec_np1, g_vec_n,
      &   h_gp_np1, h_gp_n, delta_gp_np1, delta_gp_n,
      &   beta_gp_np1, beta_gp_n, tau, gpn, felem, step, deps,
-     &   prior_linear, trial_elas_stress_np1 )
+     &   prior_linear, trial_elas_stress_np1, killed_status )
 c
        if ( cut_step_size_now ) then
           return
@@ -1968,7 +1978,8 @@ c                   update elastic elements
 c                   -----------------------
 c
        do i = 1, span
-          if ( yield(i) ) cycle
+          if( killed_status(i) ) cycle
+          if( yield(i) ) cycle
 c
           eps_n   = history_n(i,3)
           hi_n    = twothird*tau(i)*h_gp_n(i)
@@ -2017,9 +2028,8 @@ c
        call mm05_final(
      &                  span, mxvl, stress_n, stress_np1, e_vec_np1,
      &                  nu_vec_np1, g_vec_np1, deps, instat,
-     &                  history_np1, trace_eps_np1, debug, iout )
-c
-
+     &                  history_np1, trace_eps_np1, debug, iout,
+     &                  killed_status )
 c
 c
 c                        plastic work update
@@ -2027,7 +2037,8 @@ c                        -------------------
 c
       if ( iter .gt. 0 )
      &     call mm05_plastic_work( iout, span, mxvl, stress_n,
-     &      stress_np1, yield, deps, nu_vec_np1, e_vec_np1, g_vec_np1 )
+     &      stress_np1, yield, deps, nu_vec_np1, e_vec_np1, g_vec_np1,
+     &      killed_status )
 c
 c
 c
@@ -2106,7 +2117,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity model       *
 c *                                                                 *
-c *        mm05_gp_init  -- last modified  7/11/11 by jcs           *
+c *        mm05_gp_init  -- last modified  5/2/2019 rhd             *
 c *                                                                 *
 c *        compute deviatoric stress, trial elastic state,          *
 c *        and evaluate material state at the beginning of each     *
@@ -2119,14 +2130,15 @@ c
      &   g_vec_np1, g_vec_n, alpha_n, trial_elas_stress_np1, debug,
      &   gpn, sigyld_vec_np1, sigyld_vec_n, instat, yield, iter,
      &   trace_eps_np1, step, h_gp_np1, h_gp_n, tau,
-     &   e_vec_np1, e_vec_n, nu_vec_np1, nu_vec_n )
+     &   e_vec_np1, e_vec_n, nu_vec_np1, nu_vec_n, killed_status )
       implicit none
 c
 c               parameter declarations
 c               ----------------------
       integer span, mxvl, iout, iostat(*), instat(*), iter, step,
      &              gpn, felem
-      logical debug, prior_linear(*), yield(*), signal_flag
+      logical debug, prior_linear(*), yield(*), signal_flag,
+     &        killed_status(span)
       double precision
      & deps(mxvl, *), history_n(span,*), stress_n(mxvl,*),
      & g_vec_n(*), g_vec_np1(*), alpha_n( mxvl, *),
@@ -2154,6 +2166,7 @@ c
        local_debug = .false.
 c
        do i = 1, span
+          if( killed_status(i) ) cycle
           dword  = history_n(i, 4)
           iostat(i) = iword(1)
           prior_linear(i) = iostat(i) .eq. 3
@@ -2348,7 +2361,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity model       *
 c *                                                                 *
-c *        mm05_gp_compute  -- last modified 7/05/11 by jcs         *
+c *        mm05_gp_compute  -- last modified 5/2/2019 rhd           *
 c *                                                                 *
 c *        currently includes:                                      *
 c *           !*automatic subincrementation revision                *
@@ -2363,14 +2376,15 @@ c
      &   cut_step_size_now, signal_flag, g_vec_np1, g_vec_n,
      &   h_gp_np1, h_gp_n, delta_gp_np1, delta_gp_n,
      &   beta_gp_np1, beta_gp_n, tau, gpn, felem, step, deps,
-     &   prior_linear, trial_stress )
+     &   prior_linear, trial_stress, killed_status )
        implicit none
 c
 c                    parameter declarations
 c                    ----------------------
-       integer span, mxvl, iout, gpn, felem, step, iter
-       logical yield(*), debug, adaptive_possible, cut_step_size_now,
-     &         signal_flag, prior_linear(*)
+      integer :: span, mxvl, iout, gpn, felem, step, iter
+      logical :: yield(*), debug, adaptive_possible, 
+     &           cut_step_size_now, signal_flag, prior_linear(*),
+     &           killed_status(span)
       double precision
      & history_n(span,*), history_np1(span,*), mm_props(mxvl,10),
      & sigyld_vec_np1(*), sigyld_vec_n(*), stress_np1(mxvl,*),
@@ -2406,6 +2420,7 @@ c       onestep = .false.
 c
        do i = 1, span
 c
+          if( killed_status(i) ) cycle
           if( .not. yield(i) ) cycle
 c
 c     set material vectors to scalar values and scale them from uniaxial
@@ -3853,7 +3868,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity model       *
 c *                                                                 *
-c *        mm05_final  -- last modified 11/14/02 by kbc             *
+c *        mm05_final  -- last modified 5/2/2019 rhd                *
 c *                                                                 *
 c *        calculate total update stress (deviatoric component      *
 c *        only was computed in mm05_compute) and calculate the     *
@@ -3864,23 +3879,24 @@ c *******************************************************************
        subroutine mm05_final(
      &                  span, mxvl, stress_n, stress_np1, e_vec,
      &                  nu_vec, shear_mod_vec, deps, instat,
-     &                  history_np1, trace_eps_np1, debug, iout )
+     &                  history_np1, trace_eps_np1, debug, iout,
+     &                  killed_status )
 
        implicit none
 c
 c                    parameter declarations
 c                    ----------------------
-       integer span, mxvl, instat(*), iout
-       logical debug
-      double precision
-     & stress_n(mxvl, *), stress_np1(mxvl, *), e_vec(*),
+      integer :: span, mxvl, instat(*), iout
+      logical :: debug, killed_status(span)
+      double precision ::
+     & stress_n(mxvl,*), stress_np1(mxvl, *), e_vec(*),
      & nu_vec(*), shear_mod_vec(*), deps(mxvl, *),
      & history_np1(span, *), trace_eps_np1(*)
 c
 c                   local parameter declarations
 c                   ----------------------------
-       integer i, iword(2)
-      double precision
+      integer :: i, iword(2)
+      double precision ::
      & sig_mean_np1, one, two, three, half, dword
        equivalence ( dword, iword )
        data one, two, three, half / 1.0, 2.0, 3.0, 0.5 /
@@ -3888,7 +3904,9 @@ c
 c
 c
        do i = 1, span
-
+c
+          if( killed_status(i) ) cycle
+c          
 c          sig_mean_np1 = trace_eps_np1(i)*e_vec(i)/
 c     &                   ( three*(one-2*nu_vec(i)))
 
@@ -3921,7 +3939,7 @@ c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity model       *
 c *                                                                 *
-c *        mm05_plastic_work  -- last modified 11/15/02 by kbc      *
+c *        mm05_plastic_work  -- last modified 5/2/2019 rhd         *
 c *                                                                 *
 c *        calculate the total plastic work density and the         *
 c *        total plastic strain and store in stress vector          *
@@ -3929,34 +3947,33 @@ c *                                                                 *
 c *******************************************************************
 
       subroutine  mm05_plastic_work( iout, span, mxvl, stress_n,
-     &     stress_np1, yield, deps, nu_vec, e_vec, shear_mod_vec )
+     &     stress_np1, yield, deps, nu_vec, e_vec, shear_mod_vec,
+     &     killed_status )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer  span, mxvl, iout
+      integer :: span, mxvl, iout
 c
-      logical yield(*)
+      logical :: yield(span), killed_status(span)
 c
-      double precision
+      double precision ::
      &   stress_n(mxvl,*), stress_np1(mxvl,*), deps(mxvl,*),
      &   nu_vec(*), e_vec(*), shear_mod_vec(*)
 c
 c                       local parameters
 c
-       integer i
+      integer :: i
 c
-      double precision
-     & zero, deps_plas_bar, dsig(6), deps_plas(6), half, root2,
-     & three, two, factor1, factor2
-c
-       data zero, half, root2, three, two / 0.0, 0.5, 1.414213562373095,
-     & 3.0, 2.0 /
-c
+      double precision ::
+     & deps_plas_bar, dsig(6), deps_plas(6), factor1, factor2
+      double precision, parameter :: zero = 0.d0, half = 0.5d0,
+     &  root2 = sqrt(2.0d0), three = 3.0d0, two = 2.0d0
 c
 c
        do i = 1, span
+        if( killed_status(i) ) cycle
         stress_np1(i,8)   =    stress_n(i,8)
         stress_np1(i,9)   =    stress_n(i,9)
         if ( yield(i)) then

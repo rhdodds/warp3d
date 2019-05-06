@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/22/2019 rhd              *
+c     *                   last modified : 4/21/2019 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -177,6 +177,20 @@ c
          lsn= nsn
          hilcmd= .true.
          nsn= 33
+         go to 25
+      end if
+c
+      if(matchs('delete',6)) then
+         lsn= nsn
+         hilcmd= .true.
+         nsn= 34
+         go to 25
+      end if
+c
+      if(matchs('remove',6)) then
+         lsn= nsn
+         hilcmd= .true.
+         nsn= 34
          go to 25
       end if
 c
@@ -382,7 +396,7 @@ c
       go to (100,200,300,400,500,600,700,800,900,1000,1100,
      &       1200,1300,1400,1500,1600,1700,1800,1900,2000,
      &       2100,2200,2300,2400,2500,2600,2700,2800,2900,
-     &       3000,3100,3200,3300), nsn
+     &       3000,3100,3200,3300,3400), nsn
 c
 c                       if a high level command is not
 c                       encountered, print an error message
@@ -985,6 +999,25 @@ c
          call release_constraints( sbflg1, sbflg2 )
          go to 20
       end if
+c
+c                       user directed element removal/deletion
+c
+ 3400 continue
+c
+c                       check to see if the element properties and
+c                       incidences for each element and the number of
+c                       nodes have been set. if not, print an error
+c                       message and ignore the current command. return
+c                       to high order commands to receive the necess-
+c                       ary commands.
+c
+      if(.not.elprop.or..not.numnod.or..not.elinc) then
+         param= 4
+         call errmsg(11,param,dums,dumr,dumd)
+         go to 10
+      end if
+      call delete_elements( sbflg1, sbflg2 )
+      go to 10
 
 c
 c                       output timings. end execution.

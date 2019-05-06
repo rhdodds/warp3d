@@ -4,8 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/16/94                   *          
-c     *                   last modified : 07/28/95 (rhd)             *          
+c     *                   last modified : 04/29/2019 rhd             *          
 c     *                                                              *          
 c     *     this subroutine reads in the damage routines from        *          
 c     *     a file.                                                  *          
@@ -23,7 +22,7 @@ c
 c                                                                               
       implicit integer (a-z)                                                    
 c                                                                               
-      go to (100,200,300,400,500,600,700,800,900,1000), status                  
+      go to (100,200,300,400,500,600,700,800,900,1000,1100), status                  
 c                                                                               
 c                               read dam_state, dam_ifv, dam_blk_killed         
 c                                                                               
@@ -117,6 +116,13 @@ c
      &           num_crack_fronts*num_nodes_grwinc, num_nodes_thick )           
       call rd2d( fileno, master_lines, num_crack_fronts,                        
      &           num_crack_fronts, num_nodes_back + 1 )                         
+      go to 9999                                                                
+c                                                                               
+c                               read the data smcs         
+c                                                                               
+ 1100 continue
+      call rdbk( fileno, smcs_weighted_T, num_kill_elem * prec_fact )           
+      call rdbk( fileno, smcs_old_epsplas, num_kill_elem * prec_fact )                
       go to 9999                                                                
 c                                                                               
 c                                                                               

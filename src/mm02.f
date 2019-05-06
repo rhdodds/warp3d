@@ -11,24 +11,26 @@ c
 c                                                                               
       subroutine mm02( step, iter, felem, gpn, e, nu, sigyld, exp,              
      &                 stress_n, stress_n1, strain, history,                    
-     &                 history1, span, iout, signal_flag )                      
-      implicit integer (a-z)                                                    
+     &                 history1, span, iout, signal_flag,
+     &                  killed_status )                      
+      implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
 c                   parameter declarations                                      
-c                                                                               
-      double precision ::                                                       
-     & e(*), nu(*), sigyld(*), exp(*), stress_n(mxvl,*),                        
-     & stress_n1(mxvl,*), strain(mxvl,*), history(span,*),                      
-     & history1(span,*)                                                         
-       logical :: signal_flag                                                   
+c                           
+      integer :: step, iter, felem, gpn, span, iout
+      logical :: killed_status(span), signal_flag
+      double precision :: e(*), nu(*), sigyld(*), exp(*), 
+     &    stress_n(mxvl,*), stress_n1(mxvl,*), strain(mxvl,*),
+     &    history(span,*), history1(span,*)                                                         
 c                                                                               
 c                   locally defined                                             
-c                                                                               
+c                      
+      integer :: i, j, nonlin_point
       double precision ::                                                       
      & k1, k2(mxvl), l2, pi2, twothd, third, root2, rt23, zero, one,            
-     & two, half, epsm, e1, e2, e3, epseff(mxvl),                               
-     & epsyld(mxvl), epslim(mxvl), g, c, a, b,                                  
+     & two, half, epsm, e1, e2, e3, epseff(mxvl), t1,                             
+     & epsyld(mxvl), epslim(mxvl), g, c, a, b, eps_plas(6),                                 
      & theta, c1, c2, epsnc(mxvl), signc(mxvl), rnc(mxvl),                      
      & sigeff(mxvl),  eps_elas(mxvl,6), shear_mod(mxvl)                         
       logical :: mm02es, debug, signal, nonlinear_flags(mxvl), test,            
@@ -46,7 +48,7 @@ c              (1) 0.0 or 1.0 for linear/yielding
 c              (2) scalar effective stress                                      
 c              (3) scalar effective strain                                      
 c                                                                               
-      debug = .false.                                                           
+      debug = felem == -1                                                        
 c                                                                               
       if( step .eq. 1 ) then                                                    
        do i = 1, span                                                           
@@ -59,7 +61,8 @@ c             get the effective strain for the total strain. check if
 c             we are still on the linear-reponse below the transition           
 c             point. set logical linear vs. nonlinear flag for element.         
 c                                                                               
-      do i = 1, span                                                            
+      do i = 1, span    
+         if( killed_status(i) ) cycle
          epsm = ( strain(i,1) + strain(i,2) + strain(i,3) ) * third             
          e1   = strain(i,1) - epsm                                              
          e2   = strain(i,2) - epsm                                              
@@ -100,6 +103,7 @@ c
 c             process points still in linear response region                    
 c                                                                               
       do i = 1, span                                                            
+        if( killed_status(i) ) cycle
         if( nonlinear_flags(i) ) cycle                                          
         g = half * e(i) / ( one + nu(i) )                                       
         c = e(i) / ( ( one + nu(i) ) * ( one - two * nu(i) ) )                  
@@ -116,10 +120,11 @@ c
      &                   stress_n1(i,3)*strain(i,3) +                           
      &                   stress_n1(i,4)*strain(i,4) +                           
      &                   stress_n1(i,5)*strain(i,5) +                           
-     &                   stress_n1(i,6)*strain(i,6) )                           
-        history1(i,1) = zero                                                    
-        history1(i,2) = zero                                                    
-        history1(i,3) = epseff(i)                                               
+     &                   stress_n1(i,6)*strain(i,6) )  
+        stress_n1(i,9) = zero
+        history1(i,1)  = zero                                                    
+        history1(i,2)  = zero                                                    
+        history1(i,3)  = epseff(i)                                               
       end do                                                                    
 c                                                                               
       if( .not. nonlinear_points ) go to 1000                                   
@@ -132,6 +137,7 @@ c             done by function mm02es. Function is inlined but loop
 c             not vectorized.                                                   
 c                                                                               
       do i = 1, span                                                            
+        if( killed_status(i) ) cycle
         if( linear_flags(i) ) cycle                                             
         k2(i)  = root2 * ( one-k1 ) / exp(i) + one                              
         theta  = atan( k2(i)**(one-exp(i))/exp(i) )                             
@@ -144,6 +150,7 @@ c
       end do                                                                    
 c                                                                               
       do i = 1, span                                                            
+       if( killed_status(i) ) cycle
        if( linear_flags(i) ) cycle                                              
        test = mm02es( sigyld(i), epsyld(i), nu(i), exp(i),                      
      &                  epseff(i), sigeff(i), k2(i), epsnc(i),                  
@@ -161,21 +168,23 @@ c             get strain energy  density
 c                                                                               
       if( signal .and. signal_flag ) then                                       
        do i = 1, span                                                           
-        if( nonlinear_flags(i) .and. history(i,1) .eq. zero ) then              
+         if( killed_status(i) ) cycle
+         if( nonlinear_flags(i) .and. history(i,1) .eq. zero ) then              
           write(iout,9300) felem+i-1, gpn, sigeff(i)-sigyld(i)*k1               
           history1(i,1) = one                                                   
         end if                                                                  
        end do                                                                   
       end if                                                                    
 c                                                                               
-      call mm02ns( rnc, signc, k2, k1, exp,                                     
-     &             sigyld, epseff, sigeff, nu, e,                               
-     &             strain, stress_n1, linear_flags, span )                      
+      call mm02ns( rnc, signc, k2, k1, exp, sigyld, epseff, sigeff,
+     &             nu, e, strain, stress_n1, linear_flags, 
+     &             span, killed_status )                      
 c                                                                               
 c             put effective stress and strain energy into stress                
 c             vector for point. update history parameters.                      
 c                                                                               
       do i = 1, span                                                            
+       if( killed_status(i) ) cycle
        if( linear_flags(i) ) cycle                                              
        history1(i,1) = one                                                      
        history1(i,2) = sigeff(i)                                                
@@ -192,6 +201,7 @@ c             the current plastic effective strain.
 c                                                                               
  1000 continue                                                                  
       do i = 1, span                                                            
+         if( killed_status(i) ) cycle
          shear_mod(i) = e(i) * half / (one + nu(i))                             
          eps_elas(i,1) = (stress_n1(i,1) - nu(i)*(stress_n1(i,2)+               
      &                   stress_n1(i,3)))/e(i)                                  
@@ -208,13 +218,24 @@ c
      &     + eps_elas(i,3) * stress_n1(i,3)                                     
      &     + eps_elas(i,4) * stress_n1(i,4)                                     
      &     + eps_elas(i,5) * stress_n1(i,5)                                     
-     &     + eps_elas(i,6) * stress_n1(i,6) )                                   
-         stress_n1(i,9) = zero                                                  
-         if( nonlinear_flags(i) )                                               
-     &     stress_n1(i,9) = epsyld(i)*(sigeff(i)/sigyld(i))**exp(i)             
-     &                       - sigeff(i) / e(i)                                 
+     &     + eps_elas(i,6) * stress_n1(i,6) )  
+         stress_n1(i,9) =  zero                                              
+         if( nonlinear_flags(i) ) then  
+           eps_plas(1:6) = strain(i,1:6) - eps_elas(i,1:6)
+           t1 = eps_plas(1)**2 + eps_plas(2)**2 + eps_plas(3)**2 +
+     &        half*(eps_plas(4)**2+eps_plas(5)**2+eps_plas(6)**2)
+           stress_n1(i,9) =  rt23 * sqrt( t1  )  
+         end if
       end do                                                                    
-c                                                                               
+c   
+      if( debug ) then                                                          
+        write(iout,*) ' '                                                       
+        i = max( nonlin_point,1 )                                               
+        write(iout,9500) felem+i-1, gpn,                                        
+     &       (stress_n1(i,j),j=1,9), history1(i,1), history1(i,2),                 
+     &       history1(i,3)                      
+      end if                                                                    
+
       return                                                                    
 c                                                                               
  9000 format('>> debug from mm02. elem, gpn : ',i8,i2,                          
@@ -232,6 +253,10 @@ c
  9300 format(10x,i8,i3,' point yields.  f = ',f12.3 )                           
  9400 format('    updated elastic-plastic stresses: ',                          
      & /,10x,3e15.6,/,10x,4e15.6 )                                              
+ 9500 format('>> debug from mm02 after update. elem, gpn : ',i8,i2,                          
+     & /,    '    stresses @ n+1 :',                                              
+     & /,10x,4e15.6,/,10x,5e15.6,                                               
+     & /,    '    history : ',f4.1,f10.3,e14.4)                                 
 c                                                                               
       end                                                                       
 c ********************************************************************          
@@ -351,19 +376,22 @@ c
 c                                                                               
       subroutine mm02ns( rnc, signc, k2, k1, exp,                               
      &                   sigyld, epseff, sigeff, nu, e,                         
-     &                   strain, sig, linear_flags, span )                      
-      implicit integer (a-z)                                                    
+     &                   strain, sig, linear_flags, span, 
+     &                   killed_status )                      
+      implicit none                                                   
       include 'param_def'                                                       
 c                                                                               
 c             parameter declarations                                            
-c                                                                               
+c          
+      integer :: span
       double precision ::                                                       
      & rnc(*), signc(*), k2(*), k1, exp(*), sigyld(*),                          
      & epseff(*), sigeff(*), nu(*), e(*), strain(mxvl,*), sig(mxvl,*)           
-      logical :: linear_flags(*)                                                
+      logical :: linear_flags(*), killed_status(span)                                                
 c                                                                               
 c             local declarations                                                
-c                                                                               
+c            
+      integer :: i
       double precision ::                                                       
      & one, two, three, half, onefive, six, pt25, twothd,                       
      & third, const1, const2, epsv, sigm, upress(mxvl),                         
@@ -385,6 +413,7 @@ c             compute stress by volumetric and deviatoric
 c             components.                                                       
 c                                                                               
       do i = 1, span                                                            
+        if( killed_status(i) ) cycle
         if( linear_flags(i) ) cycle                                             
         const1 = twothd * sigeff(i) / epseff(i)                                 
         const2 = e(i) / ( one - two*nu(i) ) - const1                            
@@ -402,7 +431,8 @@ c             transition part of curve or power-law part of curve.
 c             energy up to k1*sigyld is same for both cases.                    
 c                                                                               
       do i = 1, span                                                            
-       if( linear_flags(i) ) cycle                                              
+        if( killed_status(i) ) cycle
+        if( linear_flags(i) ) cycle                                              
         sigm      = third * ( sig(i,1) + sig(i,2) + sig(i,3) )                  
         upress(i) = ( onefive - three*nu(i)) * sigm * sigm                      
         sigk1     = k1 * sigyld(i)                                              
@@ -418,7 +448,8 @@ c
         uk1(i) = term1 + term2 + term3                                          
       end do                                                                    
 c                                                                               
-      do i = 1, span                                                            
+      do i = 1, span   
+       if( killed_status(i) ) cycle
        if( linear_flags(i) ) cycle                                              
        if( sigeff(i)/sigyld(i) .lt. k2(i) ) then                                
 c                                                                               
@@ -702,7 +733,7 @@ c *                                                                   *
 c *********************************************************************         
 c                                                                               
       subroutine cnst2( felem, gpn, e, nu, sigyld, exp, strain_n1,              
-     &                  history, cep, span, iout )                              
+     &                  history, cep, span, iout, killed_status )                              
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
@@ -711,7 +742,8 @@ c
       integer :: felem, gpn, span, iout                                         
       double precision ::                                                       
      & strain_n1(mxvl,*), history(span,*), cep(mxvl,6,6), e(*),                 
-     & nu(*), sigyld(*), exp(*)                                                 
+     & nu(*), sigyld(*), exp(*)  
+      logical :: killed_status(span)
 c                                                                               
 c                   locally defined                                             
 c                                                                               
@@ -733,6 +765,7 @@ c
       nonlinear_points = .false.                                                
       nonlin_point     = 0                                                      
       do i = 1, span                                                            
+        if( killed_status(i) ) cycle
         epsyld(i) = sigyld(i) / e(i)                                            
         k2(i)     = root2 * ( one-k1 ) / exp(i) + one                           
         epslim(i) = k1 * epsyld(i) * (two/three) * (one+nu(i))                  
@@ -757,6 +790,7 @@ c
       end if                                                                    
 c                                                                               
       do i = 1, span  ! linear elastic points                                   
+       if( killed_status(i) ) cycle
        if( nonlinear_flags(i) ) cycle                                           
        cep(i,1,4) = zero                                                        
        cep(i,1,5) = zero                                                        
@@ -805,6 +839,7 @@ c
 c             some points are nonlinear                                         
 c                                                                               
       do i = 1, span                                                            
+        if( killed_status(i) ) cycle
         if( .not. nonlinear_flags(i) ) cycle                                    
         theta    = atan( k2(i)**(1.-exp(i))/exp(i) )                            
         l2       = -tan(pi2-theta)                                              
@@ -817,7 +852,7 @@ c
 c                                                                               
       call cnst2a( cep, e, nu, sigeff, epseff, strain_n1,                       
      &             sigyld, exp, signc, rnc, k2,                                 
-     &             span, nonlinear_flags )                                      
+     &             span, nonlinear_flags, killed_status )                                      
 c                                                                               
       if( .not. debug ) return                                                  
       write(iout,9034)                                                          
@@ -846,7 +881,8 @@ c ********************************************************************
 c                                                                               
 c                                                                               
       subroutine cnst2a( cep, e, nu, sigeff, epseff, strain, sigyld,            
-     &                   exp, signc, rnc, k2, span, nonlinear_flags )           
+     &                   exp, signc, rnc, k2, span, nonlinear_flags,
+     &                   killed_status)           
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
@@ -855,7 +891,7 @@ c
      & cep(mxvl,6,6), e(*), nu(*), sigeff(*), epseff(*),                        
      & strain(mxvl,*), sigyld(*), exp(*), signc(*),                             
      & rnc(*), k2(*)                                                            
-      logical ::  nonlinear_flags(*)                                            
+      logical ::  nonlinear_flags(*), killed_status(span)                                           
 c                                                                               
       integer :: i                                                              
       double precision ::                                                       
@@ -872,7 +908,8 @@ c
 c             compute the tangent modulus matrix                                
 c                                                                               
       do i = 1, span                                                            
-       if( .not. nonlinear_flags(i) ) cycle                                     
+         if( killed_status(i) ) cycle
+         if( .not. nonlinear_flags(i) ) cycle                                     
          ev(i) = third * ( strain(i,1) + strain(i,2) + strain(i,3) )            
          e1(i) = strain(i,1) - ev(i)                                            
          e2(i) = strain(i,2) - ev(i)                                            
@@ -884,6 +921,7 @@ c
       end do                                                                    
 c                                                                               
       do i = 1, span                                                            
+        if( killed_status(i) ) cycle
         if( .not. nonlinear_flags(i) ) cycle                                    
         if( sign(i) .le. k2(i) ) then                                           
           radical = sqrt( rnc(i)*rnc(i) - (sign(i)-signc(i))**2 )               
@@ -907,6 +945,7 @@ c
 c             3-D (row ordering x, y, z, xy, yz, xz)                            
 c                                                                               
       do i = 1, span                                                            
+       if( killed_status(i) ) cycle
        if( .not. nonlinear_flags(i) ) cycle                                     
        cep(i,1,1) = ( c3(i) + g(i)*e1(i)*e1(i) + c2(i) )                        
        cep(i,2,1) = ( c3(i) + g(i)*e2(i)*e1(i) )                                

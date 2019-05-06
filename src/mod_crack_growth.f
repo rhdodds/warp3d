@@ -4,7 +4,7 @@ c     *                      f-90 module crack_growth_data           *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 10/10/97                   *          
+c     *                   last modified : 4/28/2019 rhd              *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          
@@ -20,21 +20,19 @@ c
 c                                                                               
       integer, allocatable, dimension(:)  :: dam_node_elecnt                    
       integer, allocatable, dimension(:)  :: dam_state                          
-      allocatable                         :: dam_ifv(:,:)                       
-      allocatable                         :: dam_dbar_elems(:,:)                
+      double precision, allocatable       :: dam_ifv(:,:)                       
+      double precision, allocatable       :: dam_dbar_elems(:,:)                
       logical, allocatable, dimension(:)  :: dam_blk_killed                     
       integer, allocatable, dimension(:)  :: dam_print_list                     
       integer, allocatable, dimension(:)  :: kill_order_list                    
       integer, allocatable                :: dam_face_nodes(:,:)                
-      allocatable                         :: old_porosity(:)                    
-      allocatable                         :: old_deff(:)                        
-      allocatable                         :: old_plast_strain(:)                
-      allocatable                         :: old_mises(:)                       
-      allocatable                         :: old_mean(:)                        
-c                                                                               
-      double precision                                                          
-     &  dam_ifv, dam_dbar_elems, old_porosity, old_plast_strain,                
-     &  old_mean, old_mises, old_deff                                           
+      double precision, allocatable       :: old_porosity(:)                    
+      double precision, allocatable       :: old_deff(:)                   
+      double precision, allocatable       :: old_plast_strain(:)                
+      double precision, allocatable       :: old_mises(:)                       
+      double precision, allocatable       :: old_mean(:)    
+      double precision, allocatable       :: smcs_weighted_T(:),
+     &                                       smcs_old_epsplas(:)                   
 c                                                                               
 c                                                                               
       end module                                                                

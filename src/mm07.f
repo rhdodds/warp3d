@@ -4,7 +4,7 @@ c *        material model # 7 -- warp3d hydrogen model              *
 c *                                                                 *
 c *               written by: yueming liang                         *
 c *                                                                 *
-c *                last modified: 9/29/2016 rhd                     *
+c *                last modified: 5/2/2019 rhd                      *
 c *                                                                 *
 c *                                                                 *
 c *     this material model incorporates the equilibrium hydrogen   *
@@ -23,7 +23,7 @@ c *******************************************************************
      &  iout, signal_flag, adaptive_possible, cut_step_size_now,
      &  mm_props, e_vec, tan_e_vec, nu_vec, sigyld_vec,
      &  n_power_vec, trial_elas_stress_np1, stress_n, stress_np1,
-     &  deps, history_n, history_np1 )
+     &  deps, history_n, history_np1, killed_status )
       implicit none
 c
 c                   parameter declarations
@@ -34,7 +34,8 @@ c
      &  nstrs, nstrn
 c
       logical ::
-     &   signal_flag, adaptive_possible, cut_step_size_now
+     &   signal_flag, adaptive_possible, cut_step_size_now,
+     &   killed_status(span)
 c
       double precision ::
      & mm_props(mxvl,10), e_vec(mxvl), tan_e_vec(mxvl), nu_vec(mxvl),
@@ -186,7 +187,11 @@ c
       end if
 c
       do i = 1, span
-c
+c  
+        if( killed_status(i) ) then
+           stress_np1(i,:) = zero
+           cycle
+        end if
         alpha = mm_props(i,1)
         rho0  = mm_props(i,2)
         gamma = mm_props(i,3)
@@ -649,16 +654,17 @@ c
      &  span, felem, gpn, iter, iout, mxvl, nstrn,
      &  e_vec, nu_vec, sigyld_vec, n_power_vec, mm_props,
      &  trial_elas_stress, history_n,
-     &  history_np1, stress_np1, dmat )
+     &  history_np1, stress_np1, dmat, killed_status )
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
+      integer ::
      &  span, felem, gpn, iter, iout, mxvl, nstrn
+      logical :: killed_status(span)
 c
-      double precision
+      double precision ::
      & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
      & trial_elas_stress(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
@@ -750,6 +756,7 @@ c              dmat[] zeroed by warp3d
 c
       do i = 1, span
 c
+       if( killed_status(i) ) cycle
        alpha = mm_props(i,1)
        rho0  = mm_props(i,2)
        gamma = mm_props(i,3)

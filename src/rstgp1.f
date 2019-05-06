@@ -874,12 +874,19 @@ c
         call drive_01_update_a
       end if
 c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        if( .not. local_work%killed_status_vec(i) ) cycle
+        cep(i,1:6,1:6) = zero
+        local_work%urcs_blk_n1(i,:,gpn) = zero
+      end do
+c
 c          save the [D] matrices (lower-triangle)
 c
       call rstgp1_store_cep( span, mxvl, gpn,
      &         gbl_cep_blocks(now_blk)%vector, 21, cep )
       if( local_debug ) write(iout,9080)
-c
+
       return
 c
  9000 format(1x,'.... debug mm01. felem, gpn, span: ',i7,i3,i3)
@@ -1193,6 +1200,11 @@ c
      &                  local_work%alpha_vec(i,6)*nowtemp
       end do
 c
+      do i = 1, span
+!DIR$ VECTOR ALIGNED
+       if( local_work%killed_status_vec(i) ) ddtse(i,1:nstr) = zero
+      end do
+
       nonlinear_update = iter >= 1 .or. extrapolated_du 
       linear_elastic_update  = .not. nonlinear_update
 c
@@ -1205,11 +1217,11 @@ c
      &           ddtse(1,1),  ! total mechanical strain @ n+1
      &           local_work%elem_hist(1,1,gpn),
      &           local_work%elem_hist1(1,1,gpn), span, iout,
-     &           signal_flag )
+     &           signal_flag, local_work%killed_status_vec )
          call cnst2( felem, gpn, local_work%e_vec, local_work%nu_vec,
      &               local_work%sigyld_vec, local_work%n_power_vec,
      &               ddtse, local_work%elem_hist1(1,1,gpn),
-     &               cep, span, iout )
+     &               cep, span, iout, local_work%killed_status_vec )
       end if
 c
       if( nonlinear_update .and. local_work%capture_initial_state )
@@ -1220,6 +1232,13 @@ c
         cep  = zero
         call drive_02_update_a
       end if 
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        if( .not. local_work%killed_status_vec(i) ) cycle
+        cep(i,1:6,1:6) = zero
+        local_work%urcs_blk_n1(i,:,gpn) = zero
+      end do      
 c
 c          save the [D] matrices (lower-triangle)
 c
@@ -2721,7 +2740,7 @@ c
      &            cep,
      &            local_work%gp_h_u_vec, local_work%gp_beta_u_vec,
      &            local_work%gp_delta_u_vec,
-     &            gp_tau_vec )
+     &            gp_tau_vec, local_work%killed_status_vec )
       end if
 c
       if( nonlinear_update .and. local_work%capture_initial_state ) 
@@ -2731,6 +2750,13 @@ c
         if( local_debug ) write(iout,9070)
         call drive_05_update_a
       end if
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        if( .not. local_work%killed_status_vec(i) ) cycle
+        cep(i,1:6,1:6) = zero
+        local_work%urcs_blk_n1(i,:,gpn) = zero
+      end do
 c
 c          save the [D] matrices (lower-triangle)
 c
@@ -2947,7 +2973,8 @@ c
      &           local_work%elem_hist1(1,1,gpn),
      &           local_work%block_has_nonlocal_solids,
      &           local_work%nonlocal_state_blk(1,1),
-     &           nonlocal_shared_state_size ) ! value in param_def
+     &           nonlocal_shared_state_size,  ! value in param_def
+     &           local_work%killed_status_vec )
 c
       return
       end subroutine drive_05_update_c
@@ -3442,7 +3469,7 @@ c
       cep  = zero
 c
       do i = 1, span
-       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+       if( local_work%killed_status_vec(i) ) uddt(i,:) = zero
       end do
 c
       if( iter >= 1 .or. extrapolated_du ) then !nonlinear update
@@ -3458,7 +3485,8 @@ c
      &           local_work%urcs_blk_n(1,1,gpn),
      &           local_work%urcs_blk_n1(1,1,gpn),
      &           uddt, local_work%elem_hist(1,1,gpn),
-     &           local_work%elem_hist1(1,1,gpn) )
+     &           local_work%elem_hist1(1,1,gpn),
+     &           local_work%killed_status_vec  )
        local_work%material_cut_step = cut_step_size_now
        if( cut_step_size_now ) return
        call cnst7( span, felem, gpn, iter, iout, mxvl, nstr,
@@ -3468,11 +3496,19 @@ c
      &            local_work%rtse(1,1,gpn),
      &            local_work%elem_hist(1,1,gpn),
      &            local_work%elem_hist1(1,1,gpn),
-     &            local_work%urcs_blk_n1(1,1,gpn), cep )
+     &            local_work%urcs_blk_n1(1,1,gpn), cep, 
+     &            local_work%killed_status_vec )
       else  ! linear-elastic update
         if( local_debug ) write(iout,9070)
         call drive_07_update_a
       end if
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        if( .not. local_work%killed_status_vec(i) ) cycle
+        cep(i,1:6,1:6) = zero
+        local_work%urcs_blk_n1(i,:,gpn) = zero
+      end do
 c
 c          save the [D] matrices (lower-triangle)
 c
@@ -4595,8 +4631,12 @@ c            sigma_n+1 = sigma_n + D_E * ( uddt - delta eps creep)
 c            and puts D_E into history 1-36. D_E is linear-elastic
 c            constitutive matrix.
 c
-!DIR$ VECTOR ALIGNED
       uddt = uddt_displ + uddt_temps
+      do i = 1, span
+!DIR$ VECTOR ALIGNED
+       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+      end do
+
       iter_0_extrapolate_off = .false.
       if( iter .eq. 0 ) then
         iter_0_extrapolate_off = .not. extrapolated_du
@@ -4612,11 +4652,19 @@ c
      &           local_work%block_has_nonlocal_solids,
      &           local_work%nonlocal_state_blk(1,1),
      &           nonlocal_shared_state_size,  ! value in param_def
-     &           iter_0_extrapolate_off )
+     &           iter_0_extrapolate_off,
+     &           local_work%killed_status_vec(1) )
 c
       if( local_work%block_has_nonlocal_solids )
      &    call drive_10_non_local ! finish nonlocal shared
-
+c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        if( .not. local_work%killed_status_vec(i) ) cycle
+        cep(i,1:6,1:6) = zero
+        local_work%urcs_blk_n1(i,:,gpn) = zero
+      end do
+c
       if( local_debug )  write(iout,9120) felem, gpn, span
 c
       if( check_D ) then
@@ -5641,3 +5689,147 @@ c
      &       /,3x,"                 job aborted" )
       end
 
+
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine mm_return_values                  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 4/29/2019 rhd              *
+c     *                                                              *
+c     *  return requested results for an element if available        *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine mm_return_values( value_type, elem, vec, npts ) 
+      use global_data, only : out, iprops, nstr, nstrs, elblks
+      use main_data,       only : elems_to_blocks                               
+      use elem_block_data, only : history_blocks, eps_n_blocks,                 
+     &                            urcs_n_blocks, history_blk_list               
+c
+      implicit none       
+c
+c              parameters
+c
+      character(len=*) :: value_type
+      integer :: elem, npts
+      double precision :: vec(npts)
+c
+c              local variables
+c
+      integer :: mat_model, blk, rel_elem, hist_size, hoffset,
+     &           epsoffset, sigoffset, ngp, span
+      double precision, dimension(:), pointer :: history, urcs_n,
+     &          eps_n, urcs_n1                       
+c
+      mat_model = iprops(25,elem) 
+c
+      ngp         = iprops(6,elem)                                           
+      blk         = elems_to_blocks(elem,1)                                  
+      rel_elem    = elems_to_blocks(elem,2)  
+      span        = elblks(0,blk)
+      hist_size   = history_blk_list(blk)                                    
+      hoffset     = (rel_elem-1)*hist_size*ngp + 1                           
+      epsoffset   = (rel_elem-1)*nstr*ngp                                    
+      sigoffset   = (rel_elem-1)*nstrs*ngp                                   
+      urcs_n      => urcs_n_blocks(blk)%ptr                              
+      eps_n       => eps_n_blocks(blk)%ptr                                 
+      history     => history_blocks(blk)%ptr 
+c      
+      select case( value_type )  ! what type data is available
+c
+       case( "plastic_strain" )
+         call mm_return_values_eps_plas
+       case default
+         write(out,9000) elem, value_type, 1
+       call die_gracefully
+c
+      end select
+c
+      return
+c
+ 9000 format(/,'FATAL ERROR: mm_return_values. Contact WARP3D group',             
+     &       /,'             element, type: ', i8,2x,a,
+     &       /,'             Job terminated at ',i1,//)                         
+c
+      contains
+c     ========
+
+      subroutine mm_return_values_eps_plas ! uniaxial plastic strain
+      implicit none
+c 
+      integer :: eps_plas_loc, gp, j, eps_plas_col
+      double precision :: convert_factor
+      double precision, parameter :: root23 = dsqrt(2.0d0/3.0d0)
+c
+      if( npts /= ngp ) then
+        write(out,9020) elem, npts, ngp, 3
+        call die_gracefully
+      end if
+c
+      select case( mat_model )
+        case( 1 ) ! bilinear   verified
+           eps_plas_loc = 3
+           do gp = 1, ngp
+              j = (gp-1)*hist_size
+              vec(gp) = history(hoffset+(eps_plas_loc-1)+j)
+           end do 
+        case( 2 ) ! deformation verified
+          eps_plas_col = 9
+          do gp = 1, ngp    
+            sigoffset = (rel_elem-1)*nstrs*ngp + (gp-1)*nstrs                     
+            vec(gp) = urcs_n(sigoffset + eps_plas_col)                                          
+          end do
+        case( 3 ) ! mises/gurson  ! verified
+           eps_plas_loc = 1
+           do gp = 1, ngp
+              j = (gp-1)*hist_size
+              vec(gp) = history(hoffset+(eps_plas_loc-1)+j)
+           end do 
+        case( 5 ) ! cyclic   verified
+           eps_plas_loc = 3
+           convert_factor = root23
+           do gp = 1, ngp
+             j = (gp-1)*hist_size
+             vec(gp) = history(hoffset+(eps_plas_loc-1)+j) * 
+     &                 convert_factor 
+           end do 
+        case( 6 ) ! norton creep    verified 
+           eps_plas_loc = 1    ! accumulated creep strain
+           do gp = 1, ngp
+             j = (gp-1)*hist_size
+             vec(gp) = history(hoffset+(eps_plas_loc-1)+j) 
+           end do 
+        case( 7 ) ! mises-hydrogen  ??? run uniaxial to find factor
+           eps_plas_loc = 1
+           do gp = 1, ngp
+              j = (gp-1)*hist_size
+              vec(gp) = history(hoffset+(eps_plas_loc-1)+j) 
+           end do 
+        case( 10 ) ! crystal plasticity   verified
+           eps_plas_col = 9
+           do gp = 1, ngp    
+            sigoffset = (rel_elem-1)*nstrs*ngp + (gp-1)*nstrs                     
+            vec(gp) = urcs_n(sigoffset + eps_plas_col)                                          
+           end do
+        case default
+           write(out,9010) elem, mat_model, 2
+      end select
+c
+      return 
+c
+ 9010 format(/,'FATAL ERROR: mm_return_values. Contact WARP3D group',             
+     &       /,'             cannot return plastic strains.',
+     &       /,'             element, material model: ',i8,i3,
+     &       /,'             Job terminated at ',i1,//)                         
+ 9020 format(/,'FATAL ERROR: mm_return_values. Contact WARP3D group',             
+     &       /,'             mismatched number of points.',
+     &       /,'             element, npts, ngp: ',i8,2i3,
+     &       /,'             Job terminated at ',i1,//)                         
+c
+      end subroutine mm_return_values_eps_plas
+c
+      end subroutine mm_return_values
+      

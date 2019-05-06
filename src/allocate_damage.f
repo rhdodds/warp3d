@@ -5,14 +5,11 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/16/94                   *          
-c     *                   last modified :  804/97 ag                 *          
+c     *                   last modified : 4/29/2019 rhd              *          
 c     *                                                              *          
-c     *     this subroutine allocates all the information for        *          
-c     *     the damage routines                                      *          
+c     *     allocates information for the damage routines as needed  *                                     *          
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
 c                                                                               
 c                                                                               
       subroutine allocate_damage ( status )                                     
@@ -26,18 +23,18 @@ c
 c                                                                               
 c                                                                               
       double precision                                                          
-     &     zero, dumd1, dumd2, dumd3, dumd4, dumd5, dumd6,                      
+     &     zero, dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
      &     porosity, plast_strain,                                              
      &     values(20)                                                           
       logical debug, duml                                                       
-      data zero /0.0/                                                           
+      data zero /0.0d0/                                                           
       real dumr                                                                 
 c                                                                               
       debug = .false.                                                           
 c                                                                               
 c                                                                               
       go to (100,200,300,400,500,600,700,800,900,1000,1100,                     
-     &       1200 ), status                                                     
+     &       1200, 1300 ), status                                                     
 c                                                                               
 c                               allocate dam_state, dam_ifv,                    
 c                               dam_blk_killed                                  
@@ -390,6 +387,19 @@ c
       allocate( dam_ptr(noelem) )                                               
       dam_ptr(1:noelem) = 0                                                     
       go to 9999                                                                
+c
+c                            SMCS to enable use of plastic strain 
+c                            averaged sig_mean/sig_mises                              
+c                                                                               
+ 1300 continue
+      if( allocated( smcs_weighted_T ) ) deallocate( smcs_weighted_T )               
+      allocate( smcs_weighted_T( num_kill_elem ) )                                 
+      if( allocated( smcs_old_epsplas ) ) 
+     &      deallocate( smcs_old_epsplas )               
+      allocate( smcs_old_epsplas( num_kill_elem ) )
+      smcs_weighted_T = zero
+      smcs_old_epsplas = zero  
+      go to 9999      
 c                                                                               
  9999 continue                                                                  
 c                                                                               

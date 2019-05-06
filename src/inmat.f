@@ -1924,7 +1924,9 @@ c
                               call errmsg(364,dumi,dums,dumr,dumd)
                         end if
                   end if
-            elseif ( endcrd(dum) ) then
+          elseif ( matchs_exact('killable') ) then
+                  lmtprp(23,matnum) = .true.
+          elseif ( endcrd(dum) ) then
                   reading = .false.
                   cycle
             elseif ( matchs(',',1) ) then
@@ -2266,6 +2268,7 @@ c
       if( matchs_exact( 'gp_delta_u' ) ) go to 430
       if( matchs_exact( 'gp_beta_u' ) ) go to 440
       if( matchs( 'curves', 5) ) go to 460
+      if( matchs('killable',4) ) go to 470
 c
       if( matchs(',',1)                ) go to 215
 c
@@ -2587,8 +2590,17 @@ c
       call inseg_curve_list( curve_set_no, lmtprp(24) )
       if ( lmtprp(24) ) matprp(45) = curve_set_no
       go to 210
-
 c
+c **********************************************************************
+c *                                                                    *
+c *                 allow the element to be killed                     *
+c *                 in a crack growth problem                          *
+c *                                                                    *
+c **********************************************************************
+c
+ 470  continue
+      lmtprp(23) = .true.
+      go to 210
 c
  9000 format(/,2x,'** values for cyclic plasticity model:',
      &  /,5x,'e:        ',f10.0,

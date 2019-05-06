@@ -4,10 +4,9 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 9/4/2010 RHD               *          
+c     *                   last modified : 05/5/2019 rhd              *          
 c     *                                                              *          
-c     *     this subroutine supervises and conducts the input of the *          
-c     *     crack growth prarmeters belonging to the current problem.*          
+c     *                   input crack growth parameters              *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -19,23 +18,28 @@ c
       use main_data, only : cnstrn_in                                           
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      logical sbflg1, sbflg2                                                    
-      logical matchs, numd, numi, endcrd, matchs_exact                          
-      dimension scan_order_list(mxlsz), scan_kill_order_list(mxlsz),            
-     &      scan_master_list(mxlsz)                                             
+      implicit none
+c      
+      logical :: sbflg1, sbflg2  
+c 
+c             locals
+c           
+      integer :: dof, elem, icn, iplist, lcktype, node, param,
+     &           errnum, temp_int, dum, scan_order_list_size,
+     &           scan_kill_order_length, scan_master_length
+      logical, external :: matchs, numd, numi, endcrd,
+     &                     true, matchs_exact
+      logical :: debug
+      integer :: scan_order_list(mxlsz), scan_kill_order_list(mxlsz),            
+     &           scan_master_list(mxlsz)                                             
 c                                                                               
-c             locally allocated arrays                                          
-c                                                                               
-      double precision                                                          
+      double precision ::                                                          
      &  dumd, zero, ctoa, two, hundred, def_min_load_fact, temp_dble,           
      &  d32460, one                                                             
       data one, zero, two, hundred, def_min_load_fact,d32460                    
      &      / 1.0, 0.0, 2.0, 100.0, .01, 32460.0 /                              
       character(len=1) :: dums                                                  
       real dumr                                                                 
-      external true                                                             
-      logical debug, true                                                 
 c                                                                               
 c         do some initialization                                                
 c                                                                               
@@ -55,7 +59,7 @@ c
       if ( matchs('critical',4) )       go to 300                               
       if ( matchs('release',4) )        go to 400                               
       if ( matchs('print',5) )          go to 500                               
-      if ( matchs('kill',4) )           go to 600                               
+      if ( matchs_exact('kill') )       go to 600                               
       if ( matchs('sequential',4) )     go to 600                               
       if ( matchs('force',4) )          go to 700                               
       if ( matchs('crack',4) )          go to 800                               
@@ -65,6 +69,7 @@ c
       if ( matchs('characteristic',4) ) go to 1200                              
       if ( matchs('alpha',4) )          go to 1300                              
       if ( matchs('beta',4) )           go to 1400                              
+      if ( matchs_exact('gamma') )      go to 1450                              
       if ( matchs('overshoot',4) )      go to 100                               
       if ( matchs('automatic',4) )      go to 1500                              
       if ( matchs('adaptive',4) )       go to 1500                              
@@ -72,7 +77,9 @@ c
       if ( matchs('master',4) )         go to 1700                              
       if ( matchs('number',4) )         go to 1800                              
       if ( matchs('enforce',4) )        go to 1900                              
-      if ( matchs_exact('ppr') )        go to 2000                              
+      if ( matchs_exact('ppr') )        go to 2000
+      if ( matchs_exact('smcs') )       go to 2100
+      if ( matchs_exact('killed') )     go to 2200
 c                                                                               
       go to 9999                                                                
 c                                                                               
@@ -142,10 +149,10 @@ c      type of crack growth <option>
 c                                                                               
 c      <option> ::=   none | element_extinction | gurson |                      
 c                     smcs | node_release | discrete |                          
-c                     cohesive                                                  
+c                     cohesive | user                                                 
 c                                                                               
 c      element_extinction maybe used as an optional phrase                      
-c      ahead of gurson and smcs                                                 
+c      ahead of gurson, smcs and user                                                
 c                                                                               
 c      element_extinction with nothing afterward implies gurson                 
 c                                                                               
@@ -167,7 +174,8 @@ c
       if ( matchs('element_extinction',4) ) then                                
              lcktype = 1                                                        
              if ( matchs('gurson',4) ) call splunj                              
-             if ( matchs('smcs',4)   ) lcktype = 3                              
+             if ( matchs('smcs',4)   ) lcktype = 3      
+             if ( matchs('user',4)   ) lcktype = 5                        
       else if ( matchs('gurson',4) ) then                                       
              lcktype = 1                                                        
       else if ( matchs('smcs',4) ) then                                         
@@ -178,7 +186,9 @@ c
              lcktype = 2                                                        
       else if ( matchs('cohesive',4) ) then                                     
              lcktype = 4                                                        
-      else                                                                      
+      else if ( matchs('user',4) ) then                                     
+             lcktype = 5    
+      else                                                    
          call errmsg( 200, dum, dums, dumr, dumd )                              
          crack_growth_type  = 0                                                 
          growth_by_release  = .false.                                           
@@ -186,9 +196,9 @@ c
          growth_by_cohesive = .false.                                           
          go to 10                                                               
       end if                                                                    
-c                                                                               
+c              
       if ( lcktype .eq. 1 .or. lcktype .eq. 3                                   
-     &      .or. lcktype .eq. 4 ) then                                          
+     &      .or. lcktype .eq. 4 .or. lcktype .eq. 5 ) then                                          
 c                                                                               
 c                element extinction is chosen. if crack growth is               
 c                off and elements were killed, then error. If node_release      
@@ -203,7 +213,8 @@ c
                growth_by_kill     = .true.                                      
                growth_by_release  = .false.                                     
                growth_by_cohesive = lcktype .eq. 4                              
-               call dam_init ( debug )                                          
+               call dam_init ( debug )     
+               if( lcktype .eq. 3 ) call allocate_damage ( 13 ) 
             else                                                                
                call errmsg( 214, dum, dums, dumr, dumd )                        
             endif                                                               
@@ -735,6 +746,11 @@ c
           call errmsg( 254, dum, dums, dumr, dumd )                             
        end if                                                                   
        go to 10                                                                 
+ 1450  continue                                                                 
+       if ( .not. numd(smcs_gamma) ) then                                        
+          call errmsg( 254, dum, dums, dumr, dumd )                             
+       end if                                                                   
+       go to 10                                                                 
 c                                                                               
 c          ----------------------------                                         
 c          | automatic load reduction |                                         
@@ -1008,6 +1024,55 @@ c
       call incrack_errmsg( 2 )                                                  
       go to 10                                                                  
 c                                                                               
+c          ------------------------------------------                           
+c          | SMCS options                           |                           
+c          ------------------------------------------                           
+c                                                                               
+ 2100 continue                                                                  
+c                                                                               
+c          ========= alpha, beta, gamma
+c         
+      do
+        if( endcrd() ) go to 10
+        if( matchs_exact('alpha') ) then
+          if( .not. numd(smcs_alpha) ) then
+            call incrack_errmsg( 4 )
+            go to 10
+          end if
+          cycle
+         end if
+         if( matchs_exact('beta') ) then
+           if( .not. numd(smcs_beta) ) then
+             call incrack_errmsg( 4 )
+             go to 10
+           end if
+           cycle
+         end if
+         if( matchs_exact('gamma') ) then
+           if( .not. numd(smcs_gamma) ) then
+             call incrack_errmsg( 4 )
+             go to 10
+           end if
+           cycle
+         end if
+         call incrack_errmsg( 5 )
+         go to 10
+      end do         
+c                                                                               
+c          ------------------------------------------                           
+c          | killed element limit                   |                           
+c          ------------------------------------------                           
+c                                                                               
+ 2200 continue                                                                  
+c                                                                               
+c          ========= killed element limit
+c         
+      if( matchs('element',3) ) call splunj
+      if( matchs('limit',3) ) call splunj
+      if( .not. numi( killed_element_limit ) ) then
+            call incrack_errmsg( 6 )
+      end if
+      go to 10
 c                                                                               
  9999 continue                                                                  
       if ( debug ) write (out,*) '>>>>>>>>>>>>>>>>> leaving incrack.'           
@@ -1971,6 +2036,24 @@ c
          write(out,9003)                                                        
          input_ok = .false.                                                     
 c                                                                               
+      case( 4 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9004)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c                                                                               
+      case( 5 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9005)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c                                                                               
+      case( 6 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9006)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c                                                                               
       case default                                                              
         write(out,9999)                                                         
         stop                                                                    
@@ -1988,8 +2071,170 @@ c
  9003 format(/1x,'>>>>> error: displacement fraction invalid value',            
      & /14x,'must be >0 and .le. 1.0. command ignored',/)                       
 c                                                                               
+ 9004 format(/1x,'>>>>> error: expecting value for SMCS parameter',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9005 format(/1x,'>>>>> error: unrecognized SMCS parameter',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9006 format(/1x,'>>>>> error: expecting killed element limit value',            
+     & /14x,'line ignored',/)                       
+cc                                                                               
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
                                                                                 
       end                                                                       
-                                                                                
+c         
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine delete_elements              *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 4/21/2019 rhd              *          
+c     *                                                              *          
+c     *            user-directed element deletion for crack growth   *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c
+      subroutine delete_elements( sbflg1, sbflg2 )
+      use global_data ! old common.main
+c
+      use main_data
+      use damage_data, only : num_user_kill_elems, crack_growth_type,
+     &                        user_kill_list_now
+c
+      implicit none
+c
+c              parameters
+c
+      logical :: sbflg1, sbflg2
+c
+c              locals
+c
+      integer :: ele_intlst(mxlsz), lenlst=100, errnum, elem, icn,
+     &           iplist, bad_count
+      logical :: debug, bad_list
+      logical, external :: matchs
+c
+c              if sub flag 1 is on, there is re-entry after an error
+c              in input. if we have bad input somewhere here,
+c              release the data structure on exit
+c
+      debug = .true.
+      if( debug ) then
+         write(out,*) '... entered delete elements (user-defined) ...'
+         write(out,*) '    sbflg1, sbflg2: ', sbflg1, sbflg2
+      end if
+c 
+      if( sbflg1 ) then
+         write(out,9000) ; num_error = num_error + 1
+         num_user_kill_elems = 0
+         return
+      end if
+c
+c      if( crack_growth_type .ne. 5 ) then
+c         num_user_kill_elems = 0
+c         write(out,9040)
+c         write(*,*) '... crack_growth_type: ',crack_growth_type
+c         num_error = num_error + 1
+c         call scan_flushline
+c      end if
+c
+      num_user_kill_elems = 0
+      if( matchs('elem',4) ) call splunj   ! optional word
+      call scan
+      call trlist( ele_intlst, mxlsz, noelem, lenlst, errnum )
+c
+c              1 = no error. list found
+c              2 = parse rules failed in list
+c              3 = list overflowed its maximum length of mxlsz
+c              4 = no list found 
+c
+      if( debug ) write(out,*)
+     & '    ... trlist done, errnum, lenlst: ', errnum, lenlst
+c
+      if( errnum .eq. 4 ) then 
+          write(out,9000) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+      if( errnum .eq. 2 ) then
+          write(out,9010) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+      if( errnum .eq. 3 ) then
+          write(out,9020) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+c
+      if( errnum .ne. 1 ) then  ! something bad wrong
+         write(out,9050)
+         call die_gracefully
+      end if
+c
+
+      icn = 0; iplist = 1; bad_list = .false.; bad_count = 0
+      do while ( iplist .ne. 0 )
+        call trxlst( ele_intlst, lenlst, iplist, icn, elem )
+        if( elem <= 0 .or. elem > noelem ) then
+            if( bad_count > 10 ) then 
+              write(out,9060) 
+              bad_list = .true.
+              exit
+            end if
+            write(out,9030 ) elem
+            bad_list = .true.
+            bad_count = bad_count + 1
+            num_error = num_error + 1
+            cycle
+        end if
+        num_user_kill_elems = num_user_kill_elems + 1 
+        if( num_user_kill_elems > 100 ) then
+          write(out,9070) 100
+          num_error = num_error + 1
+          bad_list = .true.
+          exit        
+        end if
+        user_kill_list_now(num_user_kill_elems) = elem
+      end do  ! extracting elements from list
+c
+c              read/processed. cleanup.
+c
+      if( bad_list ) num_user_kill_elems = 0
+      sbflg1 = .true.
+      sbflg2 = .true.
+c
+      if( debug ) then
+         write(out,*) '... leaving delete_elements ...'
+         write(out,*) '  num_user_kill_elems: ',num_user_kill_elems
+         if( num_user_kill_elems == 0 ) return
+         do icn = 1, num_user_kill_elems
+          write(out,*) '    ... delete element: ',
+     &                 user_kill_list_now(icn)
+         end do
+      end if      
+c
+      return
+c
+ 9000 format(/1x,'>>>>> error: no delement list found',
+     &   /,14x,'read new line ...',/)
+ 9010 format(/1x,'>>>>> error: integer list rules failed....',
+     &   ' read new line ...',/)
+ 9020 format(/1x,'>>>>> error: too many elements in list....',
+     &   ' read new line ...',/)
+ 9030 format(/1x,'>>>>> error: invalid element number ',i8)
+ 9040 format(/1x,'>>>>> error: crack growth type previously defined',
+     &     /,    '             is not user-directed' )
+ 9050 format(/1x,'>>>>> FATAL ERROR: delete_elements inconsistency',
+     &   /,14x,'job terminated now ...',/)
+ 9060 format(/1x,'>>>>> error: further messages suppressed ...' )
+ 9070 format(/1x,'>>>>> error: too many elements in list. limit: ',i4 )
+c
+      end

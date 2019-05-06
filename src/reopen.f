@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 11/26/2018 rhd             *
+c     *                   last modified : 4/29/2019 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -454,7 +454,7 @@ c
      &              crack_plane_coord, release_fraction,
      &              critical_angle, char_length, release_height,
      &              crack_plane_sign, init_crit_ang, smcs_alpha,
-     &              smcs_beta, CTOA_range, perm_load_fact,
+     &              smcs_beta, smcs_gamma, CTOA_range, perm_load_fact,
      &              max_porosity_change, max_plast_strain_change,
      &              init_ctoa_dist, ctoa_dist, crkpln_srch_tol,
      &              max_deff_change, critical_cohes_deff_fract,
@@ -471,26 +471,32 @@ c
       if ( growth_by_kill ) then
          call allocate_damage( 1 )
          call read_damage( 1, fileno, prec_fact )
-         if ( print_status ) then
+c
+         if( crack_growth_type .eq. 3 ) then
+            call allocate_damage( 13 )
+            call read_damage( 11, fileno, prec_fact )
+         end if
+c
+         if( print_status ) then
             call allocate_damage( 2 )
             call read_damage( 2, fileno, prec_fact )
          end if
          call chk_data_key( fileno, 9, 0 )
 c
-         if ( kill_order ) then
+         if( kill_order ) then
             call allocate_damage( 3 )
             call read_damage( 3, fileno, prec_fact )
          end if
          call chk_data_key( fileno, 9, 1 )
 c
-         if ( .not. no_killed_elems ) then
+         if( .not. no_killed_elems ) then
             call allocate_damage( 4 )
             call read_damage( 4, fileno, prec_fact )
          end if
          call chk_data_key( fileno, 9, 2 )
 c
-         if ( release_type .eq. 2  ) then
-          if ( .not. no_killed_elems ) then
+         if( release_type .eq. 2  ) then
+          if( .not. no_killed_elems ) then
             call allocate_damage( 5 )
             call read_damage( 5, fileno, prec_fact )
           end if
@@ -498,32 +504,32 @@ c
          call chk_data_key( fileno, 9, 3 )
 
 c
-         if ( load_size_control_crk_grth ) then
+         if( load_size_control_crk_grth ) then
             call allocate_damage( 9 )
             call read_damage( 9, fileno, prec_fact )
          endif
          call chk_data_key( fileno, 9, 4 )
          write(out,9130)
 c
-      else if ( growth_by_release ) then
+      else if( growth_by_release ) then
 c
          call allocate_damage( 6 )
          call read_damage( 6, fileno, prec_fact )
          call chk_data_key( fileno, 9, 5 )
 
-         if ( release_type .eq.2 ) then
+         if( release_type .eq.2 ) then
             call allocate_damage( 7 )
             call read_damage( 7, fileno, prec_fact )
          end if
          call chk_data_key( fileno, 9, 6 )
 c
-         if ( overshoot_control_crk_grth ) then
+         if( overshoot_control_crk_grth ) then
             call allocate_damage( 8 )
             call read_damage( 8, fileno, prec_fact )
          end if
          call chk_data_key( fileno, 9, 7 )
 c
-         if ( const_front ) then
+         if( const_front ) then
             call allocate_damage( 10 )
             call allocate_damage( 11 )
             call read_damage( 10, fileno, prec_fact )
