@@ -97,8 +97,8 @@ c
       release fraction 0.1
       print status on order  1-203
       kill sequentially on order 37 135 36 134 35 133 34
-      alpha 0.16
-      beta 1.5
+      smcs alpha 0.16  beta 1.5 gamma 0.0
+      killed element limit 50
 c
    compute displacements for loading disp_ctrl step 5
      output reactions 1-10
