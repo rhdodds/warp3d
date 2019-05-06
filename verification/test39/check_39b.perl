@@ -18,14 +18,14 @@ open(infile, "$inputfile") or die
 print "   ... output file opened ...\n";
 #
 find_line( 1, "solution for step:     150 converged:" );
-find_line( 2, "      6  ");
+find_line( 2, "      4  ");
 #
 #    line with reactions is current. print value
 #
 @parts = split( / +/, $line);
 
 #
-$answer = "0.715046E-01";
+$answer = "0.064615";
 $partno = 2;
 #
 $message = " ";
