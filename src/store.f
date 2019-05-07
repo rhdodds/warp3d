@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/29/2019 rhd              *
+c     *                   last modified : 5/6/2019 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -482,6 +482,8 @@ c
 c
          if( crack_growth_type .eq. 3 ) then   ! smcs
                call wrtbk( fileno, smcs_weighted_T,
+     &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_weighted_zeta,
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_old_epsplas,
      &              prec_fact * num_kill_elem )

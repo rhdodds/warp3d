@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 4/29/2019 rhd              *
+c     *                   last modified : 5/6/2019 rhd               *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
