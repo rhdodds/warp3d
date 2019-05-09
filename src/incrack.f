@@ -2103,7 +2103,7 @@ c
 c
       use main_data
       use damage_data, only : num_user_kill_elems, crack_growth_type,
-     &                        user_kill_list_now
+     &                        user_kill_list_now, max_dam_state
 c
       implicit none
 c
@@ -2114,13 +2114,18 @@ c
 c              locals
 c
       integer :: ele_intlst(mxlsz), lenlst=100, errnum, elem, icn,
-     &           iplist, bad_count
+     &           iplist, bad_count, temp_int
       logical :: debug, bad_list
-      logical, external :: matchs
+      logical, external :: matchs, numi
+      double precision :: dumd
+      real :: dumr
+      character(len=1) :: dums
 c
 c              if sub flag 1 is on, there is re-entry after an error
 c              in input. if we have bad input somewhere here,
 c              release the data structure on exit
+c
+c              delete (elements) <list (release) steps <integer>
 c
       debug = .true.
       if( debug ) then
@@ -2205,6 +2210,19 @@ c
         user_kill_list_now(num_user_kill_elems) = elem
       end do  ! extracting elements from list
 c
+      if( matchs('release',4) ) call splunj
+      if( matchs('steps',4) ) then                                             
+        if( .not. numi(temp_int) ) then                                        
+          call errmsg( 203, max_dam_state, dums, dumr, dumd)                    
+        else                                                                    
+           if( temp_int .le. 0 ) then                                          
+              call errmsg( 202, max_dam_state, dums, dumr, dumd)                
+           else                                                                 
+              max_dam_state = temp_int                                          
+           end if                                                               
+        end if   
+      end if                                                                
+c                                                                               
 c              read/processed. cleanup.
 c
       if( bad_list ) num_user_kill_elems = 0
