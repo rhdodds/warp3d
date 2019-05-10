@@ -38,7 +38,7 @@ c
       integer :: elem_loop, elem_ptr, element, local_count, kill_count
       double precision :: dummy, eps_plas, eps_crit, sig_mean,
      &    sig_mises, d_eps_plas, max_d_eps_plas, ddummy1, ddummy2,
-     &    ddummy3, triaxiality
+     &    ddummy3, triaxiality, mean_zeta
       double precision, parameter :: zero = 0.0d0,
      &                               eps_plas_tol = 1.0d-06                 
       logical :: ldummy, debug, do_packets, skip_element
@@ -80,7 +80,7 @@ c              skip printing elements with very small plastic strain
 c                                                                               
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
-     &                   triaxiality, 2, ldummy )  
+     &                   triaxiality, mean_zeta, 2, ldummy )  
          skip_element = eps_plas < eps_plas_tol
          if( skip_element ) cycle
          cflag = " "
@@ -89,10 +89,11 @@ c
             d_eps_plas = eps_plas - old_plast_strain(dam_ptr(element))    
             max_d_eps_plas = max(max_d_eps_plas, d_eps_plas)                 
             write(out,9110) element, eps_plas, eps_crit, sig_mean,           
-     &              sig_mises, d_eps_plas, triaxiality, cflag                                       
+     &              sig_mises, d_eps_plas, triaxiality, mean_zeta,
+     &              cflag                                       
          else 
             write(out,9100) element, eps_plas, eps_crit, sig_mean,           
-     &              sig_mises, triaxiality, cflag 
+     &              sig_mises, triaxiality, mean_zeta, cflag 
          end if                                                 
          local_count = local_count + 1                                       
       end do  ! elem_loop
@@ -133,7 +134,7 @@ c             get current smcs parameters for element and print.
 c                                                                               
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
-     &                   triaxiality, 2, ldummy )  
+     &                   triaxiality, mean_zeta, 2, ldummy )  
          skip_element = eps_plas < eps_plas_tol
          if( skip_element ) cycle
          if( load_size_control_crk_grth ) then                              
@@ -152,17 +153,20 @@ c
  9010 format(/,5x,'>> Maximum change in plastic strain for this step:',         
      &     f9.7,/)                                                             
  9020 format(2x,'element   eps-pls    eps-crit    ',                      
-     &       'sig-mean  sig-mises  d(eps-pls)    triaxiality (T)',/,2x,                                   
+     & 'sig-mean  sig-mises  d(eps-pls)    triaxiality (T)   zeta',/,2x,                                   
      &          '-------   -------    --------    ',                        
-     &       '--------  ---------  ----------    ---------------')                                        
+     & '--------  ---------  ----------    ---------------   ----')                                        
  9030 format(2x,'element   eps-pls    eps-crit    ',                      
-     &       'sig-mean  sig-mises  triaxiality (T)',/,2x,                                   
+     &       'sig-mean  sig-mises  triaxiality (T)    zeta',/,2x,                                   
      &       '-------   -------    --------    ',                        
-     &       '--------  ---------  ---------------')                                        
- 9100 format(1x,i8,2(2x,f9.6),2x,f9.3,2x,f9.3,4x,f6.2,2x,a1) 
- 9110 format(1x,i8,2(2x,f9.6),2x,f9.3,2x,f9.3,3x,f9.7,4x,f6.2,2x,a1) 
+     &       '--------  ---------  ---------------    ----')                                        
+ 9100 format(1x,i8,2(2x,f9.6),2x,f9.3,2x,f9.3,4x,f6.2,10x,f6.2,2x,a1) 
+ 9110 format(1x,i8,2(2x,f9.6),2x,f9.3,2x,f9.3,3x,f9.7,9x,f6.2,6x,
+     &        f6.2,2x,a1) 
  9200 format(10x,"* -- Triaxiality (sig_mean/sig_mises) < 1.0")                                                
  9210 format(10x,"Triaxiality is mean over history weighted by ",
+     & "plastic strain",/,
+     &       10x,"Zeta is mean of normalized Lode angle weighted by ",
      & "plastic strain")   
  9220 format(10x,"Total elements now killed: ",i5)                                                
 c                                             

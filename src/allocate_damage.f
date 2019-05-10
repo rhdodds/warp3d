@@ -396,9 +396,13 @@ c
       allocate( smcs_weighted_T( num_kill_elem ) )                                 
       if( allocated( smcs_old_epsplas ) ) 
      &      deallocate( smcs_old_epsplas )               
-      allocate( smcs_old_epsplas( num_kill_elem ) )
-      smcs_weighted_T = zero
-      smcs_old_epsplas = zero  
+      if( allocated( smcs_weighted_zeta ) ) 
+     &      deallocate( smcs_weighted_zeta  )               
+      allocate( smcs_old_epsplas( num_kill_elem ),
+     &          smcs_weighted_zeta(num_kill_elem) )
+      smcs_weighted_T    = zero
+      smcs_old_epsplas   = zero  
+      smcs_weighted_zeta = zero  
       go to 9999      
 c                                                                               
  9999 continue                                                                  

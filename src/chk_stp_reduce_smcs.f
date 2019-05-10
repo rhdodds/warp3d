@@ -28,7 +28,7 @@ c
       integer :: elem, elem_ptr, dum                                                 
       logical :: not_cut, kill_now                                                     
       double precision :: eps_plas, eps_crit, sig_mean, sig_mises,
-     &                    triaxiality, new_plast_strain   
+     &                    triaxiality, new_plast_strain, mean_zeta   
       double precision, parameter :: two = 2.0d0                
       character(len=1) :: dums                                                  
       real :: dumr                                                                 
@@ -47,7 +47,7 @@ c              get plastic eps in element (=2 means no history update)
 c                                                                               
         call dam_param_3_get_values( elem, debug, eps_plas, eps_crit, 
      &                               sig_mean, sig_mises, triaxiality, 
-     &                               2, kill_now )   
+     &                               mean_zeta, 2, kill_now )   
         new_plast_strain = eps_plas   
 c                                                                               
 c              compare old plast_strain with new plast_strain -- if             

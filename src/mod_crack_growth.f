@@ -4,7 +4,7 @@ c     *                      f-90 module crack_growth_data           *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 4/28/2019 rhd              *          
+c     *                   last modified : 5/6/2019 rhd               *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          
@@ -32,7 +32,8 @@ c
       double precision, allocatable       :: old_mises(:)                       
       double precision, allocatable       :: old_mean(:)    
       double precision, allocatable       :: smcs_weighted_T(:),
-     &                                       smcs_old_epsplas(:)                   
+     &                                       smcs_old_epsplas(:),
+     &                                       smcs_weighted_zeta(:)
 c                                                                               
 c                                                                               
       end module                                                                
