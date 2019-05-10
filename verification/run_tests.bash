@@ -62,8 +62,8 @@ cd ..
 }
 
 function test39 {
-echo -e "\n>>> Test 39 (CTOA crack growth)"
-echo      "    ==========================="
+echo -e "\n>>> Test 39 (CTOA and SMCS crack growth)"
+echo      "    ===================================="
 cd test39
 ./run_tests_and_check
 cd ..
@@ -443,7 +443,7 @@ fi
 m_test14="Test 14: (Linear elastic impact, sparse iterative solver)"
 m_test18="Test 18: (Gurson model growth, impact loading, restart)"
 m_test24="Test 24: (hollow sphere, skew constraints, int press, large displ) "
-m_test39="Test 39: (CTOA crack growth)"
+m_test39="Test 39: (CTOA and SMCS crack growth)"
 m_test41="Test 41: (rigid contact, large displacements)"
 m_test44="Test 44: (Cohesive-interface growth, restart)"
 m_test47="Test 47: (Bilinear, cyclic, thermo-plasticity)"
