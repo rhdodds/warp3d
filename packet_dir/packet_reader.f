@@ -74,6 +74,7 @@ c                   read packet header line.
 c
 c
          read(unit=packet_file_no,iostat=ios)type,num_lines,step,iter
+         write(*,*) '...  ptype: ', type
 c
 c
 c                   check for errors in reading the packet file,
@@ -312,7 +313,7 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   WARP3D Packet Reader (example implementation)  *',
      &  /,   ' *                                                  *',
-     &  /,   ' *             Last updated: 5-23-2013              *',
+     &  /,   ' *             Last updated: 5-12-2019              *',
      &  /,   ' *                                                  *',
      &  /,   ' *                                                  *',
      &  /,   ' ****************************************************'
@@ -1110,7 +1111,7 @@ c **********************************************************************
 c *                                                                    *
 c *     subroutine: smcs_elem_1                                        *
 c *                                                                    *
-c *     reads packet file for gurson element property packets          *
+c *     reads packet file for smcs                                     *
 c *                                                                    *
 c *     THIS SUBROUTINE SHOULD BE MODIFIED BY THE USER TO OUTPUT       *
 c *     THE DESIRED DATA TO THE RESULTS FILE.                          *
@@ -1125,7 +1126,7 @@ c
       integer, intent(in)::type,num_lines,step,iter
 c
       integer ios, lines_read, elem,i
-      double precision smcs(4)
+      double precision smcs(6)
       logical connected
 c
 c
@@ -1136,10 +1137,8 @@ c
 c
 c                  need to read and put in file
 c
-c
-c
             do lines_read=1,num_lines
-               read(packet_file_no,iostat=ios)elem,(smcs(i), i=1,4)
+               read(packet_file_no,iostat=ios)elem,(smcs(i), i=1,6)
                if( ios .gt. 0)then
                   call closer(packet_file_no)
                   call closer(results_file_no)
@@ -1151,15 +1150,15 @@ c
                   write(screen,9100)
                   stop
                end if
-               write(results_file_no,1000)step,elem,(smcs(i), i=1,4)
+               write(results_file_no,1000)step,elem,(smcs(i), i=1,6)
             end do
 c
       return
 c
- 1000 format(1x,i5,1x,i6,4(1x,e14.6))
+ 1000 format(1x,i5,1x,i6,6(1x,e14.6))
 
  1100 format('  step  element   eps-pls        eps-crit      ',
-     &       'sig-mean       sig-mises')
+     &       'sig-mean       sig-mises     triaxiality (T)   zeta')
  9000 format(/,1x,'>> ERROR: reading packet file...terminating')
  9100 format(/,1x,'>> END OF FILE...program terminating in smcs_1')
 c
@@ -1172,7 +1171,7 @@ c **********************************************************************
 c *                                                                    *
 c *     subroutine: smcs_elem_2                                        *
 c *                                                                    *
-c *     reads packet file for gurson element property packets          *
+c *     reads packet file for smcs packets                             *
 c *             for automatic load reduction or adaptive load control  *
 c *                                                                    *
 c *     THIS SUBROUTINE SHOULD BE MODIFIED BY THE USER TO OUTPUT       *
@@ -1188,7 +1187,7 @@ c
       integer, intent(in)::type,num_lines,step,iter
 c
       integer ios, lines_read, elem,i
-      double precision smcs(5)
+      double precision smcs(7)
       logical connected
 c
 c
@@ -1202,7 +1201,7 @@ c
 c
 c
             do lines_read=1,num_lines
-               read(packet_file_no,iostat=ios)elem,(smcs(i), i=1,5)
+               read(packet_file_no,iostat=ios)elem,(smcs(i), i=1,7)
                if( ios .gt. 0)then
                   call closer(packet_file_no)
                   call closer(results_file_no)
@@ -1214,15 +1213,16 @@ c
                   write(screen,9100)
                   stop
                end if
-              write(results_file_no,1000)step,elem,(smcs(i), i=1,5)
+              write(results_file_no,1000)step,elem,(smcs(i), i=1,7)
             end do
 c
       return
 c
- 1000 format(1x,i5,1x,i6,5(1x,e14.6))
+ 1000 format(1x,i5,1x,i6,7(1x,e14.6))
 
  1100 format('  step  element    eps-pls        eps-crit      ',
-     &       'sig-mean       sig-mises       d(eps-pls)'  )
+     &       'sig-mean       sig-mises       d(eps-pls)',
+     &   '    Triaxiality (T)    zeta'  )
  9000 format(/,1x,'>> ERROR: reading packet file...terminating')
  9100 format(/,1x,'>> END OF FILE...program terminating in smcs_2')
 c
