@@ -5744,7 +5744,7 @@ c
          call mm_return_values_eps_plas
        case default
          write(out,9000) elem, value_type, 1
-       call die_gracefully
+         call die_gracefully
 c
       end select
 c
@@ -5816,6 +5816,7 @@ c
            end do
         case default
            write(out,9010) elem, mat_model, 2
+           call die_gracefully
       end select
 c
       return 

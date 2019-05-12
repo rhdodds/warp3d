@@ -141,7 +141,7 @@ c
          if( crack_growth_type == 5 ) elem = user_kill_list_now(kk)                                           
          elem_ptr = dam_ptr(elem)                                               
          if( elem_ptr .eq. 0 ) cycle                                           
-         if( debug ) write(out,*) 'element is:',elem                           
+         if( debug ) write(out,*) 'killable element is:',elem                           
 c                                                                               
 c                If element has been previously killed, update it's             
 c                unloading state vector, and then skip the rest of the          
@@ -244,7 +244,7 @@ c
 c                                                                               
           
       if( num_elements_killed > killed_element_limit ) then
-          write(out,9000) 3 ! killed_element_limit
+          write(out,9000) killed_element_limit
           call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
           call warp3d_normal_stop
       end if
@@ -736,12 +736,16 @@ c
      &                               deps_plas * zeta
       end if
 c
-      mean_triaxiality =  smcs_weighted_T(elem_ptr) / eps_plas
-      eps_crit = smcs_gamma + smcs_alpha * 
-     &           exp( -smcs_beta * mean_triaxiality )  
-      mean_zeta = zero
-      if( eps_plas > zero ) 
-     &  mean_zeta = smcs_weighted_zeta(elem_ptr) / eps_plas
+      if( eps_plas > 1.0d-07 ) then 
+        mean_triaxiality =  smcs_weighted_T(elem_ptr) / eps_plas
+        eps_crit = smcs_gamma + smcs_alpha * 
+     &             exp( -smcs_beta * mean_triaxiality )  
+        mean_zeta = smcs_weighted_zeta(elem_ptr) / eps_plas
+      else
+        mean_triaxiality = zero
+        eps_crit = max( 1.0d-05, smcs_gamma )
+        mean_zeta = zero
+      end if
 c      
       kill_now = .false.
       if( update ) kill_now = ( eps_plas - eps_crit ) >= zero
@@ -928,7 +932,7 @@ c     *                      subroutine dam_print                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 04/19/2019 rhd             *          
+c     *                   last modified : 05/10/2019 rhd             *          
 c     *                                                              *          
 c     *     print status of killable elements or released nodes at   *
 c     *     the beginning of a load step.                            *          
@@ -942,12 +946,15 @@ c
       use damage_data                                                           
       implicit none    
 c
-      integer :: step, iter                                                
+      integer :: step, iter  
+      logical :: doprint                                              
 c                                                                               
 c           check to make sure crack growth is on and printing is               
 c           specified                                                           
 c                                                                               
-      if( .not. print_status ) return
+      doprint = print_status .or. print_top_list
+      if( .not. doprint ) return
+c
       select case( crack_growth_type )                                           
       case(0)                                                                  
          write(out,*) '>>>> FATAL ERROR. dam_print'

@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 05/5/2019 rhd              *          
+c     *                   last modified : 05/10/2019 rhd             *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -28,7 +28,7 @@ c
      &           errnum, temp_int, dum, scan_order_list_size,
      &           scan_kill_order_length, scan_master_length
       logical, external :: matchs, numd, numi, endcrd,
-     &                     true, matchs_exact
+     &                     true, matchs_exact, integr
       logical :: debug
       integer :: scan_order_list(mxlsz), scan_kill_order_list(mxlsz),            
      &           scan_master_list(mxlsz)                                             
@@ -327,7 +327,8 @@ c
 c                                                                               
 c          -----------------------------------------------------------          
 c          | Print the status of the killed elements or crack front, |          
-c          | or print the initial crack front or crack front nodes   |          
+c          | or print the initial crack front or crack front nodes   |  
+c          | or print top list of killable elements                  |        
 c          -----------------------------------------------------------          
 c                                                                               
  500  continue                                                                  
@@ -342,7 +343,8 @@ c
       if ( matchs('plane',5) )  goto 520                                        
       if ( matchs('front',5) )  goto 530                                        
       if ( matchs('off',3) )    goto 540                                        
-      if ( matchs('on',2) )     goto 545                                        
+      if ( matchs('on',2) )     goto 545  
+      if ( matchs('top',3) )    goto 570                                      
       if ( endcrd(dum) )        goto 10                                         
 c                                                                               
       call errmsg( 201, dum, dums, dumr, dumd )                                 
@@ -364,13 +366,15 @@ c
 c          ======= turn off printing of crack status =======                    
 c                                                                               
  540  continue                                                                  
-      print_status = .false.                                                    
+      print_status = .false.   
+      print_top_list = .false.                                                 
       goto 510                                                                  
 c                                                                               
 c          ======= turn on printing of crack status =======                     
 c                                                                               
  545  continue                                                                  
-      print_status = .true.                                                     
+      print_status = .true.        
+      print_top_list = .false.                                             
 c                                                                               
 c            if we are using node release crack growth, we cant                 
 c            have a list, so search for another command on the line.            
@@ -459,7 +463,19 @@ c
       call print_list_fill( scan_order_list, scan_order_list_size,              
      &         debug )                                                          
 c                                                                               
-      goto 510                                                                  
+      goto 510  
+c
+ 570  continue
+      if( .not. integr( num_top_list ) ) then
+         call incrack_errmsg( 7 )
+         print_top_list = .false.
+         num_top_list = 0
+         go to 10
+      end if
+      print_status = .false.
+      print_top_list = .true.
+      go to 10
+                                                                
 c                                                                               
 c                                                                               
 c          ------------------------------------------------------               
@@ -2053,6 +2069,12 @@ c
          write(out,9006)                                                        
          input_ok = .false. 
          call scan_flushline
+c
+      case( 7 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9007)                                                        
+         input_ok = .false. 
+         call scan_flushline
 c                                                                               
       case default                                                              
         write(out,9999)                                                         
@@ -2079,7 +2101,10 @@ c
 c                                                                               
  9006 format(/1x,'>>>>> error: expecting killed element limit value',            
      & /14x,'line ignored',/)                       
-cc                                                                               
+c                                                                               
+ 9007 format(/1x,'>>>>> error: expecting number of top elements ',            
+     & /14x,'to print.  line ignored',/)                       
+c                                                                               
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
                                                                                 

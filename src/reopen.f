@@ -447,7 +447,8 @@ c
      &              num_nodes_back, master_lines_set,
      &              num_nodes_grwinc, num_steps_min, load_reduced,
      &              all_elems_killed, num_elements_killed,
-     &              enforce_node_release, num_ctoa_released_nodes
+     &              enforce_node_release, num_ctoa_released_nodes,
+     &              print_top_list, num_top_list
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,

@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 05/6/2019 rhdd                  *          
+c     *              last modified : 05/10/2019 rhd                  *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -51,7 +51,7 @@ c
      &   num_nodes_back, num_nodes_grwinc, num_steps_min,                       
      &   num_elements_killed,                                                   
      &   num_elements_in_force_release, num_ctoa_released_nodes,
-     &   num_user_kill_elems, killed_element_limit               
+     &   num_user_kill_elems, killed_element_limit, num_top_list               
 c                                                                               
 c                     scalar logicals                                           
 c                                                                               
@@ -61,6 +61,7 @@ c
      &  growth_by_cohesive, enforce_node_release,                               
      &  overshoot_control_crk_grth, overshoot_allocated,                        
      &  load_size_control_crk_grth, g_stp_cntrl_allocated,                      
-     &  const_front, master_lines_set, load_reduced, all_elems_killed           
+     &  const_front, master_lines_set, load_reduced, all_elems_killed,
+     &  print_top_list           
 c                                                                               
       end module                                                                

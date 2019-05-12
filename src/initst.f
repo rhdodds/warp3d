@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 04/20/2019 rhd             *
+c     *                   last modified : 5/10/2019 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -465,6 +465,8 @@ c
       ppr_kill_displ_fraction = 0.90d0
       num_user_kill_elems = 0
       killed_element_limit = 100000000
+      print_top_list = .false.
+      num_top_list = 0
 c
 c                       initialize the segmental stress strain curve definitions
 c
