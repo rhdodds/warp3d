@@ -91,7 +91,7 @@ c
                          9 39 10 40 11 41 12 42 13 43 14 44 15 45,
                         16 46 17 47 18 48 19 49 20 50
       smcs alpha 3.29 beta 1.5 gamma 0.1 
-      killed element limit 20
+      killed element limit 200
 !
 !  output patran neutral
 !  output model flat patran convention text file "model.text"
