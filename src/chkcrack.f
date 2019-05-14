@@ -62,7 +62,7 @@ c
          call chk_elem_kill( debug, step, iter )                                
          return                                                                 
       case(5)                                                                  
-         if(debug) write (out,*) '>>>> user specified kill element.'                 
+         if(debug) write (out,*) '>>>> user specified kill element.'      
          call chk_elem_kill( debug, step, iter )                                
       end select                                                                
 c                                                                               
@@ -72,14 +72,15 @@ c
       end if                                                                    
 c                                                                               
       return                                                                    
-      end                                                                       
+      end 
+
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine chk_elem_kill                *          
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 05/6/2019 rhd              *          
+c     *                   last modified : 05/13/2019 rhd             *          
 c     *                                                              *          
 c     *        checks conditions to see if crack                     *          
 c     *        growth will occur by element extinction               *          
@@ -103,10 +104,11 @@ c                                                can be killed this call
 c                                       
       integer :: local_packet(max_local_list), elem, elem_ptr,
      &           local_count, blk, chk_kill, cohes_type, count, 
-     &           element, felem, i, span, kk, number_elements
+     &           element, felem, i, span
       integer, parameter :: local_pkt_type(5) = (/ 20, 0, 21, 10, 0 / )                   
       logical :: blk_killed, killed_this_time, killed_found,                
-     &           kill_the_elem, elems_left, ldummy1, ldummy2                                                                                                                            
+     &           kill_the_elem, elems_left, ldummy1, ldummy2,
+     &           local_debug                                                                                                                           
       double precision ::                                                        
      &   dummy_arg, porosity, eps_plas, eps_crit, dummy_arg2,                   
      &   values(20), local_status(max_local_list,3), orig_poros,                
@@ -115,8 +117,9 @@ c
      &           option_ppr, local_write_packets, do_kill_in_order,                
      &           found_exponential, found_ppr, found_cavit,                        
      &           option_cavit                                                      
-c                                                                               
-      if( debug ) then      
+c        
+      local_debug = debug
+      if( local_debug ) then      
          write(out,*) '... entered chk_elem_kill ...'                                                    
          write(out,*) '    ... no_killed_elems:',no_killed_elems
       end if                                                                    
@@ -131,24 +134,19 @@ c
       found_ppr         = .false.                                               
       found_cavit       = .false.                                               
 c     
-      number_elements = noelem
-      if( crack_growth_type == 5 ) number_elements = num_user_kill_elems
-      if( number_elements == 0 ) return
-c                                                                          
-      do kk = 1, number_elements
+                              
+      do elem = 1, noelem
 c          
-         elem = kk
-         if( crack_growth_type == 5 ) elem = user_kill_list_now(kk)                                           
          elem_ptr = dam_ptr(elem)                                               
-         if( elem_ptr .eq. 0 ) cycle                                           
-         if( debug ) write(out,*) 'killable element is:',elem                           
+         if( elem_ptr .eq. 0 ) cycle     ! element not killable                                      
+         if( local_debug ) write(out,*) 'killable element is:',elem                           
 c                                                                               
 c                If element has been previously killed, update it's             
 c                unloading state vector, and then skip the rest of the          
 c                loop. we do this for traction-separation law as well           
 c                since other routines look at dam_state.                        
 c                                                                               
-         if( dam_state(elem_ptr) .gt. 0 ) then ! element killed already                                
+         if( dam_state(elem_ptr) .gt. 0 ) then ! element killed already    
             if( dam_state(elem_ptr) .le. max_dam_state )                       
      &           dam_state(elem_ptr) = dam_state(elem_ptr) + 1                  
             cycle                                                               
@@ -168,7 +166,13 @@ c
             call dam_param_cohes( elem, kill_the_elem, debug,                  
      &                            values, 2 )  
          case( 5 )
-            kill_the_elem = .true. 
+            kill_the_elem = .false.
+            do i = 1, num_user_kill_elems
+             if( elem  == user_kill_list_now(i) ) then
+                 kill_the_elem = .true.
+                 exit
+             end if
+            end do
          end select 
 c                              
          killed_this_time = killed_this_time .or. kill_the_elem                 
@@ -445,7 +449,8 @@ c
       end subroutine chk_elem_kill_chk_blk
 c
       end subroutine chk_elem_kill                                                                      
-c                                                                               
+                                                                      
+c                                          
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine dam_param                    *          
@@ -1271,7 +1276,7 @@ c
 c                                                                               
       t_chk_killed = .false.                                                      
       elem_ptr =  dam_ptr(elem)                                               
-      if( elem_ptr .ne. 0 ) then                                               
+      if( elem_ptr .ne. 0 ) then  ! element is killable                                             
        if( dam_state( dam_ptr(elem_ptr) ) .gt. 0 )
      &       t_chk_killed = .true.                                               
       end if                                                                    
