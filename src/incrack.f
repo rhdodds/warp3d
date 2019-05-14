@@ -2152,7 +2152,7 @@ c              release the data structure on exit
 c
 c              delete (elements) <list (release) steps <integer>
 c
-      debug = .true.
+      debug = .false.
       if( debug ) then
          write(out,*) '... entered delete elements (user-defined) ...'
          write(out,*) '    sbflg1, sbflg2: ', sbflg1, sbflg2
@@ -2234,23 +2234,14 @@ c
         end if
         user_kill_list_now(num_user_kill_elems) = elem
       end do  ! extracting elements from list
-c
-      if( matchs('release',4) ) call splunj
-      if( matchs('steps',4) ) then                                             
-        if( .not. numi(temp_int) ) then                                        
-          call errmsg( 203, max_dam_state, dums, dumr, dumd)                    
-        else                                                                    
-           if( temp_int .le. 0 ) then                                          
-              call errmsg( 202, max_dam_state, dums, dumr, dumd)                
-           else                                                                 
-              max_dam_state = temp_int                                          
-           end if                                                               
-        end if   
-      end if                                                                
 c                                                                               
 c              read/processed. cleanup.
 c
-      if( bad_list ) num_user_kill_elems = 0
+      crack_growth_type = 5
+      if( bad_list ) then
+          num_user_kill_elems = 0
+           crack_growth_type = 0
+      end if
       sbflg1 = .true.
       sbflg2 = .true.
 c
