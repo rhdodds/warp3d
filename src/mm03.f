@@ -3119,8 +3119,8 @@ c         are passed as arguments.
 c
       subroutine cnst3( element, gpn, iter, e, nu, q1,
      &                  q2, q3, nucleation, nuc_s_n, nuc_e_n, nuc_f_n,
-     &                  stress_trial, history, history1, cep,
-     &                  span, iout )
+     &                  stress_trial, history, history1, killed_status,
+     &                  cep, span, iout )
       implicit none
       include 'param_def'
 c
@@ -3131,7 +3131,7 @@ c
      & stress_trial(mxvl,*), history(span,*),
      & history1(span,*), cep(mxvl,6,6), e(*), nu(*), q1(*),
      & q2(*), q3(*), nuc_s_n(*), nuc_e_n(*), nuc_f_n(*)
-      logical :: nucleation(*)
+      logical :: nucleation(*), killed_status(span)
 c
 c                   locally defined array, variables
 c
@@ -3233,6 +3233,7 @@ c
 c
 !DIR$ VECTOR ALIGNED
       do  i = 1, span
+       if( killed_status(i) ) cycle
        if( state(i) .ne. -1 ) cycle
        c1(i)= (e(i)/((one+nu(i))*(one-two*nu(i))))
        c2(i)= (one-nu(i))*c1(i)
@@ -3269,6 +3270,7 @@ c              yield surface is computed.
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        if( killed_status(i) ) cycle
         if( state(i) .ne. 1 ) cycle
         ebarp(i)     = history1(i,1)
         sbar(i)      = history1(i,2)
@@ -3314,6 +3316,7 @@ c
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        if( killed_status(i) ) cycle
         if( state(i) .ne. 1 ) cycle
         twog(i)   = two * shear_mod(i)
         threeg(i) = three * shear_mod(i)
@@ -3330,6 +3333,7 @@ c               normal.
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        if( killed_status(i) ) cycle
         if( state(i) .ne. 1 ) cycle
         sm(i)  = ( stress_trial(i,1) + stress_trial(i,2) +
      &             stress_trial(i,3) ) * third
@@ -3368,6 +3372,7 @@ c                  4a)  a1 and a1 from Eq. (4)
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        if( killed_status(i) ) cycle
         if( state(i) .ne. 1 ) cycle
         a1(i) = (deq(i) * q(i) - dep(i) * p(i)) /
      &          ( one - f(i) )**2 / sbar(i)
@@ -3387,6 +3392,7 @@ c                       wrt to ebarp.
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        if( killed_status(i) ) cycle
         if( state(i) .ne. 1 ) cycle
         if( nucleation(i) ) then
           term1   = nuc_f_n(i) / nuc_s_n(i) / root_2_pi
@@ -3403,6 +3409,7 @@ c
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        if( killed_status(i) ) cycle
         if( state(i) .ne. 1 ) cycle
         b1 = ( one  -  f(i) ) / ( one  +  dep(i) )
         b2 = ( anuc(i)  +  debarp(i) * anuc_prime(i) ) /
@@ -3544,6 +3551,7 @@ c                     symmetry option by default
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+       if( killed_status(i) ) cycle
        if( state(i) .ne. 1 ) cycle
        con_1 = twog(i) * ( one - threeg(i) * deq(i) / qe(i) )
        con_2 = bulk_mod(i) * ( one - mpi(i) )
@@ -3592,6 +3600,7 @@ c                     jacobian.
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+       if( killed_status(i) ) cycle
        if( state(i) .ne. 1 ) cycle
        con_1 = twog(i) * ( twog(i) * deq(i) / qe(i)  -  mqn(i) )
        cep(i,1,1) = (cep(i,1,1) + con_1 * n(i,1) * n(i,1))
