@@ -1183,7 +1183,7 @@ c
 c          process iter > 0 or iter=0 and extrapolated du. mm02
 c          uses total strains adjusted for total
 c          temperature strains to compute stresses @ n+1.
-c
+cRE: Layered pressure vessels, residual stress measurements
       do i = 1, span
            nowtemp = gp_temps(i) - gp_rtemps(i)
            ddtse(i,1) = local_work%ddtse(i,1,gpn) -
@@ -1867,6 +1867,13 @@ c
         call drive_03_update_b
       end if
 c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+        if( .not. local_work%killed_status_vec(i) ) cycle
+        cep(i,1:6,1:6) = zero
+        local_work%urcs_blk_n1(i,:,gpn) = zero
+      end do
+c
 c          save the [D] matrices (lower-triangle)
 c
       call rstgp1_store_cep( span, mxvl, gpn,
@@ -2155,15 +2162,8 @@ c
      &  local_work%nuc_s_n_vec, local_work%nuc_e_n_vec,
      &  local_work%nuc_f_n_vec,
      &  local_work%rtse(1,1,gpn), local_work%elem_hist(1,1,gpn),
-     &  local_work%elem_hist1(1,1,gpn), cep, span, iout )
-c
-!DIR$ VECTOR ALIGNED
-      do i = 1, span
-        if( local_work%killed_status_vec(i) ) then
-            cep(i,1:6,1:6) = zero
-            stress_n1(1:nstrs,i) = zero
-        end if
-      end do
+     &  local_work%elem_hist1(1,1,gpn), 
+     &  local_work%killed_status_vec, cep, span, iout )
 c
       return
 c

@@ -5,9 +5,9 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/29/2019 rhd              *          
+c     *                   last modified : 5/17/2019 rhd              *          
 c     *                                                              *          
-c     *     allocates information for the damage routines as needed  *                                     *          
+c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -17,18 +17,21 @@ c
       use elem_extinct_data                                                     
       use node_release_data                                                     
       use damage_data                                                           
-      implicit integer (a-z)                                                    
+      implicit none 
+c
+      integer :: status                                                   
 c                                                                               
 c                                                                               
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     zero, dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
+c    
+      integer :: dum, elem, elem_ptr
+      double precision ::                                                          
+     &      dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
      &     porosity, plast_strain,                                              
-     &     values(20)                                                           
-      logical debug, duml                                                       
-      data zero /0.0d0/                                                           
-      real dumr                                                                 
+     &     values(20)         
+      double precision, parameter :: zero = 0.d0                                                  
+      logical :: debug, duml                                                       
+      real :: dumr                                                                 
 c                                                                               
       debug = .false.                                                           
 c                                                                               

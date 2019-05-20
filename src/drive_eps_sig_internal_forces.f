@@ -155,6 +155,7 @@ c
       run_serial_loop = .false.
 c
 c$OMP PARALLEL DO PRIVATE( blk, now_thread )
+
 c$OMP&            SHARED( nelblk, elblks, myid, iter, step,
 c$OMP&                    step_cut_flags, block_energies,
 c$OMP&                    block_plastic_work )

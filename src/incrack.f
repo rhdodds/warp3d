@@ -444,7 +444,12 @@ c
       num_print_list= 0                                                         
  565  continue                                                                  
       call trxlst( scan_order_list, scan_order_list_size, iplist,               
-     &     icn, elem )                                                          
+     &     icn, elem )  
+      if( elem == 0 .or. elem > noelem ) then 
+       write(out,9100) elem
+       num_error = num_error + 1
+       go to 10
+      end if                                                       
       if( growth_by_kill ) then                                                 
          if ( iand (iprops(30,elem),2).ne.0 ) then                              
               num_print_list = num_print_list + 1                               
@@ -1094,7 +1099,8 @@ c
       if ( debug ) write (out,*) '>>>>>>>>>>>>>>>>> leaving incrack.'           
       sbflg1 = .true.                                                           
       sbflg2 = .true.                                                           
-      return                                                                    
+      return      
+ 9100 format(/1x,'>>>>> error: invalid element number: ',i8)
       end                                                                       
 c                                                                               
 c     ****************************************************************          
@@ -1103,7 +1109,7 @@ c     *                      subroutine dam_init                     *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 07/15/94                   *          
+c     *                   last modified : 05/16/2019 rhd             *          
 c     *                                                              *          
 c     *     this subroutine allocates dam_ifv and dam_state.         *          
 c     *                                                              *          
@@ -1116,21 +1122,22 @@ c
 c                                                                               
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
+c
+      logical :: debug                                                    
 c                                                                               
 c             locally allocated arrays                                          
-c                                                                               
+c                       
+      integer :: elem, dum                                                        
       character(len=1) :: dums                                                  
-      real dumr                                                                 
-      double precision                                                          
-     &  dumd                                                                    
-      logical debug                                                             
+      real :: dumr                                                                 
+      double precision  :: dumd                                                                    
 c                                                                               
       if ( debug ) write (out,*) '>>>> in dam_init'                             
 c                                                                               
 c                if the damage data structures have already been allocated,     
 c                then leave                                                     
-c                                                                               
+c                                         
       if ( num_kill_elem .ne. 0 ) then                                          
        call errmsg( 215, dum, 'dam_ifv', dumr, dumd )                           
          return                                                                 
@@ -1197,19 +1204,17 @@ c
       use main_data, only : crdmap                                              
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
-c             locally allocated arrays                                          
-c                                                                               
+c             local declarations
+c           
+      integer :: axis, node, start_of_last_row, i, j, dum                                                                   
       character(len=1) :: dums                                                  
-      real dumr                                                                 
-      double precision                                                          
-     &  zero, plane_tol, max_dist, dumd                                         
-      data zero /0.0 /                                                          
-      allocatable tmp_nodes(:)                                                  
-c                                                                               
-      logical debug                                                             
-      data debug /.false./                                                      
+      real :: dumr                                                                 
+      double precision :: plane_tol, max_dist, dumd 
+      double precision, parameter :: zero = 0.d0                                        
+      integer, allocatable :: tmp_nodes(:)                                                  
+      logical, parameter :: debug = .false.                                                             
 c                                                                               
       if( debug ) write (out,*) '>>>> in dam_init_release'                      
 c                                                                               
@@ -1312,7 +1317,7 @@ c     *                      subroutine dam_init_release2            *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 08/21/95                   *          
+c     *                   last modified : 05/16/2019 rhd             *          
 c     *                                                              *          
 c     *     this subroutine sets up the permanent array to hold all  *          
 c     *     the crack plane nodes.  It also sets up and fills the    *          
@@ -1330,21 +1335,22 @@ c
       use main_data, only : incmap, incid, inverse_incidences                   
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
-      dimension tmp_nodes(*)                                                    
-      logical debug                                                             
+      integer :: tmp_nodes(*)                                                    
+      logical :: debug                                                             
 c                                                                               
 c                     local declarations                                        
-c                                                                               
-      logical crack_node, first_node                                            
-      double precision                                                          
-     &  zero, one, dumd                                                         
-      real dumr                                                                 
+c             
+      integer :: node, entry, elem, i, elem_node, dum
+      integer, external :: master
+      logical :: crack_node, first_node                                            
+      double precision :: dumd     
+      double precision, parameter :: zero = 0.d0, one = 1.d0                                                    
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      data zero, one /0.0, 1.0/                                                 
 c                                                                               
 c                                                                               
       if ( debug ) write (out,*) '>>>> in dam_init_release'                     
@@ -1503,7 +1509,7 @@ c     *                      subroutine find_release_height          *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 10/15/94                   *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine fills the dam_print_list array           *          
 c     *                                                              *          
@@ -1516,15 +1522,17 @@ c
 c                                                                               
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
 c                     local declarations                                        
-c                                                                               
-      double precision                                                          
-     &     oneeighty, dumd, pi                                                  
-      real dumr                                                                 
+c      
+      integer :: dum                                                                    
+      double precision, parameter :: oneeighty = 180.d0, 
+     &                               pi= 3.1415926535897932d0                                                         
+      double precision :: dumd                                                  
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      data oneeighty, pi /180.0, 3.1415926535897932 /                           
+
 c                                                                               
 c                 the release height is calculated as follows:                  
 c                 consider a line segment with length characteristic_length     
@@ -1560,7 +1568,7 @@ c     *                      subroutine print_list_fill              *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 10/15/94                   *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine fills the dam_print_list array           *          
 c     *                                                              *          
@@ -1575,9 +1583,13 @@ c
       use elem_extinct_data, only : dam_print_list                              
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      dimension scan_order_list(*)                                              
-      logical debug                                                             
+      implicit none
+c                                                    
+      integer :: scan_order_list_size 
+      integer :: scan_order_list(scan_order_list_size)                                              
+      logical :: debug   
+c
+      integer :: iplist, icn, list_entry, elem, i, dum                                                         
 c                                                                               
       if ( debug ) write (out,*) '>>>> in print_list_fill'                      
 c                                                                               
@@ -1612,7 +1624,7 @@ c     *                      subroutine kill_order_fill              *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 10/15/94                   *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine fills the kill_order_list array.         *          
 c     *                                                              *          
@@ -1627,10 +1639,14 @@ c
       use elem_extinct_data, only : kill_order_list                             
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      dimension scan_kill_order_list(*)                                         
-      logical debug                                                             
-c                                                                               
+      implicit none
+c                                                    
+      integer :: scan_kill_order_length
+      integer :: scan_kill_order_list(scan_kill_order_length)                                         
+      logical :: debug                                                             
+c   
+      integer :: iplist, icn, list_entry, elem, i
+c                                                                            
       if ( debug ) write (out,*) '>>>> in kill_order_fill'                      
 c                                                                               
 c           now fill the order array                                            
@@ -1683,12 +1699,14 @@ c
       use main_data,         only : cnstrn_in                                   
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      dimension scan_master_list(*)                                             
-      logical debug                                                             
-      double precision                                                          
-     &  d32460                                                                  
-      data d32460 / 32460.0 /                                                   
+      implicit none
+c
+      integer :: scan_master_length                                                    
+      integer :: scan_master_list(scan_master_length)                                             
+      logical :: debug  
+c
+      integer :: iplist, icn, list_entry, node, i, dof
+      double precision, parameter :: d32460 = 32460.0d0                                                                  
 c                                                                               
       if ( debug ) write (out,*) '>>>> in master_list_fill'                     
 c                                                                               
@@ -1727,20 +1745,23 @@ c     *                      function master                         *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 7/31/97                    *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
-c     *  this function returns true if specified node is in master   *          
-c     *  list                                                        *          
+c     *                   is a node in master  list                  *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      integer function master(node)                                             
+      function master( node ) result( iresult )                                              
 c                                                                               
       use node_release_data, only : master_nodes                                
-      use damage_data                                                           
+      use damage_data, only : const_front, num_crack_fronts                                         
 c                                                                               
-      implicit integer(a-z)                                                     
+      implicit none
+c
+      integer :: node, iresult
+c
+      integer :: temp, i
 c                                                                               
 c                                                                               
       temp = 0                                                                  
@@ -1753,7 +1774,7 @@ c
       enddo                                                                     
 c                                                                               
  9999 continue                                                                  
-      master = temp                                                             
+      iresult = temp                                                             
       return                                                                    
       end                                                                       
 c                                                                               
@@ -1763,7 +1784,7 @@ c     *                      subroutine init_ctoa_back               *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 10/11/97                   *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine initializes the data structures required *          
 c     *     to get the CTOA at an arbitrary distance behind the      *          
@@ -1787,10 +1808,12 @@ c
       use main_data, only : cnstrn_in                                   
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      logical debug                                                
-      double precision :: d32460                                                            
-      data d32460, debug / 32460.0, .false. /                                   
+      implicit none
+c                            
+      integer :: num_lines, i, j, node_data_entry, neighbor, 
+     &           neighbor_node, dof, master_node  
+      logical, parameter :: debug = .false.                                                
+      double precision, parameter :: d32460 = 32460.0d0                                                         
 c                                                                               
       if (debug) write (*,*) '>>> in init_ctoa_back'                            
 c                                                                               
@@ -1858,16 +1881,20 @@ c     *     reached.                                                 *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine find_master_line (base_node, next_node,                        
-     &     num_nodes_back, num_line)                                            
+      subroutine find_master_line( base_node, next_node,                        
+     &                      num_nodes_back, num_line )                                            
       use global_data ! old common.main
 c                                                                               
       use node_release_data, only : master_lines                                
 c                                                                               
-      implicit integer (a-z)                                                    
-      logical debug, reached_end                                                
-      double precision :: d32460                                                            
-      data d32460, debug / 32460.0, .false. /                                   
+      implicit none
+c              
+      integer ::  base_node, next_node, num_nodes_back, num_line
+c                    
+      integer :: idx, new_node, master_line_idx                  
+      logical :: reached_end 
+      logical, parameter ::  debug = .false.                                               
+      double precision, parameter :: d32460 = 32460.0d0                                                            
 c                                                                               
       if (debug) write (*,*) '>>> in find_master_line'                          
 c                                                                               
@@ -1901,7 +1928,7 @@ c     *                      subroutine find_master_line_node        *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 10/15/97                   *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine, given two nodes on the master line,     *          
 c     *     finds the next node in the master line.  If the node     *          
@@ -1920,10 +1947,18 @@ c
       use main_data, only : inverse_incidences                                  
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      logical debug, reached_end, found_new_node                                
-      dimension shared_elems(2)                                                 
-      data debug / .false. /                                                    
+      implicit none
+c
+      integer :: base_node, next_node, new_node
+      logical :: reached_end
+c
+      integer :: num_shared_elems, num_base_elems, num_next_elems,
+     &           base_elem_list,  base_elem, next_elem_list, i, j,
+     &           next_elem, node_data_entry, neighbor_node, 
+     &           num_elems, elem_list, elem                                              
+      logical :: found_new_node     
+      logical, parameter :: debug = .false.                           
+      integer :: shared_elems(2)                                                 
 c                                                                               
       if (debug) then                                                           
          write (*,*) '   >>> in find_master_line_node'                          
@@ -2019,7 +2054,7 @@ c     *                      subroutine incrack_errmsg               *
 c     *                                                              *          
 c     *                       written by : RHD                       *          
 c     *                                                              *          
-c     *                   last modified : 9/4/2010 RHD               *          
+c     *                   last modified : 5/16/2019 rhd              *          
 c     *                                                              *          
 c     *                service routine for error messages            *          
 c     *                                                              *          
@@ -2030,7 +2065,11 @@ c
       subroutine incrack_errmsg( ierrno )                                       
       use global_data ! old common.main
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
+c
+      integer :: ierrno   
+c
+      integer :: strlng
       character(len=50) :: string                                               
 c                                                                               
       select case( ierrno )                                                     
