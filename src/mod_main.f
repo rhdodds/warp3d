@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 12/12/2018 rhd                  *
+c     *              last modified : 5/18/2019 rhd                   *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -118,7 +118,8 @@ c
      &    in, out, histep, lowstp, ltmstp, num_warn, num_error,
      &    num_fatal, solver_flag, old_solver_flag, solver_memory,
      &    num_threads,  max_mpc, max_mpc_tied,
-     &    myid, numprocs, MPI_VAL, douextdb, mxnmbl
+     &    myid, numprocs, MPI_VAL, douextdb, mxnmbl,
+     &    current_load_time_step
 c
 c                  counters to shut off error messages at some point
 c

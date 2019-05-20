@@ -360,6 +360,7 @@ c
 c          execute the iteration driver to compute
 c          displacements for this load-time step.
 c
+      current_load_time_step = now_step
       call mnralg( mf, mf_nm1, mf_ratio_change, now_step, ldnum )
 c
 c          if global load step size was reduced via  reduction
