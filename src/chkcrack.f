@@ -894,10 +894,11 @@ c
       implicit none                                                    
 c                                                                               
       integer :: node, num_dof, j, glbal_dof
-      logical :: debug                                                                                                                                          
+      logical :: debug, local_debug                                                                                                                                          
       double precision, parameter :: zero = 0.0d0                                                          
 c
-      if( debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
+      local_debug = debug
+      if( local_debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
 c                                                                               
 c              Loop over each node -- if a node is now attatched to             
 c              no elements, constrain it.                                       
@@ -909,7 +910,7 @@ c                putting in a new set of constraints.
 c                                                                               
       do node = 1, nonode                                                       
        if( dam_node_elecnt(node) .ne. 0 ) cycle                             
-       if( debug ) then                                                   
+       if( local_debug ) then                                                   
          write(out,*) 'free node ',node                                   
          write (out,9010) node,cnstrn(dstmap(node)),                      
      &          cnstrn(dstmap(node)+1),cnstrn(dstmap(node)+2)               
@@ -927,7 +928,7 @@ c
       end do                                                                    
 c                                                                               
  9999 continue                                                                  
-      if ( debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
+      if ( local_debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
       return                                                                    
  9010 format('  old constraints for node ',i7,' :',3(1x,e14.6))                 
       end                                                                       
