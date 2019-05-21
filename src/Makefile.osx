@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 1/22/2019 rhd
+#   Last modifications: 5/20/2019 rhd
 #
 #   How to run:
 #
@@ -90,14 +90,13 @@ ifeq  ($(BUILD_SYS), gfortran) #   gfortran options
   INLINE   = -finline-small-functions  #   might be able to remove this restriction
   PROFILE  = -pg
   PROFILE  =
-  CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
-  CHECKFLOAT =
+  CHECKFLOAT =  
   MINIMUM_MACHINE_TYPE  = -march=sandybridge
   DEFAULT_MACHINE_TYPE  = -march=native
   MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
   FCOPTS   =  -O3 $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form  \
               -fcray-pointer -fopenmp  \
-             -fdec -cpp $(FTRAP) $(INLINE) -J$(ODIR) 
+             -fdec -cpp $(FTRAP) $(INLINE)  $(CHECKFLOAT) -J$(ODIR) 
   OSX_LIBDIR = ../OSX_MKL_files
   LINKOPS1  = -static-libgfortran  -Wl,-rpath,${OSX_LIBDIR}/libiomp5.a \
               ${OSX_LIBDIR}/libmkl_intel_lp64.a \
@@ -116,8 +115,8 @@ else  #  Intel Composer options
   INLINE   = -no-inline-factor
   PROFILE  = -pg
   PROFILE  =
-  CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
-  CHECKFLOAT =
+  CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
+  CHECKFLOAT = -fp-speculation=safe
   MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
   DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte  -qopt-zmm-usage=high
   MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)

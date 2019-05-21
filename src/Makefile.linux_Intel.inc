@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 3/10/2019  rhd
+#   Last modifications: 5/20/2019 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -77,8 +77,8 @@ PROFILE =
 OPT_REPORT = -qopt-report=5 -qopt-report-annotate=html -qopt-report-phase=vec
 OPT_REPORT = 
 OPENMP     = -qopenmp -reentrancy
-CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
-CHECKFLOAT =
+CHECKFLOAT = -init=snan,arrays -fp-speculation=safe
+CHECKFLOAT = -fp-speculation=safe
 #
 MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
 DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
