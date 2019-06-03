@@ -580,7 +580,7 @@ PS3="Enter your choice (<return> to repeat menu): "
           $m_test84)
              test84;;
           $m_test85)
-             test86;;
+             test85;;
           $m_test86)
              test85;;
           $m_test87)
