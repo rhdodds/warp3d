@@ -25,12 +25,11 @@ c
    material void_strip
    properties mises e 10524 nu 0.32 curve 2 rho 0.0  killable
 c
-number of nodes   4294
-number of elements  1995
+number of nodes  4294 elements  1995
 c
 *input from test_39b_coords 
 c
-elements
+ elements
   1-203  type l3disop nonlinear material void_strip,
                order 2x2x2 bbar center_output
   204-1995 type l3disop nonlinear material al2219_T87,
@@ -38,30 +37,31 @@ elements
 c
 *input from test_39b_incid
 c
+ blocking automatic size=32
 c
-blocking   $    vectorized
-     1    99     1
-     2    98   100
-     3     6   198
-     4   128   204
-     5   128   332
-     6   128   460
-     7   128   588
-     8   128   716
-     9   128   844
-    10   128   972
-    11   128  1100
-    12   128  1228
-    13   128  1356
-    14   128  1484
-    15   125  1612
-    16   115  1737
-    17    77  1852
-    18    33  1929
-    19    21  1962
-    20    11  1983
-    21     2  1994
-c
+#  blocking   $  old vectorized if ever needed
+#      1    99     1
+#      2    98   100
+#      3     6   198
+#      4   128   204
+#      5   128   332
+#      6   128   460
+#      7   128   588
+#      8   128   716
+#      9   128   844
+#     10   128   972
+#     11   128  1100
+#     12   128  1228
+#     13   128  1356
+#     14   128  1484
+#     15   125  1612
+#     16   115  1737
+#     17    77  1852
+#     18    33  1929
+#     19    21  1962
+#     20    11  1983
+#     21     2  1994
+# 
 c
 *input from test_39b_cons $ sym. bc file of all non-loading disp.
 c
@@ -97,11 +97,11 @@ c
       release fraction 0.1
       print status on order  1-203
       kill sequentially on order 37 135 36 134 35 133 34
-      smcs alpha 0.16  beta 1.5 gamma 0.0
+      smcs type 1 alpha 0.16  beta 1.5 gamma 0.0 kappa 0. display
       killed element limit 50
 c
    compute displacements for loading disp_ctrl step 5
-     output reactions 1-10
+   output reactions 1-10
    compute displacements for loading disp_ctrl step 10
 c
 *input from test_39b_cons

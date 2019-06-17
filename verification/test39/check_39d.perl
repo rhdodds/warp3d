@@ -2,30 +2,23 @@
 #      WARP3D verification system
 #      ==========================
 #
-#      check results for test_39c
+#      check results for test_39
 #
-$inputfile = 'test_39_outc';
-$line = ' ';
+$inputfile = 'test_39_outd';
 print "\n... Check results: $inputfile\n";
-open(infile, "$inputfile") or die
-"  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
-close infile;
-open(infile, "$inputfile") or die
-"  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
-close infile;
 open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
 #
-find_line( 1, "solution for step:      75 converged:" );
-find_line( 2, "    331  ");
+find_line( 1, " step:      75 converged:" );
+find_line( 2, "Totals: ");
 #
 #    line with reactions is current. print value
 #
 @parts = split( / +/, $line);
 
 #
-$answer = "0.052446";
+$answer = "0.43827E+00";
 $partno = 3;
 #
 $message = " ";

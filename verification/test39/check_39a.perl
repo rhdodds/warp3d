@@ -5,19 +5,12 @@
 #      check results for test_39
 #
 $inputfile = 'test_39_outa';
-$line = ' ';
 print "\n... Check results: $inputfile\n";
-open(infile, "$inputfile") or die
-"  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
-close infile;
-open(infile, "$inputfile") or die
-"  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
-close infile;
 open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "   ... output file opened ...\n";
 #
-find_line( 1, "step no.     200" );
+find_line( 1, " step:     200 converged" );
 find_line( 2, "Totals: ");
 #
 #    line with reactions is current. print value

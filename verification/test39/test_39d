@@ -7,7 +7,7 @@
 !             uses crack growth by element extinction
 !  
 !     nonlinear material, large displacements, bbar,
-!     large amounts of ductile crack growth with SMCS Type 2
+!     large amounts of ductile crack growth with SMCS Type 3
 !
 !     the finite element model
 !     has one-layer of elements with w=0 constraints everywhere
@@ -90,8 +90,8 @@ c
      print status on order  1 31 2 32 3 33 4 34 5 35 6 36 7 37 8 38,
                          9 39 10 40 11 41 12 42 13 43 14 44 15 45,
                         16 46 17 47 18 48 19 49 20 50
-      smcs type 2 gamma 0 beta_1 6.25 beta_2 6.25,
-            A_plus 1.5 A_minus 1.5 kappa 0. cutoff_triaxiality 0.0,
+      smcs type 3 gamma 0 alpha_1 1.6 beta_1 1.97 alpha_2 9.07,
+                  beta_2 4.25 cutoff_triaxiality 0.0,
             display
       killed element limit 200
 !
