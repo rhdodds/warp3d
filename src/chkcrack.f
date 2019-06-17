@@ -519,7 +519,7 @@ c
 c              local declarations                                               
 c       
       integer :: mat_model
-      double precision :: mean_zeta
+      double precision :: mean_zeta, mean_omega
       double precision, parameter :: zero = 0.d0, one = 1.0d0                         
 c   
       ext_gurson  = .false.                                                     
@@ -561,7 +561,8 @@ c
       case(3)   
        call dam_param_3_get_values( elem, debug, eps_plas, eps_crit, 
      &                              sig_mean, sig_mises, triaxiality, 
-     &                              mean_zeta,1, kill_now )                
+     &                              mean_zeta, mean_omega, 1,
+     &                              kill_now )                
 c                                                                               
 c           4 cohesive - not processed here               
 c                                                                                                                                                             
@@ -583,7 +584,7 @@ c     *              subroutine dam_param_3_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 05/7/2019 rhd              *          
+c     *                   last modified : 06/16/2019 rhd             *          
 c     *                                                              *          
 c     *             SMCS compute values for this element             *
 c     *                                                              *          
@@ -592,9 +593,21 @@ c
                                                                      
       subroutine dam_param_3_get_values( elem, debug,                     
      &                      eps_plas, eps_crit, sig_mean, sig_mises,            
-     &                      triaxiality, mean_zeta, dowhat, 
-     &                      kill_now )                
+     &                      triaxiality, mean_zeta, mean_omega,
+     &                      dowhat, kill_now )                
       use global_data, only : iprops, nstr, nstrs, out ! old common.main
+      use main_data,       only : elems_to_blocks                               
+      use elem_block_data, only : history_blocks, eps_n_blocks,                 
+     &                            urcs_n_blocks, history_blk_list               
+      use damage_data, only     : dam_ptr, smcs_gamma, smcs_alpha, 
+     &                            smcs_beta,  smcs_type, 
+     &                            smcs_beta_1,smcs_beta_2, 
+     &                            smcs_a_plus, smcs_a_minus,
+     &                            smcs_kappa, smcs_alpha_1, 
+     &                            smcs_alpha_2, 
+     &                            smcs_cutoff_triaxiality                                                           
+      use elem_extinct_data, only : smcs_old_epsplas, smcs_weighted_T,
+     &                              smcs_weighted_zeta
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
 c                               killing                                         
@@ -615,19 +628,13 @@ c        triaxiality -- (output) plastic strain weighted average of
 c                                triaxiality over loading history 
 c        mean_zeta -- (output)  Lode angle parameter average weighted
 c                               by plastic strain
+c        mean_omega -- (output)  Nahshon-Hutchinson Lode angle parameter
+c                                average weighted by plastic strain
 c        dowhat    --  (input)   = 1 update load dependent terms,
 c                                = 2 just return values - no update   
 c        kill_now  --  (output)  if dowhat = 1, set flag if critical
 c                                condition reached                           
 c                                                                                                                                                              
-      use main_data,       only : elems_to_blocks                               
-      use elem_block_data, only : history_blocks, eps_n_blocks,                 
-     &                            urcs_n_blocks, history_blk_list               
-      use damage_data, only     : dam_ptr, smcs_gamma, smcs_alpha, 
-     &                            smcs_beta                                                           
-      use elem_extinct_data, only : smcs_old_epsplas, smcs_weighted_T,
-     &                              smcs_weighted_zeta 
-c                                           
       implicit none                                                    
 c                                                                               
 c               parameter declarations                                           
@@ -635,22 +642,25 @@ c
       integer :: elem, dowhat                                                  
       logical :: debug, kill_now                                       
       double precision :: eps_crit, sig_mean, sig_mises, triaxiality,
-     &                    eps_plas, mean_zeta  
+     &                    eps_plas, mean_zeta, mean_omega
 c                                                                               
 c               local declarations                                               
 c
       double precision, dimension(:), pointer :: urcs_n, eps_n                         
       integer :: gp, blk, epsoffset, mat_model,
      &           ngp, rel_elem, sigoffset, j, elem_ptr
-      double precision ::  sig(6), eps(6), fpngp, deps_plas,
-     &                     now_triaxiality, mean_triaxiality,
+      double precision ::  sig(6), eps(6), fpngp,
+     &                     mean_triaxiality,
      &                     epspls_vec(27),s11, s22, s33, s12, s13, s23,
-     &                     j2, j3, zeta
+     &                     j2, j3, zeta, omega, t1, t2, t3, t4,
+     &                     p_omega, omega2
       logical ::update, local_debug
       double precision, parameter :: zero = 0.d0,
      &     third = 1.d0/3.0d0, iroot2 = 1.0d0/dsqrt(2.0d0), six = 6.0d0,
-     &     one = 1.0d0, two = 2.0d0, onept5 = 1.5d0,
-     &     root3 = dsqrt(3.0d0), half = 0.5d0 
+     &     one = 1.0d0, two = 2.0d0, onept5 = 1.5d0, three = 3.d0,
+     &     root3 = dsqrt(3.0d0), half = 0.5d0, thirteenpt5 = 13.5d0,
+     &     small_plastic_strain = 1.0d-07, small_mises = 1.0d-07,
+     &     type_2_tol = 1.0d-06, nine = 9.d0
 c                              
 c               stress/strain vectors are (x,y,z,xy,yz,xz).                
 c
@@ -659,7 +669,7 @@ c
       elem_ptr    = dam_ptr(elem)
       eps_plas    = zero  
       sig         = zero
-!      eps         = zero             !   strains not used current code                                           
+      eps         = zero             !   strains not used current code                                           
       ngp         = iprops(6,elem)                                           
       blk         = elems_to_blocks(elem,1)                                  
       rel_elem    = elems_to_blocks(elem,2)                                  
@@ -670,47 +680,36 @@ c
 c
       call mm_return_values( "plastic_strain", elem, epspls_vec, ngp )
 c
-      if( elem == -1 ) then
-       write(out,*) '.... plastic strains element 1'
-       do j = 1, ngp
-         write(out,*) '     ',j, epspls_vec(j)
-       end do
-      end if                             
-c 
 c               average stresses over all integration points
 c
-      if( ngp == 8 ) then
+      if( ngp == 8 ) then  ! for optimizer
        do gp = 1, 8    
         do j = 1, 6                                                     
          sig(j) = sig(j) + urcs_n(sigoffset+j)  
-!        eps(j) = eps(j) + eps_n(epsoffset+j)
+         eps(j) = eps(j) + eps_n(epsoffset+j)
         end do                                      
         eps_plas  = eps_plas + epspls_vec(gp)
-!       epsoffset = epsoffset + nstr                                         
+        epsoffset = epsoffset + nstr                                         
         sigoffset = sigoffset + nstrs                                        
        end do   
-      else
+      else  ! general case
        do gp = 1, ngp    
         do j = 1, 6                                                     
          sig(j) = sig(j) + urcs_n(sigoffset+j)  
-!        eps(j) = eps(j) + eps_n(epsoffset+j)
+         eps(j) = eps(j) + eps_n(epsoffset+j)
         end do                                      
         eps_plas  = eps_plas + epspls_vec(gp)
-!       epsoffset = epsoffset + nstr                                         
+        epsoffset = epsoffset + nstr                                         
         sigoffset = sigoffset + nstrs                                        
        end do 
       end if  
 c
 c               average mean stress, mises stress, plastic strain,
-c               Lode parameter zeta
+c               Lode parameters
 c
       fpngp     = one / dble( ngp )
       sig = sig * fpngp  !  averaged stresses at element center
       sig_mean  = (sig(1) + sig(2) + sig(3)) * third                    
-      sig_mises = iroot2 *
-     &            sqrt( (sig(1)-sig(2))**2 + (sig(2)-sig(3))**2 +          
-     &                  (sig(1)-sig(3))**2 + six*( sig(4)**2 +             
-     &                   sig(5)**2 + sig(6)**2 ) )  
       s11 = sig(1) - sig_mean
       s22 = sig(2) - sig_mean
       s33 = sig(3) - sig_mean
@@ -721,43 +720,101 @@ c
      &              two*(s12**2 + s23**2 + s13**2))
       j3 = s11*s22*s33 + two*s12*s23*s13 - s11*s23*s23 -
      &     s22*s13*s13 - s33*s12*s12
-      zeta = zero
-      if( j2 > 1.0d-06 ) zeta = onept5*root3 * j3 / j2**onept5
+      sig_mises = sqrt( three * j2 )
+      zeta = zero  !  called \xi in manual
+      omega = zero
+      if( sig_mises > small_mises ) then
+        zeta = onept5*root3 * j3 / j2**onept5
+        omega = one - zeta*zeta 
+      end if
       eps_plas  = fpngp * eps_plas   
 c
-c               update plastic strain weighted triaxiality over
-c               history. update saved plastic strain.
-c               use weighted triaxiality to set critical plastic strain
+c               update plastic strain weighted triaxiality, zeta,
+c               and omega. update saved plastic strain.
+c               only update if instantaneous triaxiality exceeds
+c               user-specified cutoff value
+c              
+      if( update ) call dam_param_3_get_values_a
 c
-      if( update ) then  !   history dependent values
-         deps_plas = eps_plas - smcs_old_epsplas(elem_ptr)
-         smcs_old_epsplas(elem_ptr) = eps_plas 
-         now_triaxiality = 100.0d0                                               
-         if( sig_mises .gt. 1.0d-06 )
-     &         now_triaxiality = sig_mean / sig_mises 
-         smcs_weighted_T(elem_ptr) = smcs_weighted_T(elem_ptr) +
-     &                               deps_plas * now_triaxiality
-         smcs_weighted_zeta(elem_ptr) = smcs_weighted_zeta(elem_ptr) +
-     &                               deps_plas * zeta
+c               if no plastic strain yet, set defaults and return.
+c               cannot compute weighed averages over history (divide
+c               by zero plastic strain).
+c
+      if( eps_plas < small_plastic_strain ) then 
+        triaxiality = zero
+        eps_crit = nine  ! a large value for return
+        mean_zeta  = zero
+        mean_omega = zero
+        if( update ) kill_now = .false.
+        return
       end if
 c
-      if( eps_plas > 1.0d-07 ) then 
-        mean_triaxiality =  smcs_weighted_T(elem_ptr) / eps_plas
-        eps_crit = smcs_gamma + smcs_alpha * 
-     &             exp( -smcs_beta * mean_triaxiality )  
-        mean_zeta = smcs_weighted_zeta(elem_ptr) / eps_plas
+c               use weighted triaxiality, zeta, omega values to 
+c               set critical plastic strain
+c
+      mean_triaxiality =  smcs_weighted_T(elem_ptr) / eps_plas
+      triaxiality = mean_triaxiality  ! to return
+      mean_zeta = smcs_weighted_zeta(elem_ptr) / eps_plas
+      mean_omega = one - mean_zeta**2
+      eps_crit = nine
+      if( triaxiality <= smcs_cutoff_triaxiality ) then
+        if( update ) kill_now = .false.
+        return
+      end if
+c
+      if( smcs_type .eq. 1 ) then
+          t2 = exp(-smcs_kappa*abs(mean_zeta))
+          t1 = smcs_alpha * exp(-smcs_beta * mean_triaxiality)
+          eps_crit = smcs_gamma + t1*t2
+      elseif( smcs_type .eq. 2 ) then
+          t3 = exp(-smcs_kappa*abs(mean_zeta))
+          t2 = smcs_beta_2 * exp(-smcs_a_minus * mean_triaxiality)
+          t1 = smcs_beta_1 * exp(smcs_a_plus * mean_triaxiality)
+          t4 = t1 - t2
+          if( abs(t4) < type_2_tol .or. t4 < zero ) then
+            eps_crit = nine ! a large value
+          else
+            eps_crit = smcs_gamma + t3 / t4
+          end if
       else
-        mean_triaxiality = zero
-        eps_crit = max( 1.0d-05, smcs_gamma )
-        mean_zeta = zero
+          p_omega = (one - mean_omega)**2
+          t1 = smcs_alpha_1*exp(-smcs_beta_1 * mean_triaxiality )
+          t2 = smcs_alpha_2*exp(-smcs_beta_2 * mean_triaxiality )
+          eps_crit = (one-p_omega)*t1 + p_omega*t2
       end if
 c      
       kill_now = .false.
-      if( update ) kill_now = ( eps_plas - eps_crit ) >= zero
-      triaxiality = mean_triaxiality
+      if( .not. update ) return
+      kill_now = ( eps_plas - eps_crit ) >= zero
 c
       return
-      end
+c
+      contains
+c     ========
+c
+      subroutine dam_param_3_get_values_a
+      implicit none
+c
+      double precision :: deps_plas, now_triaxiality
+c
+      deps_plas = eps_plas - smcs_old_epsplas(elem_ptr)
+      smcs_old_epsplas(elem_ptr) = eps_plas 
+      now_triaxiality = 100.0d0   ! in cases mises -> 0                                             
+      if( sig_mises .gt. small_mises )
+     &         now_triaxiality = sig_mean / sig_mises 
+c
+      if( now_triaxiality < smcs_cutoff_triaxiality ) return
+c
+      smcs_weighted_T(elem_ptr)    = smcs_weighted_T(elem_ptr) +
+     &                               deps_plas * now_triaxiality
+      smcs_weighted_zeta(elem_ptr) = smcs_weighted_zeta(elem_ptr) +
+     &                               deps_plas * zeta
+c
+      return
+      end subroutine dam_param_3_get_values_a
+
+      end subroutine dam_param_3_get_values
+
 
 c     ****************************************************************          
 c     *                                                              *          

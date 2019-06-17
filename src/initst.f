@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/10/2019 rhd              *
+c     *                   last modified : 6/16/2019 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -414,8 +414,17 @@ c
       growth_by_release     = .false.
       porosity_limit        = 0.20d0
       smcs_alpha            = one
-      smcs_beta             = 1.5d0
+      smcs_beta             = zero
+      smcs_type             = 0
       smcs_gamma            = zero
+      smcs_beta_1           = zero
+      smcs_beta_2           = zero 
+      smcs_a_plus           = zero        
+      smcs_a_minus          = zero
+      smcs_kappa            = zero 
+      smcs_alpha_1          = zero 
+      smcs_alpha_2          = zero
+      smcs_cutoff_triaxiality = zero
       max_dam_state         = 5
       num_kill_elem         = 0
       print_status          = .false.

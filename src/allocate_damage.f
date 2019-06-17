@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/17/2019 rhd              *          
+c     *                   last modified : 6/16/2019 rhd              *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -24,7 +24,7 @@ c
 c                                                                               
 c                                                                               
 c    
-      integer :: dum, elem, elem_ptr
+      integer :: dum, elem, elem_ptr, i
       double precision ::                                                          
      &      dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
      &     porosity, plast_strain,                                              
@@ -391,21 +391,23 @@ c
       dam_ptr(1:noelem) = 0                                                     
       go to 9999                                                                
 c
-c                            SMCS to enable use of plastic strain 
-c                            averaged sig_mean/sig_mises                              
+c                            SMCS data                             
 c                                                                               
  1300 continue
       if( allocated( smcs_weighted_T ) ) deallocate( smcs_weighted_T )               
-      allocate( smcs_weighted_T( num_kill_elem ) )                                 
       if( allocated( smcs_old_epsplas ) ) 
      &      deallocate( smcs_old_epsplas )               
       if( allocated( smcs_weighted_zeta ) ) 
-     &      deallocate( smcs_weighted_zeta  )               
-      allocate( smcs_old_epsplas( num_kill_elem ),
+     &      deallocate( smcs_weighted_zeta  )  
+c             
+      allocate( smcs_weighted_T(num_kill_elem),
+     &          smcs_old_epsplas(num_kill_elem),
      &          smcs_weighted_zeta(num_kill_elem) )
-      smcs_weighted_T    = zero
-      smcs_old_epsplas   = zero  
-      smcs_weighted_zeta = zero  
+      do i = 1, num_kill_elem
+        smcs_weighted_T(i)     = zero
+        smcs_old_epsplas(i)    = zero  
+        smcs_weighted_zeta(i)  = zero  
+      end do
       go to 9999      
 c                                                                               
  9999 continue                                                                  

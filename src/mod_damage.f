@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 05/10/2019 rhd                  *          
+c     *              last modified : 06/16/2019 rhd                  *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -30,7 +30,11 @@ c
      &   crack_plane_coord, release_fraction,                                   
      &   critical_angle, release_height,                                        
      &   crack_plane_sign, char_length,                                         
-     &   init_crit_ang, smcs_alpha, smcs_beta, smcs_gamma,                                  
+     &   init_crit_ang, 
+     &   smcs_gamma, smcs_beta_1, smcs_beta_2, smcs_a_plus,
+     &   smcs_a_minus, smcs_kappa, smcs_alpha_1, smcs_alpha_2, 
+     &   smcs_cutoff_triaxiality, 
+     &   smcs_alpha, smcs_beta,                               
      &   control_load_fact, old_load_fact,                                      
      &   min_load_fact, overshoot_limit, CTOA_range,                            
      &   perm_load_fact, max_porosity_change,                                   
@@ -38,13 +42,14 @@ c
      &   init_ctoa_dist, ctoa_dist,                                             
      &   crkpln_srch_tol, max_deff_change,                                      
      &   critical_cohes_deff_fract,                                             
-     &   ppr_kill_displ_fraction                                                
+     &   ppr_kill_displ_fraction
+                                               
 c                                                                               
 c                     scalar integers                                           
 c                                                                               
       integer :: crack_growth_type,                                                
      &   num_kill_elem, max_dam_state, csttail, num_print_list,                 
-     &   num_kill_order_list, release_type,                                     
+     &   num_kill_order_list, release_type, smcs_type,                                     
      &   crk_pln_normal_idx, num_crack_plane_nodes, crack_front_start,          
      &   crack_front_end, crkfrnt_garbage_start, crkfrnt_garbage_end,           
      &   min_steps_for_release, num_nodes_thick, num_crack_fronts,              

@@ -5,7 +5,7 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/15/2019 rhd              *          
+c     *                   last modified : 6/9/2019 rhd               *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
@@ -29,7 +29,7 @@ c
       double precision :: sig_mean, sig_mises, triaxiality, 
      &                    new_plast_strain, mean_zeta, max_change,
      &                    old_perm_factor, eps_crit, factor,
-     &                    default_cut_factor, damp_factor 
+     &                    default_cut_factor, damp_factor, mean_omega 
       double precision, parameter :: zero = 0.0d0, half = 0.5d0,
      &         ptnine = 0.9d0, one = 1.0d0, one_toler = 0.999d0,
      &         two = 2.0d0, pt75 = 0.75d0
@@ -53,7 +53,8 @@ c
         if( dam_state(elem_ptr) .gt. 0 ) cycle ! elem killed already                     
         call dam_param_3_get_values(
      &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
-     &      sig_mises, triaxiality, mean_zeta, 2, kill_now )   
+     &      sig_mises, triaxiality, mean_zeta, mean_omega, 2,
+     &      kill_now )   
         max_change = max( max_change, 
      &               new_plast_strain - old_plast_strain(elem_ptr) )                            
         old_plast_strain(elem_ptr) = new_plast_strain  

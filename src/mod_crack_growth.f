@@ -4,7 +4,7 @@ c     *                      f-90 module crack_growth_data           *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 5/6/2019 rhd               *          
+c     *                   last modified : 6/16/2019 rhd              *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          

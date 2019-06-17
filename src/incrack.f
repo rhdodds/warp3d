@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 05/10/2019 rhd             *          
+c     *                   last modified : 06/16/2019  rhd            *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -1050,35 +1050,8 @@ c          | SMCS options                           |
 c          ------------------------------------------                           
 c                                                                               
  2100 continue                                                                  
-c                                                                               
-c          ========= alpha, beta, gamma
-c         
-      do
-        if( endcrd() ) go to 10
-        if( matchs_exact('alpha') ) then
-          if( .not. numd(smcs_alpha) ) then
-            call incrack_errmsg( 4 )
-            go to 10
-          end if
-          cycle
-         end if
-         if( matchs_exact('beta') ) then
-           if( .not. numd(smcs_beta) ) then
-             call incrack_errmsg( 4 )
-             go to 10
-           end if
-           cycle
-         end if
-         if( matchs_exact('gamma') ) then
-           if( .not. numd(smcs_gamma) ) then
-             call incrack_errmsg( 4 )
-             go to 10
-           end if
-           cycle
-         end if
-         call incrack_errmsg( 5 )
-         go to 10
-      end do         
+      call incrack_smcs_parms
+      go to 10
 c                                                                               
 c          ------------------------------------------                           
 c          | killed element limit                   |                           
@@ -1101,7 +1074,136 @@ c
       sbflg2 = .true.                                                           
       return      
  9100 format(/1x,'>>>>> error: invalid element number: ',i8)
-      end                                                                       
+c
+      contains
+c     ========
+c
+c              
+      subroutine incrack_smcs_parms
+      implicit none
+c
+c
+c        smcs type 1 gamma, alpha, beta, kappa, triaxiality_cutoff
+c
+c        smcs type 2 gamma, beta_1, beta_2, A_plus, A_minus, kappa,
+c                    triaxiality_cutoff
+c
+c        smcs type 3 gamma, alpha_1, alpha_2, beta_1, beta_2,
+c                    triaxiality_cutoff
+c
+c
+      logical :: ok
+c
+      if( .not. matchs_exact('type') ) then
+       call incrack_errmsg( 8 )
+       return
+      end if
+c
+      if( .not. integr(smcs_type) ) then
+       call incrack_errmsg( 9 )
+       return
+      end if
+c
+      ok = smcs_type .ge. 1  .and.  smcs_type .le. 3
+      if( .not. ok ) then
+       call incrack_errmsg( 10 )
+       return
+      end if
+c
+      do
+       if( endcrd(dum) ) return
+       if( matchs_exact('display') ) then
+         write(out,9000) smcs_type, smcs_gamma, smcs_alpha,
+     &                   smcs_beta, smcs_kappa,
+     &                   smcs_beta_1,
+     &                   smcs_beta_2, smcs_a_plus, smcs_a_minus,
+     &                   smcs_alpha_1, smcs_alpha_2,
+     &                   smcs_cutoff_triaxiality
+         cycle
+       end if
+
+       if( matchs_exact('gamma') ) then
+         if( numd(smcs_gamma) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('alpha') ) then
+         if( numd(smcs_alpha) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('beta') ) then
+         if( numd(smcs_beta) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('beta_1') ) then
+         if( numd(smcs_beta_1) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('beta_2') ) then
+         if( numd(smcs_beta_2) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('a_plus') ) then
+         if( numd(smcs_a_plus) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('a_minus') ) then
+         if( numd(smcs_a_minus) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('kappa') ) then
+         if( numd(smcs_kappa) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('alpha_1') ) then
+         if( numd(smcs_alpha_1) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('alpha_2') ) then
+         if( numd(smcs_alpha_2) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs('cutoff_triaxiality',6) ) then
+         if( numd(smcs_cutoff_triaxiality) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs('triaxiality_cutoff',6) ) then
+         if( numd(smcs_cutoff_triaxiality) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       call incrack_errmsg( 11 )
+       return
+      end do
+c
+      return
+c
+ 9000 format(5x,'... smcs parameter values: ',
+     & 10x,'smcs_type :   ',i1, /,
+     & 10x,'gamma :       ',f10.4, /,
+     & 10x,'alpha:        ',f10.4, /,
+     & 10x,'beta:         ',f10.4, /,
+     & 10x,'kappa:        ',f10.4, /,
+     & 10x,'beta_1 :      ',f10.4, /,
+     & 10x,'beta_2 :      ',f10.4, /,
+     & 10x,'A+ :          ',f10.4, /,
+     & 10x,'A- :          ',f10.4, /,
+     & 10x,'alpha_1 :     ',f10.4, /,
+     & 10x,'alpha_2 :     ',f10.4, /,
+     & 10x,'cutoff_triax :',f10.4, / )
+c
+      end subroutine incrack_smcs_parms
+      end subroutine incrack                                                                 
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
@@ -2054,7 +2156,7 @@ c     *                      subroutine incrack_errmsg               *
 c     *                                                              *          
 c     *                       written by : RHD                       *          
 c     *                                                              *          
-c     *                   last modified : 5/16/2019 rhd              *          
+c     *                   last modified : 6/9/2019 rhd               *          
 c     *                                                              *          
 c     *                service routine for error messages            *          
 c     *                                                              *          
@@ -2114,7 +2216,30 @@ c
          write(out,9007)                                                        
          input_ok = .false. 
          call scan_flushline
-c                                                                               
+c
+      case( 8 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9008)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 9 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9009)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 10 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9010)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 11 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9011)                                                        
+         input_ok = .false. 
+         call scan_flushline
       case default                                                              
         write(out,9999)                                                         
         stop                                                                    
@@ -2143,6 +2268,18 @@ c
 c                                                                               
  9007 format(/1x,'>>>>> error: expecting number of top elements ',            
      & /14x,'to print.  line ignored',/)                       
+c                                                                               
+ 9008 format(/1x,'>>>>> error: expecting keyword type... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9009 format(/1x,'>>>>> error: expecting integer value 1 or 2 ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9010 format(/1x,'>>>>> error: smcs type must be 1 or 2 ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9011 format(/1x,'>>>>> error: unrecognized smcs parameter ... ',            
+     & /14x,'line ignored',/)                       
 c                                                                               
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
