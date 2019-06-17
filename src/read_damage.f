@@ -4,7 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/7/2019 rhd               *          
+c     *                   last modified : 6/16/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine reads in the damage routines from        *          
 c     *     a file.                                                  *          

@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/6/2019 rhd               *
+c     *                   last modified : 6/16/2019 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -455,14 +455,17 @@ c
      &              num_nodes_grwinc, num_steps_min, load_reduced,
      &              all_elems_killed, num_elements_killed,
      &              enforce_node_release, num_ctoa_released_nodes,
-     &              print_top_list, num_top_list
+     &              print_top_list, num_top_list, smcs_type
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
      &              crack_plane_coord, release_fraction,
      &              critical_angle, char_length, release_height,
-     &              crack_plane_sign, init_crit_ang, smcs_alpha,
-     &              smcs_beta, smcs_gamma, CTOA_range, perm_load_fact,
+     &              crack_plane_sign, init_crit_ang, smcs_gamma,
+     &              smcs_alpha, smcs_beta, smcs_cutoff_triaxiality,
+     &              smcs_a_plus, smcs_a_minus, smcs_alpha_1,
+     &              smcs_alpha_2, smcs_beta_1, smcs_beta_2,
+     &              smcs_kappa, CTOA_range, perm_load_fact,
      &              max_porosity_change, max_plast_strain_change,
      &              init_ctoa_dist, ctoa_dist, crkpln_srch_tol,
      &              max_deff_change, critical_cohes_deff_fract,
