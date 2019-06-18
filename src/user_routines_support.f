@@ -58,14 +58,13 @@ c
       call die_abort                                                            
       stop                                                                      
       end                                                                       
-                                                                                
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine rotsig                       *          
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *               last modified : 03/29/12                       *          
+c     *               last modified : 05/31/19 vsp                   *          
 c     *                                                              *          
 c     *     tensor rotation routine for Abaqus compatible UMAT       *          
 c     *                                                              *          
@@ -77,28 +76,29 @@ c
 c                                                                               
 c                      parameter declarations                                   
 c                                                                               
-      double precision :: in_vec(6), drot(3,3), out_vec(6)                                        
-      integer :: type, nrow, ncol                                                  
+      double precision, intent(in) :: in_vec(6), drot(3,3)
+      double precision, intent(out) :: out_vec(6)
+      integer, intent(in) :: type, nrow, ncol                                                  
 c                                                                               
 c                     locally defined arrays-variables                          
 c                                                                               
-      double precision :: factor, one, half, two, a(3,3), t(3,3), 
-     &                    c(3,3)                          
-      logical :: local_debug                                                       
-      data one, half, two, local_debug / 1.0d00, 0.5d00,                        
-     &                                       2.0d00, .true. /                   
+      double precision :: factor,  a(3,3), t(3,3), c(3,3)                          
+      logical, parameter :: local_debug = .true.                               
+      double precision, parameter :: 
+     &    one = 1.0d0, half = 0.5d0, two = 2.0d0
 c                                                                               
 c                                                                               
 c                     out = drot * in * trans(drot)                             
-c                                                                               
-c                     put input tensor into 3x3 matrix form.                    
-c                     type = 1 input tensor has engr strain                     
-c                     type = 2 input tensor has stress                          
-c                     put into 3 x 3 form                                       
+c 
+c                     type = 1 input tensor has stress                          
+c                     type = 2 input tensor has engr strain                     
+c 
 c                     Abaqus umat ordering: x,y,z,xy,xz,yz                      
+c 
+c                     put input tensor into 3x3 matrix form.                    
 c                                                                               
       factor = one                                                              
-      if( type .eq. 1 ) factor = half                                           
+      if( type .eq. 2 ) factor = half                                           
 c                                                                               
       a(1,1) = in_vec(1)                                                        
       a(2,1) = in_vec(4) * factor                                               
@@ -139,17 +139,17 @@ c
       c(3,3) = drot(3,1)*t(1,3) + drot(3,2)*t(2,3) + drot(3,3)*t(3,3)           
 c                                                                               
       factor = one                                                              
-      if( type .eq. 1 ) factor = two                                            
+      if( type .eq. 2 ) factor = two                                            
       out_vec(1) = c(1,1)                                                       
       out_vec(2) = c(2,2)                                                       
       out_vec(3) = c(3,3)                                                       
-      out_vec(4) = c(2,1) * two                                                 
-      out_vec(5) = c(3,1) * two                                                 
-      out_vec(6) = c(3,2) * two                                                 
+      out_vec(4) = c(2,1) * factor                                                 
+      out_vec(5) = c(3,1) * factor                                                 
+      out_vec(6) = c(3,2) * factor                                                 
 c                                                                               
       return                                                                    
       end                                                                       
-                                                                                
+                                                                               
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine sinv                         *          
