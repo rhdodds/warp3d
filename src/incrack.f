@@ -1049,8 +1049,16 @@ c          ------------------------------------------
 c          | SMCS options                           |                           
 c          ------------------------------------------                           
 c                                                                               
- 2100 continue                                                                  
-      call incrack_smcs_parms
+ 2100 continue            
+      if( matchs_exact('type') ) then                                 
+        call incrack_smcs_parms
+        go to 10
+      end if
+      if( matchs('states',5) ) then
+        call incrack_smcs_states
+        go to 10
+      end if
+      call incrack_errmsg( 8 )
       go to 10
 c                                                                               
 c          ------------------------------------------                           
@@ -1078,7 +1086,10 @@ c
       contains
 c     ========
 c
-c              
+c          ------------------------------------------                           
+c          | contains: incrack_smcs_parms           |                           
+c          ------------------------------------------                           
+c                                                                                           
       subroutine incrack_smcs_parms
       implicit none
 c
@@ -1093,11 +1104,6 @@ c                    triaxiality_cutoff
 c
 c
       logical :: ok
-c
-      if( .not. matchs_exact('type') ) then
-       call incrack_errmsg( 8 )
-       return
-      end if
 c
       if( .not. integr(smcs_type) ) then
        call incrack_errmsg( 9 )
@@ -1203,6 +1209,77 @@ c
      & 10x,'cutoff_triax :',f10.4, / )
 c
       end subroutine incrack_smcs_parms
+c
+c          ------------------------------------------                           
+c          | contains: incrack_smcs_states          |                           
+c          ------------------------------------------                           
+c                                                                                           
+      subroutine incrack_smcs_states
+      implicit none
+c
+c        smcs states on | off text | stream steps <step list> 
+c
+      integer, allocatable :: temp_list(:)
+      integer :: errnum, lenlst
+c
+      smcs_states  = .false.
+      smcs_stream  = .false.
+      smcs_text    = .false.
+      if( allocated( smcs_states_intlst ) )
+     &      deallocate( smcs_states_intlst )
+c
+      if( matchs('files',4) ) call splunj
+      if( matchs_exact('on') ) then
+         smcs_states = .true.
+      elseif( matchs_exact('off') ) then 
+         smcs_states = .false.
+      else
+         call incrack_errmsg( 15 )
+         smcs_states = .false.
+         return
+      end if
+      if( .not. smcs_states ) return
+c
+      if( matchs_exact('text') ) then
+         smcs_stream = .false.
+         smcs_text   = .true.
+      elseif( matchs_exact('stream') ) then 
+         smcs_stream = .true.
+         smcs_text   = .false.
+      else
+         call incrack_errmsg( 16 )
+         smcs_states = .false.
+         return
+      end if
+c
+      allocate( temp_list(mxlsz) )
+      call scan                                                                 
+      call trlist( temp_list, mxlsz, 100000000,   ! big for all steps                         
+     &             lenlst, errnum )                               
+      if ( errnum == 2 ) then   ! parse rules failed                                                
+         call incrack_errmsg( 12 )
+         smcs_states  = .false.
+         return
+      else if ( errnum == 3 ) then  ! list overflow                                            
+         call incrack_errmsg( 13 )
+         smcs_states  = .false.
+         return
+      else if ( errnum == 4 ) then  ! no list                                             
+         call incrack_errmsg( 14 )
+         smcs_states  = .false.
+         return
+      endif
+c
+      allocate( smcs_states_intlst( lenlst ) )
+      smcs_states_intlst(1:) = temp_list(1:lenlst)
+c
+c        not yet supported on MPI
+c     
+      if( use_mpi ) call incrack_errmsg( 17 )
+c
+      return
+c
+      end subroutine incrack_smcs_states
       end subroutine incrack                                                                 
 c                                                                               
 c     ****************************************************************          
@@ -2240,6 +2317,42 @@ c
          write(out,9011)                                                        
          input_ok = .false. 
          call scan_flushline
+c
+      case( 12 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9012)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 13 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9013)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 14 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9014)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 15 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9015)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 16 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9016)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 17 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9017)                                                        
+         input_ok = .false. 
+         call scan_flushline
       case default                                                              
         write(out,9999)                                                         
         stop                                                                    
@@ -2269,7 +2382,7 @@ c
  9007 format(/1x,'>>>>> error: expecting number of top elements ',            
      & /14x,'to print.  line ignored',/)                       
 c                                                                               
- 9008 format(/1x,'>>>>> error: expecting keyword type... ',            
+ 9008 format(/1x,'>>>>> error: expecting keyword type or states... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
  9009 format(/1x,'>>>>> error: expecting integer value 1 or 2 ... ',            
@@ -2279,6 +2392,24 @@ c
      & /14x,'line ignored',/)                       
 c                                                                               
  9011 format(/1x,'>>>>> error: unrecognized smcs parameter ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9012 format(/1x,'>>>>> error: invalid step list format... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9013 format(/1x,'>>>>> error: step list overflow ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9014 format(/1x,'>>>>> error: no steps list found ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9015 format(/1x,'>>>>> error: expecting keyword on or off ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9016 format(/1x,'>>>>> error: expecting keyword text or stream ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9017 format(/1x,'>>>>> error: feature not supported yet with MPI... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   

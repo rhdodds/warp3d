@@ -584,7 +584,7 @@ c     *              subroutine dam_param_3_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 06/16/2019 rhd             *          
+c     *                   last modified : 06/17/2019 rhd             *          
 c     *                                                              *          
 c     *             SMCS compute values for this element             *
 c     *                                                              *          
@@ -647,14 +647,16 @@ c
 c               local declarations                                               
 c
       double precision, dimension(:), pointer :: urcs_n, eps_n                         
-      integer :: gp, blk, epsoffset, mat_model,
+      integer :: gp, blk, epsoffset, mat_model, elem_type,
      &           ngp, rel_elem, sigoffset, j, elem_ptr
       double precision ::  sig(6), eps(6), fpngp,
      &                     mean_triaxiality,
      &                     epspls_vec(27),s11, s22, s33, s12, s13, s23,
      &                     j2, j3, zeta, omega, t1, t2, t3, t4,
      &                     p_omega, omega2
-      logical ::update, local_debug
+      logical :: update, local_debug, threed_solid_elem, l1, l2, l3,
+     &           l4, l5, l6, l7, l8, l9, l10
+     &          
       double precision, parameter :: zero = 0.d0,
      &     third = 1.d0/3.0d0, iroot2 = 1.0d0/dsqrt(2.0d0), six = 6.0d0,
      &     one = 1.0d0, two = 2.0d0, onept5 = 1.5d0, three = 3.d0,
@@ -665,18 +667,29 @@ c
 c               stress/strain vectors are (x,y,z,xy,yz,xz).                
 c
       update      = dowhat .eq. 1
-      local_debug = elem == 1
+      local_debug = elem == -1
+      elem_type      = iprops(1,elem)
       elem_ptr    = dam_ptr(elem)
-      eps_plas    = zero  
-      sig         = zero
-      eps         = zero             !   strains not used current code                                           
       ngp         = iprops(6,elem)                                           
       blk         = elems_to_blocks(elem,1)                                  
       rel_elem    = elems_to_blocks(elem,2)                                  
       epsoffset   = (rel_elem-1)*nstr*ngp                                    
       sigoffset   = (rel_elem-1)*nstrs*ngp                                   
       urcs_n      => urcs_n_blocks(blk)%ptr                                  
-      eps_n       => eps_n_blocks(blk)%ptr                                   
+      eps_n       => eps_n_blocks(blk)%ptr    
+c
+      eps_plas    = zero
+      eps_crit    = nine
+      sig_mean    = zero
+      sig_mises   = zero
+      triaxiality = zero
+      mean_zeta   = zero
+      mean_omega  = zero                               
+      sig         = zero
+      eps         = zero  !   strains not used current code       
+      call set_element_type( elem_type, threed_solid_elem, l1, l2, l3,
+     &                       l4, l5, l6, l7, l8, l9, l10 )  
+      if( .not. threed_solid_elem ) return                                 
 c
       call mm_return_values( "plastic_strain", elem, epspls_vec, ngp )
 c
@@ -728,6 +741,16 @@ c
         omega = one - zeta*zeta 
       end if
       eps_plas  = fpngp * eps_plas   
+c
+      if( dowhat == 3 ) then ! compute values for non-killable elem
+         eps_crit = nine
+         mean_zeta = zeta
+         mean_omega = omega
+         triaxiality = 100.0d0   ! in cases mises -> 0                                             
+         if( sig_mises .gt. small_mises )
+     &         triaxiality = sig_mean / sig_mises 
+         return
+       end if
 c
 c               update plastic strain weighted triaxiality, zeta,
 c               and omega. update saved plastic strain.

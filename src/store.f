@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/16/2019 rhd              *
+c     *                   last modified : 6/18/2019 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -49,7 +49,8 @@ c               locals
 c
       integer :: dum, fileno, last, prec_fact, node, local_length,
      &           i,  how_defined, node_count, num_patterns, mpc,
-     &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize
+     &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize,
+     &           isize
       integer, parameter :: check_data_key=2147483647
       character :: dbname*100
       logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
@@ -434,7 +435,7 @@ c
 c
 c
 c                       now save the crack growth parameters, if
-c                       needed. 1) integers, 2) doubles. then
+c                       needed. 1) integers/logicals, 2) doubles. then
 c                       data arrays based on user selected
 c                       growth options.
 c
@@ -455,7 +456,8 @@ c
      &              num_nodes_grwinc, num_steps_min, load_reduced,
      &              all_elems_killed, num_elements_killed,
      &              enforce_node_release, num_ctoa_released_nodes,
-     &              print_top_list, num_top_list, smcs_type
+     &              print_top_list, num_top_list, smcs_type,
+     &              smcs_states, smcs_stream, smcs_text  
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
@@ -491,6 +493,12 @@ c
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_old_epsplas,
      &              prec_fact * num_kill_elem )
+               isize = 0
+               if( allocated(smcs_states_intlst) ) isize =
+     &             sizeof( smcs_states_intlst )
+               write(fileno) isize
+               if( isize > 0 ) write(fileno)
+     &             smcs_states_intlst(1:isize)
          end if
 c           
          if ( print_status ) then

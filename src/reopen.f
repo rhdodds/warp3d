@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 6/16/2019 rhd              *
+c     *                   last modified : 6/18/2019 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -448,7 +448,8 @@ c
      &              num_nodes_grwinc, num_steps_min, load_reduced,
      &              all_elems_killed, num_elements_killed,
      &              enforce_node_release, num_ctoa_released_nodes,
-     &              print_top_list, num_top_list, smcs_type
+     &              print_top_list, num_top_list, smcs_type,
+     &              smcs_states, smcs_stream, smcs_text  
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,
