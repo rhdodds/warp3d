@@ -3,12 +3,12 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: March 20, 2019
+                   Last Update: July 1, 2019
 
-                  Version 18.0.0 on all platforms
+                  Version 18.1.5 on all platforms
 
-The multiple README files in previous releases are replaced with the
-QuickStart documents on home page of www.warp3d.net
+** The multiple README files in previous releases are replaced with the
+** QuickStart documents on home page of www.warp3d.net
 
 The remaining information below provides a summary of the various
 directories in the WARP3D distribution for this interested in such details.
@@ -171,14 +171,8 @@ directories in the WARP3D distribution for this interested in such details.
     1) reads flat model description file produced by WARP3D
        (see manual Section 2.12)
 
-    or
-
-    2) reads a Patran (text) neutral file for the model written by
-       WARP3D (see manual Section 2.12)  or some other program.
-
-
-    and then reads WARP3D generated "flat" result files (_text, _stream
-    or _text.gz)
+    2) then reads WARP3D generated "flat" result files (_text, 
+       _stream or _text.gz)
 
   The Exodus II database can be used by ParaView to post-process computed
   displacements, strains, stresses, etc. on the FE model. It is an
@@ -196,10 +190,6 @@ directories in the WARP3D distribution for this interested in such details.
 
          See additional discussion about Python requirements in the README
          file of this directory.
-
-         You will need to install the (free) fortranformat package into your 
-         Python environment. https://pypi.org/project/fortranformat/
-
 
   license_agreement  (a file)
   ===========================
