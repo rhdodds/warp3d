@@ -11,7 +11,7 @@ WARP3D is supported on two web sites
 
 2. This web site on GitHub is used by system developers to update and maintain the software and documentation including all source code, development tools, verification suites.
 
-Most WARP3D users will not need to use this web site (GitHub).
+Most WARP3D users will *not* need to use this web site (GitHub).
 If you want to have the most up-to-date source code, documentation, etc. you may clone this repository. This will not include ready-to-run executables.
 
 GitHub will download a zip file for the entire system or you can clone this repository.
@@ -22,4 +22,5 @@ To create a clone of the current development (but working) WARP3D system version
 % git clone https://github.com/rhdodds/warp3d  \<name for your copy of repository\>
 
 
-Follow the step-by-step instructions to rebuild WARP3D executable(s) on a platform provided in the files README_for_xxxx (where xxxx is the platform).
+See the README file in the top-level distribution directory. There is a PowerPoint file for each
+platform to get started (Windows, Linux, Macs)
