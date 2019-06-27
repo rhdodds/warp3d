@@ -13,6 +13,17 @@
 The remaining information below provides a summary of the various
 directories in the WARP3D distribution for this interested in such details.
 
+** Late Breaking News **
+ 
+ All test cases in the verification directory run correctly to completion
+ on Windows, Linux, Mac OSX with these exceptions:
+
+  -- Mac OSX w/ gfortran: test69 -> test_69_PPR_particle
+         fails with a seg fault (gfortran 8.1)
+
+
+
+
 
   src  (a directory)
   ===
