@@ -4,28 +4,28 @@ c     *                      subroutine ouext2                       *
 c     *                                                              *          
 c     *                       written by : kck                       *          
 c     *                                                              *          
-c     *                   last modified : 1/19/2017 rhd              *          
+c     *                   last modified : 6/30/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine computes derived stress/strain values    *          
 c     *     after the primary values have been averaged              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine ouext2 ( results, nrowd, noval, do_stresses )                  
+      subroutine ouext2 ( results, nrowd, numele, do_stresses )                  
       implicit none                                                             
 c                                                                               
-      integer :: nrowd, noval                                                   
+      integer :: nrowd, numele                                                   
       double precision :: results(nrowd,*)                                      
       logical :: do_stresses                                                    
 c                                                                               
       if( do_stresses ) then                                                    
-         call princ_inv_stress ( results, nrowd, noval )                        
-         call princ_stress ( results, nrowd, noval )                            
-         call yield_function( results, nrowd, noval )                           
+         call princ_inv_stress ( results, nrowd, numele )                        
+         call princ_stress ( results, nrowd, numele )                            
+         call yield_function( results, nrowd, numele )                           
       else                                                                      
-         call princ_inv_strain ( results, nrowd, noval )                        
-         call princ_strain ( results, nrowd, noval )                            
-         call equiv_strain( results, nrowd, noval )                             
+         call princ_inv_strain ( results, nrowd, numele )                        
+         call princ_strain ( results, nrowd, numele )                            
+         call equiv_strain( results, nrowd, numele )                             
       end if                                                                    
 c                                                                               
       return                                                                    
@@ -47,13 +47,12 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine princ_inv_strain( results, nrowd, num )                        
+      subroutine princ_inv_strain( results, nrowd, numele )                        
       implicit integer (a-z)                                                    
-      double precision                                                          
-     &     results(nrowd,*), half, t1, t2, t3                                   
-      data  half  / 0.5  /                                                      
+      double precision ::results(nrowd,*), half, t1, t2, t3                                   
+      data  half  / 0.5d0  /                                                      
 c                                                                               
-       do i = 1, num                                                            
+       do i = 1, numele                                                           
          t1 =  half * results(i,4)                                              
          t2 =  half * results(i,5)                                              
          t3 =  half * results(i,6)                                              
@@ -88,12 +87,11 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine princ_inv_stress( results, mxvl, num )                         
+      subroutine princ_inv_stress( results, mxvl, numele )                         
       implicit integer (a-z)                                                    
-      double precision                                                          
-     &     results(mxvl,*)                                                      
+      double precision :: results(mxvl,*)                                                      
                                                                                 
-       do i = 1, num                                                            
+       do i = 1, numele                                                           
          results(i,12) = results(i,1) +  results(i,2) +                         
      &                        results(i,3)                                      
          results(i,13) = results(i,1) * results(i,2) +                          
@@ -139,18 +137,17 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine princ_strain( results, nrowd, num )                            
+      subroutine princ_strain( results, nrowd, numele )                            
       implicit integer (a-z)                                                    
       include 'param_def'                                                       
-      double precision                                                          
-     &     results(nrowd,*)                                                     
+      double precision :: results(nrowd,*)                                                     
 c                                                                               
 c                    locally allocated                                          
 c                                                                               
       double precision                                                          
      &  temp_strain(nstr), wk(ndim), ev(nstr), evec(ndim,ndim), half            
 c                                                                               
-      data  half / 0.5 /                                                        
+      data  half / 0.5d0 /                                                        
 c                                                                               
 c                                                                               
 c        calculate the principal strains and there direction cosines by         
@@ -158,7 +155,7 @@ c        passing off strains into dummy array, then calling an eigenvalue
 c        eigenvector routine, and then passing the values from this routine     
 c        back to the appropriate places within results                          
 c                                                                               
-       do i = 1, num                                                            
+       do i = 1, numele                                                           
           temp_strain(1) = results(i,1)                                         
           temp_strain(2) = results(i,4) * half                                  
           temp_strain(3) = results(i,2)                                         
@@ -206,15 +203,14 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine princ_stress( results, nrowd, num )                            
+      subroutine princ_stress( results, nrowd, numele )                            
       implicit integer (a-z)                                                    
       include 'param_def'                                                       
-      double precision                                                          
-     &     results(nrowd,*)                                                     
+      double precision :: results(nrowd,*)                                                     
 c                                                                               
 c                    locally allocated                                          
 c                                                                               
-      double precision                                                          
+      double precision  ::                                                        
      &  temp_stress(nstr), wk(ndim), ev(nstr), evec(ndim,ndim)                  
 c                                                                               
 c                                                                               
@@ -223,7 +219,7 @@ c        passing off stresses into dummy array, then calling an eigenvalue
 c        eigenvector routine, and then passing the values from this routine     
 c        back to the appropriate places within results                          
 c                                                                               
-       do i = 1, num                                                            
+       do i = 1, numele                                                            
           temp_stress(1) = results(i,1)                                         
           temp_stress(2) = results(i,4)                                         
           temp_stress(3) = results(i,2)                                         
@@ -267,13 +263,12 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine yield_function ( results, maxnum, num )                        
+      subroutine yield_function ( results, maxnum, numele )                        
       implicit integer (a-z)                                                    
-      double precision                                                          
-     &     results(maxnum,*), iroot2, six                                       
-      data iroot2, six / 0.70711, 6.0 /                                         
+      double precision :: results(maxnum,*), iroot2, six                                       
+      data iroot2, six / 0.70711d0, 6.0d0 /                                         
 c                                                                               
-      do i = 1, num                                                             
+      do i = 1, numele                                                           
         results(i,8) = sqrt(                                                    
      &     ( results(i,1) - results(i,2) ) ** 2 +                               
      &     ( results(i,2) - results(i,3) ) ** 2 +                               
@@ -300,13 +295,13 @@ c     *     been averaged                                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine equiv_strain ( results, maxnum, num )                          
+      subroutine equiv_strain ( results, maxnum, numele )                          
       implicit integer (a-z)                                                    
       double precision                                                          
      &     results(maxnum,*),  root23, onep5                                    
-      data root23, onep5 / 0.471404, 1.5 /                                      
+      data root23, onep5 / 0.471404d0, 1.5d0 /                                      
 c                                                                               
-      do i = 1, num                                                             
+      do i = 1, numele                                                             
         results(i,7) = root23 * sqrt(                                           
      &     ( results(i,1) - results(i,2) ) ** 2 +                               
      &     ( results(i,2) - results(i,3) ) ** 2 +                               

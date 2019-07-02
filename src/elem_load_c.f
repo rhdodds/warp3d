@@ -804,18 +804,21 @@ c *******************************************************************
 c                                                                               
 c                                                                               
       subroutine  eqldjb( dsf, coord, nnode, jacob, jacobi, det, ierr )         
-      implicit double precision (a-h,o-z)                                       
+      implicit none                                       
 c                                                                               
 c                                                                               
 c              compute the 3 x 3 jacobian, its determinate and                  
 c              inverse for the 3-d isoparametrics.                              
 c                                                                               
 c                                                                               
-      dimension  dsf(32,*), coord(3,*), jacob(3,3), jacobi(3,3)                 
-      double precision                                                          
-     &  jacob, jacobi                                                           
-      logical  debug                                                            
-      data zero, debug / 0.0, .false. /                                         
+      integer :: nnode, ierr
+      double precision :: dsf(32,*), coord(3,*), jacob(3,3),
+     &                    jacobi(3,3), det  
+c
+      integer :: i, j, k 
+      double precision, parameter :: zero = 0.0d0              
+      logical, parameter ::  debug = .false.
+                                                            
 c                                                                               
 c              compute jacobian at the point.                                   
 c                                                                               
@@ -850,7 +853,9 @@ c
      &    - jacob(2,1) * jacob(1,2) * jacob(3,3)                                
      &    - jacob(3,1) * jacob(2,2) * jacob(1,3)                                
       if ( det .le. zero ) then                                                 
-        ierr = 1                                                                
+        ierr = 1   
+        write(*,100) ((jacob(i,j),j=1,3),i=1,3)            
+        write(*,*) '.....   bad determinant: ',det                                                 
         return                                                                  
       end if                                                                    
 c                                                                               
@@ -876,10 +881,10 @@ c
       if ( debug ) write(*,110) det, ((jacobi(i,j),j=1,3), i = 1,3)             
 c                                                                               
       return                                                                    
- 100  format(1h0,5x,18hjacobian at point  ,/,                                   
-     &                 2(/,7x,3f15.5) )                                         
- 110  format(1h0,5x,12hdeterminant ,f15.5,                                      
-     &       /,  5x,16hjacobian inverse  /,2(/,7x,3f15.5) )                     
+ 100  format(5x,"jacobian at point",                                   
+     &                 3(/,7x,3f15.5) )                                         
+ 110  format(5x,"determinant: " ,f15.5,                                      
+     &       /,  5x,"jacobian inverse",  /,3(/,7x,3f15.5) )                     
       end                                                                       
 c *******************************************************************           
 c *                                                                 *           
