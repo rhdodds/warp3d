@@ -62,7 +62,7 @@
 #          in the linux_pacakages/lib directory of the WARP3D distribution
 
 OSNAME   := Linux
-BUILDNUM := 3800
+BUILDNUM := 3900
 #
 BUILD_SYS := gfortran
 ODIR = ././../obj_linux_gfortran_omp
@@ -308,7 +308,6 @@ OBJ =	 \
 	$(OD)/ouocst.o	 \
 	$(OD)/ouneut.o	 \
 	$(OD)/ouocst_elem.o	 \
-	$(OD)/oupads.o	 \
 	$(OD)/oupdva.o	 \
 	$(OD)/oupele.o	 \
 	$(OD)/ouprks.o	 \
@@ -317,7 +316,6 @@ OBJ =	 \
 	$(OD)/oures.o	 \
 	$(OD)/ourlhd.o	 \
 	$(OD)/ousthd.o	 \
-	$(OD)/oustpa.o	 \
 	$(OD)/oust_elem.o	 \
 	$(OD)/oustates.o	 \
 	$(OD)/outfil.o	 \

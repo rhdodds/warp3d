@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 5/20/2019 rhd
+#   Last modifications: 3/10/2019  rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -51,7 +51,7 @@
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 3800
+BUILDNUM := 3900
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -77,8 +77,8 @@ PROFILE =
 OPT_REPORT = -qopt-report=5 -qopt-report-annotate=html -qopt-report-phase=vec
 OPT_REPORT = 
 OPENMP     = -qopenmp -reentrancy
-CHECKFLOAT = -init=snan,arrays -fp-speculation=safe
-CHECKFLOAT = -fp-speculation=safe
+CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
+CHECKFLOAT =
 #
 MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
 DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
@@ -296,7 +296,6 @@ OBJ =	 \
 	$(OD)/ouocst.o	 \
 	$(OD)/ouneut.o	 \
 	$(OD)/ouocst_elem.o	 \
-	$(OD)/oupads.o	 \
 	$(OD)/oupdva.o	 \
 	$(OD)/oupele.o	 \
 	$(OD)/ouprks.o	 \
@@ -305,7 +304,6 @@ OBJ =	 \
 	$(OD)/oures.o	 \
 	$(OD)/ourlhd.o	 \
 	$(OD)/ousthd.o	 \
-	$(OD)/oustpa.o	 \
 	$(OD)/oust_elem.o	 \
 	$(OD)/oustates.o	 \
 	$(OD)/outfil.o	 \

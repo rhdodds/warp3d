@@ -58,7 +58,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3800
+BUILDNUM := 3900
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -329,7 +329,6 @@ OBJ =	 \
 	$(OD)/ouocst.o	 \
 	$(OD)/ouneut.o	 \
 	$(OD)/ouocst_elem.o	 \
-	$(OD)/oupads.o	 \
 	$(OD)/oupdva.o	 \
 	$(OD)/oupele.o	 \
 	$(OD)/ouprks.o	 \
@@ -338,7 +337,6 @@ OBJ =	 \
 	$(OD)/oures.o	 \
 	$(OD)/ourlhd.o	 \
 	$(OD)/ousthd.o	 \
-	$(OD)/oustpa.o	 \
 	$(OD)/oust_elem.o	 \
 	$(OD)/oustates.o	 \
 	$(OD)/outfil.o	 \

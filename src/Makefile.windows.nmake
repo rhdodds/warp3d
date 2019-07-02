@@ -41,7 +41,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 3800
+BUILDNUM = 3900
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
@@ -242,7 +242,6 @@ OBJ =	 \
 	$(OD)/ouocst$O	 \
 	$(OD)/ouneut$O	 \
 	$(OD)/ouocst_elem$O	 \
-	$(OD)/oupads$O	 \
 	$(OD)/oupdva$O	 \
 	$(OD)/oupele$O	 \
 	$(OD)/ouprks$O	 \
@@ -251,7 +250,6 @@ OBJ =	 \
 	$(OD)/oures$O	 \
 	$(OD)/ourlhd$O	 \
 	$(OD)/ousthd$O	 \
-	$(OD)/oustpa$O	 \
 	$(OD)/oust_elem$O	 \
 	$(OD)/oustates$O	 \
 	$(OD)/outfil$O	 \
