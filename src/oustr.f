@@ -4,7 +4,7 @@ c     *               subroutine oustr_pat_flat_file                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 6/17/2017 rhd              *          
+c     *                   last modified : 6/30/2019 rhd              *          
 c     *                                                              *          
 c     *     output of stresses or strains to patran results file     *          
 c     *     or to a flat file (text or stream)                       *          
@@ -236,7 +236,7 @@ c     *              subroutine oustr_set_block_arrays               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 3/10/04 rhd                *          
+c     *                   last modified : 6/30/2019 rhd              *          
 c     *                                                              *          
 c     *     allocate block type arrays used by lower-level output    *          
 c     *     routines                                                 *          
@@ -251,7 +251,8 @@ c
 c                                                                               
       implicit none                                                             
 c                                                                               
-      integer :: blk                                                            
+      integer :: blk, ierror  
+      logical, parameter :: local_debug = .false.                                                      
 c                                                                               
 c                  allocate a 3-D array block for the element histories         
 c                  at n and n+1. find the maximum number of gauss points        
@@ -263,10 +264,29 @@ c
       do blk = 1, nelblk                                                        
          blk_size_gp   = max( blk_size_gp, gausspts_blk_list(blk) )             
          blk_size_hist = max( blk_size_hist, history_blk_list(blk) )            
-      end do                                                                    
+      end do 
+c
+      if( local_debug ) then
+        write(out,*) "... leaving  oustr_set_block_arrays:"
+        write(out,*) "     nelblk, blk_size_gp, blk_size_hist",
+     &           nelblk, blk_size_gp, blk_size_hist
+      end if
 c                                                                               
-      allocate( elem_hist(mxvl,blk_size_hist,blk_size_gp),                      
-     &          elem_hist1(mxvl,blk_size_hist,blk_size_gp) )                    
+      allocate( elem_hist(mxvl,blk_size_hist,blk_size_gp),
+     &          stat=ierror )
+      if( ierror .ne. 0 ) then
+        write(out,*) '.... oustr_set_block_arrays'
+        write(out,*) '     allocate failure @ 1'
+        call die_abort
+      end if                                  
+c                      
+      allocate( elem_hist1(mxvl,blk_size_hist,blk_size_gp),
+     &          stat=ierror )                    
+      if( ierror .ne. 0 ) then
+        write(out,*) '.... oustr_set_block_arrays'
+        write(out,*) '     allocate failure @ 2'
+        call die_abort
+      end if                                  
 c                                                                               
       return                                                                    
       end                                                                       
@@ -277,7 +297,7 @@ c     *              subroutine oustr_release_block_arrays           *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 1/19/2017 rhd              *          
+c     *                   last modified : 6/30/2019 rhd              *          
 c     *                                                              *          
 c     *     deallocate block type arrays used by lower-level output  *          
 c     *     routines                                                 *          
@@ -285,14 +305,21 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine oustr_release_block_arrays                                     
+      use global_data, only : out  ! old common.main
       use elblk_data, only : elem_hist, elem_hist1                              
 c                                                                               
-      implicit none                                                             
+      implicit none  
+      integer  :: ierror
 c                                                                               
 c                  deallocate a 3-D array block for the element histories       
 c                  at n and n+1.                                                
 c                                                                               
-      deallocate( elem_hist, elem_hist1 )                                       
+      deallocate( elem_hist, elem_hist1, stat=ierror )     
+      if( ierror .ne. 0 ) then
+        write(out,*) '.... oustr_release_block_arrays'
+        write(out,*) '     deallocate failure'
+        call die_abort
+      end if                                  
 c                                                                               
       return                                                                    
       end                                                                       
