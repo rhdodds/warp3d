@@ -3,25 +3,27 @@ c *                                                          *
 c *         isoparametric coordinates of element nodes       *                  
 c *         by face number or element node number            *                  
 c *                                                          *                  
-c *                 modified by mcw on 8-21-03               *                  
+c *                 modified by rhd on 7/5/2019              *                  
 c *                                                          *                  
 c ************************************************************                  
 c                                                                               
 c                                                                               
       subroutine ndpts1( fnodes, nfnode, fcoor, etype, enode,                   
      &                   xi, eta, zeta )                                        
-      implicit double precision (a-h,o-z)                                       
+      implicit none
 c                                                                               
 c                                                                               
 c              fill the fcoor table for element etype,                          
 c              face "face" with isoparametric coordinates of                    
 c              the face nodes.                                                  
 c                                                                               
-c                                                                               
-      dimension    fnodes(*), fcoor(3,*)                                        
-      real         coor20(3,20), coor12(3,12), coor15(3,15),                    
-     &             coor9(3,9), coorq4(2,4), coorq8(2,8)                         
-      integer      etype, fnodes, enode                                         
+c     
+      integer :: fnodes(*), nfnode, etype, enode
+      double precision :: fcoor(3,*), xi, eta, zeta   
+c                                                                 
+      integer :: local_etype, inode, j                                        
+      real :: coor20(3,20), coor12(3,12), coor15(3,15),                    
+     &        coor9(3,9), coorq4(2,4), coorq8(2,8)                         
 c                                                                               
       data  coor20  /                                                           
      &  -1.0,-1.0, 1.0,                                                         
@@ -104,11 +106,12 @@ c
      &  -1.0, 0.0 /                                                             
 c                                                                               
 c                                                                               
+c           
+      local_etype = etype                                                                    
+      if( local_etype .eq. 9  ) local_etype = 6                                             
+      if( local_etype .eq. 16 ) local_etype = 7                                             
 c                                                                               
-      if( etype .eq. 9  ) etype = 6                                             
-      if( etype .eq. 16 ) etype = 7                                             
-c                                                                               
-      go to ( 100, 200, 300, 400, 500, 900, 1600 ), etype                       
+      go to ( 100, 200, 300, 400, 500, 900, 1600 ), local_etype                       
 c                                                                               
 c             20 node brick                                                     
 c                                                                               
@@ -207,7 +210,7 @@ c
       do inode = 1, 8                                                           
         fcoor(1,inode) = coorq8(1,inode)                                        
         fcoor(2,inode) = coorq8(2,inode)                                        
-        fcoor(3,inode) = 0.0                                                    
+        fcoor(3,inode) = 0.0d0                                                    
       end do                                                                    
       return                                                                    
 c                                                                               
@@ -217,13 +220,13 @@ c
       if ( enode .gt. 0 ) then                                                  
         xi   = coorq4(1,enode)                                                  
         eta  = coorq4(2,enode)                                                  
-        zeta = 0.0                                                              
+        zeta = 0.0d0                                                              
         return                                                                  
       end if                                                                    
       do inode = 1, 4                                                           
         fcoor(1,inode) = coorq4(1,inode)                                        
         fcoor(2,inode) = coorq4(2,inode)                                        
-        fcoor(3,inode) = 0.0                                                    
+        fcoor(3,inode) = 0.0d0                                                    
       end do                                                                    
       return                                                                    
 c                                                                               

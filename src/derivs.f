@@ -18,7 +18,7 @@ c
 c                  
       implicit none                                                             
       double precision :: xi, eta, zeta, nxi(*), neta(*), nzeta(*)                             
-      integer :: etype  
+      integer :: etype, i
       double precision, parameter :: zero = 0.0d0                                                           
 c                                                                               
       if ( etype .le. 0 .or. etype .gt. 19 ) then                               
@@ -39,7 +39,7 @@ c
 c                     8-node brick                                              
 c                                                                               
  200  continue                                                                  
-      call deriv2( xi, eta, zeta, nxi, neta, nzeta )                            
+      call deriv2( xi, eta, zeta, nxi, neta, nzeta )              
       return                                                                    
 c                                                                               
 c                    12-node brick                                              
