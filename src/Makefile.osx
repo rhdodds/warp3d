@@ -375,7 +375,9 @@ OBJ =	 \
 	$(OD)/thyme.o	 \
 	$(OD)/trnvec.o	 \
 	$(OD)/trnmtx.o	 \
-	$(OD)/tied_mesh.o	 \
+	$(OD)/tied_mesh_a.o	 \
+	$(OD)/tied_mesh_b.o	 \
+	$(OD)/tied_mesh_c.o	 \
 	$(OD)/tilde.o	 \
 	$(OD)/update.o	 \
 	$(OD)/update_node_elecnt.o	 \

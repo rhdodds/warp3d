@@ -288,7 +288,9 @@ OBJ =	 \
 	$(OD)/thyme$O	 \
 	$(OD)/trnvec$O	 \
 	$(OD)/trnmtx$O	 \
-	$(OD)/tied_mesh$O	 \
+	$(OD)/tied_mesh_a$O	 \
+	$(OD)/tied_mesh_b$O	 \
+	$(OD)/tied_mesh_a$O	 \
 	$(OD)/tilde$O	 \
 	$(OD)/update$O	 \
 	$(OD)/update_node_elecnt$O	 \
@@ -1352,10 +1354,20 @@ $(OD)/thyme$O : thyme.f $(OD)/mod_main$O \
 	$(F90) /O3 /Qip  /c thyme.f
 	$(MVC) thyme$O $@
 
-$(OD)/tied_mesh$O : tied_mesh.f param_def \
+$(OD)/tied_mesh_a$O : tied_mesh_a.f param_def \
                    $(OD)/mod_mpc$O
-	$(F90) /O3 /Qip  /c tied_mesh.f
-	$(MVC) tied_mesh$O $@
+	$(F90) /O3 /Qip  /c tied_mesh_a.f
+	$(MVC) tied_mesh_a$O $@
+
+$(OD)/tied_mesh_b$O : tied_mesh_b.f param_def \
+                   $(OD)/mod_mpc$O
+	$(F90) /O3 /Qip  /c tied_mesh_b.f
+	$(MVC) tied_mesh_b$O $@
+
+$(OD)/tied_mesh$O : tied_mesh_c.f param_def \
+                   $(OD)/mod_mpc$O
+	$(F90) /O3 /Qip  /c tied_mesh_c.f
+	$(MVC) tied_mesh_c$O $@
 
 $(OD)/tilde$O : tilde.f
 	$(F90) /O3 /Qip  /c tilde.f
