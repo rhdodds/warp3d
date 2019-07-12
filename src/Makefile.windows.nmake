@@ -290,7 +290,7 @@ OBJ =	 \
 	$(OD)/trnmtx$O	 \
 	$(OD)/tied_mesh_a$O	 \
 	$(OD)/tied_mesh_b$O	 \
-	$(OD)/tied_mesh_a$O	 \
+	$(OD)/tied_mesh_c$O	 \
 	$(OD)/tilde$O	 \
 	$(OD)/update$O	 \
 	$(OD)/update_node_elecnt$O	 \
