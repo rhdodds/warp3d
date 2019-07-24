@@ -3,9 +3,9 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: July 1, 2019
+                   Last Update: July 25, 2019
 
-                  Version 18.1.5 on all platforms
+                  Version 18.1.8 on all platforms
 
 ** The multiple README files in previous releases are replaced with the
 ** QuickStart documents on home page of www.warp3d.net
@@ -14,13 +14,27 @@ The remaining information below provides a summary of the various
 directories in the WARP3D distribution for this interested in such details.
 
 ** Late Breaking News **
+
+ This is a bug fix, cleanup release.
+
+ Executables in the distribution and the default build process
+ now use the processor dependent dispatch feature of the Intel
+ compiler. During execution, the most efficient instructions
+ available on your specific computer are used.
+
+ The code runs optimally on all Intel processors starting with
+ the old ivybridge CPUs dating to 2011-2012.
  
  All test cases in the verification directory run correctly to completion
- on Windows, Linux, Mac OSX with these exceptions:
-
-  -- Mac OSX w/ gfortran: test69 -> test_69_PPR_particle
-         fails with a seg fault (gfortran 8.1)
-
+ on Windows, Linux, Mac OSX, except as noted:
+ 
+    - model test69/test_69_PPR_patch_uniaxial fails to complete on some
+      OSX computers. no consistent pattern/issue yet discovered.
+ 
+ Tied contact:
+   An issue is now occurring occasionally when the "master" surface is tet
+   elements. Hex -to- hex tied surfaces are fine. Tet (slave) to hex
+   (master) surfaces are ok.
 
 
 
