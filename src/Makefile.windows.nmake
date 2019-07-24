@@ -1,6 +1,13 @@
 #
+# ****************************************************************************
 #
-#   Last modifications: 3/19/2019 rhd
+#   File: Makefile.windows.nmake
+#
+#      files: Makewarp_jom.bat or Makewarp.bat invoke this file
+#
+#   Developer: rdodds
+#
+#   Last modifications: 7/23/2019 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -9,30 +16,43 @@
 #    Makewarp.bat or Makewarp_jom.bat (which sets the 64-bit
 #    mode for use here)
 #
-#    Tested with Intel Fortran 19.0.1 and included MKL
+#    Tested with Intel Fortran 19.0.3 and included MKL
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
 #
+#     Notes
 #
-#    1. We specify the -xHost  -align array64byte ifort options.
+#       1. Key compiler options:
 #
-#       -> alternatively you can build with the
-#          MINIMUM_MACHINE_TYPE option indicated below
+#           Intel: by default we use the compiler feature to
+#                  build instructions in the executable for all
+#                  processor types from ivybridge to current.
+#                  During execution the code dispatches the best
+#                  instructions for your specific computer.
 #
-#    2. The compiler will generate code for the highest level
-#       instruction set available in your processor(s).
+#                  A smaller executable file can be generated using
+#                  -xHOST option as offered below
 #
-#    3. WARP3D code ** requires ** that your processor support the
-#       AVX instruction set ==>> as a minimum.
+#       2. The Pardiso solver package in Intel MKL automatically
+#          uses the most efficient instruction set available on
+#          your specific computer.
 #
-#       These processors became available in early 2011 and include:
-#          2nd Generation Intel® Core™ i7 Processors
-#          2nd Generation Intel® Core™ i5 Processors
-#          2nd Generation Intel® Core™ i3 Processors
-#          Intel® Xeon® Processor E5 Family
-#          Intel® Xeon® Processor E3 Family
-#          + all newer processors
+#       3. The distributed executables for WARP3D ** require ** 
+#          that your processor support the AVX instruction 
+#          set from Intel ivybridge and newer processors
+#          (as a minimum).
+#
+#          These processors became available in early 2011 and include:
+#             2nd Generation Intel¨ Coreª i7 Processors
+#             2nd Generation Intel¨ Coreª i5 Processors
+#             2nd Generation Intel¨ Coreª i3 Processors
+#             Intel¨ Xeon¨ Processor E5 Family
+#             Intel¨ Xeon¨ Processor E3 Family
+#             + all newer processors
+#
+#           During the next year, we plan to require processors
+#           that support the AVX2 instruction set.
 #
 !IF DEFINED(ARCH64)
 XXX = abc
@@ -41,7 +61,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 3900
+BUILDNUM = 3960
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
@@ -58,9 +78,13 @@ INLINEOPT  = /Qinline-factor-
 PARALLEL   = /Qmkl:parallel /threads /reentrancy /Qopenmp
 STACKSIZE  = /F400000000
 #
-MINIMUM_MACHINE_TYPE = /QaxAVX /align:array64byte
-DEFAULT_MACHINE_TYPE = /QxHOST /align:array64byte
-MACHINE_TYPE         = $(DEFAULT_MACHINE_TYPE)
+HARDWARE_MACHINE_TYPE = /QxHOST /align:array64byte /Qopt-zmm-usage:high 
+#
+PART3 = /QaxAVX,CORE-AVX2,COMMON-AVX512 /QxIVYBRIDGE 
+PART4 = /Qopt-zmm-usage:high /align:array64byte
+MINIMUM_MACHINE_TYPE = $(PART3) $(PART4)
+#
+MACHINE_TYPE =  $(MINIMUM_MACHINE_TYPE)
 #
 F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
 F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback
@@ -1363,6 +1387,11 @@ $(OD)/tied_mesh_b$O : tied_mesh_b.f param_def \
                    $(OD)/mod_mpc$O
 	$(F90) /O3 /Qip  /c tied_mesh_b.f
 	$(MVC) tied_mesh_b$O $@
+
+$(OD)/tied_mesh_c$O : tied_mesh_c.f param_def \
+                   $(OD)/mod_mpc$O
+	$(F90) /O3 /Qip  /c tied_mesh_c.f
+	$(MVC) tied_mesh_c$O $@
 
 $(OD)/tied_mesh$O : tied_mesh_c.f param_def \
                    $(OD)/mod_mpc$O

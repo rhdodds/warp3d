@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 3/10/2019  rhd
+#   Last modifications: 7/23/2019 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -25,16 +25,28 @@
 #     routines are included in the WARP3D distribution directory
 #     linux_packages/lib
 #
+#
 #     Notes
 #
-#       1. We specify:  -xHOST  as a default
+#       1. Key compiler options:
 #
-#          The compiler will generate code for the highest level
-#          instruction set available in your processor(s).
+#           Intel: by default we use the compiler feature to
+#                  build instructions in the executable for all
+#                  processor types from ivybridge to current.
+#                  During execution the code dispatches the best
+#                  instructions for your specific computer.
 #
-#       2. The distributed executable for WARP3D ** requires ** 
-#          that your processor support the AVX instruction set as a minimum.
-#          Set MACHINE_TYPE below to MINIMUM_MACHINE_TYPE 
+#                  A smaller executable file can be generated using
+#                  -xHOST option as offered below
+#
+#       2. The Pardiso solver package in Intel MKL automatically
+#          uses the most efficient instruction set available on
+#          your specific computer.
+#
+#       3. The distributed executables for WARP3D ** require ** 
+#          that your processor support the AVX instruction 
+#          set from Intel ivybridge and newer processors
+#          (as a minimum).
 #
 #          These processors became available in early 2011 and include:
 #             2nd Generation Intel® Core™ i7 Processors
@@ -47,11 +59,11 @@
 #           During the next year, we plan to require processors
 #           that support the AVX2 instruction set.
 #
-#       3. We build an executable using shared libraries for 
+#       4. We build an executable using shared libraries for 
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 3900
+BUILDNUM := 3960
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -80,9 +92,10 @@ OPENMP     = -qopenmp -reentrancy
 CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
 CHECKFLOAT =
 #
-MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
-DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte
-MACHINE_TYPE          = $(DEFAULT_MACHINE_TYPE)
+MINIMUM_MACHINE_TYPE = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
+                       -align array64byte  -qopt-zmm-usage=high
+HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
+MACHINE_TYPE =  $(MINIMUM_MACHINE_TYPE)
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) $(HYINC) $(FTRAP) \

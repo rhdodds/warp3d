@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 5/20/2019 rhd
+#   Last modifications: 7/23/2019 rhd
 #
 #   How to run:
 #
@@ -22,22 +22,34 @@
 #     Link with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
 #
-#     Build tested with gfortran version 8.1.0 and MKL 19.1.0
+#     Build tested with gfortran version 8.1.0 and MKL 19.0.4
 #     on OSX 10.3.5 (High Sierra)
 #
 #
 #     Notes
 #
-#       1. By default, we specify here -march=native for gfortran and
-#          -xHOST Intel Composer Fortran.
+#       1. Key compiler options:
+#           gfortran: we specify here -march=ivybridge
+#                     switch to -native if you want best performance
+#                     on your specific hardware
 #
-#          The compiler will generate code for the highest level
-#          instruction set available in your processor(s).
+#           Intel: by default we use the compiler feature to
+#                  build instructions in the executable for all
+#                  processor types from ivybridge to current.
+#                  During execution the code dispatches the best
+#                  instructions for your specific computer.
 #
-#       2. The distributed executables for WARP3D ** requires ** 
-#          that your processor support the
-#          AVX instruction set as a minimum.
-#          Set MACHINE_TYPE below to MINIMUM_MACHINE_TYPE 
+#                  A smaller executable file can be generated using
+#                  -xHOST option as offered below
+#
+#       2. The Pardiso solver package in Intel MKL automatically
+#          uses the most efficient instruction set available on
+#          your specific computer.
+#
+#       3. The distributed executables for WARP3D ** requires ** 
+#          that your processor support the AVX instruction 
+#          set from Intel ivybridge and newer processors
+#          (as a minimum).
 #
 #          These processors became available in early 2011 and include:
 #             2nd Generation Intel® Core™ i7 Processors
@@ -58,7 +70,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3900
+BUILDNUM := 3960
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -91,9 +103,9 @@ ifeq  ($(BUILD_SYS), gfortran) #   gfortran options
   PROFILE  = -pg
   PROFILE  =
   CHECKFLOAT =  
-  MINIMUM_MACHINE_TYPE  = -march=sandybridge
-  DEFAULT_MACHINE_TYPE  = -march=native
-  MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
+  MINIMUM_MACHINE_TYPE = -march=ivybridge
+  HARDWARE_SPECIFIC = -march=native
+  MACHINE_TYPE = $(MINIMUM_MACHINE_TYPE)
   FCOPTS   =  -O3 $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form  \
               -fcray-pointer -fopenmp  \
              -fdec -cpp $(FTRAP) $(INLINE)  $(CHECKFLOAT) -J$(ODIR) 
@@ -117,9 +129,12 @@ else  #  Intel Composer options
   PROFILE  =
   CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
   CHECKFLOAT = -fp-speculation=safe
-  MINIMUM_MACHINE_TYPE  = -xAVX -align array64byte
-  DEFAULT_MACHINE_TYPE  = -xHOST -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE)
+#
+  MINIMUM_MACHINE_TYPE = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
+                         -align array64byte  -qopt-zmm-usage=high
+  HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
+  MACHINE_TYPE =  $(MINIMUM_MACHINE_TYPE)
+#
   FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
               $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
