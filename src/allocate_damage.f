@@ -33,8 +33,7 @@ c
       logical :: debug, duml                                                       
       real :: dumr                                                                 
 c                                                                               
-      debug = .false.                                                           
-c                                                                               
+      debug = .true.
 c                                                                               
       go to (100,200,300,400,500,600,700,800,900,1000,1100,                     
      &       1200, 1300 ), status                                                     
@@ -42,12 +41,12 @@ c
 c                               allocate dam_state, dam_ifv,                    
 c                               dam_blk_killed                                  
 c                                                                               
- 100  continue                                                                  
+ 100  continue   
 c                                                                               
       if( allocated(dam_state) ) then                                           
          call errmsg(215,dum,'dam_state',dumr,dumd1)                            
          go to 9999                                                             
-      end if                                                                    
+      end if        
       allocate(dam_state(num_kill_elem))                                        
       dam_state(1:num_kill_elem) = 0                                            
 c                                                                               
@@ -384,7 +383,7 @@ c
 c                                                                               
 c                            allocate: ( dam_ptr )                              
 c                                                                               
- 1200 continue                                                                  
+ 1200 continue      
       if( allocated(dam_ptr) )                                                  
      &     deallocate( dam_ptr )                                                
       allocate( dam_ptr(noelem) )                                               

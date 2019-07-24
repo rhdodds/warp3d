@@ -1,6 +1,6 @@
 c     ****************************************************************          
-c     *                                                              *          
 c     *                      subroutine tanstf                       *          
+c     *                                                              *          
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
@@ -102,7 +102,7 @@ c     *                      subroutine do_nlek_block                *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 8/16/2016 rhd              *          
+c     *                   last modified : 7/17/2019 rhd              *          
 c     *                                                              *          
 c     *     computes the global nonlinear stiffness                  *          
 c     *     matrices for a block of elements. the data structures    *          
@@ -119,8 +119,7 @@ c
 c                                                                               
       use elem_block_data,   only : estiff_blocks, cdest_blocks,                
      &                              edest_blocks                                
-      use elem_extinct_data, only : dam_state                   
-c                                                                               
+      use elem_extinct_data, only : dam_state, dam_blk_killed                                                                                                 
       use main_data,         only : trn, incid, incmap,                         
      &                              cohesive_ele_types, link_types,                         
      &                              linear_displ_ele_types,                     
@@ -129,10 +128,8 @@ c
      &                              nonlocal_analysis,                          
      &                              asymmetric_assembly,                        
      &                              temperatures_ref,                           
-     &                              fgm_node_values_defined                     
-c                                                                               
-      use damage_data, only : dam_ptr, growth_by_kill                           
-c                                                                               
+     &                              fgm_node_values_defined                                                                                                    
+      use damage_data, only : dam_ptr, growth_by_kill                                                                                                          
       use contact, only : use_contact                                           
 c                                                                               
       implicit none                                                             
@@ -154,6 +151,7 @@ c
      &           cohes_type, surface, matnum, nrow_ek, ispan, relem,            
      &           element                                                        
 c                                                                               
+      span           = elblks(0,blk)                                            
       felem          = elblks(1,blk)                                            
       elem_type      = iprops(1,felem)                                          
       int_order      = iprops(5,felem)                                          
@@ -164,12 +162,12 @@ c
       geo_non_flg    = lprops(18,felem)                                         
       bbar_flg       = lprops(19,felem)                                         
       num_int_points = iprops(6,felem)                                          
-      span           = elblks(0,blk)                                            
       utsz           = ((totdof*totdof)-totdof)/2 + totdof                      
       cohes_type     = iprops(27,felem)                                         
       surface        = iprops(26,felem)                                         
       matnum         = iprops(38,felem)                                         
-c                                                                               
+c    
+      local_work%span           = span                                                                           
       local_work%felem          = felem                                         
       local_work%blk            = blk                                           
       local_work%num_threads    = num_threads                                   
@@ -213,7 +211,6 @@ c
       local_work%cep_sym_size       = 21 
       local_work%is_bar_elem    = bar_types(elem_type)
       local_work%is_link_elem   = link_types(elem_type)
-      
 c                                                                               
       if( local_work%is_umat ) call material_model_info( felem, 0, 3,           
      &                                 local_work%umat_stress_type )            
@@ -248,8 +245,9 @@ c        local_work%tv(2) = dmatprp(123, tm)
 c        local_work%tv(3) = dmatprp(124, tm)                                    
 c      end if                                                                   
 c                                                                               
-      call chk_killed_blk( blk, local_work%killed_status_vec,                   
-     &                     local_work%block_killed )  
+      call chk_killed_blk( local_work%blk,
+     &      local_work%killed_status_vec,
+     &      local_work%block_killed )                  
       estiff_blocks(blk)%ptr(1:nrow_ek,1:span) = zero                           
 c                                                                               
 c             check if blk has all killed elements -- if so skip                
@@ -361,8 +359,8 @@ c
      &     /,10x,'blk, span, felem                 :',3i10,                     
      &     /,10x,'elem_type, int_order, geo_non_flg:',2i10,l10,                 
      &     /,10x,'bbar_flg:                        :',l10 )                     
-c                                                                               
-      end                                                                       
+c
+      end subroutine do_nlek_block                                                                
 c     ****************************************************************          
 c     *                                                              *          
 c     *                subroutine estiff_allocate                    *          

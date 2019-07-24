@@ -455,8 +455,9 @@ c
       cohes_type     = iprops(27,felem)
       surface        = iprops(26,felem)
 c
-      call chk_killed_blk( blk, local_work%killed_status_vec,
-     &                      local_work%block_killed )
+      local_work%blk  = blk
+      call chk_killed_blk( local_work%blk, 
+     &      local_work%killed_status_vec, local_work%block_killed )
       if( local_work%block_killed ) then
         einfvec_blocks(blk)%ptr(1:span,1:totdof) = zero
         return
@@ -526,6 +527,7 @@ c
      &         step <= initial_state_step
      &         .and. local_work%is_solid_matl
       local_work%capture_initial_state = tflag
+
 c
 c             See if we're actually an interface damaged material
 c
@@ -666,7 +668,6 @@ c
 c
       contains
 c     ========
-c
 c     ****************************************************************
 c     *                                                              *
 c     *                  subroutine do_nleps_block_a                 *
