@@ -28,23 +28,27 @@
 #     routines are included in the WARP3D distribution directory
 #     ../linux_packages/lib
 #
-#     This build tested with gfortran version 7.2 and  MKL 19.2.0.
+#     This build tested with gfortran version 7.2 and  MKL 19.0.3
 #
 #     Distributed executables built on Ubuntu/Kubuntu 18.04.2 LTS.
 #     Build tested on Redhat 7.5
 #     
 #     Notes:
 #
-#       1. We specify:  -march=native for gfortran.
+#       1. We specify:  -march=ivybridge for gfortran.
 #
-#          The compiler will generate code for the highest level
+#          change to -native to have the compiler generate 
+#          code for the highest level
 #          instruction set available in your processor(s).
 #
-#       2. The *distributed* executable for WARP3D ** requires ** 
-#          that your processor support the AVX instruction set as a minimum.
-#          Set MACHINE_TYPE below to MINIMUM_MACHINE_TYPE 
+#       2. The Pardiso solver package in Intel MKL automatically
+#          uses the most efficient instruction set available on
+#          your specific computer.
 #
-#          gfortran designates this option as -march=sandybridge
+#       3. The distributed executables for WARP3D ** require ** 
+#          that your processor support the AVX instruction 
+#          set from Intel ivybridge and newer processors
+#          (as a minimum).
 #
 #          These processors became available in early 2011 and include:
 #             2nd Generation Intel® Core™ i7 Processors
@@ -57,12 +61,12 @@
 #           During the next year, we plan to require processors
 #           that support the AVX2 instruction set: Haswell
 #
-#       3. We build a dynamic executable including MKL and threads
+#       4. We build a dynamic executable including MKL and threads
 #          support libraries. The required libraries are located
 #          in the linux_pacakages/lib directory of the WARP3D distribution
 
 OSNAME   := Linux
-BUILDNUM := 3900
+BUILDNUM := 3960
 #
 BUILD_SYS := gfortran
 ODIR = ././../obj_linux_gfortran_omp
@@ -94,9 +98,9 @@ PROFILE  = -pg
 PROFILE  =
 CHECKFLOAT = 
 CHECKFLOAT =
-MINIMUM_MACHINE_TYPE  = -march=sandybridge
-DEFAULT_MACHINE_TYPE  = -march=native
-MACHINE_TYPE = $(DEFAULT_MACHINE_TYPE) # or $(MINIMUM_MACHINE_TYPE)
+MINIMUM_MACHINE_TYPE  = -march=ivybridge
+HARDWARE_MACHINE_TYPE  = -march=native
+MACHINE_TYPE = $(MINIMUM_MACHINE_TYPE) 
 #
 FCOPTS   =  -O3  $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form \
             -fcray-pointer -fopenmp -fdec -cpp \
