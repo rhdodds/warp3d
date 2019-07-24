@@ -1336,7 +1336,7 @@ c     *                      function chk_killed                     *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 04/19/2019 rhd             *          
+c     *                   last modified : 07/18/2019 rhd             *          
 c     *                                                              *          
 c     *     given an element, returns true if the                    *          
 c     *     element had been killed, or false otherwise.             *          
@@ -1358,75 +1358,104 @@ c
       t_chk_killed = .false.                                                      
       elem_ptr =  dam_ptr(elem)                                               
       if( elem_ptr .ne. 0 ) then  ! element is killable                                             
-       if( dam_state( dam_ptr(elem_ptr) ) .gt. 0 )
+       if( dam_state( elem_ptr) .gt. 0 )
      &       t_chk_killed = .true.                                               
       end if                                                                    
 c                                                                               
       return                                                                    
       end                                                                       
 c                                                                               
-c                                                                               
-c     ****************************************************************          
-c     *                                                              *          
-c     *                      function chk_killed_blk                 *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 04/19/2019 rhd             *          
-c     *                                                              *          
-c     *     for the specified block of elements, return a logical    *          
-c     *     vector indicating if each element is killed or active.   *          
-c     *     also a flag if the whole block is killed                 *          
-c     *                                                              *          
-c     ****************************************************************          
-c                                                                               
-      subroutine chk_killed_blk( block_no, status_vec, block_killed )           
-      use global_data ! old common.main
-c                                                                               
-      use elem_extinct_data, only : dam_state, dam_blk_killed                   
-      use damage_data                                                           
-c                                                                               
-      implicit none                                                    
-c                                                                               
-      integer :: block_no
-      logical :: status_vec(*), block_killed   
 c
-      integer :: span, felem, elem, i, elem_ptr                                
-c                                                                               
-      span  = elblks(0,block_no)                                                
-      felem = elblks(1,block_no) - 1                                            
-c                                                                               
-      block_killed       = .false.                                              
-      status_vec(1:span) = .false.                                              
-      if( .not. growth_by_kill ) return                                         
-c                                                                               
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      function chk_killed_blk                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/21/2019                  *
+c     *                                                              *
+c     *     for the specified block of elements, return a logical    *
+c     *     vector indicating if each element is killed or active.   *
+c     *     also a flag if the whole block is killed                 *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chk_killed_blk( block_no, status_vec, block_killed )
+      use global_data, only : out, elblks, mxvl ! old common.main
+c
+      use elem_extinct_data, only : dam_state, dam_blk_killed
+      use damage_data, only : growth_by_kill, dam_ptr
+c
+      implicit none
+      integer :: block_no
+      logical :: status_vec(mxvl), block_killed
+c      
+      integer :: span, felem, i, n, nn, elem, elem_ptr
+      logical, parameter :: check_consistency = .false.
+c
+      span  = elblks(0,block_no)
+      felem = elblks(1,block_no) - 1
+c
+      block_killed = .false.
+      status_vec   = .false.
+      if( .not. growth_by_kill ) return
+c
       if( .not. allocated(dam_blk_killed) ) then                                
-        write(*,9100) 1                                                         
+        write(out,9100) 1                                                         
         call die_abort                                                          
       end if                                                                    
-c                                                                               
-      if( dam_blk_killed(block_no) ) then                                       
-        block_killed       = .true.                                             
-        status_vec(1:span) = .true.                                             
-        return                                                                  
-      end if                                                                    
-c                                                                               
+
+      if( dam_blk_killed(block_no) ) then
+        block_killed = .true.
+        status_vec   = .true.
+        return
+      end if
+c
       if( .not. allocated(dam_state) ) then                                     
-        write(*,9110) 2                                                         
+        write(out,9110) 2                                                         
         call die_abort                                                          
-      end if                                                                    
-                                                                                
-      do i = 1, span                                                            
-        elem = felem + i                                                        
-        elem_ptr = dam_ptr(elem)                                              
-        if( elem_ptr .eq. 0 ) cycle
-        if( dam_state( dam_ptr(elem_ptr) ) .gt. 0 )                        
-     &         status_vec(i) = .true.                                           
-      end do                                                                    
-c                                                                               
-      return                                                                    
+      end if 
+c
+      if( check_consistency ) then      
+        n  = sizeof( dam_state )
+        nn = sizeof( dam_ptr )
+        do i = 1, span
+          elem = felem + i
+          if( elem > nn ) then
+            write(out,9120) elem, nn
+            call die_abort
+          end if   
+          elem_ptr = dam_ptr( elem )
+          if( elem_ptr .ne. 0 ) then
+            if( elem_ptr > n .or. elem_ptr <=0 ) then
+               write(out,9130) elem, n
+               call die_abort
+            end if    
+            if( dam_state(elem_ptr) .gt. 0 ) status_vec(i) = .true.
+          end if
+        end do
+        return
+      end if
+c
+      do i = 1, span  ! no consistency check
+        elem = felem + i
+        elem_ptr = dam_ptr( elem )
+        if( elem_ptr .ne. 0 ) then
+          if( dam_state(elem_ptr) .gt. 0 ) status_vec(i) = .true.
+        end if
+      end do
+      return
+c      
  9100 format(/,'FATAL ERROR: chk_killed_nlk. Contact WARP3D group',             
      &       /,'             Job terminated at ',i1,//)                         
  9110 format(/,'FATAL ERROR: chk_killed_nlk. Contact WARP3D group',             
-     &       /,'             Job terminated at ',i1,//)                         
-      end                                                                       
+     &       /,'             Job terminated at ',i1,//)   
+ 9120 format(/,'FATAL ERROR: chk_killed_nlk at 3. elem, nn:',2i8,
+     &       /,'             Contact WARP3D group',             
+     &       /,'             Job terminated....'//)                                             
+ 9130 format(/,'FATAL ERROR: chk_killed_nlk at 4. elem, n:',2i8,
+     &       /,'             Contact WARP3D group',             
+     &       /,'             Job terminated....'//)                                             
+c
+      end
