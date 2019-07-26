@@ -6,7 +6,7 @@ c     *  full CSR matrix. [K] is structurally symmetric but values   *
 c     *  are not symmetric                                           *
 c     *                                                              *
 c     *  written by: mcm                                             *
-c     *  last modified : 5/13/2017 rhd                               *
+c     *  last modified : 7/26/2019 rhd                               *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -114,7 +114,7 @@ c                     non-symmetric matrices
       iparm(20) = -1 ! return: Numbers of CG Iterations
       iparm(21) = 0 ! Different pivoting not available
       iparm(24) = 1 ! use 2-level parallelism for triangulation
-      iparm(25) = 0 ! Parallel backsolve
+      iparm(25) = 2 ! Parallel backsolve
       iparm(27) = 0 ! Don't check matrices
       iparm(28) = 0 ! double precision
       iparm(31) = 0 ! Full solve
@@ -184,20 +184,7 @@ c
 c              direct solve: factorization, forward/backward pass
 c
       num_calls = num_calls + 1
-      call thyme( 25, 1)
-      phase = 22
-      call warp3d_pardiso_mess( 4, out,  error, mkl_ooc_flag,
-     &                          cpu_stats, iparm )
-      call pardiso( pt, maxfct, mnum, mtype, phase, n, k_coeffs,
-     &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
-     &       u_vec, error )
-       call warp3d_pardiso_mess( 3, out, error, mkl_ooc_flag,
-     &                           cpu_stats, iparm )
-      call thyme( 25, 2 )
-c
-c             solve: forward and backward substitution
-c
-      phase = 33
+      phase = 23
       call thyme( 26, 1 )
       call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,

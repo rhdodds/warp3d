@@ -7,7 +7,7 @@ c     *                                                              *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 01/20/2017 rhd             *          
+c     *                   last modified : 7/26/2019 rhd              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -76,7 +76,7 @@ c
          else if (calc.eq.25) then                                              
             clctyp= 'sparse fill, factorization:   '                            
          else if (calc.eq.26) then                                              
-            clctyp= 'sparse loadpass:              '                            
+            clctyp= 'sparse fill/factor/solve      '                            
          end if                                                                 
          write(out,9010) clctyp                                                 
          write(out,9020) times(calc,1),                                         

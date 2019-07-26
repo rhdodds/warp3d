@@ -4,7 +4,7 @@ c     *  drive Pardiso solver for symmetric equations: direct or     *
 c     *  iterative. Pardiso is threads only. CPardiso is MPI +       *
 c     *  threads                                                     *
 c     *                                                              *
-c     *      last modified : 2/2/2019 rhd                            *
+c     *      last modified : 7/26/2019 rhd                           *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -166,7 +166,7 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(19) = -1 ! return: Mflops for LU factorization
       iparm(20) = -1 ! return: Numbers of CG Iterations
       iparm(24) = 1 ! use 2 level factorization
-      iparm(25) = 0 ! parallel forward-backward solve
+      iparm(25) = 2 ! parallel forward-backward solve
       iparm(27) = 0 !  check input matrix for errors (=1)
       iparm(60) = mkl_ooc_flag
       error = 0 ! initialize error flag
@@ -230,24 +230,12 @@ c
       implicit none
 c
 c              direct solve: factorization, forward/backward pass
+c              combine into one operation.
 c
       num_calls = num_calls + 1
-      call thyme( 25, 1 )
-      phase = 22 ! only factorization
-      call warp3d_pardiso_mess( 4, out, error, mkl_ooc_flag,
-     &                          print_cpu_stats, iparm )
-      call pardiso( pt, maxfct, mnum, mtype, phase, neq,
-     &              eqn_coeffs, k_pointers, k_indices,
-     &              idum, nrhs, iparm, msglvl, ddum, ddum, error )
-      call warp3d_pardiso_mess( 3, out, error, mkl_ooc_flag,
-     &                          print_cpu_stats, iparm )
-      call thyme( 25, 2 )
-c
-c             solve: forward and backward substitution
-c
       call thyme( 26, 1 )
       iparm(8) = 0 ! max numbers of iterative refinement steps
-      phase = 33   ! only forward/backward solve
+      phase = 23   ! only forward/backward solve
       CALL pardiso( pt, maxfct, mnum, mtype, phase, neq,
      &              eqn_coeffs, k_pointers, k_indices, idum, nrhs,
      &              iparm, msglvl, rhs, sol_vec, error )
@@ -404,7 +392,7 @@ c
  9490  format(
      &  15x, 'numeric factorization done    @ ',f10.2 )
  9492  format(
-     &  15x, 'numeric loadpass done         @ ',f10.2 )
+     &  15x, 'numeric factor/solve done     @ ',f10.2 )
  9184  format(
      &  15x, 'start in-memory factorization')
  9284  format(
