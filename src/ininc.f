@@ -324,6 +324,7 @@ c
        end do
        inctop = inctop + nnode
       end do
+      inctop = inctop - 1 
 c
       deallocate( buffer )
 c
