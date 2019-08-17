@@ -82,9 +82,9 @@ HARDWARE_MACHINE_TYPE = /QxHOST /align:array64byte /Qopt-zmm-usage:high
 #
 PART3 = /QaxAVX,CORE-AVX2,COMMON-AVX512 /QxIVYBRIDGE 
 PART4 = /Qopt-zmm-usage:high /align:array64byte
-MINIMUM_MACHINE_TYPE = $(PART3) $(PART4)
+ALL_PROCESSORS = $(PART3) $(PART4)
 #
-MACHINE_TYPE =  $(MINIMUM_MACHINE_TYPE)
+MACHINE_TYPE =  $(ALL_PROCESSORS)
 #
 F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(F90TRAP)
 F2 = /Qunroll /Qftz /nologo /heap-arrays  /traceback

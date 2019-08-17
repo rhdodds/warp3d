@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 7/23/2019 rhd
+#   Last modifications: 7/28/2019 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -92,10 +92,10 @@ OPENMP     = -qopenmp -reentrancy
 CHECKFLOAT = -fpe0 -init=snan,arrays -fp-speculation=safe
 CHECKFLOAT =
 #
-MINIMUM_MACHINE_TYPE = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
-                       -align array64byte  -qopt-zmm-usage=high
+ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
+                 -align array64byte  -qopt-zmm-usage=high
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE =  $(MINIMUM_MACHINE_TYPE)
+MACHINE_TYPE =  $(ALL_PROCESSORS)
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) $(HYINC) $(FTRAP) \

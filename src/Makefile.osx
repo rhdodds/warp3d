@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 7/23/2019 rhd
+#   Last modifications: 7/28/2019 rhd
 #
 #   How to run:
 #
@@ -130,10 +130,10 @@ else  #  Intel Composer options
   CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
   CHECKFLOAT = -fp-speculation=safe
 #
-  MINIMUM_MACHINE_TYPE = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
+  ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE =  $(MINIMUM_MACHINE_TYPE)
+  MACHINE_TYPE =  $(ALL_PROCESSORS)    #  $(HARDWARE_SPECIFIC) 
 #
   FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
