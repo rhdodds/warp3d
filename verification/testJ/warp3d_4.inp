@@ -75,7 +75,8 @@
    wall time limit off
    material messages off
    bbar stabilization factor 0.0
-   consistent q-matrix on
+   consistent q-matrix off10
+
    trace solution on
    display tied mesh mpcs off
    user_routine off
