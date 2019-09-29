@@ -80,7 +80,7 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 05/13/2019 rhd             *          
+c     *                   last modified : 09/7/2019 rhd              *          
 c     *                                                              *          
 c     *        checks conditions to see if crack                     *          
 c     *        growth will occur by element extinction               *          
@@ -118,7 +118,7 @@ c
      &           found_exponential, found_ppr, found_cavit,                        
      &           option_cavit                                                      
 c        
-      local_debug = debug
+      local_debug = .false. ! debug
       if( local_debug ) then      
          write(out,*) '... entered chk_elem_kill ...'                                                    
          write(out,*) '    ... no_killed_elems:',no_killed_elems
@@ -584,7 +584,7 @@ c     *              subroutine dam_param_3_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 06/17/2019 rhd             *          
+c     *                   last modified : 09/7/2019 rhd              *          
 c     *                                                              *          
 c     *             SMCS compute values for this element             *
 c     *                                                              *          
@@ -630,8 +630,11 @@ c        mean_zeta -- (output)  Lode angle parameter average weighted
 c                               by plastic strain
 c        mean_omega -- (output)  Nahshon-Hutchinson Lode angle parameter
 c                                average weighted by plastic strain
-c        dowhat    --  (input)   = 1 update load dependent terms,
-c                                = 2 just return values - no update   
+c        dowhat    --  (input)   = 1 return damage variables - no update.
+c                                    set kill now flag
+c                                = 2 just return values - no update 
+c                                = 3 return values for non-killable elem
+c                                = 4 compute/update damage variables  
 c        kill_now  --  (output)  if dowhat = 1, set flag if critical
 c                                condition reached                           
 c                                                                                                                                                              
@@ -666,9 +669,14 @@ c
 c                              
 c               stress/strain vectors are (x,y,z,xy,yz,xz).                
 c
-      update      = dowhat .eq. 1
-      local_debug = elem == -1
-      elem_type      = iprops(1,elem)
+      update      = dowhat .eq. 4
+      local_debug = .false.  !   elem == 16
+      if( local_debug )then
+         write(out,*) '... dam_param_3_get_values, dowhat: ...', dowhat
+      end if
+      kill_now = .false.
+c
+      elem_type   = iprops(1,elem)
       elem_ptr    = dam_ptr(elem)
       ngp         = iprops(6,elem)                                           
       blk         = elems_to_blocks(elem,1)                                  
@@ -741,6 +749,7 @@ c
         omega = one - zeta*zeta 
       end if
       eps_plas  = fpngp * eps_plas   
+      if( local_debug ) write(out,9100) sig_mean,sig_mises, eps_plas
 c
       if( dowhat == 3 ) then ! compute values for non-killable elem
          eps_crit = nine
@@ -768,7 +777,6 @@ c
         eps_crit = nine  ! a large value for return
         mean_zeta  = zero
         mean_omega = zero
-        if( update ) kill_now = .false.
         return
       end if
 c
@@ -780,15 +788,14 @@ c
       mean_zeta = smcs_weighted_zeta(elem_ptr) / eps_plas
       mean_omega = one - mean_zeta**2
       eps_crit = nine
-      if( triaxiality <= smcs_cutoff_triaxiality ) then
-        if( update ) kill_now = .false.
-        return
-      end if
+      if( triaxiality <= smcs_cutoff_triaxiality ) return
 c
       if( smcs_type .eq. 1 ) then
           t2 = exp(-smcs_kappa*abs(mean_zeta))
           t1 = smcs_alpha * exp(-smcs_beta * mean_triaxiality)
           eps_crit = smcs_gamma + t1*t2
+        if( local_debug ) write(out,9110) mean_triaxiality,eps_crit
+
       elseif( smcs_type .eq. 2 ) then
           t3 = exp(-smcs_kappa*abs(mean_zeta))
           t2 = smcs_beta_2 * exp(-smcs_a_minus * mean_triaxiality)
@@ -806,11 +813,12 @@ c
           eps_crit = (one-p_omega)*t1 + p_omega*t2
       end if
 c      
-      kill_now = .false.
-      if( .not. update ) return
       kill_now = ( eps_plas - eps_crit ) >= zero
 c
       return
+c
+ 9100 format(10x,'mean, mises, eps_pls:',2f10.3,f12.6)
+ 9110  format(10x,'T_mean, eps crit: ',f10.3,f12.6) 
 c
       contains
 c     ========
@@ -822,16 +830,14 @@ c
 c
       deps_plas = eps_plas - smcs_old_epsplas(elem_ptr)
       smcs_old_epsplas(elem_ptr) = eps_plas 
-      now_triaxiality = 100.0d0   ! in cases mises -> 0                                             
-      if( sig_mises .gt. small_mises )
-     &         now_triaxiality = sig_mean / sig_mises 
-c
-      if( now_triaxiality < smcs_cutoff_triaxiality ) return
-c
-      smcs_weighted_T(elem_ptr)    = smcs_weighted_T(elem_ptr) +
-     &                               deps_plas * now_triaxiality
-      smcs_weighted_zeta(elem_ptr) = smcs_weighted_zeta(elem_ptr) +
-     &                               deps_plas * zeta
+      if( sig_mises .gt. small_mises ) then
+        now_triaxiality = sig_mean / sig_mises 
+        if( now_triaxiality < smcs_cutoff_triaxiality ) return
+        smcs_weighted_T(elem_ptr)    = smcs_weighted_T(elem_ptr) +
+     &                                 deps_plas * now_triaxiality
+        smcs_weighted_zeta(elem_ptr) = smcs_weighted_zeta(elem_ptr) +
+     &                                 deps_plas * zeta
+      end if
 c
       return
       end subroutine dam_param_3_get_values_a
@@ -1458,4 +1464,74 @@ c
      &       /,'             Contact WARP3D group',             
      &       /,'             Job terminated....'//)                                             
 c
+      end
+c     ****************************************************************          
+c     *                                                              *          
+c     *                     subroutine damage_update                 *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 09/7/2019 rhd              *          
+c     *                                                              *          
+c     *        certain damage models need variables updated outside  *
+c     *        element stress/history data (e.g. smcs )              *
+
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine damage_update( now_step, now_iter )
+c
+      use global_data ! old common.main
+      use elem_extinct_data, only : dam_state
+      use damage_data, only :  crack_growth_type, dam_ptr                                                      
+      implicit none
+c
+      integer :: now_step, now_iter
+c                                       
+      integer :: elem, elem_ptr, dowhat
+      logical :: debug, local_debug, l1, process                                                    
+      double precision :: d1, d2, d3, d4, d5, d6, d7
+c        
+      debug = .false.
+      local_debug = .false. ! debug
+      if( local_debug ) then      
+         write(out,*) '... entered damage_update ...'                                                    
+      end if                                                                    
+c 
+c              only damage model using SMCS requires this update
+c              using data outside the stress/history data.
+c
+c              the Gurson model, for example, only needs the instantaneous
+c              values stored in the element stress/history data to
+c              determine if element needs to be killed, a step
+c              size reduction is needed, values for printing, etc.
+c      
+      process = crack_growth_type .eq. 3
+      if( .not. process ) return 
+c
+c              Loop for all elements. process killable elements.
+c                                                                               
+      do elem = 1, noelem
+         elem_ptr = dam_ptr(elem)                                               
+         if( elem_ptr .eq. 0 ) cycle     ! element not killable                                      
+         if( dam_state(elem_ptr) .gt. 0 ) cycle ! element killed already    
+         if( local_debug ) write(out,*) 'killable element is:',elem                           
+c                                                                               
+c                 calculate/update damage parameter(s) for element
+c                 if this damage model requires it. 
+c
+c                 only SMCS needs this now to support plastic strain
+c                 weighted averages.                   
+c                                                                               
+         select case( crack_growth_type )
+         case( 3 ) !  SMCS   
+          dowhat = 4
+          call dam_param_3_get_values( elem, debug, d1, d2, d3, d4,            
+     &                                 d5, d6, d7, dowhat, l1 )                
+         end select 
+c                         
+      end do  ! over all model elements                                         
+c      
+      return    
       end
