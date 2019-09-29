@@ -5483,7 +5483,7 @@ c
 !DIR$ VECTOR ALIGNED
         do i = 1, span
           internal_energy = internal_energy + gp_energies(i) *
-     &                      dfn1(i) * det_j(i)
+     &                      dfn1(i) * det_j(i) ! det_J undeformed
           plastic_work    = plastic_work +
      &                      gp_plast_work(i) * dfn1(i) * det_j(i)
         end do
