@@ -1024,7 +1024,7 @@ c     *                      subroutine dam_print                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 05/10/2019 rhd             *          
+c     *                   last modified : 10/12/2019 rhd             *          
 c     *                                                              *          
 c     *     print status of killable elements or released nodes at   *
 c     *     the beginning of a load step.                            *          
@@ -1048,9 +1048,7 @@ c
       if( .not. doprint ) return
 c
       select case( crack_growth_type )                                           
-      case(0)                                                                  
-         write(out,*) '>>>> FATAL ERROR. dam_print'
-         call die_abort
+      case(0)       ! no action                                                             
       case(1)                                                                  
          call dam_print_elem1( step, iter )                                  
       case(2)
