@@ -2060,7 +2060,7 @@ c
       subroutine ctran1_qbar_original
       implicit none
 c
-      integer :: i
+      integer :: i, j, k
       double precision :: wf, halfw
 c
 !DIR$ IVDEP                                                                     
@@ -2068,32 +2068,44 @@ c
       do i = 1, span                                                          
        wf    = dj(i) * w                                                      
        halfw = half * wf
-       cep(i,1,1) = cep(i,1,1) - two * cs(i,1) * wf
-       cep(i,2,2) = cep(i,2,2) - two * cs(i,2) * wf
-       cep(i,3,3) = cep(i,3,3) - two * cs(i,3) * wf
-       cep(i,4,1) = cep(i,4,1) - cs(i,4) * wf
-       cep(i,6,1) = cep(i,6,1) - cs(i,6) * wf
-       cep(i,4,2) = cep(i,4,2) - cs(i,4) * wf
-       cep(i,5,2) = cep(i,5,2) - cs(i,5) * wf
-       cep(i,5,3) = cep(i,5,3) - cs(i,5) * wf
-       cep(i,6,3) = cep(i,6,3) - cs(i,6) * wf
-       cep(i,4,4) = cep(i,4,4) - halfw * ( cs(i,1)+cs(i,2) )
-       cep(i,5,5) = cep(i,5,5) - halfw * ( cs(i,2)+cs(i,3) )
-       cep(i,6,6) = cep(i,6,6) - halfw * ( cs(i,1)+cs(i,3) )
-       cep(i,5,4) = cep(i,5,4) - halfw * cs(i,6)
-       cep(i,6,4) = cep(i,6,4) - halfw * cs(i,5)
-       cep(i,6,5) = cep(i,6,5) - halfw * cs(i,4)
-       cep(i,1,4) = cep(i,4,1)
-       cep(i,1,6) = cep(i,6,1)
-       cep(i,2,4) = cep(i,4,2)
-       cep(i,2,5) = cep(i,5,2)
-       cep(i,3,5) = cep(i,5,3)
-       cep(i,3,6) = cep(i,6,3)
-       cep(i,4,5) = cep(i,5,4)
-       cep(i,4,6) = cep(i,6,4)
-       cep(i,5,6) = cep(i,6,5)
+        cep(i,1,1) = cep(i,1,1) - two * cs(i,1) * wf
+        cep(i,2,2) = cep(i,2,2) - two * cs(i,2) * wf
+        cep(i,3,3) = cep(i,3,3) - two * cs(i,3) * wf
+        cep(i,4,1) = cep(i,4,1) - cs(i,4) * wf
+        cep(i,6,1) = cep(i,6,1) - cs(i,6) * wf
+        cep(i,4,2) = cep(i,4,2) - cs(i,4) * wf
+        cep(i,5,2) = cep(i,5,2) - cs(i,5) * wf
+        cep(i,5,3) = cep(i,5,3) - cs(i,5) * wf
+        cep(i,6,3) = cep(i,6,3) - cs(i,6) * wf
+        cep(i,4,4) = cep(i,4,4) - halfw * ( cs(i,1)+cs(i,2) )
+        cep(i,5,5) = cep(i,5,5) - halfw * ( cs(i,2)+cs(i,3) )
+        cep(i,6,6) = cep(i,6,6) - halfw * ( cs(i,1)+cs(i,3) )
+        cep(i,5,4) = cep(i,5,4) - halfw * cs(i,6) 
+        cep(i,6,4) = cep(i,6,4) - halfw * cs(i,5)
+        cep(i,6,5) = cep(i,6,5) - halfw * cs(i,4)
+        cep(i,1,4) = cep(i,4,1)
+        cep(i,1,6) = cep(i,6,1)
+        cep(i,2,4) = cep(i,4,2)
+        cep(i,2,5) = cep(i,5,2)
+        cep(i,3,5) = cep(i,5,3)
+        cep(i,3,6) = cep(i,6,3)
+        cep(i,4,5) = cep(i,5,4)
+        cep(i,4,6) = cep(i,6,4)
+        cep(i,5,6) = cep(i,6,5)
       end do
 c
+!       do i = 1, span                                                          
+!          do j = 1, 5
+!             do k = j+1, 6
+!              if( abs(cep(i,j,k) - cep(i,k,j))>1.d-10 ) then
+!              if( cep(i,j,k) .ne. cep(i,k,j) ) then
+!                write(*,9000) i, j, k,  cep(i,j,k), cep(i,k,j)
+!              end if
+!             end do
+!          end do
+!      end do
+      
+ 9000 format(' ..i,j,k:' 3i5,2d14.6)      
       return
       end subroutine ctran1_qbar_original
 c
