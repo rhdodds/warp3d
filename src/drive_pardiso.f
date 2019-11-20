@@ -4,7 +4,7 @@ c     *  drive Pardiso solver for symmetric equations: direct or     *
 c     *  iterative. Pardiso is threads only. CPardiso is MPI +       *
 c     *  threads                                                     *
 c     *                                                              *
-c     *      last modified : 7/26/2019 rhd                           *
+c     *      last modified : 11/18/2019 rhd                          *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -16,6 +16,8 @@ c
 c
       use performance_data, only : t_performance_start_pardiso,
      &                             t_performance_end_pardiso
+      use  global_data, only : ltmstp, solver_threads, num_threads
+c
       implicit none
 c
 c                parameter declarations
@@ -32,7 +34,10 @@ c                locally defined.
 c
       real, external :: wcputime
       logical ::  pardiso_mat_defined, use_iterative, direct_solve
-      integer ::  mkl_ooc_flag
+      logical :: use_non_pardiso
+      integer ::  mkl_ooc_flag, local_now_step
+      double precision, parameter :: zero = 0.d0
+      double precision :: min_diagonal, max_diagonal
       save num_calls, pardiso_mat_defined
 c
 c                local for pardiso
@@ -57,13 +62,29 @@ c
       call t_performance_start_pardiso
       use_iterative = solver_mkl_iterative
       direct_solve = .not. use_iterative
-
+c
+      local_now_step = ltmstp
+      use_non_pardiso = local_now_step > 100000000 ! 181  ! step number
+      if( use_non_pardiso ) then
+        call pardiso_dsptrf
+        return
+      end if
+c
+c                  set number of threads Pardiso must use. Turn off
+c                  dynamic adjust of thread count.
+c
+      call mkl_set_num_threads( solver_threads )
+      call omp_set_num_threads( solver_threads )
+      call mkl_set_dynamic( 1 )
+c
       select case( itype )
       case( 1 )
         call pardiso_symmetric_setup
+        call pardiso_check_diagonals( 0 ) 
         if( use_iterative ) call pardiso_symmetric_iterative
         if( direct_solve )  call pardiso_symmetric_direct
       case( 2 )
+        call pardiso_check_diagonals( 1 )
         call pardiso_symmetric_map( neq, ncoeff, k_diag,
      &                              eqn_coeffs, k_pointers, k_indices )
         if( use_iterative ) call pardiso_symmetric_iterative
@@ -74,11 +95,163 @@ c
         call warp3d_pardiso_mess( 11, out, error, mkl_ooc_flag,
      &                            print_cpu_stats, iparm )
       end select
+c      
+      call omp_set_num_threads( num_threads )
+c
       call t_performance_end_pardiso
       return
 c
       contains
 c     ========
+c     ******************************************************************
+c     *       contains:   pardiso_check_diagonals                      *
+c     ******************************************************************
+c
+      subroutine pardiso_check_diagonals( message_type )
+      implicit none
+c
+      integer :: i, message_type
+c
+      min_diagonal =  1.0d50
+      max_diagonal = -1.0d50
+!DIR$ IVDEP
+!DIR$ VECTOR ALIGNED
+      do i = 1, neq
+       if( k_diag(i) .eq. zero ) cycle
+       min_diagonal = min( min_diagonal, k_diag(i) )   
+       max_diagonal = max( max_diagonal, k_diag(i) )   
+      end do
+c
+      if( message_type == 1 ) write(out,9000) min_diagonal, max_diagonal
+      if( message_type == 0 ) write(out,9020) min_diagonal, max_diagonal
+      if( min_diagonal < zero ) write(out,9010)
+c
+      return
+c                
+ 9000 format(12x,'min, max diagonal terms: ',2d10.3)
+ 9010 format(12x,'*** negative diagonal(s) found ***')
+ 9020 format(17x,'min diagonal term: ',d10.3,
+     &     /,17x,'max diagonal term: ',d10.3 )
+c
+      end subroutine pardiso_check_diagonals      
+      
+c     ******************************************************************
+c     *       contains:   pardiso_dsptrf                               *
+c     ******************************************************************
+c
+      subroutine pardiso_dsptrf
+c
+c          convert to full matrix form and use the dsptrf 
+c          solver for symmetric indefinite systems.
+c          runs parallel but takes much longer than
+c          pardiso
+c          
+c
+      implicit none
+c
+      integer :: i, j, row, col, ap_position, next, nsinfo,
+     &           count, nsymm, num_indexes, nterms_prior_row,
+     &           neqns, nterms_row
+c
+      integer, allocatable, dimension(:) ::
+     &   ipiv(:),  row_pos(:)
+      double precision, allocatable, dimension(:) ::
+     &              ap(:), solution_vec(:)
+      double precision, parameter :: zero = 0.0d0
+      real :: time_result, solver_time_start, solver_time
+      real, external :: wwalltime
+      logical, parameter :: ldebug = .false.
+
+      call pardiso_symmetric_release
+c
+      neqns = neq
+      nsymm = neqns*(neqns+1)/2
+      num_indexes = nsymm - neqns 
+      write(out,*) '... neqns, num_indexes: ', neqns, num_indexes
+      allocate( ipiv(10*neqns), ap(nsymm), row_pos(neqns) )
+      ap = zero
+c
+c          insert diagonals. build locations of diagonal terms in ap
+c 
+      row_pos(1) = 1
+      nterms_prior_row = neqns
+      do i = 2, neqns
+        row_pos(i) = row_pos(i-1) + nterms_prior_row
+        nterms_prior_row = nterms_prior_row - 1
+      end do
+      if( row_pos(neqns) .ne. nsymm ) stop ' ..bad last row_pos'
+c
+      do row = 1, neqns
+       if( ldebug ) then
+         write(out,*) ' row, row_pos, k_diag: ', row, row_pos(row),
+     &            k_diag(row)
+       end if
+       ap(row_pos(row)) = k_diag(row)
+      end do
+c
+      count = 0
+      do i = 1, nsymm
+        if( ap(i) /= zero ) count = count + 1
+      end do
+      write(out,*) '... ap count non-zero terms: ',count
+c
+c          insert off diagonals
+c  
+      next = 1
+      do row = 1, neqns - 1
+       nterms_row = k_pointers(row)
+       if( ldebug ) then 
+        write(out,*) '>> start row, nrterms_row, row_position: ', 
+     &         row, nterms_row, row_pos(row)
+       end if
+       if( nterms_row == 0 ) then
+          write(out,*) '... row no off diagonal terms: ', row
+          cycle 
+       end if
+       do j = 1, nterms_row
+        col = k_indices(next)
+        ap_position = row_pos(row) + ( col - row )
+        ap(ap_position) = eqn_coeffs(next)
+        if( ldebug ) then
+         write(out,9010) j, col, ap_position, eqn_coeffs(next)
+        end if  
+        next = next + 1
+       end do
+      end do
+c
+      count = 0
+      do i = 1, nsymm
+        if( ap(i) /= zero ) count = count + 1
+      end do
+      write(out,*) '... ap count non-zero terms: ',count
+
+      nsinfo = 0
+
+      write(out,*) '... call dsptrf ...'
+      solver_time_start = wwalltime(1)
+      call dsptrf( 'L', neqns, ap, ipiv, nsinfo )
+      write(out,*) '.. nsinfo after factor: ', nsinfo
+      sol_vec(1:neqns) = rhs(1:neqns)
+      call dsptrs( 'L', neqns, 1, ap, ipiv, sol_vec, neqns, nsinfo )
+      write(out,*) '.. nsinfo after solve: ', nsinfo
+      solver_time = wwalltime( 1 ) - solver_time_start
+      write(out,*) '... wall time for solution only: ',solver_time
+c
+      deallocate( row_pos )
+      deallocate( ap )
+      deallocate( ipiv )
+
+      return
+ 9010 format(5x,'.. j, col, ap_position, k_coefs: ',3i5,f14.4)
+
+
+      end subroutine pardiso_dsptrf
+
+
+
+
+
+
 
 c     ******************************************************************
 c     *       contains:   pardiso_symmetric_release                    *
@@ -143,8 +316,8 @@ c              symbolic factorization.
 c
       iparm(1:64) = 0
       iparm(1) = 1 ! no solver default
-      iparm(2) = 3 ! parallel reordering
-      iparm(3) = 1 ! numbers of processors. MKL_NUM_THREADS overrides
+      iparm(2) = 3 ! 3 ! parallel reordering
+      iparm(3) = 0 ! numbers of processors. MKL_NUM_THREADS overrides
       iparm(4) = 0 ! no iterative-direct algorithm
       if( use_iterative ) iparm(4) = 52
       iparm(5) = 0 ! no user fill-in reducing permutation
@@ -152,10 +325,10 @@ c
       iparm(7) = 0 ! not in use
       iparm(8) = 0 ! numbers of iterative refinement steps
       iparm(9) = 0 ! not in use
-      iparm(10) = 13 ! perturb the pivot elements with 1E-13
+      iparm(10) = 8 ! perturb the pivot elements with 1E-13
       iparm(11) = 1 ! use nonsymmetric permutation and scaling MPS
       iparm(12) = 0 ! not in use
-      iparm(13) = 0 ! maximum weighted matching algorithm is
+      iparm(13) = 1 ! maximum weighted matching algorithm is
 c                     switched-off (default for symmetric).
 c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(14) = 0 ! Output: number of perturbed pivots
@@ -165,6 +338,8 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(18) = -1 ! return: number of nonzeros in the factor LU
       iparm(19) = -1 ! return: Mflops for LU factorization
       iparm(20) = -1 ! return: Numbers of CG Iterations
+      iparm(21) = 0  ! Bunch-Kaufman pivoting symmetric indefinite
+      iparm(23) = 0  ! will have # negative eigenvalues
       iparm(24) = 1 ! use 2 level factorization
       iparm(25) = 2 ! parallel forward-backward solve
       iparm(27) = 0 !  check input matrix for errors (=1)
@@ -322,6 +497,7 @@ c
            call die_abort
          end if
          if( cpu_stats ) write(iout,9492) wcputime(1)
+         if( iparm(23) > 0 ) write(iout,9493) iparm(23)
 c
         case( 6 )
          if( ier .ne. 0 ) then
@@ -393,6 +569,8 @@ c
      &  15x, 'numeric factorization done    @ ',f10.2 )
  9492  format(
      &  15x, 'numeric factor/solve done     @ ',f10.2 )
+ 9493  format(/1x,'>>>>> Warning: negative eigenvalues found',
+     & /16x,'during equation solve. count: ',i5,/)
  9184  format(
      &  15x, 'start in-memory factorization')
  9284  format(
@@ -432,7 +610,7 @@ c     *                                                              *
 c     *  map the default vss sparse solver format that warp3d        *
 c     *  assembles into to the MKL sparse solver format              *
 c     *                                                              *
-c     *  written by: rh   modified by: rhd  last modified: 3/16/2017 *
+c     *  last modified: 11/18/2019                                   *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -441,11 +619,11 @@ c
 c
       implicit none
 c
-      double precision :: diag(*), amat(*)
+      double precision :: diag(*), amat(*), min_diagonal, max_diagonal
       integer :: neq, ncoeff, kpt(*), kind(*)
 c
 c      This sub maps arrays needed for the NASA sparse solver to
-c      arrays in the format that the MKL 7 solver needs ( Harwell-Boeing
+c      arrays in the format that the MKL solver needs ( Harwell-Boeing
 c      format)
 c            See format example at the end of this subroutine
 c

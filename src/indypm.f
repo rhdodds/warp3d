@@ -5,7 +5,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/28/2018 rhd              *
+c     *                   last modified : 11/18/2019 rhd             *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -816,6 +816,7 @@ c *      input the various solver options                              *
 c *            out-of-core on|off                                      *
 c *            memory <integer>      (units of MB)                     *
 c *            scratch directory     <string>                          *
+c *            threads               <integer>                         *
 c *                                                                    *
 c *                                                                    *
 c **********************************************************************
@@ -849,6 +850,11 @@ c
           call entits( solver_scr_dir, dum )
         else
           call errmsg(278,dum,dums,dumr,dumd)
+        end if
+      elseif ( matchs('threads',3) ) then
+        if ( .not. numi( solver_threads ) ) then
+          call errmsg3( out, 15 )
+          num_error = num_error + 1
         end if
       else
         call errmsg(279,dum,dums,dumr,dumd)
@@ -1185,8 +1191,7 @@ c
 c
 c **********************************************************************
 c *                                                                    *
-c *                     Parameters to set num threads                  *
-c *                 for use in various parts of the code               *
+c *                set umat routine to run serial or not               *
 c *                                                                    *
 c **********************************************************************
 c

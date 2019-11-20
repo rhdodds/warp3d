@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 5/18/2019 rhd                   *
+c     *              last modified : 11/19/2019                      *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -82,7 +82,7 @@ c
      &    new_constraints, batch_messages, signal_flag,
      &    scalar_blocking, growth_k_flag, qbar_flag,
      &    solver_out_of_core, show_details, new_analysis_param,
-     &    sparse_stiff_output, sparse_stiff_binary, solver_threads,
+     &    sparse_stiff_output, sparse_stiff_binary, 
      &    sparse_research, solver_mkl_iterative, temperatures,
      &    root_processor, slave_processor, worker_processor,
      &    use_mpi, ! end of scalars
@@ -117,9 +117,9 @@ c
      &    num_term_loads, mathed, csthed,  lodhed, inctop, crdtop,
      &    in, out, histep, lowstp, ltmstp, num_warn, num_error,
      &    num_fatal, solver_flag, old_solver_flag, solver_memory,
-     &    num_threads,  max_mpc, max_mpc_tied,
+     &    num_threads,  max_mpc, max_mpc_tied, 
      &    myid, numprocs, MPI_VAL, douextdb, mxnmbl,
-     &    current_load_time_step
+     &    current_load_time_step, solver_threads
 c
 c                  counters to shut off error messages at some point
 c

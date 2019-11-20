@@ -4,7 +4,7 @@ c     *                                                              *
 c     *  assemble & solve linear equations for a Newton iteration    *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 1/5/2017 rhd               *
+c     *                   last modified : 11/19/2019 rhd             *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -343,7 +343,7 @@ c     *                                                              *
 c     *   set up equation sparsity for local assembly: symmetric     *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 6/6/2017 rhd               *
+c     *                   last modified : 11/19/2019 rhd
 c     *                                                              *
 c     ****************************************************************
 c
@@ -362,7 +362,6 @@ c
       character(len=200) mkl_string
       integer :: mkl_num_thrds, next_space, count_previous, count_now,
      &           nrow_lists, safety_factor
-      integer, external :: mkl_get_max_threads
       logical, parameter :: local_debug_2 = .false.
 c
 c              1. generate equation numbers for all unconstrained
@@ -379,12 +378,13 @@ c
       call thyme( 21, 1 )
       if( cpu_stats .and. show_details ) then
           call mkl_get_version_string( mkl_string )
-          mkl_num_thrds = mkl_get_max_threads()
+          mkl_num_thrds = solver_threads
           if( using_mpi ) then
-             write(out,9300) num_threads, num_ranks, mkl_string(38:45),
+             write(out,9300) mkl_num_thrds, num_ranks, 
+     &                       mkl_string(38:45),
      &                       mkl_string(61:68), wcputime(1)
            else
-             write(out,9400) num_threads, mkl_string(38:45),
+             write(out,9400) mkl_num_thrds, mkl_string(38:45),
      &                       mkl_string(61:68), wcputime(1)
           end if
       end if

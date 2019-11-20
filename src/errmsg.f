@@ -4048,7 +4048,7 @@ c     *                      subroutine errmsg3                      *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 05/29/2016 rhd             *
+c     *                   last modified : 11/18/2019 rhd             *
 c     *                                                              *
 c     *            supporting, low-level error messgae routine       *
 c     *                                                              *
@@ -4136,9 +4136,8 @@ c
 c
  250  continue
       write(out,9025)
- 9025 format(
-     & 10x,'>> ***** available  ******',
-     &/10x,'            default value = 0 assumed')
+ 9025 format(/1x,
+     &    '>>>>> Error: expecting number of solver threads',/)
       go to 9999
 
 c

@@ -6,13 +6,14 @@ c     *  full CSR matrix. [K] is structurally symmetric but values   *
 c     *  are not symmetric                                           *
 c     *                                                              *
 c     *  written by: mcm                                             *
-c     *  last modified : 7/26/2019 rhd                               *
+c     *  last modified : 11/19/2019 rhd                              *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine pardiso_unsymmetric( n, nnz, k_ptrs, k_indexes,
      &            k_coeffs, p_vec, u_vec, cpu_stats, itype, out,
      &            use_iterative )
+      use global_data, only : solver_threads, num_threads
       use performance_data, only : t_performance_start_pardiso,
      &                             t_performance_end_pardiso
 c
@@ -23,6 +24,10 @@ c
       integer :: n, nnz, k_ptrs(n+1), k_indexes(nnz), itype, out
       double precision :: k_coeffs(nnz), p_vec(n), u_vec(n)
       logical :: cpu_stats, use_iterative
+c
+c                 general locals
+c
+      double precision, parameter :: zero = 0.d0
 c
 c                local for pardiso
 c
@@ -55,10 +60,17 @@ c                 3 - no solution. just release data.
 c
       call t_performance_start_pardiso
 c
+c                  set number of threads Pardiso must use. Turn off
+c                  dynamic adjust of thread count.
+c
+      call mkl_set_num_threads( solver_threads )
+      call omp_set_num_threads( solver_threads )
+      call mkl_set_dynamic( 1 )
+
       select case( itype )
        case( 1 )
         call pardiso_unsymmetric_setup
-        if( direct_solve )  call pardiso_unsymmetric_direct
+         if( direct_solve )  call pardiso_unsymmetric_direct
         if( use_iterative ) call pardiso_unsymmetric_iterative
        case( 2 )
         if( direct_solve )  call pardiso_unsymmetric_direct
@@ -69,6 +81,8 @@ c
         call warp3d_pardiso_mess( 11, out, error, mkl_ooc_flag,
      &                            cpu_stats, iparm )
       end select
+c
+      call omp_set_num_threads( num_threads )
 c
       call t_performance_end_pardiso
 c
@@ -93,7 +107,7 @@ c
       iparm(1:64) = 0
       iparm(1) = 1 ! No solver default...
       iparm(2) = 3 ! Parallel fill-in reducing
-      iparm(3) = 0 ! numbers of processors. MKL_NUM_THREADS overrides
+      iparm(3) = 0 ! numbers of processors. set by direct calls
       iparm(4) = 0 ! no iterative-direct algorithm
       if( use_iterative ) iparm(4) = 81 ! Unless we want it less strict
       iparm(5) = 0 ! No user ordering

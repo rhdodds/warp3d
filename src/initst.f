@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/18/2019 rhd              *
+c     *                   last modified : 11/18/2019 rhd             *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -387,9 +387,6 @@ c
       solver_memory      = 500
       solver_mkl_iterative = .false.
 c
-c     Never used - MM
-c      solver_threads = slv_threads
-c
 c                       initialize input error flags
 c
       num_warn  = 0
@@ -638,6 +635,7 @@ c
             write(out,9220) max_threads
             call die_abort
       end if
+      solver_threads = num_threads
 c
 c                       global flags for UMAT used in model,
 c                       run UMAT element blocks in serial
