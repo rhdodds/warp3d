@@ -84,12 +84,12 @@ c
    convergence test norm res tol 0.0005 max res tol 0.005
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off
+   line search on
    batch messages off
    cpu time limit off
    material messages off
    bbar stabilization factor 0.0
-   consistent q-matrix on
+   consistent q-matrix off
    time step 1.0e06
    trace solution on
    extrapolate off     $ recommended for growing crack
