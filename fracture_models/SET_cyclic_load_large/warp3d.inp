@@ -1,0 +1,110 @@
+!
+!     Mode I, cyclic (R = -1) loading of a SE(T) w/ reduced
+!     section width at crack-plane 
+!
+!     contact plane to prevent interpenetration.
+!     bilinear material model model, kinematic hardening
+!     small-strain theory.
+!
+!     moderate size model: nodes 583550 elements 521100
+!     8-node solids, B-bar
+!
+!     remote tensile loading by tractions
+! 
+!     1/4 symmetric model
+!       half-length: 150 mm
+!       W at net section:  50 mm
+!       top of model width:  85 mm
+!       half-thickness: 6 mm
+!       crack length: 24.0 mm, b = 26 mm, a/W = 0.48
+!
+!     first half-cycle to max tensile traction 50 MPa on remote end
+!     unload to -50 MPa on remote end
+!     reload to +50 MPa. stop solution
+!
+!     compute J at centerplane for both max tension loadings.
+!
+!     use Pardiso sparse solver with iterative option. Works well
+!     with relatively smooth plasticity models.
+!
+!     Run time:
+!       iMacPro 10 core, 2700 seconds. 29 GB RAM
+!  
+ material S355
+    properties bilinear e 200000.0 nu 0.3 yld_pt 355.0 tan_e 450.0,
+       beta 0.0 rho 0 alpha 0
+! 
+ structure SENT_S355_CAL_VAL
+! 
+ number of nodes 583550 elements 521100
+!
+ elements
+    all type l3disop  linear material S355,
+             order 2x2x2 bbar center_output short
+!
+*input from 'coords.inp'
+*input from 'incids.inp'
+ blocking automatic size 128
+*input from 'unit_remote_traction.inp'
+*input from 'constraints.inp'
+!
+ output model flat patran convention text file "model"
+ output patran neutral
+!
+ loading tensile_load
+  nonlinear   $  R = -1 cyclic loading
+    step 1-10 remote 5.0   $ 50 MPa remote
+    step 11-30 remote -5.0 $ -50 MPa remote
+    step 31-50 remote 5.0  $ 50 MPa remote
+!
+ nonlinear analysis parameters
+  solution technique sparse iterative
+  maximum iterations 10
+  minimum iterations 2
+  nonconvergent solutions stop
+  divergence check on
+  convergence test norm res tol 0.5 
+  time step 1.0E+06
+  adaptive solution on
+  batch messages off
+  cpu time limit off
+  extrapolate on
+  show details on
+  material messages off
+  trace solution on
+  bbar stabilization factor 0.0
+  line search on
+  consistent q-matrix off
+! 
+ contact surface  $ pts so contact + norm (=+Z) aligns with model +Z
+  surface 1 plane
+  point 0 -1 0   $   -100.0 -50.0 0.0
+  point 50 -1 0   $  -100.0 50.0  0.0
+  point  0 50 0  $  500.0 -50.0 0.0   
+  stiffness 1.0e05
+!
+ output commands use file "get_output.inp" steps 1-1000
+!
+ compute displacements for loading tensile_load step  10 $ max tension
+! 
+ domain T5  $ right at centerplane
+  normal plane  nx 0 ny 0 nz 1
+  symmetric
+  front nodes 117807  59452 798 linear verify 
+  q-values automatic rings    70-75
+  function type b
+  compute domain integral
+!
+ compute displacements for loading tensile_load step  30 $ max compression
+ compute displacements for loading tensile_load step  50 $ max tension
+! 
+ domain T5  $ right at centerplane
+  normal plane  nx 0 ny 0 nz 1
+  symmetric
+  front nodes 117807  59452 798 linear verify 
+  q-values automatic rings    70-75
+  function type b
+  compute domain integral
+!
+ stop
+
