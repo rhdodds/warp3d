@@ -306,7 +306,7 @@ c
          deps_plas(4) = dstran(4) - dsig(4) / eg
          deps_plas(5) = dstran(5) - dsig(5) / eg
          deps_plas(6) = dstran(6) - dsig(6) / eg
-         dspd = half * dot_product( deps_plas, avg_stress )
+         dspd = dot_product( deps_plas, avg_stress )
       end if
                                                                  
 c                                                                               
