@@ -2,7 +2,7 @@ c ************************************************************************
 c *                                                                      *
 c *    routine  mm03p -- vectorized pre-processor for block of mises or  *
 c *                      gurson elements                                 *
-c *                      updated: 6/12/2018 rhd                          *
+c *                      updated: 1/4/2019 rhd                           *
 c *                                                                      *
 c ************************************************************************
 c
@@ -2354,25 +2354,34 @@ c
       deps_plas(5) = deps(relem,5) - dsig(5) / shear_mod
       deps_plas(6) = deps(relem,6) - dsig(6) / shear_mod
 c
-      history1(relem,10:15,gpn) = history(relem,10:15,gpn) +
-     &                            deps(relem,1:6) - deps_plas(1:6)! elas eps
+      history1(relem,10:15,gpn) =
+     &      history(relem,10:15,gpn) +
+     &      deps(relem,1:6) - deps_plas(1:6) ! elastic eps
 c
-      stress_n1(8) = stress_n(8)  +  half * (
+      if( .not. gurson ) then 
+        stress_n1(8) = stress_n(8)  +  half * (sbar_new + sbar ) * 
+     &                                ( ebarp_new - ebarp )
+        stress_n1(9) = stress_n(9) + ( ebarp_new - ebarp )
+      end if
+c
+      if( gurson ) then
+        stress_n1(8) = stress_n(8)  +  half * (
      &       deps_plas(1) * (stress_n1(1) + stress_n(1))
      &     + deps_plas(2) * (stress_n1(2) + stress_n(2))
      &     + deps_plas(3) * (stress_n1(3) + stress_n(3))
      &     + deps_plas(4) * (stress_n1(4) + stress_n(4))
      &     + deps_plas(5) * (stress_n1(5) + stress_n(5))
      &     + deps_plas(6) * (stress_n1(6) + stress_n(6)) )
-c
-      factor1 = ( deps_plas(1) - deps_plas(2) )**2  +
+        factor1 = ( deps_plas(1) - deps_plas(2) )**2  +
      &          ( deps_plas(2) - deps_plas(3) )**2  +
      &          ( deps_plas(1) - deps_plas(3) )**2
-      factor2 = deps_plas(4)**2 +  deps_plas(5)**2 +
+        factor2 = deps_plas(4)**2 +  deps_plas(5)**2 +
      &          deps_plas(6)**2
-      deps_plas_bar =  (root2/three) * sqrt( factor1 +
+        deps_plas_bar =  (root2/three) * sqrt( factor1 +
      &                 (three/two)*factor2 )
-      stress_n1(9) = stress_n(9) + deps_plas_bar
+        stress_n1(9) = stress_n(9) + deps_plas_bar
+      end if
+c
       if ( debug ) then
          write(iout,9070) deps_plas(1:6)
          write(iout,9072) deps(relem,1:6)
