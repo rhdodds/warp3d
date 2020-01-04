@@ -112,13 +112,13 @@ c              oldpl  - plastic strains at start of increment
 c                                                                               
       integer :: k1, k2                                                         
       double precision :: eelas(6), eplas(6), alpha(6), flow(6),                
-     1                    olds(6), oldpl(6), avg_stress(6), 
-     2                    deps_plas(6), dsig(6)                                     
+     1                    olds(6), oldpl(6), avg_stress(6)                                    
       logical ::  debug                                    
       double precision :: cte, emod, enu, ebulk3, eg2, eg, eg3, elam,           
      1                    old_eqpl, deqpl, smises, syield, hard, shydro,        
-     2                    effg, effg2, effg3, efflam, effhrd        
-      double precision :: state_np1, dspd, dsst                                 
+     2                    effg, effg2, effg3, efflam, effhrd,
+     3                    constant_hard      
+      double precision :: state_np1, dspd, dsst, new_eqpl, osy, nsy                                 
       double precision, parameter :: zero=0.d0, one=1.d0, two=2.d0,             
      1                               three=3.d0, six=6.d0,                      
      2                               enumax=.4999d0, toler=1.0d-6,
@@ -142,7 +142,7 @@ c
 c ----------------------------------------------------------------              
 c                                                                               
 c      
-      debug =    .false. ! noel .eq. 2648 .and. npt .eq. 8                                                                      
+      debug = .false.  !     noel .eq. 16 .and. npt .eq. 8                                                                      
       if( debug ) write(kout,*) ' .... umat '    
       if( debug ) write(kout,*) '... spd in: ', spd                                    
       cte = props(5)                                                            
@@ -221,7 +221,8 @@ c
 c           get yield stress and plastic hardening modulus                      
 c                                                                               
       syield = props(3)                                                         
-      hard   = props(4)                                                         
+      hard   = props(4)  
+      constant_hard = hard ! incase we ever add variable hardening                                                       
 c                                                                               
 c           determine if actively yielding                                      
 c                                                                               
@@ -293,20 +294,18 @@ c
          statev(k1+6)  = eplas(k1)                                              
          statev(k1+12) = alpha(k1)                                              
          avg_stress(k1) = ( stress(k1) + olds(k1) ) / two 
-         dsig(k1) = stress(k1) - olds(k1)                        
          dsst = dsst + avg_stress(k1) * dstran(k1) 
       end do   
       if( yielding ) then
-         deps_plas(1) = dstran(1) -
-     &                  (dsig(1) - enu*(dsig(2)+dsig(3)))/emod
-         deps_plas(2) = dstran(2) -
-     &                  (dsig(2) - enu*(dsig(1)+dsig(3)))/emod
-         deps_plas(3) = dstran(3) -
-     &                  (dsig(3) - enu*(dsig(1)+dsig(2)))/emod
-         deps_plas(4) = dstran(4) - dsig(4) / eg
-         deps_plas(5) = dstran(5) - dsig(5) / eg
-         deps_plas(6) = dstran(6) - dsig(6) / eg
-         dspd = dot_product( deps_plas, avg_stress )
+         new_eqpl =  deqpl + old_eqpl
+         osy = syield + constant_hard * old_eqpl
+         nsy = syield + constant_hard * new_eqpl
+         dspd =  deqpl * ( osy + nsy ) * half
+         if( debug ) then
+            write(kout,*) '... old_eqpl, deqpl, new_eqpl: ',
+     &          old_eqpl, deqpl, new_eqpl
+            write(kout,*) '... osy, nsy, dspd: ',osy,nsy,dspd
+         end if
       end if
                                                                  
 c                                                                               
@@ -322,7 +321,7 @@ c
 c          update specific elastic energy and dissipatation.                    
 c                                                                               
       sse = sse + (dsst - dspd)                                                 
-      spd = spd + dspd                                                          
+      spd =   spd + dspd                                                          
       if( debug ) write(kout,*) '... spd out: ', spd                                    
 c                                                                               
 c          fill nonlocal shared values for integration point with               
@@ -557,7 +556,7 @@ c
 c                                                                               
       parameter(zero = 0.d0)                                                    
 c                                                                               
-c            set yie      ld stress to last value of table,                     
+c            set yield stress to last value of table,                     
 c            hardening to zero                                                  
 c                                                                               
       syield  = table(1,nvalue)                                                 

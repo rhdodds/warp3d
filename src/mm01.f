@@ -211,7 +211,8 @@ c                       update the plastic work density for
 c                       elements in the block.
 c
       call mm01_wrapup( span, mxvl, cgn, cgn1, yield, deps,
-     &                  nu_n1, ym_n1, shear_mod_n1, eps_elas )
+     &                  nu_n1, ym_n1, shear_mod_n1, eps_elas,
+     &                  history, history1, felem, gpn )
 c
       return
  9000 format( '>> debugging in mm01. ',
@@ -274,24 +275,14 @@ c
          history(i,3) = zero
          history(i,4) = dword
          history(i,5) = hprime(i)
-         history(i,6) = zero
-         history(i,7) = zero
-         history(i,8) = zero
-         history(i,9) = zero
-         history(i,10) = zero
-         history(i,11) = zero
+         history(i,6:11) = zero
 c
          history1(i,1) = zero
          history1(i,2) = kn
          history1(i,3) = zero
          history1(i,4) = dword
          history1(i,5) = hprime(i)
-         history1(i,6) = zero
-         history1(i,7) = zero
-         history1(i,8) = zero
-         history1(i,9) = zero
-         history1(i,10) = zero
-         history1(i,11) = zero
+         history1(i,6:11) = zero
 c
          cgn(i,8)       = zero
          cgn(i,9)       = zero
@@ -524,31 +515,32 @@ c     *                    subroutine mm01_wrapup                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 7/1/2018                    *
+c     *                   last modified: 1/4/2019 rhd                *
 c     *                                                              *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm01_wrapup( span, mxvl, cgn, cgn1, yield, deps,
-     &                              nu, ym, shear_mod, eps_elas )
-     &
+     &                        nu, ym, shear_mod, eps_elas, history,
+     &                        history1,felem, gpn )
       implicit none
 c
 c                     parameters
 c
-      integer :: span, mxvl
+      integer :: span, mxvl, felem, gpn
       double precision :: cgn(mxvl,*), cgn1(mxvl,*), deps(mxvl,*),
-     &                    nu(*), ym(*), shear_mod(*), eps_elas(span,6)
+     &                    nu(*), ym(*), shear_mod(*), history(span,*),
+     &                    history1(span,*), eps_elas(span,6)                    
       logical :: yield(*)
 c
 c                     locals
 c
       integer :: i
       double precision ::
-     &   deps_plas_bar, dsig(6), deps_plas(6), e_n1, nu_n1, g_n1, t1
-      double precision, parameter :: zero = 0.d0, half = 0.5d0,
-     &  three = 3.d0, two = 2.d0, one = 1.d0,
-     &  root23 = dsqrt( two/three )
+     &   deps_plas_bar, dsig(6), deps_plas(6), e_n1, nu_n1, g_n1,
+     &   ebarp_n, ebarp_n1, depbar, sbar_n(mxvl), sbar_n1(mxvl), s(6)
+      double precision, parameter :: half = 0.5d0,
+     &  two = 2.d0, one = 1.d0, six = 6.0d0, root2 = sqrt(2.0d0)
 c
 c              elastic strains at n + 1
 c
@@ -566,43 +558,29 @@ c
       end do
 c
 c              for plastic points, compute the updated
-c              plastic work density and accumulated
-c              (uniaxial) plastic strain
+c              plastic work density and return the uniaxial
+c              plastic strain ( bar eps plastic )
 c
-c              d( epsbar ) = sqrt[ (2/3) deps^p_{ij} deps^p_{ij} ]
+c                d(U_p) = avg mises sgtress * increment in
+c                         plastic epsbar
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
        cgn1(i,8) = cgn(i,8)
        cgn1(i,9) = cgn(i,9)
        if( .not. yield(i) ) cycle
-         deps_plas_bar = zero
-         dsig(1) = cgn1(i,1) - cgn(i,1)
-         dsig(2) = cgn1(i,2) - cgn(i,2)
-         dsig(3) = cgn1(i,3) - cgn(i,3)
-         dsig(4) = cgn1(i,4) - cgn(i,4)
-         dsig(5) = cgn1(i,5) - cgn(i,5)
-         dsig(6) = cgn1(i,6) - cgn(i,6)
-         deps_plas(1) = deps(i,1) -
-     &                  (dsig(1) - nu(i)*(dsig(2)+dsig(3)))/ym(i)
-         deps_plas(2) = deps(i,2) -
-     &                  (dsig(2) - nu(i)*(dsig(1)+dsig(3)))/ym(i)
-         deps_plas(3) = deps(i,3) -
-     &                  (dsig(3) - nu(i)*(dsig(1)+dsig(2)))/ym(i)
-         deps_plas(4) = deps(i,4) - dsig(4) / shear_mod(i)
-         deps_plas(5) = deps(i,5) - dsig(5) / shear_mod(i)
-         deps_plas(6) = deps(i,6) - dsig(6) / shear_mod(i)
-         cgn1(i,8) = cgn(i,8) +  half * (
-     &       deps_plas(1) * (cgn1(i,1) + cgn(i,1))
-     &     + deps_plas(2) * (cgn1(i,2) + cgn(i,2))
-     &     + deps_plas(3) * (cgn1(i,3) + cgn(i,3))
-     &     + deps_plas(4) * (cgn1(i,4) + cgn(i,4))
-     &     + deps_plas(5) * (cgn1(i,5) + cgn(i,5))
-     &     + deps_plas(6) * (cgn1(i,6) + cgn(i,6)) )
-         t1 = deps_plas(1)**2 + deps_plas(2)**2 + deps_plas(3)**2 +
-     &        half*(deps_plas(4)**2+deps_plas(5)**2+deps_plas(6)**2)
-         deps_plas_bar = root23 * sqrt( t1  )
-         cgn1(i,9) = cgn(i,9) + deps_plas_bar
+       s(1:6) = cgn(i,1:6)  ! for convenience
+       sbar_n(i) = sqrt( (s(1)-s(2))**2 + (s(2)-s(3))**2 + 
+     &     (s(1)-s(3))**2 + six*(s(4)**2+s(5)**2+s(6)**2) ) / root2
+       s(1:6) = cgn1(i,1:6)
+       sbar_n1(i) = sqrt( (s(1)-s(2))**2 + (s(2)-s(3))**2 + 
+     &     (s(1)-s(3))**2 + six*(s(4)**2+s(5)**2+s(6)**2) ) / root2
+       ebarp_n  = history(i,3)
+       ebarp_n1 = history1(i,3)
+       depbar   = ebarp_n1 - ebarp_n
+       cgn1(i,8) = cgn(i,8) + 
+     &             half * ( sbar_n1(i) + sbar_n(i) ) * depbar
+       cgn1(i,9) = cgn(i,9) + depbar
       end do
 c
       return
