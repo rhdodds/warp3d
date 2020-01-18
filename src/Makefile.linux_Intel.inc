@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 7/28/2019 rhd
+#   Last modifications: 12/24/2019 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -63,7 +63,7 @@
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 3960
+BUILDNUM := 3980
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -95,7 +95,7 @@ CHECKFLOAT =
 ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                  -align array64byte  -qopt-zmm-usage=high
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE =  $(ALL_PROCESSORS)
+MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) $(HYINC) $(FTRAP) \
@@ -109,24 +109,27 @@ LINK     = $(COMPILER) $(FCOPTS)
 #                    compatible routines
 #
 MODS     := $(OD)/mod_adaptive_steps.o \
-            $(OD)/mod_contact.o       \
-            $(OD)/mod_crack_growth.o \
-            $(OD)/mod_crystals.o \
-            $(OD)/mod_damage.o \
-            $(OD)/mod_elblk.o \
-            $(OD)/mod_eleblocks.o \
-            $(OD)/mod_elem_load.o \
-            $(OD)/mod_file_info.o \
-            $(OD)/mod_hypre.o \
-            $(OD)/mod_jintegral.o \
-            $(OD)/mod_local_stiffness.o \
-            $(OD)/mod_main.o \
-            $(OD)/mod_mpc.o \
-            $(OD)/mod_mpi_lnpcg.o \
-            $(OD)/mod_pconvert.o \
-            $(OD)/mod_performance.o \
-            $(OD)/mod_segmental_curves.o \
-            $(OD)/mod_stiffness.o
+			$(OD)/mod_contact.o       \
+			$(OD)/mod_crack_growth.o \
+			$(OD)/mod_crystals.o \
+			$(OD)/mod_damage.o \
+			$(OD)/mod_elblk.o \
+			$(OD)/mod_eleblocks.o \
+			$(OD)/mod_elem_load.o \
+			$(OD)/mod_file_info.o \
+			$(OD)/mod_hypre.o \
+			$(OD)/mod_jintegral.o \
+			$(OD)/mod_local_stiffness.o \
+			$(OD)/mod_main.o \
+			$(OD)/mod_mpc.o \
+			$(OD)/mod_mpi_lnpcg.o \
+			$(OD)/mod_pconvert.o \
+			$(OD)/mod_performance.o \
+			$(OD)/mod_scan.o       \
+			$(OD)/mod_segmental_curves.o \
+			$(OD)/mod_stiffness.o \
+			$(OD)/mod_trlist.o \
+			$(OD)/distributed_assembly.o  # contain a module definition
 #
 INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
             include_usr_parm
@@ -162,8 +165,10 @@ OBJ =	 \
 	$(OD)/mod_mpi_lnpcg.o	 \
 	$(OD)/mod_performance.o \
 	$(OD)/mod_pconvert.o	 \
+	$(OD)/mod_scan.o	 \
 	$(OD)/mod_segmental_curves.o	 \
 	$(OD)/mod_stiffness.o	 \
+	$(OD)/mod_trlist.o	 \
 	$(OD)/user_routines_module.o \
 	$(OD)/addifv.o	 \
 	$(OD)/addmas.o	 \
@@ -253,8 +258,9 @@ OBJ =	 \
 	$(OD)/inmat.o	 \
 	$(OD)/innum.o	 \
 	$(OD)/intab.o	 \
+	$(OD)/inpatch.o	 \
 	$(OD)/iodevn.o	 \
-    $(OD)/iterative_sparse_hypre.o \
+	$(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
 	$(OD)/kill_element.o	 \
 	$(OD)/license.o	 \
@@ -371,7 +377,7 @@ OBJ =	 \
 	$(OD)/vol_terms.o	 \
 	$(OD)/vol_avg.o	 \
 	$(OD)/zero_vector.o	 \
-	$(OD)/zero_vol.o	 \
+	$(OD)/zero_vol.o
 #
 $(EXE_NAME) : $(OBJ)
 	$(LINK) $(OBJ) $(LIBS) -o $@
@@ -429,6 +435,8 @@ $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
 #
+#
+#
 #    ------   system level module files ----------------
 #             =========================
 #
@@ -444,7 +452,7 @@ $(ODIR)/mod_crack_growth$O : mod_crack_growth.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_crystals$O : mod_crystals.f param_def $(OD)/mod_main$O
+$(ODIR)/mod_crystals$O : mod_crystals.f param_def  $(OD)/mod_main$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -468,7 +476,7 @@ $(ODIR)/mod_file_info$O : mod_file_info.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_hypre$O : mod_hypre.f param_def
+$(ODIR)/mod_hypre$O : mod_hypre.f  param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -476,7 +484,7 @@ $(ODIR)/mod_jintegral$O : mod_jintegral.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f param_def
+$(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f   param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -500,11 +508,19 @@ $(ODIR)/mod_performance$O : mod_performance.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
+$(ODIR)/mod_scan$O : mod_scan.f
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
 $(ODIR)/mod_segmental_curves$O : mod_segmental_curves.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
 $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_trlist$O : mod_trlist.f mod_scan.f mod_main.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
