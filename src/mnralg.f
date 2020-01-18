@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 12/23/2018 rhd              *
+c     *                   last modified: 12/3/2019 rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -538,9 +538,6 @@ c
          call abort_job
        end if
       end if
-
-c
-      if( prnres ) call oures( ldnum, iter )
 c
 c          perform convergence tests for newton iterations. even
 c          if apparently converged, the user may want a set minimum
