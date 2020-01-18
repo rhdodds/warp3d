@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 7/28/2019 rhd
+#   Last modifications: 12/3/2019 rhd
 #
 #   How to run:
 #
@@ -22,8 +22,8 @@
 #     Link with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
 #
-#     Build tested with gfortran version 8.1.0 and MKL 19.0.4
-#     on OSX 10.3.5 (High Sierra)
+#     Build tested with gfortran version 8.1.0 and MKL 19.0.5
+#     on OSX 10.14.5 (High Sierra)
 #
 #
 #     Notes
@@ -70,7 +70,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 3960
+BUILDNUM := 3980
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -133,7 +133,7 @@ else  #  Intel Composer options
   ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE =  $(ALL_PROCESSORS)    #  $(HARDWARE_SPECIFIC) 
+  MACHINE_TYPE =  $(ALL_PROCESSORS) #  $(HARDWARE_SPECIFIC) 
 #
   FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
@@ -168,8 +168,10 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 			$(OD)/mod_mpi_lnpcg.o \
 			$(OD)/mod_pconvert.o \
 			$(OD)/mod_performance.o \
+			$(OD)/mod_scan.o       \
 			$(OD)/mod_segmental_curves.o \
 			$(OD)/mod_stiffness.o \
+			$(OD)/mod_trlist.o \
 			$(OD)/distributed_assembly.o  # contain a module definition
 #
 INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
@@ -197,8 +199,10 @@ OBJ =	 \
 	$(OD)/mod_mpi_lnpcg.o	 \
 	$(OD)/mod_performance.o \
 	$(OD)/mod_pconvert.o	 \
+	$(OD)/mod_scan.o	 \
 	$(OD)/mod_segmental_curves.o	 \
 	$(OD)/mod_stiffness.o	 \
+	$(OD)/mod_trlist.o	 \
 	$(OD)/user_routines_module.o \
 	$(OD)/addifv.o	 \
 	$(OD)/addmas.o	 \
@@ -288,6 +292,7 @@ OBJ =	 \
 	$(OD)/inmat.o	 \
 	$(OD)/innum.o	 \
 	$(OD)/intab.o	 \
+	$(OD)/inpatch.o	 \
 	$(OD)/iodevn.o	 \
 	$(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
@@ -566,11 +571,19 @@ $(ODIR)/mod_performance$O : mod_performance.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
+$(ODIR)/mod_scan$O : mod_scan.f
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
 $(ODIR)/mod_segmental_curves$O : mod_segmental_curves.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
 $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_trlist$O : mod_trlist.f mod_scan.f mod_main.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
