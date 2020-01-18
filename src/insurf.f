@@ -4,7 +4,7 @@ c     *                      subroutine insurf                       *
 c     *                                                              *          
 c     *                       written by : bjb                       *          
 c     *                                                              *          
-c     *                   last modified : 11/26/2018                 *          
+c     *                   last modified : 12/3/2019  rhd             *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *         surfaces that define regions of mesh tieing          *          
@@ -15,27 +15,29 @@ c
 c                                                                               
       subroutine insurf()                                                       
       use global_data ! old common.main
+      use allocated_integer_list
 c                                                                               
-      use mod_mpc, only : surface_table                                         
+      use mod_mpc, only : surface_table   
+c                                      
 c      parameter (max_ele=mxel/10)                                               
-      integer  ele, nelem, face, dumi, errnum, icn, iplist, count,              
-     &         len, err                                                         
-      integer, allocatable, dimension (:) :: faces, elems                       
-      real     dumr                                                             
-      double precision  dumd                                                    
+      integer :: ele, nelem, face, dumi, errnum, icn, iplist, count,              
+     &           len, err                                                         
+      integer, allocatable, dimension (:) :: faces, elems, intlst                       
+      real :: dumr                                                             
+      double precision ::  dumd                                                    
       character(len=16) :: surfid                                               
-      character(len=1) ::   dums                                                
-      logical  label, matchs, integr, true, bad_surf,                           
-     &         abaqus_face_flag                                                 
-      dimension  intlst(mxlsz)                                                  
+      character(len=1) ::  dums                                                
+      logical ::  bad_surf, abaqus_face_flag                                                 
+      logical, external ::  label, matchs, integr, true
 c  
       max_ele = max( 5000, mxel/10 )                                                                             
       allocate (surface_table(max_surfaces),                                    
-     &          faces(max_ele), elems(max_ele), stat=err)                       
-      if (err .ne. 0) then                                                      
+     &          faces(max_ele), elems(max_ele), stat=err)   
+      if( err .ne. 0 ) then                                                      
          call errmsg2(45,dumi,dums,dumr,dumd)                                   
          call die_abort                                                         
       end if                                                                    
+      allocate( intlst(10) )                    
 c                                                                               
       new_surface: do                                                           
 c                                                                               
@@ -80,7 +82,8 @@ c
                end if                                                           
             end if                                                              
             if (matchs('element',7))  cycle surface_data                        
-            call trlist(intlst,mxlsz,noelem,lenlst,errnum)                      
+            call trlist_allocated( intlst, list_size, noelem, 
+     &                             lenlst, errnum )                      
 c                                                                               
 c           branch on the errnum returned from trlist.                          
 c           a value of 1 indicates no error.                                    

@@ -1,4 +1,4 @@
-c     ****************************************************************
+c     ***************************************************************
 c     *                                                              *
 c     *                      subroutine trwlist                      *
 c     *                                                              *
@@ -117,8 +117,7 @@ c
         go to 100
       end if
 c
-      call ulist_simple( list_col, debug, out,
-     &                   4*max(nonode,noelem,100) )
+      call ulist_simple( list_col, debug, out )
       if( matchs( 'display',6 ) ) do_display = .true.
       if( matchs( 'coordinates', 4 ) ) display_coords = .true.
 c
@@ -140,27 +139,29 @@ c     *          scan and store a conventional integer list          *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine ulist_simple( list_col, debug, out, max_list )
+      subroutine ulist_simple( list_col, debug, out )
       use main_data, only : user_lists
+      use allocated_integer_list
+c
       implicit integer (a-z)
       logical debug
       integer, allocatable :: local_list(:)
 c
 c                 the default option for user defined integer list
 c                 when no geometric selection option is specified.
-c                 input must be a regular interger list at this point.
+c                 input must be a regular integer list at this point.
 c                 value of 'all' is not acceptable since no context
 c                 for what all means (nodes, elements, etc) is
 c                 known.
 c
       if( debug ) write(out,*) "..ulist_simple called..."
-      allocate( local_list(max_list) )
 c
 c                 get an integer list and check for errors. "all"
 c                 not allowed since we would not know all of
 c                 what at this point?
+c                 trlist allocates/resizes local_list as needed
 c
-      call trscan_list( local_list, max_list, 0, nlist, ierr )
+      call trlist_allocated( local_list, list_size, 0, nlist, ierr )
       if( ierr .ne. 1 )  then
         if( ierr .eq. 2 )  call ulist_error( 5 )
         if( ierr .eq. 3 )  call ulist_error( 6 )

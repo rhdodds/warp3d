@@ -83,7 +83,7 @@ c     *                      subroutine oustr                        *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 1/19/2017 rhd              *          
+c     *                   last modified : 12/3/2019 rhd              *          
 c     *                                                              *          
 c     *     drive printed output or packet file output of stresses   *          
 c     *     or strains according to the lists and options specified  *          
@@ -96,6 +96,7 @@ c
      &                  wide, eform, prec, noheader, out_packet_now )           
       use global_data ! old common.main
       use elblk_data, only : elestr ! mxvl,mxoupr,mxoupt                        
+      use allocated_integer_list
       implicit none                                                             
 c
       logical :: ouflg, oupat, oubin, ouasc, ounod, wide, eform, prec,          
@@ -104,9 +105,8 @@ c
 c                       local declarations                                      
 c                                                                               
       integer :: lenlst, errnum, icn, iplist, num_list_entries,                 
-     &           bad_list, param, next, i, dummy                                
-      integer :: intlst(mxlsz)                                                  
-      integer, allocatable ::  element_list(:)                                  
+     &           bad_list, param, next, i, dummy, list_size                                
+      integer, allocatable :: intlst(:), element_list(:)                                  
       logical, external :: matchs, true, endcrd                                 
       logical :: eject_flag                                                     
       real :: dumr                                                              
@@ -143,8 +143,10 @@ c
 c                                                                               
       if( matchs('for',3) )      call splunj                                    
       if( matchs('elements',4) ) call scan                                      
-c                                                                               
-      call trlist( intlst, mxlsz, noelem, lenlst, errnum )                      
+c   
+      allocate( intlst(10) )                                                                            
+      call trlist_allocated( intlst, list_size, noelem, 
+     &                       lenlst, errnum )                      
 c                                                                               
       select case( errnum )                                                     
       case( 1 )  ! list found ok                                                
@@ -162,7 +164,6 @@ c
          lenlst = 3; intlst(1) = 1; intlst(2) = -noelem                         
          intlst(3) = 1                                                          
       case default                                                              
-          write(*,*) '      case default'                                       
          param = 3                                                              
          call errmsg( 24, param, dums, dumr, dumd )                             
          ouflg = .true.                                                         
@@ -221,7 +222,7 @@ c
 c                                                                               
       if ( eject_flag ) write(out,fmt='(a1)') char(12)                          
 c                                                                               
-      deallocate( element_list )                                                
+      deallocate( element_list, intlst )                                                
 c                                                                               
       return                                                                    
 c                                                                               

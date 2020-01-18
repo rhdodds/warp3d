@@ -20,6 +20,7 @@ c
      &                  out_packet_now, flat_file, stream_file,                 
      &                  text_file, compressed  )                                
       use global_data ! old common.main
+      use allocated_integer_list
 c                                                                               
       implicit none                                                             
 c                                                                               
@@ -29,15 +30,17 @@ c
      &           out_packet_now, flat_file, stream_file,                        
      &           text_file, compressed                                          
 c                                                                               
-      integer :: all, lsttyp, idum, lenlst, errnum, param                       
-      integer :: intlst(mxlsz)                                                  
+      integer :: all, lsttyp, idum, lenlst, errnum, param, list_size                   
+      integer, allocatable :: intlst(:)                                                 
       real :: dumr                                                              
       double precision :: dumd                                                  
       character(len=1) :: dums                                                  
       logical :: first                                                          
       logical, external :: matchs, endcrd, true                                 
 c                                                                               
-      ouflg = .false. ! set .true. if bad outcome                               
+      ouflg = .false. ! set .true. if bad outcome     
+      allocate( intlst(10) )
+                         
 c                                                                               
 c                       output to patran or a flat file for post                
 c                       processing. no list of nodes/elements checked.          
@@ -104,8 +107,8 @@ c
 c                       examine current token for <list> of nodes or            
 c                       elements. if not a list, assume "all" of nodes          
 c                       or elements -- scanner does not move.                   
-c                                                                               
-      call trlist( intlst, mxlsz, all, lenlst, errnum )                         
+c       
+      call trlist_allocated( intlst, list_size, all, lenlst, errnum )                         
 c                                                                               
 c                       =1 <list> or "all" found. token after list is in        
 c                          scanner                                              

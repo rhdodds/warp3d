@@ -4,7 +4,7 @@ c     *                      subroutine oudrive                      *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/3/2016 rhd               *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     drive output of any and all quantities requested by the  *
 c     *     user. all phases of output except output of residual     *
@@ -477,7 +477,7 @@ c
 c
       return
 c
-      end subroutine   oudriv_model_flat
+      end subroutine   oudriv_model_flat  
 
       end subroutine   oudrive
 
@@ -487,7 +487,7 @@ c     *                 subroutine oudriv_cmds                       *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                   last modified : 2/10/2018 rhd              *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     scan store the file name for output commands file ...    *
 c     *     get the integerlist of load steps and convert to a bit   *
@@ -500,12 +500,14 @@ c
       subroutine oudriv_cmds
       use global_data ! old common.main
       use main_data, only: output_command_file, output_step_bitmap_list
+      use allocated_integer_list
       implicit none
 c
 c                      locals
 c
-      integer :: dummy, char, errnum, icn, iplist, nchar, istep, lenlst
-      integer :: intlst(mxlsz)
+      integer :: dummy, char, errnum, icn, iplist, nchar, istep, lenlst,
+     &           list_size
+      integer, allocatable :: intlst(:)
       logical, external :: matchs, label, string
       logical :: ok
       character(len=80) :: bad_input
@@ -563,8 +565,9 @@ c                      the file of output commands will be executed.
 c                      a list of just keyword "all" is not ok since
 c                      user may nothave given any step definitions yet
 c
+      allocate( intlst(10) )
       call scan
-      call trlist( intlst, mxlsz, 0, lenlst, errnum )
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
