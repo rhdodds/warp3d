@@ -364,6 +364,14 @@ c
          nsn= 31
          go to 25
       end if
+c
+      if(matchs('patch',4)) then
+         lsn= nsn
+         hilcmd= .true.
+         nsn= 35
+          write(*,*) '...  get patch command'
+         go to 25
+      end if
 
 c
       if( endfil(idummy) ) goto 30
@@ -396,7 +404,7 @@ c
       go to (100,200,300,400,500,600,700,800,900,1000,1100,
      &       1200,1300,1400,1500,1600,1700,1800,1900,2000,
      &       2100,2200,2300,2400,2500,2600,2700,2800,2900,
-     &       3000,3100,3200,3300,3400), nsn
+     &       3000,3100,3200,3300,3400,3500), nsn
 c
 c                       if a high level command is not
 c                       encountered, print an error message
@@ -1018,6 +1026,13 @@ c
       end if
       call delete_elements( sbflg1, sbflg2 )
       go to 10
+c
+c                       patch command for development
+c
+ 3500 continue
+      call patch_data( sbflg1, sbflg2 )
+      go to 10
+
 
 c
 c                       output timings. end execution.
