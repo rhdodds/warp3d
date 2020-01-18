@@ -4,7 +4,7 @@ c     *                      subroutine inlod                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/8/2018 rhd               *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *              translate and store loading definitions         *
 c     *                                                              *
@@ -20,6 +20,7 @@ c
      &                      user_cnstrn_stp_factors, max_step_limit,
      &                      actual_cnstrn_stp_factors,
      &                      load_data_for_a_step
+      use allocated_integer_list
       implicit none
 c
 c                       parameter declarations
@@ -32,9 +33,10 @@ c
       integer :: i, dummy, dum, nc, lodn, param, open, openxt, prelod,
      &           step_count, lenlst, errnum, icn, iplist, dofn, iii,
      &           num_patterns, step, stldnm, word1, bit, test, stnod,
-     &           node, idummy, column, face, dof, pist_tabn
+     &           node, idummy, column, face, dof, pist_tabn, list_size
       integer, allocatable :: intlst(:), step_load_list(:),
      &                        list_of_steps(:)
+      integer, parameter :: start_list_size = 100
       integer, save :: nodlim, nodcol
       double precision ::
      &  forval, mpfact, dumd, body_force(mxndof),
@@ -56,7 +58,7 @@ c                       if sub flag 1 is set the subroutine is re-
 c                       entered.
 c
       if( debug ) write (*,*) '>>>>>>>>> in inlod'
-      allocate( intlst(mxlsz), step_load_list(mxlc),
+      allocate( intlst(start_list_size), step_load_list(mxlc),
      &          list_of_steps(max_step_limit) ) ! auto deallocated
       if( sbflg1 ) then
 c
@@ -288,8 +290,10 @@ c                       allowed here.
 c
          list_of_steps(1:max_step_limit) = 0
          step_count = 0
+         deallocate( intlst )
+         allocate( intlst(start_list_size) )
          call scan
-         call trlist(intlst,mxlsz,0,lenlst,errnum)
+         call trlist_allocated(intlst,list_size,0,lenlst,errnum)
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -512,8 +516,10 @@ c
 c
 c                       translate list of nodes upon which loads occur.
 c
+      deallocate( intlst )
+      allocate( intlst(start_list_size) )
       call scan
-      call trlist(intlst,mxlsz,nonode,lenlst,errnum)
+      call trlist_allocated(intlst,list_size,nonode,lenlst,errnum)
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates line start with an
@@ -769,8 +775,10 @@ c
 c
 c                       translate list of elements upon which loads occur.
 c
+      deallocate( intlst )
+      allocate( intlst(start_list_size) )
       call scan
-      call trlist(intlst,mxlsz,noelem,lenlst,errnum)
+      call trlist_allocated(intlst,list_size,noelem,lenlst,errnum)
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of

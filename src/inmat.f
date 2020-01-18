@@ -1493,7 +1493,7 @@ c     *                      subroutine inseg_curve_list             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 2/28/00                    *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of the *
 c     *     list of segmental stress-strain curves for use with      *
@@ -1505,6 +1505,7 @@ c
 c
       subroutine inseg_curve_list( cur_set_no, ok  )
       use global_data ! old common.main
+      use allocated_integer_list
 c
       use segmental_curves
 c
@@ -1512,14 +1513,15 @@ c
 c
 c                       parameters
 c
-      logical ok
+      logical :: ok
 c                       local declarations
 c
-      dimension intlst(100), tcurve_list(max_seg_curves)
-      character dums*10
-      logical local_debug, true
-      real dumr
-      double precision
+      integer :: tcurve_list(max_seg_curves)
+      integer, allocatable :: intlst(:)
+      character :: dums*10
+      logical :: local_debug, true
+      real :: dumr
+      double precision ::
      &   dumd, tcurve_value(max_seg_curves), strain_1, strain_2,
      &   tol_strain
       data local_debug, tol_strain / .false., 1.0e-05 /
@@ -1535,7 +1537,8 @@ c
       if ( local_debug ) write(*,*) '>> inside inseg_curve_list'
 c
       call scan
-      call trlist( intlst, 100, 0, lenlst, errnum )
+      allocate( intlst(10) )
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of

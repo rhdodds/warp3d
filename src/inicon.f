@@ -4,7 +4,7 @@ c     *                      subroutine inicon                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/15/2018 rhd              *
+c     *                   last modified : 12/4/2019 rhd              *
 c     *                                                              *
 c     *     supervises and conducts the input of the                 *
 c     *     desired initial conditions for the structure at time 0.  *
@@ -15,6 +15,7 @@ c
 c
       subroutine inicon( sbflg1, sbflg2 )
       use global_data ! old common.main
+      use allocated_integer_list
 c
       use main_data, only : trn, trnmat, temper_nodes,
      &                      temper_nodes_ref, temperatures_ref,
@@ -28,7 +29,7 @@ c
 c
 c                       local declarations
 c
-      integer :: i, cond, lenlst, errnum, param, dofn, icn,
+      integer :: i, cond, lenlst, errnum, param, dofn, icn, list_size,
      &           iplist, node, elem, type, nedof, idum, nc, scan_stat
       integer, allocatable :: intlst(:)
       real :: dumr
@@ -46,7 +47,7 @@ c                       inicon after an error in the input of type
 c                       of initial condition input.
 c
       allocate( edva(mxvl,mxndof), trnmte(mxvl,mxedof,mxndof),
-     &          trne(mxvl,mxndel), intlst(mxlsz) )
+     &          trne(mxvl,mxndel), intlst(10) )
 c
       if( sbflg1 ) then
          call errmsg(119,idum,dums,dumr,dumd)
@@ -111,7 +112,8 @@ c                       are to be input.
 c
  1120 call readsc
       if( matchs('nodes',4) ) call scan
-      call trlist(intlst,mxlsz,nonode,lenlst,errnum)
+      call trlist_allocated( intlst, list_size, nonode, lenlst, 
+     &             errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -467,7 +469,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *     contains:   inicon_get_list                              *
 c     *                                                              *
-c     *                 last modified : 09/22/2017 rhd               *
+c     *                 last modified : 12/4/2019 rhd                *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -477,7 +479,8 @@ c
       integer :: result
 c
       if( matchs('elements',4) ) call scan
-      call trlist( intlst, mxlsz, noelem, lenlst, result )
+      call trlist_allocated( intlst, list_size, noelem, 
+     &                       lenlst, result )
 c
       if( result .eq. 1 ) then ! list found set scan for stresses list
           call backsp( 1 )

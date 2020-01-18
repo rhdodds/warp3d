@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 06/16/2019  rhd            *          
+c     *                   last modified : 12/4/2019  rhd             *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -14,6 +14,7 @@ c
 c                                                                               
       subroutine incrack( sbflg1, sbflg2 )                                      
       use global_data ! old common.main
+      use allocated_integer_list
 c                                                                               
       use main_data, only : cnstrn_in                                           
       use damage_data                                                           
@@ -26,12 +27,14 @@ c             locals
 c           
       integer :: dof, elem, icn, iplist, lcktype, node, param,
      &           errnum, temp_int, dum, scan_order_list_size,
-     &           scan_kill_order_length, scan_master_length
+     &           scan_kill_order_length, scan_master_length,
+     &           list_size
       logical, external :: matchs, numd, numi, endcrd,
      &                     true, matchs_exact, integr
       logical :: debug
-      integer :: scan_order_list(mxlsz), scan_kill_order_list(mxlsz),            
-     &           scan_master_list(mxlsz)                                             
+      integer, allocatable :: scan_order_list(:), 
+     &                        scan_kill_order_list(:),
+     &                        scan_master_list(:)
 c                                                                               
       double precision ::                                                          
      &  dumd, zero, ctoa, two, hundred, def_min_load_fact, temp_dble,           
@@ -39,7 +42,7 @@ c
       data one, zero, two, hundred, def_min_load_fact,d32460                    
      &      / 1.0, 0.0, 2.0, 100.0, .01, 32460.0 /                              
       character(len=1) :: dums                                                  
-      real dumr                                                                 
+      real :: dumr                                                                 
 c                                                                               
 c         do some initialization                                                
 c                                                                               
@@ -390,9 +393,11 @@ c
       else                                                                      
         call backsp( 1 )                                                        
       end if                                                                    
-      call scan                                                                 
-      call trlist( scan_order_list, mxlsz, noelem,                              
-     &             scan_order_list_size, errnum )                               
+      call scan
+      if( allocated(scan_order_list) ) deallocate( scan_order_list )
+      allocate( scan_order_list(20) )
+      call trlist_allocated( scan_order_list, list_size, noelem,                              
+     &                       scan_order_list_size, errnum )                               
 c                                                                               
 c                       branch on the return code from trlist. a                
 c                       value of 1 indicates no error. a value of               
@@ -509,9 +514,12 @@ c                       kill elements
 c                                                                               
       if ( .not.matchs('order',5) ) goto 650                                    
 c                                                                               
-      call scan                                                                 
-      call trlist( scan_kill_order_list, mxlsz, noelem,                         
-     &     scan_kill_order_length, errnum )                                     
+      call scan    
+      if( allocated( scan_kill_order_list ) ) 
+     &          deallocate( scan_kill_order_list )
+      allocate( scan_kill_order_list(20) )
+      call trlist_allocated( scan_kill_order_list, list_size, noelem,                         
+     &                       scan_kill_order_length, errnum )                                     
 c                                                                               
 c                                                                               
 c                       branch on the return code from trlist. a                
@@ -921,9 +929,12 @@ c
       if ( matchs('list',4) ) call splunj                                       
 c                                                                               
 c             now read list of master nodes                                     
-c                                                                               
+c     
+      if( allocated( scan_master_list ) ) 
+     &    deallocate( scan_master_list )
+      allocate( scan_master_list(20) )                                                                         
       call scan                                                                 
-      call trlist( scan_master_list, mxlsz, noelem,                             
+      call trlist_allocated( scan_master_list, list_size, noelem,                             
      &     scan_master_length, errnum )                                         
 c                                                                               
 c                                                                               
@@ -1215,12 +1226,13 @@ c          | contains: incrack_smcs_states          |
 c          ------------------------------------------                           
 c                                                                                           
       subroutine incrack_smcs_states
+      use allocated_integer_list
       implicit none
 c
 c        smcs states on | off text | stream steps <step list> 
 c
       integer, allocatable :: temp_list(:)
-      integer :: errnum, lenlst
+      integer :: errnum, lenlst, list_size
 c
       smcs_states  = .false.
       smcs_stream  = .false.
@@ -1252,9 +1264,9 @@ c
          return
       end if
 c
-      allocate( temp_list(mxlsz) )
+      allocate( temp_list(10) )
       call scan                                                                 
-      call trlist( temp_list, mxlsz, 100000000,   ! big for all steps                         
+      call trlist_allocated( temp_list, list_size, 0,   ! all not allowed                         
      &             lenlst, errnum )                               
       if ( errnum == 2 ) then   ! parse rules failed                                                
          call incrack_errmsg( 12 )
@@ -2423,7 +2435,7 @@ c     *                      subroutine delete_elements              *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 4/21/2019 rhd              *          
+c     *                   last modified : 12/4/2019 rhd              *          
 c     *                                                              *          
 c     *            user-directed element deletion for crack growth   *          
 c     *                                                              *          
@@ -2432,6 +2444,7 @@ c
 c
       subroutine delete_elements( sbflg1, sbflg2 )
       use global_data ! old common.main
+      use allocated_integer_list
 c
       use main_data
       use damage_data, only : num_user_kill_elems, crack_growth_type,
@@ -2445,8 +2458,9 @@ c
 c
 c              locals
 c
-      integer :: ele_intlst(mxlsz), lenlst=100, errnum, elem, icn,
+      integer :: list_size, lenlst, errnum, elem, icn,
      &           iplist, bad_count, temp_int
+      integer, allocatable :: ele_intlst(:)
       logical :: debug, bad_list
       logical, external :: matchs, numi
       double precision :: dumd
@@ -2481,8 +2495,10 @@ c      end if
 c
       num_user_kill_elems = 0
       if( matchs('elem',4) ) call splunj   ! optional word
+      allocate( ele_intlst(20) )
       call scan
-      call trlist( ele_intlst, mxlsz, noelem, lenlst, errnum )
+      call trlist_allocated( ele_intlst, list_size, 
+     &                       noelem, lenlst, errnum )
 c
 c              1 = no error. list found
 c              2 = parse rules failed in list

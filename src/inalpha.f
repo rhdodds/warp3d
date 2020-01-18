@@ -4,7 +4,7 @@ c     *                      subroutine inalpha                      *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/06/98                   *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of     *
 c     *     element thermal expansion coefficients for anisotopic    *
@@ -16,16 +16,17 @@ c
 c
       subroutine inalpha( sbflg1, sbflg2 )
       use global_data ! old common.main
+      use allocated_integer_list
+c
       implicit integer (a-z)
-      double precision
-     &   dumd
-      real dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz,
-     &     zero
+c
+      double precision :: dumd
+      real :: dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
+      real, parameter :: zero = 0.0
       character(len=1) :: dums
-      logical sbflg1, sbflg2
-      logical matchs, matchs_exact, endcrd, true, numr
-      dimension intlst(mxlsz)
-      data zero / 0.0 /
+      logical :: sbflg1, sbflg2
+      logical, external :: matchs, matchs_exact, endcrd, true, numr
+      integer, allocatable :: intlst(:)
 c
 c
 c                       if we just left with a list not starting with an
@@ -34,6 +35,7 @@ c                       not recognized in driver, we're back here with
 c                       sbflg1 = .true. - error message. get next line
 c
 c
+      allocate( intlst(10) )
       if( sbflg1 ) call errmsg(24,1,dums,dumr,dumd)
 c
  505  continue
@@ -53,7 +55,8 @@ c
 c                       translate the list of elements input on
 c                       this line.
 c
-      call trlist( intlst, mxlsz, noelem, lenlst, errnum )
+      call trlist_allocated( intlst, list_size, noelem,
+     &                       lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -226,9 +229,8 @@ c
      &                    alphaxy, alphayz, alphaxz )
       use global_data ! old common.main
       implicit integer (a-z)
-      real dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
-      double precision
-     &     dumd
+      real :: dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
+      double precision :: dumd
       character :: dums
       dimension intlst(*)
 c

@@ -4,9 +4,9 @@ c     *                      subroutine indom                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/8/2018 rhd               *
+c     *                   last modified : 12/21/2019 rhd             *
 c     *                                                              *
-c     *                   input a domain definition                   *
+c     *                   input a domain definition                  *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -14,9 +14,10 @@ c
 c
       subroutine indom( sbflg1, sbflg2 )
 
-      use global_data, only : nonode, noelem, bits, out, mxlsz,
-     &                        input_ok ! old common.main
+      use global_data, only : nonode, noelem, bits, out, input_ok 
       use j_data
+      use allocated_integer_list
+c
       implicit none
 c
 c              parameters
@@ -25,9 +26,11 @@ c
 c
 c              locals
 c
-      integer :: iword, intlst(mxlsz), dum, dummy, dofn, list_entry,
+      integer :: iword, dum, dummy, dofn, list_entry, list_size,
      a           kount_set, ring_num, node_set_id, elemno, iplist, node,
-     b           dup_error, word, errnum, nchar, lenlst, icn, bit, param
+     b           dup_error, word, errnum, nchar, lenlst, icn, bit, 
+     c          param, q_node_count, element_count
+      integer, allocatable :: intlst(:)
       real :: dumr, qnow, rword
       real, parameter :: rzero=0.0
       character :: dums*1, ltitle*80
@@ -143,8 +146,9 @@ c
          if( true( dummy ) ) call splunj
          call backsp( 1 )
       end if
-      call scan
-      call trlist(intlst,mxlsz,0,lenlst,errnum)
+      if( allocated( intlst ) ) deallocate( intlst )
+      call scan  ! trlist will allocated size needed
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -260,8 +264,9 @@ c
 c               list of rings given
 c
       if( matchs('rings',4) ) call splunj
+      if( allocated( intlst ) ) deallocate( intlst )
       call scan
-      call trlist(intlst,mxlsz,0,lenlst,errnum)
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -333,7 +338,8 @@ c               this command may be repeated as necessary within the
 c               domain definition.
 c
  450  continue
-      call trlist(intlst,mxlsz,0,lenlst,errnum)
+      if( allocated( intlst ) ) deallocate( intlst )
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -376,6 +382,7 @@ c
 c
       icn    = 0
       iplist = 1
+      q_node_count = 0
       if( .not. allocated( compr_q_list ) ) then
             allocate( compr_q_list(nonode,2) )
             compr_q_list(1:nonode,1) = 0
@@ -409,9 +416,11 @@ c
       last_compr                  = last_compr + 1
       compr_q_list(last_compr,1)  = node
       compr_q_list(last_compr,2)  = iword
+      q_node_count = q_node_count + 1
 c
  480  if( iplist .ne. 0 ) go to 460
       qvals_given = .true.
+      write(out,9010) q_node_count
 c
 c                       done with q-values by node
 c
@@ -461,8 +470,9 @@ c               definition of a domain
 c
 c
  700  continue
+      if( allocated( intlst ) ) deallocate( intlst )
       call scan
-      call trlist(intlst,mxlsz,0,lenlst,errnum)
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
             if( errnum .eq. 2 ) then
                param = 1
                call errmsg(24,param,dums,dumr,dumd)
@@ -489,6 +499,7 @@ c                      numbers
 c
       icn    = 0
       iplist = 1
+      element_count = 0
       if( .not. allocated( q_element_maps ) ) then
            allocate( q_element_maps(noelem/30+1) )
            q_element_maps(1:noelem/30+1) = 0
@@ -517,8 +528,10 @@ c
       word = ( elemno-1 ) / 30 + 1
       bit  = elemno - (word-1)*30
       q_element_maps(word) = ior( q_element_maps(word), bits(bit) )
+      element_count = element_count + 1
 c
  720  if( iplist .ne. 0 ) go to 710
+      write(out,9012) element_count
       go to 10
 c
 c
@@ -589,7 +602,7 @@ c               ==================================
 c
  1300 continue
       if( matchs('face',4)      ) call splunj
-      if(matchs('tractions',5)  ) call splunj
+      if( matchs('tractions',5)  ) call splunj
 c
 c                      parse through traction specifications
 c
@@ -727,8 +740,9 @@ c
 c
 c               set-up list of nodes to be parsed.
 c
+      if( allocated( intlst ) ) deallocate( intlst )
       call scan
-      call trlist(intlst,mxlsz,0,lenlst,errnum)
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -852,6 +866,8 @@ c
 c
 c
  9000 format(//,5x,'Domain definition:',2x,a24,/)
+ 9010 format(/,5x,'... number of nodes in list: ',i10,/)
+ 9012 format(/,5x,'... number of elements in list: ',i10,/)
  9100 format(8x,'Number of front nodes: ',i4,' Nodes on front:',
      &     /,8x,10i7,/,8x,10i6,/,8x,10i6 )
  9110 format(8x,'** no front nodes specified **')

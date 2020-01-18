@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/18/2019 rhd             *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -316,8 +316,6 @@ c
       trace(3)       =  .false.
       trace(4)       =  .false.
       trace(5)       =  .false.
-      prnres         =  .false.
-      prlres         =  .false.
       growth_k_flag  = .false.
       adaptive_flag  = .false.
       qbar_flag      = .true.

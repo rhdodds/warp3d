@@ -4,7 +4,7 @@ c     *                      subroutine compute                      *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 5/18/2017 rhd              *          
+c     *                   last modified : 12/3/2019 rhd              *          
 c     *                                                              *          
 c     *     scan the compute command, make some checks and call      *          
 c     *     various driver routines                                  *          
@@ -17,12 +17,14 @@ c
       use global_data ! old common.main
       use j_data, only: comput_j, comput_i                                      
       use erflgs                                                                
+      use allocated_integer_list
 c                                                                               
       implicit none                                                             
 c                                                                               
 c                                                                               
-      integer :: intlst(mxlsz), dum, param, dummy, nc, lodn, ldnum,             
-     &           lenlst, errnum                                                 
+      integer :: list_size, dum, param, dummy, nc, lodn, ldnum,             
+     &           lenlst, errnum     
+      integer, allocatable :: intlst(:)                                            
       real :: dumr                                                              
       double precision :: dumd                                                  
       double precision, parameter :: zero = 0.0d0                               
@@ -34,7 +36,8 @@ c
 c                                                                               
 c                       branch on the type of computation to be                 
 c                       performed.                                              
-c                                                                               
+c                
+      allocate( intlst(10) )                                                               
       comput_j = .false.; comput_i = .false.                                    
       if( matchs('domain',5) ) comput_j = .true.                                
       if( matchs('interaction',8) ) comput_i = .true.                           
@@ -107,7 +110,7 @@ c
       end if                                                                    
 c                                                                               
       call scan                                                                 
-      call trlist( intlst,mxlsz,nonode,lenlst,errnum )                          
+      call trlist_allocated( intlst,list_size,0,lenlst,errnum )                          
 c                                                                               
 c                       branch on the return code from trlist. a                
 c                       value of 1 indicates no error. a value of               

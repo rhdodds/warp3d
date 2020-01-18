@@ -4,7 +4,7 @@ c     *                      subroutine infgm                        *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 04/26/01 mcw               *          
+c     *                   last modified : 12/4/2019 rhd              *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *     material properties at model nodes to define fgms        *          
@@ -17,16 +17,17 @@ c
       use global_data ! old common.main
       use main_data, only: fgm_node_values_defined,            
      &                     fgm_node_values_cols                                 
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     & dumd                                                                     
+      use allocated_integer_list
+c
+      implicit integer (a-z)           
+c                                         
+      double precision :: dumd                                                                     
       real dumr, young_mod, poisson_ratio, alpha, vol_fract_ductile,            
      &     rho, tan_e, n_power, yld_pt, zero                                    
       character(len=1) :: dums                                                  
-      logical sbflg1, sbflg2                                                    
-      logical matchs, matchs_exact, endcrd, true, numr,                         
-     &        prop_flags(fgm_node_values_cols)                                  
-      dimension intlst(mxlsz)                                                   
+      logical :: sbflg1, sbflg2, prop_flags(fgm_node_values_cols)                                                  
+      logical, external :: matchs, matchs_exact, endcrd, true, numr                                  
+      integer, allocatable :: intlst(:)
       data zero / 0.d0 /                                                        
 c                                                                               
       if ( .not. fgm_node_values_defined )  call mem_allocate( 20 )             
@@ -47,7 +48,6 @@ c
        call infgm_dump                                                          
        go to 505                                                                
       end if                                                                    
-                                                                                
 c                                                                               
 c                       translate the list of nodes input on                    
 c                       this line.                                              
@@ -56,9 +56,12 @@ c
            call splunj                                                          
       else                                                                      
            call reset                                                           
-      end if                                                                    
+      end if    
+      if( allocated( intlst ) ) deallocate( intlst )
+      allocate( intlst(20) )                                                                
       call scan                                                                 
-      call trlist( intlst, mxlsz, nonode, lenlst, errnum )                      
+      call trlist_allocated( intlst,list_size, nonode, 
+     &                       lenlst, errnum )                      
 c                                                                               
 c                       branch on the return code from trlist. a                
 c                       value of 1 indicates no error. a value of               

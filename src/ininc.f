@@ -4,7 +4,7 @@ c     *                      subroutine ininc                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 10/27/2017 rhd             *
+c     *                   last modified : 12/2/2019 rhd              *
 c     *                                                              *
 c     *     read element incidences                                  *
 c     *                                                              *
@@ -14,6 +14,8 @@ c
 c
       use global_data ! old common.main
       use main_data, only : incmap, incid
+      use allocated_integer_list
+c
       implicit none
 c
       real :: dumr
@@ -21,8 +23,9 @@ c
       character :: dums
       logical :: sbflg1, sbflg2
       logical, external :: integr, label, matchs, string, endcrd
-      integer :: intlst(mxlsz), elem, param, errnum, nnode, i, count,
+      integer :: elem, param, errnum, nnode, i, count, list_size,
      &           icn, iplist, incpos, stnod, lenlst, dum
+      integer, allocatable :: intlst(:)
 c
 c                       if the subroutine has been previously
 c                       entered and exited, then there was an
@@ -32,9 +35,11 @@ c                       absence of the element number for incidence
 c                       input. under this circumstance, print an
 c                       error message and continue with input.
 c
-      if(sbflg1) call errmsg(39,dum,dums,dumr,dumd)
+      if( sbflg1 ) call errmsg(39,dum,dums,dumr,dumd)
       if( matchs('from',4) ) call splunj
       if( matchs('file',4) ) call ininc_file
+c
+      allocate( intlst(20) )  ! starting size to store incid for 1 ele
 c
  605  call readsc
 c
@@ -74,7 +79,7 @@ c
 c
 c
       call scan
-      call trlist(intlst,mxlsz,mxlsz,lenlst,errnum)
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of

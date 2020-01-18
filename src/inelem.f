@@ -4,7 +4,7 @@ c     *                      subroutine inelem                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/15/2018 rhd             *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of     *
 c     *     element type and properties.                             *
@@ -16,6 +16,7 @@ c
       subroutine inelem( sbflg1, sbflg2 )
 c
       use global_data ! old common.main
+      use allocated_integer_list
       use main_data, only: matprp, imatprp,
      & id_node,   ! 4hNODE,
      & id_curr,   ! 4hCURR,
@@ -46,9 +47,10 @@ c
       implicit none
       logical :: sbflg1, sbflg2
 c
-      integer :: intlst(mxlsz), minum, lenlst, param, dum, nc, i, type,
+      integer :: list_size, minum, lenlst, param, dum, nc, i, type,
      &           outloc, strcon, intord, outfmt, geonl, bbar, surf,
      &           matn, matnum, errnum
+      integer, allocatable :: intlst(:)
       logical :: found, defmat, deftyp, macrointer
       logical, external :: matchs, endcrd, true, label, scanms, numr
       double precision :: dumd
@@ -57,6 +59,7 @@ c
       character(len=8) :: tname
       character(len=24) :: mname
 c
+      allocate( intlst(10) )
       macrointer = .false.
       minum = -1
       tname(1:8) = 'nodefalt'
@@ -75,14 +78,14 @@ c
          go to 511
       end if
 c
-c
  505  call readsc
 c
 c                       translate the list of elements input on
 c                       this line.
 c
       call scan
-      call trlist(intlst,mxlsz,noelem,lenlst,errnum)
+      call trlist_allocated( intlst, list_size, noelem, lenlst, 
+     &                       errnum )
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of

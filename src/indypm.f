@@ -5,7 +5,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/18/2019 rhd             *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -38,12 +38,12 @@ c
 c
       logical :: sbflg1, sbflg2
 c
-      integer :: intlst(mxlsz), dum, lenlst, param, i,testyp, nc, idum,
+      integer :: dum, lenlst, param, i,testyp, nc, idum,
      &           errnum, trctyp, ncerror
       real :: dumr
       double precision ::  dnum, dumd
       double precision, parameter :: zero = 0.0d00
-      logical :: linlst, lstflg, msg_flag, local_direct_flag,
+      logical :: lstflg, msg_flag, local_direct_flag,
      &           local_direct
       logical, external :: matchs, integr, endcrd, true, numd, numr,
      &                     string, numi, label, matchs_exact, match
@@ -111,94 +111,14 @@ c
 c **********************************************************************
 c *                                                                    *
 c *                     print residual loads command.                  *
+c *                          (deprecated)                              *
 c *                                                                    *
 c **********************************************************************
 c
 c
  100  continue
-c
-      if(matchs('linear',6)) then
-         linlst= .true.
-      else
-         linlst= .false.
-      end if
-c
-      if(matchs('residual',3)) then
-c
- 110     if(matchs('loads',4)) then
-            go to 110
-         else if(matchs('for',3)) then
-            go to 110
-         else if(matchs('iterations',4)) then
-            go to 110
-         else
-            call backsp(1)
-         end if
-c
-         call scan
-         call trlist(intlst,mxlsz,mxiter,lenlst,errnum)
-c
-c                    branch on the return code from trlist. a
-c                    value of 1 indicates no error. a value of
-c                    2 indicates that the parse rules failed in
-c                    the list. a value of 3 indicates that the
-c                    list overflowed its maximum length of mxlsz.
-c                    a value of 4 indicates that no list was found.
-c                    for the first two error cases, set the print
-c                    residuals flag to false. for the third, assume
-c                    that no list means all
-c
-         if(errnum.eq.1) then
-            lstflg= .true.
-         else if(errnum.eq.2) then
-            param= 1
-            call errmsg(24,param,dums,dumr,dumd)
-            lstflg= .false.
-         else if(errnum.eq.3) then
-            param= 2
-            call errmsg(24,param,dums,dumr,dumd)
-            lstflg= .false.
-         else if(errnum.eq.4) then
-            intlst(1)= 1
-            intlst(2)= -mxiter
-            intlst(3)= 1
-            lenlst= 3
-            lstflg= .true.
-         else
-            param= 3
-            call errmsg(24,param,dums,dumr,dumd)
-            lstflg= .false.
-         end if
-c
-c
-         if(linlst) then
-c
-            prlres= lstflg
-            if(lstflg) then
-               do i= 1,lenlst
-                  plrlst(i:lenlst)= intlst(i:lenlst)
-               end do
-               nplrs= lenlst
-            end if
-c
-         else
-c
-            prnres= lstflg
-            if(lstflg) then
-               do i= 1,lenlst
-                  prslst(i:lenlst)= intlst(i:lenlst)
-               end do
-               nprs= lenlst
-            end if
-c
-         end if
-c
-      else
-c
-         call errmsg(94,dum,dums,dumr,dumd)
-c
-      end if
-c
+      write(out,9010)
+      num_error = num_error + 1
       go to 10
 c
 c **********************************************************************
@@ -1466,6 +1386,7 @@ c
      &   'next step'
      & /,1x,'                The: linear stiffness ... command will',
      & ' be deleted in a coming release. '  )
+ 9010 format(/1x,'>>>>> error: deprecated solution option',/)
  9100 format(/1x,'>>>>> Warning:  the file name has been truncated ',
      &           'to 80 characters...',/)
  9200 format(/1x,'>>>>> Error: cluster solver not compatible ',

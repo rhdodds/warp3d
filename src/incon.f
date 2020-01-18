@@ -4,7 +4,7 @@ c     *                subroutine release_constraints                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 12/23/2018 rhd              *
+c     *                   last modified: 12/3/2019 rhd               *
 c     *                                                              *
 c     *     read/store data for the release constraints command      *
 c     *                                                              *
@@ -18,6 +18,7 @@ c
       use main_data, only : cnstrn_in, release_cons_table,
      &                      release_cons_steps, mdiag, rload
       use mod_mpc, only:    num_user_mpc, user_mpc_table
+      use allocated_integer_list
 c
       implicit none
 c
@@ -27,10 +28,11 @@ c
 c
 c              locals
 c
-      integer :: intlst(mxlsz), mpc_intlst(mxlsz), lenlst, 
+      integer :: list_size, list_size_mpc, lenlst, 
      &           mpc_lenlst, warn_mess_num_steps
       integer, save :: count_stored
-      integer, allocatable :: user_mpc_col_list(:)
+      integer, allocatable :: user_mpc_col_list(:), intlst(:),
+     &                        mpc_intlst(:)
       logical ::  found_list, bad_list, release_flags(3), debug,
      &            compact_mpc_table, warn
       logical, save :: delete_release_cons
@@ -45,6 +47,7 @@ c
          write(out,*) '    sbflg1, sbflg2: ', sbflg1, sbflg2
       end if
 c 
+      allocate( intlst(10) )
       count_stored      = 0
       compact_mpc_table = .false.
       warn_mess_num_steps = 0
@@ -199,7 +202,7 @@ c     *              subroutine release_cons_scan                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/20/2018 rhd             *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     scan/store list of nodes and constraint directions to    *
 c     *     be released                                              *
@@ -246,7 +249,8 @@ c
 c
       mpc_lenlst = 0
 c
-      call trlist( intlst, mxlsz, nonode, lenlst, errnum )
+      call trlist_allocated( intlst, list_size, nonode,
+     &                       lenlst, errnum )
 c
 c              branch on the return code from trlist. a
 c              value of 1 indicates no error. a value of
@@ -315,7 +319,8 @@ c
              done_input = .true.
              exit
          end if
-         call trlist( mpc_intlst, mxlsz, nonode, mpc_lenlst, errnum )
+         call trlist_allocated( mpc_intlst, list_size_mpc, nonode,
+     &                          mpc_lenlst, errnum )
          if( errnum .eq. 4 ) then ! no list found but not endcrd
            bad_list = .true.
            num_error = num_error + 1
@@ -862,7 +867,7 @@ c     *                      subroutine incon                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/22/2018 rhd             *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     input of nodal displacement constraints                  *
 c     *                                                              *
@@ -870,6 +875,7 @@ c     ****************************************************************
 c
       subroutine incon( sbflg1, sbflg2, olddof )
       use global_data ! old common.main
+      use allocated_integer_list
 c
       use main_data, only : trn, trnmat, cnstrn_in,
      &                      inverse_incidences, force_solver_rebuild
@@ -880,22 +886,26 @@ c
 c
 c                       locally allocated
 c
-      double precision
-     &  convec(mxndof), trans(mxndof,mxndof), tval, cval, dumd, zero,
-     &  one, d32460, rlen1, rlen2, rlen3, rottol, t11, t12, t13,
+      integer, allocatable :: intlst(:)
+      integer :: list_size
+      double precision :: 
+     &  convec(mxndof), trans(mxndof,mxndof), tval, cval, dumd, 
+     &  rlen1, rlen2, rlen3, t11, t12, t13,
      &  t21, t22, t23, t31, t32, t33
-      real dumr, rnode
-      character dums, curtyp *1
-      logical sbflg1, sbflg2, skew, inpflg(mxndof), defcon(3),
-     &        cons_defined, rflag1, rflag2
-      logical matchs, endcrd, true, numd
-      dimension intlst(mxlsz)
-      data zero, one, d32460, cons_defined / 0.0, 1.0, 32460.0,
-     &                                       .false. /
-      data rottol / 0.0001 /
+      real :: dumr, rnode
+      character :: dums, curtyp *1
+      logical :: sbflg1, sbflg2, skew, inpflg(mxndof), defcon(3),
+     &           rflag1, rflag2
+      logical, save :: cons_defined = .false. 
+      logical, external :: matchs, endcrd, true, numd
+      double precision, parameter :: zero = 0.d0, one = 1.d0,
+     &                               d32460 = 32460.0d0,
+     &                               rottol = 0.0001d0
 c
 c                       if sub flag 1 is on, there is reentry into
 c                       incon after an error in constraints input.
+c
+      allocate( intlst(10) )
 c
       if( sbflg1 ) then
          call errmsg(71,dum,dums,dumr,dumd)
@@ -1004,7 +1014,10 @@ c
 c
 c                       input node list
 c
-      call trlist(intlst,mxlsz,nonode,lenlst,errnum)
+      deallocate( intlst )
+      allocate( intlst(10) )
+      call trlist_allocated( intlst, list_size, nonode, 
+     &                       lenlst, errnum)
 c
 c                       branch on the return code from trlist. a
 c                       value of 1 indicates no error. a value of
@@ -1259,7 +1272,7 @@ c
 c
  730  icn    = 0
       iplist = 1
- 731  call trxlst(intlst,lenlst,iplist,icn,node)
+ 731  call trxlst( intlst, lenlst, iplist, icn, node )
 c
 c                       check that the list node does not exceed
 c                       the number of nodes in the structure.
@@ -1943,19 +1956,22 @@ c     *                  subroutine incon_mpcs_rigid                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/24/2018 rhd             *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     scan and store rigid constraints between 2 node lists    *
 c     *                                                              *
 c     ****************************************************************
       subroutine incon_mpcs_rigid()
 c
+      use allocated_integer_list
+c
       logical, external :: match_exact, true, iszlst
-      integer :: errnum, lenlst_a, lenlst_b, param, dumi,
-     &           intlst_a(mxlsz), intlst_b(mxlsz), nodes_lst_a,
+      integer :: errnum, list_size_a, lenlst_a, lenlst_b, param, 
+     &           dumi, list_size_b, nodes_lst_a,
      &           nodes_lst_b, nterms, node_list(2), idof,
      &           icn_a, icn_b, iplist_a, iplist_b, node_a, node_b,
      &           dof_list(2)
+      integer, allocatable :: intlst_a(:), intlst_b(:)
       real :: dumr, constant, multipliers(2)
       double precision :: dumd
       character * 1 :: dums
@@ -1969,8 +1985,10 @@ c
       if( debug ) write(out,*) '..... entered incon_mpcs_rigid'
       found_rigid = .false.
 c
+      allocate( intlst_a(10), intlst_b(10) ) 
       call scan
-      call trlist( intlst_a, mxlsz, nonode, lenlst_a, errnum )
+      call trlist_allocated( intlst_a, list_size_a, nonode, 
+     &                       lenlst_a, errnum )
 c
 c              branch on the return code from trlist. a
 c              value of 1 indicates no error. a value of
@@ -2016,7 +2034,8 @@ c
       found_rigid = .true.
 c
       call scan
-      call trlist( intlst_b, mxlsz, nonode, lenlst_b, errnum )
+      call trlist_allocated( intlst_b, list_size_b, nonode, 
+     &                       lenlst_b, errnum )
       if( debug ) write(out,9010) errnum, lenlst_b
       if( errnum .eq. 4 ) return
       if( errnum .eq. 2 ) then
