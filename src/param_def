@@ -3,7 +3,7 @@ c      last modified:  11/26/2018 rhd
 c
       integer mxndel, max_threads,
      &    mxlbel, mxndof, mxgp, nstr, mxlc,
-     &    mxmat,mxlsz,mxelmp,mxstmp, mxstc,
+     &    mxmat,mxelmp,mxstmp, mxstc,
      &    mxoupr,ntrc,mxconn,mxvl,mxnmgp,
      &    mxblsz,nparam,mxelpr,vclim,
      &    mxmtpr,mxsepr,two16,ndim,max_tables,
@@ -16,7 +16,7 @@ c
 
       parameter( mxndel=20,max_threads=128,
      &    mxlbel=19,mxndof=3,mxgp=14,nstr=6,mxlc=5000,
-     &    mxmat=500,mxlsz=10000,mxelmp=30,mxstmp=30, mxstc=10,
+     &    mxmat=500,mxelmp=30,mxstmp=30, mxstc=10,
      &    mxoupr=30,ntrc=10,mxconn=100,mxvl=128,mxnmgp=10,
      &    mxblsz=128,nparam=3,mxelpr=43,vclim=28,
      &    mxmtpr=300,mxsepr=16,two16=65536,ndim=3,max_tables=20,
