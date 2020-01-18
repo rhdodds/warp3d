@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 11/19/2019                      *
+c     *              last modified : 12/3/2019 rhd                   *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -77,8 +77,8 @@ c              --- logical arrays/vectors/scalars ---
 c
 !dir$ attributes align: 64::trace, convrg
       logical ::
-     &    prnres, halt, linmas, newstf, zrocon, newtrn,
-     &    newmas, incflg, ifvcmp, prlres, input_ok, adaptive_flag,
+     &    halt, linmas, newstf, zrocon, newtrn,
+     &    newmas, incflg, ifvcmp, input_ok, adaptive_flag,
      &    new_constraints, batch_messages, signal_flag,
      &    scalar_blocking, growth_k_flag, qbar_flag,
      &    solver_out_of_core, show_details, new_analysis_param,
@@ -96,7 +96,7 @@ c
       integer, allocatable, dimension (:) :: dstmap, cstmap
 
 !dir$ attributes align: 64 :: cp, dcp, icp
-!dir$ attributes align: 64 :: matlst, lodlst, prslst, plrlst, stprng 
+!dir$ attributes align: 64 :: matlst, lodlst, stprng 
 !dir$ attributes align: 64 :: bits, outmap, blk_ptr_head 
 !dir$ attributes align: 64 :: MPI_DOF_LOCAL, num_dof_local
 !dir$ attributes align: 64 :: proc_pids
@@ -105,14 +105,14 @@ c
 c
       integer ::  !   gpmap(mxtgp),
      &    cp(mxedof), dcp(mxedof), icp(mxutsz,2), matlst(mxmat),
-     &    lodlst(mxlc), prslst(mxlsz), plrlst(mxlsz), stprng(mxlc,2),
+     &    lodlst(mxlc), stprng(mxlc,2),
      &    bits(31), outmap(mxlbel,mxelmp),
      &    blk_ptr_head(0:max_procs - 1),
      &    MPI_DOF_LOCAL(0:max_procs-1), num_dof_local(0:max_procs-1),
      &    proc_pids(1:max_procs-1)     ! end of arrays
 c
       integer :: noelem, nonode, nummat, numcol,
-     &    nodof, nlibel, numlod, nprs, nplrs, numstc, nelblk, numgrp,
+     &    nodof, nlibel, numlod, numstc, nelblk, numgrp,
      &    lgnmcn, mxiter, mniter, lgoump, mxlitr, num_term_ifv,
      &    num_term_loads, mathed, csthed,  lodhed, inctop, crdtop,
      &    in, out, histep, lowstp, ltmstp, num_warn, num_error,
