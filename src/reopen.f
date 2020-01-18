@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 6/18/2019 rhd              *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -126,7 +126,7 @@ c
      &              crdtop, nummat, numcol, histep,
      &              lowstp, ltmstp, nlibel, numlod, mxiter,
      &              mniter, lodhed, lgnmcn, mxlitr,
-     &              nprs, nplrs, nelblk, numgrp, lgoump,
+     &              nelblk, numgrp, lgoump,
      &              max_current_pts, max_current_curves,
      &              num_seg_curve_sets,
      &              solver_flag, old_solver_flag, solver_memory,
@@ -149,10 +149,10 @@ c                       read in logical and character (scalar)
 c                       variables.
 c
 c
-      read(fileno) prnres,halt,
+      read(fileno) halt,
      &             linmas,ifvcmp,zrocon,growth_k_flag,
      &             newtrn,lsldnm,incflg,
-     &             prlres,adaptive_flag,batch_messages,
+     &             adaptive_flag,batch_messages,
      &             signal_flag, scalar_blocking, stname,
      &             qbar_flag, solver_out_of_core, solver_scr_dir,
      &             show_details, temperatures, sparse_stiff_output,
@@ -202,7 +202,6 @@ c
       call rd2d( fileno, outmap,mxlbel,nlibel,mxelmp )
       call rdbk( fileno, matlst, mxmat )
       call init_maps( fileno, 2 )
-      call rdbk( fileno, plrlst, mxlsz )
       call rdbk( fileno, stprng, mxlc*2 )
       call mem_allocate( 9 )
       call rdbk( fileno, incmap, noelem )
@@ -211,7 +210,6 @@ c
       call rdbk( fileno, dstmap, nonode )
       call rdbk( fileno, cstmap, nodof )
       call rdbk( fileno, incid, inctop )
-      call rdbk( fileno, prslst, mxlsz )
       call rdbk( fileno, lodlst, mxlc )
       call chk_data_key( fileno, 2, 0 )
       call init_maps( fileno, 4 )

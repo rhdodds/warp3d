@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/18/2019 rhd              *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -141,7 +141,7 @@ c
      &              crdtop, nummat, numcol, histep,
      &              lowstp, ltmstp, nlibel, numlod, mxiter,
      &              mniter, lodhed, lgnmcn, mxlitr,
-     &              nprs, nplrs, nelblk, numgrp, lgoump,
+     &              nelblk, numgrp, lgoump,
      &              max_current_pts, max_current_curves,
      &              num_seg_curve_sets,
      &              solver_flag, old_solver_flag, solver_memory,
@@ -164,10 +164,10 @@ c                       variables.
 c
 c
       initial_stresses_exist = allocated( initial_stresses )
-      write(fileno) prnres,halt,
+      write(fileno) halt,
      &              linmas,ifvcmp,zrocon,growth_k_flag,
      &              newtrn,lsldnm,incflg,
-     &              prlres,adaptive_flag,batch_messages,
+     &              adaptive_flag,batch_messages,
      &              signal_flag, scalar_blocking, stname,
      &              qbar_flag, solver_out_of_core, solver_scr_dir,
      &              show_details, temperatures, sparse_stiff_output,
@@ -215,14 +215,12 @@ c
       call wrt2d( fileno, outmap,mxlbel,nlibel,mxelmp )
       call wrtbk( fileno, matlst, mxmat )
       call wrtbk( fileno, invdst, nodof )
-      call wrtbk( fileno, plrlst, mxlsz )
       call wrtbk( fileno, stprng, mxlc*2 )
       call wrtbk( fileno, incmap, noelem )
       call wrtbk( fileno, crdmap, nonode )
       call wrtbk( fileno, dstmap, nonode )
       call wrtbk( fileno, cstmap, nodof )
       call wrtbk( fileno, incid,  inctop )
-      call wrtbk( fileno, prslst, mxlsz )
       call wrtbk( fileno, lodlst, mxlc )
       write (fileno) check_data_key
       call store_cmplx_int( fileno, 1 )
