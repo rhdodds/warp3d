@@ -583,7 +583,7 @@ $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_trlist$O : mod_trlist.f mod_scan.f mod_main.f param_def
+$(ODIR)/mod_trlist$O : mod_trlist.f param_def $(OD)/mod_main$O $(OD)/mod_scan$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
