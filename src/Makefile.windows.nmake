@@ -7,7 +7,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 7/23/2019 rhd
+#   Last modifications: 1/18/2020 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -61,7 +61,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 3960
+BUILDNUM = 3980
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
@@ -118,8 +118,10 @@ OBJ =	 \
 	$(OD)/mod_mpi_lnpcg$O	 \
 	$(OD)/mod_performance$O \
 	$(OD)/mod_pconvert$O	 \
+	$(OD)/mod_scan$O       \
 	$(OD)/mod_segmental_curves$O	 \
 	$(OD)/mod_stiffness$O	 \
+	$(OD)/mod_trlist$O \
 	$(OD)/user_routines_module$O \
 	$(OD)/addifv$O	 \
 	$(OD)/addmas$O	 \
@@ -209,6 +211,7 @@ OBJ =	 \
 	$(OD)/inlod$O	 \
 	$(OD)/inmat$O	 \
 	$(OD)/innum$O	 \
+	$(OD)/inpatch$O  \
 	$(OD)/intab$O	 \
 	$(OD)/iodevn$O	 \
 	$(OD)/kg1$O	 \
@@ -458,7 +461,7 @@ $(OD)/cohes_elem$O : cohes_elem.f param_def
 	$(F90) /O3 /Qip  /c cohes_elem.f
 	$(MVC) cohes_elem$O $@
 
-$(OD)/comput$O : comput.f $(OD)/mod_main$O \
+$(OD)/comput$O : comput.f $(OD)/mod_main$O $(OD)/mod_trlist$O \
                    param_def $(OD)/mod_jintegral$O
 	$(F90) /O3 /Qip  /c comput.f
 	$(MVC) comput$O $@
@@ -714,7 +717,7 @@ $(OD)/inclmass$O : inclmass.f $(OD)/mod_eleblocks$O \
 	$(F90) /O3 /Qip  /c inclmass.f
 	$(MVC) inclmass$O $@
 
-$(OD)/inalpha$O : inalpha.f $(OD)/mod_main$O \
+$(OD)/inalpha$O : inalpha.f $(OD)/mod_main$O $(OD)/mod_trlist$O \
                    param_def
 	$(F90) /O3 /Qip  /c inalpha.f
 	$(MVC) inalpha$O $@
@@ -725,13 +728,13 @@ $(OD)/incomp$O : incomp.f $(OD)/mod_main$O \
 	$(F90) /O3 /Qip  /c incomp.f
 	$(MVC) incomp$O $@
 
-$(OD)/incon$O : incon.f $(OD)/mod_main$O \
+$(OD)/incon$O : incon.f $(OD)/mod_main$O $(OD)/mod_trlist$O \
                    param_def $(OD)/mod_damage$O \
                    $(OD)/mod_main$O $(OD)/mod_mpc$O
 	$(F90) /O3 /Qip  /c incon.f
 	$(MVC) incon$O $@
 
-$(OD)/insurf$O : insurf.f $(OD)/mod_mpc$O \
+$(OD)/insurf$O : insurf.f $(OD)/mod_mpc$O $(OD)/mod_trlist$O \
                    $(OD)/mod_main$O param_def
 	$(F90) /O3 /Qip  /c insurf.f
 	$(MVC) insurf$O $@
@@ -756,13 +759,13 @@ $(OD)/incrystal$O : incrystal.f param_def $(OD)/mod_main$O \
 	$(F90) /O3 /Qip  /c incrystal.f
 	$(MVC) incrystal$O $@
 
-$(OD)/incrack$O : incrack.f $(OD)/mod_crack_growth$O \
+$(OD)/incrack$O : incrack.f $(OD)/mod_crack_growth$O  \
                    $(OD)/mod_damage$O $(OD)/mod_main$O \
-                   param_def $(OD)/mod_main$O
+                   param_def $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c incrack.f
 	$(MVC) incrack$O $@
 
-$(OD)/infgm$O : infgm.f $(OD)/mod_main$O \
+$(OD)/infgm$O : infgm.f $(OD)/mod_main$O  $(OD)/mod_trlist$O \
                    param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c infgm.f
 	$(MVC) infgm$O $@
@@ -772,7 +775,7 @@ $(OD)/incurv$O : incurv.f param_def \
 	$(F90) /O3 /Qip  /c incurv.f
 	$(MVC) incurv$O $@
 
-$(OD)/indom$O : indom.f $(OD)/mod_main$O \
+$(OD)/indom$O : indom.f $(OD)/mod_main$O $(OD)/mod_trlist$O \
                    param_def $(OD)/mod_jintegral$O
 	$(F90) /O3 /Qip  /c indom.f
 	$(MVC) indom$O $@
@@ -788,7 +791,7 @@ $(OD)/inelbk$O : inelbk.f param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c inelbk.f
 	$(MVC) inelbk$O $@
 
-$(OD)/inelem$O : inelem.f param_def $(OD)/mod_main$O
+$(OD)/inelem$O : inelem.f param_def $(OD)/mod_main$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c inelem.f
 	$(MVC) inelem$O $@
 
@@ -797,13 +800,13 @@ $(OD)/infile$O : infile.f $(OD)/mod_file_info$O \
 	$(F90) /O3 /Qip  /c infile.f
 	$(MVC) infile$O $@
 
-$(OD)/inicon$O : inicon.f $(OD)/mod_main$O \
+$(OD)/inicon$O : inicon.f $(OD)/mod_main$O $(OD)/mod_trlist$O \
                    param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c inicon.f
 	$(MVC) inicon$O $@
 
 $(OD)/ininc$O : ininc.f $(OD)/mod_main$O \
-                   param_def $(OD)/mod_main$O
+                   param_def  $(OD)/mod_trlist$O 
 	$(F90) /O3 /Qip  /c ininc.f
 	$(MVC) ininc$O $@
 
@@ -821,13 +824,13 @@ $(OD)/initdm$O : initdm.f $(OD)/mod_jintegral$O
 	$(F90) /O3 /Qip  /c initdm.f
 	$(MVC) initdm$O $@
 
-$(OD)/inlod$O : inlod.f $(OD)/mod_elem_load$O \
+$(OD)/inlod$O : inlod.f $(OD)/mod_elem_load$O $(OD)/mod_trlist$O \
                    $(OD)/mod_main$O param_def \
                    $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c inlod.f
 	$(MVC) inlod$O $@
 
-$(OD)/inmat$O : inmat.f $(OD)/mod_main$O \
+$(OD)/inmat$O : inmat.f $(OD)/mod_main$O $(OD)/mod_trlist$O \
                    param_def $(OD)/mod_segmental_curves$O \
                    $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c inmat.f
@@ -837,6 +840,11 @@ $(OD)/innum$O : innum.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_main$O
 	$(F90) /O3 /Qip  /c innum.f
 	$(MVC) innum$O $@
+
+$(OD)/inpatch$O : inpatch.f $(OD)/mod_main$O \
+                   param_def 
+	$(F90) /O3 /Qip  /c inpatch.f
+	$(MVC) inpatch$O $@
 
 $(OD)/intab$O : intab.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_main$O
@@ -856,7 +864,7 @@ $(OD)/kg1$O : kg1.f param_def
 
 $(OD)/kill_element$O : kill_element.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_main$O \
-                   $(OD)/mod_eleblocks$O
+                   $(OD)/mod_eleblocks$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c kill_element.f
 	$(MVC) kill_element$O $@
 #
@@ -965,12 +973,12 @@ $(OD)/mnralg$O : mnralg.f param_def $(OD)/mod_main$O \
                  $(OD)/mod_adaptive_steps$O $(OD)/distributed_assembly$O\
                  $(OD)/mod_stiffness$O $(OD)/mod_mpc$O $(OD)/mod_performance$O \
                  $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
-                 $(OD)/mod_hypre$O
+                 $(OD)/mod_hypre$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c mnralg.f
 	$(MVC) mnralg$O $@
 
 $(OD)/mpc_modify$O : mpc_modify.f $(OD)/mod_stiffness$O \
-                   $(OD)/mod_mpc$O
+                   $(OD)/mod_mpc$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c mpc_modify.f
 	$(MVC) mpc_modify$O $@
 
@@ -1017,7 +1025,7 @@ $(OD)/ouddpa$O : ouddpa.f $(OD)/mod_main$O \
 	$(F90) /O3 /Qip  /c ouddpa.f
 	$(MVC) ouddpa$O $@
 
-$(OD)/oudriv$O : oudriv.f $(OD)/mod_main$O
+$(OD)/oudriv$O : oudriv.f $(OD)/mod_main$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c oudriv.f
 	$(MVC) oudriv$O $@
 
@@ -1028,7 +1036,7 @@ $(OD)/oudups$O : oudups.f $(OD)/mod_main$O \
 	$(MVC) oudups$O $@
 
 $(OD)/oudva$O : oudva.f $(OD)/mod_main$O \
-                   param_def
+                   param_def $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c oudva.f
 	$(MVC) oudva$O $@
 
@@ -1191,7 +1199,7 @@ $(OD)/oustates$O : oustates.f $(OD)/mod_main$O \
 
 $(OD)/oustr$O : oustr.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_elblk$O \
-                   $(OD)/mod_eleblocks$O
+                   $(OD)/mod_eleblocks$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c oustr.f
 	$(MVC) oustr$O $@
 
@@ -1291,7 +1299,8 @@ $(OD)/rstgp1$O : rstgp1.f param_def $(OD)/mod_crystals$O \
 #
 #       --- s --
 #
-$(OD)/scan$O : scan.f $(OD)/mod_file_info$O
+$(OD)/scan$O : scan.f $(OD)/mod_file_info$O $(OD)/mod_scan$O \
+                   $(OD)/mod_trlist$O 
 	$(F90) /O3 /Qip  /c scan.f
 	$(MVC) scan$O $@
 
@@ -1425,7 +1434,7 @@ $(OD)/update_node_elecnt$O : update_node_elecnt.f $(OD)/mod_crack_growth$O \
 	$(MVC) update_node_elecnt$O $@
 
 $(OD)/user_list$O : user_list.f $(OD)/mod_main$O \
-                  param_def $(OD)/mod_main$O
+                  param_def $(OD)/mod_main$O $(OD)/mod_trlist$O
 	$(F90) /O3 /Qip  /c user_list.f
 	$(MVC) user_list$O $@
 
@@ -1560,6 +1569,10 @@ $(ODIR)/mod_performance$O : mod_performance.f
 	$(F90) /O3 /Qip /c mod_performance.f
 	$(MVC) mod_performance$O $@
 
+$(ODIR)/mod_scan$O : mod_scan.f
+	$(F90) /O3 /Qip /c mod_scan.f
+	$(MVC) mod_scan$O $@
+
 $(ODIR)/mod_segmental_curves$O : mod_segmental_curves.f param_def
 	$(F90) /O3 /Qip  /c mod_segmental_curves.f
 	$(MVC) mod_segmental_curves$O $@
@@ -1567,6 +1580,11 @@ $(ODIR)/mod_segmental_curves$O : mod_segmental_curves.f param_def
 $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(F90) /O3 /Qip  /c mod_stiffness.f
 	$(MVC) mod_stiffness$O $@
+
+$(ODIR)/mod_trlist$O : mod_trlist.f param_def $(OD)/mod_main$O \
+		                              $(OD)/mod_scan$O 
+	$(F90) /O3 /Qip  /c mod_trlist.f
+	$(MVC) mod_trlist$O $@
 
 $(ODIR)/user_routines_module$O : user_routines_module.f
 	$(F90) /O3 /Qip  /c user_routines_module.f
