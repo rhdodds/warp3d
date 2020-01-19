@@ -1079,6 +1079,7 @@ c              the follow on search loop will converge on 1st
 c              iteration.
 c  
       tied_node_is_a_master_node = .false.
+      if( elemchoice == 6 .or. elemchoice == 13 ) return ! bypass tets
 c
       do ii = 1, numnodeperface
        enode = localfacenode(face_id,ii)
