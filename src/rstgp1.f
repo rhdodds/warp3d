@@ -4,7 +4,7 @@ c     *                      subroutine rstgp1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/15/2018 rhd              *
+c     *                   last modified : 1/30/2020 rhd              *
 c     *                                                              *
 c     *     compute strains, stresses and                            *
 c     *     accompaning stress data at an integration point          *
@@ -286,11 +286,8 @@ c
      &                 local_work%urcs_blk_n1(1,8,gpn),
      &                 local_work%det_j(1,gpn), local_work%dfn1, 1,
      &                 local_work%is_bar_elem, local_work%is_link_elem,
-     &                 bar_volumes(1) )
-        internal_energy = internal_energy * beta_fact *
-     &                    local_work%weights(gpn)
-        plastic_work    = plastic_work * beta_fact *
-     &                    local_work%weights(gpn)
+     &                 bar_volumes(1), beta_fact,
+     &                 local_work%weights(gpn)   )
         local_work%block_energy       = internal_energy
         local_work%block_plastic_work = plastic_work
         if( local_work%capture_initial_state ) then
@@ -486,11 +483,8 @@ c
      &                 local_work%urcs_blk_n1(1,8,gpn),
      &                 local_work%det_j(1,gpn), dummy_dfn1, 2,
      &                 local_work%is_bar_elem, local_work%is_link_elem,
-     &                 bar_volumes(1)   )
-        internal_energy = internal_energy * beta_fact *
-     &                    local_work%weights(gpn)
-        plastic_work    = plastic_work * beta_fact *
-     &                    local_work%weights(gpn)
+     &                 bar_volumes(1), beta_fact,
+     &                 local_work%weights(gpn)   )
         local_work%block_energy       = internal_energy
         local_work%block_plastic_work = plastic_work
         if( local_work%capture_initial_state ) then
@@ -5419,7 +5413,7 @@ c     *    supporting routines for rstgp1 (to be inlined)            *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *               last modified : 10/18/15                       *
+c     *               last modified : 1/30/2020 rhd                  *
 c     *                                                              *
 c     *  support routines for rstgp1. include here so they can be    *
 c     *  inlined.                                                    *
@@ -5451,14 +5445,15 @@ c
       subroutine rstgp1_b( span, internal_energy, plastic_work,
      &                     gp_energies, gp_plast_work, det_j,
      &                     dfn1, itype, is_bar_elem, is_link_elem,
-     &                     bar_vols )
+     &                     bar_vols, beta_fact, weight )
       implicit none
 c
       integer :: span, itype, i
       logical :: is_bar_elem, is_link_elem
       double precision ::
      &  internal_energy, plastic_work, gp_energies(*),
-     &  det_j(*), dfn1(*), gp_plast_work(*), bar_vols(*)
+     &  det_j(*), dfn1(*), gp_plast_work(*), bar_vols(*),
+     &  beta_fact, weight, factor
 c
       if( is_bar_elem ) then
 !DIR$ VECTOR ALIGNED
@@ -5482,10 +5477,9 @@ c
       if( itype .eq. 1 ) then   ! large strain
 !DIR$ VECTOR ALIGNED
         do i = 1, span
-          internal_energy = internal_energy + gp_energies(i) *
-     &                      dfn1(i) * det_j(i) ! det_J undeformed
-          plastic_work    = plastic_work +
-     &                      gp_plast_work(i) * dfn1(i) * det_j(i)
+          factor = dfn1(i) * det_j(i) * beta_fact * weight
+          internal_energy = internal_energy + gp_energies(i) * factor
+          plastic_work    = plastic_work + gp_plast_work(i) * factor
         end do
         return
       end if
@@ -5493,9 +5487,9 @@ c
       if( itype .eq. 2 ) then   ! small strain
 !DIR$ VECTOR ALIGNED
         do i = 1, span
-         internal_energy = internal_energy + gp_energies(i) *
-     &                     det_j(i)
-         plastic_work    = plastic_work + gp_plast_work(i) * det_j(i)
+         factor = det_j(i) * beta_fact * weight
+         internal_energy = internal_energy + gp_energies(i) * factor
+         plastic_work    = plastic_work + gp_plast_work(i) * factor
         end do
         return
       end if

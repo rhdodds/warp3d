@@ -1010,6 +1010,7 @@ c
          write(out,9000) 19
          call die_abort
       end if
+      local_work%weights=-1.0d20  
 c
       allocate( local_work%sv(3), local_work%lv(3),
      &          local_work%tv(3), stat=error )
