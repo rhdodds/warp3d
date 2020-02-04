@@ -19,7 +19,7 @@ find_line( 1, "  Totals: " );
 @parts = split( / +/, $line);
 
 #
-$answer = "0.23221E+01";
+$answer = "0.23221442E+01";
 $partno = 3;
 #
 $parts[$partno] =~ s/\x0d{0,1}\x0a\Z//s;
