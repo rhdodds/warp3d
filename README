@@ -3,9 +3,9 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: July 25, 2019
+                   Last Update: February 4, 2020
 
-                  Version 18.1.8 on all platforms
+                  Version 18.2.0 on all platforms
 
 ** The multiple README files in previous releases are replaced with the
 ** QuickStart documents on home page of www.warp3d.net
@@ -15,7 +15,7 @@ directories in the WARP3D distribution for this interested in such details.
 
 ** Late Breaking News **
 
- This is a bug fix, cleanup release.
+ This is primarily a bug fix, cleanup release.
 
  Executables in the distribution and the default build process
  now use the processor dependent dispatch feature of the Intel
@@ -186,7 +186,8 @@ directories in the WARP3D distribution for this interested in such details.
   warp3d2exii (directory)
   =======================
 
-  Contains a Python (2.7.3 or later) program to create an ExodusII (.exo) database
+  Contains a Python (2.7.3 or later 2.7.x) program to 
+  create an ExodusII (.exo) database
   for post-processing by ParaView and other programs.
 
   The program is warp3d2exii (formerly named pat2exII)
@@ -211,7 +212,8 @@ directories in the WARP3D distribution for this interested in such details.
   MacOS. A Python environment on your machine will be
   needed.
 
-  ===>>  Python version 2.7.3 or later is required to run warp3d2exii.
+  ===>>  Python version 2.7.3 or later (not Python 3) is required 
+         to run warp3d2exii.
 
          See additional discussion about Python requirements in the README
          file of this directory.
@@ -403,11 +405,6 @@ directories in the WARP3D distribution for this interested in such details.
 
   Code no longer maintained as part of the distribution but that may be
   of some use to researchers.
-
-
-
-
-
 
 
 
