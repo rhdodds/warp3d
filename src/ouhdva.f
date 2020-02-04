@@ -284,7 +284,7 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 9000 format(/,5x,'Totals:',3(8x,e12.5))                                        
+ 9000 format(/,5x,'Totals:',3(5x,e15.8))                                        
 c                                                                               
       end                                                                       
                                                                                 
