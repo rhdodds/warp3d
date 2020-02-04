@@ -18,7 +18,7 @@ $line = <infile>;
 #
 @parts = split( / +/, $line);
 #
-$answer = "0.50854E-01";
+$answer = "0.50854226E-01";
 $partno = 3;
 #
 $message = " ";
