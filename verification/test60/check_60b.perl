@@ -18,7 +18,7 @@ find_line( 1, "     Totals:     " );
 #
 @parts = split( / +/, $line);
 #
-$answer = "0.23211E-01";
+$answer = "0.23211111E-01";
 $partno = 3;
 #
 $message = " ";
