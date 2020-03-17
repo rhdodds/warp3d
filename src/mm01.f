@@ -149,7 +149,7 @@ c
      &                rtse, isothermal, dtemps, local_debug,
      &                lk, beta, hprime_n1, yld_n1, kbar,
      &                mrts, yfn, instat, yield, lnelas,
-     &                eps_vol_n1, ym_n, nu_n )
+     &                eps_vol_n1, ym_n, nu_n, gpn )
 c
 c                       compute updated yield surface size, updated
 c                       backstresses and save in history. compute
@@ -311,12 +311,12 @@ c
      &                      rtse, isothermal, dtemps, debug,
      &                      lk, beta, hprime_n1, yld_n1,
      &                      kbar, mrts, yf, instat, yield,
-     &                      lnelas, eps_vol_n1, ym_n, nu_nn )
+     &                      lnelas, eps_vol_n1, ym_n, nu_nn, gpn )
       implicit none
 c
 c                     parameters
 c
-      integer :: span, mxvl, iostat(*), instat(*), iout
+      integer :: span, mxvl, iostat(*), instat(*), iout, gpn
       logical :: prior_linear(*), isothermal, debug, yield(*),
      &           lnelas(*)
       double precision ::
@@ -501,6 +501,7 @@ c
          if( lnelas(i) ) cycle
 c
          if( yf(i) .ge. yld_tol*root2*kbar(i) ) then
+c           if ( prior_linear(i) ) write(*,*) '.. pt yields: ',gpn
             yield(i) = .true.
             instat(i) = 1
          end if
