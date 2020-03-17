@@ -12,7 +12,7 @@ c
       subroutine mm02( step, iter, felem, gpn, e, nu, sigyld, exp,              
      &                 stress_n, stress_n1, strain, history,                    
      &                 history1, span, iout, signal_flag,
-     &                  killed_status )                      
+     &                 killed_status )                      
       implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
@@ -22,26 +22,25 @@ c
       logical :: killed_status(span), signal_flag
       double precision :: e(*), nu(*), sigyld(*), exp(*), 
      &    stress_n(mxvl,*), stress_n1(mxvl,*), strain(mxvl,*),
-     &    history(span,*), history1(span,*)                                                         
+     &    history(span,*), history1(span,*), deps(mxvl,6)                                                        
 c                                                                               
 c                   locally defined                                             
 c                      
       integer :: i, j, nonlin_point
       double precision ::                                                       
-     & k1, k2(mxvl), l2, pi2, twothd, third, root2, rt23, zero, one,            
-     & two, half, epsm, e1, e2, e3, epseff(mxvl), t1,                             
+     & k2(mxvl), l2,             
+     & epsm, e1, e2, e3, epseff(mxvl), t1,                             
      & epsyld(mxvl), epslim(mxvl), g, c, a, b, eps_plas(6),                                 
      & theta, c1, c2, epsnc(mxvl), signc(mxvl), rnc(mxvl),                      
      & sigeff(mxvl),  eps_elas(mxvl,6), shear_mod(mxvl)                         
-      logical :: mm02es, debug, signal, nonlinear_flags(mxvl), test,            
+      logical :: mm02es, debug, nonlinear_flags(mxvl), test,            
      &           nonlinear_points, linear_flags(mxvl)                           
-c                                                                               
-      data pi2, twothd, third, root2, rt23                                      
-     & / 1.570795d0, 0.66666667d0, 0.333333333d0, 1.4142135623730d0,            
-     &   0.816496580927726d0 /                                                  
-      data zero, one, two, k1, half                                             
-     & / 0.0d0, 1.0d0, 2.0d0, 0.95d0, 0.5d0 /                                   
-      data signal / .true. /                                                    
+c       
+      double precision, parameter :: zero = 0.d0, one = 1.d0,
+     &   two = 2.d0, three = 3.d0, half = 0.5d0, k1 = 0.95d0, 
+     &   pi = atan(one)*4.d0, pi2 = pi*half, twothd = two/three, 
+     &   root2 = sqrt(two), rt23 = sqrt(two/three), third = one/three
+      logical, parameter :: signal = .true.
 c                                                                               
 c              model history data:                                              
 c              (1) 0.0 or 1.0 for linear/yielding                               
@@ -50,13 +49,13 @@ c              (3) scalar effective strain
 c                                                                               
       debug = felem == -1                                                        
 c                                                                               
-      if( step .eq. 1 ) then                                                    
+      if( step .eq. 1 ) then                        
        do i = 1, span                                                           
          history(i,1:5) = zero                                                  
-         history1(i,1:5) = zero                                                 
+         history1(i,1:5) = zero     
        end do                                                                   
       end if                                                                    
-c                                                                               
+c                                                               
 c             get the effective strain for the total strain. check if           
 c             we are still on the linear-reponse below the transition           
 c             point. set logical linear vs. nonlinear flag for element.         
@@ -213,12 +212,12 @@ c
          eps_elas(i,5) = stress_n1(i,5) / shear_mod(i)                          
          eps_elas(i,6) = stress_n1(i,6) / shear_mod(i)                          
          stress_n1(i,8) =  stress_n1(i,7) -  half *                             
-     &    (  eps_elas(i,1) * stress_n1(i,1)                                     
-     &     + eps_elas(i,2) * stress_n1(i,2)                                     
-     &     + eps_elas(i,3) * stress_n1(i,3)                                     
-     &     + eps_elas(i,4) * stress_n1(i,4)                                     
-     &     + eps_elas(i,5) * stress_n1(i,5)                                     
-     &     + eps_elas(i,6) * stress_n1(i,6) )  
+     &      (  eps_elas(i,1) * stress_n1(i,1)                                     
+     &       + eps_elas(i,2) * stress_n1(i,2)                                     
+     &       + eps_elas(i,3) * stress_n1(i,3)                                     
+     &       + eps_elas(i,4) * stress_n1(i,4)                                     
+     &       + eps_elas(i,5) * stress_n1(i,5)                                     
+     &       + eps_elas(i,6) * stress_n1(i,6) )  
          stress_n1(i,9) =  zero                                              
          if( nonlinear_flags(i) ) then  
            eps_plas(1:6) = strain(i,1:6) - eps_elas(i,1:6)
@@ -271,11 +270,11 @@ c
      &                         k2, epsnc, signc, rnc )                          
       implicit double precision ( a-h,o-z)                                      
 c                                                                               
-      double precision ::                                                       
-     &   nu, k2                                                                 
-      data  maxitr / 30 /, toler / 0.0001d0 /                                   
-      data  twothd, third, one, two, half, zero                                 
-     &  / 0.666666667d0, 0.333333333d0, 1.0d0, 2.0d0, 0.5d0, 0.0d0 /            
+      double precision :: nu, k2                                                                 
+      integer, parameter :: maxitr = 30
+      double precision, parameter :: toler = 0.0001d0, zero = 0.d0,
+     &   one = 1.0d0, two = 2.d0, half = one/two, three = 3.d0,
+     &   twothd = two/three, third = one/three
 c                                                                               
 c             use newton-raphson iterative solution to find the                 
 c             effective stress given the effective strain for                   
@@ -393,21 +392,18 @@ c             local declarations
 c            
       integer :: i
       double precision ::                                                       
-     & one, two, three, half, onefive, six, pt25, twothd,                       
-     & third, const1, const2, epsv, sigm, upress(mxvl),                         
+     & const1, const2, epsv, sigm, upress(mxvl),                         
      & sigk1, uelask1(mxvl), sncso(mxvl), rncso(mxvl),                          
      & c1(mxvl), rncsq(mxvl), betak1, uk1(mxvl), term1,                         
      & term2, term3, betase, uk2, sigk2, betak2, expp1, c2,                     
      & term4, term5, term6, term7                                               
-c                                                                               
-      data one, two, three, half, onefive, six, pt25                            
-     &   / 1.0d0, 2.0d0, 3.0d0, 0.5d0, 1.5d0, 6.0d0, 0.25d0 /                   
-      data twothd, third                                                        
-     &  / 0.6666666667d0, 0.33333333333d0 /                                     
+c   
+      double precision, parameter :: one = 1.d0, two = 2.d0,
+     &    three = 3.d0, six = 6.d0, half = 0.5d0, onefive = 1.5d0,
+     &    pt25 = 0.25d0, twothd = two/three, third = one/three
 c                                                                               
 c             compute total stress given total strain and                       
 c             effective strain. also the total work density.                    
-c                                                                               
 c                                                                               
 c             compute stress by volumetric and deviatoric                       
 c             components.                                                       
@@ -495,7 +491,6 @@ c
       return                                                                    
 c                                                                               
       end                                                                       
-                                                                                
 c     ****************************************************************          
 c     *                                                              *          
 c     *                 subroutine mm02_set_sizes                    *          
@@ -566,12 +561,11 @@ c
 c                                                                               
 c                       locals                                                  
 c                                                                               
-      double precision,                                                         
-     & allocatable :: history_dump(:,:,:), one_elem_states(:)                   
+      double precision, allocatable :: history_dump(:,:,:),
+     &                                 one_elem_states(:)                   
       integer :: relem, elnum, hist_size, blockno                               
       logical :: do_a_block, local_debug                                        
-      double precision :: zero                                                  
-      data zero / 0.0d00 /                                                      
+      double precision, parameter :: zero = 0.d0
 c                                                                               
 c           build deformation plasticity states values output.                  
 c                                                                               
@@ -740,25 +734,22 @@ c
 c                   parameter declarations                                      
 c                                                                               
       integer :: felem, gpn, span, iout                                         
-      double precision ::                                                       
-     & strain_n1(mxvl,*), history(span,*), cep(mxvl,6,6), e(*),                 
-     & nu(*), sigyld(*), exp(*)  
+      double precision :: strain_n1(mxvl,*), history(span,*), 
+     &                    cep(mxvl,6,6), e(*), nu(*), sigyld(*), exp(*)
       logical :: killed_status(span)
 c                                                                               
 c                   locally defined                                             
 c                                                                               
       integer :: nonlin_point, i, j                                             
       double precision ::                                                       
-     & k1, k2(mxvl), epsyld(mxvl), epslim(mxvl), sigeff(mxvl),                  
-     & epseff(mxvl), l2, c1, c2, c3, c4, theta, pi2,                            
-     & root2, zero, one, two, three,                                            
+     & k2(mxvl), epsyld(mxvl), epslim(mxvl), sigeff(mxvl),                  
+     & epseff(mxvl), l2, c1, c2, c3, c4, theta,                            
      & epsnc(mxvl), signc(mxvl), rnc(mxvl)                                      
       logical :: debug, nonlinear_points, nonlinear_flags(mxvl)                 
-c                                                                               
-      data pi2, root2                                                           
-     & / 1.570795d00, 1.4142135623730d00  /                                     
-      data zero, one, two, k1, three                                            
-     & / 0.0d00, 1.0d00, 2.0d00, 0.95d00, 3.0d00 /                              
+c           
+      double precision, parameter :: zero = 0.d0, one = 1.d0, 
+     &    two = 2.d0, three = 3.d0, pi = atan(one)*4.d0, pi2 = pi/two,
+     &    root2 = sqrt(two), k1 = 0.95d0
 c                                                                               
 c              pull out model properties                                        
 c                                                                               
@@ -898,12 +889,11 @@ c
      & ev(mxvl), e1(mxvl), e2(mxvl), e3(mxvl),                                  
      & e4(mxvl), e5(mxvl), e6(mxvl), sign(mxvl), radical,                       
      & stiff, const, g(mxvl), expm1, c1,                                        
-     & c2(mxvl), c3(mxvl), temp, denom,                                         
-     & twothd, fnine, third, half, one, two                                     
-c                                                                               
-      data  twothd, fnine, third, half, one, two                                
-     & / 0.6666666667d00, 0.444444444444444d00, 0.3333333333333d00,             
-     &    0.5d00, 1.0d00, 2.0d00 /                                              
+     & c2(mxvl), c3(mxvl), temp, denom                                         
+c      
+      double precision, parameter :: one = 1.d0, two = 2.d0,
+     &   three = 3.d0, twothd = two/three, fnine = 4.d0/9.d0,
+     &   half = 0.5d0, third = one/three
 c                                                                               
 c             compute the tangent modulus matrix                                
 c                                                                               
