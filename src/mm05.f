@@ -4018,7 +4018,7 @@ c
 c *******************************************************************
 c *                                                                 *
 c *        material model # 5 -- adv. cyclic plasticity             *
-c *                                                                 *
+c *           last modified:  rhd, june 9, 2020                     *
 c *           set 3 material model dependent output values          *
 c *                                                                 *
 c *******************************************************************
@@ -4031,12 +4031,11 @@ c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
-     &  gpn, mxvl, span, iout
+      integer :: gpn, mxvl, span, iout
 c
 c
-      double precision
-     & stress(mxvl,*), elestr(mxvl,*), history(mxvl,*)
+      double precision :: stress(mxvl,*), elestr(mxvl,*), 
+     &                    history(mxvl,*)
 c
 c               description of parameters
 c               -------------------------
@@ -4074,14 +4073,10 @@ c         values for a gauss point. See Section 2.12 of manual and
 c         description of each material model. The output labels for
 c         columns 9-11 are "c1", "c2", "c3".
 c
-       integer i, iword(2)
-c
-      double precision
-     &      dword, one, three
-c
-       equivalence(dword, iword)
-c
-       data one, three / 1.0, 3.0 /
+      integer :: i, iword(2)
+      double precision :: dword
+      double precision, parameter :: one = 1.d0, three = 1.d0
+      equivalence (dword, iword)
 c
 c
 c   mat_va11 = c1 = accumulated plastic strain as used in material model
@@ -4093,19 +4088,15 @@ c                 = 1 for active plastic loading
 c                 = 3 otherwise
 c
 c
-       do i= 1, span
+      do i = 1, span
          elestr(i,9)  = history(i,3)
          elestr(i,10) = history(i,2)
-         elestr(i,11) = three
          dword = history(i,4)
-         if (iword(i) .eq. 1 ) then
-           elestr(i,11) = one
-         end if
-       end do
+         elestr(i,11) = dble( iword(1) )
+      end do
 c
-c
-       return
-       end
+      return
+      end
 
 
 c     ****************************************************************

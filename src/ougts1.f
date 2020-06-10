@@ -25,7 +25,7 @@ c
       include 'param_def'                                                       
                                                                                 
       integer :: span, blk, felem, ngp, mat_type, matnum, iout,                 
-     &           nowstep                                                        
+     &           nowstep                                                       
       logical :: do_stresses, geonl                                             
       double precision ::  nowtime                                              
 c                                                                               
@@ -36,7 +36,7 @@ c
       equivalence ( iword, dword )                                              
 c                                                                               
       integer :: info(10), gpn, i, ii, nprops, kinc, kout, nstatv,              
-     &           ielem, noel, npt                                               
+     &           ielem, noel, npt                                             
       logical :: do_strains                                                     
       logical ,parameter :: local_debug = .false.                               
       character(len=8) :: cmname                                                
@@ -187,11 +187,11 @@ c
       case ( 5 )                                                                
 c                                                                               
 c                       adv. cyclic plasticity model                            
-c                                                                               
+c  
            do gpn = 1, ngp                                                      
              call oumm05( gpn, mxvl, span, iout, elestr(1,1,gpn),               
-     &                    urcs_blk_n(1,1,gpn), elem_hist(1,1,gpn) )             
-           end do                                                               
+     &                    urcs_blk_n(1,1,gpn), elem_hist(1,1,gpn) )  
+           end do           
 c                                                                               
       case ( 6 )                                                                
 c                                                                               
@@ -199,7 +199,7 @@ c                       creep model
 c                                                                               
            do gpn = 1, ngp                                                      
              call oumm06( gpn, mxvl, span, iout, elestr(1,1,gpn),               
-     &                    urcs_blk_n(1,1,gpn), elem_hist(1,1,gpn) )             
+     &                    urcs_blk_n(1,1,gpn), elem_hist(1,1,gpn) )    
            end do                                                               
 c                                                                               
       case ( 7 )                                                                

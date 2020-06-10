@@ -4,7 +4,7 @@ c     *                      subroutine oupstr_elem                  *
 c     *                                                              *          
 c     *                       written by : kck                       *          
 c     *                                                              *          
-c     *                   last modified : 8/20/2017 rhd              *          
+c     *                   last modified : Jun 9, 2020 rhd            *          
 c     *                                                              *          
 c     *  drive output of stress or strain element results to         *          
 c     *  (1) a Patran file in either binary or formatted forms       *          
@@ -98,18 +98,8 @@ c
 c                       duplicate necessary element block data.                 
 c                                                                               
          call oudups( span, felem, num_int_points, geo_non_flg, stress,         
-     &                  .false. )                                               
-                                                                                
-         if( local_debug ) then                                                 
-            do i =1, span                                                       
-                elem = felem + i -1                                             
-                write(*,*) '... GP results for element: ', elem                 
-                do j = 1, 8  ! gp number                                        
-                    write(*,9000)  j, urcs_blk_n(i,1:6,j)                       
-                end do                                                          
-            end do                                                              
-         end if                                                                 
-                                                                                
+     &                  .false. )   
+c                                            
 c                       compute the element block center stress/strain          
 c                       data.                                                   
 c                                                                               
