@@ -1,11 +1,15 @@
 
-Last Update: April 15, 2019
----------------------------
+Last Update: June 15, 2020
+--------------------------
 
 See also: Workflow_WARP3D_to_ParaView on Downloads page of
           www.warp3d.net
 
-Python 2.7.x is required for warp3d2exii
+
+Python 3.8.x or later
+Python 2.7.3 or later
+
+Python 3 is preferred. At some point Python 2 will not work.
 
 warp3d2exII is a stand-alone Python program (see also last Section here).
 (a copy is also named pat2xii to remain the older naming for a while longer)
@@ -111,31 +115,13 @@ Efficiency:
 Python Requirements for warp3d2exii
 ================================================================================
 
-warp3d2exii is built and tested on Python 2.7.3 and later
+warp3d2exii is built and tested on Python 3.8.x 2.7.3 and later
 on Windows, Linux and Mac OS X.
 
 You will need a working Python environment to use warp3d2exii (in a
 Bash shell for Linux and OS X and in the command prompt for
 Windows)
 
-Python maybe installed through various free and commercial mechanisms on
-each of the platforms. Not all of them work equally well and/or contain the
-most common packages. You will need to test your particular implementation.
-
-These mostly standard packages will be imported when warp3d2exii starts up:
-
-   import os
-   import os.path
-   import time
-   import glob   
-   from collections import OrderedDict
-   import numpy as np
-   import re
-   import itertools
-   import scipy as sp
-
-Use easy_install or pip as needed for your Python implementation
-as required to install fortranformat.  
-
-
+See the QuickStart documents in the WARP3D distribution for your platform
+Instructions are included to install Python 3 if needed.
 

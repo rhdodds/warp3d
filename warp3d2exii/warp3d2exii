@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+#
+import os
+import os.path
+import time
+import glob
+import warnings
+#
+import patran
+import femodel
+import readers
+import writers
+
+
+def load_mat_headers(dirpath):
+  """
+    Load the material output file headers into the results_lookup data
+    structure.
+  """
+  mat_header_files = glob.glob(os.path.join(dirpath,'states_header_*'))
+  for hfile in mat_header_files:
+    matname = os.path.basename(hfile).replace("states_header_","")
+    uname = "_" + matname
+    patran.mats.append(uname)
+    tname = "m" + uname
+    descs = load_descriptions(hfile)
+    patran.results_lookup[tname] = descs
+  
+def load_descriptions(hfile, join = ' - ', nchar = 8):
+  """
+    Load the material descriptions from a header file
+      hfile   path to file
+      join    how to join the short and long descriptions
+      nchar   number of characters in the short descriptions
+  """
+  # A state machine to read the header files.  Not too complicated I hope...
+  state = 0
+  with open(hfile) as f:
+    descs = []
+    for line in f:
+      line = line.strip()
+      if line[0] == '#':
+        continue
+      if state == 0:
+        # Read the number of state variables
+        nstates = int(line)
+        state = 1
+      elif state == 1:
+        # What we actually want -- read each description
+        # This assumes the # gets written as i2
+        # 1) Kill everything up the first space and strip
+        i = line.index(' ')
+        line = line[i:].strip()
+        # 2) Read nchar characters as the short description (strip to make nice)
+        sdesc = line[:nchar].strip()
+        # 3) Strip the remainder and assume it's the long description
+        ldesc = line[nchar:].strip()
+        # 4) Join the two with the join string
+        desc = join.join((sdesc, ldesc))
+        # 5) Append to the list
+        descs.append(desc)
+      else:
+        raise ValueError("Unknown state.")
+  
+  return descs
+
+def check_file_exists(path):
+  if not os.path.isfile(path):
+    raise ValueError("File %s does not exist!" % path)
+
+def check_dir_exists(path):
+  if not os.path.isdir(path):
+    raise ValueError("Directory %s does not exist!" % path)
+
+def process_results_dir(dirpath):
+  """
+    Find and group all valid flat warp3d results files in directory dirpath.
+
+    Sort them into two lists, one for nodal results and one for element
+    results.  Each list contains the Patran results file descriptor class
+    corresponding to the data type.
+  """
+  print(("\nProcessing directory %s:" % dirpath))
+  files = [ f for f in os.listdir(dirpath) if os.path.isfile(os.path.join(
+    dirpath,f))]
+  files = [ f for f in files if patran.valid_result_file(f) ]
+  print((" ...found %i results files" % len(files)))
+  
+  # Parse into a big results list
+  results = []
+  for f in files:
+    loc, rtype, step, ftype = patran.parse_result_fname(f)
+    dcode = loc+rtype
+    full_path = os.path.join(dirpath,f)
+      
+    obj = next((x for x in results if x.description == dcode), None)
+    if obj is not None:
+      obj.add_file_at_step(step, ftype, full_path)
+    else:
+      results.append(patran.PatranResultsDesc(loc,rtype))
+      results[-1].add_file_at_step(step, ftype, full_path)
+
+  # Add in the field labels
+  for r in results:
+    if r.rtype not in patran.results_lookup:
+      raise ValueError("Unknown results file type %s." % r.rtype)
+    else:
+      r.labels = patran.results_lookup[r.rtype]
+  
+  # Split into two lists: one for elements and one for nodes
+  node_results = [x for x in results if x.loc == 'n']
+  elem_results = [x for x in results if x.loc == 'e']
+  
+  return node_results, elem_results
+
+#
+#         ****    main   ****
+#
+#
+if __name__=="__main__":
+
+  header = "\n\n*** warp3d2exII version 3.0 (Python) ***\
+   \n\n... Reads .text or .str flat results files. See Section 2.12 of WARP3D manual \n"
+
+  warnings.filterwarnings("ignore")
+  print(header)
+
+  efname = input("=> Filename for Exodus II output: ")
+  if os.path.splitext(efname)[1] != '.exo':
+    efname += '.exo'
+
+  selection = 0
+  while selection not in (1,2):
+    choice = 1
+    selection = int(choice)
+
+  if selection == 1:
+    sfname = input("=> Path to flat file for model description: ")
+    check_file_exists(sfname)
+  else:
+    raise ValueError("Unknown input type choice.")
+
+  dirpath = input("=> Path to directory with results files: ")
+  check_dir_exists(dirpath)
+  
+  yn = ''
+  while yn != 'y' and yn != 'n':
+    yn = input("=> Input time file with physical times for each step (y/n)? ")
+
+  if yn == 'y':
+    tfile = input("=> Path to time step file: ")
+    check_file_exists(tfile)
+  else:
+    tfile = None
+  
+  yn = ''
+  while yn != 'y' and yn != 'n':
+    yn = input("=> Write a large model Exodus II file [recommend no] (y/n)? ")
+
+  if yn == 'y':
+    large = True
+  else:
+    large = False
+  
+  load_mat_headers(dirpath)
+  patran.reg = patran.recompile()
+  node_results, elem_results = process_results_dir(dirpath)
+
+  print("");  start_time = time.time()
+  
+  print("Reading FE model into memory:")
+  model = femodel.SimpleFEModel()
+  if selection == 1:
+    reader = readers.SimpleReader(sfname, noderesults=node_results,
+      elemresults=elem_results, timestepfile=tfile)
+  else:
+    raise ValueError("Unknown model input type.")
+
+  model.read(reader)
+  end_time = time.time()
+  print("Completed reading model/results @ wall time: \
+     %5.1f (secs)\n"% (end_time-start_time)); 
+
+  print(("Writing model and results to ExodusII file: %s" % efname))
+  w = writers.ExodusIIWriter(efname, large_file = large)
+  w.write(model)
+  end_time = time.time()
+  print("Completed writing ExodusII file. wall time: \
+     %5.1f (secs)\n"% (end_time-start_time))
+  print("Closing file and pushing file buffers to disk")
+  print("   may require several minutes for very large data sets...\n\n")
+#
+  exit()    
+ 
