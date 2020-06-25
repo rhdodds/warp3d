@@ -484,13 +484,21 @@ def initialize():
 #
  if linux :
    continuation = ';'
-   warp_name = '$WARP3D_HOME"/run_linux/warp3d_Intel.omp" '
    print(">>> Platform: Linux\n" )
+   choice = input(">>> Intel Fortran version (=0), GFortran version(=1):") 
+   if choice == "0" :
+    warp_name = '$WARP3D_HOME"/run_linux/warp3d_Intel.omp" '
+   if choice == "1" :
+    warp_name = '$WARP3D_HOME"/run_linux/warp3d_gfortran.omp" '
 #
  if osx :
    continuation = ';'
-   warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
    print(">>> Platform: Mac OSX\n" )
+   choice = input(">>> Intel Fortran version (=0), GFortran version(=1):")
+   if choice == "0" :
+      warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
+   if choice == "1" :
+      warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d_gfortran.omp" '
 #
  str_threads = str(input(">>> Number of threads to use: " )  )
  threads = 'set OMP_NUM_THREADS='+str_threads + continuation + \
@@ -499,7 +507,7 @@ def initialize():
 # 
  print("\n>>> Note: comparison and output values may be" \
                " different in the last 1 or 2")
- print("          signficant digits with various number of threads")
+ print("          signficant digits with various number of threads\n")
 #
  count_diffs = 0
  failed_search ="\n\n\t\t ***** cannot find required output to check\n\n"
