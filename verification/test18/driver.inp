@@ -1,0 +1,55 @@
+#
+Test 18 (Gurson model, impact loading, restart)
+===============================================
+#
+#    number of problems
+#
+ 3
+#
+#    list of problem titles for output
+#
+test_18a
+test_18b
+test_18e
+*
+*   list of output files
+*
+test_18a_out
+test_18b_out
+test_18e_out
+*
+*    list of input files
+*
+test_18a
+test_18b
+test_18e
+*
+*        check results problem 1
+*
+3      # number of search lines
+ 'step:    30'
+ 'J-integral components' 
+ 'domain        dm1'
+ 1
+0.1310E+01
+9
+*
+*        check results problem 2
+*
+3      # number of search lines
+ 'step:    60'
+ 'J-integral components' 
+ 'domain        dm1'
+ 1
+0.2941E+01
+9
+*
+*        check results problem 3
+*
+3      # number of search lines
+ 'step:    60'
+ 'J-integral components' 
+ 'domain        dm1'
+ 1
+0.2854E+01
+9
