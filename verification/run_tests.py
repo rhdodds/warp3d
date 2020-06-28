@@ -622,7 +622,7 @@ def cleanup( output_file, problem_dir ):
  global windows
 #
  flist1 = 'wn* we* wm* *text *neutral *neut  states_header* *_db'
- flist2 =' *db *packets *tst states  energy step* model* ' 
+ flist2 =' *db *packets *tst states  *batch*mess* energy step* model* ' 
  flist  = flist1 + flist2 + output_file
  if windows :
    delstr = 'del ' + flist1 + ' 2>nul'
