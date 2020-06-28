@@ -1,0 +1,155 @@
+#
+#       driver.inp for test85
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines --  > 0 skip this number of lines after last search line,
+#                             then read line containing answer
+#                         = 0 the last searched line is also the line with data
+#                         = -1 read next line after last search line. it has data 
+#                        
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+Test 85 (user-defined initial-stresses)
+=======================================
+
+
+#
+#    number of problems
+#
+ 8
+#
+#    list of problem titles for output
+#
+test_85a
+test_85b
+test_85c
+test_85d
+test_85e
+test_85f
+test_85g
+test_85h
+*
+*   list of output files
+*
+test_85a_out
+test_85b_out
+test_85c_out
+test_85d_out
+test_85e_out
+test_85f_out
+test_85g_out
+test_85h_out
+*
+*    list of input files
+*
+test_85a
+test_85b
+test_85c
+test_85d
+test_85e
+test_85f
+test_85g
+test_85h
+*
+*        check results problem 1
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+3.333333
+ 2
+
+*
+*        check results problem 2
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+2.282380
+ 2
+
+*
+*        check results problem 3
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+3.057259
+ 2
+
+*
+*        check results problem 4
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+3.333333
+ 2
+
+*
+*        check results problem 5
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+3.333333
+ 2
+
+*
+*        check results problem 6
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+2.153094
+ 2
+
+*
+*        check results problem 7
+*
+2                                
+'step no.       2'
+ '1      1'
+0
+33.333333
+ 2
+
+
+*
+*        check results problem 8
+*
+2                                
+'step no.       2'
+ ' 201      1'
+0
+13.803901
+ 3
+
+
+
