@@ -1,0 +1,57 @@
+#
+#       driver.inp for test47
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines -- skip this number of lines after last search line
+#                        then read line containing answer
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+Test 47 (Bilinear, cyclic, thermo-plasticity)
+=============================================
+
+#
+#    number of problems
+#
+ 1
+#
+#    list of problem titles for output
+#
+test_47
+*
+*   list of output files
+*
+test_47_out
+*
+*    list of input files
+*
+test_47
+*
+*        check results problem 1
+*
+ 2                                 
+'step:     300 converged:'         
+'c2                  c3'                          
+ 1                                
+20.560236
+ 2                                 
+
