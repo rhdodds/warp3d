@@ -230,8 +230,8 @@ def test_generic( problem_dir ):
 #
 #            delete all working files in problem directory
 #
-# for i in range( num_problems ):
-#    cleanup( cpoutfiles[i], problem_dir )
+ for i in range( num_problems ):
+    cleanup( cpoutfiles[i], problem_dir )
 #
  return
 
@@ -476,6 +476,13 @@ def initialize():
  windows = os_name == 'Windows'
  linux   = os_name == 'Linux'
  osx     = os_name == 'Darwin'
+ if "WARP3D_HOME" in os.environ:
+ 	 pass
+ else:
+ 	 print("\n\n>>> Enviornment variable not set: WARP3D_HOME")
+ 	 print("    Please set this to define install directory of WARP3D and re-try...")
+ 	 print("    Program exiting...\n\n")
+ 	 exit(0)
 #
  if windows :
    continuation = '&'
@@ -564,26 +571,30 @@ def display_menu():
   m.append( "Test 87: (T-stress. surface cracked plate. face loading)" )
   m.append( "Quit" )
 #
+
   print("> Select a problem to run:\n")
   if menu_displayed == False :
     for number, entry in enumerate( m ):
        print(" ",number+1,")",entry)
     menu_displayed = True
 #
-  choice = int( input("Enter your choice (0 for menu): " ) )
-  if choice == 0 : 
-    for number, entry in enumerate( m ):
-       print(" ",number+1,")",entry)
-    menu_displayed = True
-    choice = int( input("Enter your choice (0 for menu): " ) )
+  schoice = input("Enter your choice (<return> for menu): " ) 
+  if len(schoice) == 0  : 
+    while True:
+      print(" ")
+      for number, entry in enumerate( m ):
+         print(" ",number+1,")",entry)
+      menu_displayed = True
+      schoice = input("Enter your choice (<return> for menu): " ) 
+      if len(schoice) > 0:  break
   bad_choice = False
+  choice = int( schoice )
   if choice > len( m ) : 
       bad_choice = True
   last = False
   if choice == len( m ) : last = True
 #
   return choice, bad_choice, last
-
 #
 #              function find_line
 #              ------------------
