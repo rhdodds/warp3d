@@ -1,0 +1,180 @@
+#
+#       driver.inp for test72
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines --  > 0 skip this number of lines after last search line,
+#                             then read line containing answer
+#                         = 0 the last searched line is also the line with data
+#                         = -1 read next line after last search line. it has data 
+#                        
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+Test 72 (user-defined named lists of nodes elements)
+====================================================
+
+
+#
+#    number of problems
+#
+ 8
+#
+#    list of problem titles for output
+#
+test_72a
+test_72b
+test_72c
+test_72d
+test_72e
+test_72f
+test_72g
+test_72h
+
+*   list of output files
+*
+test_72_out
+test_72b_out
+test_72c_out
+test_72d_out
+test_72e_out
+test_72f_out
+test_72g_out
+test_72h_out
+*
+*    list of input files
+*
+test72
+test72
+test72
+test72
+test72
+test72
+test72
+test72
+
+*
+*        check results problem 1
+*
+2                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+0
+853
+6
+*
+*        check results problem 2
+*
+4                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+0
+21
+7
+*
+*        check results problem 3
+*
+5                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+ >>>>> number of nodes
+0
+821
+7
+*
+*        check results problem 4
+*
+6                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+0
+1
+6
+*
+*        check results problem 5
+*
+7                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+0
+821
+6
+*
+*        check results problem 6
+*
+8                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+0
+2053
+6
+*
+*        check results problem 7
+*
+9                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+0
+51
+6
+*
+*        check results problem 8
+*
+10                                 
+'  1 u = 0.'
+' >>>>> number of nodes'
+'for proximity'
+' number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+' >>>>> number of nodes'
+0
+1
+6
