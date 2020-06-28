@@ -1,0 +1,28 @@
+#
+Test 14 (Linear elastic impact, sparse iterative solver)
+========================================================
+#
+#    number of problems
+#
+ 1
+#
+#    list of problem titles for output
+#
+test_14
+*
+*   list of output files
+*
+test_14_out
+*
+*    list of input files
+*
+test_14
+*
+*        check results problem 1
+*
+2      # number of search lines
+'step no.     500    '
+' 1000    '
+0  #  skip lines fore answer line
+-0.332151   #   answer
+2  # position of answer in line.split()
