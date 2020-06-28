@@ -1,0 +1,156 @@
+#
+#       driver.inp for testP
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines --  > 0 skip this number of lines after last search line,
+#                             then read line containing answer
+#                         = 0 the last searched line is also the line with data
+#                         = -1 read next line after last search line. it has data 
+#                        
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+TestP [Pipe, Weld, Eigenstrain, 8-node, P. Strain]
+==================================================
+
+
+#
+#    number of problems
+#
+ 9
+#
+#    list of problem titles for output
+#
+testP.1 - Eigenstrains. pre-cracked, linear-elastic
+testP.2 - Eigenstrains. crack after step 1, linear-elastic 
+testP.3 - Eigenstrains. nonlinear, crack after step 1
+testP.4 - nonlinear, using residual stresses
+testP.5 - mises, eigenstrains
+testP.5a - mises, residual stresses)
+testP.6 - cyclic, eigenstrains
+testP.6a- cyclic, residual stresses
+test).7 - deformation plasticity, eigenstrains
+*
+*   list of output files
+*
+testP_1_out
+testP_2_out
+testP_3_out
+testP_4_out
+testP_5_out
+testP_5a_out
+testP_6_out
+testP_6a_out
+testP_7_out
+
+*
+*    list of input files
+*
+ warp3d_1.inp 
+ warp3d_2.inp 
+ warp3d_3.inp 
+ warp3d_4.inp 
+ warp3d_5.inp 
+ warp3d_5a.inp 
+ warp3d_6.inp 
+ warp3d_6a.inp 
+ warp3d_7.inp 
+*
+*        check results problem 1
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.3363E-02
+ 0
+ 
+*
+*        check results problem 2
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.3353E-02
+ 0
+ 
+*
+*        check results problem 3
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.8423E-03
+ 0
+ 
+*
+*        check results problem 4
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.1270E-02
+ 0
+ 
+*
+*        check results problem 5
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.8423E-03
+ 0
+ 
+*
+*        check results problem 5a
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.1270E-02
+ 0
+ 
+*
+*        check results problem 6
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.8398E-03
+ 0
+ 
+*
+*        check results problem 6a
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.1268E-02
+ 0
+ 
+*
+*        check results problem 7
+*
+1                              
+'  average      minimum      maximum'
+  -1
+0.8428E-03
+ 0
