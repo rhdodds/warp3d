@@ -243,5 +243,5 @@ c
  compute displacements for loading alternate step 1000
 c
 c
- save to file 'test_50_rest1000'
+ save to file 'test_50_db'
  stop
