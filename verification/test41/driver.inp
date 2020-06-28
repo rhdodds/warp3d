@@ -1,0 +1,57 @@
+#
+Test 41 (rigid contact, large displacements)
+============================================
+#
+#    number of problems
+#
+ 3
+#
+#    list of problem titles for output
+#
+test_41a
+test_41b
+test_41c
+*
+*   list of output files
+*
+test_41a_out
+test_41b_out
+test_41c_out
+*
+*    list of input files
+*
+test_41a
+test_41b
+test_41c
+*
+*        check results problem 1
+*
+2      # number of search lines
+step no.    1000
+Totals: 
+0  #  skip lines fore answer line
+0.17156817E+02    #   answer
+2  # position of answer in line.split()
+*
+*
+*        check results problem 2
+*
+2      # number of search lines
+' step no.      10 '
+'   228 '
+0
+-0.113228
+2
+*
+*
+*        check results problem 3
+*
+2      # number of search lines
+' step no.      15'
+'  3781 '
+0
+0.009979
+1
+*
+*       end of file
+*
