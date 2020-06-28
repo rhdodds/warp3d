@@ -1,0 +1,73 @@
+#
+#       driver.inp for test71
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines --  > 0 skip this number of lines after last search line,
+#                             then read line containing answer
+#                         = 0 the last searched line is also the line with data
+#                         = -1 read next line after last search line. it has data 
+#                        
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+Test 71 (piston pressure loading on faces on ramp panel)
+========================================================
+
+
+#
+#    number of problems
+#
+ 2
+#
+#    list of problem titles for output
+#
+test_71
+test_71_restart
+*
+*   list of output files
+*
+test_71_out
+test_71_restart_out
+*
+*    list of input files
+*
+test_71
+test_71_restart
+*
+*        check results problem 1
+*
+3                                 
+'step no.      31         '
+' nodal velocities    '
+' node               u                   v                   w '
+-1
+0.008459
+ 1                                
+*
+*        check results problem 2
+*
+2                                 
+'  step no.      31'
+'  1            0.0084'
+0
+0.008459
+ 1                          
