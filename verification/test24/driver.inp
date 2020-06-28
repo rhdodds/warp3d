@@ -1,0 +1,30 @@
+#
+Test 24 (skew constraints)
+============================
+
+
+#
+#    number of problems
+#
+ 1
+#
+#    list of problem titles for output
+#
+test_24
+*
+*   list of output files
+*
+test_24_out
+*
+*    list of input files
+*
+test_24
+*
+*        check results problem 1
+*
+2      # number of search lines
+' output stresses 1 8' 
+' c2                  c3'
+ 1
+-205.047360
+2
