@@ -1,0 +1,58 @@
+#
+#       driver.inp for test82  djgm_overlap_taylor
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines --  > 0 skip this number of lines after last search line,
+#                             then read line containing answer
+#                         = 0 the last searched line is also the line with data
+#                         = -1 read next line after last search line. it has data 
+#                        
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+Test 82 (Crystal Plasticity options: djgm_overlap_taylor)
+=========================================================
+
+#
+#    number of problems
+#
+ 1
+#
+#    list of problem titles for output
+#
+test_djgm
+*
+*   list of output files
+*
+djgm_out
+*
+*    list of input files
+*
+warp3d_djgm_overlapped.inp
+*
+*        check results problem 1
+*
+1                                
+'1      1'
+0
+0.43893E+07
+ 2
