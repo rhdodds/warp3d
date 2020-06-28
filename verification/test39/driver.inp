@@ -1,0 +1,95 @@
+#
+#       driver.inp for test39
+#
+#       format:
+#        2 lines for title
+#        number of problems
+#        list of test_ids for print messages
+#        list of output files to use
+#        list of input files
+#
+#        for each problem
+#          number of lines to search for answer
+#          search line 1
+#          search line 2   after line 1 is found 
+#            ....
+#          skip lines -- skip this number of lines after last search line
+#                        then read line containing answer
+#          answer  -- known good solution value
+#          anspos  -- position on line to match against answer, i.e., 
+#                        words = line.split()
+#                        check words[anspos]
+#
+#        Blank lines ignored
+#
+#        Comment lines begin with:  #, !, c, C, *
+#
+#
+#
+Test 39 (CTOA and SMCS crack growth)
+====================================
+
+#
+#    number of problems
+#
+ 4
+#
+#    list of problem titles for output
+#
+test_39a
+test_39b
+test_39c
+test_39d
+*
+*   list of output files
+*
+test_39a_out
+test_39b_out
+test_39c_out
+test_39d_out
+*
+*    list of input files
+*
+test_39a
+test_39b
+test_39c
+test_39d
+*
+*        check results problem 1
+*
+ 2                                 
+'step:     200 converged:'         
+'Totals:'                          
+ 0                                 
+0.16604047E+00                     
+ 2                                 
+
+*
+*        check results problem 2
+*
+2      # number of search lines
+'solution for step:     150 converged:'
+'      4 ' 
+0
+0.064615
+1
+*
+*        check results problem 3
+*
+2      # number of search lines
+'solution for step:      75 converged:'
+'    331 '
+ 0
+0.052446
+2
+
+
+*
+*        check results problem 4
+*
+2      # number of search lines
+'solution for step:      75 converged:'
+'Totals:'
+ 0
+0.43827048E+00
+2
