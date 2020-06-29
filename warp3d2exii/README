@@ -1,15 +1,12 @@
 
-Last Update: June 15, 2020
+Last Update: June 28, 2020
 --------------------------
 
 See also: Workflow_WARP3D_to_ParaView on Downloads page of
           www.warp3d.net
 
 
-Python 3.8.x or later
-Python 2.7.3 or later
-
-Python 3 is preferred. At some point Python 2 will not work.
+Python 3.5.x or later
 
 warp3d2exII is a stand-alone Python program (see also last Section here).
 (a copy is also named pat2xii to remain the older naming for a while longer)
@@ -60,6 +57,8 @@ the following information:
 
       /path/to/file/filename-of-exodus-file
 
+   for a file current directory can use, e.g., results
+
    warp3d2exii overwrites an existing file with no warning and
    automatically appends .exo to the end of the name if not
    already included.
@@ -68,10 +67,14 @@ the following information:
 
       /path/to/file/flat_model_file.text
 
+   for a file current directory can use, e.g., model.text
+
 3) The path to the directory containing the flat results files.
    Example
 
       /path/to/results
+
+   for files in current directory can use, e.g., ./
 
 4) warp3d2exii parses the contents of the directory name entered in
    step 3 and looks for flat results files.
@@ -102,7 +105,8 @@ Efficiency:
 
    Reading of a flat model description file is very fast.   
 
-   Reading of flat results files, especially stream format, is very fast.
+   Reading of flat results files in stream format is very fast. Reading
+   text results files is considerably slower
    
    Writing of the final .exo file is reasonably fast with this version.
     
@@ -115,7 +119,7 @@ Efficiency:
 Python Requirements for warp3d2exii
 ================================================================================
 
-warp3d2exii is built and tested on Python 3.8.x 2.7.3 and later
+warp3d2exii is built and tested on Python 3.5.x and later
 on Windows, Linux and Mac OS X.
 
 You will need a working Python environment to use warp3d2exii (in a

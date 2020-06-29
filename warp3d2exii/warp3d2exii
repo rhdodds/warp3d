@@ -5,13 +5,12 @@ import os.path
 import time
 import glob
 import warnings
+import sys
 #
 import patran
 import femodel
 import readers
 import writers
-
-
 def load_mat_headers(dirpath):
   """
     Load the material output file headers into the results_lookup data
@@ -118,56 +117,68 @@ def process_results_dir(dirpath):
 #
 #
 if __name__=="__main__":
-
-  header = "\n\n*** warp3d2exII version 3.0 (Python) ***\
-   \n\n... Reads .text or .str flat results files. See Section 2.12 of WARP3D manual \n"
-
-  warnings.filterwarnings("ignore")
+#
+  header = "\n\n\t\t*** warp3d2exII version 3.0 (Python) ***\
+   \n\n>>> Reads text or stream flat results files. See Section 2.12 of WARP3D manual"
+#
+#  warnings.filterwarnings("ignore")
   print(header)
-
-  efname = input("=> Filename for Exodus II output: ")
+#
+#          must have Python >= 3.5
+#
+  ver = sys.version_info
+  print(">>> Running with Python version: " \
+      + str(ver.major)+'.'+str(ver.minor)) 
+  if ver.major == 3 and ver.minor <= 4:
+     print('\n\n  >>>>>>>>>>>>> Please upgrade to Python 3.5 or newer')
+     print('                Execution terminated\n\n')
+     exit(0)
+#
+  efname = input("\n=> Filename for Exodus II output (e.g., results): ")
   if os.path.splitext(efname)[1] != '.exo':
     efname += '.exo'
-
+#
   selection = 0
   while selection not in (1,2):
     choice = 1
     selection = int(choice)
-
+#
   if selection == 1:
-    sfname = input("=> Path to flat file for model description: ")
+    sfname = input("=> Path to flat file for model description (e.g. model.text): ")
     check_file_exists(sfname)
   else:
     raise ValueError("Unknown input type choice.")
-
-  dirpath = input("=> Path to directory with results files: ")
+#
+  dirpath = input("=> Path to directory with results files (e.g., ./): ")
   check_dir_exists(dirpath)
-  
+#  
   yn = ''
   while yn != 'y' and yn != 'n':
     yn = input("=> Input time file with physical times for each step (y/n)? ")
-
+#
   if yn == 'y':
     tfile = input("=> Path to time step file: ")
     check_file_exists(tfile)
   else:
     tfile = None
-  
+#  
   yn = ''
   while yn != 'y' and yn != 'n':
     yn = input("=> Write a large model Exodus II file [recommend no] (y/n)? ")
-
+#
   if yn == 'y':
     large = True
   else:
     large = False
-  
+#  
+#               begin actual reading of files
+#
   load_mat_headers(dirpath)
   patran.reg = patran.recompile()
   node_results, elem_results = process_results_dir(dirpath)
-
+#
   print("");  start_time = time.time()
-  
+#  
   print("Reading FE model into memory:")
   model = femodel.SimpleFEModel()
   if selection == 1:
@@ -175,12 +186,12 @@ if __name__=="__main__":
       elemresults=elem_results, timestepfile=tfile)
   else:
     raise ValueError("Unknown model input type.")
-
+#
   model.read(reader)
   end_time = time.time()
-  print("Completed reading model/results @ wall time: \
+  print("\nCompleted reading model/results @ wall time: \
      %5.1f (secs)\n"% (end_time-start_time)); 
-
+#
   print(("Writing model and results to ExodusII file: %s" % efname))
   w = writers.ExodusIIWriter(efname, large_file = large)
   w.write(model)

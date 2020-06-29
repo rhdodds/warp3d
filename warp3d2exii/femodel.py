@@ -51,27 +51,29 @@ class SimpleFEModel(FEModel):
 		print(" ...reading element data" )
 		for name, elems in reader.eblk_iterator():
 			self.eblks[name] = [self.elements[elem] for elem in elems]
-		print(" ...done")	
+		print(" ...done\n")	
 
 		print("Reading nodal results...")
 		for name, shape, fieldit in reader.node_field_iterator():
 			self.nfields[name] = shape
 			for i,values in enumerate(fieldit):
 				self.nodes[i].fields[name] = values
-		print(" ...done")	
+		print(" ...done\n")	
 
 		print("Reading element results...")
 		for name, shape, fieldit in reader.element_field_iterator():
 			self.efields[name] = shape
 			for i,values in enumerate(fieldit):
 				self.elements[i].fields[name] = values
-		print(" ...done")	
+		print(" ...done\n")	
 
-		print("Reading integration point results...")
+		print("Reading integration point results (not implemented)...")
 		for name, shape, fieldit in reader.integration_field_iterator():
 			self.ifields[name] = shape
 			for i,values in enumerate(fieldit):
 				raise NotImplementedError("Err, how to do this?")
+		print(" ...done\n")	
+
  
 	@property
 	def num_nodes(self):

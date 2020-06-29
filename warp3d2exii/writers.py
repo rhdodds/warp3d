@@ -62,7 +62,7 @@ class ExodusIIWriter(Writer):
     self.write_nodal_variables(model)
     print(" ...nodal results written")
     self.write_element_variables(model)
-    print(" ...element results written")
+    print(" ...element results written\n")
   
   def setup(self, model):
     """
@@ -109,8 +109,8 @@ class ExodusIIWriter(Writer):
       raise ValueError("No default names for dimensions > 3!")
     cn = self.ncdf.createVariable('coor_names', char_dtype,
         ('num_dim','len_name'))
-    names = np.vstack((transform_string(coor_names[i], len_name) for i 
-      in range(model.dim)))
+    names = np.vstack([transform_string(coor_names[i], len_name) for i 
+      in range(model.dim)])
     cn[:] = names
 
     # Nodes
@@ -139,8 +139,8 @@ class ExodusIIWriter(Writer):
     # Names of all blocks
     enames = self.ncdf.createVariable('eb_names', char_dtype, 
         ('num_el_blk', 'len_name'))
-    names = np.vstack((transform_string(name, len_name) for name
-      in list(model.eblks.keys()) ))
+    names = np.vstack([transform_string(name, len_name) for name
+      in list(model.eblks.keys())])
     enames[:] = names
 
     # Status of all blocks (may be wrong...)
@@ -199,8 +199,8 @@ class ExodusIIWriter(Writer):
 #   Names
     nnames = self.ncdf.createVariable('ns_names', char_dtype, 
         ('num_node_sets', 'len_name'))
-    names = np.vstack((transform_string(name, len_name) for name
-      in list(model.nsets.keys()) ))
+    names = np.vstack([transform_string(name, len_name) for name
+      in list(model.nsets.keys())])
     nnames[:] = names
 
 #   Pointless status
@@ -246,8 +246,8 @@ class ExodusIIWriter(Writer):
     # Names of all the variables
     nvnames = self.ncdf.createVariable('name_nod_var', char_dtype, 
         ('num_nod_var', 'len_name'))
-    names = np.vstack((transform_string(name, len_name) for name
-      in list(model.nfields.keys()) ))
+    names = np.vstack([transform_string(name, len_name) for name
+      in list(model.nfields.keys())])
     nvnames[:] = names
 
     # Dump each variable
@@ -286,8 +286,8 @@ class ExodusIIWriter(Writer):
     # Names of all the variables
     evnames = self.ncdf.createVariable('name_elem_var', char_dtype, 
         ('num_elem_var', 'len_name'))
-    names = np.vstack((transform_string(name, len_name) for name
-      in list(model.efields.keys()) ))
+    names = np.vstack([transform_string(name, len_name) for name
+      in list(model.efields.keys())])
     evnames[:] = names
 
     # Write a fake truth table (all blocks have all variables)
