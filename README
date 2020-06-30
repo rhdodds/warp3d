@@ -3,9 +3,9 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: February 4, 2020
+                   Last Update: July 4, 2020
 
-                  Version 18.2.0 on all platforms
+                  Version 18.2.1 on all platforms
 
 ** The multiple README files in previous releases are replaced with the
 ** QuickStart documents on home page of www.warp3d.net
@@ -186,11 +186,10 @@ directories in the WARP3D distribution for this interested in such details.
   warp3d2exii (directory)
   =======================
 
-  Contains a Python (2.7.3 or later 2.7.x) program to 
-  create an ExodusII (.exo) database
+  Contains a Python 3 program to create an ExodusII (.exo) database
   for post-processing by ParaView and other programs.
 
-  The program is warp3d2exii (formerly named pat2exII)
+  The program is warp3d2exii.
 
   warp3d2exII does the following:
 
@@ -209,14 +208,11 @@ directories in the WARP3D distribution for this interested in such details.
   further meshing, re-meshing, new constraints, boundary conitions etc.
 
   The Python source code for warp3d2exII runs on Windows, Linux and
-  MacOS. A Python environment on your machine will be
+  MacOS. A Python 3 environment on your machine will be
   needed.
 
-  ===>>  Python version 2.7.3 or later (not Python 3) is required 
-         to run warp3d2exii.
-
-         See additional discussion about Python requirements in the README
-         file of this directory.
+  The Quixckstart document for each platform describes how to obtain/install
+  Python 3 if necessary.
 
   license_agreement  (a file)
   ===========================
@@ -273,7 +269,7 @@ directories in the WARP3D distribution for this interested in such details.
   warp3d_script_linux_openmp
   warp3d_script_linux_hybrid
   warp3d_script_windows
-  warp3d_script_mac_os_x  (4 files)
+  warp3d_script_mac_os_x  
   =================================
 
   Simple Bash-shell scripts that can be customized to run WARP3D for OpenMP
@@ -291,8 +287,11 @@ directories in the WARP3D distribution for this interested in such details.
   This is our key tool to verify most all of WARP3D after making
   source code changes.
 
-  There are multiple bash scripts (run_tests.bash, run_J_tests.bash, 
-  run_mpi_tests.bash, run_J_tests_gfortran.bash, run_test_gfortran.bash).
+  There two Python 3 programs(run_tests.py, run_J_tests.py) to test
+  threads only cases on all 3 platforms. 
+
+  The Bash shell script run_mpi_tests.bash runs on Linux to test the
+  MPI version of WARP3D.
 
   These interactive scripts conduct automated execution of WARP3D
   over a wide array of models/simulations and compare results to
@@ -300,9 +299,6 @@ directories in the WARP3D distribution for this interested in such details.
 
   The scripts present a menu of simulations to execute. The longest
   verification problems run in a few minutes on 4-8 cores.
-
-  On Windows, the Bash shell and Perl programs must be available.
-  We highly recommend the free Cygwin software: https://www.cygwin.com
 
 
   example_problems  (5 directories)
