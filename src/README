@@ -1,7 +1,7 @@
 
 
                      README for WARP3D /src Directory
-                        (Updated June 2017)
+                        (Updated July 2020)
 
 
 ==========================================================================
@@ -10,35 +10,28 @@
 1. OVERVIEW
 
 This directory contains all the source code and makefiles for
-WARP3D. All source code is in *.f files. Common areas are named
- "common.....". F90 modules are named "mod...".
+WARP3D. All source code is in *.f files. Modules are named "mod...".
 
 We support WARP3D on:
 
     o Windows (64-bit) 
-    o Linux 64-bit (tested on Ubuntu 14.04 LTS)
-    o Max OS 10.11
+    o Linux 64-bit (tested on Ubuntu 18.04 LTS)
+    o Mac OS 10.14 (Mojave. May well work on Catalina)
 
-On these platforms, we use the Intel ifort & MKL compiler suite.
-ON Linux we also use the Intel MPI.
+We use the Intel Fortran compiler as the primary compiler on all
+3 platforms.
+
+On Linux, the gfortran compiler works every well.
+
+On Mac OSX, the gfortran compiler works very well if can be configured to
+run on your system -- this is sometimes not straightforward !
 
 See the specific README files for each platform in the top level
 directory.
 
 2. MAXIMUM SIZE OF MODELS
 
-
-June 2017 -> removed fixed upper limit on number of nodes
-The single file containing parameter definitions for the maximum size
-models analyzed is "param_def". Only this file is changed to increase
-or decrease the maximum problem size. Simply set:
-
- mxel=####
-
-"mxel" to the max number of elements
-and run the "Makewarp.bash" script to re-compile. Likewise, the maximum "block"
-size for the data structure used throughout WARP3D
-is "mxvl" (usually 64 or 128).
+No size limits. All global arrays are dynamically allocated.
 
 The "main" program for WARP3D is in the file "main_program.f".
 
@@ -48,41 +41,8 @@ The "main" program for WARP3D is in the file "main_program.f".
 
 2. BUILD/COMPILE PROCESS  ** Important **
 
-Precompiled executables are included for Windows (64-bit),
-64-bit Linux (Intel), and Mac OS X). For other systems, or to
-re-compile the code for any reason, follow the instructions below.
-
-Linux and OS X:
-
-The compile and link process to create a WARP3D executable is performed using
-"makefiles" and the "make" program on Linux & OS X. We provide an interactive
-shell script, "Makewarp.bash", which guides you through the process of 
-selecting options to include and then building the code via makefiles. 
-
-We strongly urge you to use ONLY this approach to build WARP3D - it is 
-very simple and easy! At a shell command prompt, say %, just enter 
-the command "Makewarp.bash".
-
-Windows:
-
-The compile and link process to create a WARP3D executable on Windows is 
-performed using a makefile and the "nmake" utility included in 
-Windows. nmake is installed as a prerequisite to the Intel Fortran 
-Compiler, so if you are planning on re-compiling the code, you already 
-have it installed.
-
-We provide a batch script, "Makewarp.bat", which sets up the proper directories
-and solvers and builds the code via an nmake file. 
-
-We urge you to use ONLY this approach to build WARP3D on Windows - it is
-very simple and easy! Within the command prompt environment that the 
-Intel Fortran Compiler creates (in the "start" menu), just "cd" to 
-the WARP3D "src" directory and enter the command ".\Makewarp.bat".
-
-Using the individual makefiles without proper knowledge can 
-lead to errors in the compiling process. Makefiles for the various 
-platforms and versions (omp, mpi_omp) are all named
-Makefile.xxx.
+Please see the Quickstart document for each platform for complete,
+up-to-date procedures to rebuild the ode on each platform.
 
 ==============================================================================
 
