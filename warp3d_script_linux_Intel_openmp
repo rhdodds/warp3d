@@ -36,6 +36,24 @@ fi
 #
 warp3d_exe="$WARP3D_HOME/run_linux/warp3d_Intel.omp"
 #
+if [[ ! -f "$WARP3D_HOME/run_linux/warp3d_Intel.omp" ]]
+then
+    echo " "; echo " "
+    echo ">>>> WARP3D executable does not exist:'$warp3d_exe'"
+    echo "     No execution possible"
+    echo " "; echo " "
+    exit
+fi
+if [[ ! -x "$WARP3D_HOME/run_linux/warp3d_Intel.omp" ]]
+then
+    echo " "; echo " "
+    echo ">>>> WARP3D executable must have execute permissions:'$warp3d_exe'"
+    echo "     No execution possible"
+    echo " "; echo " "
+    exit
+fi
+
+#
 #           set LD_LIBRARY_PATH. Examine the ordering...
 #
 #           Note: at runtime, WARP3D will use the MKL library

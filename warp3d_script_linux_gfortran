@@ -49,6 +49,23 @@ fi
 export LD_LIBRARY_PATH=$GNU_LIB64:$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
 warp3d_exe="$WARP3D_HOME/run_linux/warp3d_gfortran.omp"
 #
+if [[ ! -f "$WARP3D_HOME/run_linux/warp3d_gfortran.omp" ]]
+then
+    echo " "; echo " "
+    echo ">>>> WARP3D executable does not exist:'$warp3d_exe'"
+    echo "     No execution possible"
+    echo " "; echo " "
+    exit
+fi
+if [[ ! -x "$WARP3D_HOME/run_linux/warp3d_gfortran.omp" ]]
+then
+    echo " "; echo " "
+    echo ">>>> WARP3D executable must have execute permissions:'$warp3d_exe'"
+    echo "     No execution possible"
+    echo " "; echo " "
+    exit
+fi
+#
 #           set the number of threads for WARP3D execution and
 #           for use by the MKL sparse direct/iterative solver. Here we just
 #           assign the same number of threads for both.
