@@ -22,11 +22,19 @@ c
  list 'a' sphere origin 0 0 0 radius 10
  list 'b' cylinder first 0 -10 0 second 0 1 0 radius 10 
  list 'c' plane point x= 5 y=0 z= -10 normal nx 0 ny 4 nz 0 
- list 'd' x=10 
- list 'e' y = 0
+! check_4
+ list 'd' x=10  
+! check_5
+ list 'e' y = 0 
+! check_6
  list 'ee' z = 0
- list 'f' y=0 z=0
- list 'g' x=10 y=0 z=0
+! check_7
+ list 'f' y=0 z=0 
+! check_8
+ list 'g' x=10 y=0 z=0 
+ list 'd' copy 'z'
+! check_9
+ list 'z' display
 c
 stop
 
