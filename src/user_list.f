@@ -186,7 +186,7 @@ c
       logical :: debug
 c
       integer :: nchars, new_col, i, idummy, nlist
-      logical :: string, scanms
+      logical, external :: string, scanms
       character :: lname*24, name*80
 c
       if( debug ) write(out,*) "..ulist_copy called..."
@@ -204,8 +204,9 @@ c
 c
 c                 is new list already in table ? 
 c 
+      new_col = 0
       do i = 1, max_user_lists
-       if( scanms( user_lists(i)%name, lname, 24 ) ) then
+       if( scanms( user_lists(i)%name, lname, nchars ) ) then
          new_col = i
          exit
        end if
