@@ -28,10 +28,7 @@ c
         call ulist_error( 1 ); call scan_flushline; return
       end if
 c
-c                 check if list already exists and/or find an available column
-c                 for new list in table. if just display request, show list and
-c                 leave. lists are never deleted from the table. just defined an
-c                 possibly over written.
+c                 check if list already exists. find an available col
 c
       lname(1:24) = ' '
       call entits( name, nchars )
@@ -39,15 +36,35 @@ c
       lname(1:nchars) = name(1:nchars)
       if( debug )  write(out,*) "... list id: ", lname
 c
-      list_col  = 0; avail_col = 0
+      list_col= 0
       do i = 1, max_user_lists
-       if( user_lists(i)%length_list .eq. 0 ) then
-          if( avail_col .eq. 0 ) avail_col= i
-       end if
        if( scanms( user_lists(i)%name, lname, 24 ) ) then
-         list_col = i; exit
+         list_col = i
+         exit
        end if
       end do
+c
+      avail_col = 0
+      do i = 1, max_user_lists
+       if( user_lists(i)%length_list .eq. 0 ) then
+          avail_col= i
+          exit
+       end if
+      end do
+c
+c                 process delete, display here since simple
+c
+      if( matchs( 'delete', 4 ) ) then
+        if(  list_col .eq. 0 ) then
+          call ulist_error( 2 )
+        else
+          user_lists(list_col)%length_list = 0
+          if( allocated(user_lists(list_col)%list) )
+     &       deallocate(user_lists(list_col)%list)
+          call ulist_error( 28 )
+        end if
+        return
+      end if
 c
       if( matchs( 'display', 4 ) ) then
         if(  list_col .eq. 0 ) then
@@ -61,9 +78,30 @@ c
         return
       end if
 c
+c                 process: list 'a' copy 'b' command
+c
+      if( matchs( 'copy', 4 ) ) then
+        if(  list_col .eq. 0 ) then
+          call ulist_error( 2 )
+          return
+        end if
+        if( avail_col == 0 ) then
+          call ulist_error( 30 )
+          return
+        end if
+        call ulist_copy( list_col, avail_col, debug, out,
+     &                   max_user_lists )
+        return
+      end if
+c
 c                 new list definition in process. If already exists,
 c                 delete and re-define
 c
+      if( avail_col == 0 ) then  ! no space available
+        call ulist_error( 30 )
+        return
+      end if
+c      
       if( list_col .ne. 0 ) then
         call ulist_error( 3 )
         user_lists(list_col)%length_list = 0
@@ -125,6 +163,69 @@ c
       if( do_display ) call ulist_display( list_col, c(1),
      &                            display_coords, debug, out )
 c
+      return
+      end
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                      subroutine ulist_copy                   *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                         duplicate a list                     *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine ulist_copy( list_col, avail_col, debug, out,
+     &                       max_user_lists )
+      use main_data, only : user_lists
+c
+      implicit none
+      integer :: list_col, avail_col, out, max_user_lists
+      logical :: debug
+c
+      integer :: nchars, new_col, i, idummy, nlist
+      logical :: string, scanms
+      character :: lname*24, name*80
+c
+      if( debug ) write(out,*) "..ulist_copy called..."
+c
+c                 scan name of new list.
+c
+      if( .not. string( idummy ) ) then
+        call ulist_error( 1 ); call scan_flushline; return
+      end if
+      lname(1:24) = ' '
+      call entits( name, nchars )
+      if( nchars .gt. 24 ) nchars = 24
+      lname(1:nchars) = name(1:nchars)
+      if( debug )  write(out,*) "... list id: ", lname
+c
+c                 is new list already in table ? 
+c 
+      do i = 1, max_user_lists
+       if( scanms( user_lists(i)%name, lname, 24 ) ) then
+         new_col = i
+         exit
+       end if
+      end do
+c
+      if( new_col > 0 ) then  ! new list exists. no overwrite
+         call ulist_error( 29 ) 
+         call scan_flushline; return 
+      end if
+c
+c                 ok to duplicate list with new name
+c 
+      user_lists(avail_col)%name = lname
+      nlist = user_lists(list_col)%length_list
+      user_lists(avail_col)%length_list = nlist
+      allocate( user_lists(avail_col)%list(nlist) )
+      user_lists(avail_col)%list(1:nlist) =
+     &     user_lists(list_col)%list(1:nlist) 
+c
+      if( debug ) write(out,*) "..ulist_copy returning..."
       return
       end
 c
@@ -196,6 +297,7 @@ c
       logical debug, display_coords
       double precision :: coords(*)
 c
+      integer, external :: iszlst
       integer line(9)
       double precision ::  xcoord, ycoord, zcoord
 c
@@ -206,11 +308,13 @@ c
          call ulist_error( 8 ); return
       end if
 c
+      nterms_in_list = iszlst ( user_lists(list_col)%list(1), length )    
+c
 c                 loop to extract each entry from the compressed
 c                 integer list format. write 9 values per line
 c
       icn = 0; iplist = 1;count = 0; line_no = 0
-      write(out,9000)
+      write(out,9000) nterms_in_list
 c
       do
        if( iplist .eq. 0 ) exit
@@ -249,7 +353,7 @@ c
 
       return
 c
- 9000 format(1x,">>>>> Entries in list ....")
+ 9000 format(1x,">>>>> Entries in list ....   Count:",i8)
  9100 format(1x,i6,":",9i9)
  9200 format(1x,"..... End of list ....",//)
  9210 format(10x,i7,3f20.9)
@@ -365,6 +469,13 @@ c
       case( 27 )
          call entits( string, strlng )
          write(out,9027) string(1:strlng)
+      case( 28 )
+         write(out,9028) 
+      case( 29 )
+         call entits( string, strlng )
+         write(out,9029) string(1:strlng)
+      case( 30 )
+         write(out,9030) max_user_lists
       case default
         write(out,9999)
         stop
@@ -447,6 +558,11 @@ c
      & /14x,'or radius not positivecommand ignored...')
  9027 format(/1x,'>>>>> warning: the user-list named: ',a,
      & /16x,'has no entries...')
+ 9028 format(/1x,'>>>>> user-list deleted...')
+ 9029 format(/1x,'>>>>> warning: the user-list named: ',a,
+     & /16x,'exists. not overwritten...')
+ 9030 format(/1x,'>>>>> warning: no room for new lists...',
+     & /16x,'max lists supported: ',i5)
  9999 format(/1x,'>>>>> Fatal Error: routine ulist_error.',
      &   /16x,   'should have not reach this point.')
 c
@@ -628,7 +744,7 @@ c
      & /,5x,'x, y, z values: ',3f15.5,
      & /,5x,'tolerance, do_display: ',f15.8, l5,
      & //)
- 9200 format(1x,">>>>> number of nodes placed inlist: ", i8 )
+ 9200 format(1x,">>>>> number of nodes placed in list: ", i8,/)
  9210 format(1x,">>>>> WARNING: no nodes match the line/point ",
      & " specification")
  9220 format(1x,">>>>> (x,y,z) distances for proximity checks: ",
@@ -928,7 +1044,7 @@ c
      & /,5x,"nx, ny, nz: ",3f15.6,
      & /,5x,"radius_tol: ",f15.6,
      & //)
- 9200 format(1x,">>>>> number of nodes placed in list: ", i8 )
+ 9200 format(1x,">>>>> number of nodes placed in list: ", i8,/ )
  9210 format(1x,">>>>> no nodes match the cylinder specification")
  9220 format(1x,">>>>> physical distance for proximity checks: ",
      &       f15.8)
@@ -1130,7 +1246,7 @@ c
      & /,5x,"nx, ny, nz: ",3f15.6,
      & /,5x,"rel_tol: ",f15.6,
      & //)
- 9200 format(1x,">>>>> number of nodes placed in list: ", i8 )
+ 9200 format(1x,">>>>> number of nodes placed in list: ", i8,/ )
  9220 format(1x,">>>>> unit normal vector to plane: ",3f10.6)
  9222 format(1x,">>>>> physical distance for proximity checks: ",
      &          f15.8  )
@@ -1290,7 +1406,7 @@ c
      & /,5x,"radius, tolerance: ",2f15.6,
      & /,5x,"do_display: ",l5,
      & //)
- 9200 format(1x,">>>>> number of nodes in list: ", i8 )
+ 9200 format(1x,">>>>> number of nodes in list: ", i8,/ )
  9210 format(1x,">>>>> no nodes match the sphere specification")
  9220 format(1x,">>>>> physical distance for proximity checks: ",
      &        f15.8 )
