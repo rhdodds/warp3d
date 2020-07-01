@@ -25,6 +25,7 @@ echo "   OpenMP + threaded MKL direct/iterative sparse solver "
 if [ -z "$WARP3D_HOME" ]; then
    printf "[ERROR]\n"
    printf "... An environment variable WARP3D_HOME is not set.\n"
+   printf "... use Bash shell command: export WARP3D_HOME=... install directory...\n"
    printf "Quitting...\n"
    exit 1
 fi
