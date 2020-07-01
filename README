@@ -13,6 +13,17 @@
 The remaining information below provides a summary of the various
 directories in the WARP3D distribution for this interested in such details.
 
+This version of WARP3D is built with these compilers:
+  - Windows.  1 version w/ Intel Fortran 19.0.8.324
+  - Linux. 2 versions available
+           (1) Intel Fortran 19.0.8.323  
+           (2) GNU Fortran 7.5.0
+  - Mac OSX 2 versions available
+           (1) Intel Fortran 19.0.8.323  
+           (2) GNU Fortran (GCC) 8.1.0
+
+   Python 3 for supporting codes (e.g. warp3d2exii)
+
 ** Late Breaking News **
 
  This is primarily a bug fix, cleanup release.
