@@ -66,7 +66,7 @@ testO_4_out
 *        check results problem 1
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.5478E-02
  0
@@ -75,7 +75,7 @@ testO_4_out
 *        check results problem 2
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.5093E-02
  0
@@ -84,7 +84,7 @@ testO_4_out
 *        check results problem 3
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.4312E+00
  0
@@ -93,7 +93,7 @@ testO_4_out
 *        check results problem 4
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.3038E-02
  0
