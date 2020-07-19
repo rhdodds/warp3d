@@ -900,7 +900,7 @@ c     *                      subroutine indom_chk_dup_node           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 2/17/10  rhdcw             *
+c     *                   last modified : 7/9/2020 rhd               *
 c     *                                                              *
 c     *     input of a node set completed. check for duplicates      *
 c     *     in the list                                              *
@@ -941,7 +941,6 @@ c
         end do
        end do
 c
-      write(out,*) " "
       return
 c
  9000 format(

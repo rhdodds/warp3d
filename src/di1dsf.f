@@ -1412,7 +1412,7 @@ c                                                               *
 c      subroutine to write j and i-integral data to             *
 c      standard output                                          *
 c                    written by: mcw                            *
-c                 last modified: 3/6/2018 rhd                   *
+c                 last modified: 7/9/2020 rhd                   *
 c                                                               *
 c****************************************************************
 c
@@ -1457,10 +1457,12 @@ c             domain values for j-integral computations.
 c
          if( ring_count .gt. 1 ) then
             write(out,9020) domain_avg_j / rg_count, domain_min_j,
+     &           domain_max_j, domain_avg_j / rg_count, domain_min_j,
      &           domain_max_j
             if ( .not. static_j ) then
                write(out,9025)
                write(out,9020) static_avg / rg_count, static_min,
+     &              static_max, static_avg / rg_count, static_min,
      &              static_max
             end if
          end if
@@ -1506,6 +1508,8 @@ c
             end do
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(1) / rg_count,
+     &              domain_min_i(1), domain_max_i(1), 
+     &              domain_avg_i(1) / rg_count,
      &              domain_min_i(1), domain_max_i(1)
             end if
          end if
@@ -1520,6 +1524,8 @@ c
             end do
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(2) / rg_count,
+     &              domain_min_i(2), domain_max_i(2),
+     &              domain_avg_i(2) / rg_count,
      &              domain_min_i(2), domain_max_i(2)
             end if
          end if
@@ -1541,6 +1547,8 @@ c
             end do
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(3) / rg_count,
+     &              domain_min_i(3), domain_max_i(3), 
+     &              domain_avg_i(3) / rg_count,
      &              domain_min_i(3), domain_max_i(3)
             end if
          end if
@@ -1555,6 +1563,8 @@ c
             end do
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(4) / rg_count,
+     &              domain_min_i(4), domain_max_i(4), 
+     &              domain_avg_i(4) / rg_count,
      &              domain_min_i(4), domain_max_i(4)
             end if
          end if
@@ -1570,6 +1580,8 @@ c
          end do
          if( ring_count .gt. 1 ) then
             write(out,9020) domain_avg_i(5) / rg_count,
+     &           domain_min_i(5), domain_max_i(5), 
+     &           domain_avg_i(5) / rg_count,
      &           domain_min_i(5), domain_max_i(5)
          end if
 c
@@ -1658,6 +1670,8 @@ c
          end do
          if( ring_count .gt. 1 ) then
             write(out,9020) domain_avg_i(8) / rg_count,
+     &           domain_min_i(8), domain_max_i(8),
+     &           domain_avg_i(8) / rg_count,
      &           domain_min_i(8), domain_max_i(8)
          end if
 c
@@ -1672,13 +1686,16 @@ c
 c
  9000 format(/)
  9005 format(/,3x,'*****   Total J-values   *****')
- 9010 format(/,1x,45x,'J-integral components',
+ 9010 format(1x,45x,'J-integral components',
      &  /,      1x,42x,27('='),
-     & //,1x,'domain',8x,'dm1',10x,'dm2',10x,'dm3',10x,'dm4',
+     & /,1x,'domain',8x,'dm1',10x,'dm2',10x,'dm3',10x,'dm4',
      &    10x,'dm5',10x,'dm6',10x,'dm7',10x,'dm8',7x,'total J',3x,
      &    'killed ele' )
- 9015 format(/,1x,i5,2x,9(2x,e11.4),3x,'(',i3,')')
- 9020 format(/,3x,' average  ',3x,' minimum  ',3x,' maximum',
+ 9015 format(1x,i5,2x,9(2x,e11.4),3x,'(',i3,')')
+! 9020 format(/,3x,' average:  ',3x,' minimum:  ',3x,' maximum:',
+!     &       /,1x, e11.4,2x,e11.4,2x,e11.4 )
+ 9020 format(/,3x,' average: ',e11.4,3x,'minimum: ',
+     &            e11.4,3x,'maximum:', e11.4,
      &       /,1x, e11.4,2x,e11.4,2x,e11.4 )
  9025 format(/,10x,'Static J-values' )
  9030 format(/,1x,'* dm1: stress work density term',
@@ -1705,7 +1722,7 @@ c
  9044 format(1x,'domain',3x,'KI plane stress',3x,'KI plane strain',
      &       3x,'KII plane stress',3x,'KII plane strain',3x,
      &       'KIII anti-plane shear' )
- 9045 format(/,1x,i5,5x,e11.4,7x,e11.4,8x,e11.4,8x,e11.4,10x,e11.4)
+ 9045 format(1x,i5,5x,e11.4,7x,e11.4,8x,e11.4,8x,e11.4,10x,e11.4)
  9050 format(///,15x,'Static I-values')
  9051 format(//,1x,'>>>>> warning: ''symmetric'' option detected.',
      &       /,16x,'Values for KII, KIII and T13 set to zero.',
@@ -1716,29 +1733,29 @@ c
 c 9054 format(//,1x,'>>>>> warning: crack-face loading detected.',
 c     &       /,16x,'Interaction Integral results below for T'
 c     &       ' do not include crack-face loading effects.')
- 9055 format(/,1x,30x,'I-integral components',
+ 9055 format(1x,30x,'I-integral components',
      &       /,26x,'-- KI = 1, KII = 0, KIII = 0, plane stress --',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',5x,
      &       'KI (pstrs)',1x,'killed ele' )
- 9060 format(/,1x,i5,2x,10(2x,e11.4),3x,'(',i3,')')
- 9065 format(/,1x,i5,2x,11(2x,e11.4),3x,'(',i3,')')
- 9075 format(/,1x,30x,'I-integral components',
+ 9060 format(1x,i5,2x,10(2x,e11.4),3x,'(',i3,')')
+ 9065 format(1x,i5,2x,11(2x,e11.4),3x,'(',i3,')')
+ 9075 format(1x,30x,'I-integral components',
      &       /,26x,'-- KI = 1, KII = 0, KIII = 0, plane strain --',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',5x,
      &       'KI (pstrn)',1x,'killed ele' )
- 9085 format(/,1x,30x,'I-integral components',
+ 9085 format(1x,30x,'I-integral components',
      &       /,26x,'-- KI = 0, KII = 1, KIII = 0, plane stress --',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',5x,
      &       'KII (pstrs)',1x,'killed ele' )
- 9095 format(/,1x,30x,'I-integral components',
+ 9095 format(1x,30x,'I-integral components',
      &       /,26x,'-- KI = 0, KII = 1, KIII = 0, plane strain --',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',5x,
      &       'KII (pstrn)',1x,'killed ele' )
- 9105 format(/,1x,30x,'I-integral components',
+ 9105 format(1x,30x,'I-integral components',
      &       /,26x,'-- KI = 0, KII = 0, KIII = 1 --',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',8x,
@@ -1757,22 +1774,22 @@ c     &       ' do not include crack-face loading effects.')
  9230 format(/,1x,i5,5x,e11.4)
  9240 format(/,1x,i5,5x,e11.4,6x,e11.4)
  9260 format(/)
- 9107 format(/,1x,30x,'I-integral components',
+ 9107 format(1x,30x,'I-integral components',
      &       /,26x,'--T-stress (plane stress auxiliary fields)--',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',4x,
      &       'T11 (pstrs)',6x,'T33',5x,'killed ele' )
- 9110 format(/,1x,30x,'I-integral components',
+ 9110 format(1x,30x,'I-integral components',
      &       /,26x,'--T-stress ("plane strain" auxiliary fields)--',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',4x,
      &       'T11 (pstrn)',6x,'T33',5x,'killed ele' )
- 9112 format(/,1x,30x,'I-integral components',
+ 9112 format(1x,30x,'I-integral components',
      &       /,26x,'--T-stress (anti-plane shear auxiliary fields)--',
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',8x,
      &       'T13',5x,'killed ele' )
- 9115 format(/,3x,' average  ',3x,' minimum  ',3x,' maximum',
+ 9115 format(/,3x,' average:  ',3x,' minimum:  ',3x,' maximum:',
      &       /,1x, 3(e11.4,2x),
      &       /,1x, 3(e11.4,2x))
  9125 format(/,1x,'* II1: stress * deriv of aux. displ.',
