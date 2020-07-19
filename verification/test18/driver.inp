@@ -30,7 +30,7 @@ test_18e
  'step:    30'
  'J-integral components' 
  'domain        dm1'
- 1
+  -1
 0.1310E+01
 9
 *
@@ -40,7 +40,7 @@ test_18e
  'step:    60'
  'J-integral components' 
  'domain        dm1'
- 1
+ -1
 0.2941E+01
 9
 *
@@ -50,6 +50,6 @@ test_18e
  'step:    60'
  'J-integral components' 
  'domain        dm1'
- 1
+ -1
 0.2854E+01
 9
