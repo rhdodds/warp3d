@@ -66,11 +66,11 @@ testN_4_out
 *        check results problem 1
 *
 5                              
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
+'  average: '
+'  average: '
   -1
 0.1870E+00
  0
@@ -79,11 +79,11 @@ testN_4_out
 *        check results problem 2
 *
 5                              
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
+'  average: '
+'  average: '
   -1
 0.1579E+00
  0
@@ -92,11 +92,11 @@ testN_4_out
 *        check results problem 3
 *
 5                              
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
+'  average: '
+'  average: '
   -1
 0.1903E+00
  0
@@ -105,11 +105,11 @@ testN_4_out
 *        check results problem 4
 *
 5                              
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
+'  average: '
+'  average: '
   -1
  0.1153E+00
  0
