@@ -59,8 +59,8 @@ test_63
 *        check results problem 1   KI value
 *
 2                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
 -1
 0.1016E+01
  0                                
@@ -68,9 +68,9 @@ test_63
 *        check results problem 2   KII value
 *
 3                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
 -1
 0.1024E+01
  0                                
@@ -78,10 +78,10 @@ test_63
 *        check results problem 3  KIII value
 *
 4                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
+'  average: '
 -1
 0.1002E+01
  0                                
