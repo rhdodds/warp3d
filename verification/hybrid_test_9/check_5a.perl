@@ -10,7 +10,7 @@ open(infile, "$inputfile") or die
 "  >> Fatal Error. could not open: $inputfile\n  >> Aborting this verification segment\n\n";
 print "\t   ... output file opened ...\n";
 #
-find_line( 1, "average      minimum" );
+find_line( 1, "average: " );
 #
 #    get line with domain component values. print value
 #
