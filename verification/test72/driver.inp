@@ -36,7 +36,7 @@ Test 72 (user-defined named lists of nodes elements)
 #
 #    number of problems
 #
- 8
+ 9
 #
 #    list of problem titles for output
 #
@@ -48,6 +48,7 @@ test_72e
 test_72f
 test_72g
 test_72h
+test_72i
 
 *   list of output files
 *
@@ -59,9 +60,11 @@ test_72e_out
 test_72f_out
 test_72g_out
 test_72h_out
+test_72i_out
 *
 *    list of input files
 *
+test72
 test72
 test72
 test72
@@ -75,7 +78,7 @@ test72
 *        check results problem 1
 *
 2                                 
-'  1 u = 0.'
+sphere origin
 ' >>>>> number of nodes'
 0
 853
@@ -83,98 +86,66 @@ test72
 *
 *        check results problem 2
 *
-4                                 
-'  1 u = 0.'
+2                                 
+cylinder first
 ' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
 0
 21
 7
 *
 *        check results problem 3
-*
-5                                 
-'  1 u = 0.'
+*                                 
+2                                 
+ plane point
 ' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
- >>>>> number of nodes
 0
 821
 7
 *
 *        check results problem 4
 *
-6                                 
-'  1 u = 0.'
-' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-0
+1                                 
+'check_4'
+2
 1
-6
+7
 *
 *        check results problem 5
 *
-7                                 
-'  1 u = 0.'
-' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-0
+1                                 
+ 'check_5'
+2
 821
-6
+7
 *
 *        check results problem 6
 *
-8                                 
-'  1 u = 0.'
-' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-0
+1                                 
+ 'check_6'
+2
 2053
-6
+7
 *
 *        check results problem 7
 *
-9                                 
-'  1 u = 0.'
-' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-0
+1                                 
+ 'check_7'
+2
 51
-6
+7
 *
 *        check results problem 8
 *
-10                                 
-'  1 u = 0.'
-' >>>>> number of nodes'
-'for proximity'
-' number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-' >>>>> number of nodes'
-0
+1                                 
+'check_8'
+2
+1
+7
+*
+*        check results problem 9
+*
+1                                 
+'check_9'
+1
 1
 6
