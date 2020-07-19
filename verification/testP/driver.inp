@@ -78,7 +78,7 @@ testP_7_out
 *        check results problem 1
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.3363E-02
  0
@@ -87,7 +87,7 @@ testP_7_out
 *        check results problem 2
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.3353E-02
  0
@@ -96,7 +96,7 @@ testP_7_out
 *        check results problem 3
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.8423E-03
  0
@@ -105,7 +105,7 @@ testP_7_out
 *        check results problem 4
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.1270E-02
  0
@@ -114,7 +114,7 @@ testP_7_out
 *        check results problem 5
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.8423E-03
  0
@@ -123,7 +123,7 @@ testP_7_out
 *        check results problem 5a
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.1270E-02
  0
@@ -132,7 +132,7 @@ testP_7_out
 *        check results problem 6
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.8398E-03
  0
@@ -141,7 +141,7 @@ testP_7_out
 *        check results problem 6a
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.1268E-02
  0
@@ -150,7 +150,7 @@ testP_7_out
 *        check results problem 7
 *
 1                              
-'  average      minimum      maximum'
+'  average: '
   -1
 0.8428E-03
  0
