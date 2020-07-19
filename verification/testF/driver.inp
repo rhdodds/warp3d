@@ -64,7 +64,7 @@ warp3d_4_face_loading.inp
 *        check results problem 1
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2159E-01
  0
@@ -72,7 +72,7 @@ warp3d_4_face_loading.inp
 *        check results problem 2
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2159E-01
 0
@@ -80,7 +80,7 @@ warp3d_4_face_loading.inp
 *        check results problem 3
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2137E-01
 0
@@ -88,7 +88,7 @@ warp3d_4_face_loading.inp
 *        check results problem 4
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2159E-01
 0
