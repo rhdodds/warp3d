@@ -63,8 +63,8 @@ test_61
 *
 3
 ' domain id: left'                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
 -1
 0.5117E+00
  0                                
@@ -74,8 +74,8 @@ test_61
 *
 3
 ' domain id: right'                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
 -1
 0.1034E+01
  0                                
@@ -84,9 +84,9 @@ test_61
 *
 4
 ' domain id: right'                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
 -1
 -0.6174E+00
  0                                
@@ -95,12 +95,12 @@ test_61
 *
 6
 ' domain id: right'                                 
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
-'  average      minimum      maximum'
+'  average: '
+'  average: '
+'  average: '
+'  average: '
+'  average: '
 -1
 -0.2635E+00
 0
- 0                                
+                               
