@@ -232,6 +232,8 @@ def initialize():
  windows = os_name == 'Windows'
  linux   = os_name == 'Linux'
  osx     = os_name == 'Darwin'
+ cygwin  = False
+ if 'CYGWIN' in os_name: cygwin = True
  if "WARP3D_HOME" in os.environ:
  	 pass
  else:
@@ -262,6 +264,11 @@ def initialize():
       warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
    if choice == "1" :
       warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d_gfortran.omp" '
+#
+ if cygwin :
+   continuation = ';'
+   print(">>> Platform: Cygwin (Windows). Only Intel Fortran version supported\n" )
+   warp_name = '$WARP3D_HOME"/run_windows/warp3d.exe" '
 #
  str_threads = str(input(">>> Number of threads to use: " )  )
  threads = 'set OMP_NUM_THREADS='+str_threads + continuation + \
