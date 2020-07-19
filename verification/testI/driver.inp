@@ -70,7 +70,7 @@ testI_6_out
 *        check results problem 1
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.1147E-02
  0
@@ -78,7 +78,7 @@ testI_6_out
 *        check results problem 2
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.1133E-02
 0
@@ -86,7 +86,7 @@ testI_6_out
 *        check results problem 3
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.8370E-01
 0
@@ -95,7 +95,7 @@ testI_6_out
 *        check results problem 4
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.8367E-01
 0
@@ -104,7 +104,7 @@ testI_6_out
 *        check results problem 5
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.8173E-01
 0
@@ -113,7 +113,7 @@ testI_6_out
 *        check results problem 6
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.8170E-01
 0
