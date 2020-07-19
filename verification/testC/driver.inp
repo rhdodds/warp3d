@@ -59,7 +59,7 @@ warp3d_2_fgm_alpha.inp
 *        check results problem 1
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.3081E+00
  0
@@ -67,7 +67,7 @@ warp3d_2_fgm_alpha.inp
 *        check results problem 2
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.3068E+00
  0
