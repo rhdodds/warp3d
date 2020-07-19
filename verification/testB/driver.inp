@@ -61,7 +61,7 @@ warp3d_3_temp_sig_eps_curve.inp
 *        check results problem 1
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2566E-01
  0
@@ -69,7 +69,7 @@ warp3d_3_temp_sig_eps_curve.inp
 *        check results problem 2
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2545E-01
  0
@@ -77,7 +77,7 @@ warp3d_3_temp_sig_eps_curve.inp
 *        check results problem 3
 *
 1                              
-'average      minimum '
+'average: '
  -1
 0.2616E-01
  0
