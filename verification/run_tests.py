@@ -503,9 +503,9 @@ def initialize():
    print(">>> Platform: Mac OSX\n" )
    choice = input(">>> Intel Fortran version (=0), GFortran version(=1):")
    if choice == "0" :
-      warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
+      warp_name ='$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
    if choice == "1" :
-      warp_name = '$WARP3D_HOME"/run_mac_os_x/warp3d_gfortran.omp" '
+      warp_name ='$WARP3D_HOME"/run_mac_os_x/warp3d_gfortran.omp" '
 #
  str_threads = str(input(">>> Number of threads to use: " )  )
  threads = 'set OMP_NUM_THREADS='+str_threads + continuation + \
