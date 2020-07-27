@@ -1,16 +1,14 @@
 c
       module patwarp_data
 c
-      parameter  ( maxnod = 4000000 )
       parameter  ( maxprp = 2000 )
       parameter  ( maxmtl = 2000 )
-      parameter  ( maxele = 4000000 )
       parameter  ( maxset = 200 )
       parameter  ( maxcon = 100 )
       parameter  ( maxtrn = 2000 )
       parameter  ( maxetp = 5000 )
       parameter  ( mxnmgp = 30000 )
-      parameter  ( mxnmbl = 2*(maxele/128) )
+      parameter  ( mxnmbl = 2*(8000000/128) )
       parameter  ( mxblsz = 512 )
       parameter  ( maxprocs = 10000 )
       parameter  ( maxaccgrps = 10000 )

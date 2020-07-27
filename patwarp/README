@@ -1,5 +1,5 @@
-Updated March 2019
-==================
+Updated January 2020
+====================
 
 
 Patwarp directory
@@ -30,6 +30,7 @@ compile_patwarp_windows.bat --compile script Windows W10
 
 patwarp_windows_mac.f -- patwarp source for Windows and Mac OS X
                          platforms.
+
 NOTE: Windows and OS X versions of patwarp do not permit
       mesh partitioning for MPI-based parallel execution,
       because metis requires a C compiler on PC.
@@ -49,6 +50,12 @@ Note:
 
 Running patwarp
 ---------------
+
+** Key change in January 2020. 
+
+    patwarp now assumes the nodes and elements are numbered sequentially.
+    processing is terminated if this condition violated.
+ 
 
 patwarp asks questions about the neutral file, output file,
 and other information needed in creating the WARP3D input file.

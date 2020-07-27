@@ -26,7 +26,7 @@ c            arguments.
 c            get neutral file name, translated file name.  strip
 c            leading blanks from name in case user goofs up.
 c
-      write(termot,9000) maxnod, maxele
+      write(termot,9000)
       write(termot,9010)
       read(termin,9020) neunam
       call stripf( neunam )
@@ -179,6 +179,7 @@ c            packet type 12-13 not currently used by patran
 c
  1012 continue
  1013 continue
+      go to 3000
 c
 c            packet type 14 -- multipoint constraints
 c
@@ -282,8 +283,8 @@ c
      &  /,   ' *               (MacOS, Windows)                   *',
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 3 (formatted) Neutral File    *',
-     &  /,   ' *       (',i7,' nodes - ',i7,' elements)         *',
-     &  /,   ' *            Build Date:  9-9-2017                 *',
+     &  /,   ' *       ( node-element limits removed)             *',
+     &  /,   ' *            Build Date:  1-25-2020                *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
      &  /,   ' *  o support for 2 node bar2 and link2 elements    *',
@@ -685,28 +686,23 @@ c
       if ( numnod .gt. 500 ) msgnod = 200
       if ( numnod .gt. 1500) msgnod = 1000
       if ( numnod .gt. 5000) msgnod = 5000
+      if ( numnod .gt. 100000) msgnod = 50000
       msgele = 100
       if ( numele .gt. 500 ) msgele = 200
       if ( numele .gt. 1500) msgele = 500
       if ( numele .gt. 5000) msgele = 5000
+      if ( numele .gt. 100000) msgele = 50000
 c
 c            read date, time, and patran version number.
 c
       read(nfile,1000) date, time, versn
 c
 c            check that the sizes for this model are within
-c            maximum limits assigned for common areas.
+c            maximum limits assigned in module.
+c            node-element limit removed but nodes and
+c            elements must have sequential numbering
 c
       status = .true.
-      if ( numnod .gt. maxnod ) then
-             status = .false.
-             write(termot,1010) numnod, maxnod
-      end if
-c
-      if ( numele .gt. maxele ) then
-             status = .false.
-             write(termot,1020) numele, maxele
-      end if
 c
       if ( nummtl .gt. maxmtl ) then
              status = .false.
@@ -726,10 +722,6 @@ c
       return
 c
 1000  format( a12, a8, a12 )
-1010  format(1x,'>>>> fatal error -- number of nodes: ',i8,
-     &        /,'                    exceeds current limit of: ',i8)
-1020  format(1x,'>>>> fatal error -- number of elements: ',i8,
-     &        /,'                    exceeds current limit of: ',i8)
 1030  format(1x,'>>>> fatal error -- number of material properties',
      &       ': ',i5,
      &        /,'                    exceeds current limit of: ',i8)
@@ -779,6 +771,12 @@ c
       read(nfile,1010) x, y, z
       read(nfile,1020) icf, gtype, ndf, config, cid, pspc
 c
+      if( nodeid > numnod ) then
+        write(termot,2000) nodeid, numnod
+        status = .false.
+        return
+      end if
+c
 c            store coordinates and other data.  constraint flags are
 c            compressed into the rightmost 6 bits of the nodpcn
 c            variable for this nodeid.
@@ -813,6 +811,10 @@ c
      &         /,'   config: ',i8,' cid: ',i8,' pspc: ',6i1)
  1040 format( 14x,'>> processing data for node.......',i8)
  1050 format( /,8x,'>> begin processing nodal data')
+ 2000 format( /,'FATAL ERROR: processing coordinates node id:',i12,
+     & /,       '             larger than node count of:     ',i12,
+     & /,       '             Patwarp requires nodes-elements to be',
+     & /,       '             numbered sequentially.')
 c
       end
 c
@@ -836,10 +838,13 @@ c            read and store all data for this element data packet.
 c
       if ( debug ) write(termot,1000)
       elemid = id
-      if ( elemid .gt. numele ) then
-        write(termot,1300)
-        stop
+c
+      if( elemid > numele ) then
+        write(termot,2000) elemid, numele
+        status = .false.
+        return
       end if
+c
       if ( .not. princi ) write(termot,1070)
       princi = .true.
       if ( mod( elemid,msgele ) .eq. 0 )
@@ -1014,7 +1019,10 @@ c
      &       /, '   translation aborted' )
  1205 format(1x,'>> element id: ',i8,' has unsupported # nodes',
      &       /, '    for type. translation aborted' )
- 1300 format(1x,'>> element id > number of elements. job aborted' )
+ 2000 format( /,'FATAL ERROR: processing element id:',i12,
+     & /,       '             larger than element count of:',i12,
+     & /,       '             Patwarp requires nodes-elements to be',
+     & /,       '             numbered sequentially.')
 c
       end
 c ************************************************************************
@@ -2461,7 +2469,7 @@ c *  routine trntran -- Determine what kind of hex transition elements   *
 c *                     are needed and then add nodes to original 8-node *
 c *                     element. ignores non-hex elements                *
 c *  written by : cm                                                     *
-c *  modified by: mcw 4/8/04                                             *
+c *  modified by: rhd 1/23/2020                                          *
 c *                                                                      *
 c ************************************************************************
 c
@@ -2472,8 +2480,9 @@ c
 c
 c             local variables
 c
-      integer elem_count(maxnod), nodal_incid(maxnod, maxcon)
-      integer nodes_tr(20),nodes_20(20),ele_trnod_count(maxele)
+      integer, allocatable :: nodal_incid(:,:), elem_count(:),
+     &          ele_trnod_count(:)
+      integer nodes_tr(20), nodes_20(20)
       integer corner_nodes_in_tran(6)
       integer scr_vector(maxtrn), common_face_elem(maxtrn)
       integer num_rep(maxtrn)
@@ -2517,6 +2526,10 @@ c
 c
 c             first find out if user wants transition elements.  If not,
 c             return.
+c
+      allocate( nodal_incid(numnod, maxcon) )
+      allocate( elem_count(numnod) )
+      allocate( ele_trnod_count(numele) )
 c
       made_transition = .false.
  10   continue
@@ -2597,7 +2610,7 @@ c
          num_elems = elem_count(snode)
          found_8   = .false.
          found_20  = .false.
-	 nod_trn_list(snode) = 0
+	     nod_trn_list(snode) = 0
          do j = 1, num_elems
             elem = nodal_incid(snode,j)
             etype = eletyp(elem)
@@ -2822,9 +2835,11 @@ c
  2000 format(' Element',i7,' is a 9 node transition')
  2100 format(' Element',i7,' is a 12 node transition')
  2200 format(' Element',i7,' is a 15 node transition')
- 9000 format(1x,'>>>> Fatal error: routine trtran:')
+ 9000 format(/,1x,'>>>> Fatal error: routine trtran:',//)
  9020 format(1x,'>>>> There are nodes with no elements attached.',
-     &     'Renumber nodes',/,4x,'and elements in patran and try again')
+     & ' Renumber nodes',/,4x,
+     & '  and elements in patran and try again..',//,
+     & '  job terminated',//)
  9050 format(8x,'overflow in number of elements reaching node', i8)
  9100 format(8x,'in element',i5,'transition type not available in warp')
  9300 format(8x,'in element',i5,'more than 3 faces are quadratic')
