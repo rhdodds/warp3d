@@ -4,7 +4,7 @@ c     *                      subroutine intied                       *
 c     *                                                              *          
 c     *                       written by : bjb                       *          
 c     *                                                              *          
-c     *                   last modified : 04/09/03                   *          
+c     *                   last modified : 07/28/2020 rhd             *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *               the tied contact pair information              *          
@@ -18,13 +18,15 @@ c
 c                                                                               
       use mod_mpc, only : tied_contact_table                                    
       parameter (max_prs=10)                                                    
-      integer  dumi, npairs, err                                                
+      integer :: dumi, npairs, err                                                
       integer, allocatable, dimension (:) :: mstr_lst, slv_lst                  
-      real     dumr, tied_tol                                                   
-      double precision  dumd                                                    
+      real ::     dumr, tied_tol                                                   
+      double precision :: dumd                                                    
       character(len=16) :: setid, mstrid, slvid                                 
       character(len=1) :: dums                                                  
-      logical  label, matchs, numr, true, adj_flag                              
+      logical :: label, matchs, numr, true, adj_flag     
+      logical, external :: intied_check_master_primary,
+     &                     intied_check_slave_secondary      
 c                                                                               
       allocate (tied_contact_table(max_tied_sets),                              
      &          mstr_lst(max_prs), slv_lst(max_prs), stat=err)                  
@@ -43,7 +45,8 @@ c
             do                                                                  
                call readsc                                                      
                if (matchs('tolerance',5))  cycle                                
-               if (matchs('master',6))     cycle                                
+               if (matchs('master',6))     cycle 
+               if (matchs('primary',6))     cycle 
                if (matchs('tie',3)) then                                        
                   cycle  new_set                                                
                else                                                             
@@ -100,7 +103,7 @@ c
 c           read tied contact pairs                                             
 c           either slave or master can come first, but must be one of each      
 c                                                                               
-            if (matchs('master',6)) then                                        
+            if ( intied_check_master_primary() ) then                                        
                if (label(dumi)) then                                            
                   mstrid = ' '                                                  
                   call entits(mstrid,len)                                       
@@ -108,7 +111,7 @@ c
                   call errmsg2(50,dumi,dums,dumr,dumd)                          
                   cycle set_data                                                
                end if                                                           
-               if (matchs('slave',5)) then                                      
+               if ( intied_check_slave_secondary() ) then                                      
                   if (label(dumi)) then                                         
                      slvid = ' '                                                
                      call entits(slvid,len)                                     
@@ -128,7 +131,7 @@ c
                call find_surfs(mstrid,slvid,npairs,mstr_lst,slv_lst)            
                cycle  set_data                                                  
             end if                                                              
-            if (matchs('slave',5)) then                                         
+            if ( intied_check_slave_secondary() ) then                                      
                if (label(dumi)) then                                            
                   slvid = ' '                                                   
                   call entits(slvid,len)                                        
@@ -136,7 +139,7 @@ c
                   call errmsg2(50,dumi,dums,dumr,dumd)                          
                   cycle set_data                                                
                end if                                                           
-               if (matchs('master',6)) then                                     
+               if ( intied_check_master_primary() ) then                                        
                   if (label(dumi)) then                                         
                      mstrid = ' '                                               
                      call entits(mstrid,len)                                    
@@ -171,10 +174,65 @@ c
             end if                                                              
 c                                                                               
          end do  set_data                                                       
-      end do  new_set                                                           
+      end do  new_set     
 c                                                                               
-      end                                                                       
-                                                                                
+      end subroutine intied                                                                  
+c
+c     ****************************************************************          
+c     *                                                              *          
+c     *           function intied_check_master_primary()             *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 07/28/2020                 *          
+c     *                                                              *          
+c     ****************************************************************          
+c
+      function intied_check_master_primary() result( found )
+      implicit none
+c
+      logical :: found 
+      logical, external :: matchs
+c
+      found = .false.
+      if( matchs('master',6) ) then
+         found = .true.
+         return
+      elseif( matchs('primary',6) ) then
+         found = .true.
+         return
+      end if
+c
+      return
+      end function intied_check_master_primary
+c
+c     ****************************************************************          
+c     *                                                              *          
+c     *           function intied_check_slave_secondary()            *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 07/28/2020                 *          
+c     *                                                              *          
+c     ****************************************************************          
+c
+      function intied_check_slave_secondary() result( found )
+      implicit none
+c
+      logical :: found 
+      logical, external :: matchs
+c
+      found = .false.
+      if( matchs('slave',5) ) then
+         found = .true.
+         return
+      elseif( matchs('secondary',6) ) then
+         found = .true.
+         return
+      end if
+c
+      return
+      end function intied_check_slave_secondary
                                                                                 
                                                                                 
                                                                                 
