@@ -1,0 +1,169 @@
+!
+!          *** Linear-elastic solution ***
+!
+!          *** internal pressure loading exclusive of 
+!              crack-face pressure  ***
+!
+! ==========================================================================
+!
+!          3D model of axisymmetric geometry, material properties &
+!          loading of an RPV with a small, fully circumferential
+!          surface crack through the cladding and terminating in the
+!          base metal
+!
+!          Vessel geometry:
+!              Internal radius: 2220 mm  External: 2445 mm
+!              Clad thickness:   6 mm
+!              Ferritic base:  219 mm
+!              Cylindrical section height: 2070 mm
+!              Spherical cap has small hole at top of radius: 193.5 mm
+!
+!              Initial crack length: 10 mm
+!
+!              FE model has a 3-degree theta segment
+!
+!              Generator axis: global Y
+!              Z = 0 is a symmetry plane as is theta = 3-degrees
+!
+!           FE model details:
+!              8-node isoparametric elements
+!              crack front radius:  0.00375 mm (3.75 um)
+!              3, 1-degree "slices" of elements used to model
+!              the axisymmetric conditions. Could use just 1 slice --
+!              3 slices used for illustrative purposes.
+!
+!              tied contact capability used to support large change
+!              in Y and radial direction mesh refinement away from
+!              crack front
+!
+!              non-global coordinate system defined for all nodes
+!              on the theta = 3-degrees plane to imposed axisymmetric
+!              displacements BCs (w = 0 in the local coordinate system).
+!
+!           Loadings:
+!              - uniform pressure over the inner wall
+!              - uniform (opening) pressure on the crack face
+!              - initial uniform temperature 288 C (550 F) with
+!                time tempendent temperature gradient over wall
+!                thickness to simulate rapid internal cool down
+!
+!                Normal operating pressure: 15.2 MPa (2.2 ksi)
+!                Avg. axial stress in cylinder (pR/2t): 78.8 MPa (11.4 ksi)
+!                Avg. inner surface hoop stress (pR/t): 157.6 MPa (22.8 ksi)
+!
+!           Materials:
+!              Clad - 3xx grade austenitic stainless steel
+!              Base - ferritic steel, e.g., A533B
+!              Modulus and stress-strain properties of both are
+!              temperature dependent (not in the linear analysis)
+!
+!
+!           Physical units:
+!              Length: mm
+!              Stress: MPa
+!              Force: N
+!              Temp:  C
+!
+!           Computed values:
+!              Displacements - mm
+!              Stress - MPa
+!              Reactions: N
+!              J-values:  kJ/m^2
+!              Printed J -> K conversions. Divide output K values by
+!                      sqrt(1000.) to get MPa sqrt(m) units.
+!
+ structure vessel
+! 
+ material clad_linear
+    properties bilinear e 157200 nu 0.3 yld_pt 1.0e20,
+            tan_e 100 alpha 0.0 $ alpha 17.e-06
+!
+ material base_linear
+    properties bilinear e 193000 nu 0.3 yld_pt 1.0e20,
+            tan_e 100 alpha 14.e-06
+!
+ number of nodes 24904 elements 18081
+!
+ list 'clad' 1-1155 16102-16161 16762-16821 17422-17481
+ list 'base' 1156-16101 16162-16761 16822-17421 17482-18081
+!
+ elements
+!
+ 'clad' type l3disop linear material clad_linear,
+           order 2x2x2 bbar center_output short
+ 'base' type l3disop  linear material base_linear,
+           order 2x2x2 bbar center_output short
+! 
+*input from 'mesh_coords.inp'
+*input from 'mesh_incid.inp'
+!
+ blocking automatic size = 128
+!
+*input from 'tied_contact.inp'
+!
+ initial conditions $ no effect on pressure crack-face loadings
+    temperatures
+     nodes all temperature 288 $ steady-state operation
+!
+!            make list of nodes on the plane theta_g = 3 degrees
+!
+ list '3-degrees' plane point x  0.221995337E+04,
+    y 0.430000000E+03 z 0.116342834E+03,
+    normal  nx -0.05233595624294383 ny 0,
+    nz 0.9986295347545738 tolerance 0.0001 
+!
+constraints
+!
+   plane y = 0.0 proximity 0.0002 symmetry  
+   plane z = 0 symmetry
+   transformation matrix '3-degrees',
+      row_1 0.9986295347545738 0.0 0.05233595624294383,
+      row_2 0.0 1.0 0.0,
+      row_3 -0.05233595624294383 0.0 0.9986295347545738
+   '3-degrees' w 0.0 $ displacements normal to theta_g = 3 degrees plane
+! 
+*input from file "unit_crack_face_pressure.inp" 
+*input from file "unit_internal_pressure.inp"
+*input from file "unit_temp_gradient.inp"
+!
+ loading test
+  nonlinear
+!    step 1 unit_face_pressure 15.2        <<<<<  note comment
+    step 1 unit_internal_pressure 15.2   
+!    step 1 unit_temp_gradient 188.0       <<<<<  Note comment
+!  
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   time step 1.0e06 
+   maximum iterations 1 $ linear analysis
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   trace solution on
+   extrapolate off
+! 
+ list 'inside_bottom' 2609 5647 11183 16719
+ list 'ring_4_theta=0'  5126 10108 15090
+ list 'reaction nodes' y = 0.0 tolerance 1.0e-7 
+ list 'nodes_to_compute_T' 3609-3616 3836 3936,
+     4028 4114 4202 4299 4389 4478 4568 4654 4736 4814 4888
+!
+ output model flat patran convention text file "model"
+ output patran neutral file "patran_neutral.out"
+!
+ compute displacements for loading test step 1
+!
+*input "domain_define_internal_pressure.inp"
+ output eformat displacements 'inside_bottom'
+ output eformat displacements  3730 20998
+ output wide precision displacements nodes 'nodes_to_compute_T'
+ output stresses 'ring_4_theta=0'
+ output stresses 308-318 by 2
+ output stresses 340 5598  $ larger Y in cylinder 
+ output stresses 4482 4474 4386 4378 4356 $ behind crack, Z=0
+ output reactions totals only 'react nodes'
+!
+ output flat text displacements
+ output flat text element stresses
+ output flat text element states
+!
+ stop
