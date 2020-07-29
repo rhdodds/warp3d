@@ -1,0 +1,1026 @@
+ 
+>> Running Mac OS X (64) version of WARP3D...
+   OpenMP + threaded MKL solver
+ 
+>> Starting WARP3D in foreground...
+ 
+    *******************************************************************
+    **                                                               **
+    **                                                               **
+    **   W       W    AAAAA    RRRRRR    PPPPPP       33333  DDDD    **
+    **   W       W   A     A   R     R   P     P     3     3 D   D   **
+    **   W       W   A     A   R     R   P     P           3 D    D  **
+    **   W       W   A     A   R     R   P     P           3 D    D  **
+    **   W   W   W   AAAAAAA   RRRRRR    PPPPPP  ----  3333  D    D  **
+    **   W   W   W   A     A   R RR      P                 3 D    D  **
+    **   W   W   W   A     A   R   RR    P           3     3 D   D   **
+    **    WWW WWW    A     A   R     RR  P            33333  DDDD    **
+    **                                                               **
+    **     OSX 64-bit (Intel Fortran)     -rel-    Release:  18.2.1  **
+    **     Code Build Number: 4000                                   **
+    **     Built on: Jul 28 2020 16:13:05                            **
+    **     University of Illinois @ U-C.    Civil & Env Engineering  **
+    **     Today: Tue Jul 28 21:24:19 2020                           **
+    **                                                               **
+    **     NOTICE:  Use of Program Implies Agreement with Terms &    **
+    **              Conditions Set Forth in File 'license_agreement' **
+    **              Enter the Command 'license' to Display Text      **
+    **                                                               **
+    **     Limits (nodes, elements): none as of 17.9.3               **
+    **                                                               **
+    *******************************************************************
+       ! 
+       !          *** Linear-elastic solution ***
+       ! 
+       !          *** internal pressure loading exclusive of
+       !              crack-face pressure  ***
+       ! 
+       ! ==========================================================================
+       ! 
+       !          3D model of axisymmetric geometry, material properties &
+       !          loading of an RPV with a small, fully circumferential
+       !          surface crack through the cladding and terminating in the
+       !          base metal
+       ! 
+       !          Vessel geometry:
+       !              Internal radius: 2220 mm  External: 2445 mm
+       !              Clad thickness:   6 mm
+       !              Ferritic base:  219 mm
+       !              Cylindrical section height: 2070 mm
+       !              Spherical cap has small hole at top of radius: 193.5 mm
+       ! 
+       !              Initial crack length: 10 mm
+       ! 
+       !              FE model has a 3-degree theta segment
+       ! 
+       !              Generator axis: global Y
+       !              Z = 0 is a symmetry plane as is theta = 3-degrees
+       ! 
+       !           FE model details:
+       !              8-node isoparametric elements
+       !              crack front radius:  0.00375 mm (3.75 um)
+       !              3, 1-degree "slices" of elements used to model
+       !              the axisymmetric conditions. Could use just 1 slice --
+       !              3 slices used for illustrative purposes.
+       ! 
+       !              tied contact capability used to support large change
+       !              in Y and radial direction mesh refinement away from
+       !              crack front
+       ! 
+       !              non-global coordinate system defined for all nodes
+       !              on the theta = 3-degrees plane to imposed axisymmetric
+       !              displacements BCs (w = 0 in the local coordinate system).
+       ! 
+       !           Loadings:
+       !              - uniform pressure over the inner wall
+       !              - uniform (opening) pressure on the crack face
+       !              - initial uniform temperature 288 C (550 F) with
+       !                time tempendent temperature gradient over wall
+       !                thickness to simulate rapid internal cool down
+       ! 
+       !                Normal operating pressure: 15.2 MPa (2.2 ksi)
+       !                Avg. axial stress in cylinder (pR/2t): 78.8 MPa (11.4 ksi)
+       !                Avg. inner surface hoop stress (pR/t): 157.6 MPa (22.8 ksi)
+       ! 
+       !           Materials:
+       !              Clad - 3xx grade austenitic stainless steel
+       !              Base - ferritic steel, e.g., A533B
+       !              Modulus and stress-strain properties of both are
+       !              temperature dependent (not in the linear analysis)
+       ! 
+       ! 
+       !           Physical units:
+       !              Length: mm
+       !              Stress: MPa
+       !              Force: N
+       !              Temp:  C
+       ! 
+       !           Computed values:
+       !              Displacements - mm
+       !              Stress - MPa
+       !              Reactions: N
+       !              J-values:  kJ/m^2
+       !              Printed J -> K conversions. Divide output K values by
+       !                      sqrt(1000.) to get MPa sqrt(m) units.
+       ! 
+        structure vessel
+       ! 
+        material clad_linear
+           properties bilinear e 157200 nu 0.3 yld_pt 1.0e20,
+                   tan_e 100 alpha 0.0 $ alpha 17.e-06
+       ! 
+        material base_linear
+           properties bilinear e 193000 nu 0.3 yld_pt 1.0e20,
+                   tan_e 100 alpha 14.e-06
+       ! 
+        number of nodes 24904 elements 18081
+       ! 
+        list 'clad' 1-1155 16102-16161 16762-16821 17422-17481
+        list 'base' 1156-16101 16162-16761 16822-17421 17482-18081
+       ! 
+        elements
+       ! 
+        'clad' type l3disop linear material clad_linear,
+                  order 2x2x2 bbar center_output short
+        'base' type l3disop  linear material base_linear,
+                  order 2x2x2 bbar center_output short
+       ! 
+       *input from 'mesh_coords.inp'
+ >>>>> input file is: mesh_coords.inp
+       ! 
+        *echo off
+
+ >>>>> reached end of file.
+ >>>>> input file is: mesh_incid.inp
+       c 
+
+ >>>>> reached end of file.
+       ! 
+        blocking automatic size = 128
+
+>> Maximum element-to-node connectivity:  12 @ node:    5538
+
+
+       ! 
+       *input from 'tied_contact.inp'
+ >>>>> input file is: tied_contact.inp
+       ! 
+        surface vertical_o
+>> Check element blocking ...
+     ... Elements have scalar blocking
+
+          5293 5308 5323 10275 10290 10305 15257 15272 15287 face 5
+       ! 
+        surface top_h
+          306 307 691 692 1076 1077 5638 5639 5640 5641 5642 10620 10621,
+          10622 10623 10624 15602 15603 15604 15605 15606 face 4
+       ! 
+        surface bottom_h
+         303 304 305 688 689 690 1073 1074,
+         1075 5223 5224 5225 5226 5227 5228 5229,
+         5251 5252 5253 5254 5255 5256 5257 10205,
+         10206 10207 10208 10209 10210 10211 10233 10234,
+         10235 10236 10237 10238 10239 15187 15188 15189,
+         15190 15191 15192 15193 15215 15216 15217 15218,
+         15219 15220 15221 face 3
+       ! 
+       surface vertical_i
+         5236 5243 5250 5257 5264 5271 5278 5285,
+         5292 10218 10225 10232 10239 10246 10253 10260,
+         10267 10274 15200 15207 15214 15221 15228 15235,
+         15242 15249 15256 face 6
+       ! 
+       tie mesh inner_outer
+         primary vertical_o secondary vertical_i
+         primary top_h secondary bottom_h
+       ! 
+
+ >>>>> reached end of file.
+       ! 
+        initial conditions $ no effect on pressure crack-face loadings
+           temperatures
+            nodes all temperature 288 $ steady-state operation
+       ! 
+       !            make list of nodes on the plane theta_g = 3 degrees
+       ! 
+        list '3-degrees' plane point x  0.221995337E+04,
+           y 0.430000000E+03 z 0.116342834E+03,
+           normal  nx -0.05233595624294383 ny 0,
+           nz 0.9986295347545738 tolerance 0.0001
+  
+ >>>>> unit normal vector to plane:  -0.052336  0.000000  0.998630
+ >>>>> physical distance for proximity checks:      0.50386686
+ >>>>> number of nodes placed in list:     6226
+
+       ! 
+       constraints
+       ! 
+          plane y = 0.0 proximity 0.0002 symmetry
+          >>>> Distances (x,y,z) for proximity test:        0.000200       0.000200       0.000200
+
+>> Plane command applied constraints to:   396 nodes...
+
+
+          plane z = 0 symmetry
+          >>>> Distances (x,y,z) for proximity test:        0.022518       0.045057       0.001280
+
+>> Plane command applied constraints to:  6226 nodes...
+
+
+          transformation matrix '3-degrees',
+             row_1 0.9986295347545738 0.0 0.05233595624294383,
+             row_2 0.0 1.0 0.0,
+             row_3 -0.05233595624294383 0.0 0.9986295347545738
+          '3-degrees' w 0.0 $ displacements normal to theta_g = 3 degrees plane
+       ! 
+       *input from file "unit_crack_face_pressure.inp"
+ >>>>> input file is: unit_crack_face_pressure.inp
+       *echo off
+
+ >>>>> warning: one or more of the principle axes may not be constrained
+       in which case rigid boby rotation or translation could occur.
+       This check does not account for possible effect of skewed constraints.
+
+
+ >>>>> reached end of file.
+ >>>>> input file is: unit_internal_pressure.inp
+
+ >>>>> reached end of file.
+       *input from file "unit_temp_gradient.inp"
+ >>>>> input file is: unit_temp_gradient.inp
+       ! 
+       *echo off
+
+ >>>>> reached end of file.
+       ! 
+        loading test
+         nonlinear
+       !    step 1 unit_face_pressure 15.2        <<<<<  note comment
+           step 1 unit_internal_pressure 15.2
+       !    step 1 unit_temp_gradient 188.0       <<<<<  Note comment
+       ! 
+        nonlinear analysis parameters
+          solution technique sparse direct
+          time step 1.0e06
+          maximum iterations 1 $ linear analysis
+          minimum iterations 1
+          convergence test norm res tol 0.01
+          trace solution on
+          extrapolate off
+       ! 
+        list 'inside_bottom' 2609 5647 11183 16719
+        list 'ring_4_theta=0'  5126 10108 15090
+        list 'reaction nodes' y = 0.0 tolerance 1.0e-7
+ >>>>> (x,y,z) distances for proximity checks:      0.00022518     0.00045057     0.00001280
+ >>>>> number of nodes placed in list:      396
+
+        list 'nodes_to_compute_T' 3609-3616 3836 3936,
+            4028 4114 4202 4299 4389 4478 4568 4654 4736 4814 4888
+       ! 
+        output model flat patran convention text file "model"
+ >>>>>> Model description file: model.text
+ >>>>>> Model description file completed
+        output patran neutral file "patran_neutral.out"
+ >>>>>> Patran neutral file written as patran_neutral.out                                                              
+       ! 
+        compute displacements for loading test step 1
+
+ >>>>> Messages before first step:
+ >>         Warnings:         1
+ >>         Errors:           0
+ >>         Fatal Errors:     0
+
+
+       >> computing structural diagonal mass (@ t=0)
+          >>> total model mass (computed):   0.000000E+00
+          >>> total model volume:            0.120737E+09
+
+ >> warning: the following       16 nodes have been removed
+ >>          from the tied mesh slave node list to prevent
+ >>          redundant mpc equations from being generated
+
+     1184     1481     2017     2019     9984     9987    10050    10063
+    15520    15523    15586    15599    21056    21059    21122    21135
+
+ >> info: redundant slave nodes are caused when elements
+ >>       in the slave and master surface element lists
+ >>       use the same nodes; for example, two surfaces
+ >>       may have some merged nodes
+
+
+       >> tied mesh processor finished  @       1.08
+
+       >> starting global newton solution for step:             1
+       >> no extrapolating displacements to start step:         1
+       >> delta forces for loads/displ/temps/creep. step:       1
+       >> computing tangent stiffness step, iteration:          1  1
+       >> running sparse solver step, iteration:                1  1
+          >> solver wall time statistics (secs):
+               number of MKL threads used              10
+               MKL version, build:      2019.0.5 20191017
+               starting work                 @       1.11
+               finished dof setup            @       1.11
+               non-zero term counts finished @       1.13
+               number of equations                  61864
+               non-zero terms in profile          1881633
+               building sparse ptrs, indexes @       1.13
+               k_ptrs, k_indexes done        @       1.15
+               sparse [k] assembly done      @       1.17
+               load vector assembly done     @       1.17
+               multi-point constraints added @       1.26
+               non-zero terms in profile          1878984
+               Pardiso solver initializing   @       1.27
+               reorder-symbolic factor. done @       1.63
+               terms in factored matrix (M):        16.29
+               factorization op count (GFlop):       7.07
+               reordering memory (GB):               0.09
+                 min diagonal term:  0.100D+01
+                 max diagonal term:  0.195D+09
+               numeric factor/solve done     @       1.72
+       >> updating strains/stress/forces step, iteration:       1  1
+
+    newton convergence tests step:       1 iteration:   1 @ wall time:      1.7
+    ---------------------------------------------------------------------------
+    completed fraction over step:  1.0000
+    maximum residual force:  -0.135142E-06 @ (node,dir):   22845 X
+    test 2: norm of residual load vector:          0.14017E-05
+            norm of total load vector:             0.49689E+07
+            ratio*100:         0.00000   (passed)
+
+
+ >> solution for step:       1 converged:  1 iters.   model time:  0.100000E+07
+
+ >> total applied load pattern factors through step:       1
+      > unit_int         15.200  constraints       1.000
+  
+       ! 
+       *input "domain_define_internal_pressure.inp"
+ >>>>> input file is: domain_define_internal_pressure.inp
+       ! 
+       !           Get J-values, KI and T-stress for **only**
+       !           the pressure applied to inner surface of the vessel
+       ! 
+       ! =======================================================================
+       !!
+       !           define domains for J and interaction integral computation
+       !           at each corner node along front. Use node sets
+       !           at each front location with the initially blunted front
+       ! 
+       !           J, K and T-stress values at each front location should be
+       !           the same given axisymmetric geometry, loading, material
+       !           properties.
+       ! 
+       !           tangent vectors are theta = 0, 3-degrees are needed since
+       !           straight crack front segments do not intersect planes at right
+       !           angles.
+       ! 
+       !           **** only theta = 0 and 3-degrees computed for brevity.
+       !           **** uncomment compute commands for other front locations
+       !           **** if desired
+       ! 
+       !           domains 15-20 computed. alter as desired.
+       ! 
+       ! 
+        list 'ring 1 front nodes'  2946,
+           3268     3370 3480 3162    3586     3605,
+           3055     3606-3616 display
+ >>>>> Entries in list ....   Count:      19
+      1:     2946     3268     3370     3480     3162     3586     3605     3055     3606
+      2:     3607     3608     3609     3610     3611     3612     3613     3614     3615
+      3:     3616
+ ..... End of list ....
+
+
+       ! 
+        list 'ring 2 front nodes' 9954,
+           9944 9945 9947 9948  9951-9953 9961-9971 display
+ >>>>> Entries in list ....   Count:      19
+      1:     9954     9944     9945     9947     9948     9951     9952     9953     9961
+      2:     9962     9963     9964     9965     9966     9967     9968     9969     9970
+      3:     9971
+ ..... End of list ....
+
+
+       ! 
+        list 'ring 3 front nodes' 15490,
+          15480 15481 15483 15484 15487 15488 15489 15497-15507 display
+ >>>>> Entries in list ....   Count:      19
+      1:    15490    15480    15481    15483    15484    15487    15488    15489    15497
+      2:    15498    15499    15500    15501    15502    15503    15504    15505    15506
+      3:    15507
+ ..... End of list ....
+
+
+       ! 
+        list 'ring 4 front nodes' 21026,
+          21016    21017    21019    21020,
+          21023    21024    21025    21033-21043 display
+ >>>>> Entries in list ....   Count:      19
+      1:    21026    21016    21017    21019    21020    21023    21024    21025    21033
+      2:    21034    21035    21036    21037    21038    21039    21040    21041    21042
+      3:    21043
+ ..... End of list ....
+
+
+       ! 
+        domain theta_0
+         normal plane nx 0 ny 1.0 nz 0.0
+         symmetric
+         node set 1 'ring 1 front nodes'
+         node set 2 'ring 2 front nodes'
+         node set 3 'ring 3 front nodes'
+         node set 4 'ring 4 front nodes'
+         front node sets 1 2 l3disop
+         tangent vector tx 0 ty 0 tz 1.0
+         q-values automatic rings 15-20
+         function type a
+         plane strain output for interaction integral
+         J to K
+       ! 
+        compute domain interaction integral
+
+ >>>>> Messages before first step:
+ >>         Warnings:         1
+ >>         Errors:           0
+ >>         Fatal Errors:     0
+
+
+
+                         domain-integral post-processing
+                         -------------------------------
+
+ structure: vessel  
+ loading: test         step:     1        model analysis time:   0.100000E+07
+ domain id: theta_0                       current elapsed wall time:      1.7
+
+
+ crack front tangential strain (e_33) for T11, T33:  0.737317E-03
+
+ area under q along front:        0.194602E+02
+ length of crack front segment:   0.389204E+02
+ temperature at crack front node          2946 :  0.288000E+03
+ alpha values at crack front node         2946 :  0.140000E-04   0.140000E-04   0.140000E-04   0.000000E+00   0.000000E+00   0.000000E+00
+ Young's modulus at crack front node      2946 :  0.193000E+06
+ Poisson's ratio at crack front node      2946 :  0.300000E+00
+
+
+                                              J-integral components
+                                           ===========================
+ domain        dm1          dm2          dm3          dm4          dm5          dm6          dm7          dm8       total J   killed ele
+    15     0.2570E+01   0.1404E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    16     0.2594E+01   0.1402E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    17     0.2618E+01   0.1400E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    18     0.2641E+01   0.1397E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    19     0.2664E+01   0.1395E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    20     0.2686E+01   0.1393E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+
+    average:  0.8537E+00   minimum:  0.8537E+00   maximum: 0.8537E+00
+  0.8537E+00   0.8537E+00   0.8537E+00
+
+ * dm1: stress work density term
+ * dm2: traction-displacement derivative term
+ * dm3: kinetic energy term
+ * dm4: acceleration & velocity gradient term
+ * dm5: crack face loading term
+ * dm6: thermal loading term (zero for an fgm)
+ * dm7: stress times displacement gradient term (zero if not an fgm)
+ * dm8: derivative of stress work density (zero if not an fgm)
+ * ( ): number of killed elements skipped
+
+ * note: J-values doubled for symmetry *
+
+ * note: automatic domain builder cannot detect
+         domains that reach a boundary
+
+
+
+          Stress intensity factors obtained from J-values assuming pure mode I, mode II or mode III loading
+
+                pure mode I loading                 pure mode II loading            pure mode III loading
+          ---------------------------------   -----------------------------------   ---------------------
+ domain   KI plane stress   KI plane strain   KII plane stress   KII plane strain   KIII anti-plane shear
+    15      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    16      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    17      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    18      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    19      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    20      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+
+
+
+               Static I-values
+
+
+ >>>>> warning: 'symmetric' option detected.
+                Values for KII, KIII and T13 set to zero. results valid for mode-I loading only.
+
+
+ >>>>> warning: thermal loading detected.
+                Interaction Integral results below for K and T do not currently include thermal effects.
+                               I-integral components
+                          -- KI = 1, KII = 0, KIII = 0, plane strain --
+
+ domain        II1          II2          II3          II4          II5          II6          II7          II8       total I     KI (pstrn) killed ele
+    15     0.3362E-01   0.3283E-01   0.1162E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4011E-02   0.4254E+03   (  0)
+    16     0.3362E-01   0.3278E-01   0.1167E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4011E-02   0.4254E+03   (  0)
+    17     0.3362E-01   0.3273E-01   0.1171E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+    18     0.3362E-01   0.3268E-01   0.1176E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+    19     0.3363E-01   0.3263E-01   0.1181E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+    20     0.3363E-01   0.3259E-01   0.1185E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+
+    average:  0.4254E+03   minimum:  0.4254E+03   maximum: 0.4254E+03
+  0.4254E+03   0.4254E+03   0.4254E+03
+
+
+
+          J-values computed from mixed-mode stress intensity factors KI, KII and KIII.
+          KI- and KII-values correspond to plane strain conditions.
+
+ domain   J plane strain
+
+    15      0.8532E+00
+
+    16      0.8532E+00
+
+    17      0.8532E+00
+
+    18      0.8532E+00
+
+    19      0.8533E+00
+
+    20      0.8533E+00
+
+
+                               I-integral components
+                          --T-stress ("plane strain" auxiliary fields)--
+
+ domain        II1          II2          II3          II4          II5          II6          II7          II8       total I    T11 (pstrn)      T33     killed ele
+    15    -0.8263E-02   0.5875E-02  -0.6767E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4704E-03  -0.5286E+02   0.1264E+03   (  0)
+    16    -0.7936E-02   0.5330E-02  -0.6553E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4706E-03  -0.5290E+02   0.1264E+03   (  0)
+    17    -0.7653E-02   0.4851E-02  -0.6359E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4708E-03  -0.5293E+02   0.1264E+03   (  0)
+    18    -0.7407E-02   0.4424E-02  -0.6180E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4709E-03  -0.5295E+02   0.1264E+03   (  0)
+    19    -0.7191E-02   0.4039E-02  -0.6013E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4710E-03  -0.5297E+02   0.1264E+03   (  0)
+    20    -0.7001E-02   0.3689E-02  -0.5856E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4711E-03  -0.5299E+02   0.1264E+03   (  0)
+
+    average:      minimum:      maximum:
+ -0.5293E+02  -0.5299E+02  -0.5286E+02
+  0.1264E+03   0.1264E+03   0.1264E+03
+
+ * II1: stress * deriv of aux. displ.
+ * II2: aux stress * derivative of displacement
+ * II3: mixed strain energy density (aux stress * strain)
+ * II4: stress * 2nd deriv of aux displ
+ * II5: stress * deriv of aux strain)
+ * II6: deriv of constitutive tensor * strain * auxstrain
+ * II7: thermal strains (not yet implemented)
+ * II8: traction * deriv of aux displ
+ * ( ): number of killed elements skipped
+
+ * note: I-values doubled for symmetry *
+
+ * note: automatic domain builder cannot detect
+         domains that reach a boundary
+
+
+>>> Completed domain integral calculations
+       ! 
+        domain theta_1_degree
+         normal plane nx 0 ny 1.0 nz 0.0
+         symmetric
+         node set 1 'ring 1 front nodes'
+         node set 2 'ring 2 front nodes'
+         node set 3 'ring 3 front nodes'
+         node set 4 'ring 4 front nodes'
+         front node sets 1 2 3 l3disop
+         q-values automatic rings 15-20
+         function type b
+         plane strain output for interaction integral
+         J to K
+       ! 
+       ! compute domain interaction integral
+       ! 
+        domain theta_2_degrees
+         normal plane nx 0 ny 1.0 nz 0.0
+         symmetric
+         node set 1 'ring 1 front nodes'
+         node set 2 'ring 2 front nodes'
+         node set 3 'ring 3 front nodes'
+         node set 4 'ring 4 front nodes'
+         front node sets 2 3 4 l3disop
+         q-values automatic rings 15-20
+         function type b
+         plane strain output for interaction integral
+         J to K
+       ! 
+       ! compute domain interaction integral
+       ! 
+        domain theta_3_degrees
+         normal plane nx 0 ny 1.0 nz 0.0
+         symmetric
+         node set 1 'ring 1 front nodes'
+         node set 2 'ring 2 front nodes'
+         node set 3 'ring 3 front nodes'
+         node set 4 'ring 4 front nodes'
+         front node sets 3 4 l3disop
+         q-values automatic rings 15-20
+         tangent vector tx  -0.05233595624294383 ty 0,
+               tz 0.9986295347545738
+         function type c
+         plane strain output for interaction integral
+         J to K
+       ! 
+        compute domain interaction integral
+
+ >>>>> Messages before first step:
+ >>         Warnings:         1
+ >>         Errors:           0
+ >>         Fatal Errors:     0
+
+
+
+                         domain-integral post-processing
+                         -------------------------------
+
+ structure: vessel  
+ loading: test         step:     1        model analysis time:   0.100000E+07
+ domain id: theta_3_degrees               current elapsed wall time:      1.8
+
+
+ crack front tangential strain (e_33) for T11, T33:  0.737318E-03
+
+ area under q along front:        0.194602E+02
+ length of crack front segment:   0.389204E+02
+ temperature at crack front node         21026 :  0.288000E+03
+ alpha values at crack front node        21026 :  0.140000E-04   0.140000E-04   0.140000E-04   0.000000E+00   0.000000E+00   0.000000E+00
+ Young's modulus at crack front node     21026 :  0.193000E+06
+ Poisson's ratio at crack front node     21026 :  0.300000E+00
+
+
+                                              J-integral components
+                                           ===========================
+ domain        dm1          dm2          dm3          dm4          dm5          dm6          dm7          dm8       total J   killed ele
+    15     0.2570E+01   0.1404E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    16     0.2594E+01   0.1402E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    17     0.2617E+01   0.1400E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    18     0.2641E+01   0.1397E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    19     0.2663E+01   0.1395E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+    20     0.2686E+01   0.1393E+02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.8537E+00   (  0)
+
+    average:  0.8537E+00   minimum:  0.8537E+00   maximum: 0.8537E+00
+  0.8537E+00   0.8537E+00   0.8537E+00
+
+ * dm1: stress work density term
+ * dm2: traction-displacement derivative term
+ * dm3: kinetic energy term
+ * dm4: acceleration & velocity gradient term
+ * dm5: crack face loading term
+ * dm6: thermal loading term (zero for an fgm)
+ * dm7: stress times displacement gradient term (zero if not an fgm)
+ * dm8: derivative of stress work density (zero if not an fgm)
+ * ( ): number of killed elements skipped
+
+ * note: J-values doubled for symmetry *
+
+ * note: automatic domain builder cannot detect
+         domains that reach a boundary
+
+
+
+          Stress intensity factors obtained from J-values assuming pure mode I, mode II or mode III loading
+
+                pure mode I loading                 pure mode II loading            pure mode III loading
+          ---------------------------------   -----------------------------------   ---------------------
+ domain   KI plane stress   KI plane strain   KII plane stress   KII plane strain   KIII anti-plane shear
+    15      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    16      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    17      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    18      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    19      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+    20      0.4059E+03        0.4255E+03         0.4059E+03         0.4255E+03           0.3560E+03
+
+
+
+               Static I-values
+
+
+ >>>>> warning: 'symmetric' option detected.
+                Values for KII, KIII and T13 set to zero. results valid for mode-I loading only.
+
+
+ >>>>> warning: thermal loading detected.
+                Interaction Integral results below for K and T do not currently include thermal effects.
+                               I-integral components
+                          -- KI = 1, KII = 0, KIII = 0, plane strain --
+
+ domain        II1          II2          II3          II4          II5          II6          II7          II8       total I     KI (pstrn) killed ele
+    15     0.3362E-01   0.3283E-01   0.1162E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4011E-02   0.4254E+03   (  0)
+    16     0.3362E-01   0.3278E-01   0.1167E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4011E-02   0.4254E+03   (  0)
+    17     0.3362E-01   0.3273E-01   0.1171E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4011E-02   0.4254E+03   (  0)
+    18     0.3362E-01   0.3268E-01   0.1176E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+    19     0.3363E-01   0.3263E-01   0.1180E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+    20     0.3363E-01   0.3259E-01   0.1185E-01   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.4012E-02   0.4254E+03   (  0)
+
+    average:  0.4254E+03   minimum:  0.4254E+03   maximum: 0.4254E+03
+  0.4254E+03   0.4254E+03   0.4254E+03
+
+
+
+          J-values computed from mixed-mode stress intensity factors KI, KII and KIII.
+          KI- and KII-values correspond to plane strain conditions.
+
+ domain   J plane strain
+
+    15      0.8532E+00
+
+    16      0.8532E+00
+
+    17      0.8532E+00
+
+    18      0.8532E+00
+
+    19      0.8533E+00
+
+    20      0.8533E+00
+
+
+                               I-integral components
+                          --T-stress ("plane strain" auxiliary fields)--
+
+ domain        II1          II2          II3          II4          II5          II6          II7          II8       total I    T11 (pstrn)      T33     killed ele
+    15    -0.8263E-02   0.5876E-02  -0.6767E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4704E-03  -0.5286E+02   0.1264E+03   (  0)
+    16    -0.7936E-02   0.5331E-02  -0.6553E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4706E-03  -0.5290E+02   0.1264E+03   (  0)
+    17    -0.7653E-02   0.4852E-02  -0.6359E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4707E-03  -0.5293E+02   0.1264E+03   (  0)
+    18    -0.7407E-02   0.4425E-02  -0.6181E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4709E-03  -0.5295E+02   0.1264E+03   (  0)
+    19    -0.7191E-02   0.4040E-02  -0.6013E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4710E-03  -0.5297E+02   0.1264E+03   (  0)
+    20    -0.7001E-02   0.3690E-02  -0.5856E-02   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00   0.0000E+00  -0.4711E-03  -0.5299E+02   0.1264E+03   (  0)
+
+    average:      minimum:      maximum:
+ -0.5293E+02  -0.5299E+02  -0.5286E+02
+  0.1264E+03   0.1264E+03   0.1264E+03
+
+ * II1: stress * deriv of aux. displ.
+ * II2: aux stress * derivative of displacement
+ * II3: mixed strain energy density (aux stress * strain)
+ * II4: stress * 2nd deriv of aux displ
+ * II5: stress * deriv of aux strain)
+ * II6: deriv of constitutive tensor * strain * auxstrain
+ * II7: thermal strains (not yet implemented)
+ * II8: traction * deriv of aux displ
+ * ( ): number of killed elements skipped
+
+ * note: I-values doubled for symmetry *
+
+ * note: automatic domain builder cannot detect
+         domains that reach a boundary
+
+
+>>> Completed domain integral calculations
+       ! 
+
+ >>>>> reached end of file.
+        output eformat displacements 'inside_bottom'
+
+
+
+        structure vessel                         page no.    1
+        step no.       1                        loading test    
+
+         nodal displacements       
+
+
+
+        node               u                   v                   w    
+         2609         0.16480E+01         0.91967E-02         0.00000E+00
+         5647         0.16477E+01         0.91968E-02         0.28761E-01
+        11183         0.16470E+01         0.91968E-02         0.57514E-01
+        16719         0.16457E+01         0.91968E-02         0.86248E-01
+        output eformat displacements  3730 20998
+
+
+
+        structure vessel                         page no.    1
+        step no.       1                        loading test    
+
+         nodal displacements       
+
+
+
+        node               u                   v                   w    
+         3730         0.16442E+01         0.70639E-03         0.00000E+00
+        20998         0.16419E+01         0.70672E-03         0.86049E-01
+        output wide precision displacements nodes 'nodes_to_compute_T'
+
+
+
+        structure vessel                                                     page no.    1
+        step no.       1                        loading test    
+
+         nodal displacements       
+
+
+
+        node               u                            v                            w    
+         3609           1.6441826379566347           0.0003167168876247           0.0000000000000000
+         3610           1.6441730332285649           0.0003872085636326           0.0000000000000000
+         3611           1.6441670518516533           0.0004471093818494           0.0000000000000000
+         3612           1.6441634160965048           0.0005000927298234           0.0000000000000000
+         3613           1.6441613373214254           0.0005479802572084           0.0000000000000000
+         3614           1.6441602526981010           0.0005898340230380           0.0000000000000000
+         3615           1.6441597120003622           0.0006308950654700           0.0000000000000000
+         3616           1.6441593029847548           0.0006693745713148           0.0000000000000000
+         3836           1.6441634730270063           0.0007900144832155           0.0000000000000000
+         3936           1.6441753530508492           0.0009856905702730           0.0000000000000000
+         4028           1.6441906585163013           0.0011505085850724           0.0000000000000000
+         4114           1.6442065710183218           0.0012976047452550           0.0000000000000000
+         4202           1.6442230395198616           0.0014314038644293           0.0000000000000000
+         4299           1.6442416248536582           0.0015729288589816           0.0000000000000000
+         4389           1.6442607109698948           0.0017047186148451           0.0000000000000000
+         4478           1.6442753866633320           0.0017926529104564           0.0000000000000000
+         4568           1.6443037164483454           0.0019590314900106           0.0000000000000000
+         4654           1.6443319688030635           0.0021119593534043           0.0000000000000000
+         4736           1.6443603447276121           0.0022539647752614           0.0000000000000000
+         4814           1.6443889323676604           0.0023869251650596           0.0000000000000000
+         4888           1.6444174704038470           0.0025122981765231           0.0000000000000000
+        output stresses 'ring_4_theta=0'
+
+
+
+        structure vessel                         page no.    1
+        step no.       1                        loading test    
+
+        stresses                      
+
+
+
+      elem  cent         sigma_xx            sigma_yy            sigma_zz
+                         sigma_xy            sigma_yz            sigma_xz
+                         eng_dens            mises               c1      
+                         c2                  c3      
+
+       5126      1      476.039299          534.196756          444.983045
+                         21.801404            0.190041            0.270257
+                          0.748780           87.058793            0.000000
+                      ************            3.000000
+
+      10108      1      476.126394          534.306824          445.068286
+                         21.803634            0.571391            0.815190
+                          0.749076           87.096384            0.000000
+                      ************            3.000000
+
+      15090      1      476.077323          534.278812          445.095349
+                         21.791844            0.949998            1.350121
+                          0.749019           87.082670            0.000000
+                      ************            3.000000
+
+        output stresses 308-318 by 2
+
+
+
+        structure vessel                         page no.    1
+        step no.       1                        loading test    
+
+        stresses                      
+
+
+
+      elem  cent         sigma_xx            sigma_yy            sigma_zz
+                         sigma_xy            sigma_yz            sigma_xz
+                         eng_dens            mises               c1      
+                         c2                  c3      
+
+        308      1      -15.035296           49.216415          127.202398
+                         -0.911589           -0.007932           -1.241286
+                          0.053027          123.402119            0.000000
+                      ************            3.000000
+
+        310      1      -15.118026           54.080894          128.650284
+                         -0.260140           -0.002269           -1.254656
+                          0.054682          124.556303            0.000000
+                      ************            3.000000
+
+        312      1      -15.064330           56.169104          129.304899
+                         -0.094580           -0.000826           -1.259904
+                          0.055422          125.050757            0.000000
+                      ************            3.000000
+
+        314      1      -15.092241           57.048555          129.575702
+                         -0.036865           -0.000322           -1.262511
+                          0.055761          125.305932            0.000000
+                      ************            3.000000
+
+        316      1      -15.083829           57.425566          129.711838
+                         -0.012744           -0.000112           -1.263626
+                          0.055914          125.416448            0.000000
+                      ************            3.000000
+
+        318      1      -15.089232           57.552028          129.774933
+                         -0.002858           -0.000025           -1.264223
+                          0.055982          125.475901            0.000000
+                      ************            3.000000
+
+        output stresses 340 5598  $ larger Y in cylinder
+
+
+
+        structure vessel                         page no.    1
+        step no.       1                        loading test    
+
+        stresses                      
+
+
+
+      elem  cent         sigma_xx            sigma_yy            sigma_zz
+                         sigma_xy            sigma_yz            sigma_xz
+                         eng_dens            mises               c1      
+                         c2                  c3      
+
+        340      1      -15.087480           54.638438          129.501204
+                          0.025864            0.000226           -1.261819
+                          0.055374          125.263458            0.000000
+                      ************            3.000000
+
+       5598      1       -7.402453           71.030232          153.298620
+                          0.767536            0.006698           -1.402517
+                          0.059769          139.212605            0.000000
+                      ************            3.000000
+
+        output stresses 4482 4474 4386 4378 4356 $ behind crack, Z=0
+
+
+
+        structure vessel                         page no.    1
+        step no.       1                        loading test    
+
+        stresses                      
+
+
+
+      elem  cent         sigma_xx            sigma_yy            sigma_zz
+                         sigma_xy            sigma_yz            sigma_xz
+                         eng_dens            mises               c1      
+                         c2                  c3      
+
+       4482      1      -24.707305           -0.011323          134.905615
+                         -2.140056           -0.018754           -1.392791
+                          0.054355          148.876257            0.000000
+                      ************            3.000000
+
+       4474      1      -34.305039            0.190074          132.097979
+                         -1.133824           -0.009960           -1.452273
+                          0.055457          152.151836            0.000000
+                      ************            3.000000
+
+       4386      1      -38.937387            0.067346          130.683375
+                         -0.533473           -0.004710           -1.480415
+                          0.056174          153.896732            0.000000
+                      ************            3.000000
+
+       4378      1      -41.408994            0.033857          129.944101
+                         -0.293550           -0.002612           -1.495869
+                          0.056613          154.871631            0.000000
+                      ************            3.000000
+
+       4356      1      -42.223961            0.024958          129.703146
+                         -0.219659           -0.001968           -1.500740
+                          0.056767          155.200798            0.000000
+                      ************            3.000000
+
+        output reactions totals only 'react nodes'
+
+     Totals:     -0.67328237E+07     -0.19461870E+07     -0.17630740E+06
+
+     Totals:     -0.67328237E+07     -0.19461870E+07     -0.17630740E+06
+       ! 
+        output flat text displacements
+        output flat text element stresses
+        output flat text element states
+       ! 
+        stop
+
+
+
+
+ >>>>>  solution timings   <<<<<
+
+
+  calculations for tangent stiffness:            
+
+   wall time (secs):     0.0161  0.8 (%) no. calls:        1
+
+
+  calculations for tangent mass:                 
+
+   wall time (secs):     0.0045  0.2 (%) no. calls:        1
+
+
+  calculations for sig-eps & internal force:     
+
+   wall time (secs):     0.0280  1.3 (%) no. calls:        2
+
+
+  calculations for assembly of struct. K:        
+
+   wall time (secs):     0.0164  0.8 (%) no. calls:        1
+
+
+  calculations for set-up equations:             
+
+   wall time (secs):     0.0184  0.9 (%) no. calls:        1
+
+
+  calculations for sparse indexes set-up:        
+
+   wall time (secs):     0.0202  1.0 (%) no. calls:        1
+
+
+  calculations for reordering, symbolic factor:  
+
+   wall time (secs):     0.3649 17.3 (%) no. calls:        1
+
+
+  calculations for sparse fill/factor/solve      
+
+   wall time (secs):     0.0896  4.2 (%) no. calls:        1
+ 
+ 
+>> total job wall time (secs):         2.11
