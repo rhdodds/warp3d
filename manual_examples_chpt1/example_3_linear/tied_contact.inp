@@ -22,6 +22,6 @@ surface vertical_i
   15242 15249 15256 face 6
 !
 tie mesh inner_outer
-  primary vertical_o secondary vertical_i
-  primary top_h secondary bottom_h
+  master vertical_o slave vertical_i
+  master top_h slave bottom_h
 !  
