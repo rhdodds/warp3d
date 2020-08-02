@@ -76,7 +76,7 @@
 ! 
  material clad_linear
     properties bilinear e 157200 nu 0.3 yld_pt 1.0e20,
-            tan_e 100 alpha 0.0 $ alpha 17.e-06
+            tan_e 100  alpha 17.e-06
 !
  material base_linear
     properties bilinear e 193000 nu 0.3 yld_pt 1.0e20,
