@@ -1,5 +1,5 @@
 ! 
- structure test_mpcs   $ refernce solution using tied contact
+ structure test_mpcs   $ reference solution using tied contact
 ! 
 !         1 x 1 x 0.2 rectangular prism modeled with 3 20-node
 !         elements. +X Elements 2, 3 connect to one face of the
@@ -52,7 +52,7 @@ constraints
 !       
    tie mesh set_1
     tolerance 0.01 adjust on
-    master left slave right
+    primary left secondary right
 !
 ! output patran neutral "from_warp3d.neut"  
 ! 
