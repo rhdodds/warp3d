@@ -35,7 +35,7 @@ c
 c    Run a simple linear-elastic solution for 2 load steps to insure
 c    the mesh-tieing does not cause residual loads.
 c
-c    Look at computed axial stresses in Patran to show that
+c    Look at computed axial stresses in Paraview to show that
 c    only very small disturbancs in the uniform axial stress occur
 c    just right at the interface and immediately die out.
 c
@@ -94,7 +94,7 @@ c
 c
 tie mesh cylinder
   tolerance 0.1 adjust on
-	master coarse_end  slave fine_end
+	primary coarse_end  secondary fine_end
 c
 loading unit_end $ tensile stress on X=0 end
   element loads
