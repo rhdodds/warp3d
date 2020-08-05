@@ -2218,10 +2218,11 @@ c
             tiednodegaptolerance(row) = 0.0
 
             mflag = 1
-            message = 'warning: a slave node id number is also used'//
-     &        ' by the master surface elements; the redundant slave'//
-     &        ' node has been removed from the tied node list;'//
-     &        ' check the log file (tied_nodecheckredundant).'
+            message = 
+     &    'warning: a secondary node id number is also used'//
+     &    ' by the primary surface elements; the redundant secondary'//
+     &    ' node has been removed from the tied node list;'//
+     &    ' check the log file (tied_nodecheckredundant).'
 
             if(logflag.ge.1)then
               open(unit=logunit,file=logfile,position='append')
@@ -2329,12 +2330,16 @@ c
 4     format(i8,i18)
 
 9001  format(/,
-     & 1x,'>> warning: the following',i9,' nodes have been removed',/,
-     & 1x,'>>          from the tied mesh slave node list to prevent',/,
+     & 1x,
+     & '>> warning: the following',i9,' nodes have been removed',/,
+     & 1x,'>>          from the tied mesh secondary ',
+     & 'node list to prevent',/,
      & 1x,'>>          redundant mpc equations from being generated',/)
 9003  format(/,
-     & 1x,'>> info: redundant slave nodes are caused when elements',/,
-     & 1x,'>>       in the slave and master surface element lists',/,
+     & 1x,
+     &'>> info: redundant secondary nodes are caused when elements',/,
+     & 1x,
+     &'>>       in the secondary and primary surface element lists',/,
      & 1x,'>>       use the same nodes; for example, two surfaces',/,
      & 1x,'>>       may have some merged nodes',/)
  9004 format(8(i9))
