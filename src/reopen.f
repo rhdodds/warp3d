@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 8/16/2020 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -158,7 +158,8 @@ c
      &             show_details, temperatures, sparse_stiff_output,
      &             sparse_stiff_binary, sparse_research,
      &             solver_mkl_iterative, output_packets,
-     &             temperatures_ref, fgm_node_values_defined,
+     &             fgm_node_values_defined,
+     &             temperatures_init,
      &             fgm_node_values_used,
      &             hyp_trigger_step, hyp_first_solve,
      &             time_assembly, parallel_assembly_allowed,
@@ -284,7 +285,7 @@ c
       call rdbk( fileno, du, prec_fact*nodof )
       call mem_allocate( 1 )
       call rdbk( fileno, temper_nodes, prec_fact*nonode )
-      call rdbk( fileno, temper_nodes_ref, prec_fact*nonode )
+      call rdbk( fileno, temper_nodes_init, prec_fact*nonode )
       call mem_allocate( 2 )
       call rdbk( fileno, temper_elems, prec_fact*noelem )
       call rd2d( fileno, dmatprp, 2*mxmtpr, 2*mxmtpr, mxmat )

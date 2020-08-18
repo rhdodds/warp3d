@@ -4,7 +4,7 @@ c     *                      subroutine gp_temps                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/1/2018 rhd               *
+c     *                   last modified : 8/17/2020 rhd              *
 c     *                                                              *
 c     *     compute increment of temperature at a gauss point for    *
 c     *     all elements in the block.                               *
@@ -19,7 +19,7 @@ c
      &       dtemps_node_blk, gpn, etype, span, int_order,
      &       nnodel, gp_dtemps, temps_node_blk, gp_temps,
      &       temper_increment, temps_node_to_process,
-     &       temperatures_ref, temps_ref_node_blk, gp_rtemps  )
+     &       temperatures_init, temps_init_node_blk, gp_rtemps  )
       implicit none
       include 'param_def'
 c
@@ -28,10 +28,10 @@ c
       integer :: gpn, etype, span, int_order, nnodel
       double precision ::
      &  dtemps_node_blk(mxvl,*), gp_dtemps(*), gp_temps(*),
-     &  temps_node_blk(mxvl,*), temps_ref_node_blk(mxvl,*),
+     &  temps_node_blk(mxvl,*), temps_init_node_blk(mxvl,*),
      &  gp_rtemps(*)
       logical :: temper_increment, temps_node_to_process,
-     &           temperatures_ref
+     &           temperatures_init
 c
 c                     locally defined arrays-variables
 c
@@ -50,7 +50,7 @@ c                     integration point. then get the nodal
 c                     shape functions evaluated at the point.
 c
       if( temper_increment .or. temps_node_to_process .or.
-     &     temperatures_ref ) then
+     &     temperatures_init ) then
          call getgpts( etype, int_order, gpn, xi, eta, zeta, weight )
          call shapef( etype, xi, eta, zeta, sf(1) )
       end if
@@ -86,26 +86,26 @@ c
         end do
       end if
 c
-c                     interpolate the reference temperature
+c                     interpolate initial temperature
 c                     for this gauss point for all elements
 c                     in the block from nodal values.
 c
-      if( temperatures_ref ) then
+      if( temperatures_init ) then
         do enode = 1, nnodel
 !DIR$ VECTOR ALIGNED
           do i = 1, span
             gp_rtemps(i) = gp_rtemps(i) +
-     &                     sf(enode) * temps_ref_node_blk(i,enode)
+     &                     sf(enode) * temps_init_node_blk(i,enode)
           end do
         end do
       end if
 c
       if ( .not. local_debug ) return
          write(*,*) '>> in  gauss_pt_temps:'
-         write(*,*) '>> temps_ref_node_block:'
+         write(*,*) '>> temps_init_node_block:'
          do i = 1, span
           write(*,*) '   element: ',i
-          write(*,*) (k,temps_ref_node_blk(i,k),k=1,nnodel)
+          write(*,*) (k,temps_init_node_blk(i,k),k=1,nnodel)
          end do
          write(*,*) '>> gp_temps...'
          write(*,9000) (i,gp_temps(i),i=1,span)
@@ -123,7 +123,7 @@ c     *                      subroutine gp_temp_eps                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/1/2018 rhd               *
+c     *                   last modified : 8/17/2020 rhd              *
 c     *                                                              *
 c     *     compute incremental thermal strains at gauss point for   *
 c     *     all elements of the block. subtract them from incr.      *
@@ -162,7 +162,7 @@ c
 c
 c           \Delta\veps_\theta = \alpha_{n+1) T_{n+1)  -
 c                                \alpha_n T_n
-c           adjust for reference temp
+c           adjust for initial temp
 c
 c           \alpha here can be anisotropic
 !DIR$ VECTOR ALIGNED
@@ -262,7 +262,7 @@ c
 c
 c           instantaneous thermal strain is always just
 c           current temperature * current  CTEs
-c           adjust for reference temp.
+c           adjust for initial temp.
 c           \alpha here can be anisotropic
 c
 !DIR$ VECTOR ALIGNED

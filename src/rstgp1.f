@@ -647,7 +647,7 @@ c
       double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures, segmental,
-     &           temperatures_ref, fgm_enode_props, nonlinear_update,
+     &           temperatures_init, fgm_enode_props, nonlinear_update,
      &           linear_elastic_update
 c
 c           vectorized mises plasticity model with constant hardening
@@ -670,7 +670,7 @@ c
       now_blk           = local_work%blk
       mat_type          = local_work%mat_type
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       segmental         = local_work%segmental
       number_points     = local_work%number_points
       curve_set         = local_work%curve_set_number
@@ -683,7 +683,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_ref, segmental,
+     &                   temperatures, temperatures_init, segmental,
      &                   number_points, curve_set,
      &                   fgm_enode_props, hist_size_for_blk
       end if
@@ -770,7 +770,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -886,7 +886,7 @@ c
  9000 format(1x,'.... debug mm01. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_ref: ',
+     &     /,10x,'...temperatures, temperatures_init: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -1083,7 +1083,7 @@ c
       double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures,
-     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           temperatures_init, fgm_enode_props, signal_flag,
      &           nonlinear_update, linear_elastic_update
 c
 c          deformation plasticity model. properties are invariant of
@@ -1104,7 +1104,7 @@ c
       signal_flag       = local_work%signal_flag
       fgm_enode_props   = local_work%fgm_enode_props
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
 c
       local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 3
@@ -1112,7 +1112,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_ref,
+     &                   temperatures, temperatures_init,
      &                   fgm_enode_props, hist_size_for_blk
       end if
 c
@@ -1170,7 +1170,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -1245,7 +1245,7 @@ c
  9000 format(1x,'.... debug mm02. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_ref: ',
+     &     /,10x,'...temperatures, temperatures_init: ',
      &               2l2,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
      &    l3,i4 )
@@ -1429,22 +1429,21 @@ c
 c
 c                      parameter declarations
 c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-      double precision
-     &  uddt(mxvl,nstr)
+      real ::    props(mxelpr,*)
+      logical :: lprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
+      double precision :: uddt(mxvl,nstr)
       include 'include_sig_up'
 c
 c
 c                       locally defined variables
 c
-      double precision
+      double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  zero, gp_alpha, ddtse(mxvl,6), nowtemp
-      logical signal_flag, fgm_enode_props, local_debug,
-     &        temperatures, temperatures_ref
-      data local_debug, zero / .false., 0.0 /
+      logical :: signal_flag, fgm_enode_props, local_debug,
+     &        temperatures, temperatures_init
+      data local_debug, zero / .false., 0.0d0 /
 c
 c
 c          deformation plasticity model. properties are invariant of
@@ -1464,7 +1463,7 @@ c
       signal_flag       = local_work%signal_flag
       fgm_enode_props   = local_work%fgm_enode_props
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
 c
 c          for fgms, interpolate values of material properties
 c          at the current gauss point (overwrite the constant values).
@@ -1518,7 +1517,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c          for iter = 0, use the stored [Dt] from last stiffness update
@@ -1590,7 +1589,7 @@ c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 8/30/2018 rhd                    *
+c     *             last modified : 8/17/2020 rhd                    *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1638,7 +1637,7 @@ c
      &           adaptive, geonl, bbar, material_cut_step,
      &           local_debug, signal_flag, adaptive_flag,
      &           power_law, temperatures, allow_cut, segmental,
-     &           temperatures_ref, fgm_enode_props,
+     &           temperatures_init, fgm_enode_props,
      &           nonlinear_update, linear_elastic_update
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
@@ -1670,7 +1669,7 @@ c
       adaptive_flag     = local_work%adaptive_flag
       eps_bbar          = local_work%eps_bbar
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       allow_cut         = local_work%allow_cut
       segmental         = local_work%segmental
       number_points     = local_work%number_points
@@ -1686,7 +1685,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type, adaptive_flag,
-     &                   temperatures, temperatures_ref, segmental,
+     &                   temperatures, temperatures_init, segmental,
      &                   number_points, curve_set, power_law,
      &                   fgm_enode_props, hist_size_for_blk
       end if
@@ -1774,7 +1773,7 @@ c
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures,
      &        local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -1877,7 +1876,7 @@ c
  9000 format(1x,'.... debug mm03. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...adaptive_flag, temperatures, temperatures_ref: ',
+     &     /,10x,'...adaptive_flag, temperatures, temperatures_init: ',
      &               3l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...power_law, fgm_enode_props, hist_size_for_blk: ',
@@ -2316,7 +2315,7 @@ c
      &           nnode, knumthreads, kthread, imxvl
 
       logical :: fgm_enode_props, nonlocal, temperatures,
-     &           temperatures_ref, local_debug
+     &           temperatures_init, local_debug
 c
       data zero / 0.0d00 /
 c
@@ -2330,7 +2329,7 @@ c
       fgm_enode_props   = local_work%fgm_enode_props
 c
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       knumthreads       = local_work%num_threads
       kthread           = local_work%now_thread
 c
@@ -2453,7 +2452,7 @@ c
      6    local_work%ddtse(1,1,gpn), uddt(1,1),
      7    local_work%elem_hist(1,1,gpn),
      8    local_work%elem_hist1(1,1,gpn),
-     9    local_work%cohes_temp_ref(1),
+     9    local_work%cohes_temp_init(1),
      h    local_work%cohes_dtemp(1),
      i    local_work%cohes_temp_n(1),
      a    local_work%top_surf_solid_elements(1),
@@ -2474,7 +2473,7 @@ c
      &   local_work%elem_hist(1,1,gpn),
      &   local_work%elem_hist1(1,1,gpn),
      &   cep,
-     &   local_work%cohes_temp_ref(1),
+     &   local_work%cohes_temp_init(1),
      &   local_work%cohes_dtemp(1),
      &   local_work%cohes_temp_n(1),
      &   local_work%top_surf_solid_elements(1),
@@ -2498,7 +2497,7 @@ c
      6    local_work%ddtse(1,1,gpn), uddt(1,1),
      7    local_work%elem_hist(1,1,gpn),
      8    local_work%elem_hist1(1,1,gpn),
-     9    local_work%cohes_temp_ref(1),
+     9    local_work%cohes_temp_init(1),
      h    local_work%cohes_dtemp(1),
      i    local_work%cohes_temp_n(1),
      a    idummy(1),
@@ -2519,7 +2518,7 @@ c
      &   local_work%elem_hist(1,1,gpn),
      &   local_work%elem_hist1(1,1,gpn),
      &   cep,
-     &   local_work%cohes_temp_ref(1),
+     &   local_work%cohes_temp_init(1),
      &   local_work%cohes_dtemp(1),
      &   local_work%cohes_temp_n(1),
      &   idummy(1),
@@ -2587,7 +2586,7 @@ c
      &  cep(:,:,:)
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_ref, adaptive_possible, geonl,
+     &           temperatures_init, adaptive_possible, geonl,
      &           cut_step_size_now, fgm_enode_props,
      &           segmental, nonlin_hard, generalized_pl,
      &           nonlinear_update, linear_elastic_update
@@ -2615,7 +2614,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       segmental         = local_work%segmental
       number_points     = local_work%number_points
       curve_set         = local_work%curve_set_number
@@ -2630,7 +2629,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_ref, segmental,
+     &                   temperatures, temperatures_init, segmental,
      &                   number_points, curve_set,
      &                   fgm_enode_props, hist_size_for_blk
       end if
@@ -2656,7 +2655,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -2763,7 +2762,7 @@ c
  9000 format(1x,'.... debug mm05. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_ref: ',
+     &     /,10x,'...temperatures, temperatures_init: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -3169,7 +3168,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_ref, compute_creep_strains
+     &           temperatures_init, compute_creep_strains
       data zero /  0.0d00 /
 c
       dtime             = local_work%dt
@@ -3183,7 +3182,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
       local_debug = .false.
       if( local_debug ) then
@@ -3199,7 +3198,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c            compute (negative) of thermal strain increment
@@ -3402,7 +3401,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: geonl, local_debug, temperatures, 
-     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           temperatures_init, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
       data zero / 0.0d0 /
@@ -3421,7 +3420,7 @@ c
       mat_type          = local_work%mat_type
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut
@@ -3431,7 +3430,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_ref,
+     &                   temperatures, temperatures_init,
      &                   fgm_enode_props, hist_size_for_blk
       end if
 c
@@ -3443,7 +3442,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -3515,7 +3514,7 @@ c
  9000 format(1x,'.... debug mm07. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_ref: ',
+     &     /,10x,'...temperatures, temperatures_init: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -3695,7 +3694,7 @@ c
       equivalence (dfgrd0, dfgrd0_array),  (dfgrd1, dfgrd1_array)
 c
       logical :: signal_flag, local_debug, debug_now, temperatures,
-     &        temperatures_ref, init_sig_eps, init_history,
+     &        temperatures_init, init_sig_eps, init_history,
      &        chk_umat_support, chk, chk2, do_nonlocal,
      &        process_flag
       integer :: map(6)
@@ -3722,7 +3721,7 @@ c
       now_blk           = local_work%blk
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
 c
       knumthreads       = local_work%num_threads
@@ -3740,7 +3739,7 @@ c
          write(iout,9000)
          write(iout,9001) span, felem, gpn
          write(iout,9002) step, iter
-         write(iout,9004) temperatures, temperatures_ref
+         write(iout,9004) temperatures, temperatures_init
          write(iout,9006) hist_size_for_blk
       end if
 c
@@ -3797,7 +3796,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c           3. get negative of temp increments for step
@@ -4268,7 +4267,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: geonl, local_debug, temperatures,
-     &           temperatures_ref, fgm_enode_props, signal_flag,
+     &           temperatures_init, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
       data zero / 0.0d0 /
@@ -4287,7 +4286,7 @@ c
       mat_type          = local_work%mat_type
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut
@@ -4297,7 +4296,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_ref,
+     &                   temperatures, temperatures_init,
      &                   fgm_enode_props, hist_size_for_blk
       end if
 c
@@ -4309,7 +4308,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -4370,7 +4369,7 @@ c
  9000 format(1x,'.... debug mm09. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_ref: ',
+     &     /,10x,'...temperatures, temperatures_init: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -4535,7 +4534,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6), tol
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_ref, check_D, iter_0_extrapolate_off
+     &           temperatures_init, check_D, iter_0_extrapolate_off
       data zero, one / 0.0d0, 1.0d0 /
 
 c
@@ -4549,7 +4548,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
       now_blk           = local_work%blk
       matnum            = local_work%matnum
@@ -4559,7 +4558,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, step,
      &                   iter, now_blk,
-     &                   temperatures, temperatures_ref,
+     &                   temperatures, temperatures_init,
      &                   hist_size_for_blk
       end if
 c
@@ -4571,7 +4570,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -4697,7 +4696,7 @@ c
  9000 format(1x,'.... debug mm10. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'... dtime, type, order, nnode:     ',e14.6,3i5,
      &     /,10x,'... step, iter, now_blk:           ',3i5,
-     &     /,10x,'... temperatures, temperatures_ref: ',
+     &     /,10x,'... temperatures, temperatures_init: ',
      &               2l2,
      &     /,10x,'... hist_size_for_blk: ',i4 )
  9100 format(10x,6e14.5)
@@ -5027,7 +5026,7 @@ c
      &  zero, dtime
 c
       logical signal_flag, local_debug, temperatures,
-     &        temperatures_ref
+     &        temperatures_init
       data local_debug, zero / .false., 0.0 /
 c
       dtime             = local_work%dt
@@ -5040,7 +5039,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_ref  = local_work%temperatures_ref
+      temperatures_init = local_work%temperatures_init
       hist_size_for_blk = local_work%hist_size_for_blk
       now_blk           = local_work%blk
 c
@@ -5052,7 +5051,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_ref, local_work%temps_ref_node_blk,
+     &        temperatures_init, local_work%temps_init_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the

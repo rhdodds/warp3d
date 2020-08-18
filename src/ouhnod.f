@@ -4,7 +4,7 @@ c     *                      subroutine ouhnod                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   modified :    12/1/2017 rhd                *
+c     *                   modified :    8/17/2020 rhd                *
 c     *                                                              *
 c     *     hardcopy or packet output for the                        *
 c     *     displacements, velocities, accelerations, reaction       *
@@ -22,7 +22,7 @@ c
 c
       use main_data, only : trn, trnmat, mdiag, pbar, rload,
      &                      packet_file_no, temper_nodes,
-     &                      temper_nodes_ref
+     &                      temper_nodes_init
       use stiffness_data, only : total_lagrange_forces
 c
       implicit none
@@ -177,7 +177,7 @@ c
       nvalues_out = ndof
       if( dva .eq. 5 ) then   ! temperature only
          edva(1,1) = temper_nodes(node)
-         edva(1,2) = temper_nodes(node) - temper_nodes_ref(node)
+         edva(1,2) = temper_nodes(node) - temper_nodes_init(node)
          nvalues_out = 2
       end if
 c

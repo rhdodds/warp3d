@@ -4,7 +4,7 @@ c     *                      subroutine rknstr                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/24/2018 rhd              *
+c     *                   last modified : 8/17/2020 rhd              *
 c     *                                                              *
 c     *     drive updating of strains/stresses for a block of        *
 c     *     elements                                                 *
@@ -112,7 +112,7 @@ c
 c           average temperature data and fgm nodal property values for
 c           linear elements (or cohesive elements).
 c
-c           for linear elements, the reference temp, change in temp for
+c           for linear elements, the initial temp, change in temp for
 c           the step and temp at end of step for element nodes are
 c           averaged so that the element undergoes uniform change over
 c           the volume (prevents thermal shear and volumetric locking).
@@ -401,16 +401,16 @@ c
 c
       integer :: i
       logical :: average
-      double precision :: temp_ref, d_temp, temp_np1
+      double precision :: temp_init, d_temp, temp_np1
 c
       average =  local_work%linear_displ_elem .or.
      &             local_work%is_cohes_elem
       if( average ) then
          call average_nodal_temps( local_work%temperatures,
      &      local_work%temps_node_to_process,
-     &      local_work%temperatures_ref, nnode,
+     &      local_work%temperatures_init, nnode,
      &      local_work%dtemps_node_blk, local_work%temps_node_blk,
-     &      local_work%temps_ref_node_blk, mxvl, span, 1 )
+     &      local_work%temps_init_node_blk, mxvl, span, 1 )
       end if
 c
       if( local_work%linear_displ_elem .and. fgm_enode_props ) then
@@ -421,10 +421,10 @@ c
       if( local_work%is_cohes_elem ) then  ! all zero if no temps
 !DIR$ VECTOR ALIGNED
          do i = 1, span
-           temp_ref = local_work%temps_ref_node_blk(i,1)
+           temp_init = local_work%temps_init_node_blk(i,1)
            d_temp   = local_work%dtemps_node_blk(i,1)
            temp_np1 = local_work%temps_node_blk(i,1)
-           local_work%cohes_temp_ref(i) = temp_ref
+           local_work%cohes_temp_init(i) = temp_init
            local_work%cohes_dtemp(i)    = d_temp
            local_work%cohes_temp_n(i)   = temp_np1 - d_temp
          end do
@@ -843,8 +843,8 @@ c     ****************************************************************
 c
 c
       subroutine average_nodal_temps( temperatures,
-     &      temps_node_to_process, temperatures_ref, nnodel,
-     &      dtemps_node_blk, temps_node_blk, temps_ref_node_blk,
+     &      temps_node_to_process, temperatures_init, nnodel,
+     &      dtemps_node_blk, temps_node_blk, temps_init_node_blk,
      &      mxvl, span, average_case )
       implicit none
 c
@@ -852,11 +852,11 @@ c                    parameter declarations
 c
       integer nnodel, mxvl, span, average_case
       logical  temperatures, temps_node_to_process,
-     &         temperatures_ref
+     &         temperatures_init
 c
       double precision
      &  dtemps_node_blk(mxvl,*), temps_node_blk(mxvl,*),
-     &  temps_ref_node_blk(mxvl,*)
+     &  temps_init_node_blk(mxvl,*)
 c
 c                    local
 c
@@ -873,14 +873,14 @@ c                    elements with linear displacement fields
 c                    can shear lock when the temperature
 c                    change in the elements is not uniform.
 c                    here we have a block of such elements
-c                    with total, incremental and reference
+c                    with total, incremental and initial
 c                    temperatures available at the element nodes.
 c                    for each set of temperatures, redefine the
 c                    nodal values to be the simple average
 c                    of all the nodal values.
 c
       do_average = temperatures .or.  temps_node_to_process .or.
-     &             temperatures_ref
+     &             temperatures_init
       if( .not. do_average ) return
 c
       fnnodel = nnodel
@@ -897,7 +897,7 @@ c
             do i = 1, span
                sum1(i) = sum1(i) + dtemps_node_blk(i,enode)
                sum2(i) = sum2(i) + temps_node_blk(i,enode)
-               sum3(i) = sum3(i) + temps_ref_node_blk(i,enode)
+               sum3(i) = sum3(i) + temps_init_node_blk(i,enode)
             end do
          end do
          do enode = 1, nnodel
@@ -908,7 +908,7 @@ c
                avg3 = sum3(i) / fnnodel
                dtemps_node_blk(i,enode)    = avg1
                temps_node_blk(i,enode)     = avg2
-               temps_ref_node_blk(i,enode) = avg3
+               temps_init_node_blk(i,enode) = avg3
             end do
          end do
       end if

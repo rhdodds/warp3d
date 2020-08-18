@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/21/2019 rhd              *
+c     *                   last modified : 8/18/2020 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -1065,7 +1065,7 @@ c
      &     '    **                                             ',
      &     '                  **',/,
      &     '    **     ',a30,' -rel-    Release: ',
-     &     ' 18.2.1  **',/,
+     &     ' 18.2.3  **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,

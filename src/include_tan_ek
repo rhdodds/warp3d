@@ -56,7 +56,7 @@ c
      &            iout, macro_sz, cp_sz, inter_mat
 c
        logical :: geo_non_flg, bbar_flg, trn_e_block,
-     &            first, qbar_flag, temperatures, temperatures_ref,
+     &            first, qbar_flag, temperatures, temperatures_init,
      &            temps_node_to_process,
      &            segmental, fgm_enode_props, is_cohes_elem,
      &            linear_displ_elem, adjust_const_elem,

@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 8/16/2020 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -173,7 +173,8 @@ c
      &              show_details, temperatures, sparse_stiff_output,
      &              sparse_stiff_binary, sparse_research,
      &              solver_mkl_iterative, output_packets,
-     &              temperatures_ref, fgm_node_values_defined,
+     &              fgm_node_values_defined,
+     &              temperatures_init,
      &              fgm_node_values_used,
      &              hyp_trigger_step, hyp_first_solve,
      &              time_assembly, parallel_assembly_allowed,
@@ -294,7 +295,7 @@ c
       call wrtbk( fileno, a, prec_fact*nodof )
       call wrtbk( fileno, du, prec_fact*nodof )
       call wrtbk( fileno, temper_nodes, prec_fact*nonode )
-      call wrtbk( fileno, temper_nodes_ref, prec_fact*nonode )
+      call wrtbk( fileno, temper_nodes_init, prec_fact*nonode )
       call wrtbk( fileno, temper_elems, prec_fact*noelem )
       call wrt2d( fileno, dmatprp, 2*mxmtpr, 2*mxmtpr, mxmat )
       write (fileno) check_data_key

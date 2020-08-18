@@ -4,7 +4,7 @@ c     *                      subroutine eqivld                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/14/2018 rhd             *
+c     *                   last modified : 8/17/2020 rhd              *
 c     *                                                              *
 c     *     compute the applied total load vector at end of current  *
 c     *     step based on user specified definition of the load step.*
@@ -30,7 +30,7 @@ c
      &                      load_pattern_factors, elem_eq_loads,
      &                      eq_node_force_indexes, eq_node_forces,
      &                      node_load_defs, crdmap, cnstrn_in,
-     &                      temper_nodes_ref, total_user_nodal_forces,
+     &                      temper_nodes_init, total_user_nodal_forces,
      &                      user_cnstrn_stp_factors
 c
       implicit none
@@ -177,7 +177,7 @@ c
             user_mf_ratio_change = .false.
             user_file_name = node_load_defs(ldcond)%user_file_name
             call eqivld_drive_user_nodal( step,
-     &            step_factor, ldcond, temper_nodes_ref,
+     &            step_factor, ldcond, temper_nodes_init,
      &            total_user_nodal_forces, rload, dtemp_nodes,
      &            crdmap, user_mf_ratio_change, user_file_name,
      &            debug  )

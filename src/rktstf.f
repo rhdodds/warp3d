@@ -4,7 +4,7 @@ c     *                      subroutine rktstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/5/2017  rhd              *
+c     *                   last modified : 8/18/2020 rhd              *
 c     *                                                              *
 c     *     drive computation of tangent stiffness matrices for a    *
 c     *     block of similar elements.                               *
@@ -40,7 +40,7 @@ c
 c
       double precision ::
      &  xi, eta, zeta, beta_fact, eps_bbar, zero, one, dummy,
-     &  temp_ref, d_temp, temp_np1
+     &  d_temp, temp_np1
 c
       data local_debug, dummy_logic / .false., .true. /
       data zero, one, dummy / 0.d0, 1.d0, 1.d0 /
