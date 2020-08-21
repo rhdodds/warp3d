@@ -290,6 +290,15 @@ c                              200 - um_50
 c
 c                      201-230 cavity option for cohesive material
 c
+c                      250      the reference expansion temperature that
+c                               sets starting temperature for secant 
+c                               expansion coefficients when alpha values
+c                               are temperature dependent.
+c                               Abaqus uses *Expansion, zero=<value>
+c                               The value defaults to zero degrees.
+c                               The material values applies to all the sig-eps 
+c                               associated with material.
+c
 c                      the beta_fact is used to assist in construction
 c                      of planar models containing one layer of elements.
 c                      the stiffness and internal forces are mutiplied
@@ -371,6 +380,8 @@ c
          smatprp(113,matnum) = 'ni'
          matprp(114:mxmtpr,matnum) = 0.0
          dmatprp(151:200,matnum) = 0.0d00   ! UMAT properties
+         matprp(250,matnum) = 0.0  ! reference/zero for temp dependent
+c                                    alpha values         
       else
          call errmsg(3,dum,dums,dumr,dumd)
          go to 9998
@@ -429,6 +440,8 @@ c
       if ( matchs('alphay',6)           ) go to 274
       if ( matchs('alphaz',6)           ) go to 275
       if ( matchs('alpha',5)            ) go to 276
+      if ( matchs('alpha_zero',9)       ) go to 278
+      if ( matchs('alpha_reference',11) ) go to 278
       if ( matchs_exact('rho')          ) go to 280
       if ( matchs('thickness_ratio',8)  ) go to 285
       if ( matchs_exact('bilinear')     ) go to 300
@@ -723,7 +736,12 @@ c
       end if
       lmtprp(25,matnum) = .false.
       go to 210
-c
+ 278  continue
+      if( .not. numr(matprp(250,matnum)) ) then
+         call errmsg(5,dum,'alpha_zero',dumr,dumd)
+         go to 210
+      end if
+      go to 210
 c
 c **********************************************************************
 c *                                                                    *
