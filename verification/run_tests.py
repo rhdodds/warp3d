@@ -421,28 +421,31 @@ def test81():
 
 #
  i = 7
- answer = "-0.160559E-04"
- anspos = 0
+ answer = "0.359763E-01"
+ anspos = 1
  rfile = "wnfs0000050"
  print("\n  ... Checking results: " + rfile )
+
  with open( problem_dir + '/' + rfile ) as f:
-    for line in f:
-        pass
-    words = line.split()
+   for i, nowline in enumerate( f ):
+     if i == 5446:
+      break
+ words = nowline.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
  if answer != words[anspos] : message = message_diff; count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
- i = 7
- answer = "-0.100000E+01-0.930621E-05"
- anspos = 0
+ i = 8
+ answer = "0.209145E-02"
+ anspos = 1
  rfile = "wnfe0000050"
  print("\n  ... Checking results: " + rfile )
  with open( problem_dir + '/' + rfile ) as f:
-    for line in f:
-        pass
-    words = line.split()
+   for i, nowline in enumerate( f ):
+     if i == 1639:
+      break
+ words = nowline.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
  if answer != words[anspos] : message = message_diff; count_diffs += 1
