@@ -3,9 +3,9 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: July 4, 2020
+                   Last Update: August 25,2020
 
-                  Version 18.2.1 on all platforms
+                  Version 18.2.3 on all platforms
 
 ** The multiple README files in previous releases are replaced with the
 ** QuickStart documents on home page of www.warp3d.net
@@ -16,17 +16,21 @@ directories in the WARP3D distribution for this interested in such details.
 This version of WARP3D is built with these compilers:
   - Windows.  1 version w/ Intel Fortran 19.0.8.324
   - Linux. 2 versions available
-           (1) Intel Fortran 19.0.8.323  
+           (1) Intel Fortran 19.0.8.324  
            (2) GNU Fortran 7.5.0
   - Mac OSX 2 versions available
            (1) Intel Fortran 19.0.8.323  
            (2) GNU Fortran (GCC) 8.1.0
 
-   Python 3 for supporting codes (e.g. warp3d2exii)
+   Python 3.5 and later for supporting codes (e.g. warp3d2exii)
 
 ** Late Breaking News **
 
  This is primarily a bug fix, cleanup release.
+
+ Temperature dependent CTE values use the secant definition. The
+ reference temperature for measurement of the CTE values is specified
+ with material model parameter: alpha_zero
 
  Executables in the distribution and the default build process
  now use the processor dependent dispatch feature of the Intel
