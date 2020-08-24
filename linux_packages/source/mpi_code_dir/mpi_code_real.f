@@ -1007,7 +1007,7 @@ c
 c
       use main_data, only: incmap, incid, crdmap, dtemp_nodes,
      &      dtemp_elems, temper_nodes, temper_elems, invdst,
-     &      temper_nodes_init, temperatures_init, fgm_node_values,
+     &      temper_nodes_ref, temperatures_ref, fgm_node_values,
      &      fgm_node_values_defined, fgm_node_values_cols,
      &      fgm_node_values_used,
      &      matprp, lmtprp, imatprp, dmatprp, smatprp,
@@ -1056,7 +1056,7 @@ c
       call MPI_BCAST(num_seg_curve_sets,1,MPI_INTEGER,0,MPI_COMM_WORLD,
      &               ierr)
       call MPI_BCAST(lgnmcn,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      call MPI_BCAST(temperatures_init,1,MPI_LOGICAL,0,MPI_COMM_WORLD,
+      call MPI_BCAST(temperatures_ref,1,MPI_LOGICAL,0,MPI_COMM_WORLD,
      &               ierr)
       call MPI_BCAST(fgm_node_values_defined,1,MPI_LOGICAL,0,
      &               MPI_COMM_WORLD,ierr)
@@ -1204,7 +1204,7 @@ c
      &                ierr )
       call MPI_BCAST( temper_nodes, nonode, MPI_VAL, 0, MPI_COMM_WORLD,
      &                ierr )
-      call MPI_BCAST( temper_nodes_init, nonode, MPI_VAL, 0,
+      call MPI_BCAST( temper_nodes_ref, nonode, MPI_VAL, 0,
      &                MPI_COMM_WORLD, ierr )
       call MPI_BCAST( temper_elems, noelem, MPI_VAL, 0, MPI_COMM_WORLD,
      &                ierr)
