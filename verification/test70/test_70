@@ -30,7 +30,7 @@ c
 c
  material gp_hastelloy_x
    properties cyclic generalized_plasticity curves 1-9,
-     rho 7.7e-7 gp_tau 0.05 sig_tol 0.001
+     rho 7.7e-7 gp_tau 0.05 sig_tol 0.001 alpha_zero 70 $ must have
 c
 number of nodes  81 elements 8
 c
