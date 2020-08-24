@@ -70,7 +70,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4000
+BUILDNUM := 4100
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -133,7 +133,7 @@ else  #  Intel Composer options
   ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE =  $(ALL_PROCESSORS) #  $(HARDWARE_SPECIFIC)
+  MACHINE_TYPE = $(ALL_PROCESSORS) #  $(HARDWARE_SPECIFIC)
 #
   FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
