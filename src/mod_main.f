@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 8/16/20 rhd                     *
+c     *              last modified : 12/3/2019 rhd                   *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -141,7 +141,7 @@ c     *                     module main_data                         *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 8/18/2020 rhd                   *
+c     *              last modified : 6/28/2018 rhd                   *
 c     *                                                              *
 c     *     define the data structures for main, large arrays        *
 c     *     used in warp3d solutions. also other variables as we     *
@@ -214,8 +214,8 @@ c
       double precision,
      &       dimension(:), save, allocatable ::
      &        temper_nodes, dtemp_nodes, temper_elems,
-     &        dtemp_elems, temper_nodes_init
-      logical :: temperatures_init
+     &        dtemp_elems, temper_nodes_ref
+      logical temperatures_ref
 c
 c
 c                nodal constraints definitions. release constraints

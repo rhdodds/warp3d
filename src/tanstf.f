@@ -4,7 +4,7 @@ c     *                                                              *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 8/18/2020 rhd              *          
+c     *                   last modified : 8/12/2017 rhdd             *          
 c     *                                                              *          
 c     *     drive computation of all element [K]s. can be symmetric  *          
 c     *     (store upper-triangle) or asymmetric (store full [K])    *          
@@ -127,7 +127,7 @@ c
      &                              axisymm_ele_types, bar_types,                         
      &                              nonlocal_analysis,                          
      &                              asymmetric_assembly,                        
-     &                              temperatures_init,                   
+     &                              temperatures_ref,                           
      &                              fgm_node_values_defined                                                                                                    
       use damage_data, only : dam_ptr, growth_by_kill                                                                                                          
       use contact, only : use_contact                                           
@@ -192,7 +192,7 @@ c
       local_work%iter           = now_iter                                      
       local_work%step           = now_step                                      
       local_work%temperatures       = temperatures                              
-      local_work%temperatures_init  = temperatures_init                           
+      local_work%temperatures_ref   = temperatures_ref                          
       local_work%qbar_flag      = qbar_flag                                     
       local_work%cohes_type     = cohes_type                                    
       local_work%surface        = surface                                       

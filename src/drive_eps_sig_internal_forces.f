@@ -3,7 +3,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/17/2020 rhd              *
+c     *                   last modified : 6/13/2018 rhd              *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -411,7 +411,7 @@ c
      &                              edest_blocks, element_vol_blocks,
      &                              nonlocal_flags, nonlocal_data_n1
       use main_data,         only : trn, incid, incmap,
-     &                              temperatures_init,
+     &                              temperatures_ref,
      &                              fgm_node_values_defined,
      &                              cohesive_ele_types, bar_types,
      &                              linear_displ_ele_types,
@@ -425,11 +425,16 @@ c
 c
       implicit none
       include 'include_sig_up'
+c              
+c              parameters
 c
-      integer :: blk, iter, step
-      double precision :: block_energy, block_plastic_work,
+      integer, intent(in) :: blk, iter, step
+      double precision, intent(inout) :: block_energy,
+     &                    block_plastic_work,
      &                    block_stress_sums(1), block_strain_sums(1)
-      logical :: material_cut_step, local_debug_sums
+      logical, intent(inout) :: material_cut_step, local_debug_sums
+c              
+c              locals
 c
       integer :: span, felem, matnum, mat_type,
      &           num_enodes, num_enode_dof, totdof, num_int_points,
@@ -491,7 +496,7 @@ c
       local_work%signal_flag        = signal_flag
       local_work%adaptive_flag      = adaptive_flag
       local_work%temperatures       = temperatures
-      local_work%temperatures_init   = temperatures_init
+      local_work%temperatures_ref   = temperatures_ref
       local_work%step_scale_fact    = scaling_factor
       local_work%cohes_type         = cohes_type
       local_work%surface            = surface
@@ -821,9 +826,9 @@ c
       allocate( local_work%ddtse(mxvl,nstr,mxgp),
      1   local_work%strain_n(mxvl,nstr,mxgp),
      2   local_work%dtemps_node_blk(mxvl,mxndel),
-     3   local_work%temps_init_node_blk(mxvl,mxndel),
+     3   local_work%temps_ref_node_blk(mxvl,mxndel),
      4   local_work%temps_node_blk(mxvl,mxndel),
-     5   local_work%temps_node_init_blk(mxvl,mxndel),
+     5   local_work%temps_node_ref_blk(mxvl,mxndel),
      6   local_work%nu_vec(mxvl),
      7   local_work%beta_vec(mxvl),
      8   local_work%h_vec(mxvl),
@@ -970,7 +975,7 @@ c             So it needs to exist !
       end if
 c
       if( local_work%is_cohes_elem ) then
-         allocate( local_work%cohes_temp_init(mxvl),
+         allocate( local_work%cohes_temp_ref(mxvl),
      1      local_work%cohes_dtemp(mxvl),
      2      local_work%cohes_temp_n(mxvl),
      3      local_work%intf_prp_block(mxvl,max_interface_props),
@@ -1121,9 +1126,9 @@ c
       deallocate( local_work%ddtse,
      1   local_work%strain_n,
      2   local_work%dtemps_node_blk,
-     3   local_work%temps_init_node_blk,
+     3   local_work%temps_ref_node_blk,
      4   local_work%temps_node_blk,
-     5   local_work%temps_node_init_blk,
+     5   local_work%temps_node_ref_blk,
      6   local_work%nu_vec,
      7   local_work%beta_vec,
      8   local_work%h_vec,
@@ -1303,7 +1308,7 @@ c
            call die_abort
       end if
       if( local_work%is_cohes_elem ) then
-         deallocate( local_work%cohes_temp_init,
+         deallocate( local_work%cohes_temp_ref,
      1      local_work%cohes_dtemp,
      2      local_work%cohes_temp_n,
      3      local_work%intf_prp_block, stat=error )
@@ -1368,7 +1373,7 @@ c
      &                            eps_n_blocks, urcs_n_blocks
       use main_data,       only:  dtemp_nodes, dtemp_elems,
      &                            temper_nodes, temper_elems,
-     &                            temper_nodes_init, temperatures_init,
+     &                            temper_nodes_ref, temperatures_ref,
      &                            fgm_node_values,
      &                            fgm_node_values_defined,
      &                            fgm_node_values_cols, matprp
@@ -1478,17 +1483,17 @@ c
         local_work%dtemps_node_blk(1:span,1:nnode) = zero
       end if
 c
-c           gather initial temperatures for element nodes from the
-c           global vector of initial values at(if they are defined).
-c           construct a set of initial nodal temperatures for each
+c           gather reference temperatures for element nodes from the
+c           global vector of reference values at(if they are defined).
+c           construct a set of reference nodal temperatures for each
 c           element in block.
 c
-      if( temperatures_init ) then
+      if( temperatures_ref ) then
         if( local_debug )  write(out,9610)
-        call gartemps( temper_nodes_init, belinc, nnode, span,
-     &                 felem, local_work%temps_init_node_blk, mxvl )
+        call gartemps( temper_nodes_ref, belinc, nnode, span,
+     &                 felem, local_work%temps_ref_node_blk, mxvl )
       else
-        local_work%temps_init_node_blk(1:span,1:nnode) = zero
+        local_work%temps_ref_node_blk(1:span,1:nnode) = zero
       end if
 c
 c           build nodal temperatures for elements in the block

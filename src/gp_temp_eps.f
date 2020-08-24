@@ -8,7 +8,6 @@ c     *                   last modified : 8/17/2020 rhd              *
 c     *                                                              *
 c     *     compute increment of temperature at a gauss point for    *
 c     *     all elements in the block.                               *
-c     *                                                              *
 c     *     compute current temperature at end of step for           *
 c     *     all elements of the block.                               *
 c     *                                                              *
@@ -23,31 +22,31 @@ c
       implicit none
       include 'param_def'
 c
-c                      parameter declarations
+c              parameter declarations
 c
-      integer :: gpn, etype, span, int_order, nnodel
-      double precision ::
-     &  dtemps_node_blk(mxvl,*), gp_dtemps(*), gp_temps(*),
-     &  temps_node_blk(mxvl,*), temps_init_node_blk(mxvl,*),
-     &  gp_rtemps(*)
-      logical :: temper_increment, temps_node_to_process,
-     &           temperatures_init
+      integer, intent(in) :: gpn, etype, span, int_order, nnodel
+      double precision, intent(inout) :: gp_dtemps(*), gp_temps(*),
+     &        gp_rtemps(*)
+      double precision, intent(in) :: dtemps_node_blk(mxvl,*),
+     &        temps_node_blk(mxvl,*), temps_init_node_blk(mxvl,*)
+      logical, intent(in) :: temper_increment, temps_node_to_process,
+     &                       temperatures_init
 c
-c                     locally defined arrays-variables
+c              locally defined arrays-variables
 c
       integer :: i, k, enode
       double precision :: sf(mxndel), xi, eta, zeta, weight
       double precision, parameter :: zero = 0.0d0
       logical, parameter :: local_debug = .false.
 c
-c                     if there are incremental temperature changes
-c                     imposed in this load step, interpolate temperature
-c                     change at this gauss point for all elements
-c                     in the block from nodal values.
+c              if there are incremental temperature changes
+c              imposed in this load step, interpolate temperature
+c              change at this gauss point for all elements
+c              in the block from nodal values.
 c
-c                     get the parametric coordinates for this
-c                     integration point. then get the nodal
-c                     shape functions evaluated at the point.
+c              get the parametric coordinates for this
+c              integration point. then get the nodal
+c              shape functions evaluated at the point.
 c
       if( temper_increment .or. temps_node_to_process .or.
      &     temperatures_init ) then
@@ -72,9 +71,9 @@ c
          end do
       end if
 c
-c                     interpolate the current temperature at the end
-c                     of this load step for this gauss point for all elements
-c                     in the block from nodal values.
+c              interpolate the current temperature at the end
+c              of this load step for this gauss point for all elements
+c              in the block from nodal values.
 c
       if( temps_node_to_process ) then
         do enode = 1, nnodel
@@ -86,9 +85,9 @@ c
         end do
       end if
 c
-c                     interpolate initial temperature
-c                     for this gauss point for all elements
-c                     in the block from nodal values.
+c              interpolate initial temperature
+c              for this gauss point for all elements
+c              in the block from nodal values.
 c
       if( temperatures_init ) then
         do enode = 1, nnodel
@@ -123,7 +122,7 @@ c     *                      subroutine gp_temp_eps                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/17/2020 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     compute incremental thermal strains at gauss point for   *
 c     *     all elements of the block. subtract them from incr.      *
@@ -132,59 +131,69 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine gp_temp_eps( span, deps, alpha_n1, gp_dtemps,
-     &                        gp_temps, gp_rtemps, alpha_n, etype  )
+      subroutine gp_temp_eps( span, deps, alpha_n1,  alpha_n,
+     &      alpha_zero, temps_n1, dtemps, temps_initial, etype  )
       use main_data,  only : bar_types, link_types
       implicit none
-      include 'param_def'
+      include 'param_def' 
 c
-c                      parameter declarations
+c              parameter declarations
 c
-      integer :: span, etype
-      double precision :: deps(mxvl,*), alpha_n1(mxvl,6),
-     &                    alpha_n(mxvl,6), gp_dtemps(*),
-     &                    gp_temps(*), gp_rtemps(*)
+      integer, intent(in)  :: span, etype 
+      double precision, intent(inout) :: deps(mxvl,*)
+      double precision, intent(in) :: alpha_n1(mxvl,6),
+     &                    alpha_n(mxvl,6), temps_n1(*),
+     &                    temps_initial(*),
+     &                    dtemps(*), alpha_zero
 c
-c                     locals
+c              locals
 c
       integer :: i, j
-      double precision :: theta_n, dtn, dtn1, deps_theta(6)
+      double precision :: temps_n(mxvl), deps_theta(mxvl,6), tn1, tn
       double precision, parameter :: zero = 0.0d0
       logical :: is_bar_elem, is_link_elem
       logical, parameter :: local_debug = .false.
 c
-c            compute incremental thermal strain and subtract from
-c            strain increment due to displacements.
+c              compute incremental thermal strain and subtract from
+c              strain increment due to displacements.
 c
       if( local_debug ) write(*,9100) (i,(deps(i,j),j=1,6),i=1,span)
       is_bar_elem  = bar_types(etype)
       is_link_elem = link_types(etype)
 c
-c           \Delta\veps_\theta = \alpha_{n+1) T_{n+1)  -
-c                                \alpha_n T_n
-c           adjust for initial temp
+c              \Delta\veps_\theta = 
+c                  \alpha_{n+1) ( T_{n+1) - alpha_zero)
+c                              -  \alpha_n (T_n - alpha_zero)
 c
-c           \alpha here can be anisotropic
+c              \alpha here can be anisotropic. alpha_zero adjustment
+c              included but only applies to isotropic, temperature
+c              dependent alpha values. default = 0
+c
+c              alpha_zero. same value for all elements, gpts
+c              in block.
+c
+c              if the user sets a non-zero alpha_zero value
+c              for temperature invariant alphas, the alpha_zero
+c              terms for the incremental thermal strain cancel as
+c              easily see below.
+c
+c              The user-specified initial temperature at t=0
+c              passed in here but not used in current formulation.
+c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
+        temps_n(i) = temps_n1(i) - dtemps(i)
+      end do 
 c
-       theta_n = gp_temps(i) -  gp_dtemps(i)
-       dtn     = theta_n     -  gp_rtemps(i)
-       dtn1    = gp_temps(i) -  gp_rtemps(i)
-c
-       deps_theta(1) = alpha_n1(i,1)*dtn1 - alpha_n(i,1)*dtn
-       deps_theta(2) = alpha_n1(i,2)*dtn1 - alpha_n(i,2)*dtn
-       deps_theta(3) = alpha_n1(i,3)*dtn1 - alpha_n(i,3)*dtn
-       deps_theta(4) = alpha_n1(i,4)*dtn1 - alpha_n(i,4)*dtn
-       deps_theta(5) = alpha_n1(i,5)*dtn1 - alpha_n(i,5)*dtn
-       deps_theta(6) = alpha_n1(i,6)*dtn1 - alpha_n(i,6)*dtn
-       deps(i,1) = deps(i,1) -   deps_theta(1)
-       deps(i,2) = deps(i,2) -   deps_theta(2)
-       deps(i,3) = deps(i,3) -   deps_theta(3)
-       deps(i,4) = deps(i,4) -   deps_theta(4)
-       deps(i,5) = deps(i,5) -   deps_theta(5)
-       deps(i,6) = deps(i,6) -   deps_theta(6)
-c
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+       tn  = temps_n(i)  - alpha_zero
+       tn1 = temps_n1(i) - alpha_zero
+       deps_theta(i,1:6) = alpha_n1(i,1:6)*tn1 - alpha_n(i,1:6)*tn
+      end do 
+!DIR$ VECTOR ALIGNED
+      do i = 1, span
+       deps(i,1:6) = deps(i,1:6) - deps_theta(i,1:6)
       end do
 c
       if( is_bar_elem .or. is_link_elem ) deps(1:span,2:6) = zero
@@ -192,17 +201,7 @@ c
       if ( .not. local_debug ) return
       write(*,*) '>> thermal strain increments...'
       do i = 1, span
-       theta_n = gp_temps(i) -  gp_dtemps(i)
-       dtn     = theta_n -  gp_rtemps(i)
-       dtn1    = gp_temps(i) -  gp_rtemps(i)
-       deps_theta(1) = alpha_n1(i,1)*dtn1 - alpha_n(i,1)*dtn
-       deps_theta(2) = alpha_n1(i,2)*dtn1 - alpha_n(i,2)*dtn
-       deps_theta(3) = alpha_n1(i,3)*dtn1 - alpha_n(i,3)*dtn
-       deps_theta(4) = alpha_n1(i,4)*dtn1 - alpha_n(i,4)*dtn
-       deps_theta(5) = alpha_n1(i,5)*dtn1 - alpha_n(i,5)*dtn
-       deps_theta(6) = alpha_n1(i,6)*dtn1 - alpha_n(i,6)*dtn
-       if( is_bar_elem ) deps_theta(2:6) = zero
-       write(*,9200) i, deps_theta
+       write(*,9200) i, deps_theta(i,1:6)
       end do
       write(*,9000) (i,(deps(i,j),j=1,6),i=1,span)
       return
@@ -229,6 +228,11 @@ c     *                   last modified : 8/27/2018 rhd              *
 c     *                                                              *
 c     *     compute total thermal strains at gauss point for         *
 c     *     all elements of the block.                               *
+c     *                                                              *
+c     *   -- this routine not used anywhere in WARP3D. if used in    *
+c     *      future it needs to be re-written to properly include    *
+c     *      alpha_zero effects. Abaqus calls this term              *
+c     *      *EXPANSION,ZERO                                         *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -262,7 +266,7 @@ c
 c
 c           instantaneous thermal strain is always just
 c           current temperature * current  CTEs
-c           adjust for initial temp.
+c           adjust for reference temp.
 c           \alpha here can be anisotropic
 c
 !DIR$ VECTOR ALIGNED

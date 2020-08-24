@@ -647,7 +647,7 @@ c
       double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures, segmental,
-     &           temperatures_init, fgm_enode_props, nonlinear_update,
+     &           temperatures_ref, fgm_enode_props, nonlinear_update,
      &           linear_elastic_update
 c
 c           vectorized mises plasticity model with constant hardening
@@ -670,7 +670,7 @@ c
       now_blk           = local_work%blk
       mat_type          = local_work%mat_type
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       segmental         = local_work%segmental
       number_points     = local_work%number_points
       curve_set         = local_work%curve_set_number
@@ -683,7 +683,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_init, segmental,
+     &                   temperatures, temperatures_ref, segmental,
      &                   number_points, curve_set,
      &                   fgm_enode_props, hist_size_for_blk
       end if
@@ -700,6 +700,8 @@ c
       curve_type = -1
       if( segmental ) call set_segmental_type( curve_set, curve_type,
      &                                          local_work%eps_curve )
+c
+c          default property vectors made by setup_mm01_rknstr 
 c
 c          determine if some material properties are specified using
 c          values at model nodes to define fgms. interpolate values
@@ -749,6 +751,7 @@ c
             local_work%alpha_vec(i,4)   = zero
             local_work%alpha_vec(i,5)   = zero
             local_work%alpha_vec(i,6)   = zero
+            local_work%alpha_vec_n(i,1) = gp_alpha
             local_work%alpha_vec_n(i,2) = gp_alpha
             local_work%alpha_vec_n(i,3) = gp_alpha
             local_work%alpha_vec_n(i,4) = zero
@@ -770,7 +773,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -806,14 +809,12 @@ c
 !DIR$ VECTOR ALIGNED
       uddt_temps = zero
       if ( temperatures ) then  ! incremental temps
-        call gp_temp_eps( span, uddt_temps,
-     &                    local_work%alpha_vec, gp_dtemps ,
-     &                    gp_temps, gp_rtemps,
-     &                    local_work%alpha_vec_n, type )
+        call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
         if( local_debug ) write(iout,9050)
       end if
-
-      
 c
 c            uddt_displ - strain increment due to displacement increment
 c            uddt_temps - (negative) of strain increment just due
@@ -886,7 +887,7 @@ c
  9000 format(1x,'.... debug mm01. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_init: ',
+     &     /,10x,'...temperatures, temperatures_ref: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -1043,7 +1044,7 @@ c     *                 subroutine drive_02_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/27/2018 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     this subroutine drives material model 02 to              *
 c     *     update stresses and history for all elements in the      *
@@ -1083,7 +1084,7 @@ c
       double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures,
-     &           temperatures_init, fgm_enode_props, signal_flag,
+     &           temperatures_ref, fgm_enode_props, signal_flag,
      &           nonlinear_update, linear_elastic_update
 c
 c          deformation plasticity model. properties are invariant of
@@ -1104,7 +1105,7 @@ c
       signal_flag       = local_work%signal_flag
       fgm_enode_props   = local_work%fgm_enode_props
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
 c
       local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 3
@@ -1112,9 +1113,11 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_init,
+     &                   temperatures, temperatures_ref,
      &                   fgm_enode_props, hist_size_for_blk
       end if
+c
+c          default property vectors made by setup_mm02_rknstr 
 c
 c          for fgms, interpolate values of material properties
 c          at the current gauss point (overwrite the constant values).
@@ -1170,14 +1173,15 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
 c          process iter > 0 or iter=0 and extrapolated du. mm02
 c          uses total strains adjusted for total
 c          temperature strains to compute stresses @ n+1.
-cRE: Layered pressure vessels, residual stress measurements
+c          CTE values **cannot** be temperature dependent
+c
       do i = 1, span
            nowtemp = gp_temps(i) - gp_rtemps(i)
            ddtse(i,1) = local_work%ddtse(i,1,gpn) -
@@ -1198,7 +1202,7 @@ c
 !DIR$ VECTOR ALIGNED
        if( local_work%killed_status_vec(i) ) ddtse(i,1:nstr) = zero
       end do
-
+c
       nonlinear_update = iter >= 1 .or. extrapolated_du 
       linear_elastic_update  = .not. nonlinear_update
 c
@@ -1219,7 +1223,7 @@ c
       end if
 c
       if( nonlinear_update .and. local_work%capture_initial_state )
-     &     call  drive_02_update_c
+     &     call  drive_02_update_c 
       if(  linear_elastic_update  ) then
         if( local_debug ) write(iout,9070)
 !DIR$ VECTOR ALIGNED
@@ -1245,7 +1249,7 @@ c
  9000 format(1x,'.... debug mm02. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_init: ',
+     &     /,10x,'...temperatures, temperatures_ref: ',
      &               2l2,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
      &    l3,i4 )
@@ -1403,193 +1407,13 @@ c
 c
       return
       end
-
-c     ****************************************************************
-c     *                                                              *
-c     *                 subroutine drive_02_update                   *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 06/24/12 rhd               *
-c     *                                                              *
-c     *     this subroutine drives material model 02 to              *
-c     *     update stresses and history for all elements in the      *
-c     *     block for an integration point                           *
-c     *                                                              *
-c     ****************************************************************
-c
-c
-      subroutine drive_02_update_old( gpn, props, lprops, iprops,
-     &                            local_work, uddt, iout )
-      use segmental_curves, only : max_seg_points
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
-c
-      implicit integer (a-z)
-      include 'param_def'
-c
-c                      parameter declarations
-c
-      real ::    props(mxelpr,*)
-      logical :: lprops(mxelpr,*)
-      integer :: iprops(mxelpr,*)
-      double precision :: uddt(mxvl,nstr)
-      include 'include_sig_up'
-c
-c
-c                       locally defined variables
-c
-      double precision ::
-     &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, gp_alpha, ddtse(mxvl,6), nowtemp
-      logical :: signal_flag, fgm_enode_props, local_debug,
-     &        temperatures, temperatures_init
-      data local_debug, zero / .false., 0.0d0 /
-c
-c
-c          deformation plasticity model. properties are invariant of
-c          temperature and loading rate. properties may vary spatially
-c          for fgms - values here are interploated at the current
-c          integration point.
-c
-c
-      span              = local_work%span
-      felem             = local_work%felem
-      step              = local_work%step
-      iter              = local_work%iter
-      now_blk           = local_work%blk
-      type              = local_work%elem_type
-      order             = local_work%int_order
-      nnode             = local_work%num_enodes
-      signal_flag       = local_work%signal_flag
-      fgm_enode_props   = local_work%fgm_enode_props
-      temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
-c
-c          for fgms, interpolate values of material properties
-c          at the current gauss point (overwrite the constant values).
-c          at present only e, nu, sig_yld, n_power and
-c          isotropic alpha can be specified
-c          as fgm properties interpolated from nodal values.
-c
-      if ( fgm_enode_props ) then
-c
-          call  set_fgm_solid_props_for_block(
-     &            span, felem, type, gpn, nnode,
-     &            local_work%e_vec, local_work%shape(1,gpn),
-     &            local_work%enode_mat_props, 1,
-     &            local_work%fgm_flags(1,1) )
-          call  set_fgm_solid_props_for_block(
-     &            span, felem, elem_type, gpn, nnode,
-     &            local_work%nu_vec, local_work%shape(1,gpn),
-     &            local_work%enode_mat_props, 2,
-     &            local_work%fgm_flags(1,2) )
-          call  set_fgm_solid_props_for_block(
-     &            span, felem, elem_type, gpn, nnode,
-     &            local_work%alpha_vec(1,1), local_work%shape(1,gpn),
-     &            local_work%enode_mat_props, 3,
-     &            local_work%fgm_flags(1,3) )
-          call  set_fgm_solid_props_for_block(
-     &            span, felem, elem_type, gpn, nnode,
-     &            local_work%sigyld_vec(1), local_work%shape(1,gpn),
-     &            local_work%enode_mat_props, 7,
-     &            local_work%fgm_flags(1,7) )
-          call  set_fgm_solid_props_for_block(
-     &            span, felem, elem_type, gpn, nnode,
-     &            local_work%n_power_vec(1), local_work%shape(1,gpn),
-     &            local_work%enode_mat_props, 8,
-     &            local_work%fgm_flags(1,8) )
-          do i = 1, span
-            gp_alpha  = local_work%alpha_vec(i,1)
-            local_work%alpha_vec(i,1)   = gp_alpha
-            local_work%alpha_vec(i,2)   = gp_alpha
-            local_work%alpha_vec(i,3)   = gp_alpha
-            local_work%alpha_vec(i,4)   = zero
-            local_work%alpha_vec(i,5)   = zero
-            local_work%alpha_vec(i,6)   = zero
-          end do
-      end if
-c
-c           get increment of temperature at gauss point for elements
-c           in the block, the temperature at end of step and the
-c           reference temperature.
-c
-      call gauss_pt_temps(
-     &        local_work%dtemps_node_blk, gpn, type, span, order,
-     &        nnode, gp_dtemps, local_work%temps_node_blk,
-     &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
-     &        gp_rtemps )
-c
-c          for iter = 0, use the stored [Dt] from last stiffness update
-c          to compute stress @ n+1 = stress @ n + [Dt]*uddt. Remove
-c          temperature increment from uddt (deps) if needed.
-c          iter = 0 is the process to compute stresses for equivalent loads
-c          generation from imposed displacement and temperature loading.
-c
-      if( iter .gt. 0 ) go to 1000
-c
-      if( temperatures )
-     &    call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec,
-     &                    type )
-      igpn = gpn
-      call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-      return
-c
-c          process iter > 0. mm02 uses total strains adjusted for total
-c          temperature strains to compute stresses @ n+1.
-c
- 1000 continue
-      if( .not. temperatures ) then
-         call mm02( step, iter, felem, gpn, local_work%e_vec,
-     &           local_work%nu_vec, local_work%sigyld_vec,
-     &           local_work%n_power_vec,local_work%urcs_blk_n(1,1,gpn),
-     &           local_work%urcs_blk_n1(1,1,gpn),
-     &           local_work%ddtse(1,1,gpn),  ! total strain @ n+1
-     &           local_work%elem_hist(1,1,gpn),
-     &           local_work%elem_hist1(1,1,gpn), span, iout,
-     &           signal_flag )
-         return
-      end if
-c
-!DIR$ VECTOR ALIGNED
-      do i = 1, span
-           nowtemp = gp_temps(i) - gp_rtemps(i)
-           ddtse(i,1) = local_work%ddtse(i,1,gpn) -
-     &                  local_work%alpha_vec(i,1)*nowtemp
-           ddtse(i,2) = local_work%ddtse(i,2,gpn) -
-     &                  local_work%alpha_vec(i,2)*nowtemp
-           ddtse(i,3) = local_work%ddtse(i,3,gpn) -
-     &                  local_work%alpha_vec(i,3)*nowtemp
-           ddtse(i,4) = local_work%ddtse(i,4,gpn) -
-     &                  local_work%alpha_vec(i,4)*nowtemp
-           ddtse(i,5) = local_work%ddtse(i,5,gpn) -
-     &                  local_work%alpha_vec(i,5)*nowtemp
-           ddtse(i,6) = local_work%ddtse(i,6,gpn) -
-     &                  local_work%alpha_vec(i,6)*nowtemp
-       end do
-       call mm02( step, iter, felem, gpn, local_work%e_vec,
-     &           local_work%nu_vec, local_work%sigyld_vec,
-     &           local_work%n_power_vec,
-     &           local_work%urcs_blk_n(1,1,gpn),
-     &           local_work%urcs_blk_n1(1,1,gpn),
-     &           ddtse, local_work%elem_hist(1,1,gpn),
-     &           local_work%elem_hist1(1,1,gpn), span, iout,
-     &           signal_flag )
-c
-      return
-      end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 8/17/2020 rhd                    *
+c     *             last modified : 8/25/2020 rhd                    *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1637,7 +1461,7 @@ c
      &           adaptive, geonl, bbar, material_cut_step,
      &           local_debug, signal_flag, adaptive_flag,
      &           power_law, temperatures, allow_cut, segmental,
-     &           temperatures_init, fgm_enode_props,
+     &           temperatures_ref, fgm_enode_props,
      &           nonlinear_update, linear_elastic_update
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
@@ -1669,7 +1493,7 @@ c
       adaptive_flag     = local_work%adaptive_flag
       eps_bbar          = local_work%eps_bbar
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       allow_cut         = local_work%allow_cut
       segmental         = local_work%segmental
       number_points     = local_work%number_points
@@ -1685,7 +1509,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type, adaptive_flag,
-     &                   temperatures, temperatures_init, segmental,
+     &                   temperatures, temperatures_ref, segmental,
      &                   number_points, curve_set, power_law,
      &                   fgm_enode_props, hist_size_for_blk
       end if
@@ -1751,6 +1575,7 @@ c
             local_work%alpha_vec(i,4)   = zero
             local_work%alpha_vec(i,5)   = zero
             local_work%alpha_vec(i,6)   = zero
+            local_work%alpha_vec_n(i,1) = gp_alpha
             local_work%alpha_vec_n(i,2) = gp_alpha
             local_work%alpha_vec_n(i,3) = gp_alpha
             local_work%alpha_vec_n(i,4) = zero
@@ -1773,7 +1598,7 @@ c
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures,
      &        local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -1811,8 +1636,9 @@ c
       uddt_temps = zero
       if( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                     gp_dtemps, gp_temps, gp_rtemps,
-     &                     local_work%alpha_vec_n, type )
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
         if( local_debug ) write(iout,9050)
       end if
 c
@@ -1876,7 +1702,7 @@ c
  9000 format(1x,'.... debug mm03. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...adaptive_flag, temperatures, temperatures_init: ',
+     &     /,10x,'...adaptive_flag, temperatures, temperatures_ref: ',
      &               3l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...power_law, fgm_enode_props, hist_size_for_blk: ',
@@ -2315,7 +2141,7 @@ c
      &           nnode, knumthreads, kthread, imxvl
 
       logical :: fgm_enode_props, nonlocal, temperatures,
-     &           temperatures_init, local_debug
+     &           temperatures_ref, local_debug
 c
       data zero / 0.0d00 /
 c
@@ -2329,7 +2155,7 @@ c
       fgm_enode_props   = local_work%fgm_enode_props
 c
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       knumthreads       = local_work%num_threads
       kthread           = local_work%now_thread
 c
@@ -2452,7 +2278,7 @@ c
      6    local_work%ddtse(1,1,gpn), uddt(1,1),
      7    local_work%elem_hist(1,1,gpn),
      8    local_work%elem_hist1(1,1,gpn),
-     9    local_work%cohes_temp_init(1),
+     9    local_work%cohes_temp_ref(1),
      h    local_work%cohes_dtemp(1),
      i    local_work%cohes_temp_n(1),
      a    local_work%top_surf_solid_elements(1),
@@ -2473,7 +2299,7 @@ c
      &   local_work%elem_hist(1,1,gpn),
      &   local_work%elem_hist1(1,1,gpn),
      &   cep,
-     &   local_work%cohes_temp_init(1),
+     &   local_work%cohes_temp_ref(1),
      &   local_work%cohes_dtemp(1),
      &   local_work%cohes_temp_n(1),
      &   local_work%top_surf_solid_elements(1),
@@ -2497,7 +2323,7 @@ c
      6    local_work%ddtse(1,1,gpn), uddt(1,1),
      7    local_work%elem_hist(1,1,gpn),
      8    local_work%elem_hist1(1,1,gpn),
-     9    local_work%cohes_temp_init(1),
+     9    local_work%cohes_temp_ref(1),
      h    local_work%cohes_dtemp(1),
      i    local_work%cohes_temp_n(1),
      a    idummy(1),
@@ -2518,7 +2344,7 @@ c
      &   local_work%elem_hist(1,1,gpn),
      &   local_work%elem_hist1(1,1,gpn),
      &   cep,
-     &   local_work%cohes_temp_init(1),
+     &   local_work%cohes_temp_ref(1),
      &   local_work%cohes_dtemp(1),
      &   local_work%cohes_temp_n(1),
      &   idummy(1),
@@ -2542,7 +2368,7 @@ c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/287/2019 V. Pericoli     *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
@@ -2586,7 +2412,7 @@ c
      &  cep(:,:,:)
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_init, adaptive_possible, geonl,
+     &           temperatures_ref, adaptive_possible, geonl,
      &           cut_step_size_now, fgm_enode_props,
      &           segmental, nonlin_hard, generalized_pl,
      &           nonlinear_update, linear_elastic_update
@@ -2614,7 +2440,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       segmental         = local_work%segmental
       number_points     = local_work%number_points
       curve_set         = local_work%curve_set_number
@@ -2629,7 +2455,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_init, segmental,
+     &                   temperatures, temperatures_ref, segmental,
      &                   number_points, curve_set,
      &                   fgm_enode_props, hist_size_for_blk
       end if
@@ -2655,7 +2481,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
       if( local_debug ) write(iout,9030)
 c
@@ -2688,8 +2514,9 @@ c
       uddt_temps = zero
       if( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                    gp_dtemps, gp_temps, gp_rtemps,
-     &                    local_work%alpha_vec_n, type )
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
         if( local_debug ) write(iout,9050)
       end if
 c
@@ -2762,7 +2589,7 @@ c
  9000 format(1x,'.... debug mm05. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_init: ',
+     &     /,10x,'...temperatures, temperatures_ref: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -3134,7 +2961,7 @@ c     *            subroutine drive_06_update  (creep)               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/18/2015 rhd             *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     drives material model 06 to update stresses and history  *
 c     *     for all elements in the block for gauss point gpn        *
@@ -3168,7 +2995,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_init, compute_creep_strains
+     &           temperatures_ref, compute_creep_strains
       data zero /  0.0d00 /
 c
       dtime             = local_work%dt
@@ -3182,7 +3009,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       local_debug = .false.
       if( local_debug ) then
@@ -3198,7 +3025,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
 c            compute (negative) of thermal strain increment
@@ -3207,8 +3034,9 @@ c
       uddt_temps = zero
       if( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                    gp_dtemps, gp_temps, gp_rtemps,
-     &                    local_work%alpha_vec, type )
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
       end if
 c
 c            init block of nonlocal state variables. values array always
@@ -3363,7 +3191,7 @@ c     *                 subroutine drive_07_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/2/2016 rhd               *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     drives material model 07 (mises + hydrogen) to           *
 c     *     update stresses and history for all elements in the      *
@@ -3401,7 +3229,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: geonl, local_debug, temperatures, 
-     &           temperatures_init, fgm_enode_props, signal_flag,
+     &           temperatures_ref, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
       data zero / 0.0d0 /
@@ -3420,7 +3248,7 @@ c
       mat_type          = local_work%mat_type
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut
@@ -3430,7 +3258,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_init,
+     &                   temperatures, temperatures_ref,
      &                   fgm_enode_props, hist_size_for_blk
       end if
 c
@@ -3442,7 +3270,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -3452,8 +3280,9 @@ c
       uddt_temps = zero
       if ( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                    gp_dtemps, gp_temps, gp_rtemps,
-     &                    local_work%alpha_vec, type )
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
       end if
 c
 !DIR$ VECTOR ALIGNED
@@ -3514,7 +3343,7 @@ c
  9000 format(1x,'.... debug mm07. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_init: ',
+     &     /,10x,'...temperatures, temperatures_ref: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -3694,7 +3523,7 @@ c
       equivalence (dfgrd0, dfgrd0_array),  (dfgrd1, dfgrd1_array)
 c
       logical :: signal_flag, local_debug, debug_now, temperatures,
-     &        temperatures_init, init_sig_eps, init_history,
+     &        temperatures_ref, init_sig_eps, init_history,
      &        chk_umat_support, chk, chk2, do_nonlocal,
      &        process_flag
       integer :: map(6)
@@ -3721,7 +3550,7 @@ c
       now_blk           = local_work%blk
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
 c
       knumthreads       = local_work%num_threads
@@ -3739,7 +3568,7 @@ c
          write(iout,9000)
          write(iout,9001) span, felem, gpn
          write(iout,9002) step, iter
-         write(iout,9004) temperatures, temperatures_init
+         write(iout,9004) temperatures, temperatures_ref
          write(iout,9006) hist_size_for_blk
       end if
 c
@@ -3796,7 +3625,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
 c           3. get negative of temp increments for step
@@ -3820,9 +3649,10 @@ c
       if( temperatures ) ! global flag set by loads processor
 c                           to indicate user-specified temp changes over
 c                           load step
-     &    call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                      gp_dtemps, gp_temps, gp_rtemps,
-     &                      local_work%alpha_vec, type )
+     &   call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
 c
 c           4. (x,y,z) coordinates at this integration point for all
 c              elements in the block. umat specification requires the
@@ -3845,7 +3675,6 @@ c
        dfgrd1(k) = identity(k)
        drot(k)   = identity(k)
       end do
-
 c
       rpl         = zero
 !DIR$ VECTOR ALIGNED
@@ -4267,7 +4096,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: geonl, local_debug, temperatures,
-     &           temperatures_init, fgm_enode_props, signal_flag,
+     &           temperatures_ref, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
       data zero / 0.0d0 /
@@ -4286,7 +4115,7 @@ c
       mat_type          = local_work%mat_type
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       fgm_enode_props   = local_work%fgm_enode_props
       adaptive_possible = local_work%allow_cut
@@ -4296,7 +4125,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, ndof, geonl, step,
      &                   iter, now_blk, mat_type,
-     &                   temperatures, temperatures_init,
+     &                   temperatures, temperatures_ref,
      &                   fgm_enode_props, hist_size_for_blk
       end if
 c
@@ -4308,7 +4137,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -4317,8 +4146,9 @@ c
       uddt_temps = zero
       if ( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                    gp_dtemps, gp_temps, gp_rtemps,
-     &                    local_work%alpha_vec, type )
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
       end if
 c
 
@@ -4369,7 +4199,7 @@ c
  9000 format(1x,'.... debug mm09. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'...dtime, type, order, nnode, ndof:',e14.6,4i5,
      &     /,10x,'...geonl, step, iter, now_blk, mat_type: ',l2,4i5,
-     &     /,10x,'...temperatures, temperatures_init: ',
+     &     /,10x,'...temperatures, temperatures_ref: ',
      &               2l2,
      &     /,10x,'...segmental, number_points, curve_set: ',l2,i3,i3,
      &     /,10x,'...fgm_enode_props, hist_size_for_blk: ',
@@ -4534,7 +4364,7 @@ c
      &  uddt(mxvl,nstr), cep(mxvl,6,6), tol
 c
       logical :: signal_flag, local_debug, temperatures,
-     &           temperatures_init, check_D, iter_0_extrapolate_off
+     &           temperatures_ref, check_D, iter_0_extrapolate_off
       data zero, one / 0.0d0, 1.0d0 /
 
 c
@@ -4548,7 +4378,7 @@ c
       nnode             = local_work%num_enodes
       signal_flag       = local_work%signal_flag
       temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
+      temperatures_ref  = local_work%temperatures_ref
       hist_size_for_blk = local_work%hist_size_for_blk
       now_blk           = local_work%blk
       matnum            = local_work%matnum
@@ -4558,7 +4388,7 @@ c
         write(iout,9000) felem, gpn, span
         write(iout,9010) dtime, type, order, nnode, step,
      &                   iter, now_blk,
-     &                   temperatures, temperatures_init,
+     &                   temperatures, temperatures_ref,
      &                   hist_size_for_blk
       end if
 c
@@ -4570,7 +4400,7 @@ c
      &        local_work%dtemps_node_blk, gpn, type, span, order,
      &        nnode, gp_dtemps, local_work%temps_node_blk,
      &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
+     &        temperatures_ref, local_work%temps_ref_node_blk,
      &        gp_rtemps )
 c
 c            subtract out the thermal strain increment from uddt (the
@@ -4581,8 +4411,9 @@ c
       uddt_temps = zero
       if ( temperatures ) then
         call gp_temp_eps( span, uddt_temps, local_work%alpha_vec,
-     &                    gp_dtemps, gp_temps, gp_rtemps,
-     &                    local_work%alpha_vec, type )
+     &                    local_work%alpha_vec_n,
+     &                    local_work%alpha_zero, gp_temps,
+     &                    gp_dtemps, gp_rtemps, type )
       end if
 c
 c            init block of nonlocal state variables. values array always
@@ -4696,7 +4527,7 @@ c
  9000 format(1x,'.... debug mm10. felem, gpn, span: ',i7,i3,i3)
  9010 format(10x,'... dtime, type, order, nnode:     ',e14.6,3i5,
      &     /,10x,'... step, iter, now_blk:           ',3i5,
-     &     /,10x,'... temperatures, temperatures_init: ',
+     &     /,10x,'... temperatures, temperatures_ref: ',
      &               2l2,
      &     /,10x,'... hist_size_for_blk: ',i4 )
  9100 format(10x,6e14.5)
@@ -4995,97 +4826,16 @@ c     *                       written by : mcm                       *
 c     *                                                              *
 c     *                   last modified : 03/10/14                   *
 c     *                                                              *
-c     *     this subroutine drives material model 11 to update       *
-c     *     damage and the macroscale stress                         *
+c     *     ** deprecated **                                         *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine drive_11_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
-      use segmental_curves, only : max_seg_points
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks
-c
-      implicit integer (a-z)
-      include 'param_def'
-c
-c                      parameter declarations
-c
-      real    props(mxelpr,*)
-      logical lprops(mxelpr,*)
-      integer iprops(mxelpr,*)
-      double precision
-     &  uddt(mxvl,nstr)
-      include 'include_sig_up'
-c
-c
-c                       locally defined variables
-c
-      double precision
-     &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, dtime
-c
-      logical signal_flag, local_debug, temperatures,
-     &        temperatures_init
-      data local_debug, zero / .false., 0.0 /
-c
-      dtime             = local_work%dt
-      span              = local_work%span
-      felem             = local_work%felem
-      step              = local_work%step
-      iter              = local_work%iter
-      type              = local_work%elem_type
-      order             = local_work%int_order
-      nnode             = local_work%num_enodes
-      signal_flag       = local_work%signal_flag
-      temperatures      = local_work%temperatures
-      temperatures_init = local_work%temperatures_init
-      hist_size_for_blk = local_work%hist_size_for_blk
-      now_blk           = local_work%blk
-c
-c           get increment of temperature at gauss point for elements
-c           in the block, the temperature at end of step and the
-c           reference temperature.
-c
-      call gauss_pt_temps(
-     &        local_work%dtemps_node_blk, gpn, type, span, order,
-     &        nnode, gp_dtemps, local_work%temps_node_blk,
-     &        gp_temps, temperatures, local_work%temps_node_to_process,
-     &        temperatures_init, local_work%temps_init_node_blk,
-     &        gp_rtemps )
-c
-c            subtract out the thermal strain increment from uddt (the
-c            strain increment for step) (We're actually going to do this
-c            internally)
-c
-      if ( temperatures ) then
-        call gp_temp_eps( span, uddt, local_work%alpha_vec, gp_dtemps,
-     &                    gp_temps, gp_rtemps, local_work%alpha_vec,
-     &                    type )
-      end if
-c
-c          for iter = 0 we just use the stored [Dt] to compute
-c          stress increment. These stresses are used to dompute
-c          internal forces for applied nodal displacements and
-c          temperatures - material history is unaffected by
-c          iter = 0
-
-      if( iter .eq. 0 ) then
-        igpn = gpn
-        call recstr_cep_uddt_for_block( mxvl, span,
-     &      gbl_cep_blocks(now_blk)%vector,
-     &      uddt, local_work%urcs_blk_n(1,1,gpn),
-     &      local_work%urcs_blk_n1(1,1,gpn), 1, 21, igpn )
-        return
-       end if
-c
-      call mm11(  gpn, local_work%span,
-     &            hist_size_for_blk,
-     &            local_work%elem_hist(1,1,gpn),
-     &            local_work%elem_hist1(1,1,gpn),
-     &            local_work, uddt, gp_temps,
-     &            gp_dtemps, iout)
-
+      write(*,*) ".... routine drive_11_update: deprecated"
+      call die_abort
+      return
       end subroutine
 
 c

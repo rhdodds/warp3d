@@ -4,7 +4,7 @@ c     *                      subroutine rknstr                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/17/2020 rhd              *
+c     *                   last modified : 4/24/2018 rhd              *
 c     *                                                              *
 c     *     drive updating of strains/stresses for a block of        *
 c     *     elements                                                 *
@@ -112,7 +112,7 @@ c
 c           average temperature data and fgm nodal property values for
 c           linear elements (or cohesive elements).
 c
-c           for linear elements, the initial temp, change in temp for
+c           for linear elements, the reference temp, change in temp for
 c           the step and temp at end of step for element nodes are
 c           averaged so that the element undergoes uniform change over
 c           the volume (prevents thermal shear and volumetric locking).
@@ -143,6 +143,11 @@ c           as required based on material model.
 c           (original allocate set zero)
 c
       call rknstr_set_up_materials
+c      
+c           set alpha_zero temperature for temperature dependent 
+c           CTEs (zero temp for secant alpha values)
+c
+      local_work%alpha_zero = matprp(250,local_work%matnum)
 c
       call rknstr_initial_stresses
       if( allocated( initial_stresses ) ) then
@@ -401,16 +406,16 @@ c
 c
       integer :: i
       logical :: average
-      double precision :: temp_init, d_temp, temp_np1
+      double precision :: temp_ref, d_temp, temp_np1
 c
       average =  local_work%linear_displ_elem .or.
      &             local_work%is_cohes_elem
       if( average ) then
          call average_nodal_temps( local_work%temperatures,
      &      local_work%temps_node_to_process,
-     &      local_work%temperatures_init, nnode,
+     &      local_work%temperatures_ref, nnode,
      &      local_work%dtemps_node_blk, local_work%temps_node_blk,
-     &      local_work%temps_init_node_blk, mxvl, span, 1 )
+     &      local_work%temps_ref_node_blk, mxvl, span, 1 )
       end if
 c
       if( local_work%linear_displ_elem .and. fgm_enode_props ) then
@@ -421,10 +426,10 @@ c
       if( local_work%is_cohes_elem ) then  ! all zero if no temps
 !DIR$ VECTOR ALIGNED
          do i = 1, span
-           temp_init = local_work%temps_init_node_blk(i,1)
+           temp_ref = local_work%temps_ref_node_blk(i,1)
            d_temp   = local_work%dtemps_node_blk(i,1)
            temp_np1 = local_work%temps_node_blk(i,1)
-           local_work%cohes_temp_init(i) = temp_init
+           local_work%cohes_temp_ref(i) = temp_ref
            local_work%cohes_dtemp(i)    = d_temp
            local_work%cohes_temp_n(i)   = temp_np1 - d_temp
          end do
@@ -843,8 +848,8 @@ c     ****************************************************************
 c
 c
       subroutine average_nodal_temps( temperatures,
-     &      temps_node_to_process, temperatures_init, nnodel,
-     &      dtemps_node_blk, temps_node_blk, temps_init_node_blk,
+     &      temps_node_to_process, temperatures_ref, nnodel,
+     &      dtemps_node_blk, temps_node_blk, temps_ref_node_blk,
      &      mxvl, span, average_case )
       implicit none
 c
@@ -852,11 +857,11 @@ c                    parameter declarations
 c
       integer nnodel, mxvl, span, average_case
       logical  temperatures, temps_node_to_process,
-     &         temperatures_init
+     &         temperatures_ref
 c
       double precision
      &  dtemps_node_blk(mxvl,*), temps_node_blk(mxvl,*),
-     &  temps_init_node_blk(mxvl,*)
+     &  temps_ref_node_blk(mxvl,*)
 c
 c                    local
 c
@@ -873,14 +878,14 @@ c                    elements with linear displacement fields
 c                    can shear lock when the temperature
 c                    change in the elements is not uniform.
 c                    here we have a block of such elements
-c                    with total, incremental and initial
+c                    with total, incremental and reference
 c                    temperatures available at the element nodes.
 c                    for each set of temperatures, redefine the
 c                    nodal values to be the simple average
 c                    of all the nodal values.
 c
       do_average = temperatures .or.  temps_node_to_process .or.
-     &             temperatures_init
+     &             temperatures_ref
       if( .not. do_average ) return
 c
       fnnodel = nnodel
@@ -897,7 +902,7 @@ c
             do i = 1, span
                sum1(i) = sum1(i) + dtemps_node_blk(i,enode)
                sum2(i) = sum2(i) + temps_node_blk(i,enode)
-               sum3(i) = sum3(i) + temps_init_node_blk(i,enode)
+               sum3(i) = sum3(i) + temps_ref_node_blk(i,enode)
             end do
          end do
          do enode = 1, nnodel
@@ -908,7 +913,7 @@ c
                avg3 = sum3(i) / fnnodel
                dtemps_node_blk(i,enode)    = avg1
                temps_node_blk(i,enode)     = avg2
-               temps_init_node_blk(i,enode) = avg3
+               temps_ref_node_blk(i,enode) = avg3
             end do
          end do
       end if
@@ -1003,7 +1008,7 @@ c     *                   subroutine setup_mm01_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 9/26/2017 rhd                   *
+c     *              last modified : 8/25/2020 rhd                   *
 c     *                                                              *
 c     *     set up material model #1 (bilinear mises) for stress     *
 c     *     updating                                                 *
@@ -1038,6 +1043,7 @@ c
          local_work%fgm_flags(i,2)   = props(8,i)
 c
          local_work%fgm_flags(i,3)   = props(9,i)
+c
          local_work%alpha_vec(i,1)   = props(9,i)
          local_work%alpha_vec(i,2)   = props(13,i)
          local_work%alpha_vec(i,3)   = props(34,i)
@@ -1045,12 +1051,7 @@ c
          local_work%alpha_vec(i,5)   = props(36,i)
          local_work%alpha_vec(i,6)   = props(37,i)
 c
-         local_work%alpha_vec_n(i,1) = props(9,i)
-         local_work%alpha_vec_n(i,2) = props(13,i)
-         local_work%alpha_vec_n(i,3) = props(34,i)
-         local_work%alpha_vec_n(i,4) = props(35,i)
-         local_work%alpha_vec_n(i,5) = props(36,i)
-         local_work%alpha_vec_n(i,6) = props(37,i)
+         local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
 c
          local_work%beta_vec(i)      = props(14,i)
          local_work%h_vec(i)         = props(15,i)
@@ -1070,7 +1071,7 @@ c     *                   subroutine setup_mm02_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     set up material model #2 (deformation plasticity)        *
 c     *     for stress updating                                      *
@@ -1080,7 +1081,7 @@ c
 c
       subroutine setup_mm02_rknstr( span, props, lprops, iprops,
      &                              local_work )
-      use segmental_curves
+      use segmental_curves 
 c
 c
       implicit none
@@ -1097,14 +1098,21 @@ c
 c
 !DIR$ IVDEP
       do i = 1, span
+c
          local_work%e_vec(i)       = props(7,i)
          local_work%nu_vec(i)      = props(8,i)
+c
+c               CTE values are not functions of temperature
+c
          local_work%alpha_vec(i,1) = props(9,i)
          local_work%alpha_vec(i,2) = props(13,i)
          local_work%alpha_vec(i,3) = props(34,i)
          local_work%alpha_vec(i,4) = props(35,i)
          local_work%alpha_vec(i,5) = props(36,i)
          local_work%alpha_vec(i,6) = props(37,i)
+c
+         local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
+c
          local_work%lnelas_vec(i)  = lprops(17,i)
          local_work%sigyld_vec(i)  = props(23,i)
          local_work%n_power_vec(i) = props(21,i)
@@ -1124,7 +1132,7 @@ c     *                   subroutine setup_mm03_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     set up material model #3 (general mises and gurson)      *
 c     *     for stress updating                                      *
@@ -1153,47 +1161,43 @@ c
 c
 !DIR$ IVDEP
       do i = 1, span
-           local_work%e_vec(i)       = props(7,i)
-           local_work%e_vec_n(i)     = props(7,i)
-           local_work%fgm_flags(i,1) = props(7,i)
+        local_work%e_vec(i)       = props(7,i)
+        local_work%e_vec_n(i)     = props(7,i)
+        local_work%fgm_flags(i,1) = props(7,i)
 c
-           local_work%nu_vec(i)      = props(8,i)
-           local_work%nu_vec_n(i)    = props(8,i)
-           local_work%fgm_flags(i,2) = props(8,i)
+        local_work%nu_vec(i)      = props(8,i)
+        local_work%nu_vec_n(i)    = props(8,i)
+        local_work%fgm_flags(i,2) = props(8,i)
 c
-           local_work%fgm_flags(i,3) = props(9,i)
-           local_work%alpha_vec(i,1) = props(9,i)
-           local_work%alpha_vec(i,2) = props(13,i)
-           local_work%alpha_vec(i,3) = props(34,i)
-           local_work%alpha_vec(i,4) = props(35,i)
-           local_work%alpha_vec(i,5) = props(36,i)
-           local_work%alpha_vec(i,6) = props(37,i)
+        local_work%fgm_flags(i,3) = props(9,i)
 c
-           local_work%alpha_vec_n(i,1) = props(9,i)
-           local_work%alpha_vec_n(i,2) = props(13,i)
-           local_work%alpha_vec_n(i,3) = props(34,i)
-           local_work%alpha_vec_n(i,4) = props(35,i)
-           local_work%alpha_vec_n(i,5) = props(36,i)
-           local_work%alpha_vec_n(i,6) = props(37,i)
+        local_work%alpha_vec(i,1) = props(9,i)
+        local_work%alpha_vec(i,2) = props(13,i)
+        local_work%alpha_vec(i,3) = props(34,i)
+        local_work%alpha_vec(i,4) = props(35,i)
+        local_work%alpha_vec(i,5) = props(36,i)
+        local_work%alpha_vec(i,6) = props(37,i)
 c
-           local_work%f0_vec(i)      = props(26,i)
+        local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
 c
-           local_work%h_vec(i)       = props(15,i)
-           local_work%fgm_flags(i,6) = local_work%tan_e_vec(i)
-           local_work%sigyld_vec(i)  = props(23,i)
-           local_work%fgm_flags(i,7) = props(23,i)
-           local_work%n_power_vec(i) = props(21,i)
-           local_work%fgm_flags(i,8) = props(21,i)
+        local_work%f0_vec(i)      = props(26,i)
 c
-           local_work%eps_ref_vec(i) = props(22,i)
-           local_work%m_power_vec(i) = props(20,i)
-           local_work%q1_vec(i)      = props(27,i)
-           local_work%q2_vec(i)      = props(28,i)
-           local_work%q3_vec(i)      = props(29,i)
-           local_work%nuc_vec(i)     = .true.
-           local_work%nuc_s_n_vec(i) = props(31,i)
-           local_work%nuc_e_n_vec(i) = props(32,i)
-           local_work%nuc_f_n_vec(i) = props(33,i)
+        local_work%h_vec(i)       = props(15,i)
+        local_work%fgm_flags(i,6) = local_work%tan_e_vec(i)
+        local_work%sigyld_vec(i)  = props(23,i)
+        local_work%fgm_flags(i,7) = props(23,i)
+        local_work%n_power_vec(i) = props(21,i)
+        local_work%fgm_flags(i,8) = props(21,i)
+c
+        local_work%eps_ref_vec(i) = props(22,i)
+        local_work%m_power_vec(i) = props(20,i)
+        local_work%q1_vec(i)      = props(27,i)
+        local_work%q2_vec(i)      = props(28,i)
+        local_work%q3_vec(i)      = props(29,i)
+        local_work%nuc_vec(i)     = .true.
+        local_work%nuc_s_n_vec(i) = props(31,i)
+        local_work%nuc_e_n_vec(i) = props(32,i)
+        local_work%nuc_f_n_vec(i) = props(33,i)
 c
       end do
 c
@@ -1220,7 +1224,7 @@ c     *                   subroutine setup_mm05_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     set up material model #5 (cyclic plasticity)             *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1269,36 +1273,31 @@ c                     61-64 <available>
 c
 !DIR$ IVDEP
       do i = 1, span
+c       
+        local_work%e_vec(i)       = props(7,i)
+        local_work%e_vec_n(i)     = props(7,i)
+        local_work%nu_vec(i)      = props(8,i)
+        local_work%nu_vec_n(i)    = props(8,i)
 c
-           local_work%e_vec(i)       = props(7,i)
-           local_work%e_vec_n(i)     = props(7,i)
-           local_work%nu_vec(i)      = props(8,i)
-           local_work%nu_vec_n(i)    = props(8,i)
+        local_work%alpha_vec(i,1) = props(9,i)
+        local_work%alpha_vec(i,2) = props(13,i)
+        local_work%alpha_vec(i,3) = props(34,i)
+        local_work%alpha_vec(i,4) = props(35,i)
+        local_work%alpha_vec(i,5) = props(36,i)
+        local_work%alpha_vec(i,6) = props(37,i)
 c
-           local_work%alpha_vec(i,1) = props(9,i)
-           local_work%alpha_vec(i,2) = props(13,i)
-           local_work%alpha_vec(i,3) = props(34,i)
-           local_work%alpha_vec(i,4) = props(35,i)
-           local_work%alpha_vec(i,5) = props(36,i)
-           local_work%alpha_vec(i,6) = props(37,i)
+        local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
 c
-           local_work%alpha_vec_n(i,1) = props(9,i)
-           local_work%alpha_vec_n(i,2) = props(13,i)
-           local_work%alpha_vec_n(i,3) = props(34,i)
-           local_work%alpha_vec_n(i,4) = props(35,i)
-           local_work%alpha_vec_n(i,5) = props(36,i)
-           local_work%alpha_vec_n(i,6) = props(37,i)
+        local_work%gp_sig_0_vec(i)     = props(23,i)
+        local_work%gp_sig_0_vec_n(i)   = props(23,i)
+        local_work%gp_h_u_vec(i)       = matprp(55,matnum)
+        local_work%gp_h_u_vec_n(i)     = matprp(55,matnum)
+        local_work%gp_beta_u_vec(i)    = matprp(57,matnum)
+        local_work%gp_beta_u_vec_n(i)  = matprp(57,matnum)
+        local_work%gp_delta_u_vec(i)   = matprp(59,matnum)
+        local_work%gp_delta_u_vec_n(i) = matprp(59,matnum)
 c
-           local_work%gp_sig_0_vec(i)     = props(23,i)
-           local_work%gp_sig_0_vec_n(i)   = props(23,i)
-           local_work%gp_h_u_vec(i)       = matprp(55,matnum)
-           local_work%gp_h_u_vec_n(i)     = matprp(55,matnum)
-           local_work%gp_beta_u_vec(i)    = matprp(57,matnum)
-           local_work%gp_beta_u_vec_n(i)  = matprp(57,matnum)
-           local_work%gp_delta_u_vec(i)   = matprp(59,matnum)
-           local_work%gp_delta_u_vec_n(i) = matprp(59,matnum)
-c
-           local_work%sigyld_vec(i)  = props(23,i)
+        local_work%sigyld_vec(i)  = props(23,i)
 c  ????           local_work%n_power_vec(i) = props(21,i)
 c
 c  ????           local_work%tan_e_vec(i)    = matprp(4,matnum)
@@ -1324,7 +1323,7 @@ c     *                   subroutine setup_mm06_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     set up material model #6 (creep)                         *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1357,17 +1356,21 @@ c
 c
 !DIR$ IVDEP
       do i = 1, span
+c       
+        local_work%e_vec(i)       = props(7,i)
+        local_work%nu_vec(i)      = props(8,i)
 c
-           local_work%e_vec(i)       = props(7,i)
-           local_work%nu_vec(i)      = props(8,i)
-           local_work%alpha_vec(i,1) = props(9,i)
-           local_work%alpha_vec(i,2) = props(13,i)
-           local_work%alpha_vec(i,3) = props(34,i)
-           local_work%alpha_vec(i,4) = props(35,i)
-           local_work%alpha_vec(i,5) = props(36,i)
-           local_work%alpha_vec(i,6) = props(37,i)
-           local_work%n_power_vec(i) = props(21,i)
-           local_work%mm06_props(i,1) = matprp(80,matnum)
+        local_work%alpha_vec(i,1) = props(9,i)
+        local_work%alpha_vec(i,2) = props(13,i)
+        local_work%alpha_vec(i,3) = props(34,i)
+        local_work%alpha_vec(i,4) = props(35,i)
+        local_work%alpha_vec(i,5) = props(36,i)
+        local_work%alpha_vec(i,6) = props(37,i)
+c
+        local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
+c
+        local_work%n_power_vec(i) = props(21,i)
+        local_work%mm06_props(i,1) = matprp(80,matnum)
 c
       end do
 
@@ -1409,7 +1412,7 @@ c     *                   subroutine setup_mm07_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     set up material model #7 (mises + hydrogen)              *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1441,20 +1444,24 @@ c
 c
 !DIR$ IVDEP
       do i = 1, span
+c       
+        local_work%e_vec(i)       = props(7,i)
+        local_work%nu_vec(i)      = props(8,i)
 c
-           local_work%e_vec(i)       = props(7,i)
-           local_work%nu_vec(i)      = props(8,i)
-           local_work%alpha_vec(i,1) = props(9,i)
-           local_work%alpha_vec(i,2) = props(13,i)
-           local_work%alpha_vec(i,3) = props(34,i)
-           local_work%alpha_vec(i,4) = props(35,i)
-           local_work%alpha_vec(i,5) = props(36,i)
-           local_work%alpha_vec(i,6) = props(37,i)
-           local_work%sigyld_vec(i)  = props(23,i)
-           local_work%n_power_vec(i) = props(21,i)
+        local_work%alpha_vec(i,1) = props(9,i)
+        local_work%alpha_vec(i,2) = props(13,i)
+        local_work%alpha_vec(i,3) = props(34,i)
+        local_work%alpha_vec(i,4) = props(35,i)
+        local_work%alpha_vec(i,5) = props(36,i)
+        local_work%alpha_vec(i,6) = props(37,i)
 c
-           local_work%tan_e_vec(i)       = matprp(4,matnum)
-           local_work%mm07_props(i,1:10) = matprp(70:79,matnum)
+        local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
+c
+        local_work%sigyld_vec(i)  = props(23,i)
+        local_work%n_power_vec(i) = props(21,i)
+c
+        local_work%tan_e_vec(i)       = matprp(4,matnum)
+        local_work%mm07_props(i,1:10) = matprp(70:79,matnum)
       end do
 c
       bit_flags = iprops(24,1)
@@ -1475,7 +1482,7 @@ c     *                   subroutine setup_umat_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/26/2017 rhd              *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *   set up material model #8 (Abaqus compatible UMAT)          *
 c     *                                                              *
@@ -1506,15 +1513,21 @@ c
 c
 !DIR$ IVDEP
       do i = 1, span
+c
         local_work%e_vec(i)       = props(7,i)
         local_work%nu_vec(i)      = props(8,i)
+c
         local_work%alpha_vec(i,1) = props(9,i)
         local_work%alpha_vec(i,2) = props(13,i)
         local_work%alpha_vec(i,3) = props(34,i)
         local_work%alpha_vec(i,4) = props(35,i)
         local_work%alpha_vec(i,5) = props(36,i)
         local_work%alpha_vec(i,6) = props(37,i)
+c
+        local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
+c
         local_work%umat_props(i,1:50) = dmatprp(151:200,matnum)
+c
       end do
 c
 c                   for each element in block, compute a
@@ -1545,7 +1558,7 @@ c     *                   subroutine setup_mm10_rknstr               *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 1/9/2017 rhd               *
+c     *                   last modified : 8/25/2020 rhd              *
 c     *                                                              *
 c     *     set up material model #10 (crystal plasticity)           *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1739,12 +1752,7 @@ c
         local_work%alpha_vec(i,5) = props(36,i)
         local_work%alpha_vec(i,6) = props(37,i)
 c
-        local_work%alpha_vec_n(i,1) = props(9,i)
-        local_work%alpha_vec_n(i,2) = props(13,i)
-        local_work%alpha_vec_n(i,3) = props(34,i)
-        local_work%alpha_vec_n(i,4) = props(35,i)
-        local_work%alpha_vec_n(i,5) = props(36,i)
-        local_work%alpha_vec_n(i,6) = props(37,i)
+        local_work%alpha_vec_n(i,1:6) = local_work%alpha_vec(i,1:6)
 c
         local_work%debug_flag(i) = lmtprp(13,matnum)
         local_work%local_tol(i) = dmatprp(100,matnum)
@@ -2028,233 +2036,16 @@ c     *                       written by : mcm                       *
 c     *                                                              *
 c     *                   last modified : 03/10/2014                 *
 c     *                                                              *
-c     *     set up material model #11 (crystal interface dmg)        *
-c     *     for stress updating: values constant across all g. pts.  *
+c     *     ** deprecated **                                         *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine setup_mm11_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
-      use segmental_curves
-      use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
-      use crystal_data, only : c_array, angle_input, crystal_input,
-     &                              data_offset, simple_angles, nangles,
-     &                              mc_array
-c
-      implicit integer (a-z)
-      include 'param_def'
-c
-c                    parameter declarations
-c
-      real    props(mxelpr,mxvl)
-      logical lprops(mxelpr,mxvl)
-      integer iprops(mxelpr,mxvl)
-      include 'include_sig_up'
-c
-c                    local
-c
-      logical adaptive
-      integer :: ctotal, c, cnum, s, e
-      double precision, dimension(3) :: angles
-      character :: aconv*5
-      character :: atype*7
-      double precision, dimension(3) :: bs, ns
-      double precision, dimension(3,3) :: A
-      double precision, dimension(6,6) :: Rstiff, temp
-      integer :: elnum, osn
-c
-c
-      ctotal = 0
-c
-      matnum = local_work%inter_mat
-c
-      local_work%sv(1) = dmatprp(116, matnum)
-      local_work%sv(2) = dmatprp(117, matnum)
-      local_work%sv(3) = dmatprp(118, matnum)
-c
-      local_work%lv(1) = dmatprp(119, matnum)
-      local_work%lv(2) = dmatprp(120, matnum)
-      local_work%lv(3) = dmatprp(121, matnum)
-c
-      local_work%tv(1) = dmatprp(122, matnum)
-      local_work%tv(2) = dmatprp(123, matnum)
-      local_work%tv(3) = dmatprp(124, matnum)
-c
-      local_work%ls = dmatprp(126, matnum)
-      local_work%ll = dmatprp(127, matnum)
-      local_work%lt = dmatprp(128, matnum)
-c
-      local_work%alpha_dmg = dmatprp(129, matnum)
-c
-      do i = 1, span
-           e = i + local_work%felem
-c
-c            Calculate the number of crystals per GP based on the initial
-c            element size
-c
-           call mm11_elem_size(local_work%elem_type,
-     &          local_work%num_enodes, local_work%ce_0(i,1:3*
-     &          local_work%num_enodes),
-     &          local_work%sv, local_work%lv, local_work%tv,
-     &          local_work%ls, local_work%ll, local_work%lt,
-     &          local_work%nstacks(i), local_work%nper(i))
-c
-           local_work%debug_flag(i) = lmtprp(13,matnum)
-           local_work%local_tol(i) = dmatprp(100,matnum)
-           local_work%ncrystals(i) = local_work%nstacks(i)*
-     &            local_work%nper(i)*2
-c
-           local_work%angle_convention(i) = imatprp(102,matnum)
-           local_work%angle_type(i) = imatprp(103,matnum)
-c
-c           Make sure we aren't asking for more orientations than we have
-c
-      if ((local_work%ncrystals(i) .gt. nangles) .or.
-     &      (local_work%ncrystals(i) .gt. imatprp(101,matnum))) then
-            write(*,*) "Too many angles required!"
-            write(*,*) i+local_work%felem-1
-            write(*,*) local_work%ncrystals(i)
-            write(*,*) local_work%nstacks(i)
-            write(*,*) local_work%nper(i)
-            call die_abort
-      end if
-c
-c          Extract props for each crystal
-c
-           do c= 1, local_work%ncrystals(i)
-c
-c                       Get the local crystal number
-c
-                  cnum = imatprp(105,matnum)
-c
-c                       Get the local orientation
-c
-                  angles(1:3) = simple_angles(mc_array(e,c),1:3)
-c
-c                       Now we have the properties, we just need
-c                        to extract into our local structure
-c
-                  local_work%c_props(i,c)%init_elast_stiff =
-     &                  c_array(cnum)%elast_stiff
-                  local_work%c_props(i,c)%init_angles = angles
-                  local_work%c_props(i,c)%nslip = c_array(cnum)%nslip
-                  local_work%c_props(i,c)%rateN = c_array(cnum)%harden_n
-                  local_work%c_props(i,c)%tauHat_y
-     &                  = c_array(cnum)%tau_hat_y
-                  local_work%c_props(i,c)%Go_y = c_array(cnum)%g_o_y
-                  local_work%c_props(i,c)%tauHat_v
-     &                  = c_array(cnum)%tau_hat_v
-                  local_work%c_props(i,c)%Go_v = c_array(cnum)%g_o_v
-                  local_work%c_props(i,c)%tau_a = c_array(cnum)%tau_a
-                  local_work%c_props(i,c)%burgers = c_array(cnum)%b
-                  local_work%c_props(i,c)%p_v = c_array(cnum)%p_v
-                  local_work%c_props(i,c)%q_v = c_array(cnum)%q_v
-                  local_work%c_props(i,c)%p_y = c_array(cnum)%p_y
-                  local_work%c_props(i,c)%q_y = c_array(cnum)%q_y
-                  local_work%c_props(i,c)%boltzman = c_array(cnum)%boltz
-                  local_work%c_props(i,c)%theta_o =
-     &                  c_array(cnum)%theta_o
-                  local_work%c_props(i,c)%eps_dot_o_v =
-     &                  c_array(cnum)%eps_dot_o_v
-                  local_work%c_props(i,c)%eps_dot_o_y =
-     &                  c_array(cnum)%eps_dot_o_y
-                  local_work%c_props(i,c)%mu_o =
-     &                  c_array(cnum)%mu_o
-                  local_work%c_props(i,c)%D_o  =
-     &                  c_array(cnum)%D_o
-                  local_work%c_props(i,c)%t_o = c_array(cnum)%t_o
-                  local_work%c_props(i,c)%tau_a = c_array(cnum)%tau_a
-                  local_work%c_props(i,c)%k_o = c_array(cnum)%k_o
-                  local_work%c_props(i,c)%h_type =
-     &                  c_array(cnum)%h_type
-                  local_work%c_props(i,c)%u1 = c_array(cnum)%u1
-                  local_work%c_props(i,c)%u2 = c_array(cnum)%u2
-                  local_work%c_props(i,c)%u3 = c_array(cnum)%u3
-                  local_work%c_props(i,c)%u4 = c_array(cnum)%u4
-                  local_work%c_props(i,c)%u5 = c_array(cnum)%u5
-                  local_work%c_props(i,c)%u6 = c_array(cnum)%u6
-                  local_work%c_props(i,c)%tau_y = c_array(cnum)%tau_y
-                  local_work%c_props(i,c)%tau_v = c_array(cnum)%tau_v
-                  local_work%c_props(i,c)%voche_m =
-     &                  c_array(cnum)%voche_m
-c
-c                 Call a helper to get the crystal -> reference rotation
-c
-                  if (local_work%angle_type(i) .eq. 1) then
-                        atype = "degrees"
-                  elseif (local_work%angle_type(i) .eq. 2) then
-                        atype = "radians"
-                  else
-                        write(out,9503)
-                        call die_gracefully
-                  end if
-
-                  if (local_work%angle_convention(i) .eq. 1) then
-                        aconv="kocks"
-                  else
-                        write(out,9504)
-                        call die_gracefully
-                  end if
-c
-                  call mm10_rotation_matrix(
-     &                  local_work%c_props(i,c)%init_angles,
-     &                  aconv, atype,
-     &                  local_work%c_props(i,c)%rotation_g, out)
-c
-c                 Now that we have that, we can set up and rotate our
-c                 orientation tensors
-c
-                  do s = 1, local_work%c_props(i,c)%nslip
-                        bs = matmul(transpose(
-     &                   local_work%c_props(i,c)%rotation_g),
-     &                   c_array(cnum)%bi(s,:))
-                        ns = matmul(transpose(
-     &                   local_work%c_props(i,c)%rotation_g),
-     &                   c_array(cnum)%ni(s,:))
-                        local_work%c_props(i,c)%ns(1:3,s) =
-     &                        ns
-                        A = spread(bs,dim=2,ncopies=size(ns))*spread(
-     &                        ns,dim=1,ncopies=size(bs))
-                        call mm10_ET2EV(0.5*(A+transpose(A)),
-     &                        local_work%c_props(i,c)%ms(:,s))
-                        call mm10_WT2WV(0.5*(A-transpose(A)),
-     &                        local_work%c_props(i,c)%qs(:,s))
-                  end do
-c
-c           We can also rotate forward our stiffness tensor
-c
-            call mm10_RT2RVE( transpose(
-     &            local_work%c_props(i,c)%rotation_g), Rstiff)
-            local_work%c_props(i,c)%init_elast_stiff = matmul(
-     &            Rstiff, matmul(
-     &            local_work%c_props(i,c)%init_elast_stiff,
-     &            transpose(Rstiff)))
-
-           end do
-c
-           ctotal = ctotal + local_work%ncrystals(i)
-c
-      end do
-c
-c                   determine if material model can call for a
-c                   reduction in the adaptive step size
-c
-      local_work%allow_cut = adaptive .and. lmtprp(22,matnum)
-c
-      return
-
- 9501 format(/,1x,'>>>> Not implemented yet in rknstr setup!'/)
- 9502 format(/,1x,'>>>> System error: unexpected input type in rknstr!',
-     &            ' Aborting.'/)
- 9503 format(/,1x,'>>>> System error: unexpected angle type in rknstr!',
-     &            ' Aborting.'/)
- 9504 format(/,1x,'>>>> System error: unexpected angle conv in rknstr!',
-     &            ' Aborting.'/)
+      write(*,*) ".... routine setup_mm11_rknstr: deprecated"
+      call die_abort
       end
-
-
-c
 c     ****************************************************************
 c     *                                                              *
 c     *            subroutine characteristic_elem_length             *
@@ -2363,7 +2154,6 @@ c
  9100 format('>>>> Fatal Error: in characteristic_elem_length. invalid',
      &   /,  '                  element type. Terminate execution.' )
       end
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine zero_vol                     *

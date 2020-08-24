@@ -381,7 +381,7 @@ c
          matprp(114:mxmtpr,matnum) = 0.0
          dmatprp(151:200,matnum) = 0.0d00   ! UMAT properties
          matprp(250,matnum) = 0.0  ! reference/zero for temp dependent
-c                                    alpha values         
+c                                    alpha values     (alpha_zero)    
       else
          call errmsg(3,dum,dums,dumr,dumd)
          go to 9998
@@ -440,8 +440,8 @@ c
       if ( matchs('alphay',6)           ) go to 274
       if ( matchs('alphaz',6)           ) go to 275
       if ( matchs('alpha',5)            ) go to 276
-      if ( matchs('alpha_zero',9)       ) go to 278
-      if ( matchs('alpha_reference',11) ) go to 278
+      if ( matchs_exact('alpha_zero')   ) go to 278
+      if ( matchs_exact('alpha_reference') ) go to 278
       if ( matchs_exact('rho')          ) go to 280
       if ( matchs('thickness_ratio',8)  ) go to 285
       if ( matchs_exact('bilinear')     ) go to 300
@@ -1851,6 +1851,14 @@ c
                   if (.not. numr(matprp(6,matnum))) then
                         call errmsg(5,dumi,'alpha',dumr,dumd)
                   end if
+            elseif ( matchs_exact('alpha_zero')) then
+                  if (.not. numr(matprp(250,matnum))) then
+                        call errmsg(5,dumi,'alpha_zero',dumr,dumd)
+                  end if
+            elseif ( matchs_exact('alpha_reference')) then
+                  if (.not. numr(matprp(250,matnum))) then
+                        call errmsg(5,dumi,'alpha_reference',dumr,dumd)
+                  end if
             elseif ( matchs_exact('rho')) then
                   if (.not. numr(matprp(7,matnum))) then
                         call errmsg(5,dumi,'rho',dumr,dumd)
@@ -2161,7 +2169,7 @@ c     *                      subroutine inmat_cyclic                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/27/2019 V. Pericoli      *
+c     *                   last modified : 8/22/2020                  *
 c     *                                                              *
 c     *     input properties for the cyclic plasticty model (#5)     *
 c     *                                                              *
@@ -2290,6 +2298,8 @@ c
       if( matchs_exact( 'gp_beta_u' ) ) go to 440
       if( matchs( 'curves', 5) ) go to 460
       if( matchs('killable',4) ) go to 470
+      if( matchs_exact('alpha_zero') ) go to 480
+      if( matchs_exact('alpha_reference') ) go to 480
 c
       if( matchs(',',1)                ) go to 215
 c
@@ -2621,6 +2631,20 @@ c **********************************************************************
 c
  470  continue
       lmtprp(23) = .true.
+      go to 210
+c
+c **********************************************************************
+c *                                                                    *
+c *                 alpha_zero for temperature dependent CTEs.         *
+c *                 needed for secant definition of CTEs. Abaqus calls *
+c *                 this *EXPANSION,ZERO=<temperarure>                 *
+c *                                                                    *
+c **********************************************************************
+ 480  continue
+      if( .not. numr(matprp(250)) ) then
+         call errmsg(5,dum,'alpha_zero',dumr,dumd)
+         go to 210
+      end if
       go to 210
 c
  9000 format(/,2x,'** values for cyclic plasticity model:',

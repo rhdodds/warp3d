@@ -90,10 +90,10 @@ c
        real (h_prec), allocatable :: plastic_work_density_n1(:) ! (span)
        real (h_prec), allocatable :: strain_n(:,:,:)          ! (mxvl,nstr,mxgp)
        real (h_prec), allocatable :: dtemps_node_blk(:,:)     ! (mxvl,mxndel)
-       real (h_prec), allocatable :: temps_init_node_blk(:,:) ! (mxvl,mxndel)
+       real (h_prec), allocatable :: temps_ref_node_blk(:,:)  ! (mxvl,mxndel)
        real (h_prec), allocatable :: temps_node_blk(:,:)      ! (mxvl,mxndel)
-       real (h_prec), allocatable :: temps_node_init_blk(:,:) ! (mxvl,mxndel)
-       real (h_prec), allocatable :: cohes_temp_init(:)       ! (mxvl)
+       real (h_prec), allocatable :: temps_node_ref_blk(:,:)  ! (mxvl,mxndel)
+       real (h_prec), allocatable :: cohes_temp_ref(:)        ! (mxvl)
        real (h_prec), allocatable :: cohes_dtemp(:)           ! (mxvl)
        real (h_prec), allocatable :: cohes_temp_n(:)          ! (mxvl)
        real (h_prec), allocatable :: nu_vec(:)                ! (mxvl)
@@ -116,7 +116,7 @@ c
        real (h_prec), allocatable :: h_vec_n(:)               ! (mxvl)
        real (h_prec), allocatable :: n_power_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: f0_vec(:)                ! (mxvl)
-       real (h_prec), allocatable :: eps_ref_vec(:)          ! (mxvl)
+       real (h_prec), allocatable :: eps_ref_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: m_power_vec(:)           ! (mxvl)
        real (h_prec), allocatable :: q1_vec(:)                ! (mxvl)
        real (h_prec), allocatable :: q2_vec(:)                ! (mxvl)
@@ -163,7 +163,7 @@ c
 c
        real (h_prec) :: dt, total_model_time, time_n, beta_fact,
      &   block_energy, eps_bbar, block_plastic_work, step_scale_fact,
-     &   alpha_dmg, ls, ll, lt
+     &   alpha_dmg, ls, ll, lt, alpha_zero
        real (h_prec), allocatable :: sv(:), lv(:), tv(:)      ! 3 each
 c
        integer :: felem, elem_type, matnum, int_order, mat_type,
@@ -183,7 +183,7 @@ c
      &            adaptive_flag, temperatures, lnelas_vec(mxvl),
      &            nuc_vec(mxvl), nonlinear_flag(mxvl), allow_cut,
      &            segmental, power_law, temps_node_to_process,
-     &            temperatures_init, fgm_enode_props, is_cohes_elem,
+     &            temperatures_ref, fgm_enode_props, is_cohes_elem,
      &            linear_displ_elem, adjust_const_elem,
      &            is_axisymm_elem, killed_status_vec(mxvl),
      &            block_killed, is_umat, is_solid_matl, is_crys_pls,

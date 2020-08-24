@@ -4,7 +4,7 @@ c     *                      subroutine ouddpa                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/17/2020 rhd              *
+c     *                   last modified : 1/31/2019 rhd              *
 c     *                                                              *
 c     *     write nodal displacements, velocities, accelerations,    *
 c     *     reactions, temperatures to (1) patran file in            *
@@ -19,7 +19,7 @@ c
 c
       use main_data, only : trn, trnmat, mdiag, pbar, rload,
      &                      inverse_incidences, temper_nodes,
-     &                      temper_nodes_init
+     &                      temper_nodes_ref
       implicit none
 c
       integer :: dva, nodmax, nwidth
@@ -116,7 +116,7 @@ c
 c
         if( dva .eq. 5 ) then   ! temperature only
          edva(1,1) = temper_nodes(nod)
-         edva(1,2) = temper_nodes(nod) - temper_nodes_init(nod)
+         edva(1,2) = temper_nodes(nod) - temper_nodes_ref(nod)
         end if
 c
 c                       write the results records for this node.

@@ -20,7 +20,7 @@ c *                       see didriv for more discussion               *
 c *                                                                    *
 c *                       *** supports MPI execution ***               *
 c *                       written by:    mcw                           *
-c *                       last modified: 8/16/2020 rhd                 *
+c *                       last modified: 3/25/2018 rhd                 *
 c *                                                                    *
 c **********************************************************************
 c
@@ -107,8 +107,8 @@ c
      a                        props, numprocs, nonode  ! old common.main
       use main_data, only : incmap, incid, fgm_node_values,
      a                      elems_to_blocks, temper_nodes,
-     b                      temper_elems,
-     c                      inverse_incidences, temper_nodes_init
+     b                      temper_nodes_ref, temper_elems,
+     c                      inverse_incidences
       use segmental_curves, only: seg_curve_table, seg_curves_type
 c
       implicit none
@@ -428,7 +428,7 @@ c *                     are not averaged. this routine                 *
 c *                     was separated from di_node_props for clarity.  *
 c *                                                                    *
 c *                 written by: mcw                                    *
-c *                 last modified: 8/16/2020 rhd                       *
+c *                 last modified: 4/17/2018 rhd                       *
 c *                                                                    *
 c **********************************************************************
 c
@@ -439,7 +439,7 @@ c
 c
       use global_data, only : out, iprops, nonode  ! old common.main
       use main_data, only : incmap, incid, temper_elems, temper_nodes,
-     &                      temper_nodes_init
+     &                      temper_nodes_ref
       use segmental_curves, only : seg_curve_table, seg_curves_value,
      &                             seg_curves_ym, seg_curves_nu,
      &                             seg_curves_alpha
@@ -502,7 +502,7 @@ c
 c
 c             loop through nodes on each element. get temperature at
 c             each node. do not remove reference temperatures of model
-c             nodes (temper_nodes_init) -- we need absolute temperatures
+c             nodes (temper_nodes_ref) -- we need absolute temperatures
 c             for temperature-dependent values.
 c
          do enode = 1, num_enodes
@@ -534,8 +534,8 @@ c
 c
             if( debug )
      &         write(out,3000) elemno, enode, snode,temper_nodes(snode),
-     &         elem_uniform_temp, temper_nodes_init(snode),
-     &          enode_temper, alpha_temper, e_temper, nu_temper
+     &         elem_uniform_temp, temper_nodes_ref(snode), enode_temper,
+     &         alpha_temper, e_temper, nu_temper
 c
          end do
       end do
@@ -555,7 +555,7 @@ c
      &       /,'snode                   = ', i8,
      &       /,'temper_nodes(snode)     = ', e11.4,
      &       /,'elem_uniform_temp       = ', e11.4,
-     &       /,'temper_nodes_init(snode) = ', e11.4,
+     &       /,'temper_nodes_ref(snode) = ', e11.4,
      &       /,'enode_temper(snode)     = ', e11.4,
      &       /,'alpha_temper(snode)     = ', e11.4,
      &       /,'e_temper(snode)         = ', e11.4,
@@ -586,8 +586,7 @@ c **********************************************************************
 c
       subroutine di_setup_J7_J8( do_it_local )
 c
-      use main_data, only: fgm_node_values,
-     &                     temperatures_init,
+      use main_data, only: fgm_node_values, temperatures_ref,
      &                     fgm_node_values_defined,
      &                     fgm_node_values_used,
      &                     initial_state_option,
@@ -627,7 +626,7 @@ c
       if( myid .eq. 0 ) do_it = do_it_local
       call wmpi_bcast_int( do_it )
       call wmpi_bcast_log( temperatures ) ! just in case
-      call wmpi_bcast_log( temperatures_init ) !    "
+      call wmpi_bcast_log( temperatures_ref ) !    "
       call wmpi_bcast_log( initial_state_option ) ! "
       call wmpi_bcast_log( comput_j )
       call wmpi_bcast_log( comput_i )
@@ -700,7 +699,7 @@ c
       build_J7_J8_data = .false.
       if( fgm_node_values_used )            build_J7_J8_data = .true.
       if( comput_i .and. temperatures )     build_J7_J8_data = .true.
-      if( comput_i .and. temperatures_init ) build_J7_J8_data = .true.
+      if( comput_i .and. temperatures_ref ) build_J7_J8_data = .true.
       if( process_initial_state )           build_J7_J8_data = .true.
       if( initial_stresses_input )          build_J7_J8_data = .true.
             if( allocated( block_seg_curves ) ) then

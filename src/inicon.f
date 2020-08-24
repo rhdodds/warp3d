@@ -4,7 +4,7 @@ c     *                      subroutine inicon                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/18/2020 rhd              *
+c     *                   last modified : 8/22/2020 rhd              *
 c     *                                                              *
 c     *     supervises and conducts the input of the                 *
 c     *     desired initial conditions for the structure at time 0.  *
@@ -22,7 +22,7 @@ c
      &                      initial_stresses_user_routine,
      &                      initial_stresses_file,
      &                      initial_stresses_input,
-     &                      temper_nodes_init, temperatures_init
+     &                      temper_nodes_ref, temperatures_ref
       implicit none
 c
       logical :: sbflg1, sbflg2
@@ -256,8 +256,8 @@ c
 c
          if ( dofn .eq. 0 ) then
             temper_nodes(node) = cval
-            temper_nodes_init(node) = cval
-            if ( abs(cval) .ne. zero ) temperatures_init = .true.
+            temper_nodes_ref(node) = cval
+            if ( abs(cval) .ne. zero ) temperatures_ref = .true.
             go to 1140
          end if
 c

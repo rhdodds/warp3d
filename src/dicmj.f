@@ -499,8 +499,8 @@ c
      a                        fgm_node_values, eq_node_force_indexes,
      b                        trn, trnmat,
      c                        temper_elems, temper_nodes,
-     d                        eq_node_forces,
-     e                        eq_node_force_len, temper_nodes_init
+     d                        temper_nodes_ref, eq_node_forces,
+     e                        eq_node_force_len
       use elem_block_data, only : rot_n1_blocks,
      a                            urcs_n_blocks, cdest_blocks,
      b                            edest_blocks, eps_n_blocks,
@@ -906,7 +906,7 @@ c
         do enode = 1, num_enodes
          snode = incid(incpos + enode - 1)
          e_node_temps(enode) = temper_nodes(snode) + elem_uniform_temp
-     &                        - temper_nodes_init(snode)
+     &                        - temper_nodes_ref(snode)
          if( abs(e_node_temps(enode)) > zero ) elem_temps = .true.
         end do
         if( allocated( snode_alpha_ij ) ) then

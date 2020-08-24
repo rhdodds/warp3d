@@ -4,7 +4,7 @@ c     *               subroutine mem_allocate                        *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                last modified : 8/18/2020 rhd                 *
+c     *                last modified : 11/26/2018 rhd                *
 c     *                                                              *
 c     *     provides the general allocation/deallocation of arrays   *
 c     *     during problem solution.                                 *
@@ -46,15 +46,14 @@ c
            write(out,9930) 2
            call die_abort
          end if
-         if( allocated( temper_nodes_init ) ) then
+         if( allocated( temper_nodes_ref ) ) then
            write(out,9900)
            write(out,9930) 0
            call die_abort
          end if
 c
          allocate( temper_nodes(nonode), dtemp_nodes(nonode),
-     &             temper_nodes_init(nonode), 
-     &             stat = alloc_stat )
+     &             temper_nodes_ref(nonode), stat = alloc_stat )
          if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910)
@@ -62,7 +61,7 @@ c
          end if
          do i = 1, nonode
           temper_nodes(i)     = zero
-          temper_nodes_init(i) = zero
+          temper_nodes_ref(i) = zero
          end do
 c
 c              allocate and zero element temperature vectors.

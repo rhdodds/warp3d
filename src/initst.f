@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/18/2020 rhd              *
+c     *                   last modified : 12/3/2019 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -20,8 +20,8 @@ c
       use segmental_curves
       use main_data, only : output_packets, packet_file_name,
      &                      packet_file_no, ascii_packet_file_name,
-     &                      ascii_packet_file_no,
-     &                      temperatures_init, cp_matls_present,
+     &                      ascii_packet_file_no, temperatures_ref,
+     &                      cp_matls_present,
      &                      cohesive_ele_types, linear_displ_ele_types,
      &                      adjust_constants_ele_types,
      &                      axisymm_ele_types, umat_used,
@@ -241,11 +241,11 @@ c
       force_solver_rebuild = .false.  ! global flag to force solver to rebuild
 
 c
-c                       initialize the existence of non-zero, initial
+c                       initialize the existence of non-zero, reference
 c                       (nodal) tempertures.
 c
-      temperatures_init = .false.
-      temperatures      = .false.
+      temperatures_ref = .false.
+      temperatures     = .false.
 c
 c                       initialize the constraint multipliers for
 c                       each load step
