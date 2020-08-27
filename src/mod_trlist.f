@@ -111,9 +111,8 @@ c          return. list can be increased in size. mlist has new size.
 c          nlist has used number of entries in list.
 c
       call scan_list( list, mlist, iall, nlist, ierr )
-!      write(*,*) '.. back fronm scan_list. mlist, nlist:',mlist,nlist
 !      if( nlist > 80 ) then
-!!        do i = 1, nlist
+!        do i = 1, nlist
 !         write(*,*) i, list(i)
 !         end do
 !      end if
@@ -375,7 +374,8 @@ c
 c                                                                               
 c         save 1                                                                
 c                                                                               
- 280  list(nlist) = 1                                                           
+ 280  if( nlist > mlist ) call list_resize( list, mlist )
+      list(nlist) = 1                                                           
       nlist = nlist+1                                                           
       go to 100                                                                 
 c                                                                               
@@ -440,6 +440,7 @@ c
 c
       new_size = size*2    !  max( size * 2, 100 )
       allocate( bigger_list(new_size) )
+      bigger_list = 0
       bigger_list(1:size) = list(1:size)!!
       call move_alloc( bigger_list, list )
 !      write(*,*) ' <<<< list_resize. old, new:',size,new_size
