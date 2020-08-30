@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 import time
+import math
 #
 #
 #
@@ -33,6 +34,10 @@ def check_results( problem_dir, results_file, nsearchlines,
 #                  
 #
  ldebug = False
+ old_compare = False
+ new_compare = not old_compare
+ compare_tol = 1.0e-04
+#
  print("\n  ... Checking results: " + results_file)
 #
  with open( problem_dir + '/' + results_file, 'rt' ) as outfile:
@@ -49,10 +54,20 @@ def check_results( problem_dir, results_file, nsearchlines,
    words = line.split()
    print("\t    .... comparison value:\t", answer )
    message = " "
-   if answer != words[anspos] : message = message_diff; count_diffs += 1
+   if new_compare :
+     a = float( answer )
+     b = float( words[anspos] )
+     if not math.isclose( a,b,rel_tol=compare_tol ) : 
+       message = message_diff
+       count_diffs += 1
+   if old_compare :
+     if answer != words[anspos] : 
+       message = message_diff
+       count_diffs += 1
    print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  return
+#
 #
 #              function run_all
 #              ----------------

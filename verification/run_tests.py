@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 import time
+import math
 #
 #
 #
@@ -33,6 +34,10 @@ def check_results( problem_dir, results_file, nsearchlines,
 #                  
 #
  ldebug = False
+ old_compare = False
+ new_compare = not old_compare
+ compare_tol = 1.0e-04
+#
  print("\n  ... Checking results: " + results_file)
 #
  with open( problem_dir + '/' + results_file, 'rt' ) as outfile:
@@ -49,7 +54,16 @@ def check_results( problem_dir, results_file, nsearchlines,
    words = line.split()
    print("\t    .... comparison value:\t", answer )
    message = " "
-   if answer != words[anspos] : message = message_diff; count_diffs += 1
+   if new_compare :
+     a = float( answer )
+     b = float( words[anspos] )
+     if not math.isclose( a,b,rel_tol=compare_tol ) : 
+       message = message_diff
+       count_diffs += 1
+   if old_compare :
+     if answer != words[anspos] : 
+       message = message_diff
+       count_diffs += 1
    print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  return
@@ -303,6 +317,9 @@ def test81():
  print("    =============================================")
 # 
  problem_dir = 'test81'
+ old_compare = False
+ new_compare = not old_compare
+ compare_tol = 1.0e-04
 #
 #         checks on results in flat & Patran result files.
 #
@@ -331,7 +348,16 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  i = 1
@@ -345,7 +371,16 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  i = 2
@@ -359,7 +394,16 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  i = 3
@@ -373,7 +417,16 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  i = 4
@@ -387,7 +440,16 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  i = 5
@@ -401,9 +463,17 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
-
 #
  i = 6
  answer = "0.228269E-04"
@@ -416,9 +486,17 @@ def test81():
     words = line.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
-
 #
  i = 7
  answer = "0.359763E-01"
@@ -433,7 +511,16 @@ def test81():
  words = nowline.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  i = 8
@@ -448,7 +535,16 @@ def test81():
  words = nowline.split()
  print("\t    .... comparison value:\t" + " " + answer )
  message = " "
- if answer != words[anspos] : message = message_diff; count_diffs += 1
+ if new_compare :
+   a = float( answer )
+   b = float( words[anspos] )
+   if not math.isclose( a,b,rel_tol=compare_tol ) : 
+     message = message_diff
+     count_diffs += 1
+ if old_compare :
+   if answer != words[anspos] : 
+     message = message_diff
+     count_diffs += 1
  print("\t    .... value from output:\t", words[anspos], message, "\n" )
 #
  cleanup( cpoutfiles[0], problem_dir )
