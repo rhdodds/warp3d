@@ -29,29 +29,32 @@
 #
 #
 #
-Test 67 (Mesh tieing of two cylinders)
-======================================
+Test 67 (Mesh tieing: hex-to-hex, tet-to-hex)
+=============================================
 
 
 #
 #    number of problems
 #
- 2
+ 3
 #
 #    list of problem titles for output
 #
 test_67a
 test_67b
+test_67c
 *
 *   list of output files
 *
 test_67a_out
 test_67b_out
+test_67c_out
 *
 *    list of input files
 *
-test_67a
-test_67b
+test_67a.inp
+test_67b.inp
+test_67c.inp
 *
 *        check results problem 1  
 *
@@ -61,11 +64,19 @@ test_67b
 0.28518081E+01
  1
 *
-*        check results problem 2   KII value
+*        check results problem 2  
 *
 1                                 
 '    252      1     '
 0
 69.533108
+ 2
+*
+*        check results problem 3   
+*
+1                                 
+'    263      1'
+0
+100.025528
  2
 
