@@ -1,0 +1,123 @@
+!
+!
+!       exercise tied contact between a block of 12 hex 20 elements 
+!       and 240 tet 10 elements.
+!
+!       this is a very severe mismatch of meshes across the tied interface.
+!       for testing purposes only - not recommended in practice.
+!
+!
+!       tet 10 block:  0 <=x < 8.0, 0 <= y <= 10.0, z <= 0 <=5
+!
+!       hex 20 block:  8.1 <=x < 14.1, 0 <= y <= 10.0, z <= 0 <=5
+!
+!       axial tension loading applied over the x = 14. face
+!       x= 0, y = 0 and z = 0 are symmetry
+!
+!       exact solution is sig-x = 100 everywhere, all other stresses = 0
+!
+!       there is an intentional delta-x gap of 0.1 between the 
+!       tied faces of tet10 and hex20 elements. the tied contact processor 
+!       detects the gap and makes certain the MPCs are correct
+!
+!       simple plasticity model with linear hardening
+!
+!       model from Greg Throwald
+!
+structure two_blocks
+! 
+number of nodes 630 elements 252
+! 
+material simple
+  properties bilinear e 30000 nu 0.3 yld_pt 60.0 tan_e 200.0
+!
+elements
+   1-240 type tet10 linear material simple,
+              order 5pt_rule center_output short
+ 241-252 type q3disop linear material simple,
+              order 2x2x2 center_output short
+!
+*input 'test_67b_coord_incid'
+! 
+ blocking automatic 
+! 
+!        Add surface data for tied contact)
+!        Define two mesh surfaces using element lists
+!
+ surface tets_left_side
+  element surfaces
+      47  face 3
+      48  face 4
+      51  face 3
+      53  face 2
+      57  face 3
+      58  face 4
+     106  face 3
+     108  face 2
+     112  face 3
+     113  face 4
+     116  face 3
+     118  face 2
+     167  face 3
+     168  face 4
+     171  face 3
+     173  face 2
+     177  face 3
+     178  face 4
+     226  face 3
+     228  face 2
+     232  face 3
+     233  face 4
+     236  face 3
+     238  face 2
+!     
+surface bricks_right_side
+  element surfaces
+    241 242 245 246 249 250 face 3
+!
+tie mesh pair_1
+  tolerance 0.2 adjust on
+  primary bricks_right_side secondary tets_left_side
+!
+loading unit_end  $ x = 14.1
+  element loads
+    243 244 247 248 251 252 face 4 pressure  -1.0
+!
+ constraints
+     plane x=  0 symmetry
+     plane y=  0 symmetry
+     plane z = 0 symmetry 
+!     
+list 'left' x= 0.0     $ for use in output
+list 'right' x=14.1    $  "     "     "
+! 
+ output model flat patran convention text file "block"
+ output patran neutral file
+!
+ loading test
+  nonlinear
+    step 1 unit_end 58
+    step 2 unit_end 7.0
+    step 3 unit_end 5.0
+! 
+ nonlinear analysis parameters
+   solution technique direct sparse 
+   time step 1.0e06  $ static analysis
+   maximum iterations 9
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   line search on
+   extrapolate on
+   batch messages off
+   cpu time limit off
+   material messages off
+   display tied mesh mpcs off
+! 
+ compute displacements for loading test step 3
+ output wide stresses all
+ output reactions 'left'
+ output displacements 'right'
+! 
+stop

@@ -1,0 +1,113 @@
+!  
+!
+!         test tied contact to connect a block of 8-node hex elements
+!         to a block of 4-node tet elements.
+!
+!         uniform tension, linear-elastic response.
+!
+!         NOTE:  tet mesh is coarse. it must be primary to
+!                limit gaps
+!
+ structure model
+!  
+ material steel
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0e20
+!  
+ number of nodes 541 elements 713
+! 
+ elements
+   1-256 type l3disop linear material steel,
+                       order 2x2x2 bbar center_output short
+   257-713 type tet4 linear material steel,
+                       order 1pt_rule gausspts short
+!  
+ *input from 'test_67c_coords.inp'
+ *input from 'test_67c_incid.inp'
+ blocking automatic size = 128
+*echo on
+ surface hex_surface
+      4       8      12      16      20      24      28      32,
+      36      40      44      48      52      56      60      64,
+      68      72      76      80      84      88      92      96,
+     100     104     108     112     116     120     124     128,
+     132     136     140     144     148     152     156     160,
+     164     168     172     176     180     184     188     192,
+     196     200     204     208     212     216     220     224,
+     228     232     236     240     244     248     252     256 face 5
+!
+ surface tet_surface
+     356     398     426     463     481     482     485     486,
+     502     511     517     519     529     530     546     548,
+     587     588     604     611     629     631     643     649,
+     657     664     673     675     678     684     695     704 face 1
+!
+ tie mesh connect
+    tolerance 0.05 adjust on
+    primary tet_surface secondary hex_surface
+!
+ loading tension
+   element loads
+       263 face 1 pressure     -100.000
+       275 face 1 pressure     -100.000
+       312 face 3 pressure     -100.000
+       319 face 1 pressure     -100.000
+       321 face 1 pressure     -100.000
+       325 face 1 pressure     -100.000
+       341 face 1 pressure     -100.000
+       431 face 1 pressure     -100.000
+       433 face 1 pressure     -100.000
+       458 face 1 pressure     -100.000
+       487 face 1 pressure     -100.000
+       488 face 1 pressure     -100.000
+       498 face 1 pressure     -100.000
+       521 face 1 pressure     -100.000
+       522 face 1 pressure     -100.000
+       525 face 2 pressure     -100.000
+       527 face 1 pressure     -100.000
+       535 face 2 pressure     -100.000
+       560 face 1 pressure     -100.000
+       589 face 1 pressure     -100.000
+       594 face 1 pressure     -100.000
+       598 face 2 pressure     -100.000
+       614 face 1 pressure     -100.000
+       620 face 1 pressure     -100.000
+       621 face 1 pressure     -100.000
+       624 face 1 pressure     -100.000
+       648 face 1 pressure     -100.000
+       658 face 1 pressure     -100.000
+       671 face 3 pressure     -100.000
+       689 face 1 pressure     -100.000
+       693 face 1 pressure     -100.000
+       706 face 1 pressure     -100.000
+! 
+ constraints
+   plane x=0 symmetry
+   1 v 0 w 0
+   41 w 0
+!
+ output model flat patran convention text file "model"
+! output patran neutral
+!  
+ loading test
+  nonlinear
+    step 1 tension 1.0
+!  
+ nonlinear analysis parameters $ minimal set for linear analysis
+   solution technique sparse direct 
+   time step 1.0e06 
+   maximum iterations 5 $ global Newton iterations
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   batch messages off
+   wall time limit off
+   bbar stabilization factor 0.0
+   trace solution on
+!  
+ compute displacements for loading test step 1
+ output displacements 481 482 486 490
+ output stresses 263
+!
+! output flat text displacements
+! output flat text element stresses
+!  
+stop
