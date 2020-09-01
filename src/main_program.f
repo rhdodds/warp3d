@@ -95,9 +95,9 @@ c
       end if
 c
       char_os = ' '            !   123456789012345678901234567890
-      if( windows_os ) char_os = 'Windows 64-bit'
-      if( linux_os )   char_os = 'Linux 64-bit'
-      if( osx_os )     char_os = 'OSX 64-bit'
+      if( windows_os ) char_os = 'Windows 10'
+      if( linux_os )   char_os = 'Linux'
+      if( osx_os )     char_os = 'macOS'
       lastc = len_trim( char_os ) + 1
       if( build_sys == 0 ) char_os(lastc:) = ' (gfortran)'
       if( build_sys == 1 ) char_os(lastc:) = ' (Intel Fortran)'
