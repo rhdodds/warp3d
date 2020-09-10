@@ -6,12 +6,9 @@ c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 8/22/2020 rhd              *
 c     *                                                              *
-c     *     supervises and conducts the input of the                 *
-c     *     desired initial conditions for the structure at time 0.  *
+c     *     process input commands that define initial conditions    *
 c     *                                                              *
 c     ****************************************************************
-c
-c
 c
       subroutine inicon( sbflg1, sbflg2 )
       use global_data ! old common.main
@@ -311,17 +308,15 @@ c     ****************************************************************
 c     *                                                              *
 c     *     contains:   inicon_initial_stresses                      *
 c     *                                                              *
-c     *                 last modified : 09/22/2017 rhd               *
+c     *                 last modified : 09/9/2020 rhd                *
 c     *                                                              *
 c     ****************************************************************
 
       subroutine inicon_initial_stresses
       implicit none
-
-      logical :: file_exists, found
-      character(len=100) :: workstr
+c
       integer :: result
-
+c
       initial_stresses_user_routine = .false.
       initial_stresses_file = " "
       scan_stat = 0
@@ -330,28 +325,6 @@ c
      &    allocate( initial_stresses(6,noelem) )
       initial_stresses = zero
 c
-c              user routine with optional file name
-c
-      if( matchs('user_routine',8) ) then
-        initial_stresses_user_routine = .true.
-        if( matchs('file',4) ) call splunj
-        workstr(1:100) = " "
-        if( label(idum) ) then
-           call entits( workstr, nc )
-        elseif( string(idum) ) then
-           call entits( workstr, nc )
-        end if
-        initial_stresses_file = workstr
-        inquire( file=workstr, exist=file_exists )
-        if( .not. file_exists ) write(out,9000)
-     &                        workstr(1:len_trim(workstr))
-        scan_stat = 1
-        return
-      end if
-c
-c              regular lists of elements and stress values on each
-c              logical input lines.
-c
       scan_stat = 0 ! no read on return
       do
 c
@@ -359,6 +332,11 @@ c
         if( matchs('dump',4) ) then
            call inicon_dump_stresses
            cycle
+        end if
+        if( matchs('user_routine',8) ) then
+           call inicon_user_initial_stresses
+           scan_stat = 1
+           exit
         end if
         call inicon_get_list( result )
         if( result .eq. 4 ) then ! no list. do we have non-zero stresses
@@ -379,17 +357,47 @@ c
 
       return
 c
- 9000 format(/1x,'>>>>> warning: file does not exist: ', a,/)
  9010 format(/1x,'>>>>> warning: no valid initial stress data',
      &  ' found',/)
 c
       end subroutine inicon_initial_stresses
+c     ****************************************************************
+c     *                                                              *
+c     *     contains:   inicon_user_initial_stresses                 *
+c     *                                                              *
+c     *                 last modified : 09/9/2020 rhd                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine inicon_user_initial_stresses
+      implicit none
+      character(len=100) :: workstr
+      logical :: file_exists, found
+c
+c              user routine with optional file name
+c
+      initial_stresses_user_routine = .true.
+      if( matchs('file',4) ) call splunj
+      workstr(1:100) = " "
+      if( label(idum) ) then
+           call entits( workstr, nc )
+      elseif( string(idum) ) then
+           call entits( workstr, nc )
+      end if
+      initial_stresses_file = workstr
+      inquire( file=workstr, exist=file_exists )
+      if( .not. file_exists ) write(out,9000)
+     &                        workstr(1:len_trim(workstr))
+
+      return
+ 9000 format(/1x,'>>>>> warning: file does not exist: ', a,/)
+      end subroutine inicon_user_initial_stresses
 c
 c     ****************************************************************
 c     *                                                              *
 c     *     contains:   inicon_chk_stress_tbl                        *
 c     *                                                              *
-c     *                 last modified : 09/22/2017 rhd               *
+c     *                 last modified : 09/9/2020 rhd                *
 c     *                                                              *
 c     ****************************************************************
 
@@ -400,8 +408,8 @@ c
       logical :: found
       double precision :: sum
 
-      do i = 1, noelem
-        do j = 1, 6
+      do j = 1, 6
+        do i = 1, noelem
            sum = sum + abs( initial_stresses(j,i) )
         end do
       end do
@@ -456,8 +464,7 @@ c
          initial_stresses = zero
        end if
       end do
-
-
+c
       return
 c
  9000 format(/1x,'>>>>> error: expecting a stress value. ',

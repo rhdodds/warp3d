@@ -4,7 +4,7 @@ c     *                      subroutine incomp                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/15/2013 rhd              *
+c     *                   last modified : 9/9/2020 rhd               *
 c     *                                                              *
 c     *     performs the initial computations, data structure setup  *
 c     *     necessary for first (time) step i                        *
@@ -13,7 +13,7 @@ c     ****************************************************************
 c
       subroutine incomp
       use global_data ! old common.main
-      use main_data, only : incid
+      use main_data, only : incid, initial_stresses_user_routine
       implicit integer (a-z)
       double precision
      &   zero
@@ -62,6 +62,7 @@ c            o   array of contact "causes" -- only if
 c                rigid contact surfaces defined
 c            o   lists of solid elements connected to
 c                cohesive-interface elements
+c            o   get initial stresses from a user-routine (if defined)
 c
       call init_eblock_map
       call mem_allocate( 7 )
@@ -73,6 +74,7 @@ c
       call edest_init
       call element_volumes_init( 0, 1 )
       call solid_cohes_init
+      if( initial_stresses_user_routine ) call initial_sig_user_routine
 c
 c          MPI:
 c             broadcast basic model, constraint, and analysis
@@ -215,3 +217,211 @@ c
      & '>> tied mesh processor finished  @ ', f10.2)
 c
       end
+c     ****************************************************************          
+c     *                                                              *          
+c     *          subroutine initial_sig_user_routine                 *          
+c     *                                                              *          
+c     *                  written by : rhd                            *          
+c     *                                                              *          
+c     *            last modified : 9/9/2020 rhd                      *          
+c     *                                                              *          
+c     *  Drive over all elements to call user routine to obtain      *
+c     *  six components of initial stress at approximate center of   *
+c     *  the element                                                 *
+c     *                                                              *          
+c     ****************************************************************          
+c
+      subroutine initial_sig_user_routine
+      use global_data, only : elblks, iprops, out, nelblk
+      use main_data, only : initial_stresses_user_routine,
+     &                      initial_stresses_file,
+     &                      initial_stresses
+      use elem_block_data, only : cdest_blocks
+      implicit none
+c
+      integer :: blk, felem, mat_type, now_thread, totdof
+      integer :: ntens, ncrds, npt, layer, kspt, lrebar, local_out,
+     &           noel
+      double precision :: dummy_sig(6), dummy_coords(3)
+      character(len=80) :: names(2)
+      logical, parameter :: ldebug = .false.
+      double precision, parameter :: zero = 0.0d0
+      integer, external :: omp_get_thread_num
+c
+      if( ldebug ) then
+       write(out,*) '.... inside initial_sig_user_routine ....'
+       write(out,*) '          initial_stresses_user_routine: ',
+     &             initial_stresses_user_routine
+       write(out,*) '          initial_stresses_file: ',
+     &             initial_stresses_file
+      end if
+c
+      initial_stresses = zero  ! entire array
+c
+c              call the user routine with element 0 to allow for any
+c              setup before the parallel region is entered.
+c              there is a module setup for the storage of
+c              sigini use. see code just above the example 
+c              sigini routine.
+c
+      ntens    = 0
+      ncrds    = 0
+      npt      = 0
+      layer    = 0
+      kspt     = 0
+      lrebar   = 0
+      local_out = out
+      noel = 0
+      now_thread = 0
+      dummy_coords = zero
+      names(1) = " "
+      names(2) = " "
+c
+      call sigini( dummy_sig, dummy_coords, ntens, ncrds, noel, npt,
+     &             layer, kspt, lrebar, names, now_thread, local_out,
+     &             initial_stresses_file )
+c
+c              process all element blocks. call user routine to
+c              get initial stresses at element center.
+c
+c$OMP PARALLEL DO PRIVATE( blk, felem, mat_type, now_thread, 
+c$OMP&                     totdof )
+      do blk = 1, nelblk
+        felem      = elblks(1,blk)
+        mat_type   = iprops(25,felem)
+        now_thread = omp_get_thread_num() + 1
+        select case( mat_type ) ! some matl models no sig ini support
+          case( 1, 3, 5, 6, 7, 8, 10 ) ! bilinear, mises, cyclic,
+c                                        creep, H_2, umat, CP
+            totdof = iprops(2,felem) * iprops(4,felem) 
+c                    num_enodes * num_enode_dof
+            call initial_sig_user_do_blk( blk, felem, now_thread,
+     &                                    totdof, 
+     &                                    cdest_blocks(blk)%ptr )
+          case( 2 )
+             write(out,9000) 'deformation'
+             call die_gracefully
+          case( 4 ) ! cohesive
+             write(out,9000) 'cohesive'
+             call die_gracefully
+          case default
+             write(out,9020)
+             call die_gracefully
+        end select
+      end do
+c
+      return
+ 9000 format(//,'>>> Error: initial stresses not supported',
+     &  ' for material model: ',a,
+     &  /,      '           Please use equivalent eigenstrains imposed',
+     &  /,      '           via temperatures in step 1.',
+     &  /,      '           job terminated....', //)
+ 9020 format(//,'>>> Fatal Error: routine initial_sig_user_routine',
+     &  /,      '                 job terminated....', //)
+c
+      end
+c     ****************************************************************          
+c     *                                                              *          
+c     *                 subroutine initial_sig_user_do_blk           *          
+c     *                                                              *          
+c     *                  written by : rhd                            *          
+c     *                                                              *          
+c     *                last modified : 9/9/2020 rhd                  *          
+c     *                                                              *          
+c     *  Process element block to get user routine initial stresses  *
+c     *                                                              *          
+c     ****************************************************************          
+c
+      subroutine initial_sig_user_do_blk( blk, felem, now_thread,
+     &                                    totdof, bcdst )
+      use global_data, only : elblks, iprops, out, elelib,
+     &                        mxvl, mxecor, scoords => c 
+      use main_data, only : initial_stresses, initial_stresses_file
+      implicit none
+c
+      integer, intent(in) :: blk, felem, now_thread, totdof
+      integer, intent(in) :: bcdst(totdof,*)  ! totdof x span
+c
+c              local variables
+c
+      integer :: span, num_enodes, num_enode_dof, local_out,
+     &           elem_type, relem, noel, node, k, j,
+     &           ntens, ncrds, npt, layer, kspt, lrebar
+c
+      double precision :: xbar, ybar, zbar, x, y, z
+      double precision :: enode_coords(mxvl,mxecor), 
+     &                    e_cntr_coords(3,mxvl), eisig(6)
+      double precision, parameter :: zero = 0.0d0
+      character(len=80) :: names(2)
+      logical, parameter :: ldebug = .false.
+c
+      if( ldebug ) then
+        write(out,*) ' ...   blk, felem, now_thread: ',blk, felem,
+     &        now_thread
+      end if
+c
+      span           = elblks(0,blk)
+      num_enodes     = iprops(2,felem)
+      num_enode_dof  = iprops(4,felem)
+      elem_type      = iprops(1,felem)
+c
+c           pull coordinates at t=0 from global input vector for all
+c           elements in the block
+c
+      k = 1
+      do j = 1, num_enodes
+!DIR$ IVDEP
+         do relem = 1, span
+            enode_coords(relem,k)   = scoords(bcdst(k,relem))
+            enode_coords(relem,k+1) = scoords(bcdst(k+1,relem))
+            enode_coords(relem,k+2) = scoords(bcdst(k+2,relem))
+         end do
+         k = k + 3
+      end do
+c
+c         compute coordinates of approximate center of elements
+c
+      do relem = 1, span
+        xbar = zero; ybar = zero; zbar = zero
+        do node = 1, num_enodes
+          x = enode_coords(relem,node)
+          y = enode_coords(relem,node+num_enodes)
+          z = enode_coords(relem,node+num_enodes+num_enodes)
+          xbar = xbar + x
+          ybar = ybar + y
+          zbar = zbar + z
+       end do
+       e_cntr_coords(1,relem) = xbar / dble(num_enodes)
+       e_cntr_coords(2,relem) = ybar / dble(num_enodes)
+       e_cntr_coords(3,relem) = zbar / dble(num_enodes)
+      end do
+c
+      ntens    = 6
+      ncrds    = 3
+      npt      = 1
+      layer    = 0
+      kspt     = 0
+      lrebar   = 0
+      names(1) = " "
+      names(2) = elelib(elem_type)
+      local_out = out
+c
+c         call user initial stress routine once for all elements 
+c         in block. we only request initial stresses at element center.
+c
+      do relem = 1, span
+        noel = felem + relem - 1
+        eisig = zero
+        call sigini( eisig, e_cntr_coords(1,relem), 
+     &               ntens, ncrds, noel, npt, layer, kspt, lrebar,
+     &               names, now_thread, local_out, 
+     &               initial_stresses_file )
+        initial_stresses(1:4,noel) = eisig(1:4)
+        initial_stresses(5,noel) = eisig(6) ! switch to WARP3D order
+        initial_stresses(6,noel) = eisig(5)
+      end do 
+c 
+      return
+      end
+
+
