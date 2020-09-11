@@ -3,9 +3,9 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: August 25,2020
+                   Last Update: September 15, 2020
 
-                  Version 18.2.3 on all platforms
+                  Version 18.2.3 Build 41120 on all platforms
 
 ** The multiple README files in previous releases are replaced with the
 ** QuickStart documents on home page of www.warp3d.net
@@ -26,7 +26,9 @@ This version of WARP3D is built with these compilers:
 
 ** Late Breaking News **
 
- This is primarily a bug fix, cleanup release.
+ Support for user-defined routine SIGINI to supply initial stresses
+ for model elements. Routine is compatible with Abaqus specification
+ for SIGINI
 
  Temperature dependent CTE values use the secant definition. The
  reference temperature for measurement of the CTE values is specified
