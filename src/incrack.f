@@ -1264,10 +1264,11 @@ c
          return
       end if
 c
+      if( matchs('steps',4) ) call splunj
       allocate( temp_list(10) )
       call scan                                                                 
       call trlist_allocated( temp_list, list_size, 0,   ! all not allowed                         
-     &             lenlst, errnum )                               
+     &             lenlst, errnum )     
       if ( errnum == 2 ) then   ! parse rules failed                                                
          call incrack_errmsg( 12 )
          smcs_states  = .false.
