@@ -1024,10 +1024,11 @@ c     *                      subroutine dam_print                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/12/2019 rhd             *          
+c     *                   last modified : 9/29/2020 rhd              *          
 c     *                                                              *          
 c     *     print status of killable elements or released nodes at   *
-c     *     the beginning of a load step.                            *          
+c     *     the beginning of a load step.                            *       
+c     *     optional smcs states output for smcs model
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -1041,31 +1042,35 @@ c
       integer :: step, iter  
       logical :: doprint                                              
 c                                                                               
-c           check to make sure crack growth is on and printing is               
-c           specified                                                           
+c           check to make sure crack growth is on and some type of
+c           output is requested
 c                                                                               
-      doprint = print_status .or. print_top_list
-      if( .not. doprint ) return
-c
       select case( crack_growth_type )                                           
       case(0)       ! no action                                                             
       case(1)                                                                  
+         doprint = print_status .or. print_top_list
+         if( .not. doprint ) return
          call dam_print_elem1( step, iter )                                  
       case(2)
-         if(const_front) then                                                
+         doprint = print_status .or. print_top_list
+         if( .not. doprint ) return
+         if( const_front ) then                                                
            call dam_print_front( step, iter)                                
          else                                                                 
            call dam_print_node( step, iter )                                
          end if    
       case(3)                                                            
+         doprint = print_status .or. print_top_list .or. smcs_states
+         if( .not. doprint ) return
          call dam_print_elem3( step, iter )                                  
       case(4)
+         doprint = print_status .or. print_top_list
+         if( .not. doprint ) return
          call dam_print_elem4( step, iter )                                  
       end select                                                                    
 c                                                                               
       return                                                                    
       end                                                                       
-                                                                                
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine dam_debug                    *          
