@@ -2407,13 +2407,15 @@ c
  9011 format(/1x,'>>>>> error: unrecognized smcs parameter ... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
- 9012 format(/1x,'>>>>> error: invalid step list format... ',            
+ 9012 format(/1x,'>>>>> error: invalid step list format... ',    
+     & /14x,'(including -all- steps not allowed)',        
      & /14x,'line ignored',/)                       
 c                                                                               
  9013 format(/1x,'>>>>> error: step list overflow ... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
  9014 format(/1x,'>>>>> error: no steps list found ... ',            
+     & /14x,'(including -all- steps not allowed)',        
      & /14x,'line ignored',/)                       
 c                                                                               
  9015 format(/1x,'>>>>> error: expecting keyword on or off ... ',            
