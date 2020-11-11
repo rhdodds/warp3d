@@ -2103,116 +2103,122 @@ c     *                      subroutine read_crystal_data            *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 4/17/12 mcm                *
+c     *                   last modified : 11/11/20 RHD               *
 c     *                                                              *
 c     *      read in crystal data from file to in memory structures  *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine read_crystal_data
+c
       use crystal_data, only : angle_input, crystal_input,
-     &            data_offset, defined_crystal
-      use main_data
-      use global_data ! old common.main
+     &                         data_offset, defined_crystal
+      use main_data, only : elstor, matprp, imatprp, smatprp
+      use global_data, only : noelem, out
       implicit none
+c
+c              locals
 c
       integer :: mxcry, nelem, ncry, matnum, el, iodev, p_matnum,
      &           mattype
-      integer, external :: warp3d_get_device_number
       logical :: countme, crystalsl, anglesl, open_file, send_mess
       character(len=24) :: filen
-c     
-c     Just skip if we don't have a crystal
+      double precision, parameter :: dzero = 0.0d0
+      integer, allocatable :: temp_vec(:)
+      double precision, allocatable :: temp_array(:,:)
+c 
+c              Just skip if we don't have a crystal
 c
-      if (.not. defined_crystal) then
-            return
-      end if
+      if( .not. defined_crystal ) return
 c
+c              Forward pass: get numbers to allocate and offsets
 c
-c     Forward pass: get numbers to allocate and offsets
-c
-      allocate(data_offset(noelem))
+      if( allocated(data_offset) ) deallocate( data_offset )
+      allocate( data_offset(noelem) )
       data_offset = 0
       mxcry = 0
       nelem = 0
-      do el=1,noelem
-            matnum = elstor(2,el)
-            mattype = int(matprp(9,matnum))
-            if (mattype .eq. 10) then
-                  countme = (imatprp(104,matnum) .eq. 2) .or.
-     &                  (imatprp(107,matnum) .eq. 2)
-                  if (countme) then
-                        nelem = nelem +1
-                        data_offset(el) = nelem
-                        ncry = imatprp(101,matnum)
-                        if (ncry .gt. mxcry) mxcry = ncry
-                  end if
-            end if
+c
+      do el = 1, noelem
+        matnum = elstor(2,el)
+        mattype = int( matprp(9,matnum) )
+        if( mattype .ne. 10 ) cycle  ! cp material model
+        countme = (imatprp(104,matnum) .eq. 2) .or.
+     &            (imatprp(107,matnum) .eq. 2)
+        if( countme ) then
+          nelem = nelem + 1
+          data_offset(el) = nelem
+          ncry = imatprp(101,matnum)
+          if( ncry .gt. mxcry ) mxcry = ncry
+        end if
       end do
-c      
-c     Backward pass: actual data
+c        
+c              Backward pass: actual data
 c
       send_mess = .false.
-      if( any(data_offset .gt. 0) ) then
-            write(out,*) '' 
-            write(out,'(A)') '>> Reading crystal definitions ...'
-            send_mess = .true.
-            allocate(angle_input(nelem,mxcry,3))
-            allocate(crystal_input(nelem,mxcry))
-            p_matnum = -1
-            iodev = warp3d_get_device_number()
-            if (iodev .eq. -1) then
-              write(*,*) "No available device."
-              call die_gracefully
-            end if
-            open_file = .false.
-            do el=1,noelem
-                  if (data_offset(el) .ne. 0) then
-                        matnum = elstor(2,el)
-                        if (matnum .ne. p_matnum) then
-                          if (el .ne. 1) then
-                              close(iodev)
-                          end if
-                          filen = smatprp(112,matnum)
-                          open(iodev,FILE=filen,READONLY)
-                          open_file = .true.
-                        end if
-                        ncry = imatprp(101,matnum)
-c                        filen = smatprp(112,matnum)
-c                        open(iodev,FILE=filen,READONLY)
-                        if (imatprp(104,matnum) .eq. 2) then
-                              crystalsl = .true.
-                        else
-                              crystalsl = .false.
-                        end if
-                        if (imatprp(107,matnum) .eq. 2) then
-                              anglesl = .true.
-                        else
-                              anglesl = .false.
-                        end if
-                        call read_defs(iodev,el,ncry,anglesl,
-     &                        crystalsl, angle_input(el,1:ncry,1:3),
-     &                        crystal_input(el,1:ncry),out)
-c                        close(iodev)
-                        p_matnum = matnum
-                  end if
-            end do
-            if (open_file) then
-                  close(iodev)
-            end if
-      end if
+      if( any(data_offset .gt. 0 ) ) call read_crystal_data_a
 c
 c           If we're using MPI, send out the arrays (including the
 c           general crystal struct).  If not it's a dummy routine
 c
       call wmpi_send_crystals
-
-      if( send_mess) then
-         write(out,*) '    ... Done'
+c
+      if( send_mess ) then
+         write(out,'(a)') '>> Completed reading crystal definitions ...'
          write(out,*) 
       end if
-c     
-      end subroutine
+c
+      return
+c
+      contains
+c     ========
+c
+      subroutine read_crystal_data_a
+      implicit none
+c
+      write(out,*) '' 
+      write(out,'(a)') '>> Reading crystal definitions ...'
+c
+      send_mess = .true.
+      if( allocated(angle_input) ) deallocate( angle_input )
+      if( allocated(crystal_input) ) deallocate( crystal_input )
+      allocate( angle_input(noelem,mxcry,3) )
+      allocate( crystal_input(noelem,mxcry) )
+      allocate( temp_vec(mxcry), temp_array(mxcry,3) )
+      angle_input = dzero
+      crystal_input = 0
+      p_matnum = -1
+      open_file = .false.
+c
+      do el = 1, noelem
+        if( data_offset(el) == 0 ) cycle
+        matnum = elstor(2,el)
+        if( matnum .ne. p_matnum ) then
+          if( el .ne. 1 ) close(iodev)
+          filen = smatprp(112,matnum)
+          open(newunit=iodev,file=filen,readonly)
+          open_file = .true.
+        end if
+        ncry = imatprp(101,matnum)
+        crystalsl = .false.
+        if( imatprp(104,matnum) .eq. 2 ) crystalsl = .true.
+        anglesl = .false.
+        if( imatprp(107,matnum) .eq. 2 ) anglesl = .true.
+        temp_array = dzero ! temp to eliminate Mark's code
+        temp_vec = 0       ! that caused copyin - copyout: slow
+        call read_defs( iodev, el, ncry, anglesl, crystalsl,
+     &                  mxcry, temp_array,  temp_vec, out )
+        angle_input(el,1:ncry,1:3) = temp_array(1:ncry,1:3)
+        crystal_input(el,1:ncry) = temp_vec(1:ncry)
+        p_matnum = matnum
+      end do ! on el
+c
+      deallocate( temp_vec, temp_array )
+      if( open_file ) close(iodev)
+c
+      return
+      end subroutine read_crystal_data_a
+      end subroutine read_crystal_data
 c
 c     ****************************************************************
 c     *                                                              *
@@ -2220,96 +2226,97 @@ c     *                   subroutine read_defs                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 03/23/2012                 *
+c     *                   last modified : 11/11/2020 rhd             *
 c     *                                                              *
 c     *     Helper which reads crystal numbers and orientations from *
 c     *     a flat file                                              *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine read_defs(ionum,elnum,ncry,angles,crystals,results_ang,
-     &            results_cry,out)
-            integer, intent(in) :: ionum, elnum, ncry, out
-            logical, intent(in) :: angles, crystals
-            double precision, dimension(ncry,3), intent(out) :: 
-     &            results_ang
-            double precision :: a,b,c
-            integer :: n, d, i
-            integer, dimension(ncry), intent(out) :: results_cry
+      subroutine read_defs( ionum, elnum, ncry, angles, crystals,
+     &                      mxcry, results_ang, results_cry, out )
+      implicit none
 c
-c           Scan the file until we find the first entry which matches el
-            do
-c                 Read into dummy variables just in case
-                  if (angles .and. crystals) then
-                        read(ionum, *,end=10) n,a,b,c,d
-                  elseif (angles) then
-                        read(ionum,*,end=10) n,a,b,c
-                  elseif (crystals) then
-                        read(ionum,*,end=10) n,d
-                  else
-                        exit
-                  endif
-c                 Test and input
-                  i = 1
-                  if (n .eq. elnum) then
-                        if (angles .and. crystals) then
-                              results_ang(i,1) = a
-                              results_ang(i,2) = b
-                              results_ang(i,3) = c
-                              results_cry(i) = d
-                        elseif (angles) then
-                              results_ang(i,1) = a
-                              results_ang(i,2) = b
-                              results_ang(i,3) = c
-                        elseif (crystals) then
-                              results_cry(i) = d
-                        else
-                              exit
-                        endif
-c                             Actual loop to read data
-                        do i=2,ncry
-                              if (angles .and. crystals) then
-                                    read(ionum, *,end=12) n,
-     &                                    results_ang(i,1),
-     &                                    results_ang(i,2),
-     &                                    results_ang(i,3),
-     &                                    results_cry(i)
-                              elseif (angles) then
-                                    read(ionum, *,end=12) n,
-     &                                    results_ang(i,1),
-     &                                    results_ang(i,2),
-     &                                    results_ang(i,3)
-                              elseif (crystals) then
-                                    read(ionum,*,end=12) n,
-     &                                    results_cry(i)
-                              else
-                                    exit
-                              endif
-                              if (n .ne. elnum) then
-c                                   Terrible error
-                                    goto 12
-                              end if
-                        end do
-                        exit
-                  end if
-
-
-            end do
-
-
-            return
+      integer, intent(in) :: ionum, elnum, ncry, out, mxcry
+      logical, intent(in) :: angles, crystals
+      double precision, dimension(mxcry,3), intent(out) :: results_ang
+      integer, dimension(mxcry), intent(out) :: results_cry
+c
+      double precision :: a,b,c
+      integer :: n, d, i
+c
+c          Scan the file until we find the first entry which matches elnum
+c
+      do
+c
+c          read forward in file
+c
+        if( angles .and. crystals ) then
+              read(ionum,*,end=10) n, a, b, c, d
+        elseif( angles ) then
+              read(ionum,*,end=10) n, a, b, c
+        elseif( crystals ) then
+              read(ionum,*,end=10) n, d
+        else
+              exit
+        endif
+c
+c          is this element element line? then process
+c
+        i = 1
+        if( n .ne. elnum ) cycle
+c
+        if( angles .and. crystals ) then
+           results_ang(i,1) = a
+           results_ang(i,2) = b
+           results_ang(i,3) = c
+           results_cry(i) = d
+        elseif( angles ) then
+           results_ang(i,1) = a
+           results_ang(i,2) = b
+           results_ang(i,3) = c
+        elseif( crystals ) then
+           results_cry(i) = d
+        else
+           exit
+        endif
+c
+c             loop to read data lines for element if needed
+c
+        do i = 2, ncry ! skips loop if ncry = 1
+          if( angles .and. crystals ) then
+            read(ionum,*,end=12) n, results_ang(i,1:3),
+     &                 results_cry(i)
+          elseif( angles ) then
+            read(ionum, *,end=12) n, results_ang(i,1:3)
+          elseif( crystals ) then
+            read(ionum,*,end=12) n, results_cry(i)
+          else
+            exit
+          endif
+          if( n .ne. elnum ) then
+             write(out,13) elnum
+             call die_gracefully
+          end if
+        end do !  on i
+c
+        exit ! out of main loop. done with angles for element
+c
+      end do ! main loop
+c
+      return
+c
 10    continue
-            write (out,14) elnum
-            call die_gracefully
-
+      write (out,14) elnum
+      call die_gracefully
 12    continue
-            write (out,13) elnum
-            call die_gracefully
-
+      write (out,13) elnum
+      call die_gracefully
+c
 13    format(/1x,'>>>>> Parse Error: insufficient data for element ',
      &            i4/)
 14    format(/1x,'>>>>> Parse Error: element ', i4, ' not found.' /)
-
+c
       end subroutine
 c
 c     ****************************************************************
