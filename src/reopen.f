@@ -784,12 +784,14 @@ c
       call chk_data_key( fileno, 20, 0 )
 c
 c
-c                       close the restart file
+c                       close the restart file. messages and applied
+c                       loading summary to this analysis time.
 c
       close( fileno, status='keep' )
       restart_time = wcputime( 1 )
       call errmsg( 194, ltmstp, dbname, restart_time,
      &             total_model_time )
+      call eqiv_out_patterns( .true. )
 c
 c                       if we are running MPI:
 c                         send basic data, constraint data, and
@@ -812,7 +814,10 @@ c
 c
 c                        recalculate mass
 c
+      write(out,*) "         >>> re-computing model mass-volume ..."
       call cmpmas
+      write(out,*) " "
+      write(out,*) " "
 c
 c                        open the existing binary file of packet
 c                        results if name found in restart file.

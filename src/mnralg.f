@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 12/3/2019 rhd               *
+c     *                   last modified: 11/14/20 rhd                *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -640,7 +640,7 @@ c
 c          output the summary of loading pattern multipliers
 c          imposed on model thru the step that just converged.
 c
-      call eqiv_out_patterns
+      call eqiv_out_patterns( .false. )
 c
 c          update the last time step computed and the last nonlinear
 c          load name successfully used.

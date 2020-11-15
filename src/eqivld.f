@@ -867,7 +867,7 @@ c     *                  subroutine eqiv_out_patters                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 5/21/02 rhd                *
+c     *                   last modified : 11/14/20 rhd               *
 c     *                                                              *
 c     *     at completion of a load step, output a summary of        *
 c     *     loading pattern multipliers acting on model. this aids   *
@@ -876,28 +876,34 @@ c     *     occur during crack growth and other types of analyses    *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine eqiv_out_patterns
+      subroutine eqiv_out_patterns( doing_restart )
       use global_data ! old common.main
 c
       use main_data,  only : load_pattern_factors, output_packets,
      &                       packet_file_no, actual_cnstrn_stp_factors
 c
-      implicit integer (a-z)
-      double precision ::
-     &     step_factor, total_factor, dzero, sum
+      implicit none
+c
+      integer :: ii, i, line_count, pattern_count
+      double precision :: step_factor, total_factor, dzero, 
+     &                     sum_constraints
       character(len=12) pattern_names(3)
       real :: tfacts(3)
+      logical :: doing_restart
       data dzero / 0.0d0 /
 c
-      write(out,9000) ltmstp+1
+      ii = ltmstp + 1
+      if( doing_restart ) then
+        ii = ltmstp
+        write(out,9000) '>>>', ii
+      else
+        write(out,9000) '>>', ii
+      endif
 c
 c           sum up the constraint factors through the current load
 c           step
 c
-      sum = dzero
-      do i = 1, ltmstp+1
-        sum = sum + actual_cnstrn_stp_factors(i)
-      end do
+      sum_constraints = sum( actual_cnstrn_stp_factors(1:ii) )
 c
 c           write out the loading patterns and accumulated multipliers
 c           3 to the line. insert constraints multiplier at end.
@@ -905,7 +911,7 @@ c
       line_count = 0
       pattern_count = 0
       do i = 1, numlod
-        if ( line_count .eq. 3 ) then
+        if( line_count .eq. 3 ) then
           write(out,9010) pattern_names(1), tfacts(1),
      &                    pattern_names(2), tfacts(2),
      &                    pattern_names(3), tfacts(3)
@@ -913,7 +919,7 @@ c
         end if
         step_factor  = load_pattern_factors(i,2)
         total_factor = load_pattern_factors(i,1)
-        if ( total_factor .ne. dzero ) then
+        if( total_factor .ne. dzero ) then
           line_count                = line_count + 1
           pattern_names(line_count) = lodnam(i)
           tfacts(line_count)        = sngl( total_factor )
@@ -924,7 +930,7 @@ c
       line_count = line_count + 1
       pattern_count = pattern_count + 1
       pattern_names(line_count) = 'constraints'
-      tfacts(line_count) = sngl( sum )
+      tfacts(line_count) = sngl( sum_constraints )
       write(out,9010) (pattern_names(i), tfacts(i), i=1,line_count)
       write(out,*) ' '
 c
@@ -932,21 +938,22 @@ c
 c           write binary packets for the same information if packet
 c           output is in effect.
 c
+      if( doing_restart ) return
       if( .not. output_packets ) return
       write(packet_file_no) 24, pattern_count, ltmstp+1, 0
       do i = 1, numlod
         total_factor = load_pattern_factors(i,1)
-        if ( total_factor .ne. dzero ) then
+        if( total_factor .ne. dzero ) then
            pattern_names(1) = lodnam(i)
            write(packet_file_no) pattern_names(1), total_factor
         end if
       end do
       pattern_names(1) = 'constraints'
-      write(packet_file_no) pattern_names(1), sum
+      write(packet_file_no) pattern_names(1), sum_constraints
 
 
       return
- 9000 format(/1x,'>> total applied load pattern factors through step: ',
+ 9000 format(1x,a,' total applied load pattern factors through step: ',
      & i7 )
  9010 format(6x,'> ',3(a12,' ',f10.3,2x))
       end

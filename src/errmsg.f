@@ -1901,10 +1901,10 @@ c
 c
  1940  continue
       write(out,9204) sparam,param,dparam,rparam
- 9204 format(/1x,'>>>>> retrieved structure from ',a100,
+ 9204 format(/1x,'>>> retrieved structure from file: ',a100,
      &      /1x,'>>> step recovered from restart file:',i7,
      &      /1x,'>>> analysis time so far            : ',e14.6,' sec',
-     &      /1x,'>>> wall time now :                 ',f10.1,' sec',
+     &      /1x,'>>> wall time after loading restart : ',f8.1,' sec',
      &      /)
       goto 9999
 c
