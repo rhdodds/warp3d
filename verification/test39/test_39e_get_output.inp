@@ -1,0 +1,3 @@
+! output totals only reactions 2221 2222 2223
+output flat text element stresses
+output flat text displacements

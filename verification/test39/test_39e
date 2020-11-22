@@ -1,0 +1,83 @@
+! 
+! 
+!     ductile crack growth in a shallow notch se(b)
+!     ============================================                       
+!  
+!             W=2 in,  span/2=4 in, B=0.001 in, a/W=0.15
+!             uses crack growth by element extinction
+!  
+!     nonlinear material, large displacements, bbar,
+!     large amounts of ductile crack growth with SMCS Type 4
+!
+!     the finite element model
+!     has one-layer of elements with w=0 constraints everywhere
+!     to impose plane-strain conditions.
+! 
+!     computational "cell" size is D=200 um. due to symmetry then
+!     the elements in layer are 100 um x 100 um in size. 
+! 
+!     J-integral values are computed occasionally during loading.
+! 
+!     material properties are similar to those of Zircaloy 4.
+!     
+ structure seb
+! 
+ material zirc4
+  properties mises e 12750 nu 0.34 yld_pt 66.0 n_power 10 killable
+!
+ number of nodes 1568 elements 715
+! 
+ elements
+   1-715 type l3disop nonlinear material zirc4 order 2x2x2 bbar 
+*input from 'test_39c_coords'
+*input from 'test_39c_incids'
+!
+ blocking automatic size=16
+! 
+ constraints
+ *input from 'test_39c_cons'  $ plane-strain and crack plane
+!   
+!                     impose displacements at load point.
+!
+  331 332 415 416 501 502 u = -1.0
+! 
+ loading bend
+  nonlinear
+    step 1-200 constraints 0.0015
+! 
+  nonlinear analysis parameters
+   solution technique direct sparse 
+   adaptive solution on
+   maximum iterations 8
+   minimum iterations 2
+   convergence test norm res tol 0.005
+   line search on details
+   time step 1000000
+   trace solution on
+   extrapolate on
+   consistent q-matrix off
+   bbar stabilization factor 0.0
+! 
+  crack growth parameters
+     type of crack growth smcs
+     force release type steps 2
+     print status on order  1 31 2 32 3 33 4 34 5 35 6 36 7 37 8 38,
+                         9 39 10 40 11 41 12 42 13 43 14 44 15 45,
+                        16 46 17 47 18 48 19 49 20 50
+      smcs type 4 A 133.8 n 0.187 c_1 0.06 c_2 65 c_3 0.93,
+              cutoff_triaxiality 0.0 display 
+      smcs deleted elements file on name "list_deleted"
+      smcs states on stream steps 1-200
+      killed element limit 200
+      adaptive load control on plastic strain change 0.05 $ 5 x yield
+!
+!  output patran neutral
+ output model flat patran convention text file "model.text"
+!
+  output commands use file "test_39e_get_output.inp" steps 1-1000
+!
+  compute displacements for loading bend step 200
+  output reactions  331 332 415 416 501 502
+!  save to file 'restart.db"
+stop
+
