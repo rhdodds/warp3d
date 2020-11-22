@@ -10,7 +10,7 @@ c     *                      subroutine dam_print_elem3              *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 6/18/2019 rhd              *          
+c     *                   last modified : 11/20/20 rhd               *          
 c     *                                                              *          
 c     *     This routine prints out the status of SMCS elements      *          
 c     *     marked as killable at the beginning of a load step       *          
@@ -29,7 +29,6 @@ c
      &                        print_top_list, num_top_list, 
      &                        smcs_states, smcs_stream, smcs_text,
      &                        smcs_states_intlst
-
 c                                                        
       implicit none                                                    
 c
@@ -44,7 +43,8 @@ c
       integer, allocatable :: element_list(:), sort_index_vec(:)
       double precision :: dummy, eps_plas, eps_crit, sig_mean,
      &    sig_mises, d_eps_plas, max_d_eps_plas, ddummy1, ddummy2,
-     &    ddummy3, triaxiality, mean_zeta, ratio, mean_omega
+     &    ddummy3, triaxiality, mean_zeta, ratio, mean_omega,
+     &    mean_bar_theta
       double precision, allocatable :: strain_ratios(:)
       double precision, parameter :: zero = 0.0d0, one = 1.0d0,
      &                               eps_plas_tol = 1.0d-06,  
@@ -110,7 +110,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega, 
-     &                   2, ldummy )  
+     &                   mean_bar_theta, 2, ldummy )  
          skip_element = eps_plas < eps_plas_tol
          if( skip_element ) cycle
          cflag = " "
@@ -123,14 +123,14 @@ c
      &       write(out,9110) element, eps_plas, eps_crit, 
      &              eps_plas / eps_crit, sig_mean,           
      &              sig_mises, d_eps_plas, triaxiality, mean_zeta,
-     &              mean_omega, cflag                                       
+     &              mean_omega, mean_bar_theta, cflag                                       
          else 
             ratio = eps_plas / eps_crit
             if( ratio >= ratio_tol )
      &         write(out,9100) element, eps_plas, eps_crit, 
      &              ratio, sig_mean,           
      &              sig_mises, triaxiality, mean_zeta, mean_omega,
-     &              cflag 
+     &              mean_bar_theta, cflag 
          end if                                                 
          local_count = local_count + 1                                       
       end do  ! elem_loop
@@ -167,27 +167,30 @@ c
  9010 format(/,5x,'>> Maximum change in plastic strain for this step:',         
      &     f10.7,/)                                                             
  9020 format(2x,'element   eps-pls    eps-crit  ratio  ',                      
-     & 'sig-mean  sig-mises  d(eps-pls)    triaxiality (T)   zeta',
-     & '   omega',/,2x,                                   
+     & 'sig-mean  sig-mises  d(eps-pls)   bar T   bar xi',
+     & '   bar omega  bar theta',/,2x,                                   
      &          '-------   -------    --------  -----  ',                        
-     & '--------  ---------  ----------    ---------------   ----',
-     & '   -----')                                        
+     & '--------  ---------  ----------   -----   ------',
+     & '   ---------  ---------')                                        
  9030 format(2x,'element   eps-pls    eps-crit  ratio  ',                      
-     &       'sig-mean  sig-mises  triaxiality (T)   zeta',
-     &       '   omega',/,2x,                                   
-     &          '-------   -------    --------  -----  ',                        
-     &       '--------  ---------  ---------------   ----   -----')                                        
- 9100 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,4x,f6.2,8x,
-     &       f6.2,2x,f6.2,2x,a1) 
+     & 'sig-mean  sig-mises  bar T   bar xi',
+     & '   bar omega  bar theta',/,2x,                                   
+     & '-------   -------    --------  -----  ',                        
+     & '--------  ---------  -----   ------   ---------  ',
+     & '---------')
+ 9100 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,1x,f6.3,3x,
+     &       f6.3,6x,f6.3,5x,f6.3,2x,a1) 
  9110 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,3x,f9.7,
-     &  7x,f6.2,7x,f6.2,2x,f6.2,2x,a1) 
- 9200 format(10x,"* -- Triaxiality (sig_mean/sig_mises) < 1.0")                                                
- 9210 format(10x,"-- Triaxiality is mean over history weighted by ",
+     &  2x,f6.3,3x,f6.3,6x,f6.3,5x,f6.3,2x,a1) 
+ 9200 format(10x,"* -- bat T (sig_mean/sig_mises) < 1.0")                                                
+ 9210 format(10x,"-- bar T is mean triaxiality over history ",
+     & "weighted by plastic strain",/,
+     & 10x,"-- bar xi is mean of normalized Lode angle weighted by ",
      & "plastic strain",/,
-     & 10x,"-- Zeta is mean of normalized Lode angle weighted by ",
+     & 10x,"-- bar omega is mean of Lode angle parameter weighted by ",
      & "plastic strain",/,
-     & 10x,"-- Omega is mean of Lode angle parameter weighted by ",
-     & "plastic strain",
+     & 10x,"-- bar theta is mean of Lode angle parameter weighted by ",
+     & "plastic strain - type 4 MMC",
      & /,10x,"-- Elements with ratio < 0.001 not shown")   
  9220 format(10x,"Total elements now killed: ",i5)       
  9300 format(10x,"-- Packet data written for element count: ",i7)                                         
@@ -229,7 +232,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   2, ldummy )  
+     &                   mean_bar_theta, 2, ldummy )  
          strain_ratios(k) =  eps_plas / eps_crit
       end do  ! elem_loop
 c
@@ -270,17 +273,17 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   2, ldummy )  
+     &                   mean_bar_theta, 2, ldummy )  
          if( load_size_control_crk_grth ) then                              
             d_eps_plas = eps_plas - old_plast_strain(dam_ptr(element))                           
             max_d_eps_plas = max(max_d_eps_plas, d_eps_plas)                 
             write(packet_file_no) element, eps_plas, eps_crit,               
      &              sig_mean, sig_mises, d_eps_plas, triaxiality,
-     &              mean_zeta, mean_omega                             
+     &              mean_zeta, mean_omega, mean_bar_theta                            
          else                                                                
             write(packet_file_no) element, eps_plas, eps_crit,               
      &              sig_mean, sig_mises, triaxiality, mean_zeta, 
-     &              mean_omega                                         
+     &              mean_omega, mean_bar_theta                                         
          end if                                                               
       end do   ! elem_loop    
 c
@@ -299,7 +302,7 @@ c
      &           now_len, lenlst
       logical ::  get_values, output_this_step
       logical, external :: scan_entry_in_list
-      double precision :: evalues(8)
+      double precision :: evalues(9)
       character(len=24) :: sdate_time_tmp
       character(len=20) :: form_type, access_type
       character(len=80) :: flat_name
@@ -308,9 +311,9 @@ c              user requested output of element states file with smcs
 c              values. write file if this step in user list
 c
       step_num = ltmstp  ! current step number
-      lenlst = sizeof( smcs_states_intlst )
+      lenlst = sizeof( smcs_states_intlst ) / 4
       output_this_step = scan_entry_in_list( step_num,
-     &                      smcs_states_intlst, lenlst )
+     &                        smcs_states_intlst, lenlst )
       if( .not. output_this_step ) return
 c
 c              open/write/close the states header file. just overwrites
@@ -374,7 +377,7 @@ c
         if( get_values ) then
            call dam_param_3_get_values( element, debug, eps_plas,               
      &           eps_crit, sig_mean, sig_mises, triaxiality, 
-     &           mean_zeta, mean_omega, 3, ldummy )  
+     &           mean_zeta, mean_omega, mean_bar_theta, 3, ldummy )  
            evalues(1) = eps_plas
            evalues(2) = eps_crit
            evalues(3) = eps_plas / eps_crit
@@ -383,6 +386,7 @@ c
            evalues(6) = triaxiality
            evalues(7) = mean_zeta
            evalues(8) = mean_omega
+           evalues(9) = mean_bar_theta
         end if  
         where( abs( evalues ) .lt. eps_plas_tol ) evalues = zero
        if( smcs_stream ) write(flat_file_number) evalues
@@ -408,16 +412,17 @@ c
      &"#  8 character state labels and longer descriptors",/,
      &"#  material model number, number of state variables",/,
      &"#",/,
-     &"     8",/,
+     &"     9",/,
      &"      1  epspls   Eq. plastic strain",/,
      &"      2  epscrit  Critical strain",/,
      &"      3  ratio    epspls/epscrit",/,
      &"      4  mean     mean stress",/,
      &"      5  mises    mean mises",/,
-     &"      6  triax    mean triaxiality",/,
-     &"      7  xi       mean xi",/,
-     &"      8  omega    mean omega" )
- 9110 format(8e15.6)
+     &"      6  triax    bar T",/,
+     &"      7  xi       bar xi",/,
+     &"      8  omega    bar omega",/
+     &"      9  theta    bar theta" )
+ 9110 format(9e15.6)
  9200 format( i7.7 )                              
 c
       end subroutine dam_print_elem3_states_file

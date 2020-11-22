@@ -80,7 +80,7 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 09/7/2019 rhd              *          
+c     *                   last modified : 11/21/2020 rhd             *          
 c     *                                                              *          
 c     *        checks conditions to see if crack                     *          
 c     *        growth will occur by element extinction               *          
@@ -110,9 +110,11 @@ c
      &           kill_the_elem, elems_left, ldummy1, ldummy2,
      &           local_debug                                                                                                                           
       double precision ::                                                        
-     &   dummy_arg, porosity, eps_plas, eps_crit, dummy_arg2,                   
+     &   dummy_arg, dummy_arg2, dummy_arg3, dummy_arg4, dummy_arg5,
+     &   porosity, eps_plas, eps_crit,              
      &   values(20), local_status(max_local_list,3), orig_poros,                
-     &   ext_shape, ext_spacing, triaxiality                                                                                                                                
+     &   ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
+     &   avg_bar_theta                                                                                                                                
       logical :: fgm_cohes, ext_gurson, option_exponential,                        
      &           option_ppr, local_write_packets, do_kill_in_order,                
      &           found_exponential, found_ppr, found_cavit,                        
@@ -158,10 +160,16 @@ c                 internal force release using fixed no.
 c                 of load steps or the traction-separation law.                 
 c                                                                               
          select case( crack_growth_type )
-         case( 1, 3 )  ! GTN or SMCS   
+         case( 1 )  ! GTN or SMCS   
             call dam_param( elem, kill_the_elem, debug, porosity,              
      &                      eps_plas, eps_crit, dummy_arg, dummy_arg2,           
-     &                      ext_gurson, ext_shape, ext_spacing )
+     &                      ext_gurson, ext_shape, ext_spacing,
+     &                      dummy_arg3, dummy_arg4, dummy_arg5  )
+         case( 3 )  ! GTN or SMCS   
+            call dam_param( elem, kill_the_elem, debug, porosity,              
+     &                      eps_plas, eps_crit, dummy_arg, dummy_arg2,           
+     &                      ext_gurson, ext_shape, ext_spacing,
+     &                      avg_triaxiality, avg_zeta, avg_bar_theta )
          case( 4 )
             call dam_param_cohes( elem, kill_the_elem, debug,                  
      &                            values, 2 )  
@@ -183,7 +191,7 @@ c
 c                                                                               
 c                  kill now and make output packet data as needed.
 c
-         call chk_elem_kill_now
+         call output_kill_messages
          if( output_packets ) call chk_elem_kill_make_packets
 c                                                                               
 c                 initialize global variables for 1st killed element 
@@ -265,8 +273,11 @@ c
       contains
 c     ========
 c
-      subroutine chk_elem_kill_now
+      subroutine output_kill_messages
       implicit none
+c
+      integer :: device
+      logical :: fexists
 c
 c                 kill this element right now. record status for                
 c                 subsequent packet output if neeeded. write usual              
@@ -277,9 +288,22 @@ c
       case( 1 )
           if( .not. ext_gurson ) write(out,9000) elem, porosity              
           if( ext_gurson ) write(out,9002) elem, porosity,                   
-     &                     ext_spacing, ext_shape                            
+     &                     ext_spacing, ext_shape     
+          return                       
       case( 3 )
-          write(out,9010) elem, eps_plas, eps_crit                           
+          write(out,9010) elem, eps_plas, eps_crit, avg_triaxiality,
+     &                    avg_zeta, avg_bar_theta
+          if( .not. smcs_list_file_flag ) return ! delete elements file
+          inquire( file=smcs_list_file_name, exist=fexists )
+          open( newunit=device,file=smcs_list_file_name,
+     &          form='formatted', status='unknown', 
+     &          access='sequential', position='append' )   
+          if( .not. fexists ) write(device,9018)
+          write(device,9020) current_load_time_step,
+     & elem, eps_plas, eps_crit,
+     &                       avg_triaxiality, avg_zeta, avg_bar_theta 
+          close(unit=device)    
+        return
       case( 4 )
           cohes_type         = iprops(27,elem)                               
           option_exponential = cohes_type .eq. 4                             
@@ -300,7 +324,8 @@ c
           if( option_exponential )                                           
      &       write(out,9200) elem, values(6)/values(7), values(8)            
           if( option_ppr )   write(out,9220) elem                            
-          if( option_cavit ) write(out,9230) elem   
+          if( option_cavit ) write(out,9230) elem  
+          return 
       case( 5 )
           write(out,9240) elem                         
       end select
@@ -313,7 +338,15 @@ c
      & '.   f, W, X: ',3f8.3)                                                   
  9010 format(/,' >> element death option invoked before next step',             
      &       /,'    element: ',i7,' is now killed.',                            
-     &       /,'    plastic strain: ',f8.5,' is > limit of: ',f8.5)             
+     &       /,'    plastic strain: ',f8.5,' is > limit of: ',f8.5,
+     &       /,'    plastic strain weighted values: bar_T, ',
+     &         'bar_xi, bar_theta:',f6.3,2x,f6.3,2x,f6.3)    
+ 9018 format('!',/,'!  SMCS quantities when critical plastic ',
+     & 'strain reached for elements', /,
+     & '!   (element deletion begins at listed step number)',
+     & /,'!',/,
+     & 3x,'step     elem   ebarp  ebarp_crit bar_T  bar_xi   bar_theta')  
+ 9020 format(2x,2i8,f8.5,1x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3)      
  9200 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   Deff/Dpeak: ',f5.2,' Teff/Tpeak: ',f5.2)                            
  9220 format(/,'   >> element death invoked for element: ',i7,                  
@@ -327,7 +360,7 @@ c
      & /,      '             found while processing element: ',i7,              
      & /,      '             job aborted.' )  
 c 
-      end subroutine chk_elem_kill_now
+      end subroutine output_kill_messages
 c
       subroutine chk_elem_kill_output_packets
       implicit none
@@ -457,7 +490,7 @@ c     *                      subroutine dam_param                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 04/29/2019 rhd             *          
+c     *                   last modified : 11/20/20 rhd               *          
 c     *                                                              *          
 c     *     for a killable element not yet killed, determine if the  *          
 c     *     element should be killed now. isolating decision here    *          
@@ -468,7 +501,8 @@ c
 c                                                                               
       subroutine dam_param( elem, kill_now, debug, porosity,                    
      &                      eps_plas, eps_crit, sig_mean, sig_mises,            
-     &                      ext_gurson, ext_shape, ext_spacing )
+     &                      ext_gurson, ext_shape, ext_spacing,
+     &                      avg_triaxiality, avg_zeta, avg_bar_theta )
       use global_data, only : iprops, out  ! old common.main
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
@@ -496,8 +530,15 @@ c                               the extended gurson model
 c        ext_shape -- (output)  W (shape) parameter for extended gurson model   
 c        ext_spacing -- (output) X (spacing) parameter for extended             
 c                                gurson model    
-c        triaxiality -- (output) plastic strain weighted average of
+c        avg_triaxiality -- (output) plastic strain weighted average of
 c                                triaxiality over loading history                               
+c        avg_zeta  --  (output) plastic strain weighted average of
+c                                Lode parameter (-1<=mean_zeta<=1)
+c                                over loading history                               
+c        avg_bar_theta --  (output) plastic strain weighted average of
+c                                MIT MMC Lode parameter
+c                                (-1<=mean_bar_theta<=1)
+c                                over loading history                               
 c                                                                               
 c                                                                               
       use main_data,       only : elems_to_blocks                               
@@ -513,13 +554,14 @@ c
       logical :: kill_now, debug, ext_gurson                                       
       double precision :: porosity, eps_plas, eps_crit, sig_mean,
      &                    sig_mises, ext_shape, ext_spacing,
-     &                    triaxiality  
+     &                    avg_triaxiality, avg_zeta, avg_bar_theta 
       double precision, dimension(:), pointer :: history, urcs_n, eps_n                         
 c                                                                               
 c              local declarations                                               
 c       
       integer :: mat_model
-      double precision :: mean_zeta, mean_omega
+      double precision :: mean_zeta, mean_omega, triaxiality,
+     &                    mean_bar_theta
       double precision, parameter :: zero = 0.d0, one = 1.0d0                         
 c   
       ext_gurson  = .false.                                                     
@@ -559,10 +601,13 @@ c
 c           3 smcs - failure based on a stress modified critical strain     
 c
       case(3)   
-       call dam_param_3_get_values( elem, debug, eps_plas, eps_crit, 
-     &                              sig_mean, sig_mises, triaxiality, 
-     &                              mean_zeta, mean_omega, 1,
-     &                              kill_now )                
+       call dam_param_3_get_values( 
+     &    elem, debug, eps_plas, eps_crit, sig_mean, sig_mises,
+     &    triaxiality, mean_zeta, mean_omega, mean_bar_theta, 1,
+     &    kill_now )       
+       avg_triaxiality = triaxiality      
+       avg_zeta        = mean_zeta
+       avg_bar_theta   = mean_bar_theta
 c                                                                               
 c           4 cohesive - not processed here               
 c                                                                                                                                                             
@@ -584,7 +629,7 @@ c     *              subroutine dam_param_3_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 09/7/2019 rhd              *          
+c     *                   last modified : 11/21/20 rhd               *          
 c     *                                                              *          
 c     *             SMCS compute values for this element             *
 c     *                                                              *          
@@ -594,7 +639,7 @@ c
       subroutine dam_param_3_get_values( elem, debug,                     
      &                      eps_plas, eps_crit, sig_mean, sig_mises,            
      &                      triaxiality, mean_zeta, mean_omega,
-     &                      dowhat, kill_now )                
+     &                      mean_bar_theta, dowhat, kill_now )                
       use global_data, only : iprops, nstr, nstrs, out ! old common.main
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, eps_n_blocks,                 
@@ -604,36 +649,45 @@ c
      &                            smcs_beta_1,smcs_beta_2, 
      &                            smcs_a_plus, smcs_a_minus,
      &                            smcs_kappa, smcs_alpha_1, 
-     &                            smcs_alpha_2, 
-     &                            smcs_cutoff_triaxiality                                                           
+     &                            smcs_alpha_2, max_eps_critical,
+     &                            smcs_cutoff_triaxiality,
+     &                            smcs_type_4_A, smcs_type_4_n,
+     &                            smcs_type_4_c1, smcs_type_4_c2,
+     &                            smcs_type_4_c3                                                          
       use elem_extinct_data, only : smcs_old_epsplas, smcs_weighted_T,
-     &                              smcs_weighted_zeta
+     &                              smcs_weighted_zeta,
+     &                              smcs_weighted_bar_theta
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
 c                               killing                                         
 c        debug     -- (input)   .true. if the calling routine wants             
 c                               debugging info output                           
-c        eps_plas  -- (output)  for SMCS type models. this the                  
+c        eps_plas  -- (output)  for SMCS type models. this the current                 
 c                               average plastic strain over element.            
 c                               Just used for output                            
 c        eps_crit  -- (output)  for SMCS type models. this the                  
-c                               critical plastic strain value.                  
+c                               current, predicted critical 
+c                               plastic strain value.                  
 c                               Just used for output                            
-c        sig_mean  -- (output)  all models. average mean stress                 
+c        sig_mean  -- (output)  all models. average, current mean stress                 
 c                               over element. just used for output              
 c                               messages                                        
-c        sig_mises -- (ouput)   all models. average mises stress                
-c                               over element. just used for output.             
+c        sig_mises -- (ouput)   all models. average, current mises 
+c                               stress over element. for output.             
 c        triaxiality -- (output) plastic strain weighted average of
 c                                triaxiality over loading history 
 c        mean_zeta -- (output)  Lode angle parameter average weighted
 c                               by plastic strain
 c        mean_omega -- (output)  Nahshon-Hutchinson Lode angle parameter
 c                                average weighted by plastic strain
+c        mean_bar_theta(output)  bar_theta angle in the MMC critical
+c                                strain function from MIT group
+c                                average weighted by plastic strain
 c        dowhat    --  (input)   = 1 return damage variables - no update.
 c                                    set kill now flag
 c                                = 2 just return values - no update 
-c                                = 3 return values for non-killable elem
+c                                = 3 return instantaneous values for 
+c                                  non-killable elem
 c                                = 4 compute/update damage variables  
 c        kill_now  --  (output)  if dowhat = 1, set flag if critical
 c                                condition reached                           
@@ -645,7 +699,8 @@ c
       integer :: elem, dowhat                                                  
       logical :: debug, kill_now                                       
       double precision :: eps_crit, sig_mean, sig_mises, triaxiality,
-     &                    eps_plas, mean_zeta, mean_omega
+     &                    eps_plas, mean_zeta, mean_omega,
+     &                    mean_bar_theta
 c                                                                               
 c               local declarations                                               
 c
@@ -655,8 +710,8 @@ c
       double precision ::  sig(6), eps(6), fpngp,
      &                     mean_triaxiality,
      &                     epspls_vec(27),s11, s22, s33, s12, s13, s23,
-     &                     j2, j3, zeta, omega, t1, t2, t3, t4,
-     &                     p_omega, omega2
+     &                     j2, j3, zeta, omega, t1, t2, t3, t4, 
+     &                     p_omega, omega2, bar_theta
       logical :: update, local_debug, threed_solid_elem, l1, l2, l3,
      &           l4, l5, l6, l7, l8, l9, l10
      &          
@@ -665,7 +720,8 @@ c
      &     one = 1.0d0, two = 2.0d0, onept5 = 1.5d0, three = 3.d0,
      &     root3 = dsqrt(3.0d0), half = 0.5d0, thirteenpt5 = 13.5d0,
      &     small_plastic_strain = 1.0d-07, small_mises = 1.0d-07,
-     &     type_2_tol = 1.0d-06, nine = 9.d0
+     &     type_2_tol = 1.0d-06, pi = 3.14159265359d0,
+     &     type_4_toler = 0.0001d0
 c                              
 c               stress/strain vectors are (x,y,z,xy,yz,xz).                
 c
@@ -687,12 +743,13 @@ c
       eps_n       => eps_n_blocks(blk)%ptr    
 c
       eps_plas    = zero
-      eps_crit    = nine
+      eps_crit    = max_eps_critical
       sig_mean    = zero
       sig_mises   = zero
       triaxiality = zero
       mean_zeta   = zero
-      mean_omega  = zero                               
+      mean_omega  = zero  
+      mean_bar_theta = zero                             
       sig         = zero
       eps         = zero  !   strains not used current code       
       call set_element_type( elem_type, threed_solid_elem, l1, l2, l3,
@@ -729,7 +786,8 @@ c               average mean stress, mises stress, plastic strain,
 c               Lode parameters
 c
       fpngp     = one / dble( ngp )
-      sig = sig * fpngp  !  averaged stresses at element center
+      eps_plas  = fpngp * eps_plas     !  averaged at element center
+      sig = sig * fpngp                !    ""
       sig_mean  = (sig(1) + sig(2) + sig(3)) * third                    
       s11 = sig(1) - sig_mean
       s22 = sig(2) - sig_mean
@@ -742,19 +800,26 @@ c
       j3 = s11*s22*s33 + two*s12*s23*s13 - s11*s23*s23 -
      &     s22*s13*s13 - s33*s12*s12
       sig_mises = sqrt( three * j2 )
-      zeta = zero  !  called \xi in manual
-      omega = zero
+      zeta      = zero  !  called \xi in manual
+      omega     = zero
+      bar_theta = zero
       if( sig_mises > small_mises ) then
-        zeta = onept5*root3 * j3 / j2**onept5
+        zeta  = onept5*root3 * j3 / j2**onept5
         omega = one - zeta*zeta 
+        t1    = thirteenpt5 * j3 / sig_mises**3
+        bar_theta = one - ( acos( t1 ) * two / pi )
+        if( abs(bar_theta) > one+type_4_toler ) then
+          write(out,9120) elem, bar_theta  ! improve message
+          call die_abort
+        endif
       end if
-      eps_plas  = fpngp * eps_plas   
-      if( local_debug ) write(out,9100) sig_mean,sig_mises, eps_plas
+      if( local_debug ) write(out,9100) sig_mean, sig_mises, eps_plas
 c
       if( dowhat == 3 ) then ! compute values for non-killable elem
-         eps_crit = nine
-         mean_zeta = zeta
-         mean_omega = omega
+         eps_crit       = max_eps_critical
+         mean_zeta      = zeta
+         mean_omega     = omega
+         mean_bar_theta = bar_theta
          triaxiality = 100.0d0   ! in cases mises -> 0                                             
          if( sig_mises .gt. small_mises )
      &         triaxiality = sig_mean / sig_mises 
@@ -762,7 +827,7 @@ c
        end if
 c
 c               update plastic strain weighted triaxiality, zeta,
-c               and omega. update saved plastic strain.
+c               omega, bar_theta. update saved plastic strain.
 c               only update if instantaneous triaxiality exceeds
 c               user-specified cutoff value
 c              
@@ -774,51 +839,92 @@ c               by zero plastic strain).
 c
       if( eps_plas < small_plastic_strain ) then 
         triaxiality = zero
-        eps_crit = nine  ! a large value for return
-        mean_zeta  = zero
-        mean_omega = zero
+        eps_crit    = max_eps_critical
+        mean_zeta   = zero
+        mean_omega  = zero
+        mean_bar_theta = zero
         return
       end if
 c
-c               use weighted triaxiality, zeta, omega values to 
-c               set critical plastic strain
+c               use weighted triaxiality, zeta, omega, bar_theta
+c               values to set critical plastic strain
 c
       mean_triaxiality =  smcs_weighted_T(elem_ptr) / eps_plas
-      triaxiality = mean_triaxiality  ! to return
-      mean_zeta = smcs_weighted_zeta(elem_ptr) / eps_plas
-      mean_omega = one - mean_zeta**2
-      eps_crit = nine
+      triaxiality    = mean_triaxiality  ! to return
+      mean_zeta      = smcs_weighted_zeta(elem_ptr) / eps_plas
+      mean_omega     = one - mean_zeta**2
+      mean_bar_theta = smcs_weighted_bar_theta(elem_ptr) / eps_plas
+      eps_crit       = max_eps_critical
       if( triaxiality <= smcs_cutoff_triaxiality ) return
 c
       if( smcs_type .eq. 1 ) then
+c
           t2 = exp(-smcs_kappa*abs(mean_zeta))
           t1 = smcs_alpha * exp(-smcs_beta * mean_triaxiality)
           eps_crit = smcs_gamma + t1*t2
-        if( local_debug ) write(out,9110) mean_triaxiality,eps_crit
-
+          if( local_debug ) write(out,9110) mean_triaxiality,eps_crit
+c
       elseif( smcs_type .eq. 2 ) then
+c
           t3 = exp(-smcs_kappa*abs(mean_zeta))
           t2 = smcs_beta_2 * exp(-smcs_a_minus * mean_triaxiality)
           t1 = smcs_beta_1 * exp(smcs_a_plus * mean_triaxiality)
           t4 = t1 - t2
           if( abs(t4) < type_2_tol .or. t4 < zero ) then
-            eps_crit = nine ! a large value
+            eps_crit = max_eps_critical
           else
             eps_crit = smcs_gamma + t3 / t4
           end if
-      else
+c
+      elseif( smcs_type .eq. 3 ) then
+c
           p_omega = (one - mean_omega)**2
           t1 = smcs_alpha_1*exp(-smcs_beta_1 * mean_triaxiality )
           t2 = smcs_alpha_2*exp(-smcs_beta_2 * mean_triaxiality )
           eps_crit = (one-p_omega)*t1 + p_omega*t2
+c
+      elseif( smcs_type .eq. 4 ) then
+c
+        block
+          double precision :: A, n, c1, c2, c3, eta, t1, t2, ta, tb,
+     &                        t1c, t1s, t1sec
+          A     = smcs_type_4_A
+          n     = smcs_type_4_n
+          c1    = smcs_type_4_c1
+          c2    = smcs_type_4_c2
+          c3    = smcs_type_4_c3
+          eta   = mean_triaxiality
+          t1    = mean_bar_theta * pi / six
+          t1c   = cos( t1 )
+          t1s   = sin( t1 )
+          t1sec = one / t1c
+          t2 = root3 / ( two - root3 )
+          ta = (A/c2) * ( c3 + t2*(one-c3)*(t1sec-one) )
+          tb = sqrt( third*(one+c1*c1) ) * t1c + 
+     &         c1*(eta+third*t1s)
+          eps_crit = ( ta * tb )**(-one/n)
+        end block
+c
+      else
+          write(out,9130) elem, smcs_type
+          call die_abort
       end if
 c      
-      kill_now = ( eps_plas - eps_crit ) >= zero
+      kill_now = ( eps_plas - eps_crit ) >= zero .or. 
+     &             eps_plas >= max_eps_critical
 c
       return
 c
  9100 format(10x,'mean, mises, eps_pls:',2f10.3,f12.6)
- 9110  format(10x,'T_mean, eps crit: ',f10.3,f12.6) 
+ 9110 format(10x,'T_mean, eps crit: ',f10.3,f12.6) 
+ 9120 format(/1x,'>>>>> error: inconsistency in bar_theta computation',
+     & ' for smcs type 4',/,
+     & 14x,'element: ',i8,' bar_theta value: ',f6.2,/,
+     & 14x,'value must lie in range (-1.0,1.0)',/,
+     & 14x,'job aborted by routine dam_param_3_get_values',/)
+ 9130 format(/1x,'>>>>> error: inconsistency in smcs_type',/,
+     & 14x,'element: ',i8,' smcs_type: ',i5,/,
+     & 14x,'job aborted by routine dam_param_3_get_values',/)
 c
       contains
 c     ========
@@ -830,14 +936,18 @@ c
 c
       deps_plas = eps_plas - smcs_old_epsplas(elem_ptr)
       smcs_old_epsplas(elem_ptr) = eps_plas 
-      if( sig_mises .gt. small_mises ) then
-        now_triaxiality = sig_mean / sig_mises 
-        if( now_triaxiality < smcs_cutoff_triaxiality ) return
-        smcs_weighted_T(elem_ptr)    = smcs_weighted_T(elem_ptr) +
-     &                                 deps_plas * now_triaxiality
-        smcs_weighted_zeta(elem_ptr) = smcs_weighted_zeta(elem_ptr) +
-     &                                 deps_plas * zeta
-      end if
+c
+      if( sig_mises <= small_mises ) return
+c
+      now_triaxiality = sig_mean / sig_mises 
+      if( now_triaxiality < smcs_cutoff_triaxiality ) return
+c
+      smcs_weighted_T(elem_ptr) = 
+     &      smcs_weighted_T(elem_ptr) + deps_plas * now_triaxiality
+      smcs_weighted_zeta(elem_ptr) = 
+     &      smcs_weighted_zeta(elem_ptr) + deps_plas * zeta
+      smcs_weighted_bar_theta(elem_ptr) = 
+     &      smcs_weighted_bar_theta(elem_ptr) + deps_plas * bar_theta
 c
       return
       end subroutine dam_param_3_get_values_a
@@ -1494,7 +1604,7 @@ c
 c                                       
       integer :: elem, elem_ptr, dowhat
       logical :: debug, local_debug, l1, process                                                    
-      double precision :: d1, d2, d3, d4, d5, d6, d7
+      double precision :: d1, d2, d3, d4, d5, d6, d7, d8
 c        
       debug = .false.
       local_debug = .false. ! debug
@@ -1531,7 +1641,7 @@ c
          case( 3 ) !  SMCS   
           dowhat = 4
           call dam_param_3_get_values( elem, debug, d1, d2, d3, d4,            
-     &                                 d5, d6, d7, dowhat, l1 )                
+     &                                 d5, d6, d7, d8, dowhat, l1 )                
          end select 
 c                         
       end do  ! over all model elements                                         

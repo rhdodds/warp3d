@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 12/4/2019  rhd             *          
+c     *                   last modified : 11/20/20 rhd               *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -1069,6 +1069,10 @@ c
         call incrack_smcs_states
         go to 10
       end if
+      if( matchs_exact('deleted') ) then
+        call incrack_smcs_list_file
+        go to 10
+      end if
       call incrack_errmsg( 8 )
       go to 10
 c                                                                               
@@ -1121,7 +1125,7 @@ c
        return
       end if
 c
-      ok = smcs_type .ge. 1  .and.  smcs_type .le. 3
+      ok = smcs_type .ge. 1  .and.  smcs_type .le. 4
       if( .not. ok ) then
        call incrack_errmsg( 10 )
        return
@@ -1135,7 +1139,9 @@ c
      &                   smcs_beta_1,
      &                   smcs_beta_2, smcs_a_plus, smcs_a_minus,
      &                   smcs_alpha_1, smcs_alpha_2,
-     &                   smcs_cutoff_triaxiality
+     &                   smcs_cutoff_triaxiality,
+     &                   max_eps_critical, smcs_type_4_A, smcs_type_4_n,
+     &                   smcs_type_4_c1, smcs_type_4_c2, smcs_type_4_c3 
          cycle
        end if
 
@@ -1198,6 +1204,36 @@ c
          if( numd(smcs_cutoff_triaxiality) ) cycle
          call incrack_errmsg( 4 )
          return
+       end if    
+       if( matchs('max_eps_critical',12) ) then
+         if( numd(max_eps_critical) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('A') ) then
+         if( numd(smcs_type_4_A) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('n') ) then
+         if( numd(smcs_type_4_n) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('c_1') ) then
+         if( numd(smcs_type_4_c1) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('c_2') ) then
+         if( numd(smcs_type_4_c2) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('c_3') ) then
+         if( numd(smcs_type_4_c3) ) cycle
+         call incrack_errmsg( 4 )
+         return
        end if
        call incrack_errmsg( 11 )
        return
@@ -1205,19 +1241,25 @@ c
 c
       return
 c
- 9000 format(5x,'... smcs parameter values: ',
-     & 10x,'smcs_type :   ',i1, /,
-     & 10x,'gamma :       ',f10.4, /,
-     & 10x,'alpha:        ',f10.4, /,
-     & 10x,'beta:         ',f10.4, /,
-     & 10x,'kappa:        ',f10.4, /,
-     & 10x,'beta_1 :      ',f10.4, /,
-     & 10x,'beta_2 :      ',f10.4, /,
-     & 10x,'A+ :          ',f10.4, /,
-     & 10x,'A- :          ',f10.4, /,
-     & 10x,'alpha_1 :     ',f10.4, /,
-     & 10x,'alpha_2 :     ',f10.4, /,
-     & 10x,'cutoff_triax :',f10.4, / )
+ 9000 format(/,5x,'... smcs parameter values: ',/,
+     & 10x,'smcs_type :          ',i2, /,
+     & 10x,'gamma :           ',f10.4, /,
+     & 10x,'alpha:            ',f10.4, /,
+     & 10x,'beta:             ',f10.4, /,
+     & 10x,'kappa:            ',f10.4, /,
+     & 10x,'beta_1 :          ',f10.4, /,
+     & 10x,'beta_2 :          ',f10.4, /,
+     & 10x,'A+ :              ',f10.4, /,
+     & 10x,'A- :              ',f10.4, /,
+     & 10x,'alpha_1 :         ',f10.4, /,
+     & 10x,'alpha_2 :         ',f10.4, /,
+     & 10x,'cutoff_triaxiaiality:',f10.4, /,
+     & 10x,'max_eps_critical :',2x,f9.5, /,
+     & 10x,'type_4_A :        ',f10.4, /,
+     & 10x,'type_4_n :        ',f10.4, /,
+     & 10x,'type_4_c1 :       ',f10.4, /,
+     & 10x,'type_4_c2 :       ',f10.4, /,
+     & 10x,'type_4_c3 :       ',f10.4,/)
 c
       end subroutine incrack_smcs_parms
 c
@@ -1265,7 +1307,8 @@ c
       end if
 c
       if( matchs('steps',4) ) call splunj
-      allocate( temp_list(10) )
+      allocate( temp_list(10) ) 
+      temp_list = 0
       call scan                                                                 
       call trlist_allocated( temp_list, list_size, 0,   ! all not allowed                         
      &             lenlst, errnum )     
@@ -1293,6 +1336,70 @@ c
       return
 c
       end subroutine incrack_smcs_states
+c
+c          ------------------------------------------                           
+c          | contains: incrack_smcs_list_file       |                           
+c          ------------------------------------------                           
+c                                                                                           
+      subroutine incrack_smcs_list_file
+c
+      use damage_data, only : smcs_list_file_flag, smcs_list_file_name
+      implicit none
+c
+      integer :: idummy, nchars, device
+      logical, external :: label, string
+      logical :: fexists
+      character(len=80) :: temp_name
+c
+c        smcs deleted element file on | off text | name <string> 
+c
+      smcs_list_file_flag = .false.
+      smcs_list_file_name = " "
+c
+      if( matchs('element',4) ) call splunj
+      if( .not. matchs('file',4) ) then
+        call incrack_errmsg( 19 )
+        call scan_flushline
+        return
+      end if
+c
+      if( matchs_exact('on') ) then
+         smcs_list_file_flag = .true.
+      elseif( matchs_exact('off') ) then 
+         smcs_list_file_flag = .false.
+         call scan_flushline
+         return
+      else
+         call incrack_errmsg( 15 )
+         smcs_list_file_flag = .false.
+         call scan_flushline
+         return
+      end if
+c
+      if( matchs('name',4) ) call splunj
+c
+      if( label( idummy) ) then
+        call entits( temp_name, nchars )
+      elseif( string( idummy ) ) then
+        call entits( temp_name, nchars )
+      else
+        call incrack_errmsg( 18 ) 
+        call scan_flushline
+        smcs_list_file_flag = .false.
+        return
+      end if
+c
+      smcs_list_file_name(1:) = temp_name(1:nchars)
+      inquire( file=smcs_list_file_name, exist=fexists )
+      if( fexists ) then
+         call incrack_errmsg( 20 ) 
+         open(newunit=device, file=smcs_list_file_name, status='old')
+         close(device, status='delete')
+      end if
+c
+
+      end subroutine incrack_smcs_list_file
+
       end subroutine incrack                                                                 
 c                                                                               
 c     ****************************************************************          
@@ -2366,6 +2473,22 @@ c
          write(out,9017)                                                        
          input_ok = .false. 
          call scan_flushline
+c
+      case( 18 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9018)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 19 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9019)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 20 )                                                                 
+         write(out,9020)                                                        
+c
       case default                                                              
         write(out,9999)                                                         
         stop                                                                    
@@ -2395,13 +2518,13 @@ c
  9007 format(/1x,'>>>>> error: expecting number of top elements ',            
      & /14x,'to print.  line ignored',/)                       
 c                                                                               
- 9008 format(/1x,'>>>>> error: expecting keyword type or states... ',            
+ 9008 format(/1x,'>>>>> error: expecting keyword type, states, ... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
  9009 format(/1x,'>>>>> error: expecting integer value 1 or 2 ... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
- 9010 format(/1x,'>>>>> error: smcs type must be 1 or 2 ... ',            
+ 9010 format(/1x,'>>>>> error: smcs type must be valid integer ... ',            
      & /14x,'line ignored',/)                       
 c                                                                               
  9011 format(/1x,'>>>>> error: unrecognized smcs parameter ... ',            
@@ -2426,7 +2549,15 @@ c
 c                                                                               
  9017 format(/1x,'>>>>> error: feature not supported yet with MPI... ',            
      & /14x,'line ignored',/)                       
+c
+ 9018 format(/1x,'>>>>> error: expecting file name... ',            
+     & /14x,'line ignored',/)                       
 c                                                                               
+ 9019 format(/1x,'>>>>> error: expecting keyword file ... ',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9020 format(/1x,'>>>>> warning: existing file deleted...',/)                  
+c     
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
                                                                                 

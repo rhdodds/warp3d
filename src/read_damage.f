@@ -4,7 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/18/2019 rhd              *          
+c     *                   last modified : 11/21/20 rhd               *          
 c     *                                                              *          
 c     *     this subroutine reads in the damage routines from        *          
 c     *     a file.                                                  *          
@@ -123,6 +123,8 @@ c
  1100 continue
       call rdbk( fileno, smcs_weighted_T, num_kill_elem * prec_fact )           
       call rdbk( fileno, smcs_weighted_zeta, 
+     &           num_kill_elem * prec_fact )           
+      call rdbk( fileno, smcs_weighted_bar_theta, 
      &           num_kill_elem * prec_fact )           
       call rdbk( fileno, smcs_old_epsplas, num_kill_elem * prec_fact ) 
       read(fileno) isize

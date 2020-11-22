@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 11/21/20 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -469,7 +469,9 @@ c
      &              max_porosity_change, max_plast_strain_change,
      &              init_ctoa_dist, ctoa_dist, crkpln_srch_tol,
      &              max_deff_change, critical_cohes_deff_fract,
-     &              ppr_kill_displ_fraction
+     &              ppr_kill_displ_fraction, max_eps_critical,
+     &              smcs_type_4_A, smcs_type_4_n, smcs_type_4_c1,
+     &              smcs_type_4_c2, smcs_type_4_c3
       write (fileno) check_data_key
       call wrtbk( fileno, dam_ptr, noelem )
       write (fileno) check_data_key
@@ -488,6 +490,8 @@ c
                call wrtbk( fileno, smcs_weighted_T,
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_weighted_zeta,
+     &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_weighted_bar_theta,
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_old_epsplas,
      &              prec_fact * num_kill_elem )

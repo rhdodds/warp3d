@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/16/2019 rhd              *          
+c     *                   last modified : 11/20/2020 rhd             *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -27,7 +27,7 @@ c
       integer :: dum, elem, elem_ptr, i
       double precision ::                                                          
      &      dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
-     &     porosity, plast_strain,                                              
+     &     dumd8, dumd9, dumd10, porosity, plast_strain,                                              
      &     values(20)         
       double precision, parameter :: zero = 0.d0                                                  
       logical :: debug, duml                                                       
@@ -248,7 +248,7 @@ c
            if ( elem_ptr .eq. 0 ) cycle                                         
            call dam_param( elem, duml, debug, porosity, dumd1,                  
      &                     dumd2, dumd3, dumd4, duml, dumd5,                    
-     &                     dumd6 )                                              
+     &                     dumd6, dumd7, dumd8, dumd9)                                              
            old_porosity( elem_ptr ) = porosity                                  
            if ( debug ) write (*,'("   Poros. for:",i5,"=",e13.6)')             
      &              elem, porosity                                              
@@ -283,7 +283,7 @@ c
            if ( elem_ptr .eq. 0 ) cycle                                         
            call dam_param( elem, duml, debug, dumd5,                            
      &                     plast_strain, dumd2, dumd3, dumd4, duml,             
-     &                     dumd5, dumd6 )                                       
+     &                     dumd5, dumd6, dumd7, dumd8, dumd9 )                                       
            old_plast_strain( elem_ptr ) = plast_strain                          
            if ( debug ) write (*,'("   Pl. e for:",i5,"is",e13.6)')             
      &              elem, plast_strain                                          
@@ -398,14 +398,17 @@ c
      &      deallocate( smcs_old_epsplas )               
       if( allocated( smcs_weighted_zeta ) ) 
      &      deallocate( smcs_weighted_zeta  )  
-c             
+      if( allocated( smcs_weighted_bar_theta ) ) 
+     &      deallocate( smcs_weighted_bar_theta  )  
       allocate( smcs_weighted_T(num_kill_elem),
      &          smcs_old_epsplas(num_kill_elem),
-     &          smcs_weighted_zeta(num_kill_elem) )
+     &          smcs_weighted_zeta(num_kill_elem),
+     &          smcs_weighted_bar_theta(num_kill_elem) )
       do i = 1, num_kill_elem
-        smcs_weighted_T(i)     = zero
-        smcs_old_epsplas(i)    = zero  
-        smcs_weighted_zeta(i)  = zero  
+        smcs_weighted_T(i)          = zero
+        smcs_old_epsplas(i)         = zero  
+        smcs_weighted_zeta(i)       = zero  
+        smcs_weighted_bar_theta(i)  = zero  
       end do
       go to 9999      
 c                                                                               

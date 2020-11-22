@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 11/20/20 rhd               *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -461,7 +461,9 @@ c
      &              max_porosity_change, max_plast_strain_change,
      &              init_ctoa_dist, ctoa_dist, crkpln_srch_tol,
      &              max_deff_change, critical_cohes_deff_fract,
-     &              ppr_kill_displ_fraction
+     &              ppr_kill_displ_fraction, max_eps_critical,
+     &              smcs_type_4_A, smcs_type_4_n, smcs_type_4_c1,
+     &              smcs_type_4_c2, smcs_type_4_c3
       call chk_data_key( fileno, 8, 1 )
       call allocate_damage( 12 )
       call rdbk( fileno, dam_ptr, noelem )

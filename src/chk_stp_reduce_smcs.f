@@ -5,7 +5,7 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/9/2019 rhd               *          
+c     *                   last modified : 11/20/20 rhd               *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
@@ -27,7 +27,8 @@ c
       integer :: elem, elem_ptr, count                                              
       logical :: kill_now, ldebug, increase_size                                                   
       double precision :: sig_mean, sig_mises, triaxiality, 
-     &                    new_plast_strain, mean_zeta, max_change,
+     &                    new_plast_strain, mean_zeta, mean_bar_theta,
+     &                    max_change,
      &                    old_perm_factor, eps_crit, factor,
      &                    default_cut_factor, damp_factor, mean_omega 
       double precision, parameter :: zero = 0.0d0, half = 0.5d0,
@@ -53,13 +54,13 @@ c
         if( dam_state(elem_ptr) .gt. 0 ) cycle ! elem killed already                     
         call dam_param_3_get_values(
      &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
-     &      sig_mises, triaxiality, mean_zeta, mean_omega, 2,
-     &      kill_now )   
+     &      sig_mises, triaxiality, mean_zeta, mean_omega,
+     &      mean_bar_theta, 2, kill_now )   
         max_change = max( max_change, 
      &               new_plast_strain - old_plast_strain(elem_ptr) )                            
         old_plast_strain(elem_ptr) = new_plast_strain  
         count = count + 1
-      end do ! over elements
+      end do ! over elements 
 c
 c              is max change too large, too small, ok  ? 
 c

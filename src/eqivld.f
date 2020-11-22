@@ -910,6 +910,8 @@ c           3 to the line. insert constraints multiplier at end.
 c
       line_count = 0
       pattern_count = 0
+      pattern_names(1:3) = " "
+      tfacts = 0.0
       do i = 1, numlod
         if( line_count .eq. 3 ) then
           write(out,9010) pattern_names(1), tfacts(1),

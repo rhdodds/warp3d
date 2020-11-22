@@ -293,7 +293,7 @@ c     *                      subroutine dam_print_elem1              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/11/03 rhd                *          
+c     *                   last modified : 11/15/20 rhd               *          
 c     *                                                              *          
 c     *     This routine prints out the status of killable Gurson    *          
 c     *     and extended Gurson elements at the beginning of a       *          
@@ -303,7 +303,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dam_print_elem1(step,iter)                                     
+      subroutine dam_print_elem1( step, iter )                                     
       use global_data ! old common.main
       use main_data                                                             
       use elem_extinct_data, only : dam_state, dam_print_list,                  
@@ -312,12 +312,10 @@ c
       use damage_data                                                           
       implicit integer (a-z)                                                    
 c                                                                               
-c                                                                               
-                                                                                
       double precision                                                          
      &     porosity, orig_porosity, zero, ebarp, sigma_bar, d_poros,            
      &     max_d_poros, fpngp, ddum1, ddum2, sig_mean, sig_mises,               
-     &     ext_shape, ext_spacing                                               
+     &     ext_shape, ext_spacing, ddum3, ddum4, ddum_5                                              
       double precision,                                                         
      &  dimension(:), pointer :: history                                        
       logical ldummy, debug, all_killed, lmises(num_print_list),                
@@ -390,7 +388,8 @@ c
 c                                                                               
          call dam_param( element, ldummy, debug, porosity,                      
      &                   ddum1, ddum2, sig_mean, sig_mises,                     
-     &                   ext_gurson, ext_shape, ext_spacing )                   
+     &                   ext_gurson, ext_shape, ext_spacing,
+     &                   ddum3, ddum4 ddum5 )                   
 c                                                                               
 c             if the mises stress or mean stress from this step are             
 c             lower than the previous step, then put a * by the                 
@@ -499,7 +498,8 @@ c
 c                                                                               
          call dam_param( element, ldummy, debug, porosity,                      
      &                   ddum1, ddum2, sig_mean, sig_mises,                     
-     &                   ext_gurson, ext_shape, ext_spacing )                   
+     &                   ext_gurson, ext_shape, ext_spacing
+     &                   ddum3, ddum4, ddum5 )                   
 c                                                                               
 c             if the mises stress or mean stress from this step are             
 c             lower than the previous step, then put a 0 or 1 flag              
