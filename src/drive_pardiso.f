@@ -456,6 +456,7 @@ c
          if( ier .ne. 0 ) then
            write(iout,9470)
            write(iout,*) '       >> @ phase 11, ier: ',ier
+           write(iout,9900)
            call die_abort
          end if
          if( cpu_stats )  then
@@ -472,9 +473,9 @@ c
         case( 3 )
          if( ier .ne. 0 ) then
             write(iout,9470)
-            write(iout,*) '       >> @ phase 22, ier: ',ier
-            if( ier .eq. -2 ) write(iout,9700)
+            if( ier .eq. -2 ) write(iout,9700) 
             if( ier .eq. -4 ) write(iout,9710)
+            write(iout,9900)
             call die_abort
          end if
          if( cpu_stats ) then
@@ -493,7 +494,9 @@ c
         case( 5 )
          if( ier .ne. 0 ) then
            write(iout,9470)
-           write(iout,*) '       >> @ phase 33, ier: ',ier
+           if( ier .eq. -2 ) write(iout,9700)
+           if( ier .eq. -4 ) write(iout,9710)
+           write(iout,9900)
            call die_abort
          end if
          if( cpu_stats ) write(iout,9492) wcputime(1)
@@ -504,6 +507,7 @@ c
            write(iout,9470)
            write(iout,*) '       >>  phase -1, ier: ',ier
            write(iout,*) '       >>  releasing solver data'
+           write(iout,9900)
            call die_abort
          end if
 c
@@ -511,6 +515,7 @@ c
            write(iout,9470)
            write(iout,*) '  >>  inconsistency @ 1'
            write(iout,*) '  >>  releasing solver data'
+           write(iout,9900)
            call die_abort
 c
         case( 8 )
@@ -518,6 +523,7 @@ c
            write(iout,9472)
            write(iout,*) '       >>  phase 52, ier: ',ier
            write(iout,*) '       >>  iterative solve'
+           write(iout,9900)
            call die_abort
          end if
          if( cpu_stats ) then
@@ -532,14 +538,17 @@ c
 c
         case( 10 )
            write(iout,9720)
+           write(iout,9900)
            call die_abort
 c
         case( 11 )
            write(iout,9740)
+           write(iout,9900)
            call die_abort
 c
         case default
            write(iout,9730)
+           write(iout,9900)
            call die_abort
 
       end select
@@ -555,10 +564,10 @@ c
      &  15x,'reordering memory (GB):          ', f9.2)
  2030 format(
      &  15x,'factorization memory (GB):       ', f9.2)
- 9470  format(
-     &  15x, 'FATAL ERRROR: mkl sparse solver' )
- 9472  format(
-     &  15x, 'FATAL ERRROR: mkl sparse -iterative- solver' )
+ 9470  format(/,
+     &  10x, '>>>>>>> FATAL ERRROR: mkl sparse solver' )
+ 9472  format(/,
+     &  10x, '>>>>>>> FATAL ERRROR: mkl sparse -iterative- solver' )
  9480  format(
      &  15x, 'Pardiso solver initializing   @ ',f10.2 )
  9580  format(
@@ -585,22 +594,29 @@ c
      &  15x,'Krylov iterations done        @ ',f10.2 )
  9610  format(7x,
      & '>> conjugate gradient-Krylov iterations:           ',i5)
- 9700  format(7x,'The factorization step has attempted to allocate',
-     & /,     7x,'more virtual memory than available on your',
-     & /,     7x,'machine.' )
- 9710  format(7x,'The factorization step has encountered a',
-     & /,     7x,'zero pivot.')
- 9720  format(
-     &   15x, 'FATAL ERRROR: iterative solver cannot be used with',
-     & /,15x, '              out-of-core option',
-     & /,15x  '              Job aborted.')
- 9730  format(
-     &   15x, 'FATAL ERRROR: invalid message condition in',
-     & /,15x, '              warp3d_pardiso_mess',
-     & /,15x  '              Job aborted.')
- 9740  format(
-     &   15x, 'FATAL ERRROR: invalid itype in pardiso_symmetric',
-     & /,15x  '              or pardiso_unsymmetric. Job aborted.')
+ 9700  format(
+     & /,7x,'Pardiso factorization/solve step reported error code -2',
+     & /,7x,'This is an out-of-memory error. Usually this means',
+     & /,7x,'the factorization step has attempted to allocate more',
+     & /,7x,'virtual memory than available on your machine.' )
+ 9710  format(/,
+     & /,7x,'Pardiso factorization/solve step reported error code: -4',
+     & /,7x,'There is a zero pivot that cannot be locally re-ordered.')
+ 9720  format(/,
+     &   10x, '>>>>>>> FATAL ERRROR: iterative solver cannot be',
+     &     ' used with',
+     & /,10x, '              out-of-core option',
+     & /,10x  '              Job aborted.')
+ 9730  format(/,
+     &   10x, '>>>>>>> FATAL ERRROR: invalid message condition in',
+     & /,10x, '              warp3d_pardiso_mess',
+     & /,10x  '              Job aborted.')
+ 9740  format(/,
+     &   10x, '>>>>>>> FATAL ERRROR: invalid itype in',
+     &   ' pardiso_symmetric',
+     & /,10x  '              or pardiso_unsymmetric. Job aborted.')
+ 9900 format(/,
+     &   10x, '>>>>>>> Job terminated.....',//)
 c
       end
 
