@@ -176,7 +176,7 @@ c     *                      subroutine do_perm_allo                 *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/15/11 jcs               *          
+c     *                   last modified : 12/3/2020 rhd              *          
 c     *                                                              *          
 c     *     this subroutine does the allocation                      *          
 c     *     of the permanent body,face load and element temperature  *          
@@ -184,16 +184,24 @@ c     *     input data structures.                                   *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine do_perm_allo (status, loadnum, num_loads, fill)                
-      use global_data ! old common.main
-      use elem_load_data                                                        
-      implicit integer (a-z)                                                    
+      subroutine do_perm_allo( status, loadnum, num_loads, fill )   
+c             
+      use global_data, only : out
+      use elem_load_data   
+c                                                     
+      implicit none
+c   
+      integer :: status, loadnum, num_loads
+      logical :: fill
+c
+                                                                            
+      logical, parameter ::  debug = .false.
 c                                                                               
-      logical debug, fill                                                       
-      data debug / .false./                                                     
-c                                                                               
-      if ( debug ) write (*,*) ' >>> inside do_perm_allo'                       
-      go to (1, 1000), status                                                   
+      if( debug ) write (out,*) 
+     &   ' >>> inside do_perm_allo. status,load_num,num_loads,fill: ',
+     &      status,loadnum,num_loads,fill    
+c                   
+      select case( status )
 c                                                                               
 c                  Allocation of variables.  First check if the general         
 c                  elem_loads structure has been allocated; allocate it         
@@ -202,58 +210,55 @@ c                  from num_loads and allocate the loading structures
 c                  inside elem_loads for the current loading condition          
 c                  number.  If num_loads is 0, skip allocation.                 
 c                                                                               
- 1    continue                                                                  
-c                                                                               
-      if (.not. allocated(elem_loads)) then                                     
+      case( 1 )
+c          
+      if( .not. allocated(elem_loads) ) then                                     
          write (*,*) ' elem_loads vector not allocated. stop'                   
          call die_gracefully                                                    
          stop                                                                   
       endif                                                                     
 c                                                                               
-      if (num_loads.eq.0) then                                                  
+      if( num_loads.eq.0 ) then                                                  
          elem_loads(loadnum)%size = 0                                           
          if (debug) write (*,*) '  skipping allocation:'                        
          goto 9999                                                              
       endif                                                                     
-c                                                                               
-      if (elem_loads(loadnum)%size .ne. 0) then                                 
-         deallocate (elem_loads(loadnum)%data)                                  
-         deallocate (elem_loads(loadnum)%vals)                                  
-         deallocate (elem_loads(loadnum)%piston_tabnum)                         
-         deallocate (elem_loads(loadnum)%thread_number)                         
+c  
+      if( elem_loads(loadnum)%size .ne. 0 ) then                                 
+         deallocate( elem_loads(loadnum)%data )                                  
+         deallocate( elem_loads(loadnum)%vals )                                  
+         deallocate( elem_loads(loadnum)%piston_tabnum )                         
+         deallocate( elem_loads(loadnum)%thread_number )                         
       endif                                                                     
-c                                                                               
-      allocate (elem_loads(loadnum)%data(num_loads,3))                          
-      allocate (elem_loads(loadnum)%vals(num_loads))                            
-      allocate (elem_loads(loadnum)%piston_tabnum(num_loads))                   
-      allocate (elem_loads(loadnum)%thread_number(num_loads))                   
+c
+      allocate( elem_loads(loadnum)%data(num_loads,3) )                          
+      allocate( elem_loads(loadnum)%vals(num_loads) )                            
+      allocate( elem_loads(loadnum)%piston_tabnum(num_loads) )                   
+      allocate( elem_loads(loadnum)%thread_number(num_loads) )                   
       elem_loads(loadnum)%size = num_loads                                      
-c                                                                               
-      if (fill) call store_perm_allo (                                          
+c  
+      if( fill ) call store_perm_allo (                                          
      &     elem_loads(loadnum)%data(1,1),                                       
      &     elem_loads(loadnum)%vals(1),                                         
      &     elem_loads(loadnum)%piston_tabnum(1),                                
      &     elem_loads(loadnum)%size,                                            
      &     elem_loads(loadnum)%thread_number(1) )                               
-c                                                                               
-      goto 9999                                                                 
-c                                                                               
+c        
 c                  Deallocation of variables                                    
 c                                                                               
- 1000 continue                                                                  
+      case( 2 )
 c                                                                               
-      if (elem_loads(loadnum)%size .ne. 0) then                                 
-         deallocate (elem_loads(loadnum)%data)                                  
-         deallocate (elem_loads(loadnum)%vals)                                  
-         deallocate (elem_loads(loadnum)%piston_tabnum)                         
-         deallocate (elem_loads(loadnum)%thread_number)                         
+      if( elem_loads(loadnum)%size .ne. 0 ) then                                 
+         deallocate( elem_loads(loadnum)%data )                                  
+         deallocate( elem_loads(loadnum)%vals )                                  
+         deallocate( elem_loads(loadnum)%piston_tabnum )                         
+         deallocate( elem_loads(loadnum)%thread_number )                         
       endif                                                                     
-c                                                                               
-      goto 9999                                                                 
-c                                                                               
-c                                                                               
+c
+      end select                                                                               
+c                                                                                                                                                              
  9999 continue                                                                  
-      if (debug) write (*,*) ' <<< leaving do_perm_allo'                        
+      if( debug ) write (out,*) ' <<< leaving do_perm_allo'                        
       return                                                                    
       end                                                                       
                                                                                 
@@ -264,7 +269,7 @@ c     *                      subroutine store_perm_allo              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/15/11 jcs               *          
+c     *                   last modified : 12/3/2020 rhd              *          
 c     *                                                              *          
 c     *     this subroutine stores the loading information into      *          
 c     *     the permanent body and face load input structures.       *          
@@ -294,34 +299,41 @@ c                                       value of element temperature
 c                   eload_pist(i)   -- piston table number for entry i          
 c                   thread_number(i) -- thread number processing entry i        
 c                                                                               
-      subroutine store_perm_allo(                                               
-     &     eload_data, eload_val, eload_pist, size, thread_number )             
-      use global_data ! old common.main
-      use elem_load_data                                                        
-      implicit integer (a-z)                                                    
+      subroutine store_perm_allo( eload_data, eload_val, eload_pist,
+     &                            size, thread_number ) 
+c            
+      use global_data, only : out, mxndof, noelem, num_threads
+      use elem_load_data      
+c                                                  
+      implicit none                                                    
+c     
+      integer :: size, count, elem                                                                          
+      integer :: eload_data(size,3), thread_number(size), 
+     &           eload_pist(size)                           
+      real ::    eload_val(size)    
+c
+c              locals
+c     
+      integer :: force_entry, dof, face, erow 
+      integer, allocatable :: thdnum(:)                                            
+      real, parameter ::  zero = 0.0    !  note: single precision                                    
+      double precision :: mx, my, mz, norm                                                     
+      logical, parameter ::  debug = .false.                                                           
 c                                                                               
-      dimension eload_data(size,3), thdnum(noelem),                             
-     &          thread_number(size), eload_pist(size)                           
-      real eload_val(size)                                                      
-      real zero    !  note: single precision                                    
-      double precision                                                          
-     &     mx, my, mz, norm                                                     
-      logical debug                                                             
-      data zero, debug / 0.0, .false. /                                         
-c                                                                               
-      if ( debug ) write (*,*) ' >>> inside store_perm_allo'                    
+      if( debug ) write (out,*) ' >>> inside store_perm_allo'                    
+c
       force_entry = 0                                                           
-c                                                                               
+      count = 1          
+      allocate( thdnum(noelem) )                                                       
       thdnum(1:noelem) = -1                                                     
-      count = 1                                                                 
-c                                                                               
-      do elem = 1, noelem                                                       
+c                     
+      do elem = 1, noelem         
 c                                                                               
 c                      body loadings for the element                            
 c                                                                               
-         if ( debug ) write (*,*) '--------- body loadings:'                    
+         if( debug ) write (*,*) '--------- body loadings:'                    
          do dof = 1, mxndof                                                     
-            if ( temp_body(elem,dof).ne.zero ) then                             
+            if( temp_body(elem,dof).ne.zero ) then                             
                call eloads_thread_count(count,thdnum(elem),num_threads)         
                if(debug)write(*,'("elem,dof:",2i6,"temp_body:",e14.6)')         
      &              elem,dof,temp_body(elem,dof)                                
@@ -336,11 +348,11 @@ c
 c                                                                               
 c                      face loadings for the element                            
 c                                                                               
-         if ( debug )write (*,*) '-------- face loadings:'                      
+         if( debug )write (*,*) '-------- face loadings:'                      
          do face = 1, numfaces                                                  
             if ( temp_press(elem,face).ne.zero ) then                           
                call eloads_thread_count(count,thdnum(elem),num_threads)         
-               if(debug)write (*,'("press;el,fa:",2i6,"temp:",e14.6)')          
+               if( debug )write (*,'("press;el,fa:",2i6,"temp:",e14.6)')          
      &              elem,face,temp_press(elem,face)                             
                force_entry               = force_entry + 1                      
                eload_data(force_entry,1) = elem                                 
@@ -348,10 +360,10 @@ c
                eload_data(force_entry,3) = 0                                    
                eload_val(force_entry)    = temp_press(elem,face)                
                eload_pist(force_entry)   = 0                                    
-               if(debug)write (*,'("press;el,fa:",2i6,"temp:",e14.6)')          
+               if( debug )write (*,'("press;el,fa:",2i6,"temp:",e14.6)')          
      &              elem,eload_data(force_entry,2),                             
      &              eload_val(force_entry)                                      
-            elseif (temp_piston(elem,face).ne.0 ) then                          
+            elseif( temp_piston(elem,face).ne.0 ) then                          
                if (debug) write (*,'("pistn;el,fa:",2i6)') elem,face            
                call eloads_thread_count(count,thdnum(elem),num_threads)         
                force_entry = force_entry + 1                                    
@@ -380,8 +392,8 @@ c
 c                                                                               
 c                      element temperature change                               
 c                                                                               
-         if ( debug ) write (*,*) '-------- temperature loadings:'              
-         if ( temp_temper(elem).ne.zero ) then                                  
+         if( debug ) write (*,*) '-------- temperature loadings:'              
+         if( temp_temper(elem).ne.zero ) then                                  
             call eloads_thread_count(count,thdnum(elem),num_threads)            
             force_entry               = force_entry + 1                         
             eload_data(force_entry,1) = elem                                    
@@ -391,13 +403,12 @@ c
             eload_pist(force_entry)   = 0                                       
          end if                                                                 
 c                                                                               
-      end do                                                                    
+      end do    ! over elements                                                                 
 c                                                                               
-c                                                                               
-c                                                                               
-      if ( force_entry .ne. size ) then                                         
-         write (*,*) ' >>>> Error: a memory fault in the element'               
-         write (*,*) '     has been detected.  Stopping execution.'             
+      if( force_entry .ne. size ) then                                         
+         write(out,*) ' >>>> Error: a memory fault in the element'               
+         write(out,*) '     has been detected.  Stopping execution.' 
+         write(out,*) '     routine:  store_perm_allo' 
          call die_gracefully                                                    
          stop                                                                   
       end if                                                                    
@@ -407,12 +418,14 @@ c
       do erow = 1, size                                                         
          elem = eload_data(erow,1)                                              
          thread_number(erow) = thdnum(elem)                                     
-      end do                                                                    
+      end do       
+c
+      deallocate( thdnum )                                                             
 c                                                                               
-      if (debug) then                                                           
-        call dump_load (eload_data, eload_val,                                  
-     &     thread_number, size)                                                 
-        write (*,*) ' <<< leaving store_perm_allo'                              
+      if( debug ) then                                                           
+        call dump_load( eload_data, eload_val,                                  
+     &     thread_number, size )                                                 
+        write(out,*) ' <<< leaving store_perm_allo'                              
       end if                                                                    
 c                                                                               
       return                                                                    
@@ -424,33 +437,36 @@ c     *                      subroutine dump_load                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/03/11 jcs               *          
+c     *                   last modified : 12/3/2020 rhd              *          
 c     *                                                              *          
 c     *     this subroutine prints out the face and body loadings    *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine dump_load(eload_data, eload_val, thread_number, size)          
-      use global_data ! old common.main
-      implicit integer (a-z)                                                    
+      subroutine dump_load( eload_data, eload_val, thread_number, size)          
+c
+      use global_data, only : out
+c
+      implicit none
+c   
+      integer :: size      
+      integer :: eload_data(size,3), thread_number(size)                                                      
+      real ::  eload_val(size)    
+c
+      integer :: i, k                                                  
 c                                                                               
-      real eload_val(size)                                                      
-      dimension eload_data(size,3), thread_number(size)                         
-c                                                                               
-c                                                                               
-      write (*,*) ' ==================='                                        
-      write (*,*) '   DUMPING LOADING  '                                        
-      write (*,*) ' ==================='                                        
-c                                                                               
-c                                                                               
-      write (*,1000)                                                            
-      if (size .gt. 0) then                                                     
+      write(out,*) ' ==================='                                        
+      write(out,*) '   DUMPING LOADING  '                                        
+      write(out,*) ' ==================='                                        
+c                                                                                                                                                             
+      write(out,1000)                                                            
+      if( size > 0 ) then                                                     
          do i = 1, size                                                         
-            write (*,1010) i,(eload_data(i,k),k=1,3),                           
-     &           thread_number(i),eload_val(i)                                  
+            write(out,1010) i, (eload_data(i,k),k=1,3),                           
+     &           thread_number(i), eload_val(i)                                  
          end do                                                                 
       else                                                                      
-         write (*,*) 'size is zero.'                                            
+         write(out,*) 'size is zero.'                                            
       endif                                                                     
 c                                                                               
       return                                                                    
@@ -470,14 +486,16 @@ c     *     this subroutine updates the thread count                 *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine eloads_thread_count(count,thdnum,num_threads)                  
-      implicit integer (a-z)                                                    
+      subroutine eloads_thread_count( count, thdnum, num_threads )                  
+      implicit none             
+c
+      integer :: count, thdnum, num_threads                                       
 c                                                                               
 c                     thdnum represents the thread assigned to this             
 c                     element, by default (-1), no thread is assigned           
 c                     check if a thread has been assigned, if so, skip          
 c                                                                               
-      if (thdnum .ne. -1) return                                                
+      if( thdnum .ne. -1 ) return                                                
 c                                                                               
 c                     thdnum has not been assigned, assign thread               
 c                     based on count. count provides the current                
@@ -489,12 +507,10 @@ c                     each thread
 c                                                                               
       thdnum = count                                                            
       count  = count + 1                                                        
-      if ( count .gt. num_threads ) count = 1                                   
+      if( count .gt. num_threads ) count = 1                                   
 c                                                                               
       return                                                                    
-c                                                                               
       end                                                                       
-                                                                                
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
@@ -502,7 +518,7 @@ c     *               subroutine eloads_rebuild_thread_list          *
 c     *                                                              *          
 c     *                       written by : jcs                       *          
 c     *                                                              *          
-c     *                   last modified : 10/26/11                   *          
+c     *                   last modified : 12/3/2020 rhd              *          
 c     *                                                              *          
 c     *     this subroutine rebuilds the thread list after           *          
 c     *     a restart                                                *          
@@ -511,18 +527,22 @@ c     ****************************************************************
 c                                                                               
       subroutine eloads_rebuild_thread_list( eload_data, size,                  
      &                                       thread_number )                    
-      use global_data ! old common.main
-      implicit integer (a-z)                                                    
+      use global_data, only : out, noelem, num_threads
+c
+      implicit none
+c
+      integer :: size
+      integer :: eload_data(size,3),  thread_number(size) 
+c
+      integer :: erow, element, count
+      integer, allocatable :: thdnum(:)
+      logical, parameter :: debug = .false.
 c                                                                               
-      dimension eload_data(size,3), thdnum(noelem), thread_number(size)         
-c                                                                               
-      logical debug                                                             
-      data debug / .false. /                                                    
-c                                                                               
-      if (debug) write (*,*) ' >>> inside eloads_rebuild_thread_list'           
+      if( debug ) write(out,*) ' >>> inside eloads_rebuild_thread_list'           
 c                                                                               
 c                     set thdnum and count to initial values                    
-c                                                                               
+c
+      allocate( thdnum(noelem) )                                                                               
       thdnum(:) = -1                                                            
       count = 1                                                                 
 c                                                                               
@@ -534,21 +554,22 @@ c
 c                     check if the element for this row has a thread            
 c                     assigned to it already. if not, set thread                
 c                                                                               
-         element = eload_data( erow, 1 )                                        
+       element = eload_data(erow,1)                                        
 c         if (debug) write(*,*) 'erow, element, thread number',                 
 c     &        erow, element, thdnum(element)                                   
 c                                                                               
-         call eloads_thread_count(count,thdnum(element),num_threads)            
+       call eloads_thread_count( count, thdnum(element), num_threads )            
 c            if (debug) write(*,*), 'new thread, count, #threads',              
 c     &           thdnum(element), count, num_threads                           
 c                                                                               
 c                     set thread number of the element row                      
 c                                                                               
-         thread_number(erow) = thdnum(element)                                  
+       thread_number(erow) = thdnum(element)                                  
 c                                                                               
       end do                                                                    
-c                                                                               
-      if (debug) write (*,*) ' >>> leaving rebuild_thread_list'                 
+c                
+      deallocate( thdnum )                                                               
+      if( debug ) write(out,*) ' >>> leaving rebuild_thread_list'                 
       return                                                                    
 c                                                                               
       end                                                                       
