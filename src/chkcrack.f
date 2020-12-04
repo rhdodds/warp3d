@@ -136,7 +136,6 @@ c
       found_ppr         = .false.                                               
       found_cavit       = .false.                                               
 c     
-                              
       do elem = 1, noelem
 c          
          elem_ptr = dam_ptr(elem)                                               
@@ -210,7 +209,7 @@ c
          call kill_element( elem, debug )                                    
          call store_ifv( elem, elem_ptr, debug )                             
          call update_node_elecnt( elem, debug )                              
-         if ( release_type .eq. 2 ) call growth_set_dbar( elem,              
+         if( release_type .eq. 2 ) call growth_set_dbar( elem,              
      &             elem_ptr, debug, -1, dummy_arg ) 
 c                         
       end do  ! over all model elements                                         
@@ -254,7 +253,6 @@ c             this is a dummy for non-MPI
 c                                                                               
       call wmpi_send_growth( killed_this_time )                                
 c                                                                               
-          
       if( num_elements_killed > killed_element_limit ) then
           write(out,9000) killed_element_limit
           call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
@@ -300,7 +298,7 @@ c
      &          access='sequential', position='append' )   
           if( .not. fexists ) write(device,9018)
           write(device,9020) current_load_time_step,
-     & elem, eps_plas, eps_crit,
+     &                       elem, eps_plas, eps_crit,
      &                       avg_triaxiality, avg_zeta, avg_bar_theta 
           close(unit=device)    
         return
@@ -410,7 +408,7 @@ c
      &                                        -1, dummy_arg )                   
           end if                                                                
         end if                                                                  
-      end do 
+      end do  ! chk_kill
 c   
       return
 c
@@ -1588,7 +1586,6 @@ c     *                   last modified : 09/7/2019 rhd              *
 c     *                                                              *          
 c     *        certain damage models need variables updated outside  *
 c     *        element stress/history data (e.g. smcs )              *
-
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
