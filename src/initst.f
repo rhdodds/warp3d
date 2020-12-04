@@ -75,6 +75,12 @@ c
      &            hundredth=0.01d0, twentyth=0.05d0,
      &            thousandth=0.001d0
 c
+c                       temporary fix until Intel fixes an inconsistency
+c                       in MKL. this call prevents lots of warning messages
+c                       from being printed during execution.
+c
+      call kmp_set_warnings_off()
+c
 c                       initialize the file input and output parameters
 c
       inlun(1) = 5
