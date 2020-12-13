@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 11/20/20 rhd               *
+c     *                   last modified : 12/12/20 rhd               *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -48,7 +48,7 @@ c
       integer :: dum, last, prec_fact, node, i, node_count, eload_size,
      &           num_patterns, err, dumi, mpc, ntrm, fileno,
      &           how_defined, itab, num_rows, num_cols, ilist,
-     &           ulen, nsize, local_length
+     &           ulen, nsize, local_length, isize
       character ::  dbname*100, string*80, dums*1
       logical :: flexst, scanms, nameok, initial_stresses_exist,
      &          read_nod_load, msg_flag, read_table, exist_flag
@@ -447,7 +447,8 @@ c
      &              all_elems_killed, num_elements_killed,
      &              enforce_node_release, num_ctoa_released_nodes,
      &              print_top_list, num_top_list, smcs_type,
-     &              smcs_states, smcs_stream, smcs_text  
+     &              smcs_states, smcs_stream, smcs_text,
+     &              stop_killed_elist_length  
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,
@@ -480,6 +481,12 @@ c
          if( crack_growth_type .eq. 3 ) then
             call allocate_damage( 13 )
             call read_damage( 11, fileno, prec_fact )
+         end if
+c
+         isize = stop_killed_elist_length
+         if(  isize > 0 ) then
+           allocate( deleted_elist_to_stop(isize) )
+           call rdbk( fileno, deleted_elist_to_stop, isize )
          end if
 c
          if( print_status ) then

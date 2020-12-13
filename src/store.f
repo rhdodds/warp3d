@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/21/20 rhd               *
+c     *                   last modified : 12/12/20 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -455,7 +455,8 @@ c
      &              all_elems_killed, num_elements_killed,
      &              enforce_node_release, num_ctoa_released_nodes,
      &              print_top_list, num_top_list, smcs_type,
-     &              smcs_states, smcs_stream, smcs_text  
+     &              smcs_states, smcs_stream, smcs_text,
+     &              stop_killed_elist_length  
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
@@ -502,7 +503,12 @@ c
                if( isize > 0 ) write(fileno)
      &             smcs_states_intlst(1:isize)
          end if
-c           
+c  
+         isize = stop_killed_elist_length
+         if(  isize > 0 ) then
+           call wrtbk( fileno, deleted_elist_to_stop, isize )
+         end if
+c
          if ( print_status ) then
             call wrtbk( fileno, dam_print_list, num_print_list )
             call wrtbk( fileno, old_mises, num_print_list*prec_fact )
