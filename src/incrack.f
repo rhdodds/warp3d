@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 11/20/20 rhd               *          
+c     *                   last modified : 12/11/2020 rhd             *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -83,6 +83,7 @@ c
       if ( matchs_exact('ppr') )        go to 2000
       if ( matchs_exact('smcs') )       go to 2100
       if ( matchs_exact('killed') )     go to 2200
+      if ( matchs_exact('stop') )       go to 2300
 c                                                                               
       go to 9999                                                                
 c                                                                               
@@ -1091,11 +1092,29 @@ c
       end if
       go to 10
 c                                                                               
+c          ------------------------------------------                           
+c          | stop if elements killed <list>         |                           
+c          ------------------------------------------                           
+c                                                                               
+ 2300 continue                                                                  
+c        
+      call incrack_stop_elist                                                                       
+      go to 10
+c                                                                               
  9999 continue                                                                  
       if ( debug ) write (out,*) '>>>>>>>>>>>>>>>>> leaving incrack.'           
       sbflg1 = .true.                                                           
       sbflg2 = .true.                                                           
-      return      
+      return  
+c
+ 9000 format(/1x,'>>>>> error: no element list found',
+     &   /,14x,'read new line ...',/)
+ 9010 format(/1x,'>>>>> error: integer list rules failed....',
+     &   ' read new line ...',/)
+ 9020 format(/1x,'>>>>> error: too many elements in list....',
+     &   ' read new line ...',/)
+ 9050 format(/1x,'>>>>> FATAL ERROR: delete_elements inconsistency',
+     &   /,14x,'job terminated now ...',/)
  9100 format(/1x,'>>>>> error: invalid element number: ',i8)
 c
       contains
@@ -1397,9 +1416,74 @@ c
          close(device, status='delete')
       end if
 c
-
       end subroutine incrack_smcs_list_file
-
+c
+      subroutine incrack_stop_elist 
+      implicit none
+      integer :: vector_length, errnum  
+      logical, parameter :: ldebug = .false.                                                        
+c                          
+c              stop (if) killed (elements) < list >  
+c                 
+      if( matchs_exact('if') ) call splunj
+      if( .not. matchs_exact('killed') ) then
+         call incrack_errmsg( 21 )
+         return
+      end if     
+      if( matchs('elements',3) ) call splunj
+      stop_killed_elist_length = 0
+      if( allocated( deleted_elist_to_stop ) ) 
+     &    deallocate( deleted_elist_to_stop )     
+      if( matchs_exact('off') ) return
+      if( .not. matchs_exact('on') ) then
+         call incrack_errmsg( 22 )
+         return
+      end if     
+      call scan
+      call trlist_allocated( deleted_elist_to_stop, vector_length, 
+     &                       0, stop_killed_elist_length, errnum )
+c
+c              1 = no error. list found
+c              2 = parse rules failed in list
+c              3 = list overflowed its maximum length of mxlsz
+c              4 = no list found 
+c
+       if( errnum .eq. 4 ) then 
+          write(out,9000) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+      if( errnum .eq. 2 ) then
+          write(out,9010) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+      if( errnum .eq. 3 ) then
+          write(out,9020) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+c
+      if( errnum .ne. 1 ) then  ! something bad wrong
+         write(out,9050)
+         call die_gracefully
+      end if
+c     
+      return
+ 9000 format(/1x,'>>>>> error: no element list found',
+     &   /,14x,'read new line ...',/)
+ 9010 format(/1x,'>>>>> error: integer list rules failed....',
+     &   ' read new line ...',/)
+ 9020 format(/1x,'>>>>> error: too many elements in list....',
+     &   ' read new line ...',/)
+ 9050 format(/1x,'>>>>> FATAL ERROR: delete_elements inconsistency',
+     &   /,14x,'job terminated now ...',/)
+c
+      end subroutine incrack_stop_elist
+c
       end subroutine incrack                                                                 
 c                                                                               
 c     ****************************************************************          
@@ -2489,6 +2573,18 @@ c
       case( 20 )                                                                 
          write(out,9020)                                                        
 c
+      case( 21 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9021)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 22 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9022)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
       case default                                                              
         write(out,9999)                                                         
         stop                                                                    
@@ -2557,6 +2653,12 @@ c
      & /14x,'line ignored',/)                  
 c                                                                               
  9020 format(/1x,'>>>>> warning: existing file deleted...',/)                  
+c                                                                               
+ 9021 format(/1x,'>>>>> error: unrecognized keyword ... ',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9022 format(/1x,'>>>>> error: expecting keyword on or off ... ',            
+     & /14x,'line ignored',/)                  
 c     
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
@@ -2714,7 +2816,7 @@ c
 c
       return
 c
- 9000 format(/1x,'>>>>> error: no delement list found',
+ 9000 format(/1x,'>>>>> error: no element list found',
      &   /,14x,'read new line ...',/)
  9010 format(/1x,'>>>>> error: integer list rules failed....',
      &   ' read new line ...',/)

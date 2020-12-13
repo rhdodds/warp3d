@@ -5,7 +5,7 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/20/20 rhd               *          
+c     *                   last modified : 12/5/2020 rhd              *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
@@ -17,7 +17,8 @@ c
       use elem_extinct_data, only : old_plast_strain, dam_state  
       use damage_data, only : dam_ptr,
      &           allowable_change => max_plast_strain_change, 
-     &           perm_load_fact, num_elements_in_force_release         
+     &           perm_load_fact, num_elements_in_force_release    
+      use dam_param_code, only :  dam_param_3_get_values
 c                                                 
       implicit none                                                    
       logical :: debug                                                                                                                                            
@@ -25,7 +26,7 @@ c
 c              local declarations                                                  
 c                              
       integer :: elem, elem_ptr, count                                              
-      logical :: kill_now, ldebug, increase_size                                                   
+      logical :: ldebug, increase_size                                               
       double precision :: sig_mean, sig_mises, triaxiality, 
      &                    new_plast_strain, mean_zeta, mean_bar_theta,
      &                    max_change,
@@ -55,7 +56,7 @@ c
         call dam_param_3_get_values(
      &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
      &      sig_mises, triaxiality, mean_zeta, mean_omega,
-     &      mean_bar_theta, 2, kill_now )   
+     &      mean_bar_theta, 2 )   
         max_change = max( max_change, 
      &               new_plast_strain - old_plast_strain(elem_ptr) )                            
         old_plast_strain(elem_ptr) = new_plast_strain  

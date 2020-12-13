@@ -4,7 +4,7 @@ c     *                      subroutine chkcrack                     *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 04/28/2019 rhd             *          
+c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *        This routine drives the check on conditions to tell   *          
 c     *        if crack growth will occur.  This calls routines for  *          
@@ -14,9 +14,11 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine chkcrack( step, iter )                                         
-      use global_data ! old common.main
-      use damage_data                                                           
+      subroutine chkcrack( step, iter )   
+c                                      
+      use global_data, only : out
+      use damage_data, only : crack_growth_type
+c                                                          
       implicit none                                                    
 c                                                                               
       integer :: step, iter
@@ -58,7 +60,7 @@ c
       case(3)                                                                  
          if(debug) write (out,*) '>>>> use smcs crack growth.'                 
          call chk_elem_kill( debug, step, iter )                                
-      case(4)    !  chohesive                                                               
+      case(4)    !  cohesive                                                               
          call chk_elem_kill( debug, step, iter )                                
          return                                                                 
       case(5)                                                                  
@@ -80,7 +82,7 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/21/2020 rhd             *          
+c     *                   last modified : 12/12/2020 rhd             *          
 c     *                                                              *          
 c     *        checks conditions to see if crack                     *          
 c     *        growth will occur by element extinction               *          
@@ -88,18 +90,32 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine chk_elem_kill( debug, step, iter )                             
-      use global_data ! old common.main
+      subroutine chk_elem_kill( debug, step, iter )
+c                             
+      use global_data, only : out, noelem, current_load_time_step, 
+     &                        iprops, props, nelblk, elblks 
+      use dam_param_code, only : dam_param, growth_set_dbar
       use elem_extinct_data, only : dam_blk_killed, dam_state,                  
      &                              kill_order_list, dam_print_list
       use main_data, only : output_packets, packet_file_no                      
-      use damage_data                                                           
+      use damage_data, only : no_killed_elems, dam_ptr, max_dam_state,
+     &                        crack_growth_type, num_user_kill_elems,
+     &                        release_type, user_kill_list_now,
+     &                        all_elems_killed, killed_element_limit,
+     &                        num_elements_killed, kill_order,
+     &                        smcs_list_file_flag, smcs_list_file_name,
+     &                        num_kill_order_list,
+     &                        stop_killed_elist_length,
+     &                        deleted_elist_to_stop                         
+c                                                         
       implicit none
 c
-      integer :: step, iter
-      logical :: debug                                                    
+      integer, intent(in) :: step, iter
+      logical, intent(in) :: debug                                                                                                                                   
 c                                                                               
-      integer, parameter :: max_local_list=200 ! max elements that
+c               local declarations                                               
+c
+      integer, parameter :: max_local_list=500 ! max elements that
 c                                                can be killed this call    
 c                                       
       integer :: local_packet(max_local_list), elem, elem_ptr,
@@ -108,9 +124,9 @@ c
       integer, parameter :: local_pkt_type(5) = (/ 20, 0, 21, 10, 0 / )                   
       logical :: blk_killed, killed_this_time, killed_found,                
      &           kill_the_elem, elems_left, ldummy1, ldummy2,
-     &           local_debug                                                                                                                           
+     &           local_debug, stop_solution    
+      logical, external :: scan_entry_in_list                                                                                                                       
       double precision ::                                                        
-     &   dummy_arg, dummy_arg2, dummy_arg3, dummy_arg4, dummy_arg5,
      &   porosity, eps_plas, eps_crit,              
      &   values(20), local_status(max_local_list,3), orig_poros,                
      &   ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
@@ -134,7 +150,8 @@ c
       local_count       = 0                                                           
       found_exponential = .false.                                               
       found_ppr         = .false.                                               
-      found_cavit       = .false.                                               
+      found_cavit       = .false.    
+      stop_solution     = .false.                                           
 c     
       do elem = 1, noelem
 c          
@@ -159,16 +176,18 @@ c                 internal force release using fixed no.
 c                 of load steps or the traction-separation law.                 
 c                                                                               
          select case( crack_growth_type )
-         case( 1 )  ! GTN or SMCS   
-            call dam_param( elem, kill_the_elem, debug, porosity,              
-     &                      eps_plas, eps_crit, dummy_arg, dummy_arg2,           
-     &                      ext_gurson, ext_shape, ext_spacing,
-     &                      dummy_arg3, dummy_arg4, dummy_arg5  )
-         case( 3 )  ! GTN or SMCS   
-            call dam_param( elem, kill_the_elem, debug, porosity,              
-     &                      eps_plas, eps_crit, dummy_arg, dummy_arg2,           
-     &                      ext_gurson, ext_shape, ext_spacing,
-     &                      avg_triaxiality, avg_zeta, avg_bar_theta )
+         case( 1 )  ! GTN
+            call dam_param(
+     &         elem=elem, kill_now=kill_the_elem, debug=debug,
+     &         porosity=porosity, eps_plas=eps_plas, eps_crit=eps_crit,
+     &         ext_gurson=ext_gurson, ext_shape=ext_shape,
+     &         ext_spacing=ext_spacing )
+         case( 3 )  ! SMCS   
+            call dam_param(
+     &         elem=elem, kill_now=kill_the_elem, debug=debug,              
+     &         eps_plas=eps_plas, eps_crit=eps_crit,           
+     &         avg_triaxiality=avg_triaxiality, avg_zeta=avg_zeta, 
+     &         avg_bar_theta=avg_bar_theta )
          case( 4 )
             call dam_param_cohes( elem, kill_the_elem, debug,                  
      &                            values, 2 )  
@@ -210,7 +229,17 @@ c
          call store_ifv( elem, elem_ptr, debug )                             
          call update_node_elecnt( elem, debug )                              
          if( release_type .eq. 2 ) call growth_set_dbar( elem,              
-     &             elem_ptr, debug, -1, dummy_arg ) 
+     &             elem_ptr, debug, -1 ) 
+c
+c                 the user may have provided a list if elements.
+c                 if this newly killed element is is the list,
+c                 stop solution at cleanup in this routine.
+c
+         if( stop_killed_elist_length > 0 ) then
+           if( scan_entry_in_list( elem, deleted_elist_to_stop, 
+     &         stop_killed_elist_length ) ) stop_solution = .true.
+         end if
+
 c                         
       end do  ! over all model elements                                         
 c                                                                               
@@ -244,7 +273,6 @@ c             no free nodes.
 c                                                                               
       if( .not. no_killed_elems ) call chk_free_nodes( debug )                 
 c                                                                               
-
 c         (7) if MPI, then all processors need to know what blocks              
 c             and elements have been killed.  Send dam_blk_killed               
 c             and dam_state.  Also have processors kill any elements            
@@ -253,8 +281,20 @@ c             this is a dummy for non-MPI
 c                                                                               
       call wmpi_send_growth( killed_this_time )                                
 c                                                                               
+c         (8) if limit on number of killed elements is exceeded,
+c             stop the solution.
+c
       if( num_elements_killed > killed_element_limit ) then
           write(out,9000) killed_element_limit
+          call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
+          call warp3d_normal_stop
+      end if
+c                                                                               
+c         (9) the user may have provided a list of elements
+c             to stop the analysis if <any> of them are killed
+c             stop the solution.
+      if( stop_solution ) then
+          write(out,9010) 
           call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
           call warp3d_normal_stop
       end if
@@ -264,6 +304,10 @@ c
  9000 format(/,1x,">>>>> Number of currently killed (deleted)",
      & " elements has reached the ",
      &       /,7x,"user-specified limit of: ",i6,".",
+     &       /,7x,"Restart file: kill_limit_restart.db written.",
+     &       /,7x,"Job ended normally."// )
+ 9010 format(/,1x,">>>>> An element just killed appears in the user",
+     & " defined list to stop the solution.",
      &       /,7x,"Restart file: kill_limit_restart.db written.",
      &       /,7x,"Job ended normally."// )
 c                                                                               
@@ -404,8 +448,8 @@ c
              call store_ifv( elem, elem_ptr, debug )                            
              call update_node_elecnt( elem, debug )                             
              if ( release_type .eq. 2 )                                         
-     &             call growth_set_dbar( elem, elem_ptr, debug,                 
-     &                                        -1, dummy_arg )                   
+     &          call growth_set_dbar( elem, elem_ptr,
+     &               debug, -1 )                   
           end if                                                                
         end if                                                                  
       end do  ! chk_kill
@@ -449,7 +493,7 @@ c
              local_status(local_count,3) = 6.0                             
            end if                                                          
            if( option_cavit) then                                          
-             write(*,*) ' cavit death packets not implemented'             
+             write(out,*) ' cavit death packets not implemented'             
              call die_abort                                                
            end if  
       end select 
@@ -480,477 +524,6 @@ c
       end subroutine chk_elem_kill_chk_blk
 c
       end subroutine chk_elem_kill                                                                      
-                                                                      
-c                                          
-c     ****************************************************************          
-c     *                                                              *          
-c     *                      subroutine dam_param                    *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 11/20/20 rhd               *          
-c     *                                                              *          
-c     *     for a killable element not yet killed, determine if the  *          
-c     *     element should be killed now. isolating decision here    *          
-c     *     makes possible different kinds of killing criteria       *          
-c     *                                                              *          
-c     ****************************************************************          
-c                                                                               
-c                                                                               
-      subroutine dam_param( elem, kill_now, debug, porosity,                    
-     &                      eps_plas, eps_crit, sig_mean, sig_mises,            
-     &                      ext_gurson, ext_shape, ext_spacing,
-     &                      avg_triaxiality, avg_zeta, avg_bar_theta )
-      use global_data, only : iprops, out  ! old common.main
-c                                                                               
-c        elem      -- (input)   element number to be checked for                
-c                               killing                                         
-c        kill_now  -- (output)  set .true. if element should be                 
-c                               killed now                                      
-c        debug     -- (input)   .true. if the calling routine wants             
-c                               debugging info output                           
-c        porosity  -- (output)  for Gurson-type material models,                
-c                               this is the average element porosity.           
-c                               Just used for output messages                   
-c        eps_plas  -- (output)  for SMCS type models. this the                  
-c                               average plastic strain over element.            
-c                               Just used for output                            
-c        eps_crit  -- (output)  for SMCS type models. this the                  
-c                               critical plastic strain value.                  
-c                               Just used for output                            
-c        sig_mean  -- (output)  all models. average mean stress                 
-c                               over element. just used for output              
-c                               messages                                        
-c        sig_mises -- (ouput)   all models. average mises stress                
-c                               over element. just used for output.             
-c        ext_gurson -- (output) logical = .true. if element death using         
-c                               the extended gurson model                       
-c        ext_shape -- (output)  W (shape) parameter for extended gurson model   
-c        ext_spacing -- (output) X (spacing) parameter for extended             
-c                                gurson model    
-c        avg_triaxiality -- (output) plastic strain weighted average of
-c                                triaxiality over loading history                               
-c        avg_zeta  --  (output) plastic strain weighted average of
-c                                Lode parameter (-1<=mean_zeta<=1)
-c                                over loading history                               
-c        avg_bar_theta --  (output) plastic strain weighted average of
-c                                MIT MMC Lode parameter
-c                                (-1<=mean_bar_theta<=1)
-c                                over loading history                               
-c                                                                               
-c                                                                               
-      use main_data,       only : elems_to_blocks                               
-      use elem_block_data, only : history_blocks, eps_n_blocks,                 
-     &                            urcs_n_blocks, history_blk_list               
-      use damage_data, only     : crack_growth_type 
-c                                                         
-      implicit none                                                    
-c                                                                               
-c              parameter declarations                                           
-c                             
-      integer :: elem                                                  
-      logical :: kill_now, debug, ext_gurson                                       
-      double precision :: porosity, eps_plas, eps_crit, sig_mean,
-     &                    sig_mises, ext_shape, ext_spacing,
-     &                    avg_triaxiality, avg_zeta, avg_bar_theta 
-      double precision, dimension(:), pointer :: history, urcs_n, eps_n                         
-c                                                                               
-c              local declarations                                               
-c       
-      integer :: mat_model
-      double precision :: mean_zeta, mean_omega, triaxiality,
-     &                    mean_bar_theta
-      double precision, parameter :: zero = 0.d0, one = 1.0d0                         
-c   
-      ext_gurson  = .false.                                                     
-      ext_shape   = one                                                         
-      ext_spacing = zero                                                        
-c                                                                               
-      select case( crack_growth_type )                         
-c                                                                               
-c                                                                               
-c           1 gurson model- the material model 3 is the standard         
-c                           Gurson model, 6 is the extended                
-c                           Gurson model. call model dependent routine     
-c                           to assess element status for killing and       
-c                           to compute parameters.                         
-c                                                                               
-      case( 1) 
-       mat_model = iprops(25,elem)                                               
-       if( mat_model .eq. 3 ) then                                               
-         call dam_param_gt( elem, kill_now, debug, porosity,                    
-     &                      sig_mean, sig_mises )                               
-       else if( mat_model .eq. 6 ) then                                          
-         ext_gurson = .true.                                                    
-         call dam_param_agt( elem, kill_now, debug, porosity,                   
-     &                       sig_mean, sig_mises, ext_spacing,                  
-     &                       ext_shape )                                        
-       else                                                                      
-         write(out,9100) 1; write(out,9120)                                                        
-         call die_gracefully                                                       
-       end if                                                                    
-c                                                                               
-c           2  ctoa - not processed here                  
-c                                                                               
-      case(2) 
-       write(out,9100) 2; write(out,9120)                                                      
-       call die_gracefully                                                       
-c                                                                               
-c           3 smcs - failure based on a stress modified critical strain     
-c
-      case(3)   
-       call dam_param_3_get_values( 
-     &    elem, debug, eps_plas, eps_crit, sig_mean, sig_mises,
-     &    triaxiality, mean_zeta, mean_omega, mean_bar_theta, 1,
-     &    kill_now )       
-       avg_triaxiality = triaxiality      
-       avg_zeta        = mean_zeta
-       avg_bar_theta   = mean_bar_theta
-c                                                                               
-c           4 cohesive - not processed here               
-c                                                                                                                                                             
-      case(4)
-        write(out,9100) 4; write(out,9120)                                                          
-        call die_gracefully                                                       
-c
-      end select  
-c
-      return                                                              
-c                                                                               
- 9100 format('>>>> FATAL ERROR: invalid model no. in dam_param @:',i1 )                
- 9120 format('                  job terminated....')                
-c    
-      end
-c     ****************************************************************          
-c     *                                                              *          
-c     *              subroutine dam_param_3_get_values               *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 11/21/20 rhd               *          
-c     *                                                              *          
-c     *             SMCS compute values for this element             *
-c     *                                                              *          
-c     ****************************************************************          
-c
-                                                                     
-      subroutine dam_param_3_get_values( elem, debug,                     
-     &                      eps_plas, eps_crit, sig_mean, sig_mises,            
-     &                      triaxiality, mean_zeta, mean_omega,
-     &                      mean_bar_theta, dowhat, kill_now )                
-      use global_data, only : iprops, nstr, nstrs, out ! old common.main
-      use main_data,       only : elems_to_blocks                               
-      use elem_block_data, only : history_blocks, eps_n_blocks,                 
-     &                            urcs_n_blocks, history_blk_list               
-      use damage_data, only     : dam_ptr, smcs_gamma, smcs_alpha, 
-     &                            smcs_beta,  smcs_type, 
-     &                            smcs_beta_1,smcs_beta_2, 
-     &                            smcs_a_plus, smcs_a_minus,
-     &                            smcs_kappa, smcs_alpha_1, 
-     &                            smcs_alpha_2, max_eps_critical,
-     &                            smcs_cutoff_triaxiality,
-     &                            smcs_type_4_A, smcs_type_4_n,
-     &                            smcs_type_4_c1, smcs_type_4_c2,
-     &                            smcs_type_4_c3                                                          
-      use elem_extinct_data, only : smcs_old_epsplas, smcs_weighted_T,
-     &                              smcs_weighted_zeta,
-     &                              smcs_weighted_bar_theta
-c                                                                               
-c        elem      -- (input)   element number to be checked for                
-c                               killing                                         
-c        debug     -- (input)   .true. if the calling routine wants             
-c                               debugging info output                           
-c        eps_plas  -- (output)  for SMCS type models. this the current                 
-c                               average plastic strain over element.            
-c                               Just used for output                            
-c        eps_crit  -- (output)  for SMCS type models. this the                  
-c                               current, predicted critical 
-c                               plastic strain value.                  
-c                               Just used for output                            
-c        sig_mean  -- (output)  all models. average, current mean stress                 
-c                               over element. just used for output              
-c                               messages                                        
-c        sig_mises -- (ouput)   all models. average, current mises 
-c                               stress over element. for output.             
-c        triaxiality -- (output) plastic strain weighted average of
-c                                triaxiality over loading history 
-c        mean_zeta -- (output)  Lode angle parameter average weighted
-c                               by plastic strain
-c        mean_omega -- (output)  Nahshon-Hutchinson Lode angle parameter
-c                                average weighted by plastic strain
-c        mean_bar_theta(output)  bar_theta angle in the MMC critical
-c                                strain function from MIT group
-c                                average weighted by plastic strain
-c        dowhat    --  (input)   = 1 return damage variables - no update.
-c                                    set kill now flag
-c                                = 2 just return values - no update 
-c                                = 3 return instantaneous values for 
-c                                  non-killable elem
-c                                = 4 compute/update damage variables  
-c        kill_now  --  (output)  if dowhat = 1, set flag if critical
-c                                condition reached                           
-c                                                                                                                                                              
-      implicit none                                                    
-c                                                                               
-c               parameter declarations                                           
-c                             
-      integer :: elem, dowhat                                                  
-      logical :: debug, kill_now                                       
-      double precision :: eps_crit, sig_mean, sig_mises, triaxiality,
-     &                    eps_plas, mean_zeta, mean_omega,
-     &                    mean_bar_theta
-c                                                                               
-c               local declarations                                               
-c
-      double precision, dimension(:), pointer :: urcs_n, eps_n                         
-      integer :: gp, blk, epsoffset, mat_model, elem_type,
-     &           ngp, rel_elem, sigoffset, j, elem_ptr
-      double precision ::  sig(6), eps(6), fpngp,
-     &                     mean_triaxiality,
-     &                     epspls_vec(27),s11, s22, s33, s12, s13, s23,
-     &                     j2, j3, zeta, omega, t1, t2, t3, t4, 
-     &                     p_omega, omega2, bar_theta
-      logical :: update, local_debug, threed_solid_elem, l1, l2, l3,
-     &           l4, l5, l6, l7, l8, l9, l10
-     &          
-      double precision, parameter :: zero = 0.d0,
-     &     third = 1.d0/3.0d0, iroot2 = 1.0d0/dsqrt(2.0d0), six = 6.0d0,
-     &     one = 1.0d0, two = 2.0d0, onept5 = 1.5d0, three = 3.d0,
-     &     root3 = dsqrt(3.0d0), half = 0.5d0, thirteenpt5 = 13.5d0,
-     &     small_plastic_strain = 1.0d-07, small_mises = 1.0d-07,
-     &     type_2_tol = 1.0d-06, pi = 3.14159265359d0,
-     &     type_4_toler = 0.0001d0
-c                              
-c               stress/strain vectors are (x,y,z,xy,yz,xz).                
-c
-      update      = dowhat .eq. 4
-      local_debug = .false.  !   elem == 16
-      if( local_debug )then
-         write(out,*) '... dam_param_3_get_values, dowhat: ...', dowhat
-      end if
-      kill_now = .false.
-c
-      elem_type   = iprops(1,elem)
-      elem_ptr    = dam_ptr(elem)
-      ngp         = iprops(6,elem)                                           
-      blk         = elems_to_blocks(elem,1)                                  
-      rel_elem    = elems_to_blocks(elem,2)                                  
-      epsoffset   = (rel_elem-1)*nstr*ngp                                    
-      sigoffset   = (rel_elem-1)*nstrs*ngp                                   
-      urcs_n      => urcs_n_blocks(blk)%ptr                                  
-      eps_n       => eps_n_blocks(blk)%ptr    
-c
-      eps_plas    = zero
-      eps_crit    = max_eps_critical
-      sig_mean    = zero
-      sig_mises   = zero
-      triaxiality = zero
-      mean_zeta   = zero
-      mean_omega  = zero  
-      mean_bar_theta = zero                             
-      sig         = zero
-      eps         = zero  !   strains not used current code       
-      call set_element_type( elem_type, threed_solid_elem, l1, l2, l3,
-     &                       l4, l5, l6, l7, l8, l9, l10 )  
-      if( .not. threed_solid_elem ) return                                 
-c
-      call mm_return_values( "plastic_strain", elem, epspls_vec, ngp )
-c
-c               average stresses over all integration points
-c
-      if( ngp == 8 ) then  ! for optimizer
-       do gp = 1, 8    
-        do j = 1, 6                                                     
-         sig(j) = sig(j) + urcs_n(sigoffset+j)  
-         eps(j) = eps(j) + eps_n(epsoffset+j)
-        end do                                      
-        eps_plas  = eps_plas + epspls_vec(gp)
-        epsoffset = epsoffset + nstr                                         
-        sigoffset = sigoffset + nstrs                                        
-       end do   
-      else  ! general case
-       do gp = 1, ngp    
-        do j = 1, 6                                                     
-         sig(j) = sig(j) + urcs_n(sigoffset+j)  
-         eps(j) = eps(j) + eps_n(epsoffset+j)
-        end do                                      
-        eps_plas  = eps_plas + epspls_vec(gp)
-        epsoffset = epsoffset + nstr                                         
-        sigoffset = sigoffset + nstrs                                        
-       end do 
-      end if  
-c
-c               average mean stress, mises stress, plastic strain,
-c               Lode parameters
-c
-      fpngp     = one / dble( ngp )
-      eps_plas  = fpngp * eps_plas     !  averaged at element center
-      sig = sig * fpngp                !    ""
-      sig_mean  = (sig(1) + sig(2) + sig(3)) * third                    
-      s11 = sig(1) - sig_mean
-      s22 = sig(2) - sig_mean
-      s33 = sig(3) - sig_mean
-      s12 = sig(4)
-      s13 = sig(5)
-      s23 = sig(6)
-      j2 = half * ( s11**2 + s22**2 + s33**2 + 
-     &              two*(s12**2 + s23**2 + s13**2))
-      j3 = s11*s22*s33 + two*s12*s23*s13 - s11*s23*s23 -
-     &     s22*s13*s13 - s33*s12*s12
-      sig_mises = sqrt( three * j2 )
-      zeta      = zero  !  called \xi in manual
-      omega     = zero
-      bar_theta = zero
-      if( sig_mises > small_mises ) then
-        zeta  = onept5*root3 * j3 / j2**onept5
-        omega = one - zeta*zeta 
-        t1    = thirteenpt5 * j3 / sig_mises**3
-        bar_theta = one - ( acos( t1 ) * two / pi )
-        if( abs(bar_theta) > one+type_4_toler ) then
-          write(out,9120) elem, bar_theta  ! improve message
-          call die_abort
-        endif
-      end if
-      if( local_debug ) write(out,9100) sig_mean, sig_mises, eps_plas
-c
-      if( dowhat == 3 ) then ! compute values for non-killable elem
-         eps_crit       = max_eps_critical
-         mean_zeta      = zeta
-         mean_omega     = omega
-         mean_bar_theta = bar_theta
-         triaxiality = 100.0d0   ! in cases mises -> 0                                             
-         if( sig_mises .gt. small_mises )
-     &         triaxiality = sig_mean / sig_mises 
-         return
-       end if
-c
-c               update plastic strain weighted triaxiality, zeta,
-c               omega, bar_theta. update saved plastic strain.
-c               only update if instantaneous triaxiality exceeds
-c               user-specified cutoff value
-c              
-      if( update ) call dam_param_3_get_values_a
-c
-c               if no plastic strain yet, set defaults and return.
-c               cannot compute weighed averages over history (divide
-c               by zero plastic strain).
-c
-      if( eps_plas < small_plastic_strain ) then 
-        triaxiality = zero
-        eps_crit    = max_eps_critical
-        mean_zeta   = zero
-        mean_omega  = zero
-        mean_bar_theta = zero
-        return
-      end if
-c
-c               use weighted triaxiality, zeta, omega, bar_theta
-c               values to set critical plastic strain
-c
-      mean_triaxiality =  smcs_weighted_T(elem_ptr) / eps_plas
-      triaxiality    = mean_triaxiality  ! to return
-      mean_zeta      = smcs_weighted_zeta(elem_ptr) / eps_plas
-      mean_omega     = one - mean_zeta**2
-      mean_bar_theta = smcs_weighted_bar_theta(elem_ptr) / eps_plas
-      eps_crit       = max_eps_critical
-      if( triaxiality <= smcs_cutoff_triaxiality ) return
-c
-      if( smcs_type .eq. 1 ) then
-c
-          t2 = exp(-smcs_kappa*abs(mean_zeta))
-          t1 = smcs_alpha * exp(-smcs_beta * mean_triaxiality)
-          eps_crit = smcs_gamma + t1*t2
-          if( local_debug ) write(out,9110) mean_triaxiality,eps_crit
-c
-      elseif( smcs_type .eq. 2 ) then
-c
-          t3 = exp(-smcs_kappa*abs(mean_zeta))
-          t2 = smcs_beta_2 * exp(-smcs_a_minus * mean_triaxiality)
-          t1 = smcs_beta_1 * exp(smcs_a_plus * mean_triaxiality)
-          t4 = t1 - t2
-          if( abs(t4) < type_2_tol .or. t4 < zero ) then
-            eps_crit = max_eps_critical
-          else
-            eps_crit = smcs_gamma + t3 / t4
-          end if
-c
-      elseif( smcs_type .eq. 3 ) then
-c
-          p_omega = (one - mean_omega)**2
-          t1 = smcs_alpha_1*exp(-smcs_beta_1 * mean_triaxiality )
-          t2 = smcs_alpha_2*exp(-smcs_beta_2 * mean_triaxiality )
-          eps_crit = (one-p_omega)*t1 + p_omega*t2
-c
-      elseif( smcs_type .eq. 4 ) then
-c
-        block
-          double precision :: A, n, c1, c2, c3, eta, t1, t2, ta, tb,
-     &                        t1c, t1s, t1sec
-          A     = smcs_type_4_A
-          n     = smcs_type_4_n
-          c1    = smcs_type_4_c1
-          c2    = smcs_type_4_c2
-          c3    = smcs_type_4_c3
-          eta   = mean_triaxiality
-          t1    = mean_bar_theta * pi / six
-          t1c   = cos( t1 )
-          t1s   = sin( t1 )
-          t1sec = one / t1c
-          t2 = root3 / ( two - root3 )
-          ta = (A/c2) * ( c3 + t2*(one-c3)*(t1sec-one) )
-          tb = sqrt( third*(one+c1*c1) ) * t1c + 
-     &         c1*(eta+third*t1s)
-          eps_crit = ( ta * tb )**(-one/n)
-        end block
-c
-      else
-          write(out,9130) elem, smcs_type
-          call die_abort
-      end if
-c      
-      kill_now = ( eps_plas - eps_crit ) >= zero .or. 
-     &             eps_plas >= max_eps_critical
-c
-      return
-c
- 9100 format(10x,'mean, mises, eps_pls:',2f10.3,f12.6)
- 9110 format(10x,'T_mean, eps crit: ',f10.3,f12.6) 
- 9120 format(/1x,'>>>>> error: inconsistency in bar_theta computation',
-     & ' for smcs type 4',/,
-     & 14x,'element: ',i8,' bar_theta value: ',f6.2,/,
-     & 14x,'value must lie in range (-1.0,1.0)',/,
-     & 14x,'job aborted by routine dam_param_3_get_values',/)
- 9130 format(/1x,'>>>>> error: inconsistency in smcs_type',/,
-     & 14x,'element: ',i8,' smcs_type: ',i5,/,
-     & 14x,'job aborted by routine dam_param_3_get_values',/)
-c
-      contains
-c     ========
-c
-      subroutine dam_param_3_get_values_a
-      implicit none
-c
-      double precision :: deps_plas, now_triaxiality
-c
-      deps_plas = eps_plas - smcs_old_epsplas(elem_ptr)
-      smcs_old_epsplas(elem_ptr) = eps_plas 
-c
-      if( sig_mises <= small_mises ) return
-c
-      now_triaxiality = sig_mean / sig_mises 
-      if( now_triaxiality < smcs_cutoff_triaxiality ) return
-c
-      smcs_weighted_T(elem_ptr) = 
-     &      smcs_weighted_T(elem_ptr) + deps_plas * now_triaxiality
-      smcs_weighted_zeta(elem_ptr) = 
-     &      smcs_weighted_zeta(elem_ptr) + deps_plas * zeta
-      smcs_weighted_bar_theta(elem_ptr) = 
-     &      smcs_weighted_bar_theta(elem_ptr) + deps_plas * bar_theta
-c
-      return
-      end subroutine dam_param_3_get_values_a
-
-      end subroutine dam_param_3_get_values
 
 
 c     ****************************************************************          
@@ -959,7 +532,7 @@ c     *                      subroutine dam_init2                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 04/19/2019 rhd             *          
+c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *        This routine is called when damage to an element      *          
 c     *        has occurred.  It initializes arrays to support       *          
@@ -970,18 +543,21 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dam_init2( debug )                                             
-      use global_data ! old common.main
+      subroutine dam_init2( debug ) 
+c                                            
+      use global_data, only : out, nonode, noelem, iprops, c
 c                                                                               
       use elem_extinct_data, only : dam_node_elecnt, dam_face_nodes             
       use main_data, only : incmap, incid, elems_to_blocks,                     
      &                      inverse_incidences                                  
       use elem_block_data, only : cdest_blocks                                  
-      use damage_data                                                           
+      use damage_data, only : no_killed_elems, release_type, dam_ptr, 
+     &                        crk_pln_normal_idx, crack_plane_coord,
+     &                        gurson_cell_size                                                           
 c                                                                               
       implicit none                                                    
 c                                                                               
-      logical :: debug
+      logical, intent(in) :: debug
 c
       integer :: i, elem, elem_ptr, incptr, num_enodes, k1, k2,
      &           face_count, blk, rel_elem, enode, snode
@@ -998,7 +574,7 @@ c
       end do                                                                    
       if( debug ) then                                                         
          do i = 1, nonode                                                       
-            write (out,9030) i, dam_node_elecnt(i)                              
+            write(out,9030) i, dam_node_elecnt(i)                              
          end do                                                                 
       end if                                                                    
 c                                                                               
@@ -1068,7 +644,7 @@ c     *                      subroutine chk_free_nodes               *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 04/19/2019 rhd             *          
+c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *        check each node in the structure to                   *          
 c     *        see if they are no longer connected to any element.   *          
@@ -1076,23 +652,21 @@ c     *        if so, it constrains them.                            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
       subroutine chk_free_nodes( debug )                                        
       use global_data ! old common.main
 c                                                                               
       use elem_extinct_data, only : dam_node_elecnt                             
       use main_data,         only : cnstrn, cnstrn_in                          
-      use damage_data                                                           
+      use damage_data, only : csttail                                                      
 c                                                                               
       implicit none                                                    
-c                                                                               
+c              
+      logical, intent(in) :: debug
+c
       integer :: node, num_dof, j, glbal_dof
-      logical :: debug, local_debug                                                                                                                                          
       double precision, parameter :: zero = 0.0d0                                                          
 c
-      local_debug = debug
-      if( local_debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
+      if( debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
 c                                                                               
 c              Loop over each node -- if a node is now attatched to             
 c              no elements, constrain it.                                       
@@ -1104,7 +678,7 @@ c                putting in a new set of constraints.
 c                                                                               
       do node = 1, nonode                                                       
        if( dam_node_elecnt(node) .ne. 0 ) cycle                             
-       if( local_debug ) then                                                   
+       if( debug ) then                                                   
          write(out,*) 'free node ',node                                   
          write (out,9010) node,cnstrn(dstmap(node)),                      
      &          cnstrn(dstmap(node)+1),cnstrn(dstmap(node)+2)               
@@ -1121,8 +695,7 @@ c
        cstmap(csttail) = -1                                                
       end do                                                                    
 c                                                                               
- 9999 continue                                                                  
-      if ( local_debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
+      if ( debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
       return                                                                    
  9010 format('  old constraints for node ',i7,' :',3(1x,e14.6))                 
       end                                                                       
@@ -1132,7 +705,7 @@ c     *                      subroutine dam_print                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 9/29/2020 rhd              *          
+c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *     print status of killable elements or released nodes at   *
 c     *     the beginning of a load step.                            *       
@@ -1141,13 +714,15 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-c                                                                               
-      subroutine dam_print( step, iter )                                        
-      use global_data ! old common.main
-      use damage_data                                                           
+      subroutine dam_print( step, iter ) 
+c                                       
+      use damage_data, only : crack_growth_type, print_status, 
+     &                        print_top_list, const_front, smcs_states                                                           
+c
       implicit none    
 c
-      integer :: step, iter  
+      integer, intent(in) :: step, iter  
+c
       logical :: doprint                                              
 c                                                                               
 c           check to make sure crack growth is on and some type of
@@ -1374,86 +949,14 @@ c
 c                                                                               
  9000 format(5(3x,4e14.6,/))                                                    
       end                                                                       
-c     ****************************************************************          
-c     *                                                              *          
-c     *                 subroutine growth_set_dbar                   *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 04/19/2019 rhd             *          
-c     *                                                              *          
-c     *  supports traction-separation law release option. compute    *          
-c     *  elongation of element normal to crack plane when first      *          
-c     *  killed (option=0) or at some load step later (option=1)     *          
-c     *                                                              *          
-c     ****************************************************************          
-c                                                                               
-c                                                                               
-      subroutine growth_set_dbar( elem, elem_ptr, debug, action,                
-     &                            dbar_now )                                    
-      use global_data ! old common.main
-      use elem_extinct_data, only : dam_face_nodes, dam_dbar_elems              
-      use damage_data                                                           
-c                                                                               
-      implicit none
-c                
-      integer :: elem, elem_ptr, action                                    
-      logical :: debug
-c
-      integer :: i, snode
-      integer, parameter :: num_face_nodes = 4
-      logical, parameter :: local_debug = .false.                                                
-      double precision :: sum, node_displ(3), dbar_now          
-      double precision, parameter :: zero = 0.d0                           
-c                                                                               
-      if( debug ) write (out,*) '>>>> in growth_set_dbar'                      
-c                                                                               
-      sum = zero       
-c                                                         
-      if( action .lt. 0 ) then                                                 
-        do i = 1, num_face_nodes                                                
-          snode         = dam_face_nodes(i,elem_ptr)                            
-          node_displ(1) = u(dstmap(snode)+0)                                    
-          node_displ(2) = u(dstmap(snode)+1)                                    
-          node_displ(3) = u(dstmap(snode)+2)                                    
-          sum           = sum + node_displ(crk_pln_normal_idx)                  
-        end do                                                                  
-      end if   
-c                                                                 
-      if( action .gt. 0 ) then                                                 
-        do i = 1, num_face_nodes                                                
-          snode         = dam_face_nodes(i,elem_ptr)                            
-          node_displ(1) = u(dstmap(snode)+0) + du(dstmap(snode)+0)              
-          node_displ(2) = u(dstmap(snode)+1) + du(dstmap(snode)+1)              
-          node_displ(3) = u(dstmap(snode)+2) + du(dstmap(snode)+2)              
-          sum           = sum + node_displ(crk_pln_normal_idx)                  
-        end do                                                                  
-      end if                                                                    
-c                                                                               
-      sum = sum / dble(num_face_nodes)                                          
-      dbar_now = gurson_cell_size + sum                                         
-      if( abs(action) .eq. 1 ) then                                            
-       dam_dbar_elems(1,elem_ptr) = dbar_now                                    
-       dam_dbar_elems(2,elem_ptr) = zero                                        
-      end if                                                                    
-c                                                                               
-      if( local_debug ) write(out,9000)  action, elem, sum, dbar_now                            
-c                                                                               
-      return                                                                    
-c                                                                               
- 9000 format(' > element release type 2. Cell height computation.',             
-     & /,5x,'action: ',i1,10x,'element: ',i7,' avg. face displ: ',f10.6,        
-     & ' D-bar now: ',f10.6 )                                                   
-c                                                                               
-      end                                                                       
-c                                                                               
+c                                                                           
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      function chk_killed                     *          
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/18/2019 rhd             *          
+c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *     given an element, returns true if the                    *          
 c     *     element had been killed, or false otherwise.             *          
@@ -1467,7 +970,7 @@ c
 c                                                                               
       implicit none
 c
-      integer :: elem
+      integer, intent(in) :: elem
       logical :: t_chk_killed    
 c
       integer :: elem_ptr                                         
@@ -1483,14 +986,13 @@ c
       end                                                                       
 c                                                                               
 c
-c
 c     ****************************************************************
 c     *                                                              *
 c     *                      function chk_killed_blk                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/21/2019                  *
+c     *                   last modified : 12/6/2020 rhd              *
 c     *                                                              *
 c     *     for the specified block of elements, return a logical    *
 c     *     vector indicating if each element is killed or active.   *
@@ -1499,14 +1001,16 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine chk_killed_blk( block_no, status_vec, block_killed )
+c
       use global_data, only : out, elblks, mxvl ! old common.main
 c
       use elem_extinct_data, only : dam_state, dam_blk_killed
       use damage_data, only : growth_by_kill, dam_ptr
 c
       implicit none
-      integer :: block_no
-      logical :: status_vec(mxvl), block_killed
+c
+      integer, intent(in) :: block_no
+      logical, intent(out) :: status_vec(mxvl), block_killed
 c      
       integer :: span, felem, i, n, nn, elem, elem_ptr
       logical, parameter :: check_consistency = .false.
@@ -1562,6 +1066,7 @@ c
           if( dam_state(elem_ptr) .gt. 0 ) status_vec(i) = .true.
         end if
       end do
+c
       return
 c      
  9100 format(/,'FATAL ERROR: chk_killed_nlk. Contact WARP3D group',             
@@ -1582,7 +1087,7 @@ c     *                     subroutine damage_update                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 09/7/2019 rhd              *          
+c     *                   last modified : 12/7/2020 rhd              *          
 c     *                                                              *          
 c     *        certain damage models need variables updated outside  *
 c     *        element stress/history data (e.g. smcs )              *
@@ -1592,15 +1097,17 @@ c
 c                                                                               
       subroutine damage_update( now_step, now_iter )
 c
-      use global_data ! old common.main
+      use global_data, only : out, noelem
       use elem_extinct_data, only : dam_state
-      use damage_data, only :  crack_growth_type, dam_ptr                                                      
+      use damage_data, only :  crack_growth_type, dam_ptr        
+      use dam_param_code, only : dam_param_3_get_values 
+c                                             
       implicit none
 c
       integer :: now_step, now_iter
 c                                       
       integer :: elem, elem_ptr, dowhat
-      logical :: debug, local_debug, l1, process                                                    
+      logical :: debug, local_debug, process                                                    
       double precision :: d1, d2, d3, d4, d5, d6, d7, d8
 c        
       debug = .false.
@@ -1622,6 +1129,8 @@ c
 c
 c              Loop for all elements. process killable elements.
 c                                                                               
+c$OMP PARALLEL DO PRIVATE( elem, elem_ptr, dowhat, d1, d2, d3, d4, 
+c$OMP&                     d5, d6, d7, d8 )
       do elem = 1, noelem
          elem_ptr = dam_ptr(elem)                                               
          if( elem_ptr .eq. 0 ) cycle     ! element not killable                                      
@@ -1638,10 +1147,11 @@ c
          case( 3 ) !  SMCS   
           dowhat = 4
           call dam_param_3_get_values( elem, debug, d1, d2, d3, d4,            
-     &                                 d5, d6, d7, d8, dowhat, l1 )                
+     &                                 d5, d6, d7, d8, dowhat )                
          end select 
 c                         
       end do  ! over all model elements                                         
+c$OMP END PARALLEL DO
 c      
       return    
       end

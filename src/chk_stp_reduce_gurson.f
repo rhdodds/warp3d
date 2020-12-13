@@ -20,7 +20,8 @@ c
       subroutine gurson_cut_step( debug )                                       
       use global_data ! old common.main
       use elem_extinct_data, only : old_porosity, dam_state                     
-      use damage_data                                                           
+      use damage_data        
+      use dam_param_code, only : dam_param                                                   
       implicit integer (a-z)                                                    
 c                                                                               
       logical debug                                                             

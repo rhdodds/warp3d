@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 11/20/20 rhd                    *          
+c     *              last modified : 12/12/20 rhd                    *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -19,9 +19,11 @@ c
 c                     arrays                                                    
 c                                                                               
       integer, save, allocatable :: dam_ptr(:),
-     &          smcs_states_intlst(:)                                
+     &          smcs_states_intlst(:), deleted_elist_to_stop(:)   
+c                            
       double precision ::                                                         
      &   del_poros(mxstp_store), del_deff(mxstp_store)   
+c
       integer :: user_kill_list_now(100)                      
 c                                                                               
 c                     scalar double precision/reals                             
@@ -57,7 +59,7 @@ c
      &   crack_front_end, crkfrnt_garbage_start, crkfrnt_garbage_end,           
      &   min_steps_for_release, num_nodes_thick, num_crack_fronts,              
      &   num_nodes_back, num_nodes_grwinc, num_steps_min,                       
-     &   num_elements_killed,                                                   
+     &   num_elements_killed, stop_killed_elist_length,                                                  
      &   num_elements_in_force_release, num_ctoa_released_nodes,
      &   num_user_kill_elems, killed_element_limit, num_top_list               
 c                                                                               

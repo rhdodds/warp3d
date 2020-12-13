@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/1/2020  rhd             *          
+c     *                   last modified : 12/5/2020  rhd             *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -19,6 +19,7 @@ c
       use elem_extinct_data                                                     
       use node_release_data                                                     
       use damage_data   
+      use dam_param_code, only : dam_param
 c                                                        
       implicit none 
 c

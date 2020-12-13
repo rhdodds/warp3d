@@ -115,7 +115,7 @@ c
 c          final average values over element. check average porosity            
 c          against user specified limit (in module damage_data)                 
 c                                                                               
-       fpngp = dble( ngp )                                                      
+      fpngp = dble( ngp )                                                      
       porosity = porosity / fpngp                                               
       sig_mean  = sig_mean * third / fpngp                                      
       sig_mises = sig_mises / fpngp                                             
@@ -305,7 +305,8 @@ c
 c                                                                               
       subroutine dam_print_elem1( step, iter )                                     
       use global_data ! old common.main
-      use main_data                                                             
+      use main_data   
+      use dam_param_code, only : dam_param                                                          
       use elem_extinct_data, only : dam_state, dam_print_list,                  
      &     old_porosity, old_mises, old_mean                                    
       use elem_block_data, only : history_blocks, history_blk_list              
@@ -315,7 +316,7 @@ c
       double precision                                                          
      &     porosity, orig_porosity, zero, ebarp, sigma_bar, d_poros,            
      &     max_d_poros, fpngp, ddum1, ddum2, sig_mean, sig_mises,               
-     &     ext_shape, ext_spacing, ddum3, ddum4, ddum_5                                              
+     &     ext_shape, ext_spacing, ddum3, ddum4, ddum5                                              
       double precision,                                                         
      &  dimension(:), pointer :: history                                        
       logical ldummy, debug, all_killed, lmises(num_print_list),                
@@ -389,7 +390,7 @@ c
          call dam_param( element, ldummy, debug, porosity,                      
      &                   ddum1, ddum2, sig_mean, sig_mises,                     
      &                   ext_gurson, ext_shape, ext_spacing,
-     &                   ddum3, ddum4 ddum5 )                   
+     &                   ddum3, ddum4, ddum5 )                   
 c                                                                               
 c             if the mises stress or mean stress from this step are             
 c             lower than the previous step, then put a * by the                 
@@ -498,7 +499,7 @@ c
 c                                                                               
          call dam_param( element, ldummy, debug, porosity,                      
      &                   ddum1, ddum2, sig_mean, sig_mises,                     
-     &                   ext_gurson, ext_shape, ext_spacing
+     &                   ext_gurson, ext_shape, ext_spacing,
      &                   ddum3, ddum4, ddum5 )                   
 c                                                                               
 c             if the mises stress or mean stress from this step are             

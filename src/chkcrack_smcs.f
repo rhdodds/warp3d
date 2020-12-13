@@ -29,6 +29,7 @@ c
      &                        print_top_list, num_top_list, 
      &                        smcs_states, smcs_stream, smcs_text,
      &                        smcs_states_intlst
+      use dam_param_code, only : dam_param_3_get_values
 c                                                        
       implicit none                                                    
 c
@@ -49,7 +50,7 @@ c
       double precision, parameter :: zero = 0.0d0, one = 1.0d0,
      &                               eps_plas_tol = 1.0d-06,  
      &                               ratio_tol = 0.001d0              
-      logical :: ldummy, debug, skip_element
+      logical :: debug, skip_element
       character(len=1) :: cflag                                          
 c                                                                               
       write(out,*) ' '                                                          
@@ -110,7 +111,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega, 
-     &                   mean_bar_theta, 2, ldummy )  
+     &                   mean_bar_theta, 2 )  
          skip_element = eps_plas < eps_plas_tol
          if( skip_element ) cycle
          cflag = " "
@@ -232,7 +233,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   mean_bar_theta, 2, ldummy )  
+     &                   mean_bar_theta, 2 )  
          strain_ratios(k) =  eps_plas / eps_crit
       end do  ! elem_loop
 c
@@ -273,7 +274,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   mean_bar_theta, 2, ldummy )  
+     &                   mean_bar_theta, 2 )  
          if( load_size_control_crk_grth ) then                              
             d_eps_plas = eps_plas - old_plast_strain(dam_ptr(element))                           
             max_d_eps_plas = max(max_d_eps_plas, d_eps_plas)                 
@@ -377,7 +378,7 @@ c
         if( get_values ) then
            call dam_param_3_get_values( element, debug, eps_plas,               
      &           eps_crit, sig_mean, sig_mises, triaxiality, 
-     &           mean_zeta, mean_omega, mean_bar_theta, 3, ldummy )  
+     &           mean_zeta, mean_omega, mean_bar_theta, 3 )  
            evalues(1) = eps_plas
            evalues(2) = eps_crit
            evalues(3) = eps_plas / eps_crit
