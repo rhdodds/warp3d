@@ -7,7 +7,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 1/18/2020 rhd
+#   Last modifications: 12/13/2020 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -61,7 +61,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 4142
+BUILDNUM = 4144
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
@@ -1506,7 +1506,9 @@ $(ODIR)/mod_contact$O : mod_contact.f
 	$(F90) /O3 /Qip  /c mod_contact.f
 	$(MVC) mod_contact$O $@
 
-$(ODIR)/mod_crack_growth$O : mod_crack_growth.f
+$(ODIR)/mod_crack_growth$O : mod_crack_growth.f param_def  \
+                             $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
+                             $(OD)/mod_damage$O
 	$(F90) /O3 /Qip  /c mod_crack_growth.f
 	$(MVC) mod_crack_growth$O $@
 

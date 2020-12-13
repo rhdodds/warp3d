@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 12/24/2019 rhd
+#   Last modifications: 12/13/2020 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -63,7 +63,7 @@
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 4142
+BUILDNUM := 4144
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -448,7 +448,9 @@ $(ODIR)/mod_contact$O : mod_contact.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_crack_growth$O : mod_crack_growth.f
+$(ODIR)/mod_crack_growth$O : mod_crack_growth.f param_def  \
+                             $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
+                             $(OD)/mod_damage$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 

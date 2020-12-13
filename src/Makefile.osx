@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 12/3/2019 rhd
+#   Last modifications: 12/13/2020 rhd
 #
 #   How to run:
 #
@@ -16,14 +16,22 @@
 #   Description:
 #
 #     Build OMP version of WARP3D (64-bit) running on
-#     Mac OS X, Intel 64-bit processors.
+#     OS X, Intel processors.
 #
 #     Build with either gfortran or Intel Composer Fortran.
-#     Link with the (free) Intel MKL library to access the PARDISO
+#     Links with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
 #
 #     Build tested with gfortran version 8.1.0 and MKL 19.0.5
-#     on OSX 10.14.5 (High Sierra)
+#     on OSX 10.15.7 (Catalina) and 10.14.5 (High Sierra)
+#
+#     How we handle MKL libraries. The few required libraries are
+#     included in the WARP3D directory OSX_MKL_files.
+#     The build instructions below explicitly link these static
+#     libraries for both Intel and GNU Fortran. Uses of WARP3D
+#     on Mac (Intel) computers can thus run w/o the Intel compiler
+#     system installed.
+#
 #
 #
 #     Notes
@@ -70,7 +78,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4142
+BUILDNUM := 4144
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -130,10 +138,18 @@ else  #  Intel Composer options
   CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
   CHECKFLOAT = -fp-speculation=safe
 #
+  OSX_LIBDIR = ../OSX_MKL_files
+  LINKOPS1  =  -Wl,-rpath,${OSX_LIBDIR}/libiomp5.a \
+              ${OSX_LIBDIR}/libmkl_intel_lp64.a \
+              ${OSX_LIBDIR}/libmkl_intel_thread.a \
+              ${OSX_LIBDIR}/libmkl_core.a \
+               ${OSX_LIBDIR}/libiomp5.a -lpthread -lm -ldl
+  LINKOPS   = $(LINKOPS1)
   ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE = $(ALL_PROCESSORS) #  $(HARDWARE_SPECIFIC)
+  MACHINE_TYPE =   $(ALL_PROCESSORS) #  $(HARDWARE_SPECIFIC)
+
 #
   FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
@@ -511,7 +527,9 @@ $(ODIR)/mod_contact$O : mod_contact.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_crack_growth$O : mod_crack_growth.f
+$(ODIR)/mod_crack_growth$O : mod_crack_growth.f param_def  \
+                             $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
+                             $(OD)/mod_damage$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 

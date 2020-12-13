@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 12/4/2019 rhd
+#   Last modifications: 12/13/2020 rhd
 #
 #
 #   How to run:
@@ -66,7 +66,7 @@
 #          in the linux_pacakages/lib directory of the WARP3D distribution
 
 OSNAME   := Linux
-BUILDNUM := 4142
+BUILDNUM := 4144
 #
 BUILD_SYS := gfortran
 ODIR = ././../obj_linux_gfortran_omp
@@ -445,7 +445,10 @@ $(ODIR)/mod_contact$O : mod_contact.f
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_crack_growth$O : mod_crack_growth.f
+
+$(ODIR)/mod_crack_growth$O : mod_crack_growth.f param_def  \
+                             $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
+                             $(OD)/mod_damage$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
