@@ -4,20 +4,18 @@ c     *                      subroutine growth_loads                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 01/03/96                   *          
+c     *                   last modified : 12/6/2020                  *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
       subroutine growth_loads                                                   
-      use global_data ! old common.main
+      use global_data,only : out
 c                                                                               
-      use damage_data                                                           
+      use damage_data, only :  growth_by_kill, growth_by_release                                                          
 c                                                                               
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &   zero                                                                   
-      logical debug                                                             
-      data zero, debug / 0.0, .false./                                          
+      implicit none
+      double precision, parameter :: zero = 0.0d0                                                          
+      logical, parameter :: debug = .false.                                                             
 c                                                                               
 c                                                                               
 c            If crack growth is present in this analysis, slowly release        
@@ -27,11 +25,11 @@ c            of the solution while the geometry of the model is changed
 c            due to crack growth.                                               
 c                                                                               
 c                                                                               
-      if ( debug ) write(*,*) '>>>> in growth_loads'                            
+      if( debug ) write(*,*) '>>>> in growth_loads'                            
 c                                                                               
-      if ( growth_by_kill ) then                                                
+      if( growth_by_kill ) then                                                
          call killed_elem_loads( debug )                                        
-      else if ( growth_by_release ) then                                        
+      else if( growth_by_release ) then                                        
          call released_node_loads( debug )                                      
       end if                                                                    
 c                                                                               
@@ -43,17 +41,17 @@ c     &           i,load(i)
 c         end do                                                                
 c      end if                                                                   
 c                                                                               
-      if ( debug ) write(*,*) '<<<< leaving growth_loads'                       
+      if ( debug ) write(out,*) '<<<< leaving growth_loads'                       
 c                                                                               
       return                                                                    
-      end                                                                       
+      end subroutine growth_loads                                                                  
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine killed_elem_loads            *          
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 10/11/94                   *          
+c     *                   last modified : 12/6/2020                  *          
 c     *                                                              *          
 c     *     this subroutine releases the nodal loads that are        *          
 c     *     imposed on the structure when an element is killed       *          
@@ -63,20 +61,26 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine killed_elem_loads( debug )                                     
-      use global_data ! old common.main
-c                                                                               
+c
+      use global_data, only : out, noelem, iprops, load, mxedof
       use elem_extinct_data, only : dam_ifv, dam_state, dam_dbar_elems          
-      use damage_data                                                           
+      use damage_data, only : dam_ptr, max_dam_state, release_fraction,
+     &                        gurson_cell_size, release_type,
+     &                        num_elements_in_force_release   
+      use dam_param_code, only : growth_set_dbar                                                        
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision                                                          
-     &  dbar_now, refer_deform, now_fraction, last_fraction,                    
-     &  fraction, dbar_zero, ldincr, zero, one                       
-      logical debug, no_print                                                   
-      integer edest(mxedof)                                                     
-      data zero, one / 0.0, 1.0 /                                               
-c                                                                               
+      implicit none
+c 
+      logical, intent(in) :: debug
+c
+
+      integer :: rcount, elem, num_dof, sdof, elem_ptr, dof
+      logical :: no_print                                                   
+      integer :: edest(mxedof)                                                     
+      double precision :: dbar_now, refer_deform, now_fraction, 
+     &                    last_fraction, fraction, dbar_zero, ldincr
+      double precision, parameter :: zero=0.0d0, one=1.0d0                       
+c
 c          - For Gurson Crack Growth:                                           
 c                                                                               
 c            add a fraction of the internal load vector saved from              
@@ -91,20 +95,20 @@ c            immediately. if element is killable, determine
 c            if the internal forces present at extinction have                  
 c            already been 100% released.                                        
 c                                                                               
-      if ( debug ) write(*,*) '>> dealing w/ killed element loads'              
-      write (out,9200)                                                          
+      if( debug ) write(*,*) '>> dealing w/ killed element loads'              
+      write(out,9200)                                                          
       no_print = .true.                                                         
       rcount   = 0                                                              
 c                                                                               
       do elem = 1, noelem                                                       
         elem_ptr = dam_ptr(elem)                                                
-        if ( elem_ptr .eq. 0 ) cycle                                            
-        if ( dam_state(elem_ptr) .eq. 0 ) cycle                                 
-        if ( release_type .eq. 1 ) then                                         
-          if ( dam_state(elem_ptr) .gt. max_dam_state ) cycle                   
+        if( elem_ptr .eq. 0 ) cycle                                            
+        if( dam_state(elem_ptr) .eq. 0 ) cycle                                 
+        if( release_type .eq. 1 ) then                                         
+          if( dam_state(elem_ptr) .gt. max_dam_state ) cycle                   
         end if                                                                  
-        if ( release_type .eq. 2 ) then                                         
-          if ( dam_dbar_elems(2,elem_ptr) .lt. zero ) cycle                     
+        if( release_type .eq. 2 ) then                                         
+          if( dam_dbar_elems(2,elem_ptr) .lt. zero ) cycle                     
         end if                                                                  
 c                                                                               
 c            element not yet 100% released. compute increment of                
@@ -114,8 +118,8 @@ c            sign convention).
 c                                                                               
 c            for fixed number of steps, the fraction is trivial.                
 c                                                                               
-        if ( release_type .eq. 1 ) then                                         
-         fraction = one / dble(max_dam_state)                                   
+        if( release_type .eq. 1 ) then                                         
+             fraction = one / dble(max_dam_state)                                   
              now_fraction =  dble(dam_state(elem_ptr)) /                        
      &                       dble(max_dam_state)                                
         end if                                                                  
@@ -127,14 +131,15 @@ c            relative to total fraction release up to now.
 c            row 2 of dam_dbar_elems stores the released                        
 c            fraction up to now.                                                
 c                                                                               
-        if ( release_type .eq. 2 ) then                                         
-          call growth_set_dbar( elem, elem_ptr, debug, -2, dbar_now )           
+        if( release_type .eq. 2 ) then                                         
+          call growth_set_dbar( elem, elem_ptr, debug, -2,
+     &                          dbar_now=dbar_now )           
           dbar_zero      = dam_dbar_elems(1,elem_ptr)                           
           refer_deform   = release_fraction * gurson_cell_size                  
           now_fraction   = (dbar_now-dbar_zero)/refer_deform                    
           last_fraction  = dam_dbar_elems(2,elem_ptr)                           
 c                                                                               
-          if ( now_fraction .gt. one ) then                                     
+          if( now_fraction .gt. one ) then                                     
             now_fraction = one                                                  
             dam_dbar_elems(2,elem_ptr) = -one                                   
           else                                                                  
@@ -146,11 +151,11 @@ c
 c                                                                               
 c            output message about release of element forces                     
 c                                                                               
-      write (out,9300) elem, now_fraction * 100.0                               
+      write(out,9300) elem, now_fraction * 100.0                               
       no_print = .false.                                                        
-        rcount   = rcount + 1                                                   
+      rcount   = rcount + 1                                                   
 c                                                                               
-        num_dof = iprops(2,elem) * iprops(4,elem)                               
+      num_dof = iprops(2,elem) * iprops(4,elem)                               
 c                                                                               
 c            modify incrmental load vector for structure for this               
 c            step by the incremental force release for the                      
@@ -163,12 +168,12 @@ c
           load(sdof)  = load(sdof) + ldincr                                     
         end do                                                                  
 c                                                                               
-      end do                                                                    
+      end do ! on elem                                                                   
 c                                                                               
 c         if no elements are undergoing release, output a message.              
 c                                                                               
-      if ( no_print ) write (out,9400)                                          
-      if ( rcount .gt. 0 ) write(out,9500) rcount                               
+      if( no_print ) write(out,9400)                                          
+      if( rcount .gt. 0 ) write(out,9500) rcount                               
       num_elements_in_force_release = rcount                                    
 c                                                                               
       return                                                                    
@@ -176,8 +181,8 @@ c
  9300 format(1x,'       element: ',i7,'. forces released (%): ',f5.1)           
  9400 format(1x,'        *no forces are currently being released*')             
  9500 format(1x,'       total elements in active release: ',i6)                 
-                                                                                
-      end                                                                       
+c                                                                                
+      end  subroutine killed_elem_loads                                                                     
 c                                                                               
 c                                                                               
 c     ****************************************************************          
@@ -186,7 +191,7 @@ c     *                      subroutine released_node_loads          *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 10/11/94                   *          
+c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *     this subroutine releases the nodal loads that are        *          
 c     *     imposed on the structure when a node is released         *          
@@ -195,20 +200,27 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine released_node_loads( debug )                                   
-      use global_data ! old common.main
+      subroutine released_node_loads( debug ) 
+c                                  
+      use global_data, only : out, u, dstmap, load
       use node_release_data, only : crack_plane_nodes,                          
      &     crkpln_nodes_state, crkpln_nodes_react, node_release_frac,           
      &     crack_front_list, inv_crkpln_nodes                                   
-      use damage_data                                                           
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision                                                          
-     &  now_fraction, fraction, new_height, ldincr, zero, one                   
-      logical debug, no_print                                                   
+      use damage_data, only : release_type, num_crack_fronts, 
+     &     num_nodes_grwinc, crk_pln_normal_idx, crack_plane_sign,
+     &     release_height, num_nodes_thick, num_crack_plane_nodes,
+     &     max_dam_state, const_front
+c                                                           
+      implicit none        
+c
+      logical, intent(in) :: debug                                            
+c 
+      integer :: i, j, node_data_entry, dof, node_loop, node                                                                            
+      double precision :: now_fraction, fraction, new_height, ldincr
+      double precision, parameter :: zero=0.d0, one=1.0d0                   
+      logical :: no_print                                                   
       real dumr                                                                 
       character(len=1) :: dums                                                  
-      data zero, one / 0.0, 1.0 /                                               
 c                                                                               
 c          - For Node Release Crack Growth:                                     
 c                                                                               
@@ -222,8 +234,8 @@ c            loop over all of the crack plane nodes.   If a node
 c            has not yet been released, then skip it.  Also, skip the           
 c            node if it has been 100% released.                                 
 c                                                                               
-      if ( debug ) write (*,*) '>> dealing with released nodes'                 
-      write (out, 9200)                                                         
+      if( debug ) write (*,*) '>> dealing with released nodes'                 
+      write(out,9200)                                                         
       no_print = .true.                                                         
 c                                                                               
 c         1) if we are using the const_front algorithm and we are using the     
@@ -240,8 +252,8 @@ c           other crack front nodes, and release them based on the
 c           master node's release fraction.                                     
 c                                                                               
 c                                                                               
-      if ( const_front .and. release_type .eq. 2) then                          
-         if (debug) write(*,*) 'Const_front and trac sep.'                      
+      if( const_front .and. release_type .eq. 2 ) then                          
+         if( debug ) write(out,*) 'Const_front and trac sep.'                      
 c                                                                               
 c               loop over each set of fronts in crack_front_list                
 c                                                                               
@@ -250,26 +262,26 @@ c
 c                   if first node is zero, skip this front                      
 c                                                                               
             node = crack_front_list(i,1)                                        
-            if (node .eq. 0) cycle                                              
-          node_data_entry = inv_crkpln_nodes(node)                              
+            if(node .eq. 0) cycle                                              
+            node_data_entry = inv_crkpln_nodes(node)                              
 c                                                                               
 c                   get release fraction for master node (see                   
-c                below for explaination of traction-seperation                  
+c                  below for explaination of traction-seperation                  
 c                  algorithm)                                                   
 c                                                                               
             new_height = u(dstmap(node)+crk_pln_normal_idx-1)                   
             now_fraction = crack_plane_sign*new_height/release_height           
             now_fraction = aint(now_fraction * 100.0) / 100.0                   
-            if ( now_fraction.lt.zero ) now_fraction = - now_fraction           
-            if ( now_fraction.gt.one ) now_fraction = one                       
+            if( now_fraction.lt.zero ) now_fraction = - now_fraction           
+            if( now_fraction.gt.one ) now_fraction = one                       
 c                                                                               
             fraction = now_fraction -                                           
      &           node_release_frac(node_data_entry)                             
 c                                                                               
-            if ( debug ) write(*,'("new_height,now_frac,frac:",                 
+            if( debug ) write(*,'("new_height,now_frac,frac:",                 
      &           3e16.9)') new_height, now_fraction, fraction                   
 c                                                                               
-            if ( fraction.lt.zero ) then                                        
+            if( fraction.lt.zero ) then                                        
                call errmsg( 253, node, dums, dumr, new_height )                 
                fraction = zero                                                  
             else                                                                
@@ -278,7 +290,7 @@ c
 c                                                                               
 c                  write out information about the releasing force              
 c                                                                               
-          write (out,9300) node, now_fraction * 100.0                           
+          write(out,9300) node, now_fraction * 100.0                           
           no_print = .false.                                                    
 c                                                                               
 c                 for all nodes on the crack front, calculate the               
@@ -289,38 +301,38 @@ c
             do j = 1, num_nodes_thick                                           
                node = crack_front_list(i,j)                                     
                node_data_entry = inv_crkpln_nodes(node)                         
-             if (node .eq. 0) exit                                              
+             if(node .eq. 0) exit                                              
                dof = dstmap(node) + crk_pln_normal_idx - 1                      
-               if ( debug )                                                     
+               if( debug )                                                     
      &            write(*,'(" change dof",i7," from load:",e13.6)')             
      &            dof, load(dof)                                                
                ldincr = fraction*crkpln_nodes_react(node_data_entry)            
                load(dof)  = load(dof) - ldincr                                  
-               if ( debug )                                                     
+               if( debug )                                                     
      &            write (*,'(20x,"new load:",e13.6)') load(dof)                 
 c                                                                               
 c                 if the force has been fully released on the master node,      
 c                 then zero out the terms in the crack front list so we can     
 c                 reuse the space.                                              
 c                                                                               
-               if (now_fraction .eq. one) crack_front_list(i,j) = 0             
+               if( now_fraction .eq. one ) crack_front_list(i,j) = 0             
 c                                                                               
-            enddo                                                               
+            end do  ! over j                                                             
 c                                                                               
-         enddo                                                                  
+         end do  !   over i                                                              
          goto 9999                                                              
-      endif                                                                     
+      end if                                                                     
 c                                                                               
 c           2)  handle cases of general growth or const. front growth           
 c               with release steps                                              
 c                                                                               
       do node_loop = 1, num_crack_plane_nodes                                   
          node = crack_plane_nodes(node_loop)                                    
-         if ( crkpln_nodes_state(node_loop).eq.0 ) cycle                        
-         if ( release_type .eq. 1 .and.                                         
+         if( crkpln_nodes_state(node_loop).eq.0 ) cycle                        
+         if( release_type .eq. 1 .and.                                         
      &        crkpln_nodes_state(node_loop).gt.max_dam_state ) cycle            
-         if ( release_type .eq. 2 ) then                                        
-           if ( node_release_frac(node_loop) .ge. one ) cycle                   
+         if( release_type .eq. 2 ) then                                        
+           if( node_release_frac(node_loop) .ge. one ) cycle                   
          end if                                                                 
 c                                                                               
 c            node not yet 100% released. compute increment of                   
@@ -331,7 +343,7 @@ c
 c            for fixed number of steps, the fraction is trivial. compute        
 c            the total % released thus far for printing.                        
 c                                                                               
-        if ( release_type .eq. 1 ) then                                         
+        if( release_type .eq. 1 ) then                                         
          fraction = one / dble(max_dam_state)                                   
          now_fraction = dble(crkpln_nodes_state(node_loop)) /                   
      &                      dble(max_dam_state)                                 
@@ -362,55 +374,55 @@ c
            new_height = u(dstmap(node)+crk_pln_normal_idx-1)                    
            now_fraction = crack_plane_sign*new_height/release_height            
            now_fraction = aint(now_fraction * 100.0) / 100.0                    
-           if ( now_fraction.lt.zero ) now_fraction = - now_fraction            
-           if ( now_fraction.gt.one ) now_fraction = one                        
+           if( now_fraction.lt.zero ) now_fraction = - now_fraction            
+           if( now_fraction.gt.one ) now_fraction = one                        
            fraction = now_fraction - node_release_frac(node_loop)               
 c                                                                               
-           if ( debug ) write(*,'("new_height,now_frac,frac:",3e16.9)')         
+           if( debug ) write(*,'("new_height,now_frac,frac:",3e16.9)')         
      &          new_height, now_fraction, fraction                              
 c                                                                               
-           if ( fraction.lt.zero ) then                                         
+           if( fraction.lt.zero ) then                                         
               call errmsg( 253, node, dums, dumr, new_height )                  
               fraction = zero                                                   
            else                                                                 
               node_release_frac(node_loop) = now_fraction                       
-           endif                                                                
+           end if                                                                
 c                                                                               
         end if                                                                  
 c                                                                               
 c            write out information about the releasing force                    
 c                                                                               
-      write (out,9300) node, now_fraction * 100.0                               
-      no_print = .false.                                                        
+        write(out,9300) node, now_fraction * 100.0                               
+        no_print = .false.                                                        
 c                                                                               
 c            modify incrmental load vector for structure for this               
 c            step by the incremental force release for the                      
 c            this node in the crack plane normal direction.                     
 c                                                                               
         dof = dstmap(node) + crk_pln_normal_idx - 1                             
-        if ( debug ) write(*,'(" change dof",i7," from load:",e13.6)')          
+        if( debug ) write(*,'(" change dof",i7," from load:",e13.6)')          
      &       dof, load(dof)                                                     
         ldincr = fraction*crkpln_nodes_react(node_loop)                         
         load(dof)  = load(dof) - ldincr                                         
-        if ( debug ) write (*,'(20x,"new load:",e13.6)') load(dof)              
+        if( debug ) write (*,'(20x,"new load:",e13.6)') load(dof)              
                                                                                 
 c                                                                               
-      end do                                                                    
+      end do  ! nodeloop                                                                  
 c                                                                               
  9999 continue                                                                  
 c                                                                               
 c          if no forces released, then output a message.                        
 c                                                                               
-      if ( no_print) write (out,9400)                                           
-c                                                                               
-c                                                                               
-      return                                                                    
+      if( no_print) write (out,9400)                                           
+      if( debug ) write(out,*) '<< finished with released nodes'                
+      return 
+c                                                                   
  9200 format(/1x,'  >> Force release information for released nodes:')          
  9300 format(1x,'     % of forces released from node ',i7,                      
      &        ' : ',f6.1)                                                       
- 9400 format(1x,'     no forces are currently being released.')                 
-      if ( debug ) write (*,*) '<< finished with released nodes'                
-      end                                                                       
+ 9400 format(1x,'     no forces are currently being released.')     
+c            
+      end subroutine released_node_loads                                                                  
                                                                                 
                                                                                 
                                                                                 
