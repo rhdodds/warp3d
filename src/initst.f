@@ -79,7 +79,9 @@ c                       temporary fix until Intel fixes an inconsistency
 c                       in MKL. this call prevents lots of warning messages
 c                       from being printed during execution.
 c
+#ifdef OSX
       call kmp_set_warnings_off()
+#endif
 c
 c                       initialize the file input and output parameters
 c
