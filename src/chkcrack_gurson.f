@@ -11,7 +11,7 @@ c     *                    subroutine dam_param_gt                   *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 09/22/02                   *          
+c     *                   last modified : 12/15/2020                 *          
 c     *                                                              *          
 c     *    evaluate current damage state for an element associated   *          
 c     *    with the standard GT material model (#3)                  *          
@@ -22,7 +22,6 @@ c
 c                                                                               
       subroutine dam_param_gt( elem, kill_now, debug, porosity,                 
      &                         sig_mean, sig_mises )                            
-      use global_data ! old common.main
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
 c                               killing                                         
@@ -40,32 +39,32 @@ c        sig_mises -- (ouput)   all models. average mises stress
 c                               over element. just used for output.             
 c                                                                               
 c                                                                               
+      use global_data, only : iprops, nstrs, out
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, urcs_n_blocks,                
      &                            history_blk_list                              
-      use damage_data                                                           
+      use damage_data, only : porosity_limit                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
 c              parameter declarations                                           
-c                                                                               
-      logical kill_now, debug                                                   
-      double precision                                                          
-     &     porosity, sig_mean, sig_mises                                        
-      double precision,                                                         
-     &  dimension(:), pointer :: history, urcs_n                                
-c                                                                               
+c               
+      integer, intent(in) :: elem                                                                
+      logical, intent(out):: kill_now                                                   
+      logical, intent(in):: debug
+      double precision, intent(out) :: porosity, sig_mean, sig_mises
+c                                        
 c              local declarations                                               
-c                                                                               
-      double precision                                                          
-     &     zero,                                                                
-     &     third, six, iroot2,                                                  
-     &     sig_xx, sig_yy, sig_zz,                                              
+c      
+      integer :: ngp, blk, rel_elem, hist_size, offset, gp, sigoffset,
+     &           hist_offset
+      double precision, dimension(:), pointer :: history, urcs_n                                
+                                                                     
+      double precision :: sig_xx, sig_yy, sig_zz,                                              
      &     sig_xy, sig_xz, sig_yz,eps_xx, eps_yy, eps_zz,                       
-     &     gam_xy, gam_xz, gam_yz, fpngp                                        
-      data zero /0.0/                                                           
-      data third / 0.333333333 /                                                
-      data iroot2, six / 0.70711, 6.0 /                                         
+     &     gam_xy, gam_xz, gam_yz, fpngp       
+      double precision, parameter :: zero = 0.d0, third = 1.d0/3.d0,
+     &              iroot2 = 1.d0/sqrt(2.d0), six = 6.d0                                 
 c                                                                               
 c          set up to process element. get number of gauss points.               
 c          find the block that the element belongs to. get the                  
@@ -121,15 +120,16 @@ c
       sig_mises = sig_mises / fpngp                                             
       kill_now  =  porosity .gt. porosity_limit                                 
 c                                                                               
-      if ( debug ) then                                                         
+      if( debug ) then                                                         
             write(out,*) 'element is:',elem                                     
             write(out,'("    porosity=",e14.6)') porosity                       
             write(out,'("    sig_mean=",e14.6)') sig_mean                       
             write(out,'("    sig_mises=",e14.6)') sig_mises                     
-      end if                                                                    
+      end if 
+c                                                                   
       return                                                                    
 c                                                                               
-      end                                                                       
+      end  subroutine dam_param_gt                                                                     
                                                                                 
                                                                                 
 c     ****************************************************************          
@@ -138,7 +138,7 @@ c     *                    subroutine dam_param_agt                  *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 06/12/03                   *          
+c     *                   last modified : 12/15/20 rhd               *          
 c     *                                                              *          
 c     *    evaluate current damage state for an element associated   *          
 c     *    with the extended GT material model (#6)                  *          
@@ -150,7 +150,6 @@ c
       subroutine dam_param_agt( elem, kill_now, debug, porosity,                
      &                          sig_mean, sig_mises, ext_spacing,               
      &                          ext_shape )                                     
-      use global_data ! old common.main
 c                                                                               
 c   elem        -- (input)   element number to be checked for                   
 c                            killing                                            
@@ -172,32 +171,33 @@ c   ext_spacing -- (output)  average value of X (spacing) parameter
 c                            over element                                       
 c                                                                               
 c                                                                               
+      use global_data, only : iprops, nstrs, out
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, urcs_n_blocks,                
      &                            history_blk_list                              
-      use damage_data                                                           
-c                                                                               
-      implicit integer (a-z)                                                    
+c
+      implicit none                                                    
 c                                                                               
 c              parameter declarations                                           
-c                                                                               
-      logical kill_now, debug                                                   
-      double precision                                                          
-     &     porosity, sig_mean, sig_mises, ext_spacing, ext_shape                
-      double precision,                                                         
-     &  dimension(:), pointer :: history, urcs_n                                
+c 
+      integer, intent(in) :: elem                                                                              
+      logical, intent(in) :: debug  
+      logical, intent(out) :: kill_now                                                 
+      double precision, intent(out) :: porosity, sig_mean, sig_mises,
+     &                                 ext_spacing, ext_shape                
+      double precision, dimension(:), pointer :: history, urcs_n                                
 c                                                                               
 c              local declarations                                               
-c                                                                               
-      double precision                                                          
-     &     zero, coalesce_count, one, half,                                     
-     &     third, six, iroot2,                                                  
-     &     sig_xx, sig_yy, sig_zz,                                              
+c             
+      integer :: ngp, blk, rel_elem, hist_size, offset, gp, sigoffset, 
+     &           hist_offset                                                                   
+      double precision :: coalesce_count, sig_xx, sig_yy, sig_zz,                                              
      &     sig_xy, sig_xz, sig_yz,eps_xx, eps_yy, eps_zz,                       
      &     gam_xy, gam_xz, gam_yz, fpngp                                        
-      data zero, one, half / 0.0, 1.0, 0.5 /                                    
-      data third / 0.333333333 /                                                
-      data iroot2, six / 0.70711, 6.0 /                                         
+      double precision, parameter :: zero = 0.d0, third = 1.d0/3.d0,
+     &                               one = 1.d0, six = 6.d0, 
+     &                               iroot2 = 1.d0/sqrt(2.d0),
+     &                               half = 0.5d0
 c                                                                               
 c          set up to process element. get number of gauss points.               
 c          find the block that the element belongs to. get the                  
@@ -266,7 +266,7 @@ c
 c          final average values over element. check number of points            
 c          on coalesence surface to set kill flag                               
 c                                                                               
-       fpngp = dble( ngp )                                                      
+      fpngp = dble( ngp )                                                      
       porosity    = porosity / fpngp                                            
       sig_mean    = sig_mean * third / fpngp                                    
       sig_mises   = sig_mises / fpngp                                           
@@ -274,7 +274,7 @@ c
       ext_shape   = ext_shape  / fpngp                                          
       kill_now    = coalesce_count / fpngp .ge. half                            
 c                                                                               
-      if ( debug ) then                                                         
+      if( debug ) then                                                         
          write(out,*) 'element is:',elem                                        
          write(out,'("    porosity=",e14.6)') porosity                          
          write(out,'("    sig_mean=",e14.6)') sig_mean                          
@@ -282,10 +282,11 @@ c
          write(out,'("    ext_shape=",e14.6)') ext_shape                        
          write(out,'("    ext_spacing=",e14.6)') ext_spacing                    
          write(out,'("    coalesce_count=",f5.1)') coalesce_count               
-      end if                                                                    
+      end if        
+c                                                            
       return                                                                    
 c                                                                               
-      end                                                                       
+      end subroutine dam_param_agt                                                                    
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
@@ -293,7 +294,7 @@ c     *                      subroutine dam_print_elem1              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/15/20 rhd               *          
+c     *                   last modified : 12/15/20 rhd               *          
 c     *                                                              *          
 c     *     This routine prints out the status of killable Gurson    *          
 c     *     and extended Gurson elements at the beginning of a       *          
@@ -304,25 +305,37 @@ c
 c                                                                               
 c                                                                               
       subroutine dam_print_elem1( step, iter )                                     
-      use global_data ! old common.main
-      use main_data   
+c
+      use global_data, only : out, iprops, props
+      use main_data, only : elems_to_blocks, output_packets,
+     &                      packet_file_no   
       use dam_param_code, only : dam_param                                                          
       use elem_extinct_data, only : dam_state, dam_print_list,                  
      &     old_porosity, old_mises, old_mean                                    
       use elem_block_data, only : history_blocks, history_blk_list              
-      use damage_data                                                           
-      implicit integer (a-z)                                                    
+      use damage_data, only : dam_ptr, load_size_control_crk_grth,
+     &                        num_elements_killed, porosity_limit,
+     &                        num_print_list
+c                                                        
+      implicit none                                                                      
 c                                                                               
-      double precision                                                          
-     &     porosity, orig_porosity, zero, ebarp, sigma_bar, d_poros,            
-     &     max_d_poros, fpngp, ddum1, ddum2, sig_mean, sig_mises,               
-     &     ext_shape, ext_spacing, ddum3, ddum4, ddum5                                              
-      double precision,                                                         
-     &  dimension(:), pointer :: history                                        
-      logical ldummy, debug, all_killed, lmises(num_print_list),                
-     &                                   lmean(num_print_list),                 
-     &                                   ext_gurson                             
-      data zero, debug / 0.0, .false. /                                         
+c              parameter declarations                                           
+c
+      integer, intent(in) :: step, iter                                                                            
+c                                        
+c              local declarations                                               
+c  
+      integer :: elem_loop, element, elem_ptr, local_count, ngp, blk,
+     &           rel_elem, hist_size, hist_offset, offset, sigbar_loc,
+     &           gp, ebarp_loc, mises_flag, mean_flag     
+      double precision :: porosity, orig_porosity, ebarp, sigma_bar,
+     &     d_poros, max_d_poros, fpngp, sig_mean,             
+     &     sig_mises, ext_shape, ext_spacing    
+      double precision, dimension(:), pointer :: history
+      double precision, parameter :: zero = 0.d0
+      logical, parameter :: debug = .false.                                        
+      logical :: all_killed, lmises(num_print_list), 
+     &           lmean(num_print_list), ext_gurson                             
       character(len=1) :: mises_char, mean_char                                 
 c                                                                               
 c           check to see if all elements in print list have been killed.        
@@ -364,7 +377,7 @@ c
       lmises = .false.                                                          
       lmean  = .false.                                                          
       do elem_loop = 1, num_print_list                                          
-       element  = dam_print_list(elem_loop)                                     
+         element  = dam_print_list(elem_loop)                                     
          elem_ptr = dam_ptr(element)                                            
 c                                                                               
 c             check if element is a killable element and if it has              
@@ -387,10 +400,10 @@ c
          offset    = (rel_elem-1)*hist_size*ngp + 1                             
          history   => history_blocks(blk)%ptr                                   
 c                                                                               
-         call dam_param( element, ldummy, debug, porosity,                      
-     &                   ddum1, ddum2, sig_mean, sig_mises,                     
-     &                   ext_gurson, ext_shape, ext_spacing,
-     &                   ddum3, ddum4, ddum5 )                   
+         call dam_param( element, debug=debug, porosity=porosity,                     
+     &                   sig_mean=sig_mean, sig_mises=sig_mises,                     
+     &                   ext_gurson=ext_gurson, ext_shape=ext_shape,
+     &                   ext_spacing=ext_spacing )                   
 c                                                                               
 c             if the mises stress or mean stress from this step are             
 c             lower than the previous step, then put a * by the                 
@@ -398,14 +411,14 @@ c             value to indicate this state.
 c                                                                               
        if( sig_mises .lt. old_mises(elem_loop) ) then                           
           mises_char = '*'                                                      
-            lmises(elem_loop)=.true.                                            
+          lmises(elem_loop)=.true.                                            
          else                                                                   
           mises_char = ' '                                                      
          end if                                                                 
 c                                                                               
        if( sig_mean .lt. old_mean(elem_loop) ) then                             
           mean_char = '*'                                                       
-            lmean(elem_loop)=.true.                                             
+          lmean(elem_loop)=.true.                                             
          else                                                                   
           mean_char = ' '                                                       
          end if                                                                 
@@ -474,7 +487,7 @@ c
 c                                                                               
 c                                                                               
       do elem_loop = 1, num_print_list                                          
-       element  = dam_print_list(elem_loop)                                     
+         element  = dam_print_list(elem_loop)                                     
          elem_ptr = dam_ptr(element)                                            
 c                                                                               
 c             check if element is a killable element and if it has              
@@ -497,10 +510,10 @@ c
          offset    = (rel_elem-1)*hist_size*ngp + 1                             
          history   => history_blocks(blk)%ptr                                   
 c                                                                               
-         call dam_param( element, ldummy, debug, porosity,                      
-     &                   ddum1, ddum2, sig_mean, sig_mises,                     
-     &                   ext_gurson, ext_shape, ext_spacing,
-     &                   ddum3, ddum4, ddum5 )                   
+        call dam_param( element, debug=debug, porosity=porosity,                     
+     &                   sig_mean=sig_mean, sig_mises=sig_mises,                     
+     &                   ext_gurson=ext_gurson, ext_shape=ext_shape,
+     &                   ext_spacing=ext_spacing )                   
 c                                                                               
 c             if the mises stress or mean stress from this step are             
 c             lower than the previous step, then put a 0 or 1 flag              
@@ -557,13 +570,13 @@ c
      &              mises_flag                                                  
             end if                                                              
 c                                                                               
-         end if                                                                 
+         end if   ! porosity .ne. orig_porosity                                                              
 c                                                                               
 c                                                                               
-      end do                                                                    
+      end do   ! elem_loop                                                                  
 c                                                                               
 c                                                                               
-      end if                                                                    
+      end if  ! local_count .ne. 0 .and. output_packets                                                                   
 c                                                                               
 c            end of packet output loop                                          
 c            =========================                                          
@@ -615,4 +628,4 @@ c
  9040 format(1x,'*** NOTE: all elements in the killable element',               
      & ' status list have been killed.',/)                                      
 c                                                                               
-      end                                                                       
+      end subroutine dam_print_elem1                                                                      

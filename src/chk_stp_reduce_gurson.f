@@ -5,7 +5,7 @@ c     *                   subroutine gurson_cut_step                 *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/20/20 rhd               *          
+c     *                   last modified : 12/15/20 rhd               *          
 c     *                                   adaptive during release of *          
 c     *                                   forces on killed eleemnts  *          
 c     *                                                              *          
@@ -17,25 +17,27 @@ c     *         then adjust load step size down                      *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine gurson_cut_step( debug )                                       
-      use global_data ! old common.main
+      subroutine gurson_cut_step( debug ) 
+c                                      
+      use global_data, only : out, noelem
       use elem_extinct_data, only : old_porosity, dam_state                     
-      use damage_data        
-      use dam_param_code, only : dam_param                                                   
-      implicit integer (a-z)                                                    
-c                                                                               
-      logical debug                                                             
+      use damage_data, only : all_elems_killed, dam_ptr, mxstp_store,
+     &                        del_poros, num_elements_in_force_release,
+     &                        max_porosity_change, load_reduced,
+     &                        perm_load_fact, num_steps_min, 
+     &                        no_killed_elems        
+      use dam_param_code, only : dam_param      
+c            
+      implicit none
+c                                 
+      logical, intent(in) :: debug                                                             
 c                                                                               
 c           local declarations                                                  
-c                                                                               
-      double precision                                                          
-     &     new_porosity, two, dumd1, dumd2, dumd3, dumd4, max_del_poros,        
-     &     zero, dumd5, dumd6, dumd7, dumd8, dumd9                                                   
-      logical not_cut, duml, all_killed,                                        
-     &        no_adaptive_during_force_release                                  
-      character(len=1) :: dums                                                  
-      real dumr                                                                 
-      data two, zero / 2.0, 0.0 /                                               
+c          
+      integer :: elem, elem_ptr, i                                                                      
+      double precision :: new_porosity, max_del_poros    
+      double precision, parameter :: two = 2.d0, zero = 0.d0                                               
+      logical :: not_cut, all_killed, no_adaptive_during_force_release                                  
 c                                                                               
       if( debug ) write( out,*) '>>>>>> in gurson_cut_step'                     
 c                                                                               
@@ -59,9 +61,7 @@ c
 c                                                                               
 c              calculate new porosity for this element                          
 c                                                                               
-         call dam_param( elem, duml, debug, new_porosity, dumd1, dumd2,         
-     &                   dumd3, dumd4, duml, dumd5, dumd6, dumd7,
-     &                   dumd8, dumd9 )                     
+         call dam_param( elem, debug=debug, porosity=new_porosity )
 c                                                                               
 c              find the change in porosity over the last step for this          
 c              element -- if the change is the largest so far, store it.        
@@ -71,7 +71,7 @@ c
      &                        new_porosity - old_porosity( elem_ptr ) )         
          old_porosity(elem_ptr) = new_porosity                                  
 c                                                                               
-      end do                                                                    
+      end do ! elem                                                                   
       if( debug ) write (out,*) '   >>> max poros change:',                     
      &     max_del_poros                                                        
 c                                                                               
@@ -109,8 +109,9 @@ c
  9999 continue                                                                  
       if( debug ) write( out, * ) '<<<<< leaving gurson_cut_step'               
 c                                                                               
-      return                                                                    
-      end                                                                       
+      return  
+c                                                                  
+      end subroutine gurson_cut_step                                                                
 c                                                                               
 c                                                                               
 c     ****************************************************************          
@@ -119,7 +120,7 @@ c     *                   subroutine gurson_load_factor              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 1/14/2010                  *          
+c     *                   last modified : 12/15/20 rhd               *          
 c     *                                   tfactor set back to 2.0    *          
 c     *                                   from 4.0 to comply with    *          
 c     *                                   manual                     *          
@@ -141,23 +142,23 @@ c
       subroutine gurson_load_factor( del_poros, mxstp_store,                    
      &     max_porosity_change, load_reduced, perm_load_fact,                   
      &     num_steps_min, no_killed_elems, out, debug )                         
-      implicit integer (a-z)                                                    
-c                                                                               
-      logical debug, load_reduced, no_killed_elems                              
-      parameter (max_steps_min = 3)                                             
+      implicit none                                                    
+c
+      integer, intent(in) :: out, mxstp_store
+      integer, intent(out) :: num_steps_min
+      logical, intent(in) :: debug,  no_killed_elems  
+      logical, intent(out):: load_reduced 
+      double precision, intent(in) :: del_poros(*), max_porosity_change     
+      double precision, intent(out) :: perm_load_fact              
 c                                                                               
 c           local declarations                                                  
-c                                                                               
-      double precision                                                          
-     &     two, dumd1, dumd2, dumd3, dumd4, max_factor, min_factor,             
-     &     del_poros(*), max_porosity_change, zero, one, point_eight,           
-     &     ave_del_poros, ratio, perm_load_fact, tfactor, four                  
-      logical duml                                                              
-      character(len=1) :: dums                                                  
-      real dumr                                                                 
-      data two, max_factor, min_factor, one, point_eight, zero, four            
-     &     / 2.0, 1.2, 0.8, 1.0, 0.8, 0.0, 4.0 /                                
-c                                                                               
+c         
+      integer :: j                                                                      
+      integer, parameter :: max_steps_min = 3                                             
+      double precision :: ave_del_poros, ratio, tfactor                                                         
+      double precision, parameter :: two = 2.d0, max_factor = 1.2d0,
+     &      min_factor = 0.8d0, one = 1.d0, point_eight = 0.8d0,
+     &      zero = 0.d0, four = 4.d0            
 c                                                                               
       if( debug ) write ( out, * ) '   >>>>>> in gurson_load_factor'            
 c                                                                               
@@ -183,7 +184,7 @@ c
 c         load_reduced is a global factor initialized to false on analysis      
 c         startup. once set .true. it remains unchanged.                        
 c                                                                               
-      if ( ratio .gt. max_factor ) then                                         
+      if( ratio .gt. max_factor ) then                                         
          load_reduced   = .true.                                                
          write(out,9338) del_poros(1), max_porosity_change, max_factor,         
      &                   perm_load_fact, point_eight / ratio,                   
@@ -223,12 +224,12 @@ c
 c                                                                               
 c               compute load factor                                             
 c                                                                               
-            if ( abs(ave_del_poros) .le. 1.0e-10 ) then                         
+            if( abs(ave_del_poros) .le. 1.0e-10 ) then                         
               tfactor = two                                                     
             else                                                                
               tfactor = one / ( ave_del_poros / max_porosity_change )           
             end if                                                              
-            if ( tfactor .gt. two ) tfactor = two                               
+            if( tfactor .gt. two ) tfactor = two                               
             write(out,9339) ave_del_poros,                                      
      &                      max_factor * max_porosity_change,                   
      &                      tfactor, perm_load_fact,                            
@@ -239,8 +240,7 @@ c
       else                                                                      
          num_steps_min = 0                                                      
       end if                                                                    
-c                                                                               
-c                                                                               
+c                                                                                                                                                             
  9999 continue                                                                  
       if( debug ) write( out, * ) '   <<<<< leaving gurson_load_factor'         
 c                                                                               
