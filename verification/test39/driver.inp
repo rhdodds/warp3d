@@ -32,7 +32,7 @@ Test 39 (CTOA and SMCS crack growth)
 #
 #    number of problems
 #
- 5
+ 6
 #
 #    list of problem titles for output
 #
@@ -41,6 +41,7 @@ test_39b
 test_39c
 test_39d
 test_39e
+test_39f
 *
 *   list of output files
 *
@@ -49,6 +50,7 @@ test_39b_out
 test_39c_out
 test_39d_out
 test_39e_out
+test_39f_out
 *
 *    list of input files
 *
@@ -57,6 +59,7 @@ test_39b
 test_39c
 test_39d
 test_39e
+test_39f
 *
 *        check results problem 1
 *
@@ -105,4 +108,13 @@ test_39e
 'Totals:'
  0
 0.43571185E+00
+2
+*
+*        check results problem 6
+*
+2      # number of search lines
+'solution for step:     100 converged:'
+'Totals:'
+ 0
+0.40381145E+00
 2
