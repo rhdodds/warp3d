@@ -15,6 +15,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine gtmat1( qnhalf, qn1, error, local_work )
+      use constants
       implicit none
       include 'param_def'
 c
@@ -28,7 +29,6 @@ c          local declarations - make allocatable
 c          to reduce stack size
 c
       integer :: span, felem, type, order, nnode, gpn, step
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0
       double precision, allocatable :: rnh(:,:,:), fnh(:,:,:),
      &                                 theta(:,:), dfh(:), dfn(:)
 c
@@ -168,6 +168,7 @@ c     ****************************************************************
 c
 c
       subroutine gtmat1_init_fn( span, mxvl, fn, dfn )
+      use constants
       implicit none
 c
 c                       parameter declarations
@@ -178,7 +179,6 @@ c
 c                       local declarations
 c
       integer :: i
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0
 c
 c                       set [F @ 0] to identity. set determinant
 c                       to 1.0 (no deformation). routine will
@@ -212,6 +212,7 @@ c     ****************************************************************
       subroutine gtmat1_make_fbar( span, mxvl, felem, f, det_f,
      &                int_detF_vols, undeformed_elem_vols, step,
      &                ldebug )
+      use constants
       implicit none
 c
 c                      parameter declarations
@@ -225,7 +226,6 @@ c                      locals
 c
       integer :: i
       double precision :: j_bar, factor
-      double precision, parameter :: third = 1.0d0/3.0d0
 c
 c                      bar [F] = [F] * (bar J/J)**0.333 where
 c                      J = det [F], bar J is volume of deformed
@@ -264,6 +264,7 @@ c     ****************************************************************
 c
       subroutine jacob1( etype, span, felem, gpn, jac, dj, gama,
      &                   lambda, nxi, neta, nzeta, ce, nnode )
+      use constants
       use global_data, only : msg_count_1, out
       implicit none
 c
@@ -282,8 +283,7 @@ c
       double precision :: j1(mxvl), j2(mxvl), j3(mxvl),
      &                    ce_rotated(mxvl,mxecor)
 c
-      double precision, parameter :: zero=0.0d0, zero_check=1.0d-20,
-     &                               one=1.0d0, half=0.5d0
+      double precision, parameter :: zero_check=1.0d-20
 c
       logical :: twod, cohesive_elem, threed_elem, bar_elem,
      &           ldum1, ldum2, ldum3, ldum4, ldum5, ldum6,
@@ -484,6 +484,7 @@ c
 c
       subroutine tcomp1( span, theta, nxi, neta, nzeta, gama, ue,
      &                   nnode )
+      use constants
       implicit none
       include 'param_def'
 c
@@ -498,7 +499,6 @@ c                     locally allocated
 c
       integer :: i, j, tpos1, tpos2
       double precision, allocatable :: thtemp(:,:,:)
-      double precision, parameter :: zero = 0.0d0
 c
 c           initialize theta
 c
@@ -562,6 +562,7 @@ c     ****************************************************************
 c
 c
       subroutine fcomp1( span, felem, gpn, f, df, theta, error )
+      use constants
       use global_data, only : msg_count_2, out
       implicit none
       include 'param_def'
@@ -576,7 +577,7 @@ c
       integer :: i
       double precision :: f1(mxvl), f2(mxvl), f3(mxvl)
 c
-      double precision, parameter :: zero_check=1.0d-20, one=1.0d00
+      double precision, parameter :: zero_check=1.0d-20
 c
 c                       compute the deformation gradient matrix
 c                       and its determinate.
@@ -657,6 +658,7 @@ c
 c
       integer :: i
       allocate( ui(mxvl,nstr) )
+c
 c                       compute the inverse of the right
 c                       stretch tensor.
 c
@@ -697,6 +699,7 @@ c     ****************************************************************
 c
 c
       subroutine getrm1( span, q, r, opt )
+      use constants
       implicit none
       include 'param_def'
 c
@@ -710,7 +713,6 @@ c           locals
 c
       integer :: i
       double precision :: rbar(mxvl,3,3)
-      double precision, parameter :: two = 2.0d0
 c
 c           compute q. branch on quantity & direction of rotation.
 c
@@ -918,6 +920,7 @@ c
 c
 c
       subroutine irscp1( span, f, ui )
+      use constants
       implicit none
       include 'param_def'
 c
@@ -929,11 +932,8 @@ c
 c                       locally allocated arrays
 c
       integer :: i
-      double precision, allocatable ::
-     &   c(:,:), cc(:,:),
-     &   iu(:), iiu(:), iiiu(:), a2(:), b2(:),
-     &   c2(:),d2(:)
-      double precision, parameter :: one = 1.0d0, two = 2.0d0
+      double precision, allocatable :: c(:,:), cc(:,:), iu(:), iiu(:),
+     &                  iiiu(:), a2(:), b2(:), c2(:),d2(:)
 c
       allocate (
      &   c(mxvl,nstr), cc(mxvl,nstr),
@@ -1092,6 +1092,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine evcmp1_new( span, mxvl, c, lamda )
+      use constants
       implicit none
 c
 c                 parameter declarations
@@ -1107,18 +1108,18 @@ c
      &  swap1, swap2, swap3,
      &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi
 
-      double precision, parameter ::
-     &  zero = 0.0d0, one = 1.0d0, two = 2.0d0, three = 3.0d0,
-     &  third = 1.0d0/3.0d0, oneptfive = 1.5d0,
-     &  thirteenptfive = 13.5d0, twentyseven = 27.0d0,
-     &  quarter = 0.25d0, sixpt75 = 6.75d0,
-     &  oneroot3 = 0.5773502691896258d0
+c      double precision, parameter ::
+c     &  zero = 0.0d0, one = 1.0d0, two = 2.0d0, three = 3.0d0,
+c     &  third = 1.0d0/3.0d0, oneptfive = 1.5d0,
+c     &  thirteenptfive = 13.5d0, twentyseven = 27.0d0,
+c     &  quarter = 0.25d0, sixpt75 = 6.75d0,
+c     &  oneroot3 = 0.5773502691896258d0
 c
 c              calculates the eigenvalues of a symmetric 3x3 matrix
 c              using Cardano's analytical algorithm.
 c              Only the diagonal and upper triangular parts of matrix
 c              are accessed. The access is read-only.
-c              Copyright (C) 2006  Joachim Kopp. Avialble under
+c              Copyright (C) 2006  Joachim Kopp. Available under
 c              GNU Lesser General Public License
 c
       do bel = 1, span
@@ -1136,13 +1137,13 @@ c
        c1  = ( m11*m22 + m11*m33 + m22*m33 ) - (dd + ee + ff)
        c0  = m33*dd + m11*ee + m22*ff - m11*m22*m33 - two * m13*de
        p   = m*m - three * c1
-       q   = m*(p - oneptfive*c1) - thirteenptfive*c0
+       q   = m*(p - onept5*c1) - thirteenpt5*c0
        sqrtp = sqrt(abs(p))
        phi = twentyseven * ( quarter * c1*c1 * (p - c1)
      &          + c0 * (q + sixpt75 * c0) )
        phi = third * atan2(sqrt(abs(phi)), q)
        cphi = sqrtp * cos(phi)
-       sphi = oneroot3 * sqrtp * sin(phi)
+       sphi = iroot3 * sqrtp * sin(phi)
        e2 = third * (m - cphi)
        e3 = e2 + sphi
        e1 = e2 + cphi
@@ -1190,29 +1191,29 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine evcmp1( span, k, lamda )
-      implicit integer (a-z)
+      use constants
+      implicit none
       include 'param_def'
 c
 c                 parameter declarations
 c
-      double precision
-     &  k(mxvl,6), lamda(mxvl,3)
+      integer, intent(in) :: span
+      double precision, intent(out) :: k(mxvl,6), lamda(mxvl,3)
 c
-c                 local arrays allocated
+c                 locals
 c
-      double precision
-     &  m(mxvl,ndim),kbari(mxvl),
+      integer :: swpnum, bel, iexp(mxvl)
+      logical :: cvgtst
+      integer, parameter :: maxswp = 15
+      double precision :: m(mxvl,ndim),kbari(mxvl),
      &  kbarj(mxvl), kbar(mxvl), ki(mxvl), kj(mxvl),mi(mxvl),
      &  mj(mxvl), scale(mxvl), alpha(mxvl), gamma(mxvl),x(mxvl),
      &  xsign(mxvl), rad(mxvl), errork(mxvl), swap(mxvl),
      &  ratiok(mxvl), sqtol, thold
-      integer iexp(mxvl)
-      logical cvgtst
-      double precision
-     &  jactol, one, four, ten, ten_thouth
-      data maxswp/15/,zero, one, two, jactol, four, ten, ten_thouth
-     &   / 0.0d00, 1.0d00, 2.0d00, 1.0d-08,
-     &     4.0d00, 10.0d00, 0.0001d00 /
+      double precision :: jactol, ten_thouth
+      data jactol, ten_thouth
+     &   /  1.0d-08,
+     &      0.0001d00 /
 c
 c              initialize lamda, m, sweep parameters.
 c
