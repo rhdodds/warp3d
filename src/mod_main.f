@@ -524,9 +524,80 @@ c
      & id_pcm    = 4Hpcm ,  ! requires blank after pcm to make 4 chars
      & id_gaus   = 4HGAUS,
      & id_dollar = 4H$      !  requires 3 blanks after $  
-
-
+c
       end module
+c     ****************************************************************
+c     *                                                              *
+c     *                    f-90 module constants                     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *              last modified : 12/15/20 rhd                    *
+c     *                                                              *
+c     *     numerical values used throughout the code                *
+c     *                                                              *
+c     ****************************************************************
+c
+      module constants
+c
+      double precision, parameter ::
+     &   zero  = 0.d0,
+     &   one   = 1.d0,
+     &   two   = 2.d0,
+     &   three = 3.d0,
+     &   four  = 4.d0,
+     &   five  = 5.d0,
+     &   six   = 6.d0,
+     &   seven = 7.d0,
+     &   eight = 8.d0,
+     &   nine  = 9.d0,
+     &   ten   = 10.d0,
+     &   sixteen = 16.d0,
+     &   twentyseven = 27.0d0,
+     &   ninety  = 90.d0,
+     &   ninety_nine = 99.d0,
+     &   hundred = 100.d0,
+     &   oneeighty = 180.d0
+c
+      double precision, parameter ::
+     &   tenth   = 0.1d0,
+     &   quarter = 0.25d0,
+     &   pt_25   = 0.25d0,
+     &   pt25    = 0.25d0,
+     &   third   = one/three,
+     &   half    = 0.5d0,
+     &   pt75    = 0.75d0,
+     &   point_eight  = 0.8d0,
+     &   ptnine  = 0.9d0,
+     &   one_pt_5 = 1.5d0,
+     &   onept5   = 1.5d0,
+     &   onep5    = 1.5d0,
+     &   pt_one = 0.1d0,
+     &   hundredth = 0.01d0,
+     &   onesixth = one / six,
+     &   twothird = two / three,
+     &   thirteenpt5 = 13.5d0,
+     &   sixpt75 = 6.75d0
+c
+      double precision, parameter ::
+     &   pi        = 3.1415926535897932384626433d0,
+     &   euler     = 2.71828182845904523536d0,
+     &   root_half = sqrt(half),
+     &   root2     = sqrt(two),
+     &   root3     = sqrt(three),
+     &   root23    = sqrt(two/three),
+     &   root32    = sqrt(three/two),
+     &   iroot2    = one / sqrt(two),
+     &   iroot3    = one / sqrt(three)
+c
+       double precision, parameter :: !  used as a key in code
+     &   d32460 = 32460.0d0
+c
+      real, parameter ::
+     &   rzero = 0.0,
+     &   rone  = 1.0
+c
+      end module constants
 
 
 
