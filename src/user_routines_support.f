@@ -1,7 +1,7 @@
 c                                                                               
 c           user_routines_support.f   Distribution version                      
 c                                                                               
-c           Updated:  6/13/2017 rhd                                            
+c           Updated:  12/21/20 rhd                                            
 c                                                                               
                                                                                 
 c     ****************************************************************          
@@ -22,7 +22,8 @@ c
       logical :: connected                                                         
 c                                                                               
 c        1.  find an available device number, open the neutral                  
-c            file                                                               
+c            file  
+c        2. alternatively use the newunit feature of modern fortran                                                             
 c                                                                               
       warp3d_get_device_number = -1                                             
       do iunit = 11, 5000                                                       
@@ -51,12 +52,15 @@ c     *                                                              *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine xit                                                            
+      subroutine xit  
+      use global_data, only : out                                                          
       implicit integer (a-z)                                                    
-c                                                                               
-      write(*,*) '>>> UMAT called to abort execution'                           
+c     
+      write(out,*) ' '                                                                          
+      write(out,*) '>>> UMAT called to abort execution'        
+      write(out,*) ' '                                                                          
+c
       call die_abort                                                            
-      stop                                                                      
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
@@ -71,7 +75,8 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine rotsig( in_vec, drot, out_vec, type, nrow, ncol )              
+      subroutine rotsig( in_vec, drot, out_vec, type, nrow, ncol )  
+      use constants            
       implicit none                                                             
 c                                                                               
 c                      parameter declarations                                   
@@ -84,8 +89,6 @@ c                     locally defined arrays-variables
 c                                                                               
       double precision :: factor,  a(3,3), t(3,3), c(3,3)                          
       logical, parameter :: local_debug = .true.                               
-      double precision, parameter :: 
-     &    one = 1.0d0, half = 0.5d0, two = 2.0d0
 c                                                                               
 c                                                                               
 c                     out = drot * in * trans(drot)                             
@@ -163,7 +166,8 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine sinv( sig, sinv1, sinv2, ndi, nshr )                           
+      subroutine sinv( sig, sinv1, sinv2, ndi, nshr )
+      use constants                           
       implicit none                                                             
 c                                                                               
 c                      parameter declarations                                   
@@ -173,11 +177,9 @@ c
 c                                                                               
 c                     locally defined arrays-variables                          
 c                                                                               
-      double precision :: sig_dev(6), t1, t2, one_third, two, oneptfive                           
-      data one_third, two, oneptfive                                            
-     &    /  0.3333333333333333d00, 2.0d00, 1.5d00 /                            
+      double precision :: sig_dev(6), t1, t2                           
 c                                                                               
-      sinv1 = one_third * ( sig(1) + sig(2) + sig(3) )                          
+      sinv1 = third * ( sig(1) + sig(2) + sig(3) )                          
 c                                                                               
       sig_dev(1) = sig(1) - sinv1                                               
       sig_dev(2) = sig(2) - sinv1                                               
@@ -188,7 +190,7 @@ c
 c                                                                               
       t1 = sig_dev(1)**2 + sig_dev(2)**2 + sig_dev(3)**2                        
       t2 = sig_dev(4)**2 + sig_dev(5)**2 + sig_dev(6)**2                        
-      sinv2 = sqrt( oneptfive * (t1 + two * t2 ) )                              
+      sinv2 = sqrt( onept5 * (t1 + two * t2 ) )                              
 c                                                                               
       return                                                                    
       end                                                                       
@@ -199,39 +201,40 @@ c     *                      subroutine sprinc                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 5/14/12                    *          
+c     *                   last modified : 12/20/20 rhd               *          
 c     *                                                              *          
 c     *     compute principal strain or stresses compatible with     *          
 c     *     UMAT specifications                                      *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine sprinc( s, ps, lstr, ndi, nshr )                               
+      subroutine sprinc( s, ps, lstr, ndi, nshr ) 
+c
+      use constants
+c                              
       implicit none  
       integer :: lstr, ndi, nshr, ier                                                 
-      double precision :: s(*), ps(*)                                                          
+      double precision :: s(6), ps(3)                                                          
 c                                                                               
 c                    locally allocated                                          
 c                                                                               
-      double precision :: temp(6), wk(3), evec(3,3), half, one, factor                            
-c                                                                               
-      data  half, one                                                           
-     &   / 0.5d00, 1.0d00 /                                                     
+      double precision :: temp(6), evectors(3,3), evals(3), factor                            
 c                                                                               
 c        calculate the principal strains or stresses for UMAT support.          
 c        Abaqus stress/strain ordering: xx, yy, zz, xy, xz, yz                  
 c        lstr = 1 (stresses), lstr = 2 (strains)                                
 c                                                                               
       factor = one                                                              
-      if( lstr .eq. 2 ) factor = half                                           
+      if( lstr .eq. 2 ) factor = half  ! strains                                         
 c                                                                               
       temp(1) = s(1)                                                            
-      temp(2) = s(4) * factor                                                   
-      temp(3) = s(2)                                                            
-      temp(4) = s(5) * factor                                                   
-      temp(5) = s(6) * factor                                                   
-      temp(6) = s(3)                                                            
-      call ou3dpr( temp, 3, 0, ps, evec, 3, wk, ier )   ! warp3d routine        
+      temp(2) = s(2)                                                 
+      temp(3) = s(3)                                                            
+      temp(4) = s(4) * factor                                                   
+      temp(5) = s(5) * factor                                                   
+      temp(6) = s(6) * factor                                                              
+      call principal_values( temp, evectors, evals )       
+      ps = evals
 c                                                                               
       return                                                                    
       end                                                                       
@@ -243,22 +246,23 @@ c     *                       written by : rhd                       *
 c     *                                                              *          
 c     *                   last modified : 5/14/12                    *          
 c     *                                                              *          
-c     *     compute principal strain or stresses compatible with     *          
-c     *     UMAT specifications                                      *          
+c     *     compute principal strain or stresses and direction       *
+c     *     cosines following UMAT specifications                    *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine sprind( s, ps, an, lstr, ndi, nshr )                           
+      subroutine sprind( s, ps, an, lstr, ndi, nshr )   
+c
+      use constants
+c                        
       implicit none
       integer :: lstr, ndi, nshr, ier                                                    
-      double precision :: s(*), ps(*), an(3,3)                                                 
+      double precision :: s(6), ps(3), an(3,3)                                                 
 c                                                                               
-c                    locally allocated                                          
-c                                                                               
-      double precision :: temp(6), wk(3), half, one, factor                                       
-c                                                                               
-      data  half, one  / 0.5d00, 1.0d00 /                                                     
-c                                                                               
+c                    locals
+c
+      double precision :: temp(6), evectors(3,3), evals(3), factor                            
+c                                                                                                                                                             
 c        calculate the principal strains or stresses and eigenvectors           
 c        for UMAT support.                                                      
 c        Abaqus stress/strain ordering: xx, yy, zz, xy, xz, yz                  
@@ -266,14 +270,16 @@ c        lstr = 1 (stresses), lstr = 2 (strains)
 c                                                                               
       factor = one                                                              
       if( lstr .eq. 2 ) factor = half                                           
-c                                                                               
+c 
       temp(1) = s(1)                                                            
-      temp(2) = s(4) * factor                                                   
-      temp(3) = s(2)                                                            
-      temp(4) = s(5) * factor                                                   
-      temp(5) = s(6) * factor                                                   
-      temp(6) = s(3)                                                            
-      call ou3dpr( temp, 3, 1, ps, an, 3, wk, ier )   ! warp3d routine          
+      temp(2) = s(2)                                                 
+      temp(3) = s(3)                                                            
+      temp(4) = s(4) * factor                                                   
+      temp(5) = s(5) * factor                                                   
+      temp(6) = s(6) * factor                                                              
+      call principal_values( temp, evectors, evals )       
+      ps = evals
+      an = evectors
 c                                                                               
       return                                                                    
       end                                                                       
@@ -291,7 +297,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine getnumcpus( nranks )                                           
-      use global_data ! old common.main
+      use global_data, only : use_mpi, numprocs
       implicit none
       integer :: nranks                                                   
 c                                                                               
@@ -313,7 +319,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine getrank( thisrank )                                            
-      use global_data ! old common.main
+      use global_data, only : use_mpi, myid
       implicit none
       integer :: thisrank                                                   
 c                                                                               
@@ -335,7 +341,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine getmodelsizes( num_model_nodes, num_model_elements )           
-      use global_data ! old common.main
+      use global_data,only : nonode, noelem
       implicit none
       integer :: num_model_nodes, num_model_elements                                                    
 c                                                                               
@@ -344,4 +350,178 @@ c
 c                                                                               
       return                                                                    
       end                                                                       
-                                                                                
+          
+
+c     ****************************************************************          
+c     *                                                              *          
+c     *                    subroutine principal_values               *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                last modified : 12/18/2020 rhd                *          
+c     *                                                              *          
+c     *  eigenvalues of symmetric 3x3 returned in descending order   *
+c     *                                                              *          
+c     ****************************************************************          
+c
+      subroutine principal_values( vector, evectors, evals)
+c
+      use global_data, only : out
+      use constants
+      implicit none
+c
+c              calculates the eigenvalues and normalized eigenvectors 
+c              of a symmetric 3x3 matrix using the jacobi algorithm. 
+c              not the fastest method but the most stable and accurate
+c              especially for ill-conditioned input.
+c
+c              input vector not altered
+c
+c              vector: xx, yy, zz, xy, yz, xz
+c
+c              reference:  Numerical diagonalization of 3x3 matrcies
+c                          Copyright (C) 2006  Joachim Kopp
+c                          GNU Lesser General Public License
+c                          his name for routine: dsyevj3
+c
+      double precision :: vector(6), evectors(3,3), evals(3)
+c
+      integer :: i, x, y, r
+      double precision :: q(3,3), a(3,3), w(3), sd, so, s, c, t, g, h,
+     &                    z, theta, thresh
+c
+      a(1,1) = vector(1)
+      a(1,2) = vector(4)
+      a(1,3) = vector(6)
+      a(2,2) = vector(2)
+      a(2,3) = vector(5)
+      a(3,3) = vector(3)
+c
+      do x = 1, 3
+        q(x,x) = one
+        do y = 1, x-1
+          q(x, y) = zero
+          q(y, x) = zero
+        end do
+      end do
+c
+      do x = 1, 3
+        w(x) = a(x,x)
+      end do
+c
+      sd = zero
+      do x = 1, 3
+        sd = sd + abs(w(x))
+      end do
+      sd = sd**2
+c 
+c              main iteration loop
+c
+      do i = 1, 50  ! max iterations
+        so = zero
+        do x = 1, 3
+          do y = x+1, 3
+            so = so + abs(a(x,y))
+          end do
+        end do
+        if( so == zero ) then ! converged
+           call principal_values_reorder
+           return
+        end if
+c
+        if( i < 4) then ! looser initial threshold
+          thresh = 0.2d0 * so / 3**2
+        else
+          thresh = zero
+        end if
+c
+c                do  a sweep
+c
+        do x = 1, 3
+          do y = x+1, 3
+            g = hundred * ( abs(a(x,y)) )
+            if( i > 4 .and. abs(w(x)) + g == abs(w(x))
+     &           .and. abs(w(y)) + g == abs(w(y)) ) then
+              a(x, y) = zero
+            else if( abs(a(x, y)) > thresh ) then
+c                calculate jacobi transformation
+              h = w(y) - w(x)
+              if( abs(h) + g == abs(h) ) then
+                t = a(x, y) / h
+              else
+                theta = half * h / a(x, y)
+                if( theta < zero ) then
+                  t = -one / (sqrt(one + theta**2) - theta)
+                else
+                  t = one / (sqrt(one + theta**2) + theta)
+                end if
+              end if
+c
+              c = one / sqrt( one + t**2 )
+              s = t * c
+              z = t * a(x, y)
+c              
+c                apply jacobi transformation
+c
+              a(x, y) = zero
+              w(x)    = w(x) - z
+              w(y)    = w(y) + z
+              do r = 1, x-1
+                t       = a(r, x)
+                a(r, x) = c * t - s * a(r, y)
+                a(r, y) = s * t + c * a(r, y)
+              end do
+              do r = x+1, y-1
+                t       = a(x, r)
+                a(x, r) = c * t - s * a(r, y)
+                a(r, y) = s * t + c * a(r, y)
+              end do
+              do r = y+1, 3
+                t       = a(x, r)
+                a(x, r) = c * t - s * a(y, r)
+                a(y, r) = s * t + c * a(y, r)
+              end do
+c
+c             update eigenvectors
+c
+              do r = 1, 3
+                t       = q(r, x)
+                q(r, x) = c * t - s * q(r, y)
+                q(r, y) = s * t + c * q(r, y)
+              end do
+            end if
+          end do ! on y
+        end do ! on x
+      end do ! on i
+
+      write(out,9000)
+      call die_abort
+ 9000 format(/1x,'>>>>> FATAL ERROR: routine principal_values.',
+     &          ' Jacobi iterations failed to converge',/
+     & /,'.....  analysis terminated  .....',// )
+c
+      contains     
+c     ========       
+c  
+      subroutine principal_values_reorder
+      implicit none
+c
+c              put eigenvalues in descending order.
+c              make eigenvector columns match ordering.
+c      
+      integer :: k, i
+c
+      do i = 1, 3 
+        k = maxloc( w,dim=1 )
+        evals(i) = w(k)
+        evectors(1:3,i) = q(1:3,k)
+        w(k) = -1.0d20
+      end do
+c      
+      return     
+      end subroutine principal_values_reorder
+c      
+      end subroutine principal_values
+      
+
+                                                                      
