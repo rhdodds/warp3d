@@ -5,7 +5,7 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/5/2020 rhd              *          
+c     *                   last modified : 12/19/2020 rhd             *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
@@ -19,6 +19,7 @@ c
      &           allowable_change => max_plast_strain_change, 
      &           perm_load_fact, num_elements_in_force_release    
       use dam_param_code, only :  dam_param_3_get_values
+      use constants
 c                                                 
       implicit none                                                    
       logical :: debug                                                                                                                                            
@@ -26,15 +27,13 @@ c
 c              local declarations                                                  
 c                              
       integer :: elem, elem_ptr, count                                              
-      logical :: ldebug, increase_size                                               
+      logical :: ldebug, increase_size                                           
       double precision :: sig_mean, sig_mises, triaxiality, 
      &                    new_plast_strain, mean_zeta, mean_bar_theta,
-     &                    max_change,
-     &                    old_perm_factor, eps_crit, factor,
-     &                    default_cut_factor, damp_factor, mean_omega 
-      double precision, parameter :: zero = 0.0d0, half = 0.5d0,
-     &         ptnine = 0.9d0, one = 1.0d0, one_toler = 0.999d0,
-     &         two = 2.0d0, pt75 = 0.75d0
+     &                    max_change, old_perm_factor, eps_crit, factor,
+     &                    default_cut_factor, damp_factor, mean_omega,
+     &                    tear_param 
+      double precision, parameter :: one_toler = 0.999d0
 c                
       ldebug = debug
 c
@@ -56,7 +55,7 @@ c
         call dam_param_3_get_values(
      &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
      &      sig_mises, triaxiality, mean_zeta, mean_omega,
-     &      mean_bar_theta, 2 )   
+     &      mean_bar_theta, 2, tear_param )   
         max_change = max( max_change, 
      &               new_plast_strain - old_plast_strain(elem_ptr) )                            
         old_plast_strain(elem_ptr) = new_plast_strain  

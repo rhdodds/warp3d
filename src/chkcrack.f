@@ -21,7 +21,7 @@ c
 c                                                          
       implicit none                                                    
 c                                                                               
-      integer :: step, iter
+      integer, intent(in) :: step, iter
       logical :: debug                                                             
 c                                                                               
       debug = .false.                                                           
@@ -82,7 +82,7 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/12/2020 rhd             *          
+c     *                   last modified : 12/18/2020 rhd             *          
 c     *                                                              *          
 c     *        checks conditions to see if crack                     *          
 c     *        growth will occur by element extinction               *          
@@ -104,9 +104,10 @@ c
      &                        all_elems_killed, killed_element_limit,
      &                        num_elements_killed, kill_order,
      &                        smcs_list_file_flag, smcs_list_file_name,
-     &                        num_kill_order_list,
+     &                        num_kill_order_list, smcs_type,
      &                        stop_killed_elist_length,
-     &                        deleted_elist_to_stop                         
+     &                        deleted_elist_to_stop,
+     &                        smcs_type_5_tp_critical                         
 c                                                         
       implicit none
 c
@@ -130,7 +131,7 @@ c
      &   porosity, eps_plas, eps_crit,              
      &   values(20), local_status(max_local_list,3), orig_poros,                
      &   ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
-     &   avg_bar_theta                                                                                                                                
+     &   avg_bar_theta, tear_param                                                                                                                                
       logical :: fgm_cohes, ext_gurson, option_exponential,                        
      &           option_ppr, local_write_packets, do_kill_in_order,                
      &           found_exponential, found_ppr, found_cavit,                        
@@ -187,7 +188,7 @@ c
      &         elem=elem, kill_now=kill_the_elem, debug=debug,              
      &         eps_plas=eps_plas, eps_crit=eps_crit,           
      &         avg_triaxiality=avg_triaxiality, avg_zeta=avg_zeta, 
-     &         avg_bar_theta=avg_bar_theta )
+     &         avg_bar_theta=avg_bar_theta, tear_param=tear_param )
          case( 4 )
             call dam_param_cohes( elem, kill_the_elem, debug,                  
      &                            values, 2 )  
@@ -333,9 +334,14 @@ c
      &                     ext_spacing, ext_shape     
           return                       
       case( 3 )
-          write(out,9010) elem, eps_plas, eps_crit, avg_triaxiality,
+          if( smcs_type <= 4 ) then
+            write(out,9010) elem, eps_plas, eps_crit, avg_triaxiality,
      &                    avg_zeta, avg_bar_theta
-          if( .not. smcs_list_file_flag ) return ! delete elements file
+          end if
+          if( smcs_type == 5 ) then
+            write(out,9025) elem, tear_param, smcs_type_5_tp_critical
+          end if
+           if( .not. smcs_list_file_flag ) return ! delete elements file
           inquire( file=smcs_list_file_name, exist=fexists )
           open( newunit=device,file=smcs_list_file_name,
      &          form='formatted', status='unknown', 
@@ -343,7 +349,8 @@ c
           if( .not. fexists ) write(device,9018)
           write(device,9020) current_load_time_step,
      &                       elem, eps_plas, eps_crit,
-     &                       avg_triaxiality, avg_zeta, avg_bar_theta 
+     &                       avg_triaxiality, avg_zeta, avg_bar_theta,
+     &                       tear_param 
           close(unit=device)    
         return
       case( 4 )
@@ -387,8 +394,13 @@ c
      & 'strain reached for elements', /,
      & '!   (element deletion begins at listed step number)',
      & /,'!',/,
-     & 3x,'step     elem   ebarp  ebarp_crit bar_T  bar_xi   bar_theta')  
- 9020 format(2x,2i8,f8.5,1x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3)      
+     & 3x,'step     elem   ebarp  ebarp_crit bar_T  bar_xi',
+     &  '   bar_theta   tear_param')  
+ 9020 format(2x,2i8,f8.5,1x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3,4x,f8.3)      
+ 9025 format(/,' >> element death option invoked before next step',             
+     &       /,'    element: ',i7,' is now killed.',                            
+     &       /,'    tearing parameter: ',f9.3,' is > limit of: ',
+     &        f9.3 )
  9200 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   Deff/Dpeak: ',f5.2,' Teff/Tpeak: ',f5.2)                            
  9220 format(/,'   >> element death invoked for element: ',i7,                  
@@ -657,14 +669,14 @@ c
 c                                                                               
       use elem_extinct_data, only : dam_node_elecnt                             
       use main_data,         only : cnstrn, cnstrn_in                          
-      use damage_data, only : csttail                                                      
+      use damage_data, only : csttail  
+      use constants                                                    
 c                                                                               
       implicit none                                                    
 c              
       logical, intent(in) :: debug
 c
       integer :: node, num_dof, j, glbal_dof
-      double precision, parameter :: zero = 0.0d0                                                          
 c
       if( debug ) write(out,*) '>>> in chk_free_nodes <<<'                     
 c                                                                               
@@ -1087,7 +1099,7 @@ c     *                     subroutine damage_update                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 12/7/2020 rhd              *          
+c     *                   last modified : 12/18/2020 rhd             *          
 c     *                                                              *          
 c     *        certain damage models need variables updated outside  *
 c     *        element stress/history data (e.g. smcs )              *
@@ -1108,7 +1120,7 @@ c
 c                                       
       integer :: elem, elem_ptr, dowhat
       logical :: debug, local_debug, process                                                    
-      double precision :: d1, d2, d3, d4, d5, d6, d7, d8
+      double precision :: d1, d2, d3, d4, d5, d6, d7, d8, d9
 c        
       debug = .false.
       local_debug = .false. ! debug
@@ -1147,7 +1159,7 @@ c
          case( 3 ) !  SMCS   
           dowhat = 4
           call dam_param_3_get_values( elem, debug, d1, d2, d3, d4,            
-     &                                 d5, d6, d7, d8, dowhat )                
+     &                                 d5, d6, d7, d8, dowhat, d9 )                
          end select 
 c                         
       end do  ! over all model elements                                         

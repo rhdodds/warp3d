@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 12/12/20 rhd                    *          
+c     *              last modified : 12/15/20 rhd                    *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -37,10 +37,9 @@ c
      &   smcs_gamma, smcs_beta_1, smcs_beta_2, smcs_a_plus,
      &   smcs_a_minus, smcs_kappa, smcs_alpha_1, smcs_alpha_2, 
      &   smcs_cutoff_triaxiality, max_eps_critical, smcs_type_4_A,
-     &   smcs_type_4_n,
-     &   smcs_type_4_c1, smcs_type_4_c2, smcs_type_4_c3,
-     &   smcs_alpha, smcs_beta,                               
-     &   control_load_fact, old_load_fact,                                      
+     &   smcs_type_4_n, smcs_type_4_c1, smcs_type_4_c2, smcs_type_4_c3,
+     &   smcs_type_5_power, smcs_type_5_tp_critical, smcs_alpha,
+     &   smcs_beta, control_load_fact, old_load_fact,                                      
      &   min_load_fact, overshoot_limit, CTOA_range,                            
      &   perm_load_fact, max_porosity_change,                                   
      &   max_plast_strain_change,                                               
@@ -48,7 +47,6 @@ c
      &   crkpln_srch_tol, max_deff_change,                                      
      &   critical_cohes_deff_fract,                                             
      &   ppr_kill_displ_fraction
-                                               
 c                                                                               
 c                     scalar integers                                           
 c                                                                               

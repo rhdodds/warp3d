@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 12/11/2020 rhd             *          
+c     *                   last modified : 12/15/2020 rhd             *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -13,11 +13,14 @@ c
 c                                                                               
 c                                                                               
       subroutine incrack( sbflg1, sbflg2 )                                      
-      use global_data ! old common.main
-      use allocated_integer_list
+c
+      use global_data, only : out, noelem, num_error, iprops, use_mpi,
+     &                        dstmap
+      use constants
+      use allocated_integer_list, only : trlist_allocated
 c                                                                               
       use main_data, only : cnstrn_in                                           
-      use damage_data                                                           
+      use damage_data
 c                                                                               
       implicit none
 c      
@@ -36,11 +39,8 @@ c
      &                        scan_kill_order_list(:),
      &                        scan_master_list(:)
 c                                                                               
-      double precision ::                                                          
-     &  dumd, zero, ctoa, two, hundred, def_min_load_fact, temp_dble,           
-     &  d32460, one                                                             
-      data one, zero, two, hundred, def_min_load_fact,d32460                    
-     &      / 1.0, 0.0, 2.0, 100.0, .01, 32460.0 /                              
+      double precision :: dumd, ctoa, temp_dble         
+      double precision, parameter :: def_min_load_fact = 0.01d0                                                    
       character(len=1) :: dums                                                  
       real :: dumr                                                                 
 c                                                                               
@@ -1144,7 +1144,7 @@ c
        return
       end if
 c
-      ok = smcs_type .ge. 1  .and.  smcs_type .le. 4
+      ok = smcs_type .ge. 1  .and.  smcs_type .le. 5
       if( .not. ok ) then
        call incrack_errmsg( 10 )
        return
@@ -1160,7 +1160,8 @@ c
      &                   smcs_alpha_1, smcs_alpha_2,
      &                   smcs_cutoff_triaxiality,
      &                   max_eps_critical, smcs_type_4_A, smcs_type_4_n,
-     &                   smcs_type_4_c1, smcs_type_4_c2, smcs_type_4_c3 
+     &                   smcs_type_4_c1, smcs_type_4_c2, smcs_type_4_c3,
+     &                   smcs_type_5_power, smcs_type_5_tp_critical 
          cycle
        end if
 
@@ -1254,6 +1255,16 @@ c
          call incrack_errmsg( 4 )
          return
        end if
+       if( matchs_exact('power') ) then
+         if( numd(smcs_type_5_power) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
+       if( matchs_exact('tp_critical') ) then
+         if( numd(smcs_type_5_tp_critical) ) cycle
+         call incrack_errmsg( 4 )
+         return
+       end if
        call incrack_errmsg( 11 )
        return
       end do
@@ -1278,7 +1289,9 @@ c
      & 10x,'type_4_n :        ',f10.4, /,
      & 10x,'type_4_c1 :       ',f10.4, /,
      & 10x,'type_4_c2 :       ',f10.4, /,
-     & 10x,'type_4_c3 :       ',f10.4,/)
+     & 10x,'type_4_c3 :       ',f10.4,/
+     & 10x,'type_5_power:     ',f10.4, /,
+     & 10x,'type_5_critical:  ',f10.4,/ )
 c
       end subroutine incrack_smcs_parms
 c
@@ -1581,11 +1594,13 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dam_init_release                                               
+      subroutine dam_init_release 
+c                                              
       use global_data ! old common.main
-c                                                                               
       use main_data, only : crdmap                                              
-      use damage_data                                                           
+      use damage_data
+      use constants  
+                                                               
 c                                                                               
       implicit none                                                    
 c                                                                               
@@ -1595,7 +1610,6 @@ c
       character(len=1) :: dums                                                  
       real :: dumr                                                                 
       double precision :: plane_tol, max_dist, dumd 
-      double precision, parameter :: zero = 0.d0                                        
       integer, allocatable :: tmp_nodes(:)                                                  
       logical, parameter :: debug = .false.                                                             
 c                                                                               
@@ -1716,7 +1730,8 @@ c
 c                                                                               
       use node_release_data                                                     
       use main_data, only : incmap, incid, inverse_incidences                   
-      use damage_data                                                           
+      use damage_data  
+      use constants                                                         
 c                                                                               
       implicit none                                                    
 c                                                                               
@@ -1731,7 +1746,6 @@ c
       integer, external :: master
       logical :: crack_node, first_node                                            
       double precision :: dumd     
-      double precision, parameter :: zero = 0.d0, one = 1.d0                                                    
       real :: dumr                                                                 
       character(len=1) :: dums                                                  
 c                                                                               
@@ -1903,15 +1917,14 @@ c
       subroutine find_release_height                                            
       use global_data ! old common.main
 c                                                                               
-      use damage_data                                                           
+      use damage_data
+      use constants                                                           
 c                                                                               
       implicit none                                                    
 c                                                                               
 c                     local declarations                                        
 c      
       integer :: dum                                                                    
-      double precision, parameter :: oneeighty = 180.d0, 
-     &                               pi= 3.1415926535897932d0                                                         
       double precision :: dumd                                                  
       real :: dumr                                                                 
       character(len=1) :: dums                                                  
@@ -2080,7 +2093,8 @@ c
 c                                                                               
       use node_release_data, only : master_nodes                                
       use main_data,         only : cnstrn_in                                   
-      use damage_data                                                           
+      use damage_data 
+      use constants                                                          
 c                                                                               
       implicit none
 c
@@ -2089,7 +2103,6 @@ c
       logical :: debug  
 c
       integer :: iplist, icn, list_entry, node, i, dof
-      double precision, parameter :: d32460 = 32460.0d0                                                                  
 c                                                                               
       if ( debug ) write (out,*) '>>>> in master_list_fill'                     
 c                                                                               
@@ -2189,14 +2202,14 @@ c
       use node_release_data, only : master_nodes, num_neighbors,                
      &     neighbor_nodes, inv_crkpln_nodes, master_lines                       
       use main_data, only : cnstrn_in                                   
-      use damage_data                                                           
+      use damage_data  
+      use constants                                                         
 c                                                                               
       implicit none
 c                            
       integer :: num_lines, i, j, node_data_entry, neighbor, 
      &           neighbor_node, dof, master_node  
       logical, parameter :: debug = .false.                                                
-      double precision, parameter :: d32460 = 32460.0d0                                                         
 c                                                                               
       if (debug) write (*,*) '>>> in init_ctoa_back'                            
 c                                                                               
@@ -2268,7 +2281,8 @@ c
      &                      num_nodes_back, num_line )                                            
       use global_data ! old common.main
 c                                                                               
-      use node_release_data, only : master_lines                                
+      use node_release_data, only : master_lines       
+      use constants                         
 c                                                                               
       implicit none
 c              
@@ -2277,7 +2291,6 @@ c
       integer :: idx, new_node, master_line_idx                  
       logical :: reached_end 
       logical, parameter ::  debug = .false.                                               
-      double precision, parameter :: d32460 = 32460.0d0                                                            
 c                                                                               
       if (debug) write (*,*) '>>> in find_master_line'                          
 c                                                                               

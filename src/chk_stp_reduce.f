@@ -19,12 +19,12 @@ c
       subroutine check_for_step_reduction( temp_load_fact, mf, mf_nm1 )
       use global_data ! old common.main
       use damage_data
+      use constants
       implicit none
 c
       double precision ::  temp_load_fact, mf, mf_nm1
 c
       logical, parameter ::  debug = .false.
-      double precision, parameter ::  one = 1.0d0, zero = 1.0d0
 c
       if ( debug ) then
          write(*,*) ' > entered check_for_step_reduction'
@@ -121,6 +121,7 @@ c
      &                       dtemp_elems, actual_cnstrn_stp_factors,
      &                       user_cnstrn_stp_factors
       use damage_data
+      use constants
 c
       implicit none
 c
@@ -129,7 +130,6 @@ c
 c
       integer :: i
       double precision :: step_factor, total_factor
-      double precision, parameter :: one = 1.0d0
       logical, parameter :: debug = .false.
 c
       if ( debug ) write (out,9000)

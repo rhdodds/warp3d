@@ -26,7 +26,8 @@ c
      &                        max_porosity_change, load_reduced,
      &                        perm_load_fact, num_steps_min, 
      &                        no_killed_elems        
-      use dam_param_code, only : dam_param      
+      use dam_param_code, only : dam_param  
+      use constants    
 c            
       implicit none
 c                                 
@@ -36,7 +37,6 @@ c           local declarations
 c          
       integer :: elem, elem_ptr, i                                                                      
       double precision :: new_porosity, max_del_poros    
-      double precision, parameter :: two = 2.d0, zero = 0.d0                                               
       logical :: not_cut, all_killed, no_adaptive_during_force_release                                  
 c                                                                               
       if( debug ) write( out,*) '>>>>>> in gurson_cut_step'                     
@@ -141,7 +141,8 @@ c     ****************************************************************
 c                                                                               
       subroutine gurson_load_factor( del_poros, mxstp_store,                    
      &     max_porosity_change, load_reduced, perm_load_fact,                   
-     &     num_steps_min, no_killed_elems, out, debug )                         
+     &     num_steps_min, no_killed_elems, out, debug )   
+      use constants                      
       implicit none                                                    
 c
       integer, intent(in) :: out, mxstp_store
@@ -156,9 +157,8 @@ c
       integer :: j                                                                      
       integer, parameter :: max_steps_min = 3                                             
       double precision :: ave_del_poros, ratio, tfactor                                                         
-      double precision, parameter :: two = 2.d0, max_factor = 1.2d0,
-     &      min_factor = 0.8d0, one = 1.d0, point_eight = 0.8d0,
-     &      zero = 0.d0, four = 4.d0            
+      double precision, parameter ::  max_factor = 1.2d0,
+     &                                min_factor = 0.8d0            
 c                                                                               
       if( debug ) write ( out, * ) '   >>>>>> in gurson_load_factor'            
 c                                                                               

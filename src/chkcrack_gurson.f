@@ -43,7 +43,8 @@ c
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, urcs_n_blocks,                
      &                            history_blk_list                              
-      use damage_data, only : porosity_limit                                                           
+      use damage_data, only : porosity_limit   
+      use constants                                                        
 c                                                                               
       implicit none                                                    
 c                                                                               
@@ -63,8 +64,6 @@ c
       double precision :: sig_xx, sig_yy, sig_zz,                                              
      &     sig_xy, sig_xz, sig_yz,eps_xx, eps_yy, eps_zz,                       
      &     gam_xy, gam_xz, gam_yz, fpngp       
-      double precision, parameter :: zero = 0.d0, third = 1.d0/3.d0,
-     &              iroot2 = 1.d0/sqrt(2.d0), six = 6.d0                                 
 c                                                                               
 c          set up to process element. get number of gauss points.               
 c          find the block that the element belongs to. get the                  
@@ -174,7 +173,8 @@ c
       use global_data, only : iprops, nstrs, out
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, urcs_n_blocks,                
-     &                            history_blk_list                              
+     &                            history_blk_list   
+      use constants                           
 c
       implicit none                                                    
 c                                                                               
@@ -194,10 +194,6 @@ c
       double precision :: coalesce_count, sig_xx, sig_yy, sig_zz,                                              
      &     sig_xy, sig_xz, sig_yz,eps_xx, eps_yy, eps_zz,                       
      &     gam_xy, gam_xz, gam_yz, fpngp                                        
-      double precision, parameter :: zero = 0.d0, third = 1.d0/3.d0,
-     &                               one = 1.d0, six = 6.d0, 
-     &                               iroot2 = 1.d0/sqrt(2.d0),
-     &                               half = 0.5d0
 c                                                                               
 c          set up to process element. get number of gauss points.               
 c          find the block that the element belongs to. get the                  
@@ -316,6 +312,7 @@ c
       use damage_data, only : dam_ptr, load_size_control_crk_grth,
      &                        num_elements_killed, porosity_limit,
      &                        num_print_list
+      use constants
 c                                                        
       implicit none                                                                      
 c                                                                               
@@ -332,7 +329,6 @@ c
      &     d_poros, max_d_poros, fpngp, sig_mean,             
      &     sig_mises, ext_shape, ext_spacing    
       double precision, dimension(:), pointer :: history
-      double precision, parameter :: zero = 0.d0
       logical, parameter :: debug = .false.                                        
       logical :: all_killed, lmises(num_print_list), 
      &           lmean(num_print_list), ext_gurson                             

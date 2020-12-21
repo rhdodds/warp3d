@@ -28,8 +28,9 @@ c
      &                        num_kill_elem, print_status, 
      &                        print_top_list, num_top_list, 
      &                        smcs_states, smcs_stream, smcs_text,
-     &                        smcs_states_intlst
+     &                        smcs_states_intlst, smcs_type
       use dam_param_code, only : dam_param_3_get_values
+      use constants
 c                                                        
       implicit none                                                    
 c
@@ -45,10 +46,9 @@ c
       double precision :: dummy, eps_plas, eps_crit, sig_mean,
      &    sig_mises, d_eps_plas, max_d_eps_plas, ddummy1, ddummy2,
      &    ddummy3, triaxiality, mean_zeta, ratio, mean_omega,
-     &    mean_bar_theta
+     &    mean_bar_theta, tear_param
       double precision, allocatable :: strain_ratios(:)
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0,
-     &                               eps_plas_tol = 1.0d-06,  
+      double precision, parameter :: eps_plas_tol = 1.0d-06,  
      &                               ratio_tol = 0.001d0              
       logical :: debug, skip_element
       character(len=1) :: cflag                                          
@@ -111,7 +111,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega, 
-     &                   mean_bar_theta, 2 )  
+     &                   mean_bar_theta, 2, tear_param )  
          skip_element = eps_plas < eps_plas_tol
          if( skip_element ) cycle
          cflag = " "
@@ -124,14 +124,14 @@ c
      &       write(out,9110) element, eps_plas, eps_crit, 
      &              eps_plas / eps_crit, sig_mean,           
      &              sig_mises, d_eps_plas, triaxiality, mean_zeta,
-     &              mean_omega, mean_bar_theta, cflag                                       
+     &              mean_omega, mean_bar_theta, tear_param, cflag                                       
          else 
             ratio = eps_plas / eps_crit
             if( ratio >= ratio_tol )
      &         write(out,9100) element, eps_plas, eps_crit, 
      &              ratio, sig_mean,           
      &              sig_mises, triaxiality, mean_zeta, mean_omega,
-     &              mean_bar_theta, cflag 
+     &              mean_bar_theta, tear_param, cflag 
          end if                                                 
          local_count = local_count + 1                                       
       end do  ! elem_loop
@@ -139,6 +139,7 @@ c
       write(out,9220) num_elements_killed
       if( local_count > 0 ) then
         write(out,9200); write(out,9210)
+        if( smcs_type == 5 ) write(out,9215)
       end if                                                              
       if( load_size_control_crk_grth ) write(out,9010) max_d_eps_plas 
 c
@@ -169,21 +170,21 @@ c
      &     f10.7,/)                                                             
  9020 format(2x,'element   eps-pls    eps-crit  ratio  ',                      
      & 'sig-mean  sig-mises  d(eps-pls)   bar T   bar xi',
-     & '   bar omega  bar theta',/,2x,                                   
+     & '   bar omega  bar theta  tear_param',/,2x, 
      &          '-------   -------    --------  -----  ',                        
      & '--------  ---------  ----------   -----   ------',
-     & '   ---------  ---------')                                        
+     & '   ---------  ---------  ----------')                                        
  9030 format(2x,'element   eps-pls    eps-crit  ratio  ',                      
      & 'sig-mean  sig-mises  bar T   bar xi',
-     & '   bar omega  bar theta',/,2x,                                   
+     & '   bar omega  bar theta  tear_param',/,2x,                                   
      & '-------   -------    --------  -----  ',                        
      & '--------  ---------  -----   ------   ---------  ',
-     & '---------')
+     & '---------  ----------')
  9100 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,1x,f6.3,3x,
-     &       f6.3,6x,f6.3,5x,f6.3,2x,a1) 
+     &       f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1) 
  9110 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,3x,f9.7,
-     &  2x,f6.3,3x,f6.3,6x,f6.3,5x,f6.3,2x,a1) 
- 9200 format(10x,"* -- bat T (sig_mean/sig_mises) < 1.0")                                                
+     &  2x,f6.3,3x,f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1) 
+ 9200 format(10x,"* -- bar T (sig_mean/sig_mises) < 1.0")                                                
  9210 format(10x,"-- bar T is mean triaxiality over history ",
      & "weighted by plastic strain",/,
      & 10x,"-- bar xi is mean of normalized Lode angle weighted by ",
@@ -191,9 +192,13 @@ c
      & 10x,"-- bar omega is mean of Lode angle parameter weighted by ",
      & "plastic strain",/,
      & 10x,"-- bar theta is mean of Lode angle parameter weighted by ",
-     & "plastic strain - type 4 MMC",
-     & /,10x,"-- Elements with ratio < 0.001 not shown")   
- 9220 format(10x,"Total elements now killed: ",i5)       
+     & "plastic strain - type 4 MMC",/,
+     & 10x,"-- tear_param is Sandia/Wellman tearing parameter ",
+     & "- type 5",
+     & /,10x,"-- Elements with ratio < 0.001 not shown")  
+ 9215 format(10x,"** for Type 5 (tearing parameter), eps-crit set",
+     & ' = 1.0 for printing purposes. not used in computations')
+ 9220 format(/,10x,"Total elements now killed: ",i5)       
  9300 format(10x,"-- Packet data written for element count: ",i7)                                         
 c  
       contains
@@ -233,7 +238,7 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   mean_bar_theta, 2 )  
+     &                   mean_bar_theta, 2, tear_param )  
          strain_ratios(k) =  eps_plas / eps_crit
       end do  ! elem_loop
 c
@@ -274,17 +279,17 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   mean_bar_theta, 2 )  
+     &                   mean_bar_theta, 2, tear_param )  
          if( load_size_control_crk_grth ) then                              
             d_eps_plas = eps_plas - old_plast_strain(dam_ptr(element))                           
             max_d_eps_plas = max(max_d_eps_plas, d_eps_plas)                 
             write(packet_file_no) element, eps_plas, eps_crit,               
      &              sig_mean, sig_mises, d_eps_plas, triaxiality,
-     &              mean_zeta, mean_omega, mean_bar_theta                            
+     &              mean_zeta, mean_omega, mean_bar_theta, tear_param                            
          else                                                                
             write(packet_file_no) element, eps_plas, eps_crit,               
      &              sig_mean, sig_mises, triaxiality, mean_zeta, 
-     &              mean_omega, mean_bar_theta                                         
+     &              mean_omega, mean_bar_theta, tear_param                                         
          end if                                                               
       end do   ! elem_loop    
 c
@@ -303,7 +308,7 @@ c
      &           now_len, lenlst
       logical ::  get_values, output_this_step
       logical, external :: scan_entry_in_list
-      double precision :: evalues(9)
+      double precision :: evalues(10)
       character(len=24) :: sdate_time_tmp
       character(len=20) :: form_type, access_type
       character(len=80) :: flat_name
@@ -362,23 +367,23 @@ c
           write(flat_file_number,9000)
       end if
 c
-c              write a result record for every element. nonkillable
-c              elements have a large critical plastic strain.
+c              write a result record for every element. non-killable
+c              elements have all zero values
 c   
       do element = 1, noelem
         elem_ptr = dam_ptr(element)    
         if( elem_ptr == 0 ) then ! element not killable
-          get_values = .true.
+          get_values = .false.
         elseif( dam_state(elem_ptr) .ne. 0 ) then !already killed
-           evalues = zero
            get_values = .false.
         else ! killable elem not yet killed
            get_values = .true.
         end if
+        evalues = zero
         if( get_values ) then
            call dam_param_3_get_values( element, debug, eps_plas,               
-     &           eps_crit, sig_mean, sig_mises, triaxiality, 
-     &           mean_zeta, mean_omega, mean_bar_theta, 3 )  
+     &         eps_crit, sig_mean, sig_mises, triaxiality, 
+     &         mean_zeta, mean_omega, mean_bar_theta, 2, tear_param )  
            evalues(1) = eps_plas
            evalues(2) = eps_crit
            evalues(3) = eps_plas / eps_crit
@@ -388,6 +393,7 @@ c
            evalues(7) = mean_zeta
            evalues(8) = mean_omega
            evalues(9) = mean_bar_theta
+           evalues(10) = tear_param
         end if  
         where( abs( evalues ) .lt. eps_plas_tol ) evalues = zero
        if( smcs_stream ) write(flat_file_number) evalues
@@ -413,7 +419,7 @@ c
      &"#  8 character state labels and longer descriptors",/,
      &"#  material model number, number of state variables",/,
      &"#",/,
-     &"     9",/,
+     &"     10",/,
      &"      1  epspls   Eq. plastic strain",/,
      &"      2  epscrit  Critical strain",/,
      &"      3  ratio    epspls/epscrit",/,
@@ -421,9 +427,10 @@ c
      &"      5  mises    mean mises",/,
      &"      6  triax    bar T",/,
      &"      7  xi       bar xi",/,
-     &"      8  omega    bar omega",/
-     &"      9  theta    bar theta" )
- 9110 format(9e15.6)
+     &"      8  omega    bar omega",/,
+     &"      9  theta    bar theta",/
+     &"     10  tear_p   tearing_parm",/)
+ 9110 format(10e15.6)
  9200 format( i7.7 )                              
 c
       end subroutine dam_print_elem3_states_file

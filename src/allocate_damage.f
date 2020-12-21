@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/5/2020  rhd             *          
+c     *                   last modified : 12/18/20 rhd               *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -20,6 +20,7 @@ c
       use node_release_data                                                     
       use damage_data   
       use dam_param_code, only : dam_param
+      use constants
 c                                                        
       implicit none 
 c
@@ -30,7 +31,6 @@ c
      &      dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
      &     dumd8, dumd9, dumd10, porosity, plast_strain,                                              
      &     values(20)         
-      double precision, parameter :: zero = 0.d0                                                  
       logical :: debug, duml                                                       
       real :: dumr                                                                 
 c                                                                               
@@ -240,10 +240,9 @@ c
                 do elem  = 1, noelem                                                    
                    elem_ptr = dam_ptr(elem)                                             
                    if ( elem_ptr .eq. 0 ) cycle                                         
-                   call dam_param( elem, duml, debug, porosity, dumd1,                  
-     &                     dumd2, dumd3, dumd4, duml, dumd5,                    
-     &                     dumd6, dumd7, dumd8, dumd9)                                              
-                   old_porosity( elem_ptr ) = porosity                                  
+                   call dam_param( elem, debug=debug, 
+     &                             porosity=porosity )                             
+                   old_porosity(elem_ptr) = porosity                                  
                    if( debug )
      &                  write(out,'("   Poros. for:",i5,"=",e13.6)')             
      &                  elem, porosity                                              
@@ -277,9 +276,8 @@ c
                 do elem = 1, noelem                                                     
                    elem_ptr = dam_ptr( elem )                                           
                    if( elem_ptr .eq. 0 ) cycle                                         
-                   call dam_param( elem, duml, debug, dumd5,                            
-     &                     plast_strain, dumd2, dumd3, dumd4, duml,             
-     &                     dumd5, dumd6, dumd7, dumd8, dumd9 )                                       
+                   call dam_param( elem, debug=debug,                      
+     &                             eps_plas=plast_strain )                                     
                    old_plast_strain( elem_ptr ) = plast_strain                          
                    if( debug )
      &                  write(out,'("   Pl. e for:",i5,"is",e13.6)')             
@@ -388,15 +386,19 @@ c
      &        deallocate( smcs_weighted_zeta  )  
           if( allocated( smcs_weighted_bar_theta ) ) 
      &        deallocate( smcs_weighted_bar_theta  )  
+          if( allocated( smcs_weighted_tear_parm ) ) 
+     &        deallocate( smcs_weighted_tear_parm  )  
           allocate( smcs_weighted_T(num_kill_elem),
      &              smcs_old_epsplas(num_kill_elem),
      &              smcs_weighted_zeta(num_kill_elem),
-     &              smcs_weighted_bar_theta(num_kill_elem) )
+     &              smcs_weighted_bar_theta(num_kill_elem),
+     &              smcs_weighted_tear_parm(num_kill_elem) )
           do i = 1, num_kill_elem
             smcs_weighted_T(i)          = zero
             smcs_old_epsplas(i)         = zero  
             smcs_weighted_zeta(i)       = zero  
             smcs_weighted_bar_theta(i)  = zero  
+            smcs_weighted_tear_parm(i)  = zero  
           end do
 c
       end select  !  dowhat   
