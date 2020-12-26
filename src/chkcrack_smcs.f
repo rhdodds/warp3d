@@ -429,7 +429,7 @@ c
      &"      7  xi       bar xi",/,
      &"      8  omega    bar omega",/,
      &"      9  theta    bar theta",/
-     &"     10  tear_p   tearing_parm",/)
+     &"     10  tear_p   tearing_parm")
  9110 format(10e15.6)
  9200 format( i7.7 )                              
 c
