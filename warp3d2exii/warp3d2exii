@@ -38,18 +38,23 @@ def load_descriptions(hfile, join = ' - ', nchar = 8):
     descs = []
     for line in f:
       line = line.strip()
+      if len(line) == 0:
+        continue
+#      print("..@ 1 line: ", line)
       if line[0] == '#':
         continue
       if state == 0:
         # Read the number of state variables
         nstates = int(line)
         state = 1
+#        print(".. @ 2 nstates: ", nstates)
       elif state == 1:
         # What we actually want -- read each description
         # This assumes the # gets written as i2
         # 1) Kill everything up the first space and strip
         i = line.index(' ')
         line = line[i:].strip()
+#        print(".. @3 line: ",line)
         # 2) Read nchar characters as the short description (strip to make nice)
         sdesc = line[:nchar].strip()
         # 3) Strip the remainder and assume it's the long description
