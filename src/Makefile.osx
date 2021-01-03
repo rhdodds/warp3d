@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 12/13/2020 rhd
+#   Last modifications: 1/2/2021 rhd
 #
 #   How to run:
 #
@@ -78,16 +78,18 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4144
+BUILDNUM := 4150
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
   EXE_NAME = warp3d_gfortran.omp
   BUILD_FLAG := -Dgfortran
+  KMP_ERROR := KMP_ERROR    # temp fix for MKL 
 else
   ODIR = ././../obj_mac_os_x_intel
   EXE_NAME = warp3d.omp
-  BUILD_FLAG := 
+  BUILD_FLAG :=  
+  KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
 endif
 #
 #                Define extension for relocatable object code files,
@@ -157,7 +159,7 @@ else  #  Intel Composer options
 endif
 #
 #
-FOR      = $(COMPILER) $(FCOPTS)
+FOR      = $(COMPILER) $(FCOPTS) -D$(KMP_ERROR) -D$(OSNAME) 
 LINK     = $(COMPILER) $(FCOPTS)
 #
 #
@@ -451,7 +453,7 @@ $(OD)/%.o : %.f $(MODS) $(INCLUDES)
 #
 #
 $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
-	$(FOR) -D$(OSNAME) -DBuild=$(BUILDNUM) $(BUILD_FLAG)  $< -c -o $@
+	$(FOR) -D$(KMP_ERROR) -D$(OSNAME) -DBuild=$(BUILDNUM) $(BUILD_FLAG)  $< -c -o $@
 #
 #       ---  any .f files that require non-std compile options ------
 #            =================================================
