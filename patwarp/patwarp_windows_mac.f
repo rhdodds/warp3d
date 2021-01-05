@@ -1,5 +1,5 @@
 c *                                                                          *
-c *    Modifications  8/27/2017 rhd                                          *
+c *    Modifications  1/5/2021 rhd                                           *
 c *                                                                          *
 c ****************************************************************************
 c ****************************************************************************
@@ -284,7 +284,7 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 3 (formatted) Neutral File    *',
      &  /,   ' *       ( node-element limits removed)             *',
-     &  /,   ' *            Build Date:  1-25-2020                *',
+     &  /,   ' *            Build Date:  1-5-2021                 *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
      &  /,   ' *  o support for 2 node bar2 and link2 elements    *',
@@ -435,10 +435,10 @@ c
       maxadv = numele*3
       allocate ( eleadv(maxadv) )
 c
-      maxnls = numnod
+      maxnls = numnod * 1.5
       allocate ( ndcnls(maxnls,2) )
 c
-      maxndt = numnod*3
+      maxndt = numnod*3*1.5
       allocate ( ndcndt(maxndt),
      &           rndcndt(maxndt) )
 c
@@ -1336,7 +1336,7 @@ c      end if
              return
       end if
       if ( nxtndt + cdof .gt. maxndt ) then
-             write(termot,9030) node
+             write(termot,9031) node
              return
       end if
 c
@@ -1360,7 +1360,11 @@ c
       return
  9010 format( i8,6i1 )
  9020 format( 5e16.9 )
- 9030 format(1x,'>>>> warning -- insufficient array space to store',
+ 9030 format(1x,'>>>> warning -- insufficient array space (maxnls)',
+     & ' to store',
+     &   /,  1x,'                constraints for node ',i8 )
+ 9031 format(1x,'>>>> warning -- insufficient array space (maxndt)',
+     & ' to store',
      &   /,  1x,'                constraints for node ',i8 )
  9040 format(1x,'>>>> warning -- constraint on set other than',
      &          ' 1 ignored.')

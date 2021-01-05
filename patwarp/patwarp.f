@@ -5,7 +5,7 @@ c *     includes Metis for domain decomposition                              *
 c *                                                                          *
 c ****************************************************************************
 c *                                                                          *
-c *    Modifications  1/25/2020 rhd                                          *
+c *    Modifications  1/5/2021  rhd                                          *
 c *                                                                          *
 c ****************************************************************************
 c
@@ -284,7 +284,7 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   Processes Patran 3 (formatted) Neutral File    *',
      &  /,   ' *       ( node-element limits removed)             *',
-     &  /,   ' *            Build Date:  1-25-2020                *',
+     &  /,   ' *            Build Date:  1-5-2021                 *',
      &  /,   ' *                                                  *',
      &  /,   ' * includes:                                        *',
      &  /,   ' *  o support for 2 node bar2 and link2 elements    *',
@@ -439,10 +439,10 @@ c
       maxadv = numele*3
       allocate ( eleadv(maxadv) )
 c
-      maxnls = numnod
+      maxnls = numnod * 1.5
       allocate ( ndcnls(maxnls,2) )
 c
-      maxndt = numnod*3
+      maxndt = numnod*3*1.5
       allocate ( ndcndt(maxndt),
      &           rndcndt(maxndt) )
 c
