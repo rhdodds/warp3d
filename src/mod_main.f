@@ -406,7 +406,7 @@ c
         integer, allocatable, dimension(:) :: list
       end type
 c
-      type (ulist), dimension(100) :: user_lists ! 100 is set in param_def
+      type (ulist), dimension(500) :: user_lists ! 500 is set in param_def
 c
 c               UMAT model used ? Force serialization of umats?
 c
