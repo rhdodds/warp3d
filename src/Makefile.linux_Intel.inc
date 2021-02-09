@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 1/2/2021 rhd
+#   Last modifications: 2/8/2021 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -96,12 +96,13 @@ ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                  -align array64byte  -qopt-zmm-usage=high
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
 MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
+KMP_ERROR := KMP_ERROR    # temp fix for MKL to suppress warning messages
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
          $(MACHINE_TYPE) -module $(ODIR) $(HYINC) $(FTRAP) \
          $(INLINE) $(PROFILE) $(MPIOPT) $(OPENMP)
 #
-FOR      = $(COMPILER) $(OPT_REPORT) $(FCOPTS)
+FOR      = $(COMPILER) $(OPT_REPORT) $(FCOPTS) -D$(KMP_ERROR) -D$(OSNAME) 
 LINK     = $(COMPILER) $(FCOPTS)
 #
 #                all system level module files that appear as separate *.f in WARP3D
@@ -400,10 +401,12 @@ $(OD)/%.o : %.f $(MODS) $(INCLUDES)
 #            =========================================
 #
 $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
-	$(FOR) -D$(OSNAME) -DBuild=$(BUILDNUM) -fpp  $< -c -o $@
+	$(FOR) -D$(KMP_ERROR) -D$(OSNAME) -DBuild=$(BUILDNUM) -fpp  $< -c -o $@
 #
 #       ---  any .f files that require non-std compile options ------
 #            =================================================
+#
+#                  reduced inline level
 #
 $(OD)/mm10_b$O : mm10_b.f $(OD)/mod_crystals$O param_def include_mm10
 	$(RMC)  $@
