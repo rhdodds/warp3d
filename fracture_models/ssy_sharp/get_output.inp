@@ -1,0 +1,19 @@
+!  output wide  precision element stresses 1
+!  output displacements 46
+  output flat stream element states
+  output flat text displacements
+  output flat text element stresses
+
+!    output displacements nodes 1-54
+!    output displacements elements 3 4
+!    output totals only reactions  1-54
+!    output wide eformat noheader strains 1-20
+!    output stresses 3 5
+!    output wide eformat strains 10 12
+!    output wide strains 3 5
+!    output patran binary displacements stresses strains
+!    output patran binary element  stresses strains
+!    output patran formatted displacements stresses strains
+!    output patran formatted element  stresses strains
+!    output packet  displacements 1-54
+!    output packet reactions 2-20 by 2
