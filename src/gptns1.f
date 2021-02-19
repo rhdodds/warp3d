@@ -1717,7 +1717,7 @@ c     *                      subroutine ctran1                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 4/18/2016 rhd              *          
+c     *                   last modified : 2/18/2021 rhd              *          
 c     *                                                              *          
 c     *     transform [Dt] from a form relating the unrotated stress *          
 c     *     rate and the unrotated rate of deformation tensor to     *          
@@ -1889,209 +1889,60 @@ c            is: - trans([B]) * [Q-bar] * [B]. this modification of
 c            [cep] is essential for convergence of nearly homogeneous           
 c            deformation problems.                                              
 c                                                                               
-      if( qbar ) call ctran1_qbar_original  !_original
+      if( qbar ) call ctran1_qbar
 c                                                                               
       return 
 c
       contains
 c     ========
 c
-      subroutine ctran1_qbarv2
+      subroutine ctran1_qbar
       implicit none
 c
-      integer :: i, iwork(6) 
-      double precision :: q(6,6), cep_trial(6,6), det, dwork(6),
-     &                    wf, halfw, cxx, cyy, czz, cxy, cyz, cxz,
-     &                    qhat(6,6), total(6,6), total_transpose(6,6)
-!DIR$ IVDEP                                                                     
-!DIR$ VECTOR ALIGNED                                                            
-      do i = 1, span                                                          
-       wf    = dj(i) * w                                                      
-       halfw = half * wf
-       cxx = cs(i,1)
-       cyy = cs(i,2)
-       czz = cs(i,3)
-       cxy = cs(i,4)
-       cyz = cs(i,5)
-       cxz = cs(i,6)
-c
-       q(1,1) = two * cxx * wf    
-       q(2,1) = zero
-       q(3,1) = zero
-       q(4,1) = cxy * wf                                 
-       q(5,1) = zero
-       q(6,1) = cxz * wf                                 
-c
-       q(1,2) = zero
-       q(2,2) = two * cyy * wf                           
-       q(3,2) = zero
-       q(4,2) = cxy * wf                                 
-       q(5,2) = cyz * wf                                 
-       q(6,2) = zero
-c
-       q(1,3) = zero
-       q(2,3) = zero
-       q(3,3) = two * czz * wf                           
-       q(4,3) = zero
-       q(5,3) = cyz * wf                                 
-       q(6,3) = cxz * wf  
-c                
-       q(1,4) = cxy * wf                                              
-       q(2,4) = cxy * wf                                                
-       q(3,4) = zero
-       q(4,4) = halfw * ( cxx + cyy )                  
-       q(5,4) = wf * cxz                              
-       q(6,4) = wf * cyz     
-c
-       q(1,5) = zero
-       q(2,5) = cyz * wf                                               
-       q(3,5) = cyz * wf                                               
-       q(4,5) = cxz * wf                                               
-       q(5,5) = halfw * ( cyy + czz )                  
-       q(6,5) = wf * cxy          
-                
-       q(1,6) = cxz * wf                                                 
-       q(2,6) = zero                                                 
-       q(3,6) = cxz * wf                                                
-       q(4,6) = cyz * wf                                                 
-       q(5,6) = cxy * wf    
-       q(6,6) = halfw * ( cxx + czz )     
-c
-       qhat(1:6,1) =  cs(i,1:6) * wf
-       qhat(1:6,2) =  cs(i,1:6) * wf
-       qhat(1:6,3) =  cs(i,1:6) * wf
-       qhat(1:6,4:6) = zero
-c 
-       total = -q + qhat
-       total_transpose = transpose( total ) 
-       total = half * ( total + total_transpose )
-c
-       cep(i,1:6,1:6) = cep(i,1:6,1:6) + total(1:6,1:6) 
-!       call dgedi( cep_trial, 6, 6, iwork, det, dwork, 10 )
-!       if( det <=zero ) then
-!        write(*,*) " @ 1 det <=0"
-!       end if
-!        return
-!       else
-!           cep(i,1:6,1:6) = cep_trial
-!       end if      
-      end do                                                                                                                                            
-c
-      return
-      end subroutine ctran1_qbarv2
-c
-      subroutine ctran1_qbarv1
-      implicit none
-c
-      integer :: i, iwork(6) 
-      double precision :: q(6,6), cep_trial(6,6), det, dwork(6),
-     &                    wf, halfw, cxx, cyy, czz, cxy, cyz, cxz
-c
-!DIR$ IVDEP                                                                     
-!DIR$ VECTOR ALIGNED                                                            
-        do i = 1, span                                                          
-         wf    = dj(i) * w                                                      
-         halfw = half * wf
-c
-         cxx = cs(i,1)
-         cyy = cs(i,2)
-         czz = cs(i,3)
-         cxy = cs(i,4)
-         cyz = cs(i,5)
-         cxz = cs(i,6)
-c
-         q(1,1) = two * cxx * wf    
-         q(2,1) = zero
-         q(3,1) = zero
-         q(4,1) = cxy * wf                                 
-         q(5,1) = zero
-         q(6,1) = cxz * wf                                 
-c
-         q(1,2) = zero
-         q(2,2) = two * cyy * wf                           
-         q(3,2) = zero
-         q(4,2) = cxy * wf                                 
-         q(5,2) = cyz * wf                                 
-         q(6,2) = zero
-c
-         q(1,3) = zero
-         q(2,3) = zero
-         q(3,3) = two * czz * wf                           
-         q(4,3) = zero
-         q(5,3) = cyz * wf                                 
-         q(6,3) = cxz * wf  
-c                  
-         q(1,4) = cxy * wf                                              
-         q(2,4) = cxy * wf                                                
-         q(3,4) = zero
-         q(4,4) = halfw * ( cxx + cyy )                  
-         q(5,4) = wf * cxz                              
-         q(6,4) = wf * cyz     
-c
-         q(1,5) = zero
-         q(2,5) = cyz * wf                                               
-         q(3,5) = cyz * wf                                               
-         q(4,5) = cxz * wf                                               
-         q(5,5) = halfw * ( cyy + czz )                  
-         q(6,5) = wf * cxy          
-                  
-         q(1,6) = cxz * wf                                                 
-         q(2,6) = zero                                                 
-         q(3,6) = cxz * wf                                                
-         q(4,6) = cyz * wf                                                 
-         q(5,6) = cxy * wf    
-         q(6,6) = halfw * ( cxx + czz )     
-c
-         cep(i,1:6,1:6) = cep(i,1:6,1:6) - q(1:6,1:6)
-!         call warp3d_dgedi( cep_trial, 6, 6, iwork, det, dwork, 10 )
-!         if( det <=zero ) then
-!          write(*,*) " @ 1 det <=0"
-!         end if
-!          return
-!         else
-!             cep(i,1:6,1:6) = cep_trial
-!        end if      
-!
-      end do                                                                                                                                            
-c
-      return
-      end subroutine ctran1_qbarv1
-c
-      subroutine ctran1_qbar_original
-      implicit none
-c
-      integer :: i, j, k
-      double precision :: wf, halfw
+      integer :: i
+      double precision :: wf, halfw, xx, yy, zz, xy, yz, xz
+
 c
 !DIR$ IVDEP                                                                     
 !DIR$ VECTOR ALIGNED                                                            
       do i = 1, span                                                          
        wf    = dj(i) * w                                                      
        halfw = half * wf
-        cep(i,1,1) = cep(i,1,1) - two * cs(i,1) * wf
-        cep(i,2,2) = cep(i,2,2) - two * cs(i,2) * wf
-        cep(i,3,3) = cep(i,3,3) - two * cs(i,3) * wf
-        cep(i,4,1) = cep(i,4,1) - cs(i,4) * wf
-        cep(i,6,1) = cep(i,6,1) - cs(i,6) * wf
-        cep(i,4,2) = cep(i,4,2) - cs(i,4) * wf
-        cep(i,5,2) = cep(i,5,2) - cs(i,5) * wf
-        cep(i,5,3) = cep(i,5,3) - cs(i,5) * wf
-        cep(i,6,3) = cep(i,6,3) - cs(i,6) * wf
-        cep(i,4,4) = cep(i,4,4) - halfw * ( cs(i,1)+cs(i,2) )
-        cep(i,5,5) = cep(i,5,5) - halfw * ( cs(i,2)+cs(i,3) )
-        cep(i,6,6) = cep(i,6,6) - halfw * ( cs(i,1)+cs(i,3) )
-        cep(i,5,4) = cep(i,5,4) - halfw * cs(i,6) 
-        cep(i,6,4) = cep(i,6,4) - halfw * cs(i,5)
-        cep(i,6,5) = cep(i,6,5) - halfw * cs(i,4)
-        cep(i,1,4) = cep(i,4,1)
-        cep(i,1,6) = cep(i,6,1)
-        cep(i,2,4) = cep(i,4,2)
-        cep(i,2,5) = cep(i,5,2)
-        cep(i,3,5) = cep(i,5,3)
-        cep(i,3,6) = cep(i,6,3)
-        cep(i,4,5) = cep(i,5,4)
-        cep(i,4,6) = cep(i,6,4)
-        cep(i,5,6) = cep(i,6,5)
+       xx = cs(i,1)
+       yy = cs(i,2)
+       zz = cs(i,3)
+       xy = cs(i,4)
+       yz = cs(i,5)
+       xz = cs(i,6)
+c
+       cep(i,1,1) = cep(i,1,1) - two * xx * wf
+       cep(i,2,2) = cep(i,2,2) - two * yy * wf
+       cep(i,3,3) = cep(i,3,3) - two * zz * wf
+c
+       cep(i,4,1) = cep(i,4,1) - xy * wf
+       cep(i,6,1) = cep(i,6,1) - xz * wf
+       cep(i,4,2) = cep(i,4,2) - xy * wf
+       cep(i,5,2) = cep(i,5,2) - yz * wf
+       cep(i,5,3) = cep(i,5,3) - yz * wf
+       cep(i,6,3) = cep(i,6,3) - xz * wf
+c
+       cep(i,4,4) = cep(i,4,4) - halfw * ( xx + yy )
+       cep(i,5,5) = cep(i,5,5) - halfw * ( yy + zz )
+       cep(i,6,6) = cep(i,6,6) - halfw * ( xx + zz )
+c
+       cep(i,5,4) = cep(i,5,4) - wf * xz
+       cep(i,6,4) = cep(i,6,4) - wf * yz
+       cep(i,6,5) = cep(i,6,5) - wf * xy
+c
+       cep(i,1,4) = cep(i,4,1)
+       cep(i,1,6) = cep(i,6,1)
+       cep(i,2,4) = cep(i,4,2)
+       cep(i,2,5) = cep(i,5,2)
+       cep(i,3,5) = cep(i,5,3)
+       cep(i,3,6) = cep(i,6,3)
+       cep(i,4,5) = cep(i,5,4)
+       cep(i,4,6) = cep(i,6,4)
+       cep(i,5,6) = cep(i,6,5)
       end do
 c
 !       do i = 1, span                                                          
@@ -2107,7 +1958,7 @@ c
       
  9000 format(' ..i,j,k:' 3i5,2d14.6)      
       return
-      end subroutine ctran1_qbar_original
+      end subroutine ctran1_qbar
 c
       end  subroutine ctran1                                                                  
                                                                                 
