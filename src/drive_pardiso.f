@@ -338,7 +338,7 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(18) = -1 ! return: number of nonzeros in the factor LU
       iparm(19) = -1 ! return: Mflops for LU factorization
       iparm(20) = -1 ! return: Numbers of CG Iterations
-      iparm(21) = 0  ! Bunch-Kaufman pivoting symmetric indefinite
+      iparm(21) = 2  ! pivoting strategy. = 2 seems best
       iparm(23) = 0  ! will have # negative eigenvalues
       iparm(24) = 1 ! use 2 level factorization
       iparm(25) = 2 ! parallel forward-backward solve
