@@ -3,11 +3,12 @@
                  Highest Level README File for WARP3D
                  ====================================
 
-                   Last Update: January 2, 2021
+                   Last Update: February 20, 2021
 
-                  Version 18.2.4 Build 4150 on all platforms
+                  Version 18.2.4 Build 4160 on all platforms
 
-                  4150 includes new features for SMCS crack growth
+                  4160 includes no new features. A few rolled up
+                  fixes. See Revision History in manual.
 
 ** The multiple README files in previous releases are replaced with the
 ** QuickStart documents on home page of www.warp3d.net
@@ -18,10 +19,10 @@ directories in the WARP3D distribution for this interested in such details.
 This version of WARP3D is built with these compilers:
   - Windows.  1 version w/ Intel Fortran 19.0.8.324
   - Linux. 2 versions available
-           (1) Intel Fortran 19.0.8.324  
+           (1) Intel Fortran 2021  
            (2) GNU Fortran 7.5.0
   - Mac OSX 2 versions available
-           (1) Intel Fortran 19.0.8.323  
+           (1) Intel Fortran 2021  
            (2) GNU Fortran (GCC) 8.1.0
 
    Python 3.5 and later for supporting codes (e.g. warp3d2exii)
