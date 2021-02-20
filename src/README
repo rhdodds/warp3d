@@ -1,7 +1,7 @@
 
 
                      README for WARP3D /src Directory
-                        (Updated July 2020)
+                        (Updated February 2021)
 
 
 ==========================================================================
@@ -16,7 +16,7 @@ We support WARP3D on:
 
     o Windows (64-bit) 
     o Linux 64-bit (tested on Ubuntu 18.04 LTS)
-    o Mac OS 10.14 (Mojave. May well work on Catalina)
+    o Mac OS 10.15 (built on Catalina. May well work on Big Sur)
 
 We use the Intel Fortran compiler as the primary compiler on all
 3 platforms.
