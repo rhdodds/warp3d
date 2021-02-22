@@ -4,7 +4,7 @@ c     *                      subroutine elem_load                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/01/11 jcs               *          
+c     *                   last modified : 2/21/2021 rhd              *          
 c     *                                                              *          
 c     *     this subroutine sets up the equivalent nodal loads       *          
 c     *     calcs for all element loads on a 3-d isoparametrics      *          
@@ -32,38 +32,37 @@ c                                temperature)
 c                   eload_val(i)     -- the value of the force for entry i      
 c                                       value of element temperature            
 c                   eload_pist(i)   -- piston table number for entry i          
-c                   thread_number(i) -- thread number for entry i               
+c                   thread_number(i) -- thread number for entry i       
+c                   size     -- number of elements with loads for this
+c                               loading number   
+c                   eqloads -- 3 x nonode for model     
 c                                                                               
 c                                                                               
       subroutine elem_load( eload_data, eload_val, size, eload_pist,            
      &                      thread_number, mult_fact, eqloads )                 
-      use global_data ! old common.main
+      use global_data, only : out, nodof, num_threads
+      use constants                                                           
 c                                                                               
-      use main_data                                                             
+      implicit none
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                global variables                                               
-c                                                                               
-      dimension eload_data(size,3), thread_number(size),                        
-     &          eload_pist(size)                                                
-      real eload_val(size)                                                      
-      double precision                                                          
-     &     mult_fact, eqloads(*)                                                
+c                parameters
+c 
+      integer, intent(in) :: size, thread_number(size), 
+     &                       eload_data(size,3), eload_pist(size)
+      double precision, intent(out) :: eqloads(*)                                                  
+      real, intent(in) :: eload_val(size)                                                      
+      double precision, intent(in) :: mult_fact                                               
 c                                                                               
 c                local variables                                                
+c              
+      integer :: now_thread, erow, exe_thread, element, i, j                                                                 
+      logical, parameter :: debug = .false.                                                         
+      double precision :: nrmeq                                                             
+      double precision, allocatable :: del_eqload(:,:)     
+      integer, external :: omp_get_thread_num                         
 c                                                                               
-      logical debug                                                             
-      double precision                                                          
-     &      zero, nrmeq                                                         
-c                                                                               
-      double precision,                                                         
-     & dimension(:,:), allocatable :: del_eqload                                
-c                                                                               
-      data debug, zero / .false., 0.0 /                                         
-c                                                                               
-      if ( debug ) then                                                         
-         write (*,*) '>>>> entering elem_load.'                                 
+      if( debug ) then                                                         
+         write(out,*) '>>>> entering elem_load.'                                 
          call dump_load( eload_data, eload_val, thread_number, size )           
       end if                                                                    
 c                                                                               
@@ -80,13 +79,13 @@ c            loop, but only performs work on the elements assigned
 c            to it. otherwise the loop cycles.                                  
 c            each change in the eqload vector is marked by processor.           
 c                                                                               
-c$OMP PARALLEL PRIVATE(erow,now_thread,element,exe_thread)                      
-      now_thread = omp_get_thread_num()+1                                       
-      do erow = 1,size                                                          
+c$OMP PARALLEL PRIVATE( erow, now_thread, element, exe_thread )                      
+      now_thread =  omp_get_thread_num() + 1                                       
+      do erow = 1, size                                                          
          exe_thread = thread_number(erow)                                       
-         if ( now_thread .ne. exe_thread ) cycle                                
+         if( now_thread .ne. exe_thread ) cycle                                
          element    = eload_data(erow,1)                                        
-         if (debug) write(*,*) 'erow,elem,myid,exid',                           
+         if( debug ) write(out,*) 'erow,elem,myid,exid',                           
      &        erow,element,now_thread,exe_thread                                
          call do_elem_load( element, eload_data(erow,2),                        
      &        eload_data(erow,3), eload_val(erow),                              
@@ -104,18 +103,17 @@ c
 c                                                                               
       deallocate( del_eqload )                                                  
 c                                                                               
-      if ( debug ) then                                                         
+      if( debug ) then                                                         
          nrmeq = zero                                                           
-         do i = 1,nodof                                                         
+         do i = 1, nodof                                                         
             nrmeq = nrmeq + eqloads(i)*eqloads(i)                               
          end do                                                                 
          nrmeq = sqrt(nrmeq)                                                    
-         write(*,*) 'Norm of equivalent loading vector: ',nrmeq                 
+         write(out,*) 'Norm of equivalent loading vector: ',nrmeq                 
       end if                                                                    
-                                                                                
 c                                                                               
  9999 continue                                                                  
-      if (debug) write (*,*) '<<<< leaving elem_load.'                          
+      if( debug ) write (out,*) '<<<< leaving elem_load.'                          
       return                                                                    
       end                                                                       
 c  ****************************************************************             
@@ -124,7 +122,7 @@ c  *                  subroutine: do_elem_load                    *
 c  *                                                              *             
 c  *                       written by : jcs                       *             
 c  *                                                              *             
-c  *                   last modified : 11/15/11 jcs               *             
+c  *                   last modified : 2/21/2021 rhd              *             
 c  *                                                              *             
 c  *     this subroutine calculates the equivalent nodal loads    *             
 c  *     for all element loads on a 3-d isoparametrics            *             
@@ -133,48 +131,47 @@ c  ****************************************************************
 c                                                                               
 c                                                                               
       subroutine do_elem_load( element, eload_type, eload_dof,                  
-     &     elval, eload_pist, del_eqload, mult_fact )                           
-      use global_data ! old common.main
+     &                         elval, eload_pist, del_eqload,
+     &                         mult_fact )                           
+      use global_data, only : mxndel, mxedof, out, temperatures,
+     &                        total_model_time, dstmap, u, iprops,
+     &                        coord_t0=>c, lprops
+      use main_data, only : elem_eq_loads, crdmap, incmap, incid,
+     &                      dtemp_elems
+      use constants                                                         
 c                                                                               
-      use main_data                                                             
+      implicit none
+c 
+c              parameters
 c                                                                               
-      implicit integer (a-z)                                                    
+      integer, intent(in) :: element, eload_type, eload_dof, eload_pist                        
+      real, intent(in) :: elval                                                                
+      double precision, intent(out) :: del_eqload(*) ! 3 x nonode
+      double precision, intent(in) :: mult_fact                                             
 c                                                                               
-c     parameter declarations                                                    
-c     ----------------------                                                    
+c              locals
+c             
+      integer :: etype, nnode, iorder, ngp, totdof, node, face,
+     &           face_dir, k, enode, snode, i, body_dir
+      integer :: elem_nodes(mxndel), edest(mxedof)                               
+      double precision ::  ecoord(3,mxndel), body_intens, face_intens,                   
+     &                     equiv_loads_ele(mxndel),
+     &                     equiv_loads_face(mxndel,3),                
+     &                     face_intensities(mxndel,3), dummy,                                  
+     &                     p3, u3, m3, gam, fdirc(3)                                           
+      double precision, pointer :: eforces(:,:)                                       
+      logical :: geonl, body_flg, face_flg, nrml_flg, tet_elem, failed 
+      logical, parameter :: debug = .false.                                                           
+c                                                                                                                                                              
+      if( debug ) write(out,*) '>> In do_elem_load'                                
 c                                                                               
-      integer element, eload_type, eload_dof, eload_pist                        
-      real elval                                                                
-      double precision                                                          
-     &     del_eqload(*), mult_fact                                             
-c                                                                               
-c     declare local variables                                                   
-c     -----------------------                                                   
-c                                                                               
-      double precision                                                          
-     &      ecoord(3,mxndel), zero, body_intens, face_intens,                   
-     &      equiv_loads_ele(mxndel), equiv_loads_face(mxndel,3),                
-     &      face_intensities(mxndel,3), dummy,                                  
-     &      p3, u3, m3, gam, fdirc(3)                                           
-c                                                                               
-      double precision,                                                         
-     & dimension(:,:), pointer :: eforces                                       
-c                                                                               
-      dimension elem_nodes(mxndel), edest(mxedof)                               
-      logical debug, geonl, body_flg, face_flg, nrml_flg, tet_elem,             
-     &        failed                                                            
-      data debug, zero / .false., 0.0 /                                         
-c                                                                               
-c                                                                               
-      if (debug) write(*,*) '>> In do_elem_load'                                
-c                                                                               
-      if (debug) then                                                           
-         write(*,9010) element                                                  
-         write(*,9020) eload_type                                               
-         write(*,9030) eload_dof                                                
-         write(*,9040) elval                                                    
-         write(*,9050) eload_pist                                               
-         write(*,9070) mult_fact                                                
+      if( debug ) then                                                           
+         write(out,9010) element                                                  
+         write(out,9020) eload_type                                               
+         write(out,9030) eload_dof                                                
+         write(out,9040) elval                                                    
+         write(out,9050) eload_pist                                               
+         write(out,9070) mult_fact                                                
       end if                                                                    
 c                                                                               
 c                    initialize loading flags for current element row           
@@ -188,7 +185,7 @@ c
       body_flg = .false.                                                        
       face_flg = .false.                                                        
       nrml_flg = .false.                                                        
-      if (debug) write (*,*) '>>>>>> ELEMENT:' , element                        
+      if( debug ) write(out,*) '   doing element:' , element                        
       call get_single_edest_terms( edest, element )                             
 c                                                                               
       tet_elem = etype .eq. 6 .or. etype .eq. 13                                
@@ -202,49 +199,49 @@ c                         current coordinates are the original coords
 c                         (stored in c) plus the displacements (stored in       
 c                         u).                                                   
 c                                                                               
-      if ( debug ) write (*,*) '     getting new coords'                        
-      if ( geonl ) then                                                         
+      if( debug ) write(out,*) '     getting new coords'                        
+      if( geonl ) then                                                         
          do node = 1, nnode                                                     
             elem_nodes(node) = incid(incmap(element)+(node-1))                  
             ecoord(1,node) =                                                    
-     &           c(crdmap(elem_nodes(node)))                                    
+     &           coord_t0(crdmap(elem_nodes(node)))                                    
      &           + u(edest(node))                                               
             ecoord(2,node) =                                                    
-     &           c(crdmap(elem_nodes(node))+1)                                  
+     &           coord_t0(crdmap(elem_nodes(node))+1)                                  
      &           + u(edest(nnode+node))                                         
             ecoord(3,node) =                                                    
-     &           c(crdmap(elem_nodes(node))+2)                                  
+     &           coord_t0(crdmap(elem_nodes(node))+2)                                  
      &           + u(edest(2*nnode+node))                                       
          end do                                                                 
       else                                                                      
          do node = 1, nnode                                                     
             elem_nodes(node) = incid(incmap(element)+(node-1))                  
             ecoord(1,node) =                                                    
-     &           c(crdmap(elem_nodes(node)))                                    
+     &           coord_t0(crdmap(elem_nodes(node)))                                    
             ecoord(2,node) =                                                    
-     &           c(crdmap(elem_nodes(node))+1)                                  
+     &           coord_t0(crdmap(elem_nodes(node))+1)                                  
             ecoord(3,node) =                                                    
-     &           c(crdmap(elem_nodes(node))+2)                                  
+     &           coord_t0(crdmap(elem_nodes(node))+2)                                  
          end do                                                                 
       end if                                                                    
-      if ( debug ) write (*,*) '     done getting new coords'                   
+      if( debug ) write(out,*) '     done getting new coords'                   
+c
+c              build loading data variables.                                             
 c                                                                               
-c     build loading data variables.                                             
-c                                                                               
-      if ( eload_type .eq. 0 ) then                                             
+      if( eload_type .eq. 0 ) then                                             
 c                                                                               
 c                        1) body force -- build applied load vector             
 c                                                                               
          body_flg    = .true.                                                   
          body_dir    = eload_dof                                                
          body_intens = elval                                                    
-         if ( debug ) then                                                      
-            write(*,*) '    body force. element',element                        
-            write(*,*) 'body_flg,body_dir,body_intens:'                         
-            write(*,*)  body_flg,body_dir,body_intens                           
+         if( debug ) then                                                      
+            write(out,*) '    body force. element',element                        
+            write(out,*) 'body_flg,body_dir,body_intens:'                         
+            write(out,*)  body_flg,body_dir,body_intens                           
          end if                                                                 
 c                                                                               
-      else if ( eload_type .gt. 0 ) then                                        
+      else if( eload_type .gt. 0 ) then                                        
 c                                                                               
 c                        2) face force constant direction                       
 c                                                                               
@@ -252,31 +249,31 @@ c
          face_dir    = eload_dof                                                
          face_intens = elval                                                    
          face_flg    = .true.                                                   
-         if ( debug ) then                                                      
-            write(*,*) '    face load, const. dir'                              
-            write(*,*) 'face,face_dir,face_intens:'                             
-            write(*,*) face,face_dir,face_intens                                
+         if( debug ) then                                                      
+            write(out,*) '    face load, const. dir'                              
+            write(out,*) '      ...face, face_dir, face_intens:',                             
+     &                          face, face_dir, face_intens                                
          end if                                                                 
 c                                                                               
-      else if ( eload_type .eq. -100 ) then                                     
+      else if( eload_type .eq. -100 ) then                                     
 c                                                                               
 c                        3) element temperature. save temperature               
 c                           change in global vector                             
 c                                                                               
-         if ( debug ) write (*,*) '    element temper'                          
-         dtemp_elems(element) = dtemp_elems(element)+                           
-     &        elval*mult_fact                                                   
+         if( debug ) write(out,*) '    element temper'                          
+         dtemp_elems(element) = dtemp_elems(element) +                           
+     &                          elval*mult_fact                                                   
          temperatures = .true.                                                  
 c                                                                               
-      else if ( (eload_type .le. -7)                                            
-     &        .and. (eload_type .ge. -12 ) ) then                               
+      else if( (eload_type .le. -7 )                                            
+     &        .and. ( eload_type .ge. -12 ) ) then                               
 c                                                                               
 c                        4) piston theory pressure                              
 c                                                                               
          face       = abs(eload_type) - 6                                       
          face_dir   = eload_dof                                                 
-         face_flg    = .true.                                                   
-         nrml_flg    = .true.                                                   
+         face_flg   = .true.                                                   
+         nrml_flg   = .true.                                                   
 c                                                                               
 c                        call a separate subroutine piston loading              
 c                        parameters at current time. linearly interpolate       
@@ -293,10 +290,10 @@ c
      &        p3, u3, m3, gam, fdirc, tet_elem, elem_nodes,                     
      &        ecoord )                                                          
 c                                                                               
-         if ( debug ) then                                                      
-            write(*,*) '    face load, piston'                                  
-            write(*,*) 'face,face_dir,face_intens:'                             
-            write(*,*) face,face_dir,face_intens                                
+         if( debug ) then                                                      
+            write(out,*) '    face load, piston'                                  
+            write(out,*) 'face,face_dir,face_intens:'                             
+            write(out,*) face,face_dir,face_intens                                
          end if                                                                 
 c                                                                               
       else                                                                      
@@ -308,12 +305,13 @@ c
          face_intens = elval                                                    
          face_flg    = .true.                                                   
          nrml_flg    = .true.                                                   
-         if ( debug ) then                                                      
-            write(*,*) '    face load, normal'                                  
-            write(*,*) 'face,face_dir,face_intens:'                             
-            write(*,*) face,face_dir,face_intens                                
-         end if                                                                 
-      end if                                                                    
+         if( debug ) then                                                      
+            write(out,*) '     face load, normal'                                  
+            write(out,*) '      face, face_dir, face_intens:',                             
+     &                   face, face_dir, face_intens                                
+         end if     
+c                                                             
+      end if       !  eload_type                                                               
 c                                                                               
 c                    now process the face and body forces if they have          
 c                    been set.                                                  
@@ -321,8 +319,8 @@ c
 c                       1) compute body forces and add to structure             
 c                          incremental load vector (by nodal dof).              
 c                                                                               
-      if ( body_flg ) then                                                      
-         if ( debug ) write (*,*) '  processing body forces.'                   
+      if( body_flg ) then                                                      
+         if( debug ) write(out,*) '  processing body forces.'                   
          call body_load( element, etype, nnode, body_dir,                       
      &        body_intens, ecoord, equiv_loads_ele )                            
 c                                                                               
@@ -341,22 +339,18 @@ c
 c                                                                               
 c                       2) face/pressure forces                                 
 c                                                                               
-      if ( face_flg ) then                                                      
-         if ( debug ) write (*,*) '  processing face/pressure loads.'           
-         do i = 1, nnode                                                        
-            equiv_loads_face(i,1) = zero                                        
-            equiv_loads_face(i,2) = zero                                        
-            equiv_loads_face(i,3) = zero                                        
-         end do                                                                 
-         if ( .not. nrml_flg ) then                                             
+      if( face_flg ) then                                                      
+         if( debug ) write(out,*) '     processing face/pressure loads'           
+         equiv_loads_face = zero
+         if( .not. nrml_flg ) then                                             
             call face_load( element, etype, nnode, face,                        
-     &           face_intensities(1,1), ecoord,                                 
-     &           equiv_loads_face(1,face_dir),                                  
-     &           1, face_intens )                                               
+     &                      face_intensities(1,1), ecoord,                                 
+     &                      equiv_loads_face(1,face_dir),                                  
+     &                      1, face_intens, elem_nodes )                                               
          end if                                                                 
-         if ( nrml_flg ) then                                                   
+         if( nrml_flg ) then  ! get global x,y,z components of pressure                                                  
 c                                                                               
-            if ( tet_elem ) then                                                
+            if( tet_elem ) then                                                
                call tet_face_nloads( element, etype, nnode, face,               
      &              face_intensities(1,1),                                      
      &              face_intensities(1,2),                                      
@@ -369,20 +363,20 @@ c
      &              face_intensities(1,3),                                      
      &              face_intens, ecoord, failed )                               
             end if                                                              
-            if ( failed ) return                                                
+            if( failed ) return                                                
 c                                                                               
-            call face_load( element, etype, nnode, face,                        
-     &           face_intensities(1,1), ecoord,                                 
-     &           equiv_loads_face(1,1),                                         
-     &           2, dummy )                                                     
-            call face_load( element, etype, nnode, face,                        
-     &           face_intensities(1,2), ecoord,                                 
-     &           equiv_loads_face(1,2),                                         
-     &           2, dummy )                                                     
-            call face_load( element, etype, nnode, face,                        
-     &           face_intensities(1,3), ecoord,                                 
-     &           equiv_loads_face(1,3),                                         
-     &           2, dummy )                                                     
+            call face_load( element, etype, nnode, face, !  x-component                       
+     &                      face_intensities(1,1), ecoord,                                 
+     &                      equiv_loads_face(1,1),                                         
+     &                      2, dummy, elem_nodes )                                                     
+            call face_load( element, etype, nnode, face, !  y-component                       
+     &                      face_intensities(1,2), ecoord,                                 
+     &                      equiv_loads_face(1,2),                                         
+     &                      2, dummy, elem_nodes )                                                     
+            call face_load( element, etype, nnode, face, !  z-component                         
+     &                      face_intensities(1,3), ecoord,                                 
+     &                      equiv_loads_face(1,3),                                         
+     &                      2, dummy, elem_nodes )                                                     
          end if                                                                 
 c                                                                               
          call elem_eqload_allocate( element, nnode )                            
@@ -405,14 +399,15 @@ c
          end do                                                                 
       end if                                                                    
 c                                                                               
-      if (debug) write(*,*) '>> Leaving do_elem_load'                           
+      if( debug ) write(out,*) '>> Leaving do_elem_load'                           
 c                                                                               
  9010 format(4x,'element number:  ',7x,i5)                                      
  9020 format(4x,'load type:       ',7x,i5)                                      
  9030 format(4x,'load dof:        ',7x,i5)                                      
  9040 format(4x,'eload_val:       ',9x,f10.6)                                   
  9050 format(4x,'eload_pist: tab #',i5)                                         
- 9070 format(4x,'mult factor:     ',9x,f10.6)                                   
+ 9070 format(4x,'mult factor:     ',9x,f10.6)      
+c                             
       end                                                                       
 c                                                                               
 c                                                                               
@@ -424,24 +419,25 @@ c ****************************************************************
 c                                                                               
 c                                                                               
       subroutine hex_face_nloads( element, etype, nnode, face,                  
-     &                        xload, yload, zload, face_intens,                 
-     &                        ecoord, failed )                                  
-      implicit double precision (a-h,o-z)                                       
+     &                            xload, yload, zload, face_intens,                 
+     &                            ecoord, failed )      
+      use constants
+      use global_data, only : out, mxndel                            
+      implicit none                                       
+c        
+      integer ::  element, etype, nnode, face
+      logical :: failed                                                                 
+      double precision :: xload(mxndel), yload(mxndel), zload(mxndel),
+     &                    ecoord(3,*), face_intens                     
 c                                                                               
-      dimension  xload(*), yload(*), zload(*), ecoord(3,*)                      
-      integer element, etype, face                                              
-      logical failed                                                            
+c                locals
 c                                                                               
-c                local arrays                                                   
-c                                                                               
-      double precision                                                          
-     &    jacob, jacobi, nrmvec                                                 
-c                                                                               
-      dimension dsf(32,3), jacob(3,3), jacobi(3,3),                             
-     &          nrmvec(3), fnodes(10), fcoor(3,10)                              
-      logical local_debug, bad                                                  
-      integer enode, fnodes                                                     
-      data zero, local_debug / 0.0, .false. /                                   
+      integer enode, fnodes(10), i, j, node, ierr, nfnode                                                     
+      double precision :: jacob(3,3), jacobi(3,3), nrmvec(3), dsf(32,3),                            
+     &                    fcoor(3,10)    
+      double precision :: dum1, dum2, dum3, xsi, eta, zeta, det                          
+      logical, parameter :: local_debug = .false. 
+      logical :: bad, msg_flag1                                                 
 c                                                                               
 c             get a list of element node numbers for the loaded                 
 c             face and the isoparametric coordinates of nodes                   
@@ -453,12 +449,12 @@ c
         yload(i) = zero                                                         
         zload(i) = zero                                                         
       end do                                                                    
-      if ( local_debug ) write(*,1000) etype, face                              
+      if( local_debug ) write(out,1000) etype, face                              
       call eqelfn( fnodes, etype, face, nfnode )                                
       call ndpts1( fnodes, nfnode, fcoor, etype, -1, dum1, dum2, dum3 )         
-      if ( local_debug ) then                                                   
-          write(*,1010) nfnode, (fnodes(i),i=1,nfnode )                         
-          write(*,1020) ((fcoor(i,j),i=1,3),j=1,nfnode)                         
+      if( local_debug ) then                                                   
+          write(out,1010) nfnode, (fnodes(i),i=1,nfnode )                         
+          write(out,1020) ((fcoor(i,j),i=1,3),j=1,nfnode)                         
       end if                                                                    
 c                                                                               
 c             loop over all nodes on the loaded face:                           
@@ -481,24 +477,33 @@ c                 message
 c              6) x,y,z components of load at the node are the                  
 c                 pressure intensity * the corresponding direction              
 c                 cosine.                                                       
-c                                                                               
+c
+      msg_flag1 = .false.  
+c                                                                                   
       do node = 1, nfnode                                                       
         xsi  = fcoor(1,node)                                                    
         eta  = fcoor(2,node)                                                    
         zeta = fcoor(3,node)                                                    
         call derivs( etype, xsi, eta, zeta, dsf(1,1), dsf(1,2),                 
      &               dsf(1,3) )                                                 
-        call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr )             
+        call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr ) 
+        if( ierr .eq. 1 ) then
+          if( .not. msg_flag1 ) write(out,9000) element, face
+          msg_flag1 = .true.
+        end if     
         call eqnrmvh( face, jacob, nrmvec, bad, local_debug )                   
         if( bad ) then                                                          
           call eqnrmvh_adjust( face, xsi, eta, zeta )                           
           call derivs( etype, xsi, eta, zeta, dsf(1,1), dsf(1,2),               
      &                 dsf(1,3) )                                               
           call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr )           
+          if( ierr .eq. 1 ) then
+            if( .not. msg_flag1 ) write(out,9000) element, face
+            msg_flag1 = .true.
+          end if     
           call eqnrmvh( face, jacob, nrmvec, bad, local_debug )                 
           if( bad ) then                                                        
-           call iodevn( idummy, iout, dummy, 1 )                                
-           write (iout,1050) face, element                                      
+           write(out,1050) face, element                                      
            failed = .true.                                                      
            return                                                               
           end if                                                                
@@ -506,11 +511,14 @@ c
         enode        = fnodes(node)                                             
         xload(enode) = face_intens * nrmvec(1)                                  
         yload(enode) = face_intens * nrmvec(2)                                  
-        zload(enode) = face_intens * nrmvec(3)                                  
+        zload(enode) = face_intens * nrmvec(3) 
         if ( local_debug ) write(*,1030) enode, nrmvec                          
       end do                                                                    
+      if( msg_flag1 ) then
+          write(out,9010) 
+      end if                       
 c                                                                               
-      if ( local_debug ) write(*,1040) (i,xload(i),yload(i),zload(i),           
+      if( local_debug ) write(*,1040) (i,xload(i),yload(i),zload(i),           
      &                                  i = 1, nnode )                          
 c                                                                               
       return                                                                    
@@ -525,10 +533,21 @@ c
      &        40(/,2x,i4,3f15.8) )                                              
  1050 format('>>> WARNING: pressure load placed on face ',i1,' of ',            
      &       'element ',i8,'.  This face',/,                                    
-     &       '             has at least one collapsed edge. Warp3D',            
+     &       '             has at least one collapsed edge. WARP2D',            
      & /,    '             cannot resolve the normal direction at',/,           
      &       '             one or more nodes on the loaded face.',/,            
-     &       '             This loading ignored...',/)                          
+     &       '             Pressure on this element ignored ...',/)                          
+ 9000 format(' ',
+     & /,5x,'>>>>> WARNING: possible error for element ',
+     & '# loaded face:',i8,i3,
+     & /,5x,'               while computing global X-Y-Z components',
+     & ' of the pressure.',
+     & /,5x,'               Face [J] invalid. routine: ',
+     &   'hex_face_nloads',
+     & /,5x,'               Likely from a collapsed face at',
+     & ' crack front.'
+     & /,5x,'               Attempting to continue...')
+ 9010 format(5x,'>>>>> Success. pressure load processed')
 c                                                                               
        end                                                                      
 c ****************************************************************              
@@ -757,23 +776,21 @@ c *                                                              *
 c ****************************************************************              
 c                                                                               
 c                                                                               
-      subroutine elem_eqload_allocate( element, nnode )                         
-      use main_data                                                             
+      subroutine elem_eqload_allocate( element, nnode )      
+c                   
+      use main_data, only : elem_equiv_loads_now, elem_eq_loads
+      use constants                                                             
 c                                                                               
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     & zero                                                                     
-                                                                                
-      data zero / 0.0 /                                                         
+      implicit none
+
+      integer, intent(in) :: element, nnode
 c                                                                               
       elem_equiv_loads_now = .true.                                             
 c                                                                               
       if( elem_eq_loads(element)%ncols .eq. 0 ) then                            
         allocate( elem_eq_loads(element)%forces(3,nnode) )                      
         elem_eq_loads(element)%ncols = nnode                                    
-        do enode = 1, nnode                                                     
-           elem_eq_loads(element)%forces(1:3,enode) = zero                      
-        end do                                                                  
+        elem_eq_loads(element)%forces(1:3,1:nnode) = zero                      
       end if                                                                    
 c                                                                               
       return                                                                    

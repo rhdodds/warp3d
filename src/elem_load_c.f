@@ -140,27 +140,25 @@ c
 c                                                                               
        subroutine face_load( element, etype, nnode, face,                       
      &                       face_intens, ecoord, equiv_loads_face,             
-     &                       ldtype, constant_intens )                          
+     &                       ldtype, constant_intens, snodes )
+      use constants   
+      use global_data, only : out, mxndel                       
 c                                                                               
-      implicit double precision (a-h,o-z)                                       
+      implicit none
 c                                                                               
-      dimension  equiv_loads_face(*),                                           
-     &           ecoord(3,*),                                                   
-     &           face_intens(*)                                                 
+      integer, intent(in) :: element, etype, nnode, face, ldtype,
+     &                       snodes(mxndel)
+      double precision, intent(in) :: ecoord(3,*), constant_intens                                                
+      double precision, intent(inout) :: equiv_loads_face(mxndel),
+     &                                   face_intens(mxndel)                      
 c                                                                               
-      integer element, etype, face                                              
-c                                                                               
-c                                                                               
-c                local arrays                                                   
-c                                                                               
-c                                                                               
-      dimension qmat(10,10), fnodes(10)                                         
-c                                                                               
-      logical local_debug, tet_elem                                             
-      integer ptno, fnodes                                                      
-c                                                                               
-      data zero, one, local_debug                                               
-     & / 0.d0, 1.d0, .false. /                                                  
+c                locals
+c   
+      integer, parameter :: size_q=10, size_fnodes = mxndel                                                                           
+      integer :: ptno, fnodes(size_fnodes), i, j, nfnode                                                      
+      double precision :: qmat(size_q,size_q), totlod, sum, area                                        
+      logical :: tet_elem  
+      logical, parameter :: local_debug = .false.                                           
 c                                                                               
 c                                                                               
 c                check if we've got a tet element. if so,                       
@@ -169,8 +167,8 @@ c                greater than 4, print an error and quit.
 c                                                                               
 c                                                                               
       tet_elem = etype .eq. 6 .or. etype .eq. 13                                
-      if (tet_elem .and. face .gt. 4) then                                      
-         write(*,9920)                                                          
+      if( tet_elem .and. face .gt. 4 ) then                                      
+         write(out,9920)                                                          
          call die_abort                                                         
       end if                                                                    
 c                                                                               
@@ -194,14 +192,13 @@ c                 5)  form partial contribution to each {q}
 c                     term and add to existing terms.                           
 c                                                                               
 c                                                                               
-      if ( local_debug ) then                                                   
-         write(*,*) '>> inside face load'                                       
-         write(*,*) '     element coordinates'                                  
+      if( local_debug ) then                                                   
+         write(out,*) '>> inside routine face_load'                                       
+          write(out,*) '   nnode,etype: ',nnode,etype                              
+        write(out,*) '     element coordinates'                                  
          do i = 1, nnode                                                        
-           write(*,9900) i,ecoord(1,i),ecoord(2,i),                             
-     &                   ecoord(3,i)                                            
+           write(out,9900) i, ecoord(1:3,i)                        
          end do                                                                 
-         write(*,*) '   nnode,etype: ',nnode,etype                              
       end if                                                                    
 c                                                                               
 c               ldtype = 1 means constant intensity over the                    
@@ -210,38 +207,35 @@ c               means variable intensity at face nodes. if
 c               all values are zero, leave (could occur in                      
 c               support of pressure loads).                                     
 c                                                                               
-      if ( ldtype .eq. 1 ) then                                                 
-         do i = 1, nnode                                                        
-           face_intens(i) = constant_intens                                     
-         end do                                                                 
-      else if ( ldtype .eq. 2 ) then                                            
+      if( ldtype .eq. 1 ) then                                                 
+         face_intens(1:nnode) = constant_intens                                     
+      else if( ldtype .eq. 2 ) then                                            
          sum = zero                                                             
          do i = 1, nnode                                                        
            sum = sum + abs(face_intens(i))                                      
          end do                                                                 
-         if ( sum .eq. zero ) return                                            
+         if( sum .eq. zero ) return                                            
       else                                                                      
-         write(*,9910)                                                          
+         write(out,9910)                                                          
        call die_gracefully                                                      
          stop                                                                   
       end if                                                                    
-c                                                                               
 c                                                                               
 c               tet and hex elements diverge here to compute [q].               
 c               2-D gauss integration schemes are used on the                   
 c               loaded face.                                                    
 c                                                                               
 c                                                                               
-      if (tet_elem) then                                                        
-         call tet_compute_q (element, etype, nnode, face,                       
-     &                       face_intens, ecoord, equiv_loads_face,             
+      if( tet_elem ) then                                                        
+         call tet_compute_q( element, etype, nnode, face,                       
+     &                       face_intens, ecoord,              
      &                       ldtype, constant_intens, qmat, fnodes,             
-     &                       nfnode, area)                                      
+     &                       nfnode, area )                                      
       else                                                                      
-         call hex_compute_q (element, etype, nnode, face,                       
-     &                       face_intens, ecoord, equiv_loads_face,             
+         call hex_compute_q( element, etype, nnode, face,                       
+     &                       face_intens, ecoord,             
      &                       ldtype, constant_intens, qmat, fnodes,             
-     &                       nfnode, area)                                      
+     &                       nfnode, area, size_q, size_fnodes )                                      
       end if                                                                    
 c                                                                               
 c             equivalent loads for face nodes are given by                      
@@ -257,32 +251,27 @@ c
        totlod = totlod + sum                                                    
       end do                                                                    
 c                                                                               
-      if ( .not. local_debug ) return                                           
-      write(*,3000)                                                             
-      do i = 1, nfnode                                                          
-        write(*,3010) (qmat(i,j),j=1,nfnode)                                    
-      end do                                                                    
-      write(*,3020) ( i,equiv_loads_face(i),i=1,nnode )                         
-      write(*,3030) totlod, area                                                
+      if ( .not. local_debug ) return   
+      write(out,*) '>> leaving routine face_load with these values',
+     &  ' for element: ', element   
+      write(out,*) '          equivalent nodal loads for edge forces'       
+      write(out,*) '              enode     snode'                                     
+      write(out,3020) ( i,snodes(i),equiv_loads_face(i),i=1,nnode )                         
+      write(out,3030) totlod, area   
+      write(out,*) " "                                             
       return                                                                    
 c                                                                               
-c                                                                               
-c                                                                               
- 3020 format( 1h0,5x,38hequivalent nodal loads for edge forces,                 
-     &   / 20(/,10x,i4,f20.6) )                                                 
- 3000 format(/,2x,"[q] matrix:" )                                               
- 3010 format(1x,10f10.3)                                                        
- 3030 format(1x,"total load, area: ",2f10.4 )                                   
+ 3020 format(20(15x,i4,i9,f20.9,/) )                                                 
+ 3030 format(10x,"total load, face area: ",2f15.9 )                                   
  9900 format(i4,3f10.3)                                                         
  9910 format('>> FATAL ERROR: routine face_load. job aborted')                  
  9920 format('>> FATAL ERROR: tet face > 4 not valid. job aborted')             
+c
       end                                                                       
-c                                                                               
-c                                                                               
 c                                                                               
 c *******************************************************************           
 c *                                                                 *           
-c *    subroutine hex_compute_q                                     *           
+c *    subroutine hex_compute_q:   2/20/2021 rhd                    *           
 c *                                                                 *           
 c *               compute the [q] matrix for hex elements.          *           
 c *               this routine contains 2D gauss rules for          *           
@@ -290,60 +279,51 @@ c *               the quad faces.                                   *
 c *                                                                 *           
 c *******************************************************************           
 c                                                                               
-      subroutine hex_compute_q (element, etype, nnode, face,                    
-     &                       face_intens, ecoord, equiv_loads_face,             
+      subroutine hex_compute_q( element, etype, nnode, face,                    
+     &                       face_intens, ecoord,             
      &                       ldtype, constant_intens, qmat, fnodes,             
-     &                       nfnode, area)                                      
+     &                       nfnode, area, size_q, size_fnodes)   
+      use constants   
+      use global_data, only : out, mxndel                       
 c                                                                               
+      implicit none
+c      
+      integer, intent(in) :: element, etype, nnode, face, ldtype,
+     &                       size_q, size_fnodes                           
+      integer, intent(out) ::  fnodes(size_fnodes), nfnode                                                                    
+      double precision, intent(in) :: ecoord(3,*), face_intens(mxndel),
+     &                                constant_intens
+      double precision, intent(out) :: area,
+     &                                 qmat(size_q,size_q)
 c                                                                               
-      implicit double precision (a-h,o-z)                                       
+c                locals
 c                                                                               
-      dimension  equiv_loads_face(*),                                           
-     &           ecoord(3,*),                                                   
-     &           face_intens(*),                                                
-     &           qmat(10,*),                                                    
-     &           fnodes(*)                                                      
+      integer :: i, j, iorder, ptno, ierr, irow, jcol
+      double precision :: dsf(32,3), jacob(3,3), jacobi(3,3),                             
+     &                    sf(32), fcoor(3,9), fweigt(3), gauss(3),
+     &                    det, darea, weight, a                                                            
 c                                                                               
-      integer element, etype, face                                              
-c                                                                               
-c                                                                               
-c                local arrays                                                   
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &    jacob, jacobi                                                         
-c                                                                               
-      dimension dsf(32,3), jacob(3,3), jacobi(3,3),                             
-     &          sf(32), fcoor(3,9), fweigt(3),                                  
-     &          gauss(3)                                                        
-c                                                                               
-      logical local_debug                                                       
-      integer ptno, fnodes                                                      
-c                                                                               
-      data zero, one, local_debug                                               
-     & / 0.d0, 1.d0, .false. /                                                  
-c                                                                               
+      logical, parameter ::  local_debug = .false.                                                
 c                                                                               
 c               gauss points and weights for 2x2 and                            
 c               3x3 integration over the loaded face.                           
 c                                                                               
-c                                                                               
-      data gp1, gp2, w1, w2                                                     
-     &  / 0.57735026918962576450d0,                                             
-     &    0.77459666924148337703d0,                                             
-     &    0.55555555555555555555d0,                                             
-     &    0.88888888888888888888d0 /                                            
+      double precision, parameter ::                                                   
+     &  gp1 = 0.57735026918962576450d0,                                             
+     &  gp2 = 0.77459666924148337703d0,                                             
+     &  w1 =  0.55555555555555555555d0,                                             
+     &  w2 =  0.88888888888888888888d0                                            
 c                                                                               
 c               get the element nodes on the loaded face and                    
 c               zero the [q] matrix.                                            
 c                                                                               
-      call eqelfn( fnodes, etype, face, nfnode )                                
-c                                                                               
-      do i = 1, nfnode                                                          
-       do j = 1, nfnode                                                         
-         qmat(j,i) = zero                                                       
-       end do                                                                   
-      end do                                                                    
+      call eqelfn( fnodes, etype, face, nfnode ) 
+      if( local_debug ) then
+        write(out,*) ' ...... inside routine  hex_compute_q'
+        write(out,*) '   etype, face, nfnode: ', etype, face, nfnode
+        write(out,*) '   face nodes: ',fnodes(1:nfnode)
+      end if                                                                                                             
+      qmat = zero
 c                                                                               
 c               integrate the product of shape functions over                   
 c               the loaded face to obtain the [q] matrix.                       
@@ -358,13 +338,13 @@ c                     in parent and real element )
 c                 6)  add the integration point contribution                    
 c                     to each [q] term on the face.                             
 c                                                                               
-      if ( nfnode .eq. 4 ) then                                                 
+      if( nfnode == 4 ) then      !  linear face                                               
          iorder = 2                                                             
          gauss(1) = -gp1                                                        
          gauss(2) =  gp1                                                        
          fweigt(1) = one                                                        
          fweigt(2) = one                                                        
-      else                                                                      
+      else                       !   quadratic face                                                
          iorder    = 3                                                          
          gauss(1)  = -gp2                                                       
          gauss(2)  = zero                                                       
@@ -374,7 +354,17 @@ c
          fweigt(3) = w1                                                         
       end if                                                                    
 c                                                                               
-      call eqfnic( fcoor, iorder, gauss, face )                                 
+      call eqfnic( fcoor, iorder, gauss, face ) 
+      if( local_debug ) then
+        write(out,*) '      parametric coords of face integ pts'
+        ptno = 1
+        do i = 1, iorder * iorder
+          write(out,*) '      ptno, (xsi,eta,zeta): ', ptno,
+     &                  fcoor(1:3,ptno)
+          ptno = ptno + 1
+        end do
+      end if
+c                                
       ptno = 0                                                                  
       area = zero                                                               
       do i = 1, iorder                                                          
@@ -382,7 +372,11 @@ c
           ptno = ptno + 1                                                       
           call derivs( etype, fcoor(1,ptno), fcoor(2,ptno),                     
      &                 fcoor(3,ptno), dsf(1,1), dsf(1,2), dsf(1,3) )            
-          call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr )           
+          call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr )      
+          if( ierr .eq. 1 ) then
+              write(out,9000) element, face
+              call die_abort
+          end if     
           call shapef( etype, fcoor(1,ptno), fcoor(2,ptno),                     
      &                 fcoor(3,ptno), sf )                                      
           call eqfcda( jacob, face, darea )                                     
@@ -395,9 +389,24 @@ c
             end do                                                              
           end do                                                                
         end do                                                                  
-      end do                                                                    
+      end do 
+c
+      if( local_debug ) then
+        write(out,*) '      [Q] for element face loading'
+        do i = 1, nfnode  
+          write(out,9100) i, qmat(i,1:nfnode)
+        end do
+      end if                                                                 
 c                                                                               
-      return                                                                    
+      return      
+c
+ 9000 format(' ',
+     & /,5x,'>>>>> FATAL ERROR: failed computation for element ',
+     &   'equivalent forces...',
+     & /,5x,'                   element # loaded face:',i8,i3,
+     & /,5x,'                   Face [J] invalid. Job terminated.',//)
+c
+ 9100 format(10x,i2,10f15.7)
 c                                                                               
       end                                                                       
 c                                                                               
@@ -411,20 +420,20 @@ c *               elements.                                         *
 c *                                                                 *           
 c *******************************************************************           
       subroutine tet_compute_q (element, etype, nnode, face,                    
-     &                       face_intens, ecoord, equiv_loads_face,             
+     &                       face_intens, ecoord,             
      &                       ldtype, constant_intens, qmat, fnodes,             
      &                       nfnode, area)                                      
 c                                                                               
 c                                                                               
       implicit double precision (a-h,o-z)                                       
 c                                                                               
-      dimension  equiv_loads_face(*),                                           
-     &           ecoord(3,*),                                                   
+      dimension  ecoord(3,*),                                                   
      &           face_intens(*),                                                
      &           qmat(10,*),                                                    
      &           fnodes(*)                                                      
 c                                                                               
-      integer element, etype, face, index, gp, irow, jcol, i, j                 
+      integer element, etype, face, index, gp, irow, jcol, i, j,
+     &        ldtype                  
 c                                                                               
 c                                                                               
 c                local arrays                                                   
@@ -803,34 +812,24 @@ c *                                                                 *
 c *******************************************************************           
 c                                                                               
 c                                                                               
-      subroutine  eqldjb( dsf, coord, nnode, jacob, jacobi, det, ierr )         
+      subroutine  eqldjb( dsf, coord, nnode, jacob, jacobi, det, ierr ) 
+      use global_data, only : out
+      use constants        
       implicit none                                       
-c                                                                               
 c                                                                               
 c              compute the 3 x 3 jacobian, its determinate and                  
 c              inverse for the 3-d isoparametrics.                              
-c                                                                               
 c                                                                               
       integer :: nnode, ierr
       double precision :: dsf(32,*), coord(3,*), jacob(3,3),
      &                    jacobi(3,3), det  
 c
       integer :: i, j, k 
-      double precision, parameter :: zero = 0.0d0              
       logical, parameter ::  debug = .false.
-                                                            
 c                                                                               
 c              compute jacobian at the point.                                   
 c                                                                               
-      jacob(1,1) = zero                                                         
-      jacob(2,1) = zero                                                         
-      jacob(3,1) = zero                                                         
-      jacob(1,2) = zero                                                         
-      jacob(2,2) = zero                                                         
-      jacob(3,2) = zero                                                         
-      jacob(1,3) = zero                                                         
-      jacob(2,3) = zero                                                         
-      jacob(3,3) = zero                                                         
+      jacob = zero
       do k = 1, nnode                                                           
        jacob(1,1) = jacob(1,1) + dsf(k,1) * coord(1,k)                          
        jacob(2,1) = jacob(2,1) + dsf(k,2) * coord(1,k)                          
@@ -842,7 +841,7 @@ c
        jacob(2,3) = jacob(2,3) + dsf(k,2) * coord(3,k)                          
        jacob(3,3) = jacob(3,3) + dsf(k,3) * coord(3,k)                          
       end do                                                                    
-      if ( debug ) write(*,100) ((jacob(i,j),j=1,3),i=1,3)                      
+      if( debug ) write(out,100) ((jacob(i,j),j=1,3),i=1,3)                      
 c                                                                               
 c              inverse and determinant of the jacobian.                         
 c                                                                               
@@ -851,11 +850,10 @@ c
      &    + jacob(3,1) * jacob(1,2) * jacob(2,3)                                
      &    - jacob(1,1) * jacob(3,2) * jacob(2,3)                                
      &    - jacob(2,1) * jacob(1,2) * jacob(3,3)                                
-     &    - jacob(3,1) * jacob(2,2) * jacob(1,3)                                
+     &    - jacob(3,1) * jacob(2,2) * jacob(1,3)    
+      ierr = 0                            
       if ( det .le. zero ) then                                                 
         ierr = 1   
-        write(*,100) ((jacob(i,j),j=1,3),i=1,3)            
-        write(*,*) '.....   bad determinant: ',det                                                 
         return                                                                  
       end if                                                                    
 c                                                                               
@@ -878,7 +876,7 @@ c
       jacobi(2,3) = -(jacob(1,1) * jacob(2,3)                                   
      &              - jacob(2,1) * jacob(1,3)) / det                            
 c                                                                               
-      if ( debug ) write(*,110) det, ((jacobi(i,j),j=1,3), i = 1,3)             
+      if( debug ) write(out,110) det, ((jacobi(i,j),j=1,3), i = 1,3)             
 c                                                                               
       return                                                                    
  100  format(5x,"jacobian at point",                                   
@@ -1020,21 +1018,18 @@ c              points on an element face.  order of points
 c              is of no importance to user or integrators.                      
 c                                                                               
 c                                                                               
-      double precision                                                          
-     &   fcoor(3,*), gauss(*)                                                   
+      double precision :: fcoor(3,*), gauss(*)                                                   
 c                                                                               
 c              local variables                                                  
 c                                                                               
-      double precision                                                          
-     &  const(6), value                                                         
-      integer row1(6),  row2(6), row3(6)                                        
+      double precision :: const(6), value                                                         
+      integer ::  row1(6),  row2(6), row3(6)                                        
 c                                                                               
       data    const  /   -1.,1.,  -1.,1.,  -1.,1.  /                            
       data    row1   /  1,1,  2,2,  3,3  /                                      
       data    row2   /  2,2,  1,1,  1,1  /                                      
       data    row3   /  3,3,  3,3,  2,2  /                                      
-c                                                                               
-c                                                                               
+c                                                                                                                                                        
       value = const(face)                                                       
       irow1 = row1(face)                                                        
       irow2 = row2(face)                                                        
@@ -1070,7 +1065,8 @@ c *                                                             *
 c ***************************************************************               
 c                                                                               
 c                                                                               
-      subroutine eqfcda( jacob, face, darea )                                   
+      subroutine eqfcda( jacob, face, darea )
+      implicit none                                   
 c                                                                               
 c                                                                               
 c                 compute the differential area at some point                   
@@ -1080,10 +1076,11 @@ c                 surface at point as the required area.  use
 c                 cross product of two tangential vectors on the face.          
 c                                                                               
 c                                                                               
-      double precision                                                          
-     &  jacob(3,*), veca(3), vecb(3), darea, a1, a2, a3                         
-      integer   face                                                            
-c                                                                               
+      double precision :: jacob(3,3), darea
+      integer :: face 
+c   
+      integer :: i                                                        
+      double precision :: veca(3), vecb(3), a1, a2, a3                         
 c                                                                               
       go to ( 100,100,200,200,300,300 ), face                                   
 c                                                                               
@@ -1344,26 +1341,27 @@ c *                                                              *
 c ****************************************************************              
 c                                                                               
       subroutine hex_face_nvec( xi, eta, zeta, ecoord, lvec,                    
-     &     element, etype, nnode, face )                                        
+     &                          element, etype, nnode, face )       
+      use global_data, only : out                                 
 c                                                                               
       implicit none                                                             
 c                                                                               
 c     parameter declarations                                                    
 c     ----------------------                                                    
 c                                                                               
-      integer element, etype, nnode, face                                       
-      double precision                                                          
+      integer :: element, etype, nnode, face                                       
+      double precision ::                                                         
      &     xi, eta, zeta, ecoord(3,*), lvec(3)                                  
 c                                                                               
 c     declare local variables                                                   
 c     -----------------------                                                   
 c                                                                               
-      integer ierr                                                              
-      logical bad, debug                                                        
-      double precision                                                          
+      integer :: ierr                                                              
+      logical :: bad, debug                                                        
+      double precision ::                                                         
      &     dsf(32,3), jacob(3,3), jacobi(3,3), det                              
       data debug / .false. /                                                    
-      if(debug) write(*,*) '>> In hex_face_nvec'                                
+      if( debug ) write(*,*) '>> In hex_face_nvec'                                
 c                                                                               
 c              1) evaluate derivatives of shape functions                       
 c                 at the node;                                                  
@@ -1377,14 +1375,26 @@ c                 thus producing direction cosines;
 c              5) reverse the sign of the normal vector to point out            
 c                                                                               
       call derivs( etype, xi, eta, zeta, dsf(1,1), dsf(1,2), dsf(1,3) )         
-      call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr )               
+      call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr ) 
+      if( ierr .eq. 1 ) then
+         write(out,9000) element, face
+         call die_abort
+      end if     
       call eqnrmvh( face, jacob, lvec, bad, debug )                             
 c                                                                               
       lvec(1) = -lvec(1)                                                        
       lvec(2) = -lvec(2)                                                        
       lvec(3) = -lvec(3)                                                        
-      if(debug) write(*,*) '>> Leaving hex_face_nvec'                           
+      if( debug ) write(*,*) '>> Leaving hex_face_nvec'      
+      return                     
 c                                                                               
+ 9000 format(' ',
+     & /,5x,'>>>>> FATAL ERROR: failed computation for element ',
+     &   'equivalent forces...',
+     & /,5x,'                   element # loaded face:',i8,i3,
+     & /,5x,'                   Face [J] invalid. routine: ',
+     &   'hex_face_nvec',
+     & /,5x,'                   Job terminated.',//)
       end                                                                       
 c                                                                               
 c ****************************************************************              

@@ -4,7 +4,7 @@ c     *                      subroutine driv_eload                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/15/11 jcs               *          
+c     *                   last modified : 2/21/2021 rhd              *
 c     *                                                              *          
 c     *     this subroutine drives the calculation of the            *          
 c     *     equivalent nodal loads for element loadings.             *          
@@ -29,21 +29,20 @@ c                   eload_data(i,3)  -- the dof for the loading for entry i
 c                               (zero for pressure loading)                     
 c                   eload_val(i)     -- the value of the force for entry i      
 c                   eload_pist(i)   -- piston table number for entry i          
-c                   thread_number(i) -- thread number for entry i               
+c                   thread_number(i) -- thread number for entry i  
+c                   rload -- 3 x nonode for model             
 c                                                                               
 c                                                                               
 c                                                                               
       subroutine driv_eload( loadnum, mult_fact, rload )                        
-      use global_data ! old common.main
       use elem_load_data, only : elem_loads                                     
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
-c                                                                               
-c                                                                               
-c                global variables                                               
-c                                                                               
-      double precision                                                          
-     &     mult_fact, rload(*)                                                  
+c                parameters                                               
+c               
+      integer, intent(in) :: loadnum                                                                
+      double precision, intent(in) :: mult_fact
+      double precision, intent(out) :: rload(*)                                                  
 c                                                                               
 c                                                                               
 c                   originally, this routine was to govern element              
@@ -52,13 +51,11 @@ c                   code structure deals with different element types
 c                   in later routines. simply call elem_load to start           
 c                   calculations for all elements.                              
 c                                                                               
-c                                                                               
-      if ( elem_loads(loadnum)%size .gt. 0 )                                    
-     &      call elem_load ( elem_loads(loadnum)%data(1,1),                     
+      if( elem_loads(loadnum)%size .gt. 0 )                                    
+     &      call elem_load( elem_loads(loadnum)%data(1,1),                     
      &      elem_loads(loadnum)%vals(1), elem_loads(loadnum)%size,              
      &      elem_loads(loadnum)%piston_tabnum(1),                               
      &      elem_loads(loadnum)%thread_number(1), mult_fact, rload )            
 c                                                                               
- 9999 continue                                                                  
       return                                                                    
       end                                                                       
