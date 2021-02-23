@@ -561,10 +561,9 @@ c
       subroutine  eqnrmvh_adjust( face, xsi, eta, zeta )                        
       implicit none                                                             
 c                                                                               
-      integer face                                                              
-      double precision                                                          
-     &  xsi, eta, zeta, pt9                                                     
-      data pt9 / 0.9 /                                                          
+      integer :: face                                                              
+      double precision :: xsi, eta, zeta
+      double precision, parameter :: pt9 = 0.9d0                                                    
 c                                                                               
       if( face .eq. 1 .or. face .eq. 2 ) then                                   
         eta  = eta * pt9                                                        
@@ -803,22 +802,23 @@ c *                                                              *
 c ****************************************************************              
 c                                                                               
 c                                                                               
-      subroutine eqnrmvh( face, jacob, nrmvec, bad, debug )                     
+      subroutine eqnrmvh( face, jacob, nrmvec, bad, debug )    
+      use constants
+      use global_data, only : out                 
       implicit none                                                             
 c                                                                               
-      double precision                                                          
-     &  jacob(3,3), nrmvec(3)                                                   
-      integer face                                                              
-      logical bad, debug                                                        
+      double precision :: jacob(3,3), nrmvec(3)                                                   
+      integer :: face                                                              
+      logical :: bad, debug                                                        
 c                                                                               
-c                local arrays                                                   
+c                locals
 c                                                                               
-      double precision                                                          
+      double precision ::                                                        
      &     maga, magb, mag_max, veca(3), vecb(3), rlen,                         
-     &     zero, tol, mag_min                                                   
-      integer irowa(6), irowb(6), rowa, rowb                                    
+     &     tol, mag_min                                                   
+      integer :: irowa(6), irowb(6), rowa, rowb                                    
 c                                                                               
-      data zero, tol / 0.0, 0.0001 /                                            
+      data tol / 0.0001d0 /                                            
       data irowa /  2,3,3,1,1,2 /                                               
       data irowb /  3,2,1,3,2,1 /                                               
 c                                                                               
@@ -831,9 +831,6 @@ c
       vecb(1) = jacob(rowb,1)                                                   
       vecb(2) = jacob(rowb,2)                                                   
       vecb(3) = jacob(rowb,3)                                                   
-c      write(*,*) '... eqnrmvh ...'                                             
-c      write(*,9900) veca, vecb                                                 
-                                                                                
 c                                                                               
 c             Error conditions:                                                 
 c               (1) either vector has exactly zero length                       
@@ -844,7 +841,6 @@ c
         magb = sqrt (vecb(1)**2 + vecb(2)**2 + vecb(3)**2 )                     
         mag_max = maga                                                          
         mag_min = magb                                                          
-c        write(*,9910) maga, magb                                               
         if( magb .gt. maga ) then                                               
           mag_max = magb                                                        
           mag_min = maga                                                        
@@ -855,12 +851,10 @@ c        write(*,9910) maga, magb
            return                                                               
         end if                                                                  
         if( debug ) then                                                        
-          write(*,*) '..normal vector computation..'                            
-          write(*,*) '   rowa, rowb: ', rowa, rowb                              
-          write(*,9000) jacob(1,1:3), jacob(2,1:3),                             
-     &           jacob(3,1:3)                                                   
- 9000     format(3(5x,3f15.9,/) )                                               
-          write(*,*) '    maga, magb: ', maga, magb                             
+          write(out,*) '..normal vector computation..'                            
+          write(out,*) '   rowa, rowb: ', rowa, rowb                              
+          write(out,9000) jacob(1,1:3), jacob(2,1:3), jacob(3,1:3)                                                   
+          write(out,*) '    maga, magb: ', maga, magb                             
         end if                                                                  
 c                                                                               
 c             generate unit normal to surface at node using                     
@@ -884,10 +878,7 @@ c
         nrmvec(3) = veca(1)*vecb(2) - vecb(1)*veca(2)                           
         rlen = sqrt( nrmvec(1)*nrmvec(1) + nrmvec(2)*nrmvec(2) +                
      &               nrmvec(3)*nrmvec(3) )                                      
-c        if( debug ) then                                                       
-c         write(*,9920) nrmvec, rlen                                            
-c        end if                                                                 
-        if( rlen .lt. tol*10.0 ) then                                           
+        if( rlen .lt. tol*10.0d0 ) then                                           
            bad = .true.                                                         
            return                                                               
         end if                                                                  
@@ -896,12 +887,13 @@ c
         nrmvec(2) = nrmvec(2) / rlen                                            
         nrmvec(3) = nrmvec(3) / rlen                                            
 c                                                                               
-        return                                                                  
+        return    
+c                                                              
+ 9000   format(3(5x,3f15.9,/) )                                               
  9900   format(3x, 'veca: ',3e14.6,/,/,3x, 'vecb: ',3e14.6)                     
  9910   format(3x,'maga, magb: ', 2e14.6)                                       
  9920   format(3x,'nrmvec: ',3e14.6,' rlen: ',e14.6)                            
-                                                                                
-                                                                                
+c                                                                                
         end                                                                     
 c                                                                               
 c                                                                               

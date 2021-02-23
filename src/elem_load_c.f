@@ -194,8 +194,8 @@ c
 c                                                                               
       if( local_debug ) then                                                   
          write(out,*) '>> inside routine face_load'                                       
-          write(out,*) '   nnode,etype: ',nnode,etype                              
-        write(out,*) '     element coordinates'                                  
+         write(out,*) '   nnode,etype: ',nnode,etype                              
+         write(out,*) '     element coordinates'                                  
          do i = 1, nnode                                                        
            write(out,9900) i, ecoord(1:3,i)                        
          end do                                                                 
@@ -526,33 +526,27 @@ c *                                                                 *
 c *******************************************************************           
 c                                                                               
       subroutine tet_darea( dsf, nfnode, fnodes, ecoord, darea,                 
-     &                      vec1, vec2 )                                        
+     &                      vec1, vec2 )  
+      use constants                                      
       implicit none                                                             
 c                                                                               
-      double precision                                                          
-     &    dsf(32,*), ecoord(3,*), darea, vec1(*), vec2(*)                       
-c                                                                               
-      integer fnodes(*), nfnode                                                 
+      double precision ::                                                         
+     &    dsf(32,*), ecoord(3,*), darea, vec1(3), vec2(3)                       
+      integer :: fnodes(*), nfnode                                                 
 c                                                                               
 c                 local variables                                               
 c                                                                               
-      double precision                                                          
-     &    a1, a2, a3                                                            
-c                                                                               
+      double precision :: a1, a2, a3                                                            
       integer i, loc                                                            
-c                                                                               
 c                                                                               
 c                 first build the vectors using the derivatives                 
 c                 of shape functions and nodal coordinates on                   
 c                 the loaded face.                                              
 c                                                                               
+      vec1 = zero
+      vec2 = zero
 c                                                                               
-      do i=1,3                                                                  
-      vec1(i) = 0.d0                                                            
-      vec2(i) = 0.d0                                                            
-      end do                                                                    
-c                                                                               
-      do i=1,nfnode                                                             
+      do i = 1, nfnode                                                             
          loc = fnodes(i)                                                        
          vec1(1) = vec1(1) + dsf(loc,1)*ecoord(1,loc)                           
          vec1(2) = vec1(2) + dsf(loc,1)*ecoord(2,loc)                           
@@ -563,20 +557,15 @@ c
          vec2(3) = vec2(3) + dsf(loc,2)*ecoord(3,loc)                           
       end do                                                                    
 c                                                                               
-c                                                                               
 c                  darea is simply the magnitude of the                         
 c                  cross product of the two vectors.                            
-c                                                                               
 c                                                                               
       a1 = vec1(2)*vec2(3) - vec2(2)*vec1(3)                                    
       a2 = vec2(1)*vec1(3) - vec1(1)*vec2(3)                                    
       a3 = vec1(1)*vec2(2) - vec2(1)*vec1(2)                                    
       darea = sqrt( a1*a1 + a2*a2 + a3*a3 )                                     
 c                                                                               
-c                                                                               
-c                                                                               
       return                                                                    
-c                                                                               
       end                                                                       
 c                                                                               
 c *******************************************************************           
@@ -590,16 +579,16 @@ c
      &                     dsf, temp_dsf )                                      
       implicit none                                                             
 c                                                                               
-      double precision                                                          
+      double precision ::                                                         
      &    sf(*), dsf(32,*), temp_dsf(32,*), temp_sf(*)                          
 c                                                                               
-      integer etype, nfnode, fnodes(*)                                          
+      integer :: etype, nfnode, fnodes(*)                                          
 c                                                                               
 c                local variables                                                
 c                                                                               
-      integer node, map_3node(3), map_6node(6)                                  
+      integer :: node, map_3node(3), map_6node(6)                                  
 c                                                                               
-      logical etype_tet4, etype_tet10                                           
+      logical :: etype_tet4, etype_tet10                                           
 c                                                                               
 c                                                                               
 c                use the map vectors to match the shape                         
@@ -662,7 +651,6 @@ c
       end if                                                                    
 c                                                                               
       return                                                                    
-c                                                                               
       end                                                                       
 c                                                                               
 c *******************************************************************           
@@ -672,22 +660,19 @@ c *         points on triangular faces.                             *
 c *                                                                 *           
 c *******************************************************************           
 c                                                                               
-      subroutine tet_get_gpts (etype, fcoor, fweight, ngpts, index)             
+      subroutine tet_get_gpts (etype, fcoor, fweight, ngpts, index) 
+      use constants            
       implicit none                                                             
 c                                                                               
-      integer etype, ngpts, order, gp, index                                    
+      integer :: etype, ngpts, order, gp, index                                    
 c                                                                               
-      double precision                                                          
+      double precision ::                                                         
      &    fcoor(3,*),                                                           
      &    fweight(*),                                                           
      &    s1, s2, s3,                                                           
-     &    weight, zero, one                                                     
+     &    weight                                                 
 c                                                                               
       logical etype_tet4, etype_tet10                                           
-c                                                                               
-      data zero, one                                                            
-     & / 0.d0, 1.d0 /                                                           
-c                                                                               
 c                                                                               
 c               determine whether linear or quadratic tet.                      
 c               then set the number of gauss points on the                      
@@ -704,11 +689,11 @@ c
       etype_tet10 = etype .eq. 6                                                
       etype_tet4  = etype .eq. 13                                               
 c                                                                               
-      if (etype_tet4) then                                                      
+      if( etype_tet4 ) then                                                      
         ngpts = 4                                                               
         order = 4                                                               
         index = 14                                                              
-      else if (etype_tet10) then                                                
+      else if( etype_tet10 ) then                                                
         ngpts = 7                                                               
         order = 7                                                               
         index = 15                                                              
@@ -734,7 +719,7 @@ c                     the shapef and derivs routines so it
 c                     won't be calculated here.                                 
 c                                                                               
 c                                                                               
-      do gp = 1,ngpts                                                           
+      do gp = 1, ngpts                                                           
          call trint12_gp( order, gp, s1, s2, s3, weight )                       
          fcoor (1,gp) = s1                                                      
          fcoor (2,gp) = s2                                                      
@@ -760,9 +745,9 @@ c              put the node numbers for face "face" , element
 c              type "etype" into vector fnodes and set number of                
 c              nodes on the face.                                               
 c                                                                               
-      dimension  fnodes(*), tet_10node(6,4), tet_4node(3,4)                     
+      dimension :: fnodes(*), tet_10node(6,4), tet_4node(3,4)                     
 c                                                                               
-      logical etype_tet10, etype_tet4                                           
+      logical :: etype_tet10, etype_tet4                                           
 c                                                                               
 c                                                                               
       data   tet_10node   / 1,7,3,6,2,5,                                        
@@ -775,16 +760,12 @@ c
      &                      2,3,4,                                              
      &                      1,4,3 /                                             
 c                                                                               
-c                                                                               
 c               determine whether linear or quadratic tet                       
-c                                                                               
 c                                                                               
       etype_tet10 = etype .eq. 6                                                
       etype_tet4  = etype .eq. 13                                               
 c                                                                               
-c                                                                               
 c               store face nodes in 'fnodes'                                    
-c                                                                               
 c                                                                               
       if (etype_tet10) then                                                     
          nfnode = 6                                                             
@@ -801,7 +782,6 @@ c
          end do                                                                 
          return                                                                 
       end if                                                                    
-c                                                                               
 c                                                                               
       end                                                                       
 c                                                                               
@@ -1010,18 +990,20 @@ c *******************************************************************
 c                                                                               
 c                                                                               
       subroutine eqfnic( fcoor, iorder, gauss, face )                           
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
 c                                                                               
 c              return the isoparametric coordinates of integration              
 c              points on an element face.  order of points                      
 c              is of no importance to user or integrators.                      
 c                                                                               
-c                                                                               
+c   
+      integer :: iorder, face                                                                            
       double precision :: fcoor(3,*), gauss(*)                                                   
 c                                                                               
 c              local variables                                                  
-c                                                                               
+c          
+      integer :: irow1, irow2, irow3, npts, ptno, i, j                                                                     
       double precision :: const(6), value                                                         
       integer ::  row1(6),  row2(6), row3(6)                                        
 c                                                                               
