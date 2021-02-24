@@ -154,7 +154,7 @@ c
       if( local_debug ) start_time = omp_get_wtime()
       run_serial_loop = .false.
 c
-c$OMP PARALLEL DO PRIVATE( blk, now_thread )
+c$OMP PARALLEL DO PRIVATE( blk, now_thread ) 
 
 c$OMP&            SHARED( nelblk, elblks, myid, iter, step,
 c$OMP&                    step_cut_flags, block_energies,
@@ -572,7 +572,11 @@ c             nonlocal analysis? set flags.
 c
       call do_nleps_block_a
 c
-      call recstr_allocate( local_work )
+      call recstr_allocate_1( local_work )
+      call recstr_allocate_2( local_work )
+      call recstr_allocate_3( local_work )
+      call recstr_allocate_4( local_work )
+      call recstr_allocate_5( local_work )
 c
       call dupstr( span, edest_blocks(blk)%ptr(1,1),
      &             incid(incmap(felem)), felem,
@@ -720,11 +724,11 @@ c
       end subroutine do_nleps_block
 c     ****************************************************************
 c     *                                                              *
-c     *                   subroutine recstr_allocate                 *
+c     *                   subroutine recstr_allocate_1                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified :  9/15/2018 rhd             *
+c     *                   last modified :  2/23/2021 rhd             *
 c     *                                                              *
 c     *     allocate data structure in local_work for updating       *
 c     *     strains-stresses-internal forces.                        *
@@ -732,77 +736,214 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine recstr_allocate( local_work )
-      use global_data ! old common.main
+      subroutine recstr_allocate_1( local_work )
+      use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
+     &                        mxndof, mxgp, mxndel, nstr, nstrs,
+     &                        mxndpr, max_crystals, 
+     &                        nonlocal_shared_state_size,
+     &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
       implicit none
-
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      logical, parameter :: debug = .false.
       double precision :: zero
       data zero / 0.0d00 /
 c
+      if( debug ) write(out,*) '... entered recstr_allocate_1 ...'
       local_mt = local_work%mat_type
 c
+c          ===============================================
+c
+      if( allocated( local_work%ce_0 ) ) deallocate( local_work%ce_0 )
+      if( allocated( local_work%ce_n ) ) deallocate( local_work%ce_n )
+      if( allocated( local_work%ce_mid ) ) 
+     &             deallocate( local_work%ce_mid )
+      if( allocated( local_work%ce_n1 ) ) deallocate( local_work%ce_n1 )
+c
       allocate(
-     &   local_work%ce_0(mxvl,mxecor),
-     &   local_work%ce_n(mxvl,mxecor),
-     &   local_work%ce_mid(mxvl,mxecor),
-     &   local_work%ce_n1(mxvl,mxecor), stat=error )
-      if( error .ne. 0 ) then
-         write(out,9000) 1
-         call die_abort
-      end if
+     &  local_work%ce_0(mxvl,mxecor), stat=error )
+      call recstr_allocate_check( '0.1', error, out )
+      allocate(
+     &  local_work%ce_n(mxvl,mxecor), stat=error )
+      call recstr_allocate_check( '0.2', error, out )
+      allocate(
+     &  local_work%ce_mid(mxvl,mxecor), stat=error )
+      call recstr_allocate_check( '0.3', error, out )
+      allocate(
+     &  local_work%ce_n1(mxvl,mxecor), stat=error )
+      call recstr_allocate_check( '0.4', error, out )
+c
+c          ===============================================
+c
+      if( debug ) write(out,*) '... @ 1'
+c
+      if( allocated( local_work%trnmte ) ) 
+     &           deallocate( local_work%trnmte )
+      if( allocated( local_work%det_j ) ) 
+     &           deallocate( local_work%det_j )
+      if( allocated( local_work%det_j_mid ) ) 
+     &           deallocate( local_work%det_j_mid )
+      if( allocated( local_work%nxi ) ) 
+     &           deallocate( local_work%nxi )
+      if( allocated( local_work%neta ) ) 
+     &           deallocate( local_work%neta )
+      if( allocated( local_work%nzeta ) ) 
+     &           deallocate( local_work%nzeta )
+      if( allocated( local_work%gama ) ) 
+     &           deallocate( local_work%gama )
+      if( allocated( local_work%gama_mid ) ) 
+     &           deallocate( local_work%gama_mid )
 c
       allocate( local_work%trnmte(mxvl,mxedof,mxndof) )
-c
+      call recstr_allocate_check( '1.1', error, out )
       allocate(
-     1 local_work%det_j(mxvl,mxgp),
-     2 local_work%det_j_mid(mxvl,mxgp),
-     3 local_work%nxi(mxndel,mxgp),
-     4 local_work%neta(mxndel,mxgp),
-     5 local_work%nzeta(mxndel,mxgp),
-     6 local_work%gama(mxvl,3,3,mxgp),
-     7 local_work%gama_mid(mxvl,3,3,mxgp), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 2
-         call die_abort
-      end if
-       local_work%det_j = zero
-       local_work%det_j_mid = zero
-       local_work%gama = zero
-       local_work%gama_mid = zero
-       local_work%neta = zero
-       local_work%nxi = zero
-       local_work%nzeta = zero
+     1 local_work%det_j(mxvl,mxgp), stat=error  )
+      call recstr_allocate_check( '1.2', error, out )
+      allocate(
+     1 local_work%det_j_mid(mxvl,mxgp), stat=error  )
+      call recstr_allocate_check( '1.3', error, out )
+      allocate(
+     1 local_work%nxi(mxndel,mxgp), stat=error  )
+      call recstr_allocate_check( '1.4', error, out )
+      allocate(
+     1 local_work%neta(mxndel,mxgp), stat=error  )
+      call recstr_allocate_check( '1.5', error, out )
+      allocate(
+     1 local_work%nzeta(mxndel,mxgp), stat=error  )
+      call recstr_allocate_check( '1.6', error, out )
+      allocate(
+     1 local_work%gama(mxvl,3,3,mxgp), stat=error  )
+      call recstr_allocate_check( '1.7', error, out )
+      allocate(
+     1 local_work%gama_mid(mxvl,3,3,mxgp), stat=error  )
+      call recstr_allocate_check( '1.8', error, out )
+c
+      local_work%det_j = zero
+      local_work%det_j_mid = zero
+      local_work%gama = zero
+      local_work%gama_mid = zero
+      local_work%neta = zero
+      local_work%nxi = zero
+      local_work%nzeta = zero
+c
+      if( debug ) write(out,*) '... leaving recstr_allocate_1 ...'
+      return
+c
+ 9000 format('>> FATAL ERROR: recstr_allocate'
+     &  /,   '                failure status= ',i5,
+     &  /,   '                job terminated' )
+c
+      end 
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine recstr_allocate_2               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  2/22/2021 rhd             *
+c     *                                                              *
+c     *     allocate data structure in local_work for updating       *
+c     *     strains-stresses-internal forces.                        *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine recstr_allocate_2( local_work )
+      use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
+     &                        mxndof, mxgp, mxndel, nstr, nstrs,
+     &                        mxndpr, max_crystals, 
+     &                        nonlocal_shared_state_size,
+     &                        max_interface_props
+      use segmental_curves, only : max_seg_points, max_seg_curves
+      use elem_block_data, only: history_blk_list
+      implicit none
+      include 'include_sig_up'
+c
+      integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      logical, parameter :: debug = .false.
+      double precision :: zero
+      data zero / 0.0d00 /
+c
+      if( debug ) write(out,*) '... entered recstr_allocate_2 ...'
+      local_mt = local_work%mat_type
+c
+c          ===============================================
+c
+      if( allocated( local_work%fn ) ) deallocate( local_work%fn )
+      if( allocated( local_work%fn1 ) ) deallocate( local_work%fn1 )
+      if( allocated( local_work%dfn1 ) ) deallocate( local_work%dfn1 )
 c
       if( local_work%geo_non_flg ) then
-        allocate( local_work%fn(mxvl,3,3),
-     &           local_work%fn1(mxvl,3,3),
-     &           local_work%dfn1(mxvl) )
+        allocate(
+     1    local_work%fn(mxvl,3,3), stat=error  )
+        call recstr_allocate_check( '1.9', error, out )
+        allocate(
+     1    local_work%fn1(mxvl,3,3), stat=error  )
+        call recstr_allocate_check( '1.10', error, out )
+        allocate(
+     1    local_work%dfn1(mxvl), stat=error  )
+        call recstr_allocate_check( '1.11', error, out )
         local_work%fn  = zero
         local_work%fn1 = zero
         local_work%dfn1 = zero
       end if
 
+      if( debug ) write(out,*) '... @ 2'
+c
+c          ===============================================
+c
 
+      if( allocated( local_work%vol_block ) )
+     &        deallocate(local_work%vol_block)
+      if( allocated( local_work%volume_block ) )
+     &        deallocate(local_work%volume_block)
+      if( allocated( local_work%volume_block_0 ) )
+     &        deallocate(local_work%volume_block_0)
+      if( allocated( local_work%integral_detF_n ) )
+     &        deallocate(local_work%integral_detF_n)
+      if( allocated( local_work%integral_detF_n1 ) )
+     &        deallocate(local_work%integral_detF_n1)
+      if( allocated( local_work%jac) )
+     &        deallocate(local_work%jac)
+      if( allocated( local_work%b) )
+     &        deallocate(local_work%b)
+      if( allocated( local_work%ue ) )
+     &        deallocate(local_work%ue)
+      if( allocated( local_work%ue ) )
+     &        deallocate(local_work%due)
+      if( allocated( local_work%uenh ) )
+     &        deallocate(local_work%uenh)
+c
       allocate(
-     &  local_work%vol_block(mxvl,8,3),
-     &  local_work%volume_block(mxvl),
-     &  local_work%volume_block_0(mxvl),
-     &  local_work%integral_detF_n(mxvl),
-     &  local_work%integral_detF_n1(mxvl),
-     &  local_work%jac(mxvl,3,3),
-     &  local_work%b(mxvl,mxedof,nstr),
-     &  local_work%ue(mxvl,mxedof),
-     &  local_work%due(mxvl,mxedof),
-     &  local_work%uenh(mxvl,mxedof), stat=error  )
-      if( error .ne. 0 ) then
-         write(out,9000) 3
-         call die_abort
-      end if
+     &  local_work%vol_block(mxvl,8,3), stat=error )
+      call recstr_allocate_check( '2.1', error, out )
+      allocate(
+     &  local_work%volume_block(mxvl), stat=error )
+      call recstr_allocate_check( '2.2', error, out )
+      allocate(
+     &  local_work%volume_block_0(mxvl), stat=error )
+      call recstr_allocate_check( '2.3', error, out )
+      allocate(
+     &  local_work%integral_detF_n(mxvl), stat=error )
+      call recstr_allocate_check( '2.4', error, out )
+      allocate(
+     &  local_work%integral_detF_n1(mxvl), stat=error )
+      call recstr_allocate_check( '2.5', error, out )
+      allocate(
+     &  local_work%jac(mxvl,3,3), stat=error )
+      call recstr_allocate_check( '2.6', error, out )
+      allocate( local_work%b(mxvl,mxedof,nstr), stat=error )
+      call recstr_allocate_check( '2.7', error, out )
+      allocate( local_work%ue(mxvl,mxedof), stat=error )
+      call recstr_allocate_check( '2.8', error, out )
+      allocate( local_work%due(mxvl,mxedof), stat=error )
+      call recstr_allocate_check( '2.9', error, out )
+      allocate( local_work%uenh(mxvl,mxedof), stat=error )
+      call recstr_allocate_check( '2.10', error, out )
+      if( debug ) write(out,*) '... @ 2a'
 
       local_work%b = zero
 c
@@ -816,6 +957,7 @@ c
          write(out,9000) 4
          call die_abort
       end if
+      if( debug ) write(out,*) '... @ 2b'
       local_work%det_j       = zero
       local_work%rot_blk_n1  = zero
       local_work%urcs_blk_n1 = zero
@@ -838,6 +980,51 @@ c
          write(out,9000) 5
          call die_abort
       end if
+c
+      if( debug ) write(out,*) '... @ 3'
+
+
+c
+      if( debug ) write(out,*) '... leaving recstr_allocate_2 ...'
+      return
+c
+ 9000 format('>> FATAL ERROR: recstr_allocate'
+     &  /,   '                failure status= ',i5,
+     &  /,   '                job terminated' )
+c
+      end 
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine recstr_allocate_3               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  2/22/2021 rhd             *
+c     *                                                              *
+c     *     allocate data structure in local_work for updating       *
+c     *     strains-stresses-internal forces.                        *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine recstr_allocate_3( local_work )
+      use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
+     &                        mxndof, mxgp, mxndel, nstr, nstrs,
+     &                        mxndpr, max_crystals, 
+     &                        nonlocal_shared_state_size,
+     &                        max_interface_props
+      use segmental_curves, only : max_seg_points, max_seg_curves
+      use elem_block_data, only: history_blk_list
+      implicit none
+      include 'include_sig_up'
+c
+      integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      logical, parameter :: debug = .false.
+      double precision :: zero
+      data zero / 0.0d00 /
+c
+      if( debug ) write(out,*) '... entered recstr_allocate_3 ...'
+      local_mt = local_work%mat_type
 c
       if( local_work%capture_initial_state ) then
         span = local_work%span
@@ -890,6 +1077,495 @@ c
         end if
       end if
 c
+      if( debug ) write(out,*) '... @ 4'
+
+      allocate( local_work%eps_curve(max_seg_points),
+     1    local_work%shape(mxndel,mxgp),
+     5    local_work%enode_mat_props(mxndel,mxvl,mxndpr),
+     6    local_work%fgm_flags(mxvl,mxndpr), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 9
+         call die_abort
+      end if
+c
+      if( local_mt .eq. 5 ) allocate( local_work%mm05_props(mxvl,10) )
+      if( local_mt .eq. 6 ) allocate( local_work%mm06_props(mxvl,10) )
+      if( local_mt .eq. 7 ) allocate( local_work%mm07_props(mxvl,10) )
+      if( local_work%is_umat ) then
+        allocate(local_work%umat_props(mxvl,50),
+     1           local_work%characteristic_length(mxvl) )
+      end if
+
+
+
+c
+      if( debug ) write(out,*) '... leaving recstr_allocate_3 ...'
+      return
+c
+ 9000 format('>> FATAL ERROR: recstr_allocate'
+     &  /,   '                failure status= ',i5,
+     &  /,   '                job terminated' )
+c
+      end 
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine recstr_allocate_4               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  2/22/2021 rhd             *
+c     *                                                              *
+c     *     allocate data structure in local_work for updating       *
+c     *     strains-stresses-internal forces.                        *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine recstr_allocate_4( local_work )
+      use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
+     &                        mxndof, mxgp, mxndel, nstr, nstrs,
+     &                        mxndpr, max_crystals, 
+     &                        nonlocal_shared_state_size,
+     &                        max_interface_props
+      use segmental_curves, only : max_seg_points, max_seg_curves
+      use elem_block_data, only: history_blk_list
+      implicit none
+      include 'include_sig_up'
+c
+      integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      logical, parameter :: debug = .false.
+      double precision :: zero
+      data zero / 0.0d00 /
+c
+      if( debug ) write(out,*) '... entered recstr_allocate_4 ...'
+      local_mt = local_work%mat_type
+
+c
+      allocate( local_work%trne(mxvl,mxndel), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 11
+         call die_abort
+      end if
+      local_work%trne = .false.
+c
+      if( local_mt .eq. 10 .or. local_mt .eq. 11 ) then
+        allocate( local_work%debug_flag(mxvl),
+     1    local_work%local_tol(mxvl),
+     2    local_work%ncrystals(mxvl),
+     3    local_work%angle_type(mxvl),
+     4    local_work%angle_convention(mxvl),
+     5    local_work%c_props(mxvl,max_crystals),
+     6    local_work%nstacks(mxvl),
+     7    local_work%nper(mxvl))
+      end if
+c
+      if( debug ) write(out,*) '... @ 5'
+
+      span                         = local_work%span
+      blk                          = local_work%blk
+      ngp                          = local_work%num_int_points
+      hist_size                    = history_blk_list(blk)
+      local_work%hist_size_for_blk = hist_size
+c
+      allocate( local_work%elem_hist1(span,hist_size,ngp),
+     &          local_work%elem_hist(span,hist_size,ngp), stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 12
+         call die_abort
+      end if
+c
+      if( local_work%is_cohes_nonlocal ) then
+         nlsize = nonlocal_shared_state_size
+         allocate( local_work%top_surf_solid_stresses_n(mxvl,nstrs),
+     &      local_work%bott_surf_solid_stresses_n(mxvl,nstrs),
+     &      local_work%top_surf_solid_eps_n(mxvl,nstr),
+     &      local_work%bott_surf_solid_eps_n(mxvl,nstr),
+     &      local_work%top_surf_solid_elements(mxvl),
+     &      local_work%bott_surf_solid_elements(mxvl),
+     &      local_work%nonlocal_stvals_bott_n(mxvl,nlsize),
+     &      local_work%nonlocal_stvals_top_n(mxvl,nlsize),
+     &      stat=error )
+         if( error .ne. 0 ) then
+           write(out,9000) 13
+           call die_abort
+         end if
+         allocate( local_work%top_solid_matl(mxvl),
+     &      local_work%bott_solid_matl(mxvl), stat=error )
+         if( error .ne. 0 ) then
+           write(out,9000) 14
+           call die_abort
+         end if
+      end if
+      if( debug ) write(out,*) '... @ 6'
+
+c
+c             always allocate cohes_rot_block even if not
+c             a block of cohesive elements. the
+c             array is passed in lots of places
+c             that process both solid and interface elements.
+c             So it needs to exist !
+
+      allocate( local_work%cohes_rot_block(mxvl,3,3), stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 15
+         call die_abort
+      end if
+c
+      if( local_work%is_cohes_elem ) then
+         allocate( local_work%cohes_temp_ref(mxvl),
+     1      local_work%cohes_dtemp(mxvl),
+     2      local_work%cohes_temp_n(mxvl),
+     3      local_work%intf_prp_block(mxvl,max_interface_props),
+     4      stat=error )
+         if( error .ne. 0 ) then
+           write(out,9000) 16
+           call die_abort
+         end if
+      end if
+
+
+
+c
+      if( debug ) write(out,*) '... leaving recstr_allocate_4 ...'
+      return
+c
+ 9000 format('>> FATAL ERROR: recstr_allocate'
+     &  /,   '                failure status= ',i5,
+     &  /,   '                job terminated' )
+c
+      end 
+
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine recstr_allocate_5               *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  2/22/2021 rhd             *
+c     *                                                              *
+c     *     allocate data structure in local_work for updating       *
+c     *     strains-stresses-internal forces.                        *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine recstr_allocate_5( local_work )
+      use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
+     &                        mxndof, mxgp, mxndel, nstr, nstrs,
+     &                        mxndpr, max_crystals, 
+     &                        nonlocal_shared_state_size,
+     &                        max_interface_props
+      use segmental_curves, only : max_seg_points, max_seg_curves
+      use elem_block_data, only: history_blk_list
+      implicit none
+      include 'include_sig_up'
+c
+      integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      logical, parameter :: debug = .false.
+      double precision :: zero
+      data zero / 0.0d00 /
+c
+      if( debug ) write(out,*) '... entered recstr_allocate_5 ...'
+      local_mt = local_work%mat_type
+
+c
+c             when nonlocal analysis in effect, allocate space
+c             for block nonlocal state values. we need to store span x
+c             num local values (fixed global in param_def). Space
+c             will be passed to material model code to insert values
+c             for elements in the block at the integration point
+c             being processed.
+c             allocate dummy 1x1 for std. local analysis to
+c             simplify calls later.
+c
+      if( local_work%block_has_nonlocal_solids ) then
+         allocate( local_work%nonlocal_state_blk(mxvl,
+     &             nonlocal_shared_state_size), stat=error )
+         if( error .ne. 0 ) then
+           write(out,9000) 17
+           call die_abort
+         end if
+      else
+         allocate( local_work%nonlocal_state_blk(1,1), stat=error )
+         if( error .ne. 0 ) then
+           write(out,9000) 18
+           call die_abort
+         end if
+      end if
+c
+      if( debug ) write(out,*) '... @ 7'
+
+      allocate( local_work%weights(mxgp), stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 19
+         call die_abort
+      end if
+      local_work%weights=-1.0d20  
+c
+      allocate( local_work%sv(3), local_work%lv(3),
+     &          local_work%tv(3), stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 20
+         call die_abort
+      end if
+c
+      if( debug ) write(out,*) '... leaving recstr_allocate_5 ...'
+      return
+c
+ 9000 format('>> FATAL ERROR: recstr_allocate'
+     &  /,   '                failure status= ',i5,
+     &  /,   '                job terminated' )
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *             subroutine recstr_allocate_check                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  2/22/2021 rhd             *
+c     *                                                              *
+c     *                    check and message                         *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine recstr_allocate_check( mess, error, out )
+      implicit none
+c
+      integer :: error, out
+      character(*) :: mess
+      logical, parameter :: debug = .false.
+c
+      if( debug ) write(out,9010) mess(1:len(mess))
+      if( error .eq. 0 ) return
+      write(out,9000) error, mess(1:len(mess))
+      call die_abort
+      
+ 9000 format('>> FATAL ERROR: recstr_allocate'
+     &  /,   '                failure status= ',i5,
+     &  /,   '                message @ : ', a,
+     &  /,   '                job terminated' )
+ 9010 format('>> Debug recstr_allocate_check: ',a)
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine recstr_allocate                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified :  9/15/2018 rhd             *
+c     *                                                              *
+c     *     allocate data structure in local_work for updating       *
+c     *     strains-stresses-internal forces.                        *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine recstr_allocate_old( local_work )
+      use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
+     &                        mxndof, mxgp, mxndel, nstr, nstrs,
+     &                        mxndpr, max_crystals, 
+     &                        nonlocal_shared_state_size,
+     &                        max_interface_props
+      use segmental_curves, only : max_seg_points, max_seg_curves
+      use elem_block_data, only: history_blk_list
+      implicit none
+
+      include 'include_sig_up'
+c
+      integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
+      double precision :: zero
+      data zero / 0.0d00 /
+c
+      write(out,*) '... entered recstr_allocate ...'
+      local_mt = local_work%mat_type
+c
+      allocate(
+     &   local_work%ce_0(mxvl,mxecor),
+     &   local_work%ce_n(mxvl,mxecor),
+     &   local_work%ce_mid(mxvl,mxecor),
+     &   local_work%ce_n1(mxvl,mxecor), stat=error )
+      if( error .ne. 0 ) then
+         write(out,9000) 1
+         call die_abort
+      end if
+      write(out,*) '... @ 1'
+c
+      allocate( local_work%trnmte(mxvl,mxedof,mxndof) )
+c
+      allocate(
+     1 local_work%det_j(mxvl,mxgp),
+     2 local_work%det_j_mid(mxvl,mxgp),
+     3 local_work%nxi(mxndel,mxgp),
+     4 local_work%neta(mxndel,mxgp),
+     5 local_work%nzeta(mxndel,mxgp),
+     6 local_work%gama(mxvl,3,3,mxgp),
+     7 local_work%gama_mid(mxvl,3,3,mxgp), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 2
+         call die_abort
+      end if
+       local_work%det_j = zero
+       local_work%det_j_mid = zero
+       local_work%gama = zero
+       local_work%gama_mid = zero
+       local_work%neta = zero
+       local_work%nxi = zero
+       local_work%nzeta = zero
+c
+      if( local_work%geo_non_flg ) then
+        allocate( local_work%fn(mxvl,3,3),
+     &           local_work%fn1(mxvl,3,3),
+     &           local_work%dfn1(mxvl) )
+        local_work%fn  = zero
+        local_work%fn1 = zero
+        local_work%dfn1 = zero
+      end if
+
+      write(out,*) '... @ 2'
+
+      if( allocated( local_work%vol_block ) )
+     &        deallocate(local_work%vol_block)
+      if( allocated( local_work%volume_block ) )
+     &        deallocate(local_work%volume_block)
+      if( allocated( local_work%volume_block_0 ) )
+     &        deallocate(local_work%volume_block_0)
+
+      if( allocated( local_work%integral_detF_n ) )
+     &        deallocate(local_work%integral_detF_n)
+      if( allocated( local_work%integral_detF_n1 ) )
+     &        deallocate(local_work%integral_detF_n1)
+
+      if( allocated( local_work%jac) )
+     &        deallocate(local_work%jac)
+
+      if( allocated( local_work%b) )
+     &        deallocate(local_work%b)
+
+      if( allocated( local_work%ue ) )
+     &        deallocate(local_work%ue)
+
+      if( allocated( local_work%ue ) )
+     &        deallocate(local_work%due)
+
+      if( allocated( local_work%uenh ) )
+     &        deallocate(local_work%uenh)
+
+
+
+
+
+
+
+      allocate(
+     &  local_work%vol_block(mxvl,8,3),
+     &  local_work%volume_block(mxvl),
+     &  local_work%volume_block_0(mxvl),
+     &  local_work%integral_detF_n(mxvl),
+     &  local_work%integral_detF_n1(mxvl),
+     &  local_work%jac(mxvl,3,3),
+     &  local_work%b(mxvl,mxedof,nstr),
+     &  local_work%ue(mxvl,mxedof),
+     &  local_work%due(mxvl,mxedof),
+     &  local_work%uenh(mxvl,mxedof), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 3
+         call die_abort
+      end if
+      write(out,*) '... @ 2a'
+
+      local_work%b = zero
+c
+      allocate( local_work%uen1(mxvl,mxedof),
+     &  local_work%urcs_blk_n(mxvl,nstrs,mxgp),
+     &  local_work%urcs_blk_n1(mxvl,nstrs,mxgp),
+     &  local_work%initial_stresses(6,mxvl),
+     3  local_work%rot_blk_n1(mxvl,9,mxgp),
+     4  local_work%rtse(mxvl,nstr,mxgp), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 4
+         call die_abort
+      end if
+      write(out,*) '... @ 2b'
+      local_work%det_j       = zero
+      local_work%rot_blk_n1  = zero
+      local_work%urcs_blk_n1 = zero
+      local_work%urcs_blk_n  = zero
+      local_work%initial_stresses = zero
+
+c
+      allocate( local_work%ddtse(mxvl,nstr,mxgp),
+     1   local_work%strain_n(mxvl,nstr,mxgp),
+     2   local_work%dtemps_node_blk(mxvl,mxndel),
+     3   local_work%temps_ref_node_blk(mxvl,mxndel),
+     4   local_work%temps_node_blk(mxvl,mxndel),
+     5   local_work%temps_node_ref_blk(mxvl,mxndel),
+     6   local_work%nu_vec(mxvl),
+     7   local_work%beta_vec(mxvl),
+     8   local_work%h_vec(mxvl),
+     9   local_work%tan_e_vec(mxvl),
+     a   local_work%e_vec(mxvl), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 5
+         call die_abort
+      end if
+c
+      write(out,*) '... @ 3'
+
+      if( local_work%capture_initial_state ) then
+        span = local_work%span
+        allocate( local_work%plastic_work_density_n1(span),
+     &            stat=error  )
+        if( error .ne. 0 ) then
+         write(out,9000) 52
+         call die_abort
+        end if
+        local_work%plastic_work_density_n1 = zero
+      end if
+c
+      allocate( local_work%sigyld_vec(mxvl),
+     1   local_work%alpha_vec(mxvl,6),
+     2   local_work%e_vec_n(mxvl),
+     3   local_work%nu_vec_n(mxvl),
+     4   local_work%gp_sig_0_vec(mxvl),
+     5   local_work%gp_sig_0_vec_n(mxvl),
+     6   local_work%gp_h_u_vec(mxvl),
+     7   local_work%gp_h_u_vec_n(mxvl),
+     8   local_work%gp_beta_u_vec(mxvl),
+     9   local_work%gp_beta_u_vec_n(mxvl), stat=error  )
+      if( error .ne. 0 ) then
+         write(out,9000) 6
+         call die_abort
+      end if
+c
+      allocate( local_work%gp_delta_u_vec(mxvl),
+     1   local_work%gp_delta_u_vec_n(mxvl),
+     2   local_work%alpha_vec_n(mxvl,6),
+     3   local_work%h_vec_n(mxvl),
+     4   local_work%n_power_vec(mxvl) )
+c
+      local_mt = local_work%mat_type
+c
+      if( local_mt .eq. 3 ) then
+        allocate(
+     1   local_work%f0_vec(mxvl),
+     2   local_work%eps_ref_vec(mxvl),
+     3   local_work%m_power_vec(mxvl),
+     4   local_work%q1_vec(mxvl),
+     5   local_work%q2_vec(mxvl),
+     6   local_work%q3_vec(mxvl),
+     7   local_work%nuc_s_n_vec(mxvl),
+     8   local_work%nuc_e_n_vec(mxvl),
+     9   local_work%nuc_f_n_vec(mxvl), stat=error  )
+        if( error .ne. 0 ) then
+         write(out,9000) 7
+         call die_abort
+        end if
+      end if
+c
+      write(out,*) '... @ 4'
+
       allocate( local_work%eps_curve(max_seg_points),
      1    local_work%shape(mxndel,mxgp),
      5    local_work%enode_mat_props(mxndel,mxvl,mxndpr),
@@ -926,6 +1602,8 @@ c
      7    local_work%nper(mxvl))
       end if
 c
+      write(out,*) '... @ 5'
+
       span                         = local_work%span
       blk                          = local_work%blk
       ngp                          = local_work%num_int_points
@@ -961,6 +1639,8 @@ c
            call die_abort
          end if
       end if
+      write(out,*) '... @ 6'
+
 c
 c             always allocate cohes_rot_block even if not
 c             a block of cohesive elements. the
@@ -1010,6 +1690,8 @@ c
          end if
       end if
 c
+      write(out,*) '... @ 7'
+
       allocate( local_work%weights(mxgp), stat=error )
       if( error .ne. 0 ) then
          write(out,9000) 19
@@ -1024,6 +1706,7 @@ c
          call die_abort
       end if
 c
+      write(out,*) '... leaving recstr_allocate ...'
       return
 c
  9000 format('>> FATAL ERROR: recstr_allocate'
