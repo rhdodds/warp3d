@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 12/15/20 rhd                    *          
+c     *              last modified : 12/30/20 rhd                    *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -39,6 +39,7 @@ c
      &   smcs_cutoff_triaxiality, max_eps_critical, smcs_type_4_A,
      &   smcs_type_4_n, smcs_type_4_c1, smcs_type_4_c2, smcs_type_4_c3,
      &   smcs_type_5_power, smcs_type_5_tp_critical, smcs_alpha,
+     &   smcs_adapt_alpha_min, smcs_adapt_alpha_max, 
      &   smcs_beta, control_load_fact, old_load_fact,                                      
      &   min_load_fact, overshoot_limit, CTOA_range,                            
      &   perm_load_fact, max_porosity_change,                                   
@@ -59,7 +60,8 @@ c
      &   num_nodes_back, num_nodes_grwinc, num_steps_min,                       
      &   num_elements_killed, stop_killed_elist_length,                                                  
      &   num_elements_in_force_release, num_ctoa_released_nodes,
-     &   num_user_kill_elems, killed_element_limit, num_top_list               
+     &   num_user_kill_elems, killed_element_limit, num_top_list,
+     &   smcs_allowable_in_release            
 c                                                                               
 c                     scalar logicals                                           
 c                                                                               
