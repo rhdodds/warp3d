@@ -60,6 +60,7 @@ c
       call wmpi_alert_slaves( 27 )
       call wmpi_send_jint
 c
+      debug_driver = .false.
       if( debug_driver ) write(iout,*) ' >>> entered element driver'
 c
 c          keep track of ring_count for storing and retrieving output
@@ -800,7 +801,7 @@ c
       implicit none
 c
       integer :: incpos, k1, k2, i1, i2, i3, enode, snode
-      logical, parameter :: local_debug = .true.
+      logical, parameter :: local_debug = .false.
 c
       seg_curves_flag = .false.
 c
@@ -985,6 +986,7 @@ c
             write(iout,9130) elemno, gpn, (e_strain(i,gpn),i=1,9)
          end do
       end if
+
 c
 c          for crack-face loading, make a copy of the tractions
 c          input by the user in the domain definition. if none

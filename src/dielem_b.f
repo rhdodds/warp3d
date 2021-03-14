@@ -44,37 +44,34 @@ c a single point, measured in polar coordinates in the           *
 c local crack-front system.                                      *
 c                                                                *
 c                                 written by: mcw                *
-c                              last modified: 9/18/03            *
+c                              last modified: 3/13/21 rhd        *
 c                                                                *
 c ****************************************************************
+c
 c
       subroutine di_calc_r_theta( tag, front_nodes, num_front_nodes,
      &                         front_coords, domain_type, domain_origin,
      &                         front_order, point_x, point_y, point_z,
      &                         elemno, ptno, r1, theta, crack_curvature,
      &                         debug, out )
+      use constants
       implicit none
 c
-c             dummy variables
+c             parameters
 c
-      integer tag, front_nodes(*), num_front_nodes, domain_type,
-     &        front_order, ptno, p0, p1, out, domain_origin, elemno
-      double precision
-     & front_coords(3,*), point_x, point_y, point_z, r1, theta,
-     & crack_curvature(*)
-      logical debug
+      integer :: tag, front_nodes(*), num_front_nodes, domain_type,
+     &           front_order, ptno, p0, p1, out, domain_origin, elemno
+      double precision :: front_coords(3,*), point_x, point_y, point_z,
+     &                    r1, theta, crack_curvature(*)
+      logical :: debug
 c
 c             local variables
 c
-      integer i, j
-      logical curved_crack
-      double precision
-     & zero, len, pi, x1, y1, z1, x2, y2, z2, dist1, dist2, base,
-     & height, x_local, y_local, half, one, two, x3, y3, z3, a,
-     & toler, zguess
-c
-      data zero, half, one, two, pi
-     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.14159265359d0 /
+      integer ::  i, j, inttbl(3,7), caseno
+      logical :: curved_crack
+      double precision :: len, x1, y1, z1, x2, y2, z2, dist1, dist2,
+     &                    base, height, x_local, y_local, x3, y3, 
+     &                    z3, a, toler, zguess
 c
 c             determine distance r and angle theta to the integration
 c             point from the straight line connecting the two closest
@@ -88,12 +85,18 @@ c                            the local x-z plane
 c                     r1   = distance from element edge to integration point 'p'
 c                     base = distance from p2 to crack front.
 c
+      inttbl(1,:) = (/0, 1, 2, 0, 0, 0, 0/)
+      inttbl(2,:) = (/0, 0, 3, 0, 5, 0, 0/)
+      inttbl(3,:) = (/0, 0, 3, 0, 5, 0, 0/)
+c
+      caseno = inttbl(front_order,num_front_nodes)
+c
       p0 = 0
       p1 = 0
 c
 c             one linear element: domain types 1, 3, 4.
 c
-      if( front_order.eq.1 .and. num_front_nodes .eq. 2 ) then
+      if( caseno == 1 ) then
          p0 = 1
          p1 = 2
       end if
@@ -104,7 +107,7 @@ c             the two front nodes closest to the point.
 c             use closest end front node to determine
 c             closest line segment.
 c
-      if( front_order.eq.2 .and. num_front_nodes.eq.3 ) then
+      if( caseno == 3 ) then
          x1    = point_x - front_coords(1,1)
          y1    = point_y - front_coords(2,1)
          z1    = point_z - front_coords(3,1)
@@ -114,7 +117,7 @@ c
          z2    = point_z - front_coords(3,3)
          dist2 = (x2*x2 + y2*y2 + z2*z2)**half
 c
-         if( dist1.le.dist2 ) then
+         if( dist1 <= dist2 ) then
             p0 = 1
             p1 = 2
          else
@@ -129,11 +132,11 @@ c             the two front nodes closest to the point.
 c             use local z-coordinate to determine closest
 c             line segment.
 c
-      if( front_order.eq.1 .and. num_front_nodes.eq.3 ) then
+      if( caseno == 2 ) then
 c
          dist1 = point_z - front_coords(3,2)
 c
-         if( dist1.le.zero ) then
+         if( dist1 <= zero ) then
             p0 = 1
             p1 = 2
          else
@@ -148,13 +151,13 @@ c             the two front nodes closest to the point.
 c             use local z-coordinate, and then closest end
 c             front node to determine closest line segment.
 c
-      if( front_order.eq.2 .and. num_front_nodes.eq.5 ) then
+      if( caseno == 5 ) then
 c
          dist1 = point_z - front_coords(3,3)
 c
 c             if point is closest to first crack-front segment.
 c
-         if( dist1.le.zero ) then
+         if( dist1 <= zero ) then
             x1    = point_x - front_coords(1,1)
             y1    = point_y - front_coords(2,1)
             z1    = point_z - front_coords(3,1)
@@ -163,7 +166,7 @@ c
             y2    = point_y - front_coords(2,3)
             z2    = point_z - front_coords(3,3)
             dist2 = (x2*x2 + y2*y2 + z2*z2)**half
-            if( dist1.le.dist2 ) then
+            if( dist1 <= dist2 ) then
                p0 = 1
                p1 = 2
             else
@@ -182,7 +185,7 @@ c
             y2    = point_y - front_coords(2,5)
             z2    = point_z - front_coords(3,5)
             dist2 = (x2*x2 + y2*y2 + z2*z2)**half
-            if( dist1.le.dist2 ) then
+            if( dist1 <= dist2 ) then
                p0 = 3
                p1 = 4
             else
@@ -199,12 +202,16 @@ c             is compatible with the local crack-front
 c             coordinate system, which is defined using the
 c             first two front nodes in dimrot.f.
 c
-      if( domain_type.eq.4 .and. num_front_nodes.gt.5 ) then
+      if( domain_type == 4 .and. num_front_nodes > 5 ) then
          p0 = 1
          p1 = 2
       end if
 c
       if( debug ) write(out,895) p0, p1
+      if( p0 == 0 .or. p1 == 0 ) then
+        write(out,9000)
+        call die_abort
+      end if
 c
 c             compute distance from integration point p to its
 c             projection onto the crack plane, point p2.
@@ -234,7 +241,7 @@ c             crack front. take cross product of vector p0-p1 and vector
 c             p0-p2. if result is positive, projected point lies ahead
 c             of crack front, and if negative, it's behind.
 c
-      if( z1*x2 - x1*z2 .ge. zero ) then
+      if( z1*x2 - x1*z2 >= zero ) then
          x_local =  one
       else
          x_local = -one
@@ -243,14 +250,14 @@ c
 c             for curved cracks, call routine to recompute "base."
 c             determine if p2 is ahead of or behind curved front.
 c
-      if( int( crack_curvature(1) ) .eq. 1 ) then
+      if( int( crack_curvature(1) ) == 1 ) then
          if( debug ) write(out,894)
-         if( num_front_nodes .eq. 3 ) zguess = front_coords(3,2)
-         if( num_front_nodes .ge. 5 ) then
-            if( p0 .eq. 1 .or. p0 .eq. 2 ) zguess = front_coords(3,2)
-            if( p0 .eq. 3 .or. p0 .eq. 4 ) zguess = front_coords(3,4)
+         if( num_front_nodes == 3 ) zguess = front_coords(3,2)
+         if( num_front_nodes >= 5 ) then
+            if( p0 == 1 .or. p0 == 2 ) zguess = front_coords(3,2)
+            if( p0 == 3 .or. p0 == 4 ) zguess = front_coords(3,4)
          end if
-         call di_calc_distance( crack_curvature, front_order, zguess,
+         call di_calc_distance( crack_curvature, caseno, zguess,
      &                          point_x, point_z, base, x_local, out,
      &                          debug )
       end if
@@ -326,8 +333,11 @@ c
      & 10x,'ptno: ',i7,2x,'x',2x,e13.6,2x,'y',2x,e13.6,2x,'z',2x,e13.6)
  915  format(//,10x,'x',2x,e13.6,2x,'y',6x,e13.6,
      &        /,10x,'r',2x,e13.6,2x,'theta',2x,e13.6,/)
+ 9000 format('>> FATAL ERROR: di_calc_r_theta. bad p0, p1',
+     &  /,15x,'Job terminated',//)
 c
       end
+
 c
 c
 c ****************************************************************
@@ -338,36 +348,33 @@ c quadratic curve defined by three crack-front nodes.            *
 c use Newton iteration.                                          *
 c                                                                *
 c                                 written by: mcw                *
-c                              last modified: 4/24/04            *
+c                              last modified: 3/13/21 rhd        *
 c                                                                *
 c ****************************************************************
 c
       subroutine di_calc_distance( crack_curvature, caseno, zguess,
      &                point_x, point_z, base, x_local, out, debug )
+      use constants
       implicit none
 c
-c             dummy variables
+c             parameters
 c
       integer :: caseno, out
-      double precision ::
-     & zguess, point_x, point_z, base, x_local, crack_curvature(*)
+      double precision :: zguess, point_x, point_z, base, x_local,
+     &                    crack_curvature(*)
       logical :: debug
 c
 c             local variables
 c
-      integer i
-      double precision
-     & zero, half, one, two, three, x, fz, fprimez, z, znext,
-     & d1, d2, dist, x_center, z_center, circle_radius, a, b, c, d, e,
-     & four
-c
-      data zero, half, one, two, three, four
-     & / 0.0d0, 0.5d0, 1.0d0, 2.0d0, 3.0d0, 4.0d0 /
+      integer :: i
+      double precision :: x, fz, fprimez, z, znext, d1, d2, dist,
+     &                    x_center, z_center, circle_radius, a, b,
+     &                    c, d, e
 c
 c             for a circular crack, find center and radius of a
 c             circle defined by three crack-front nodes.
-c
-      if( int(crack_curvature(2)) .eq. 1 ) then
+c 
+      if( int(crack_curvature(2)) == 1 ) then
          x_center      = crack_curvature(3)
          z_center      = crack_curvature(4)
          circle_radius = crack_curvature(5)
@@ -387,7 +394,7 @@ c
 c
 c             for crack fronts of unknown curvature:
 c
-      if( int( crack_curvature(2) ) .eq. 0 ) then
+      if( int( crack_curvature(2) ) == 0 ) then
 c
 c             for three nodes on front, fit nodes to a
 c             quadratic polynomial: x = az^2 + bz + c
@@ -424,24 +431,29 @@ c
 c             z(i+1) = z(i) - f(z(i))/f'(z(i))
 c
          z = zguess
-         do i=1,5
-            if( caseno .eq. 3 ) then
+         do i = 1, 5
+            select case( caseno )
+             case( 3) 
                fz = z*z*z + three*b*z*z/(two*a)
-     &            + z/(two*a*a) * ( b*b + two*a*c - two*a*point_x + 1 )
+     &          + z/(two*a*a) * ( b*b + two*a*c - two*a*point_x + one )
      &            + one/(two*a*a) * ( b*c - b*point_x - point_z )
 c
                fprimez = three*z*z + three*b*z/a
-     &           + one/(two*a*a) * ( b*b + two*a*c - two*a*point_x + 1 )
-            end if
+     &        + one/(two*a*a) * ( b*b + two*a*c - two*a*point_x + one )
 c
-            if( caseno .eq. 5 ) then
+            case( 5 )
                fz = z - point_z
      &            + ( a*z*z*z*z + b*z*z*z + c*z*z + d*z + e - point_x )
      &            * ( four*a*z*z*z + three*b*z*z + two*c*z + d )
                fprimez = one +(four*a*z*z*z +three*b*z*z +2*c*z +d)**two
      &                 + ( a*z*z*z*z +b*z*z*z +c*z*z +d*z +e - point_x )
      &                 * ( three*four*a*z*z + two*three*b*z + two*c )
-            end if
+c
+            case default
+              write(out,9000) 
+              call die_abort
+            end select
+c
             znext = z - fz / fprimez
             z     = znext
          end do
@@ -449,8 +461,8 @@ c
 c             use z in the appropriate function to find x.
 c             use x and z to find distance "base."
 c
-         if( caseno .eq. 3 ) x = a*z*z + b*z + c
-         if( caseno .eq. 5 ) x = a*z*z*z*z + b*z*z*z + c*z*z + d*z + e
+         if( caseno == 3 ) x = a*z*z + b*z + c
+         if( caseno == 5 ) x = a*z*z*z*z + b*z*z*z + c*z*z + d*z + e
          base = ((point_x - x)**two + (point_z - z)**two)**half
 c
 c             determine if the integration point lies ahead of
@@ -461,9 +473,14 @@ c
          else
             x_local = -one
          end if
+
       end if
 c
       return
+c
+ 9000 format(".. FATAL ERROR. in di_calc_distance @ 1",/,
+     &  10x,"Job terminated" )
+c
       end
 c
 c
@@ -480,6 +497,7 @@ c
       subroutine di_calc_constitutive( dcijkl_x1, sijkl, dsijkl_x1,
      &                              e, nu, de_x1, dnu_x1, elemno, debug,
      &                              out )
+      use constants
 c
       implicit none
 c
@@ -492,12 +510,8 @@ c
 c
 c             local variables
 c
-      double precision
-     &     zero, one, two
       logical debug
 c
-      data zero, one, two
-     & / 0.d0, 1.d0, 2.d0 /
 c
 c
 c             calculate three nonzero components of constitutive tensor

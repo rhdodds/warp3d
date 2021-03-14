@@ -75,10 +75,11 @@ c             locals
 c
       integer :: j, enode, faceno, nfnode, fnodes(mxndel),
      &           sfnodes(mxndel), flag
+      logical, parameter :: ldebug = .false.
       double precision :: sum_load, eloads(3,mxndel)
       double precision, parameter :: zero=0.0d0
 c
-      if( debug ) write(out,100) elemno
+      if( ldebug ) write(out,100) elemno
 c
       sum_load = zero
       do enode = 1, nnode
@@ -88,14 +89,14 @@ c
       end do
       if ( sum_load .le. 1.0d-8 ) return
 c
-      if( debug ) write(out,110) elemno
+      if( ldebug ) write(out,110) elemno
       do enode = 1, nnode
         if( debug ) then
            write(out,120) snodes(enode), feload(1,enode),
      &                    feload(2,enode), feload(3,enode)
         end if
       end do
-      if( debug ) write(out, 130) sum_load
+      if( ldebug ) write(out, 130) sum_load
 c
 c             determine which face is loaded. only one loaded face
 c             is permitted. rotate equivalent loads from element
@@ -106,14 +107,16 @@ c             handled above. We ignore body force loadings. also
 c             rotate crack-face tractions input in domain definition
 c             to local crack coordinates
 c
-      if ( debug ) write(out,140)
+      if ( ldebug ) write(out,140)
       call dielwf( feload, etype, nnode, faceno, out, debug,
      &             flag, snodes, nfnode, fnodes, sfnodes )
       if ( flag .eq. 1 .or. faceno .eq. 0 ) return
       face_loading = .true.
-      if ( debug ) write(out,150) faceno, (fnodes(j),j=1,nfnode)
+      if ( ldebug ) write(out,150) faceno, (fnodes(j),j=1,nfnode)
+      if( ldebug ) write(out,*) '.. at 10 call dielrl'
       call dielrl( feload, eloads, cf_tractions, rotate, nnode, debug,
      &             out )
+      if( ldebug ) write(out,*) '.. at 11 back dielrl'
 c
 c             set-up is complete. calculate integrals.
 c
@@ -122,8 +125,8 @@ c
      &                        dsf, jacobi, cdispl, eloads, qvals,
      &                        jterm, elemno, out, debug )
       end if
-c
       if( comput_i ) then
+      if( ldebug ) write(out,*) '.. at 15 call di_calc_surface_i'
          call di_calc_surface_i( elemno, etype, nnode, nfnode, fnodes,
      &                        sfnodes, coord, front_nodes, front_coords,
      &                        domain_type, domain_origin,
@@ -133,6 +136,7 @@ c
      &                        ym_front_node, nu_front_node,
      &                        front_elem_flag, qp_node, crack_curvature,
      &                        out, debug )
+        if( ldebug ) write(out,*) '.. at 16 back di_calc_surface_i'
       end if
 c
       return
@@ -1038,6 +1042,8 @@ c
 c
       d1     = huge
       d1_old = huge
+      pair   = 0
+c
       do i = 1,4
          node1   = fnodes(i)
          sfnode1 = sfnodes(i)
@@ -1110,7 +1116,7 @@ c
  1121 format(/,10x,'distance, closest pair: ',2x,e13.6,2x,i8 )
  1131 format(/,10x,'numbering of reordered nodes:',
      &       /,13x,'node',4x,'snode',8x,'x',14x,'y',14x,'z')
- 1141 format(12x,i4,2x,i8,3(2x,e13.6))
+ 1141 format(12x,i8,2x,i8,3(2x,e13.6))
 c
       end
 c

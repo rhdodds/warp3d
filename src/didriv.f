@@ -480,7 +480,7 @@ c
          else
             call diexp13( ring, nonode, noelem, incmap, iprops, incid,
      &                    out, bits, q_new_map, q_old_map, q_map_len )
-         end if
+        end if
          if( ring_list(ring) .eq. 1 ) then
             last_domain = ring .eq. last_ring
             nowring = ring
