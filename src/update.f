@@ -4,17 +4,17 @@ c     *                      subroutine update                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 2/17/2017 rhd              *          
+c     *                   last modified : 3/20/21 rhd                *          
 c     *                                                              *          
 c     *     various updates of vectors required after the iterative  *          
 c     *     solution procedure for a step has been completed.        *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine update                                                         
-      use global_data ! old common.main
+c                                                                                                                                                        
+      subroutine update  
+c                                                       
+      use global_data
 c                                                                               
       use main_data, only :  temper_nodes, temper_elems,                        
      &                       dtemp_nodes, dtemp_elems, mdiag,                   
@@ -29,20 +29,17 @@ c
       use stiffness_data, only : total_lagrange_forces,                         
      &                           d_lagrange_forces                              
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-                                                                                
-      double precision ::                                                       
-     &    dlf, tlf                                                              
+      implicit none                                                    
 c                                                                               
       integer :: blk, felem, span, ngp, hblock_size, eblock_size,               
      &           ublock_size, n, i, dof                                      
       logical :: chk, update_lag_forces                                         
       logical, parameter :: local_debug = .false.                               
+      double precision :: dlf, tlf                                                              
 c                                                                               
       if( local_debug ) write(out,9300)                                         
 c                                                                               
-c                       tell those slaves to get in here.                       
+c                       tell those workers to get in here.                       
 c                                                                               
       call wmpi_alert_slaves (17)                                               
 c                                                                               
@@ -62,7 +59,7 @@ c                       compute the equivalent loads for the con-
 c                       strained dof.                                           
 c                                                                               
       dof = csthed                                                              
-      do while ( dof .ne. -1 )                                                  
+      do while( dof .ne. -1 )                                                  
          load(dof) = mdiag(dof)*a(dof) + ifv(dof)                               
          dof       = cstmap(dof)                                                
       end do                                                                    
@@ -85,14 +82,14 @@ c$OMP&                     eblock_size, ublock_size )
          ublock_size  = span * ngp * nstrs                                      
 c                                                                               
          if( hblock_size .gt. 0 )                                               
-     &      call update_copy( history_blocks(blk)%ptr(1),                       
-     &                  history1_blocks(blk)%ptr(1), hblock_size )              
+     &      call update_copy( history_blocks(blk)%ptr,                       
+     &                  history1_blocks(blk)%ptr, hblock_size )              
          if( eps_blk_list(blk) .eq. 1 )                                         
-     &      call update_copy( eps_n_blocks(blk)%ptr(1),                         
-     &                  eps_n1_blocks(blk)%ptr(1), eblock_size)                 
+     &      call update_copy( eps_n_blocks(blk)%ptr,                         
+     &                  eps_n1_blocks(blk)%ptr, eblock_size)                 
          if( urcs_blk_list(blk) .eq. 1 )                                        
-     &      call update_copy( urcs_n_blocks(blk)%ptr(1),                        
-     &                  urcs_n1_blocks(blk)%ptr(1), ublock_size )               
+     &      call update_copy( urcs_n_blocks(blk)%ptr,                        
+     &                  urcs_n1_blocks(blk)%ptr, ublock_size )               
       end do ! on blk                                                           
 c$OMP END PARALLEL DO                                                           
 c                                                                               
@@ -162,7 +159,6 @@ c
  9220 format(2x,i7,3f16.6)                                                      
  9300 format(1x,"--- entering update ---" )                                     
  9305 format(1x,"--- leaving update ---" )                                      
-                                                                                
 c                                                                               
       end                                                                       
 c     ****************************************************************          
@@ -183,11 +179,12 @@ c
 c                                                                               
       subroutine update_copy( a, b, n )                                         
       implicit none                                                             
-      integer :: n                                                              
-      double precision :: a(n), b(n)                                            
+      integer, intent(in) :: n                                                              
+      double precision, intent(out):: a(n)                                      
+      double precision, intent(in):: b(n)                                            
 c                                                                               
 !DIR$ VECTOR ALIGNED                                                            
-      a = b                                                                     
+      a(1:n) = b(1:n)                                                                     
       return                                                                    
       end                                                                       
 c     ****************************************************************          
@@ -204,20 +201,21 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine newmrk( nodof, nbeta, dt, du, velocity,                        
-     &                   acceleration )                                         
+     &                   acceleration )  
+c
+      use constants
+c                                       
       implicit none                                                             
 c                                                                               
-      integer :: nodof                                                          
-      double precision ::                                                       
-     & du(nodof), velocity(nodof),  acceleration(nodof), dt, nbeta              
-                                                                                
+      integer, intent(in) :: nodof                                                          
+      double precision, intent(in) :: dt, nbeta, du(nodof)             
+      double precision, intent(inout) :: velocity(nodof),  
+     &                                   acceleration(nodof)           
+c                                                                                                                                                               
       integer :: i                                                              
-      double precision ::                                                       
-     &     bdt, bdt2, exp1, exp2, exp3, exp4, zero, lt1, one,                   
-     &     two, three, four, veln, acceln                                       
-c                                                                               
-      data zero, lt1, one, two, three, four / 0.0d00,                           
-     &     0.999999999999999d00, 1.0d00, 2.0d00, 3.0d00, 4.0d00 /               
+      double precision :: bdt, bdt2, exp1, exp2, exp3, exp4, 
+     &                    veln, acceln    
+      double precision, parameter :: lt1 = 0.999999999999999d00                                   
 c                                                                               
       bdt  = nbeta * dt                                                         
       bdt2 = bdt * dt                                                           
