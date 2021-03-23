@@ -4,7 +4,7 @@ c     *                      subroutine ouhstr                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 8/20/2017 rhd              *          
+c     *                   last modified : 3/22/21 rhd                *          
 c     *                                                              *          
 c     *     drive output of element strains/stresses to printed      *          
 c     *     hardcopy and/or to packets files                         *          
@@ -14,22 +14,32 @@ c
 c                                                                               
       subroutine ouhstr( do_stress, wide, eform, prec,                          
      &                   noheader, out_packet_now, element_list,                
-     &                   num_list_entries )                                     
-      use global_data ! old common.main
+     &                   num_list_entries )   
+c                                  
+      use global_data, only : ltmstp, iprops, lprops, elblks
       use main_data, only: packet_file_no, cohesive_ele_types,                  
      &                     elems_to_blocks, bar_types, link_types                                      
-      implicit integer (a-z)                                                    
-      logical :: wide, eform, prec, do_stress, noheader, 
-     &           out_packet_now, solid_elem                                                        
-      integer :: element_list(num_list_entries)                                    
+c
+      implicit none
+c
+      integer, intent(in) :: num_list_entries  
+      integer, intent(in) :: element_list(num_list_entries)                                    
+      logical, intent(in) :: wide, eform, prec, do_stress, noheader, 
+     &                       out_packet_now                                                       
 c                                                                               
 c             local declarations                                                
-c                                                                               
+c     
+      integer :: local_count, index, elem, elem_type, num_enodes,
+     &           num_int_points, output_loc, additional, 
+     &           cohes_pkt_offset, pkt_type, lnum, pgnum, lbltyp,
+     &           span, blk, rel_elem, int_order, mat_type, totdof,
+     &           num_short_stress, num_short_strain, cohesive_type,
+     &           felem, num_enode_dof
       character(len=8) :: strlbl(30), hedtyp*30                                 
       real :: dumr                                                                 
       double precision :: dumd                                                                 
       character :: dums                                                         
-      logical :: bbar_flg, geo_non_flg, long_out_flg,                             
+      logical :: bbar_flg, geo_non_flg, long_out_flg, solid_elem,                              
      &           nodpts_flg, center_output, cohesive_elem,                        
      &           at_intpts, at_enodes, at_center, bar_elem, link_elem                                  
 c                                                                               
@@ -111,7 +121,7 @@ c
         link_elem         = link_types(elem_type)
 c                                                                               
 c             duplicate necessary element block data.                           
-c                                                                               
+c  
         call oudups( span, elem, num_int_points, geo_non_flg,                   
      &               do_stress, cohesive_elem )                                 
 c                                                                               
@@ -167,6 +177,7 @@ c
           lbltyp = 1
           lnum = 56 ! forces new page & label printing
         end if  
+c
         call ouhrks( span, blk, felem, elem_type, int_order,                    
      &                num_int_points, num_enodes,                               
      &                geo_non_flg, long_out_flg,                                
@@ -174,7 +185,7 @@ c
      &                center_output, num_short_stress,                          
      &                num_short_strain )                                        
 c                                                                               
-        call ouhprn(  elem, elem_type, num_int_points,                          
+       call ouhprn(  elem, elem_type, num_int_points,                          
      &                num_enodes, long_out_flg,                                 
      &                nodpts_flg, do_stress, wide, eform, prec,                 
      &                lnum, pgnum, lbltyp, strlbl, hedtyp,                      
@@ -187,4 +198,68 @@ c
       return                                                                    
       end                                                                       
                                                                                 
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine ou_gastr                     *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 03/22/21 rhd               *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+c               moved here to stop compilers from complaining about
+c               history_global is history....(blk)%ptr(location).
+c               compilers don't like this type of old-style Fortran
+c               array passing. it thinks ptr might be an array section.
+c
+c               by putting routine here and with separate compiles, the 
+c               cont's see what we're doing (it is legal!) 
+c     
+c                                                                                    
+      subroutine ou_gastr( history_local, history_global, ngp,                  
+     &                     mxhist, mxngp, hist_size, span, mxvl )               
+      implicit none                                                             
+c                                                                               
+c               parameter declarations                                          
+c                                                                               
+      integer, intent(in) :: ngp, mxhist, mxngp, hist_size, mxvl, span                         
+      double precision, intent(in) :: history_global(hist_size,ngp,span)                                       
+      double precision, intent(out) :: history_local(mxvl,mxhist,mxngp)
+c                                                                               
+c               local declarations                                              
+c                                                                               
+      integer i, j, k                                                           
+c                                                                               
+      if( ngp .ne. 8 ) then                                                     
+        do k = 1, ngp                                                           
+         do  j = 1, hist_size                                                   
+!DIR$ VECTOR ALIGNED
+            do  i = 1, span                                                     
+               history_local(i,j,k) = history_global(j,k,i)                     
+            end do                                                              
+         end do                                                                 
+        end do                                                                  
+        return                                                                  
+      end if                                                                    
+c                                                                               
+c                number of gauss points = 8, unroll.                            
+c                                                                               
+      do  j = 1, hist_size                                                      
+!DIR$ VECTOR ALIGNED
+        do  i = 1, span                                                         
+            history_local(i,j,1) = history_global(j,1,i)                        
+            history_local(i,j,2) = history_global(j,2,i)                        
+            history_local(i,j,3) = history_global(j,3,i)                        
+            history_local(i,j,4) = history_global(j,4,i)                        
+            history_local(i,j,5) = history_global(j,5,i)                        
+            history_local(i,j,6) = history_global(j,6,i)                        
+            history_local(i,j,7) = history_global(j,7,i)                        
+            history_local(i,j,8) = history_global(j,8,i)                        
+        end do                                                                  
+      end do                                                                    
+c                                                                               
+      return                                                                    
+      end                                                                       
                                                                                 

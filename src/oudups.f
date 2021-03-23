@@ -4,7 +4,7 @@ c     *                      subroutine oudups                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 4/26/2017 rhd              *          
+c     *                   last modified : 3/22/21   rhd              *          
 c     *                                                              *          
 c     *     gathers data for a block of elements to support          *          
 c     *     generation of a patran, packet or hard copy output.      *          
@@ -12,8 +12,9 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine oudups( span, felem, ngp, geonl, stress, is_cohesive )         
-      use global_data ! old common.main
+      subroutine oudups( span, felem, ngp, geonl, stress, is_cohesive )  
+c       
+      use global_data, only : mxvl, nstr, nstrs, out
       use main_data, only : elems_to_blocks                                     
       use elem_block_data, only : history_blocks, rot_n1_blocks,                
      &                            eps_n_blocks, urcs_n_blocks,                  
@@ -23,8 +24,8 @@ c
 c                                                                               
       implicit none                                                             
 c                                                                               
-      integer :: span, felem, ngp                                               
-      logical :: geonl, stress, is_cohesive                                     
+      integer, intent(in) :: span, felem, ngp                                               
+      logical, intent(in) :: geonl, stress, is_cohesive                                     
 c                                                                               
 c             local declarations                                                
 c                                                                               
@@ -89,60 +90,6 @@ c
         call tanstf_gastr( ddtse, eps_n_blocks(blk)%ptr(eps_offset),            
      &         ngp, nstr, span )                                                
       end if                                                                    
-c                                                                               
-      return                                                                    
-      end                                                                       
-c     ****************************************************************          
-c     *                                                              *          
-c     *                      subroutine ou_gastr                     *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 03/9/13 rhd                *          
-c     *                                                              *          
-c     ****************************************************************          
-c                                                                               
-c                                                                               
-      subroutine ou_gastr( history_local, history_global, ngp,                  
-     &                     mxhist, mxngp, hist_size, span, mxvl )               
-      implicit none                                                             
-c                                                                               
-c               parameter declarations                                          
-c                                                                               
-      integer ngp, mxhist, mxngp, hist_size, mxvl, span                         
-      double precision                                                          
-     & history_local(mxvl,mxhist,mxngp),                                        
-     & history_global(hist_size,ngp,span)                                       
-c                                                                               
-c               local declarations                                              
-c                                                                               
-      integer i, j, k                                                           
-c                                                                               
-      if( ngp .ne. 8 ) then                                                     
-        do k = 1, ngp                                                           
-         do  j = 1, hist_size                                                   
-            do  i = 1, span                                                     
-               history_local(i,j,k) = history_global(j,k,i)                     
-            end do                                                              
-         end do                                                                 
-        end do                                                                  
-        return                                                                  
-      end if                                                                    
-c                                                                               
-c                number of gauss points = 8, unroll.                            
-c                                                                               
-      do  j = 1, hist_size                                                      
-        do  i = 1, span                                                         
-            history_local(i,j,1) = history_global(j,1,i)                        
-            history_local(i,j,2) = history_global(j,2,i)                        
-            history_local(i,j,3) = history_global(j,3,i)                        
-            history_local(i,j,4) = history_global(j,4,i)                        
-            history_local(i,j,5) = history_global(j,5,i)                        
-            history_local(i,j,6) = history_global(j,6,i)                        
-            history_local(i,j,7) = history_global(j,7,i)                        
-            history_local(i,j,8) = history_global(j,8,i)                        
-        end do                                                                  
-      end do                                                                    
 c                                                                               
       return                                                                    
       end                                                                       
