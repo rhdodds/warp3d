@@ -56,7 +56,8 @@ c
       do elem = 1, noelem                                                       
         elem_ptr = dam_ptr( elem )                                             
         if( elem_ptr .eq. 0 ) cycle   ! element not killable 
-        if( dam_state(elem_ptr) .gt. 0 ) cycle ! elem killed already                     
+        if( dam_state(elem_ptr) .gt. 0 ) cycle ! elem killed already     
+c                                              or being killed                
         call dam_param_3_get_values(
      &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
      &      sig_mises, triaxiality, mean_zeta, mean_omega,
