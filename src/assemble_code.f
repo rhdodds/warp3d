@@ -62,7 +62,8 @@ c                   attached to the node. (skip if this node
 c                   same as last node).                                         
 c                                                                               
 c             (c) loop over elements connected to the node                      
-c                  (1) skip null elements                                       
+c                  (1) skip null elements. ** no longer checked.
+c                      completely killed elements just have [Ke]=0                                       
 c                  (2) we need to know what row of the element                  
 c                      stiffness corresponds to the                             
 c                      current equilibrium equation. the                        
@@ -704,7 +705,9 @@ c                      of the equilibrum equations. each thread has
 c                      its own allocated row for this.                          
 c                                                                               
 c                  (d) loop over elements connected to the node                 
-c                       (1) skip null elements (killed elems)                   
+c                       (1) skip null elements (killed elems).
+c                           completely killed elements have [Ke]=0.
+c                           no longer use logic to skip them                 
 c                       (2) we need to know what row of the element             
 c                           stiffness corresponds to the                        
 c                           current equilibrium equation. the                   
@@ -1076,7 +1079,8 @@ c             3) For each row then:
 c                   a) Find the node number                                     
 c                   b) Look up all elements connected to this node              
 c                   c) Loop over those elements                                 
-c                   d) Skip killed elements                                     
+c                   d) Skip killed elements. completely killed elems
+c                      have [Ke]=0. logic removed to skip them                                   
 c                   e) Find the row of the element corresponding to             
 c                      the node/dof we're looking at                            
 c                   f) Loop over all columns in this local row and              
@@ -1158,7 +1162,7 @@ c
       end if                                                                    
 c                                                                               
 c                 - loop over element connected to this snode                   
-c                   - skip killed elements                                      
+c                   - skip killed elements (logic removed. [Ke]=0)                                      
 c                   - get corresponding element blok and column                 
 c                     within that block                                         
 c                   - use local pointer to block of element                     
