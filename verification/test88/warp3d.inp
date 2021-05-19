@@ -1,0 +1,72 @@
+!
+!
+!    ductile crack growth in a shallow notch se(b)
+!    ============================================                       
+! 
+!            W=2 in,  span/2=4 in, B=0.001 in, a/W=0.15
+!
+!            uses crack growth by element extinction
+! 
+!    
+ structure seb
+! 
+ material steel 
+  properties mises e 29000 nu 0.3 yld_pt 58.0 n_power 10,
+            rho 0.0
+!
+ material void_strip
+  properties mises e 29000 nu 0.3 yld_pt 58.0 n_power 10,
+                  rho 0.0 killable
+!
+ number of nodes  1568 elements   715
+!
+ elements
+   1-60 type l3disop nonlinear material void_strip order 2x2x2,
+             bbar center_output 
+   61-715 type l3disop nonlinear material steel order 2x2x2,
+               bbar center_output 
+*input 'coords.inp'
+*input 'incid.inp'
+ blocking automatic size 128 $ display
+*input'constraints.inp'
+!
+! output model flat patran convention text file "model"
+! output patran neutral
+! stop
+!
+ loading test
+  nonlinear
+    step 1-240 constraints 0.0005     $   0.002
+!
+  nonlinear analysis parameters
+   solution technique direct sparse 
+   adaptive solution on
+   maximum iterations 10
+   minimum iterations 2
+   divergence check on 
+   convergence test norm res tol 0.02
+   line search on  slack_toler 0.5
+   time step 1000000
+   trace solution on
+   extrapolate on
+   consistent q-matrix off
+   bbar stabilization factor 0.0
+!
+  crack growth parameters
+    type of crack growth smcs
+    regularization on type 3  Length_scale 0.004 Gf 0.078 m 1.0 alpha 4,
+           display
+    smcs type 5 power 4.0 tp_critical 3.0 display
+    smcs deleted elements file on name "list_deleted"
+    smcs states off text steps 1-200
+    killed element limit 55
+    kill sequentially on order 1 31 2 32 3 33 4 34 5 35 6 36 7 37,
+         8 38 9 39 10 40
+    adaptive load control on plastic strain change 0.05 $ 5 x yield
+!
+ output commands use file "get_output.inp" steps 1-1000
+!
+compute displacements for loading test step 150
+*input './get_J_average.inp'
+save to file 'restart.db'
+stop

@@ -1,0 +1,16 @@
+!
+ restart from "restart.db"
+!
+ compute displacements for loading test step 160
+ *input from 'get_J_average.inp'
+!
+ stop
+
+
+
+
+
+
+
+
+

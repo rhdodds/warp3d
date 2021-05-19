@@ -1,0 +1,16 @@
+c
+domain one
+ symmetric
+ front nodes 1 2 linear verify
+ normal plane nx 0 ny 1 nz 0
+ function type a
+ q-values 1 2,
+	  235 236 313 314 393 394 459 460 553 554 656 658 711 712,
+	  760 762 759 761 845 846 931 932 1016 1015 1057 1058,
+	  1091 1092 1098 1100 1097 1099 1133 1134 1095 1096, 
+	  1093 1094 1045 1046 973 974 971 972 969 970 967 968 1.0
+ elements   181 306 180 602 305 536 608 314 607 313 606 312,
+            605 311 188 604 187 539 186 541 664 545 422 544 421
+ ignore crack face loading $ needed for killed elements
+c 
+ compute domain integral
