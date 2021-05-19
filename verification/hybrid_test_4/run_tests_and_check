@@ -53,6 +53,7 @@ fi
 #
 # Check
 #
+python=/usr/bin/python3
 perl check_1.perl
 perl check_2.perl
 perl check_3.perl
@@ -64,13 +65,13 @@ tail -1 wne0000030_text | cut -c1-46 >temp2
 perl check_7.perl
 tail -1 wns0000030_text | cut -c1-46 >temp3
 perl check_8.perl
-python read_element_flat_stream_strains.py > temp4
+$python read_element_flat_stream_strains.py > temp4
 perl check_9.perl
-python read_element_flat_stream_stresses.py > temp5
+$python read_element_flat_stream_stresses.py > temp5
 perl check_10.perl
-python read_nodal_flat_stream_stresses.py > temp6
+$python read_nodal_flat_stream_stresses.py > temp6
 perl check_11.perl
-python read_element_flat_stream_states.py > temp7
+$python read_element_flat_stream_states.py > temp7
 perl check_12.perl
 cleanup_files
 printf ">>> All done with MPI combine partial results test\n\n"

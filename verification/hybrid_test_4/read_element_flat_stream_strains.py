@@ -1,8 +1,5 @@
 from numpy import *
 import os
-
-#
-set_printoptions(threshold='nan')
 #
 stream_fname = "./wee0000030_stream"
 #
@@ -20,8 +17,8 @@ x4 = data[:,4]
 x5 = data[:,5]
 x6 = data[:,6]
 x21 = data[:,21]
-print  " %15.7e  %15.7e  %15.7e"%(
-     x0[num_elements-1] ,x1[num_elements-1], x2[num_elements-1])
+print( " %15.7e  %15.7e  %15.7e"%(
+     x0[num_elements-1] ,x1[num_elements-1], x2[num_elements-1]) )
 
 exit(0)
 
