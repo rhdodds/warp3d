@@ -122,6 +122,7 @@ def run_all():
  test_generic( "test85" )
  test_generic( "test86" )
  test_generic( "test87" )
+ test_generic( "test88" )
 #
  time_end = time.time()
  print("  ... Elaspsed walltime: %0.1f" % (time_end-time_start))
@@ -676,6 +677,7 @@ def display_menu():
   m.append( "Test 85: (user-defined initial-stresses)" )
   m.append( "Test 86: (FGMs compute J. explicit terms needed for path independence)" )
   m.append( "Test 87: (T-stress. surface cracked plate. face loading)" )
+  m.append( "Test 88: (SMCS ductile growth. mesh regularization)" )
   m.append( "Quit" )
 #
 
@@ -730,7 +732,8 @@ def cleanup( output_file, problem_dir ):
 #
  flist1 = 'wn* we* wm* *text *neutral *neut  states_header* *_db list*'
  flist2 =' *db *packets *tst states  *batch*mess* energy step* model* ' 
- flist  = flist1 + flist2 + output_file
+ flist3 =' fully* '
+ flist  = flist1 + flist2 + flist3 + output_file
  if windows :
    delstr = 'del ' + flist1 + ' 2>nul'
    run_chk = subprocess.run( delstr, shell = True, cwd = problem_dir )
@@ -822,6 +825,7 @@ def main():
    if choice == 33: test_generic( "test85" )
    if choice == 34: test_generic( "test86" )
    if choice == 35: test_generic( "test87" )
+   if choice == 36: test_generic( "test88" )
 #
 # ----------------------------------------------------------------------------
 #
