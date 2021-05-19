@@ -41,7 +41,7 @@ test_18e
  'J-integral components' 
  'domain        dm1'
  -1
-0.2941E+01
+0.3023E+01
 9
 *
 *        check results problem 3
@@ -51,5 +51,5 @@ test_18e
  'J-integral components' 
  'domain        dm1'
  -1
-0.2854E+01
+0.2915E+01
 9
