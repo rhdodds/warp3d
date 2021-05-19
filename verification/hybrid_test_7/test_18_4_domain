@@ -3944,15 +3944,17 @@ c
 c
 c
   nonlinear analysis parameters
-   solution technique cluster $ direct sparse
+   solution technique direct sparse
    adaptive solution on
    maximum iterations 5
+   minimum iterations 2
+   divergence check on
    convergence test norm res tol 0.005
-   line search on details
+   line search on  slack_toler 0.5
    time step 1000000
    trace solution on
    extrapolate on
-   consistent q-matrix on
+   consistent q-matrix off
    bbar stabilization factor 0.0
 c
   crack growth parameters
