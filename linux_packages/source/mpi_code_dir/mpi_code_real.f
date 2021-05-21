@@ -1865,7 +1865,7 @@ c     *                      subroutine wmpi_growth_init             *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/21/2017 rhd             *
+c     *                   last modified : 03/28/21 rhd               *
 c     *                                                              *
 c     *       send initial crack growth data to all the MPI          *
 c     *       processors                                             *
@@ -1876,7 +1876,6 @@ c
       subroutine wmpi_growth_init
       use global_data ! old common.main
 c
-      use elem_extinct_data, only: dam_blk_killed
       use damage_data, only : dam_ptr, num_kill_elem, growth_by_kill
 c
       implicit none
@@ -1928,7 +1927,7 @@ c     *                   subroutine wmpi_send_growth                *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 02/21/2017 rhd             *
+c     *                   last modified : 5/12/21 rhd                *
 c     *                                                              *
 c     *           send crack growth data to all the MPI worker       *
 c     *           processors after root has completed processing     *
@@ -1940,7 +1939,7 @@ c
       subroutine wmpi_send_growth ( killed_this_time )
       use global_data ! old common.main
 c
-      use elem_extinct_data, only: dam_blk_killed, dam_state
+      use elem_extinct_data, only: dam_state
       use main_data, only: elems_to_blocks
       use damage_data, only : dam_ptr, growth_by_kill, num_kill_elem
 c
@@ -1960,8 +1959,6 @@ c
 c           send them the state vectors describing what elements
 c           and blocks have been killed.
 c
-      call MPI_BCAST( dam_blk_killed, nelblk, MPI_LOGICAL, 0,
-     &                MPI_COMM_WORLD, ierr )
       call MPI_BCAST( dam_state, num_kill_elem, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
 c
@@ -1990,7 +1987,7 @@ c
             if( debug )
      &          write(out,'("=> proc ",i3,": elem",i5," is dead")')
      &          myid, elem
-            call kill_element ( elem, debug )
+            call chk_kill_element_now( elem, debug )
          end if
       end do
 c
@@ -2007,7 +2004,7 @@ c     *                    subroutine wmpi_get_grow                  *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 12/24/99                   *
+c     *                   last modified : 5/12/21 rhd                *
 c     *                                                              *
 c     *       Gather data about killable elements that the           *
 c     *       workers own and send it back to root so                *
@@ -2025,7 +2022,7 @@ c
       use global_data ! old common.main
 c
       use main_data, only: elems_to_blocks
-      use elem_extinct_data, only: dam_ifv, dam_state, dam_blk_killed
+      use elem_extinct_data, only: dam_ifv, dam_state
       use elem_block_data, only: history_blocks, urcs_n_blocks,
      &                           eps_n_blocks, urcs_n1_blocks,
      &                           element_vol_blocks, history_blk_list
@@ -2070,7 +2067,6 @@ c
 c
             if( owner .eq. 0 ) cycle
             if( iand( iprops(30,felem),2 ) .eq. 0 ) cycle
-            if( dam_blk_killed(blk) ) cycle
 c
 c                         get internal forces for killable elements
 c                         not yet killed (in this block)
@@ -2117,7 +2113,6 @@ c
 c
             if( owner .ne. myid ) cycle
             if( iand( iprops(30,felem),2 ) .eq. 0 ) cycle
-            if( dam_blk_killed(blk) ) cycle
 c
 c                         get internal forces for killable elements
 c                         not yet killed (in this block)
