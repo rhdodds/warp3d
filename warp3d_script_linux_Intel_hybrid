@@ -5,7 +5,7 @@
 #    Built with Intel Fortran + MPI system
 #    =========================================
 #
-#    Last updated: March 7, 2019  (RHD)
+#    Last updated: May 11, 2021 rhd
 #
 #    This bash script runs the "hybrid" version of WARP3D that
 #    includes MPI, OpenMP. The Intel MKL libraries
@@ -70,7 +70,7 @@ then
     echo " "; echo " "
     exit
 fi
-
+#
 #
 #           set LD_LIBRARY_PATH. Examine the ordering...
 #
@@ -103,7 +103,10 @@ if [ $1 = "0" -o $2 = "0"  ]; then
  exit 1
 fi
 #
-mpi2019=`mpirun --version | grep 2019 | wc --lines`
+mpirun --version > ./ztempx
+sed -i -e '2d' ./ztempx
+mpi2021=`grep "2021" ./ztempx | wc --lines`
+/bin/rm ./ztempx
 #
 #           increase the allowable size of the runtime stack. needed
 #           for MPI jobs that also use threads
@@ -112,14 +115,14 @@ ulimit -s 100000
 #
 #            set up for Intel MPI 2019 
 #
-if [ $mpi2019 -ne "1" ]; then
+if [ $mpi2021 -ne "1" ]; then
   export MPI_TYPE_MAX=4096
   export I_MPI_PIN_DOMAIN=omp
   export I_MPI_FABRICS=shm:ofi
   export I_MPI_DEBUG=1
 else
   echo " "
-  echo ">>>  Must have Intel MPI 2019.0.3 or newer"
+  echo ">>>  Must have Intel MPI 2021.x or newer"
   echo ">>>  Execution not started "
   exit 1
 fi  
