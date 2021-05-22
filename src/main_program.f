@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/11/2020 rhd             *
+c     *                   last modified : 3/30/21 rhd                *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -1024,7 +1024,7 @@ c
          call errmsg(11,param,dums,dumr,dumd)
          go to 10
       end if
-      call delete_elements( sbflg1, sbflg2 )
+      call incrack_delete_elements( sbflg1, sbflg2 )
       go to 10
 c
 c                       patch command for development
@@ -1065,7 +1065,7 @@ c
      &     '    **                                             ',
      &     '                  **',/,
      &     '    **     ',a30,' -rel-    Release: ',
-     &     ' 18.2.4  **',/,
+     &     ' 18.3.0  **',/,
      &     '    **     Code Build Number: ',i4.4,'              ',
      &     '                     **',/,
      &     "    **     Built on: ",a11,1x,a8,28x,'**',/,
