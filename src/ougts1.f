@@ -178,7 +178,7 @@ c                       general mises and gurson-tvergaard model
 c                                                                               
            do gpn = 1, ngp                                                      
               do i = 1, span                                                    
-                elestr(i,9,gpn)  = urcs_blk_n(i,9,gpn)                          
+                elestr(i,9,gpn)  = elem_hist(i,1,gpn) !urcs_blk_n(i,9,gpn)                          
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)                           
                 elestr(i,11,gpn) = elem_hist(i,5,gpn)                           
               end do                                                            

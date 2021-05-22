@@ -42,7 +42,7 @@ c
 c                       2. build summed values over gauss points                
 c                          for each stress/strain value. do all                 
 c                          elements in block at same time                       
-c                                                                               
+c      
       if( ngp .eq. 8 ) then                                                     
 c                                                                               
        do k = 1, 8                                                              

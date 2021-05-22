@@ -94,7 +94,6 @@ c
      &    elestr(bele,j,strpt) = zero
        end do
       end do
-
 c
 c                      for packet output write entries & return.
 c                      for output at element nodes, use the structure
