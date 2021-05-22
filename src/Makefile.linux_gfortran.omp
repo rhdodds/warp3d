@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 1/2/2021 rhd
+#   Last modifications: 5/12/2021 rhd
 #
 #
 #   How to run:
@@ -28,9 +28,12 @@
 #     routines are included in the WARP3D distribution directory
 #     ../linux_packages/lib
 #
-#     This build tested with gfortran version 7.2 and  MKL 19.0.3
+#     Required MKL libraries are statically linked
 #
-#     Distributed executables built on Ubuntu/Kubuntu 18.04.2 LTS.
+#     This build tested with gfortran version 8.1.0  and 
+#     MKL 2020.0.4 (included in linux_packages/lib)
+#
+#     Distributed executables built on Ubuntu/Kubuntu 18.04.5 LTS.
 #     Build tested on Redhat 7.5
 #     
 #     Notes:
@@ -66,11 +69,11 @@
 #          in the linux_pacakages/lib directory of the WARP3D distribution
 
 OSNAME   := Linux
-BUILDNUM := 4150
+BUILDNUM := 4200
 #
 BUILD_SYS := gfortran
 ODIR = ././../obj_linux_gfortran_omp
-MKL_LIBDIR = ../linux_packages/lib
+MKL_LIBDIR = ${WARP3D_HOME}/linux_packages
 EXE_NAME = warp3d_gfortran.omp
 BUILD_FLAG := -Dgfortran
 #
@@ -85,7 +88,6 @@ O        = .o
 OD       = $(ODIR)
 RMC      = rm -f
 MVC      = mv -f
-#
 #
 COMPILER = gfortran
 OPENMP   =  
@@ -108,9 +110,10 @@ FCOPTS   =  -O3  $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form \
 #
 FOR      = $(COMPILER) $(FCOPTS)
 #
-LINKOPS =  -Wl,--no-as-needed -L${MKL_LIBDIR} -lmkl_gf_lp64 \
-           -lmkl_gnu_thread -lmkl_core \
-           -lgomp -lpthread -lm -ldl 
+LINKOPS = -Wl,--start-group ${MKL_LIBDIR}/lib/libmkl_gf_lp64.a \
+          ${MKL_LIBDIR}/lib/libmkl_gnu_thread.a \
+          ${MKL_LIBDIR}/lib/libmkl_core.a \
+          -Wl,--end-group -lgomp -lpthread -lm -ldl
 #
 LINK     = $(COMPILER) $(FCOPTS)
 #
@@ -264,7 +267,6 @@ OBJ =	 \
 	$(OD)/iodevn.o	 \
 	$(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
-	$(OD)/kill_element.o	 \
 	$(OD)/license.o	 \
 	$(OD)/linked_list.o	 \
 	$(OD)/main_program.o	 \
@@ -355,7 +357,6 @@ OBJ =	 \
 	$(OD)/statistics.o	 \
 	$(OD)/steptime.o   \
 	$(OD)/store.o	 \
-	$(OD)/store_ifv.o	 \
 	$(OD)/stpdrv.o	 \
 	$(OD)/star_com.o	 \
 	$(OD)/tanstf.o	 \
@@ -368,7 +369,6 @@ OBJ =	 \
 	$(OD)/tied_mesh_c.o	 \
 	$(OD)/tilde.o	 \
 	$(OD)/update.o	 \
-	$(OD)/update_node_elecnt.o	 \
 	$(OD)/uppbar.o	 \
 	$(OD)/upres.o	 \
 	$(OD)/user_list.o	 \

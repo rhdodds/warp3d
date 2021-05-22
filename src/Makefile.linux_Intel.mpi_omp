@@ -3,7 +3,7 @@
 #
 #   File: Header.linux_em64t.mpi
 #
-#   Updated: January 2019 RHD
+#   Updated: May 15, 2021 rhd
 #
 #   Description:
 #     Makefile Header for use with the WARP3D
@@ -19,13 +19,23 @@
 #
 #
 HYROOT = $(HYPRE_ROOT)
-HYLIB = -L$(HYPRE_ROOT)/lib -lHYPRE
+HYLIB = ${WARP3D_HOME}/linux_packages/lib/libHYPRE.a # hypre solver
 HYINC = -I$(HYPRE_ROOT)/include
 #
-LIBMPI = -lmkl_blacs_intelmpi_lp64
+#LIBMPI = -lmkl_blacs_intelmpi_lp64
 MPIOPT = -mt_mpi
 ODIR  = ././../obj_linux_Intel_mpi
 EXE_NAME = warp3d_Intel.mpi_omp
+#
+MKL_LIBS = ${WARP3D_HOME}/linux_packages/lib
+#
+LIBMKL = -Wl,--start-group ${MKL_LIBS}/libmkl_intel_lp64.a \
+         ${MKL_LIBS}/libmkl_intel_thread.a \
+         ${MKL_LIBS}/libmkl_core.a \
+         ${MKL_LIBS}/libmkl_core.a \
+         ${MKL_LIBS}/libmkl_blacs_intelmpi_lp64.so \
+         ${MKL_LIBS}/libHYPRE.a \
+         -Wl,--end-group ${MKL_LIBS}/libiomp5.so -lpthread -lm -ldl
 #
 include Makefile.linux_Intel.inc
 #

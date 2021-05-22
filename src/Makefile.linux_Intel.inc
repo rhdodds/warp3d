@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 2/8/2021 rhd
+#   Last modifications: 3/20/21 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -63,7 +63,7 @@
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 4160
+BUILDNUM := 4200
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -95,7 +95,7 @@ CHECKFLOAT =
 ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                  -align array64byte  -qopt-zmm-usage=high
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
+MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) #
 KMP_ERROR := KMP_ERROR    # temp fix for MKL to suppress warning messages
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \
@@ -135,14 +135,13 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
             include_usr_parm
 #
-#                MKL libraries to include at link time. Needed MPI
-#                library for CPardiso set by invoking makefile (MPILIB).
-#                The MKL files are part of WARP3D distribution
+#                MKL libraries to include at link time. see the
+#                initializer scripts that call this makefile script
 #
-MKL_LIBS = ../linux_packages/lib
-LIBMKL =  -L$(MKL_LIBS) -lmkl_intel_lp64 -lmkl_core \
-          -lmkl_intel_thread -lpthread -lm
-LIBS = $(LIBMKL) $(LIBMPI)  $(HYLIB)
+#                Makefile.linux_Intel.omp
+#                Makefile.linux_Intel.mpi_omp
+#
+LIBS = $(LIBMKL) $(LIBMPI)  
 #
 #                all *.o files for linking.  module files are listed
 #                first for readability. try to keep ordering alphabetic
@@ -263,7 +262,6 @@ OBJ =	 \
 	$(OD)/iodevn.o	 \
 	$(OD)/iterative_sparse_hypre.o \
 	$(OD)/kg1.o	 \
-	$(OD)/kill_element.o	 \
 	$(OD)/license.o	 \
 	$(OD)/linked_list.o	 \
 	$(OD)/main_program.o	 \
@@ -354,7 +352,6 @@ OBJ =	 \
 	$(OD)/statistics.o	 \
 	$(OD)/steptime.o   \
 	$(OD)/store.o	 \
-	$(OD)/store_ifv.o	 \
 	$(OD)/stpdrv.o	 \
 	$(OD)/star_com.o	 \
 	$(OD)/tanstf.o	 \
@@ -367,7 +364,6 @@ OBJ =	 \
 	$(OD)/tied_mesh_c.o	 \
 	$(OD)/tilde.o	 \
 	$(OD)/update.o	 \
-	$(OD)/update_node_elecnt.o	 \
 	$(OD)/uppbar.o	 \
 	$(OD)/upres.o	 \
 	$(OD)/user_list.o	 \

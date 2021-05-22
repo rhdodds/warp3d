@@ -4,7 +4,7 @@
 #
 #   Invoked by:    Makewarp.bash script
 #
-#   Updated:   March 10, 2019 RHD
+#   Updated:   May 12, 2021 rhd
 #
 #   Description:
 #     Makefile Header for use with the WARP3D 
@@ -19,11 +19,17 @@
 #
 
 HYINC = 
-HYLIB = 
 MPIOPT =
 LIBMPI = 
 ODIR = ././../obj_linux_Intel_omp
 EXE_NAME = warp3d_Intel.omp
+#
+MKL_LIBS = ${WARP3D_HOME}/linux_packages/lib
+# 
+LIBMKL = -Wl,--start-group ${MKL_LIBS}/libmkl_intel_lp64.a \
+         ${MKL_LIBS}/libmkl_intel_thread.a \
+         ${MKL_LIBS}/libmkl_core.a \
+         -Wl,--end-group   ${MKL_LIBS}/libiomp5.so -lpthread -lm -ldl
 #
 include Makefile.linux_Intel.inc
 #

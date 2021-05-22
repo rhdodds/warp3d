@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#     Makewarp.bash (4th version)
+#     Makewarp.bash (5th version)
 #
-#     modified: Jan 2019 RHD
+#     modified: May 2021 RHD
 #
 #     Description:
 #
@@ -78,43 +78,29 @@ printf "Quitting...\n\n"
 exit 1
 }
 version=$(echo `ifort --version` | cut -c 15-16)
-if [ "$version" -lt "18" ]; then
-    printf "\n... ERROR: ifort must be version 18 or newer"
+if [ "$version" -lt "20" ]; then
+    printf "\n... ERROR: ifort must be version 19 or newer"
     echo -e  "\n...        you have version: " $version
     printf "...        from:  ifort --version"
     printf "\n... Quitting...\n\n"
     exit 1
 fi
-if [ -z "$MKLROOT" ]; then
-    printf "[ERROR]\n"
-    printf "... Environment variable MKLROOT is not set.\n"
-    printf "... See Intel Fortran install documentation. Most often a line of\n"
-    printf "... the form: source /opt/intel/compilers_and_libraries/... intel64 is placed \n"
-    printf "... in the /etc/bashrc our your ~/.bashrc file.\n"
-    printf "Quitting...\n"
-    exit 1
- fi
-#
-#         The MKL libraries must be accesible.
-#
-if [ ! -d "$MKLROOT/lib" ]; then
-    printf "[ERROR]\n"
-    printf "... Directory MKLROOT/lib does not exist.\n"
-    printf "Quitting...\n\n"
-    exit 1
-fi
-#
-# Fortran libraries must be accessible for our makefile to function properly.
-# We have to use a small kludge by locating them from the MKL directory. Intel
-# does not provide an environment variable to locate them.
-#
-if [ ! -d $MKLROOT/../compiler/lib/intel64 ]; then
-    printf "[ERROR]\n"
-    printf "... Could not find the Intel Fortran library directory.\n"
-    printf "... by examining $MKLROOT/../compiler/lib/intel64\n"
-    printf "Quitting...\n\n"
-    exit 1
-fi
+# if [ -z "$MKLROOT" ]; then
+#     printf "[ERROR]\n"
+#     printf "... Environment variable MKLROOT is not set.\n"
+#     printf "... See Intel Fortran install documentation.\n"
+#     printf "Quitting...\n"
+#     exit 1
+#  fi
+# #
+# #         The MKL libraries must be accesible.
+# #
+# if [ ! -d "$MKLROOT/lib" ]; then
+#     printf "[ERROR]\n"
+#     printf "... Directory MKLROOT/lib does not exist.\n"
+#     printf "Quitting...\n\n"
+#     exit 1
+# fi
 #
 return
 }
@@ -486,7 +472,7 @@ function compile_linux_gfortran_OpenMP
 #
 # Start by going through the packages and installing them if required
 #
-printf "... Building OpenMP Linux w/ grfortran ...\n"
+printf "... Building OpenMP Linux w/ gfortran ...\n"
 uninstall_mpi
 uninstall_hypre
 #
@@ -643,46 +629,6 @@ printf "Quitting...\n\n"
 exit 1
 fi
 #
-##
-# To use Intel Fortran, the usual required environment variables must be set.
-# The MKLROOT environment variable must be set. This is normally
-# done by the user's login script or system shell initialization
-# script, e.g., source /opt/intel/composerxe/bin/compilervars.sh intel64
-# Often best to put this in /etc/bashrc
-#
-if [ "$INTEL_FORTRAN" = "yes" ]; then
-   if [ -z "$MKLROOT" ]; then
-     printf "[ERROR]\n"
-     printf "... Environment variable MKLROOT is not set.\n"
-     printf "... See Intel Fortran install documentation. Most often a line of\n"
-     printf "... the form: source /opt/intel/compilers_and_libraries/mac/bin/compilervars.sh intel64\n"
-     printf "... in the /etc/bashrc file on your Mac.\n"
-     printf "Quitting...\n"
-     exit 1
-   fi
-#
-#         The MKL libraries must be accesible.
-#
-    if [ ! -d "$MKLROOT/lib" ]; then
-     printf "[ERROR]\n"
-     printf "... Directory MKLROOT/lib does not exist.\n"
-     printf "Quitting...\n\n"
-     exit 1
-    fi
-#
-# Fortran libraries must be accessible for our makefile to function properly.
-# We have to use a small kludge by locating them from the MKL directory. Intel
-# does not provide an environment variable to locate them.
-#
-    if [ ! -d $MKLROOT/../compiler/lib/intel64 ]; then
-      printf "[ERROR]\n"
-      printf "... Could not find the Intel Fortran library directory.\n"
-      printf "... by examining $MKLROOT/../compiler/lib/intel64\n"
-      printf "Quitting...\n\n"
-      exit 1
-    fi
-fi
-#
 # Done with all checks. Looks good for a build process.
 }
 
@@ -738,9 +684,6 @@ if [ "$GFORTRAN" = "yes" ]; then
 fi
 #
 }
-
-
-
 # ****************************************************************************
 #
 #   main

@@ -7,7 +7,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 1/2/2021 rhd
+#   Last modifications: 3/21/21 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -61,7 +61,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 4160
+BUILDNUM = 4200
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
@@ -215,7 +215,6 @@ OBJ =	 \
 	$(OD)/intab$O	 \
 	$(OD)/iodevn$O	 \
 	$(OD)/kg1$O	 \
-	$(OD)/kill_element$O	 \
 	$(OD)/license$O	 \
 	$(OD)/linked_list$O	 \
 	$(OD)/main_program$O	 \
@@ -307,7 +306,6 @@ OBJ =	 \
 	$(OD)/statistics$O	 \
 	$(OD)/steptime$O   \
 	$(OD)/store$O	 \
-	$(OD)/store_ifv$O	 \
 	$(OD)/stpdrv$O	 \
 	$(OD)/star_com$O	 \
 	$(OD)/tanstf$O	 \
@@ -320,7 +318,6 @@ OBJ =	 \
 	$(OD)/tied_mesh_c$O	 \
 	$(OD)/tilde$O	 \
 	$(OD)/update$O	 \
-	$(OD)/update_node_elecnt$O	 \
 	$(OD)/uppbar$O	 \
 	$(OD)/upres$O	 \
 	$(OD)/user_list$O	 \
@@ -339,7 +336,7 @@ $(EXE_NAME) : $(OBJ)
 	$(MVC) $@ $(EXEDIR)\$@
 #
 $(OD)/addifv$O : addifv.f param_def \
-                  $(OD)/mod_damage$O
+                  $(OD)/mod_damage$O $(OD)/mod_crack_growth$O
 	$(F90) /O3 /Qip  /c addifv.f
 	$(MVC) addifv$O $@
 
@@ -353,7 +350,7 @@ $(OD)/addmas$O : addmas.f param_def
 
 $(OD)/allocate_damage$O : allocate_damage.f $(OD)/mod_crack_growth$O \
                    $(OD)/mod_main$O param_def \
-                   $(OD)/mod_damage$O
+                   $(OD)/mod_damage$O 
 	$(F90) /O3 /Qip  /c allocate_damage.f
 	$(MVC) allocate_damage$O $@
 
@@ -861,12 +858,6 @@ $(OD)/iodevn$O : iodevn.f $(OD)/mod_main$O \
 $(OD)/kg1$O : kg1.f param_def
 	$(F90) /O3 /Qip  /c kg1.f
 	$(MVC) kg1$O $@
-
-$(OD)/kill_element$O : kill_element.f $(OD)/mod_main$O \
-                   param_def $(OD)/mod_main$O \
-                   $(OD)/mod_eleblocks$O $(OD)/mod_trlist$O
-	$(F90) /O3 /Qip  /c kill_element.f
-	$(MVC) kill_element$O $@
 #
 #       --- l --
 #
@@ -1354,13 +1345,6 @@ $(OD)/store$O : store.f param_def $(OD)/mod_main$O $(OD)/mod_eleblocks$O \
 	$(F90) /$(PRE) /D$(OSNAME) /O3 /Qip  /c store.f
 	$(MVC) store$O $@
 
-$(OD)/store_ifv$O : store_ifv.f $(OD)/mod_crack_growth$O \
-                   $(OD)/mod_main$O $(OD)/mod_damage$O \
-                   param_def $(OD)/mod_main$O \
-                   $(OD)/mod_eleblocks$O
-	$(F90) /O3 /Qip  /c store_ifv.f
-	$(MVC) store_ifv$O $@
-
 $(OD)/stpdrv$O : stpdrv.f $(OD)/mod_main$O \
                    param_def $(OD)/mod_damage$O \
                    $(OD)/mod_main$O
@@ -1426,12 +1410,6 @@ $(OD)/update$O : update.f $(OD)/mod_main$O \
                    $(OD)/mod_eleblocks$O
 	$(F90) /O3 /Qip  /c update.f
 	$(MVC) update$O $@
-
-$(OD)/update_node_elecnt$O : update_node_elecnt.f $(OD)/mod_crack_growth$O \
-                   $(OD)/mod_main$O param_def \
-                   $(OD)/mod_main$O
-	$(F90) /O3 /Qip  /c update_node_elecnt.f
-	$(MVC) update_node_elecnt$O $@
 
 $(OD)/user_list$O : user_list.f $(OD)/mod_main$O \
                   param_def $(OD)/mod_main$O $(OD)/mod_trlist$O
