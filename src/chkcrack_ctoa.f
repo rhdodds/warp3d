@@ -1155,7 +1155,7 @@ c     *                      subroutine update_crack_front           *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 7/29/97                    *          
+c     *                   last modified : 3/30/21 rhd                *          
 c     *                                                              *          
 c     *      This routine updates the crack front list, removing     *          
 c     *      entries of newly released nodes and adding to the       *          
@@ -1182,7 +1182,7 @@ c
       data d32460, zero  / 32460.0, 0.0 /                                       
       logical debug, next_node_found                                            
 c                                                                               
-      integer master                                                            
+      integer, external :: incrack_master
 c                                                                               
 c                                                                               
 c            Traverse linked list of the crack front nodes.                     
@@ -1242,7 +1242,7 @@ c
             next_node_found = .true.                                            
            if (find_in_list(neighbor_node,dumi).eq.-1) then                     
                call add_to_list (neighbor_node)                                 
-               master_entry = master(node)                                      
+               master_entry = incrack_master(node)                                      
                if (master_entry .gt. 0) then                                    
                   master_nodes(master_entry) = neighbor_node                    
                endif                                                            

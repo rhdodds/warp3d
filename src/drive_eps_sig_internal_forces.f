@@ -3,7 +3,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/13/2018 rhd              *
+c     *                   last modified : 3/6/2021 rhd               *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -19,17 +19,21 @@ c
 c
       subroutine drive_eps_sig_internal_forces( step, iter,
      &                                          material_cut_step )
-      use global_data ! old common.main
-c
+      use global_data, only : out, ifv, internal_energy, max_threads,
+     &                        nelblk, myid, num_threads, nodof,
+     &                        num_term_ifv, plastic_work, beta_fact,
+     &                        root_processor, slave_processor,
+     &                        ifvcmp, sum_ifv, elblks, iprops
       use elem_block_data,   only : einfvec_blocks, edest_blocks
-      use elem_extinct_data, only : dam_blk_killed, dam_ifv, dam_state
+      use elem_extinct_data, only : dam_ifv, dam_state
       use damage_data, only : growth_by_kill
       use main_data, only: umat_serial
+      use constants
 c
       implicit none
 c
-      integer :: step, iter
-      logical :: material_cut_step
+      integer, intent(in) :: step, iter
+      logical, intent(inout) :: material_cut_step
 c
 c             locals
 c
@@ -46,16 +50,15 @@ c
       double precision :: start_time, sum_stress_norm2s,
      &                    sum_strain_norm2s,
      &                    end_time, sum_ifv_threads(max_threads)
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0
       double precision, external :: omp_get_wtime
       logical, allocatable, dimension(:)  :: step_cut_flags,
      &                                       blks_reqd_serial
 c
-      logical :: umat_matl, run_serial_loop
-      logical, parameter :: local_debug = .false.,
-     &                      local_debug_sums = .false.
-c
+      logical :: umat_matl, run_serial_loop, local_debug_sums
+      logical, parameter :: local_debug = .false.
       integer, external :: warp3d_get_device_number
+c
+      local_debug_sums = .false.
 c
 c             MPI:
 c               alert workers we are in the strain-
@@ -127,7 +130,7 @@ c
       call allocate_ifv( 1 )
 c
 c             user-defined initial state to support J computations.
-c           . set up global block-by-block
+c             set up global block-by-block
 c             data structure to store initial state. we
 c             save the displavement gradients - small-strain elastic
 c             strains. these are updated over solution until
@@ -250,10 +253,11 @@ c             scatter the element internal forces (stored in blocks) into
 c             the global vector (unless we are cutting step)
 c             initialize the global internal force vector.
 c
+!DIR$ IVDEP
       ifv(1:nodof) = zero    ! for this rank
       sum_ifv      = zero    ! for this rank
       num_term_ifv = 0       ! for this rank
-      if( material_cut_step ) then
+      if( material_cut_step ) then   ! deallocate and leave
         call allocate_ifv( 2 )
         return
       end if
@@ -285,9 +289,6 @@ c$OMP&                     num_enode_dof, totdof, span )
 c
       do blk = 1, nelblk
          if( elblks(2,blk) .ne. myid ) cycle
-         if( growth_by_kill ) then
-           if( dam_blk_killed(blk) ) cycle
-         end if
          now_thread    = omp_get_thread_num() + 1
          felem         = elblks(1,blk)
          num_enodes    = iprops(2,felem)
@@ -295,22 +296,10 @@ c
          totdof        = num_enodes * num_enode_dof
          span          = elblks(0,blk)
          if( local_debug ) write(out,9300) myid, blk, span, felem
-         if( allocated( dam_ifv ) ) then
-           call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,
-     &                ifv(1),
-     &                iprops, felem, sum_ifv_threads(now_thread),
+         call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,
+     &                ifv(1), felem, sum_ifv_threads(now_thread),
      &                num_term_ifv_threads(now_thread),
-     &                einfvec_blocks(blk)%ptr(1,1), dam_ifv,
-     &                dam_state, out )
-         else
-           call addifv( span, edest_blocks(blk)%ptr(1,1), totdof,
-     &                ifv(1),
-     &                iprops, felem, sum_ifv_threads(now_thread),
-     &                num_term_ifv_threads(now_thread),
-     &                einfvec_blocks(blk)%ptr(1,1), idummy1,
-     &                idummy2, out )
-         end if
-c
+     &                einfvec_blocks(blk)%ptr(1,1) )
       end do
 c
 c$OMP END PARALLEL DO
@@ -396,7 +385,7 @@ c     *                      subroutine do_nleps_block               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/13/2018 rhd              *
+c     *                   last modified : 3/18/21 rhd                *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -405,11 +394,17 @@ c
      &                           block_energy, block_plastic_work,
      &                           block_stress_sums, block_strain_sums,
      &                           local_debug_sums )
-      use global_data ! old common.main
+c
+      use global_data, only : out, props, iprops, lprops, elblks,
+     &                        total_model_time, temperatures, dt,
+     &                        num_threads, eps_bbar, 
+     &                        beta_fact, adaptive_flag,  signal_flag,
+     &                        scaling_factor, mxvl, max_slip_sys                        
 c
       use elem_block_data,   only : einfvec_blocks, cdest_blocks,
      &                              edest_blocks, element_vol_blocks,
      &                              nonlocal_flags, nonlocal_data_n1
+c
       use main_data,         only : trn, incid, incmap,
      &                              temperatures_ref,
      &                              fgm_node_values_defined,
@@ -422,6 +417,7 @@ c
      &                              initial_state_option,
      &                              initial_state_step
       use segmental_curves, only : max_seg_points, max_seg_curves
+      use constants
 c
       implicit none
       include 'include_sig_up'
@@ -431,7 +427,7 @@ c
       integer, intent(in) :: blk, iter, step
       double precision, intent(inout) :: block_energy,
      &                    block_plastic_work,
-     &                    block_stress_sums(1), block_strain_sums(1)
+     &                    block_stress_sums(*), block_strain_sums(*)
       logical, intent(inout) :: material_cut_step, local_debug_sums
 c              
 c              locals
@@ -439,7 +435,6 @@ c
       integer :: span, felem, matnum, mat_type,
      &           num_enodes, num_enode_dof, totdof, num_int_points,
      &           elem_type, int_order, cohes_type, surface
-      double precision, parameter :: zero=0.0d0
       integer, external :: omp_get_thread_num
       logical :: geo_non_flg, bbar_flg, tet_elem, tri_elem,
      &           axisymm_elem, tflag
@@ -459,10 +454,16 @@ c
       bbar_flg       = lprops(19,felem)
       cohes_type     = iprops(27,felem)
       surface        = iprops(26,felem)
+      local_work%blk = blk
 c
-      local_work%blk  = blk
-      call chk_killed_blk( local_work%blk, 
-     &      local_work%killed_status_vec, local_work%block_killed )
+c              all elements in block may be *completely* killed,
+c              i.e., fully removed from the solution.
+c              they will not have strains, stress, ifv computed.
+c              if whole block is completely killed, just zero
+c              and leave. 
+c
+      call chk_killed_blk( span, felem, step, local_work%blk, 
+     &      local_work%killed_status_vec, local_work%block_killed, 2 )
       if( local_work%block_killed ) then
         einfvec_blocks(blk)%ptr(1:span,1:totdof) = zero
         return
@@ -532,35 +533,8 @@ c
      &         step <= initial_state_step
      &         .and. local_work%is_solid_matl
       local_work%capture_initial_state = tflag
-
 c
-c             See if we're actually an interface damaged material
-c
-      local_work%is_inter_dmg = .false.
-      if( iprops(42,felem) .ne. -1 ) then
-            local_work%is_inter_dmg = .true.
-            local_work%inter_mat = iprops(42,felem)
-            local_work%macro_sz = imatprp(132, local_work%inter_mat)
-            local_work%cp_sz = imatprp(133, local_work%inter_mat)
-      end if
-c
-c             build data structures for elements in this block.
-c             this is a gather operation on nodal coordinates,
-c             nodal displacements, stresses at time n, current
-c             estimate of strain increment over step n->n+1,
-c             various material state and history data at step n
-c             for the specific material model
-c             associated with elements of the block. we might be able
-c             to skip processing of this block.
-c
-c             we do this in 3 steps: (1) allocate all data structures in
-c             local_work (local_work is on stack but components are
-c             allocatable), (2) data that is stored globally
-c             in simple vectors and (3) data that is stored globally in
-c             blocked structures. a mixure of arguments are passed
-c             vs. data in modules to optimize indexing into blocked
-c             data structures.
-c
+      local_work%is_inter_dmg = .false. ! deprecated
       if( local_debug ) then
             write(out,9100) blk, span, felem, mat_type, num_enodes,
      &                      num_enode_dof, totdof, num_int_points,
@@ -648,7 +622,6 @@ c
       if( local_debug ) write(out,9510) blk, span, felem
       call recstr_deallocate( local_work )
       if( local_debug ) write(out,9515) blk, span, felem
-
       if( local_debug ) write(out,9525) blk, span, felem
       return
 c
@@ -744,13 +717,12 @@ c
      &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
+      use constants
       implicit none
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
-      double precision :: zero
-      data zero / 0.0d00 /
 c
       if( debug ) write(out,*) '... entered recstr_allocate_1 ...'
       local_mt = local_work%mat_type
@@ -859,13 +831,13 @@ c
      &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
+      use constants
+c 
       implicit none
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
-      double precision :: zero
-      data zero / 0.0d00 /
 c
       if( debug ) write(out,*) '... entered recstr_allocate_2 ...'
       local_mt = local_work%mat_type
@@ -1015,13 +987,13 @@ c
      &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
+      use constants
+c
       implicit none
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
-      double precision :: zero
-      data zero / 0.0d00 /
 c
       if( debug ) write(out,*) '... entered recstr_allocate_3 ...'
       local_mt = local_work%mat_type
@@ -1129,13 +1101,13 @@ c
      &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
+      use constants
+c
       implicit none
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
-      double precision :: zero
-      data zero / 0.0d00 /
 c
       if( debug ) write(out,*) '... entered recstr_allocate_4 ...'
       local_mt = local_work%mat_type
@@ -1222,9 +1194,6 @@ c
            call die_abort
          end if
       end if
-
-
-
 c
       if( debug ) write(out,*) '... leaving recstr_allocate_4 ...'
       return
@@ -1257,13 +1226,13 @@ c
      &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
+      use constants
+c
       implicit none
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
-      double precision :: zero
-      data zero / 0.0d00 /
 c
       if( debug ) write(out,*) '... entered recstr_allocate_5 ...'
       local_mt = local_work%mat_type
@@ -1370,13 +1339,13 @@ c
      &                        max_interface_props
       use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data, only: history_blk_list
+      use constants
+c
       implicit none
 
       include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
-      double precision :: zero
-      data zero / 0.0d00 /
 c
       write(out,*) '... entered recstr_allocate ...'
       local_mt = local_work%mat_type
@@ -1741,7 +1710,6 @@ c
       if( local_debug ) write(out,*) "..recstr_dell @ 1"
       local_mt = local_work%mat_type
 c
-
       deallocate(
      & local_work%ce_0,
      & local_work%ce_n,
@@ -2062,6 +2030,7 @@ c
      &                            fgm_node_values_cols, matprp
 c
       use segmental_curves, only : max_seg_points, max_seg_curves
+      use constants
 c
       implicit none
       include 'include_sig_up'
@@ -2079,12 +2048,9 @@ c
 c           local declarations
 c
       integer :: elem_type, surf, k, j, i, matl_no
-      logical ::local_debug, update, update_coords, middle_surface
-      double precision ::
-     &   half, zero, one, djcoh(mxvl)
-      data local_debug, half, zero, one
-     &  / .false., 0.5d00, 0.0d00, 1.0d00 /
-
+      logical :: update, update_coords, middle_surface
+      logical, parameter :: local_debug = .false.
+      double precision :: djcoh(mxvl)
 c
       if( local_debug ) write(out,9100)
 c
@@ -2093,7 +2059,6 @@ c
       middle_surface = surf .eq. 2
       djcoh(1:span)  = zero
 c
-
 c           pull coordinates at t=0 from global input vector.
 c
       k = 1
@@ -2398,8 +2363,6 @@ c
 c
       return
       end
-
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine allocate_ifv                 *
@@ -2509,6 +2472,7 @@ c
       subroutine recstr_build_cohes_nonlocal( local_work, iprops  )
 
       use elem_block_data, only:  solid_interface_lists
+      use constants
 c
       implicit none
       include 'param_def'
@@ -2523,15 +2487,12 @@ c
      &           matl_bott, top_mat_model, bott_mat_model
       logical :: local_debug
       double precision ::
-     &   zero,
      &   top_stress_n_avg(nstrs), bott_stress_n_avg(nstrs),
      &   top_eps_n_avg(nstr), bott_eps_n_avg(nstr),
      &   top_stress_n(nstrs,mxgp), bott_stress_n(nstrs,mxgp),
      &   top_eps_n(nstr,mxgp), bott_eps_n(nstr,mxgp),
      &   top_local_vals(nonlocal_shared_state_size),
      &   bott_local_vals(nonlocal_shared_state_size)
-c
-      data  zero  / 0.0d00 /
 c
 c           build averages of stresses and strains at start of load
 c           step for the two solid elements connected to each cohesive
@@ -2972,6 +2933,7 @@ c
       use global_data, only : nelblk, elblks, out, iprops! old common.main
       use elem_block_data,  only : initial_state_data
       use main_data, only: initial_state_option
+      use constants
 c
       implicit none
 c
@@ -2982,7 +2944,6 @@ c
 c              locals
 c
       integer :: alloc_stat, blk, felem, span, ngp
-      double precision, parameter :: zero = 0.0d0
 c
 c              setup per block data structures to support the
 c              user-defined initial state as requested by user.
@@ -3034,7 +2995,3 @@ c
  9910 format('>>> Job terminated....')
 c
       end
-
-
-
-

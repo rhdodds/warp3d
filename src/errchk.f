@@ -965,7 +965,7 @@ c     *                      subroutine errchk_21                    *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 5/28/02 rhd                *
+c     *                   last modified : 3/30/21 rhd                *
 c     *                                                              *
 c     *    this subroutine checks the parameters for crack growth    *
 c     *    for consistency.                                          *
@@ -1087,9 +1087,9 @@ c
 c
          end if
 c
-         if( input_ok ) call dam_init_release
+         if( input_ok ) call incrack_dam_init_release
 c
-         if(const_front) call init_ctoa_back
+         if(const_front) call incrack_init_ctoa_back
 c
          if( release_type .eq. 2 ) then
 c
@@ -1098,7 +1098,7 @@ c
             else if( char_length .le. zero ) then
                call errmsg( 243, 2, dums, dumr, dumd )
             else
-               call find_release_height
+               call incrack_find_release_height
             end if
 c
          end if

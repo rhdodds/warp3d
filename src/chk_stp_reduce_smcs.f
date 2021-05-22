@@ -5,7 +5,7 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/30/2020 rhd             *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
@@ -30,11 +30,11 @@ c              local declarations
 c                              
       integer :: elem, elem_ptr, count, elem_max_change, 
      &           allowed_elems_in_release                                              
-      logical :: ldebug, increase_size                                           
+      logical :: ldebug, increase_size, ldummy                                         
       double precision :: sig_mean, sig_mises, triaxiality, 
      &                    new_plast_strain, mean_zeta, mean_bar_theta,
      &                    max_change, old_perm_factor, eps_crit, factor,
-     &                    default_cut_factor, mean_omega,
+     &                    default_cut_factor, mean_omega, sig_1,
      &                    tear_param, increase_multiplier, delta 
       double precision, parameter :: one_toler = 0.999d0
 c                
@@ -61,7 +61,7 @@ c                                              or being killed
         call dam_param_3_get_values(
      &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
      &      sig_mises, triaxiality, mean_zeta, mean_omega,
-     &      mean_bar_theta, 2, tear_param )   
+     &      mean_bar_theta, 2, tear_param, ldummy, sig_1 )   
         delta = new_plast_strain - old_plast_strain(elem_ptr) 
         if( delta > max_change ) then
            max_change = delta

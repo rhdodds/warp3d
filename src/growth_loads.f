@@ -4,18 +4,21 @@ c     *                      subroutine growth_loads                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 12/6/2020                  *          
+c     *                   last modified : 3/18/21    rhd             *          
+c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
       subroutine growth_loads                                                   
-      use global_data,only : out
-c                                                                               
-      use damage_data, only :  growth_by_kill, growth_by_release                                                          
+c
+      use global_data,only : out, nodof, load
+      use damage_data, only : growth_by_kill, growth_by_release   
+      use constants                                                       
 c                                                                               
       implicit none
-      double precision, parameter :: zero = 0.0d0                                                          
-      logical, parameter :: debug = .false.                                                             
+c
+      integer :: i
+      logical, parameter :: debug = .false.
 c                                                                               
 c                                                                               
 c            If crack growth is present in this analysis, slowly release        
@@ -24,22 +27,22 @@ c            or released nodes.  This release ensures smooth convergence
 c            of the solution while the geometry of the model is changed         
 c            due to crack growth.                                               
 c                                                                               
-c                                                                               
-      if( debug ) write(*,*) '>>>> in growth_loads'                            
+c       
+      if( debug ) write(*,*) '>>>> entered growth_loads'                            
 c                                                                               
       if( growth_by_kill ) then                                                
-         call killed_elem_loads( debug )                                        
+         call killed_elem_loads
       else if( growth_by_release ) then                                        
          call released_node_loads( debug )                                      
       end if                                                                    
 c                                                                               
-c      if ( debug ) then                                                        
-c         write (*,*) ' These are non-zero terms in new load_vector:'           
-c         do i = 1, nodof                                                       
-c            if ( load(i) .ne. zero ) write(*,'(" load(",i7,")=",e13.6)')       
-c     &           i,load(i)                                                     
-c         end do                                                                
-c      end if                                                                   
+      if ( debug ) then                                                        
+         write (*,*) ' These are non-zero terms in new load_vector:'           
+         do i = 1, nodof                                                       
+            if ( load(i) .ne. zero ) write(*,'(" load(",i7,")=",e13.6)')       
+     &           i,load(i)                                                     
+         end do                                                                
+      end if                                                                   
 c                                                                               
       if ( debug ) write(out,*) '<<<< leaving growth_loads'                       
 c                                                                               
@@ -51,7 +54,7 @@ c     *                      subroutine killed_elem_loads            *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 12/6/2020                  *          
+c     *                   last modified : 3/27/21 rhd                *          
 c     *                                                              *          
 c     *     this subroutine releases the nodal loads that are        *          
 c     *     imposed on the structure when an element is killed       *          
@@ -60,50 +63,78 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine killed_elem_loads( debug )                                     
+      subroutine killed_elem_loads
 c
       use global_data, only : out, noelem, iprops, load, mxedof
-      use elem_extinct_data, only : dam_ifv, dam_state, dam_dbar_elems          
+      use elem_extinct_data, only : dam_ifv, dam_state, dam_dbar_elems,
+     &                              smcs_d_values          
       use damage_data, only : dam_ptr, max_dam_state, release_fraction,
      &                        gurson_cell_size, release_type,
-     &                        num_elements_in_force_release   
-      use dam_param_code, only : growth_set_dbar                                                        
+     &                        num_elements_in_force_release,
+     &                        use_mesh_regularization,
+     &                        tol_regular =>
+     &                        tolerance_mesh_regularization     
+      use dam_param_code, only : growth_set_dbar      
+      use constants                                                  
 c                                                                               
       implicit none
-c 
-      logical, intent(in) :: debug
+c              
+c              locals
 c
-
       integer :: rcount, elem, num_dof, sdof, elem_ptr, dof
-      logical :: no_print                                                   
+      logical :: no_print, std_kill
+      logical, parameter :: debug = .false.                                                
       integer :: edest(mxedof)                                                     
-      double precision :: dbar_now, refer_deform, now_fraction, 
+      double precision :: dbar_now, refer_deform, now_fraction, d_now, 
      &                    last_fraction, fraction, dbar_zero, ldincr
-      double precision, parameter :: zero=0.0d0, one=1.0d0                       
 c
-c          - For Gurson Crack Growth:                                           
+c              standard element death (Gurson, SMCS): 
+c                 immediate reduction of [Ke] to zero, zeroing of
+c                 all element stresses, histories, etc.
+c                 reduction of element (internal) nodal forces to
+c                 zero by release type (1) over a user specified number 
+c                 of load steps, or release type (2) over a linear
+c                 traction-separation model applicable only for Mode I.
+c                 element nodal forces at death have been saved to be
+c                 reduced to zero.
+c 
+c                 actions to impose (1) and (2) are done here.
+c                 add a fraction of the internal load vector saved from              
+c                 killed elements to the dload vector to simulate the slow           
+c                 release of the killed element forces.
+c  
+c              mesh regularization death for SMCS:
+c                 element internal forces are gradually  reduced to
+c                 zero through the damage parameter 'd'. internal
+c                 forces at death have not been saved.    
+c  
+c                 for this option. no actions are needed here. 
+c                 code here prints current value of 'd' for elements        
 c                                                                               
-c            add a fraction of the internal load vector saved from              
-c            killed elements to the dload vector to simulate the slow           
-c            release of the killed element forces. there are two                
-c            release options: (1) fixed no. of load steps, (2) a                
-c            linear traction separation law.                                    
 c                                                                               
-c                                                                               
-c            loop over all elements. skip non-killable elements                 
-c            immediately. if element is killable, determine                     
-c            if the internal forces present at extinction have                  
-c            already been 100% released.                                        
-c                                                                               
-      if( debug ) write(*,*) '>> dealing w/ killed element loads'              
-      write(out,9200)                                                          
+c              loop over all elements. skip non-killable elements                 
+c              immediately. if element is killable, process as above
+c     
+      if( debug ) write(out,9000)       
+      std_kill = .not. use_mesh_regularization
+      if( std_kill ) write(out,9200)   
+      if( use_mesh_regularization ) write(out,9201)                                                       
       no_print = .true.                                                         
       rcount   = 0                                                              
 c                                                                               
       do elem = 1, noelem                                                       
         elem_ptr = dam_ptr(elem)                                                
-        if( elem_ptr .eq. 0 ) cycle                                            
-        if( dam_state(elem_ptr) .eq. 0 ) cycle                                 
+        if( elem_ptr .eq. 0 ) cycle  ! element not killable                                          
+        if( dam_state(elem_ptr) .eq. 0 ) cycle ! not yet killed       
+        if( use_mesh_regularization ) then
+            d_now = smcs_d_values(elem_ptr)
+            if( d_now > tol_regular ) cycle
+            if( d_now <= zero ) cycle
+            write(out,9600) elem, smcs_d_values(elem_ptr)
+            no_print = .false.
+            rcount = rcount + 1
+            cycle
+        end if                         
         if( release_type .eq. 1 ) then                                         
           if( dam_state(elem_ptr) .gt. max_dam_state ) cycle                   
         end if                                                                  
@@ -172,22 +203,38 @@ c
 c                                                                               
 c         if no elements are undergoing release, output a message.              
 c                                                                               
-      if( no_print ) write(out,9400)                                          
-      if( rcount .gt. 0 ) write(out,9500) rcount                               
-      num_elements_in_force_release = rcount                                    
+      if( std_kill ) then
+         if( no_print ) write(out,9400)                                          
+         if( rcount .gt. 0 ) write(out,9500) rcount     
+      end if
+      if( use_mesh_regularization ) then
+         if( no_print ) write(out,9401)                                          
+          if( rcount .gt. 0 ) write(out,9501) rcount     
+      end if                      
+      num_elements_in_force_release = rcount          
+      if( debug )  write(out,9010)
 c                                                                               
-      return                                                                    
+      return     
+ 9000 format(10x, '>> entered killed_elem_loads')                                                               
+ 9010 format(10x, '>> leaving killed_elem_loads')                                                               
  9200 format(/1x,'  >> force release information for killed elements:')         
+ 9201 format(/1x,'>> mesh regularization information for',
+     & ' killed elements:')         
  9300 format(1x,'       element: ',i7,'. forces released (%): ',f5.1)           
- 9400 format(1x,'        *no forces are currently being released*')             
- 9500 format(1x,'       total elements in active release: ',i6)                 
+ 9400 format(1x,'        *no forces are currently being released*')    
+ 9401 format(1x,'      *no killed elements in regularization',
+     &    '  process*')             
+ 9500 format(1x,'       total elements in active release: ',i6)      
+ 9501 format(1x,'   total elements in active',
+     &  ' regularization: ',i6)      
+ 9600 format(1x,'   element: ',i7,', damage parameter (d): ',f5.3)             
 c                                                                                
       end  subroutine killed_elem_loads                                                                     
 c                                                                               
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine released_node_loads          *          
+c     *              subroutine released_node_loads                  *          
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
@@ -210,6 +257,7 @@ c
      &     num_nodes_grwinc, crk_pln_normal_idx, crack_plane_sign,
      &     release_height, num_nodes_thick, num_crack_plane_nodes,
      &     max_dam_state, const_front
+      use constants
 c                                                           
       implicit none        
 c
@@ -217,7 +265,6 @@ c
 c 
       integer :: i, j, node_data_entry, dof, node_loop, node                                                                            
       double precision :: now_fraction, fraction, new_height, ldincr
-      double precision, parameter :: zero=0.d0, one=1.0d0                   
       logical :: no_print                                                   
       real dumr                                                                 
       character(len=1) :: dums                                                  
@@ -234,7 +281,7 @@ c            loop over all of the crack plane nodes.   If a node
 c            has not yet been released, then skip it.  Also, skip the           
 c            node if it has been 100% released.                                 
 c                                                                               
-      if( debug ) write (*,*) '>> dealing with released nodes'                 
+      if( debug ) write (*,*) '>> entered released_node_loads ...'                 
       write(out,9200)                                                         
       no_print = .true.                                                         
 c                                                                               
@@ -414,7 +461,7 @@ c
 c          if no forces released, then output a message.                        
 c                                                                               
       if( no_print) write (out,9400)                                           
-      if( debug ) write(out,*) '<< finished with released nodes'                
+      if( debug ) write(out,*) '<< leaving released_node_loads..'                
       return 
 c                                                                   
  9200 format(/1x,'  >> Force release information for released nodes:')          

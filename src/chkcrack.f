@@ -22,11 +22,12 @@ c
       implicit none                                                    
 c                                                                               
       integer, intent(in) :: step, iter
-      logical :: debug                                                             
+      logical :: debug, ldebug                                                            
 c                                                                               
-      debug = .false.                                                           
+      debug  = .false.    
+      ldebug = .false.                                                       
 c                                                                               
-      if ( debug ) write(out,*) '>>> enter chkcrack <<<'                        
+      if( ldebug ) write(out,*) '>>> entered chkcrack ...'                        
 c                                                                               
 c              Return if no crack growth specified.                             
 c                                                                               
@@ -58,7 +59,7 @@ c
          if(debug) write (out,*) '>>>> use node release crack growth.'         
          call chk_node_release( debug, step, iter )                             
       case(3)                                                                  
-         if(debug) write (out,*) '>>>> use smcs crack growth.'                 
+         if(ldebug) write (out,*) '>>>> use smcs crack growth.'                 
          call chk_elem_kill( debug, step, iter )                                
       case(4)    !  cohesive                                                               
          call chk_elem_kill( debug, step, iter )                                
@@ -68,10 +69,11 @@ c
          call chk_elem_kill( debug, step, iter )                                
       end select                                                                
 c                                                                               
-      if( debug ) then                                                         
-         call dam_debug                                                         
-         write(out,*) '>>>>>>>> leaving chkcrack <<<<<<<'                       
-      end if                                                                    
+      if( debug ) call dam_debug    
+      if( ldebug ) then 
+        write(out,*) '>>> leaving chkcrack ...'                       
+        write(out,*) ' '
+      end if
 c                                                                               
       return                                                                    
       end 
@@ -82,10 +84,10 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/18/2020 rhd             *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
-c     *        checks conditions to see if crack                     *          
-c     *        growth will occur by element extinction               *          
+c     *        checks conditions to see if crack growth will occur   *          
+c     *        by element extinction. if so start the deletion.      *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -93,11 +95,14 @@ c
       subroutine chk_elem_kill( debug, step, iter )
 c                             
       use global_data, only : out, noelem, current_load_time_step, 
-     &                        iprops, props, nelblk, elblks 
+     &                        iprops, props, nelblk, elblks, num_error
       use dam_param_code, only : dam_param, growth_set_dbar
-      use elem_extinct_data, only : dam_blk_killed, dam_state,                  
-     &                              kill_order_list, dam_print_list
-      use main_data, only : output_packets, packet_file_no                      
+      use elem_extinct_data, only : dam_state, smcs_start_kill_step,                 
+     &                              kill_order_list, dam_print_list,
+     &                              smcs_d_values,
+     &                              smcs_eps_plas_at_death,
+     &                              smcs_stress_at_death
+      use main_data, only : output_packets, packet_file_no
       use damage_data, only : no_killed_elems, dam_ptr, max_dam_state,
      &                        crack_growth_type, num_user_kill_elems,
      &                        release_type, user_kill_list_now,
@@ -107,7 +112,11 @@ c
      &                        num_kill_order_list, smcs_type,
      &                        stop_killed_elist_length,
      &                        deleted_elist_to_stop,
-     &                        smcs_type_5_tp_critical                         
+     &                        smcs_type_5_tp_critical,
+     &                        use_mesh_regularization,
+     &                        tol_regular =>
+     &                        tolerance_mesh_regularization     
+      use constants                   
 c                                                         
       implicit none
 c
@@ -120,55 +129,77 @@ c
 c                                                can be killed this call    
 c                                       
       integer :: local_packet(max_local_list), elem, elem_ptr,
-     &           local_count, blk, chk_kill, cohes_type, count, 
+     &           local_count, blk,  cohes_type, count, 
      &           element, felem, i, span
       integer, parameter :: local_pkt_type(5) = (/ 20, 0, 21, 10, 0 / )                   
-      logical :: blk_killed, killed_this_time, killed_found,                
-     &           kill_the_elem, elems_left, ldummy1, ldummy2,
-     &           local_debug, stop_solution    
-      logical, external :: scan_entry_in_list                                                                                                                       
-      double precision ::                                                        
-     &   porosity, eps_plas, eps_crit,              
-     &   values(20), local_status(max_local_list,3), orig_poros,                
-     &   ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
-     &   avg_bar_theta, tear_param                                                                                                                                
-      logical :: fgm_cohes, ext_gurson, option_exponential,                        
+      logical :: blk_killed, killed_this_time,            
+     &           kill_the_elem, ldummy1, ldummy2,
+     &           local_debug, stop_solution, standard_kill, 
+     &           elements_have_been_killed,  
+     &           fgm_cohes, ext_gurson, option_exponential,                        
      &           option_ppr, local_write_packets, do_kill_in_order,                
      &           found_exponential, found_ppr, found_cavit,                        
-     &           option_cavit                                                      
+     &           option_cavit, elem_deleted                                                     
+      logical, external :: scan_entry_in_list, chkcrack_is_elem_deleted                                                                                                                       
+      double precision ::                                                        
+     &   porosity, eps_plas, eps_crit, d_old, d_new,           
+     &   values(20), local_status(max_local_list,3), orig_poros,                
+     &   ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
+     &   avg_bar_theta, tear_param, sig_mises, mises_at_death,
+     &   sig_1, sig_1_at_death
 c        
-      local_debug = .false. ! debug
+      local_debug = .false.
       if( local_debug ) then      
          write(out,*) '... entered chk_elem_kill ...'                                                    
          write(out,*) '    ... no_killed_elems:',no_killed_elems
       end if                                                                    
 c                                                                               
 c              1) Loop for all elements. process killable elements.
-c                 kill as required.                 
+c                 start kill as required.           
+c
+c                 standard kill: immediately delete element. no
+c                                [Ke], stresses, properties, histories.
+c                                element forces save for prescribed
+c                                reduction to zero in future steps.
+c                 use_mesh_regularization: element stiffness, stresses
+c                                gradually released to zero following
+c                                a user-defined damage function.      
 c                                                                               
       killed_this_time  = .false.                                                
-      elems_left        = .false.                                                
       local_count       = 0                                                           
       found_exponential = .false.                                               
       found_ppr         = .false.                                               
       found_cavit       = .false.    
-      stop_solution     = .false.                                           
+      stop_solution     = .false.   
+      standard_kill     = .not. use_mesh_regularization                                       
 c     
       do elem = 1, noelem
 c          
          elem_ptr = dam_ptr(elem)                                               
-         if( elem_ptr .eq. 0 ) cycle     ! element not killable                                      
-         if( local_debug ) write(out,*) 'killable element is:',elem                           
+         if( elem_ptr == 0 ) cycle     ! element not killable                                      
+         if( local_debug ) then
+            write(out,*) 'killable element, dam state:',elem,
+     &            dam_state(elem_ptr)
+         end if
 c                                                                               
-c                If element has been previously killed, update it's             
-c                unloading state vector, and then skip the rest of the          
+c                If we previously started killing element, update it's             
+c                unloading state vector or damage parameter, 
+c                and then skip the rest of the          
 c                loop. we do this for traction-separation law as well           
 c                since other routines look at dam_state.                        
-c                                                                               
-         if( dam_state(elem_ptr) .gt. 0 ) then ! element killed already    
-            if( dam_state(elem_ptr) .le. max_dam_state )                       
-     &           dam_state(elem_ptr) = dam_state(elem_ptr) + 1                  
-            cycle                                                               
+c              
+         if( dam_state(elem_ptr) > 0 ) then ! already being killed
+            if( use_mesh_regularization ) then
+               call chk_elem_kill_upmr
+               cycle 
+            end if
+            if( standard_kill ) then
+               if( dam_state(elem_ptr) <=  max_dam_state )                        
+     &             dam_state(elem_ptr) = dam_state(elem_ptr) + 1                  
+               cycle   
+            end if
+            write(out,9100) elem
+            call die_abort
          end if                                                                 
 c                                                                               
 c                 calculate damage parameter(s) for element,                    
@@ -186,9 +217,11 @@ c
          case( 3 )  ! SMCS   
             call dam_param(
      &         elem=elem, kill_now=kill_the_elem, debug=debug,              
-     &         eps_plas=eps_plas, eps_crit=eps_crit,           
+     &         eps_plas=eps_plas, eps_crit=eps_crit, 
+     &         sig_mises=sig_mises,          
      &         avg_triaxiality=avg_triaxiality, avg_zeta=avg_zeta, 
-     &         avg_bar_theta=avg_bar_theta, tear_param=tear_param )
+     &         avg_bar_theta=avg_bar_theta, tear_param=tear_param,
+     &         max_princ_stress=sig_1 )
          case( 4 )
             call dam_param_cohes( elem, kill_the_elem, debug,                  
      &                            values, 2 )  
@@ -203,34 +236,61 @@ c
          end select 
 c                              
          killed_this_time = killed_this_time .or. kill_the_elem                 
-         if( .not. kill_the_elem ) then                                         
-           elems_left = .true. ! killable elements remain to be killed                   
-           cycle                                                                
-         end if                                                                 
+         if( .not. kill_the_elem ) cycle                                                                
 c                                                                               
-c                  kill now and make output packet data as needed.
+c                  for standard element deletion, the element is 
+c                  immediately removed from the mesh by zeroing 
+c                  strains, stresses, history, stiffness. forces 
+c                  exerted by element on model nodes are gradually
+c                  relaxed to zero using one of several methods.
 c
-         call output_kill_messages
+c                  for mesh regularization, the element stiffness and
+c                  internal forces are degraded towards zero with 
+c                  increasing deformation based on a damage 
+c                  parameter (d). When d > (1.0-tol), the element
+c                  stiffness, strains, stresses, .. are zeroed and no
+c                  further element computations occur
+c
+         local_count = local_count + 1                                          
+         call chk_output_kill_messages
          if( output_packets ) call chk_elem_kill_make_packets
 c                                                                               
-c                 initialize global variables for 1st killed element 
+c                 initialize global variables for 1st killed element.
+c                 for standard kill process (no damage tracking),  
 c                 null props and history for this newly killed element          
 c                 so subsequent stiffness will be zero. zero stresses,          
 c                 start the element force reduction process, constrain          
 c                 completely uncoupled nodes if required.                       
-c                                                                               
-         if( no_killed_elems ) then                                             
-            call allocate_damage( 4 )                                           
+c     
+         if( no_killed_elems ) then     
+            call allocate_damage( 4 ) ! setup to find newly free nodes                                         
             if( release_type .eq. 2 ) call allocate_damage( 5 )                 
-            call dam_init2( debug )                                             
+            call chk_dam_init2( debug )                                             
          end if                                                                 
          num_elements_killed = num_elements_killed + 1                       
-         call update_killed_energy( elem )                                   
-         call kill_element( elem, debug )                                    
-         call store_ifv( elem, elem_ptr, debug )                             
-         call update_node_elecnt( elem, debug )                              
-         if( release_type .eq. 2 ) call growth_set_dbar( elem,              
+         if( standard_kill ) then
+           call chk_update_killed_energy( elem )                                   
+           call chk_kill_element_now( elem, debug )                                    
+           call chk_store_ifv( elem, elem_ptr, debug )                             
+           call chk_update_node_elecnt( elem, debug )                              
+           if( release_type .eq. 2 ) call growth_set_dbar( elem,              
      &             elem_ptr, debug, -1 ) 
+         end if
+         if( use_mesh_regularization ) then
+            mises_at_death = sig_mises
+            sig_1_at_death = sig_1
+            smcs_eps_plas_at_death(elem_ptr) = eps_plas
+            smcs_stress_at_death(elem_ptr) = sig_1_at_death
+            smcs_start_kill_step(elem_ptr) = current_load_time_step
+            dam_state(elem_ptr) = 1
+            call chk_get_d( elem, zero, sig_1_at_death, d_new, out )
+            d_old = smcs_d_values(elem_ptr)
+            if( d_new < d_old .and. iter > 1) then
+              write(out,9020) elem, d_old, d_new
+              num_error = num_error + 1 ! stop at next compute cmd
+            end if
+            smcs_d_values(elem_ptr) = d_new
+         end if
 c
 c                 the user may have provided a list if elements.
 c                 if this newly killed element is is the list,
@@ -251,32 +311,39 @@ c
       local_write_packets = output_packets .and. local_count .gt. 0             
       if( local_write_packets ) call chk_elem_kill_output_packets
 c                                                                               
-c         (3) are elements left to be killed in model?
+c         (3) are all elements in model now killed ?
+c             std kill means all killable elements have dam state >0
+c             regularization kill means damage > one
+c          
+      all_elems_killed = .true.
+      do elem = 1, noelem
+         elem_deleted = chkcrack_is_elem_deleted( elem )
+         if( elem_deleted ) cycle
+         all_elems_killed = .false.
+         exit
+      end do
 c                                                                               
-      if( .not. elems_left ) all_elems_killed = .true.                          
-c                                                                               
-
 c         (4) if a killing order has been specified then make sure that         
 c             no element "holes" have been left.                                
-c                                                                               
+c 
+      if( local_debug )write(out,*) '.. kill_order, killed this time:',
+     &      kill_order, killed_this_time                                                     
       do_kill_in_order = kill_order .and. killed_this_time                      
       if( do_kill_in_order ) call chk_elem_kill_in_order 
 c                                                                               
-
-c         (5) check the element blocks to see if all elements in                
-c             them have been killed.  Set dam_blk_killed if so.                 
 c                                                                               
-      if( killed_this_time ) call chk_elem_kill_chk_blk
+c         (5) deprecated code
 c                                                                               
 c         (6) re-check for free nodes if any elements have ever                 
 c             been killed. Just makes triple sure that there are                
 c             no free nodes.                                                    
-c                                                                               
-      if( .not. no_killed_elems ) call chk_free_nodes( debug )                 
+c              
+      elements_have_been_killed =  .not. no_killed_elems                                                                 
+      if( elements_have_been_killed ) call chk_free_nodes( debug )                 
 c                                                                               
 c         (7) if MPI, then all processors need to know what blocks              
-c             and elements have been killed.  Send dam_blk_killed               
-c             and dam_state.  Also have processors kill any elements            
+c             and elements have been killed.  send dam_state,...          
+c             Also have processors kill any elements            
 c             which they own which should be killed.                            
 c             this is a dummy for non-MPI                                      
 c                                                                               
@@ -294,6 +361,7 @@ c
 c         (9) the user may have provided a list of elements
 c             to stop the analysis if <any> of them are killed
 c             stop the solution.
+c
       if( stop_solution ) then
           write(out,9010) 
           call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
@@ -311,22 +379,208 @@ c
      & " defined list to stop the solution.",
      &       /,7x,"Restart file: kill_limit_restart.db written.",
      &       /,7x,"Job ended normally."// )
+ 9020 format(/,1x,">>>>> Inconsistent condition for element: ",i8,
+     &       /,1x,"      new damage paramter < old damage parameter",
+     &       /,1x,"      values: ", 2f8.4,
+     &       /,1x,"      in routine chk_elem_kill", 
+     &       /,1x,"      Execution will stop at next Compute cmd",
+     &       /)
+ 9100 format('>> FATAL ERROR: routine ',
+     & 'chk_elem_kill. @ 1',
+     & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
 c                                                                               
 c
       contains
 c     ========
 c
-      subroutine output_kill_messages
+c     ****************************************************************
+c     *                                                              *
+c     *          internal subroutine chk_elem_kill_upmr              *
+c     *                                                              *
+c     *                   last modified : 4/30/21 rhd                *
+c     *                                                              *
+c     *     element in deletion via SMCS using mesh regularization.  *
+c     *     update damage parameter. if fully deleted, updated       *
+c     *     other data structures                                    *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine chk_elem_kill_upmr
+c
+      implicit none
+c
+c              element is in progress of being deleted. mesh
+c              regularization is being used. Update the damage
+c              parameter "d" for the element. It was zeroed
+c              upon triggering deletion. When d >=1, the
+c              element is to be fully deleted as in the standard
+c              killing process.'
+
+      logical :: local_debug
+      double precision ::  avg_eps_plas, avg_sig_mises, d_now, d_old,
+     &                     deps_plas, stress_at_death, avg_sig_1
+c
+      local_debug = elem == -1
+      if( local_debug ) write(out,9000) elem
+c
+      if( smcs_d_values(elem_ptr) > tol_regular ) return ! already fully killed
+c
+c              current plastic strain and mises stress averages
+c              for element
+c
+      call chk_get_ele_vals( elem, avg_eps_plas, avg_sig_mises, 
+     &                       avg_sig_1 )
+      deps_plas = avg_eps_plas - smcs_eps_plas_at_death(elem_ptr)
+      if( local_debug ) then
+        write(out,9010) avg_eps_plas, deps_plas, 
+     &                  smcs_eps_plas_at_death(elem_ptr)
+      end if
+      if( deps_plas < zero ) deps_plas = zero ! round-off @ just killed
+c
+c               get current damage parameter value "d"
+c
+      stress_at_death = smcs_stress_at_death(elem_ptr)
+      call chk_get_d( elem, deps_plas, stress_at_death, d_now, out )
+      d_old = smcs_d_values(elem_ptr)
+      if( d_now < d_old .and. iter > 1 ) then
+         write(out,9040) elem, d_old, d_now
+         num_error = num_error + 1 ! stop at next compute cmd
+      end if
+      smcs_d_values(elem_ptr) = d_now
+      if( local_debug ) write(out,9020) d_old, d_now, stress_at_death
+      if( d_now <= tol_regular ) return
+      smcs_d_values(elem_ptr) = hundred
+c
+c               fully kill the element. 
+c               data structures like a standard (immediate) deletion
+c               process.
+c                   - energy ??
+c                   - zero properties, stresses, history
+c                   - decreases by 1 the count of elements attached to
+c                     the now fully deleted element
+c                   - if a node now has no elements attached, add
+c                     constraints to prevent rbm
+c
+      if( local_debug )  write(out,9030)
+      call chk_update_killed_energy( elem )     
+      call chk_kill_element_now( elem, debug )                                    
+      call chk_update_node_elecnt( elem, debug )  
+      call chk_free_nodes( .false. ) ! debug flag     
+      write(out,9200) elem 
+c               
+      return
+c
+ 9000 format(5x"... entered chk_elem_kill_upmr. elem: ",i8)
+ 9010 format(10x,'avg eps pls, deps_pls, eps_pls @ death: ',3f12.8)
+ 
+ 9020 format(10x,'d_old: ',f6.3,'d_now: ',f6.3,' sig_1 @ death:',f8.3)
+ 9030 format(10x,'ready to leave. fully deleting element')
+ 9040 format(/,1x,">>>>> Inconsistent condition for element: ",i8,
+     &       /,1x,"      new damage paramter < old damage parameter",
+     &       /,1x,"      values: ", 2f8.4,
+     &       /,1x,"      in routine chk_elem_kill_upmr", 
+     &       /,1x,"      Execution will stop at next Compute cmd",
+     &       /)
+
+ 9100 format('>> FATAL ERROR: routine ',
+     & 'chk_elem_kill_update_mesh_regularization.',
+     & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
+ 9200 format(/,' >> element fully removed by regularization: ',i7 )
+c
+      end subroutine chk_elem_kill_upmr
+c     ****************************************************************
+c     *                                                              *
+c     *          internal subroutine chk_get_ele_vals                *
+c     *                                                              *
+c     *                   last modified : 4/13/21 rhd                *
+c     *                                                              *
+c     *         service routine to get strain-stress values for a    *
+c     *         single element                                       *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine chk_get_ele_vals( elem, avg_eps_plas, avg_sig_mises,
+     &                             avg_sig_1  )
+c
+      implicit none
+c
+c              return current values of average plastic strain and 
+c              average mises stress for element
+c
+      integer, intent(in) :: elem
+      double precision, intent(out) :: avg_eps_plas, avg_sig_mises,
+     &                                 avg_sig_1
+c
+      integer :: elem_type, ngp
+      logical :: threed_solid_elem, l1, l2, l3, l4, l5, l6, l7, l8,
+     &           l9, l10
+      logical :: ldebug 
+      double precision :: workvec(27)
+c
+      ldebug = elem .eq. 4 .and. step > 57
+      if( ldebug ) 
+     &    write(out,9000) elem
+c
+      elem_type = iprops(1,elem)
+      ngp       = iprops(6,elem)    
+c
+      if( step < 2 ) then  ! sanity check. step passed to chkcrack
+        call set_element_type( elem_type, threed_solid_elem, l1, l2, l3,
+     &                       l4, l5, l6, l7, l8, l9, l10 )  
+        if( .not. threed_solid_elem ) then
+          write(out,9100) elem
+          call die_abort
+        end if
+      end if
+c 
+      call mm_return_values( "plastic_strain", elem, workvec, ngp )
+      avg_eps_plas = sum( workvec(1:ngp) ) * ( one / dble( ngp ) )
+c
+      call mm_return_values( "avg_mises", elem, workvec, ngp )
+      avg_sig_mises = workvec(1)
+      call mm_return_values( "avg_princ_stress", elem, workvec, ngp )
+      avg_sig_1 = workvec(1)
+      if( ldebug ) then
+        write(out,9010) avg_eps_plas, avg_sig_mises
+      end if
+      return
+c
+ 9000 format(5x"... enter chk_get_ele_vals. elem: ",i8)
+ 9010 format(10x,'... leave chk_get_ele_vals with:',
+     &   /,10x,'avg eps pls:',f12.8,' avg_sig_mises:',f8.3)
+ 9100 format('>> FATAL ERROR: routine ',
+     & 'chk_get_ele_vals.',
+     & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
+c
+      end subroutine chk_get_ele_vals
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_output_kill_messages          *
+c     *                                                              *
+c     *                   last modified : 3/7/21 rhd                 *
+c     *                                                              *
+c     *     element deletion by any method started. output messages  *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chk_output_kill_messages
+c
       implicit none
 c
       integer :: device
       logical :: fexists
 c
-c                 kill this element right now. record status for                
-c                 subsequent packet output if neeeded. write usual              
+c                 start killing this element right now. record status               
+c                 for subsequent packet output if neeeded. write usual              
 c                 output about element death.                                   
 c
-      local_count = local_count + 1                                          
       select case( crack_growth_type )
       case( 1 )
           if( .not. ext_gurson ) write(out,9000) elem, porosity              
@@ -381,7 +635,7 @@ c
 c
       return
 c
- 9000 format(/,'   >> element death invoked for element: ',i7,                  
+ 9000 format(/,' @1  >> element death invoked for element: ',i7,                  
      & '.   f: ',f6.3)                                                          
  9002 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   f, W, X: ',3f8.3)                                                   
@@ -414,10 +668,19 @@ c
      & /,      '             found while processing element: ',i7,              
      & /,      '             job aborted.' )  
 c 
-      end subroutine output_kill_messages
+      end subroutine chk_output_kill_messages
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_elem_kill_output_packets      *
+c     *                                                              *
+c     *                   last modified : 3/7/21 rhd                 *
+c     *                                                              *
+c     *     packet output for new element starting deletion          *
+c     *                                                              *
+c     ****************************************************************
 c
       subroutine chk_elem_kill_output_packets
-      implicit none
+c      implicit none
 c
       write(packet_file_no) local_pkt_type(crack_growth_type),                  
      &                      local_count, step, iter                             
@@ -441,40 +704,106 @@ c
       return
       end subroutine chk_elem_kill_output_packets
 c
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_elem_kill_in_order            *
+c     *                                                              *
+c     *                   last modified : 4/13/21 rhd                *
+c     *                                                              *
+c     *     after starting deletion of new element, see if other     *
+c     *     elements must also be killed to satisfy the user input   *
+c     *     command to kill in order                                 *
+c     *                                                              *
+c     ****************************************************************
+c
       subroutine chk_elem_kill_in_order
+c
+      use constants
+c
       implicit none
 c
-      if ( debug ) write (out,*) '>>> checking for holes....'                   
-      killed_found = .false.                                                    
-      do chk_kill = num_kill_order_list,1, -1                                   
-        elem     = kill_order_list(chk_kill)                                    
+      integer :: i, index_killed, elem, elem_ptr
+      logical :: killed_found_in_order_list
+      logical, parameter :: ldebug = .false.
+      double precision :: eps_plas_at_death, mises_at_death_local,
+     &                    sig_1_at_death_local
+c
+      if( ldebug ) write (out,*) '>>> chk_elem_kill_in_order....'       
+c
+c              have started deaths for 1 or more elements just now.
+c              user has provided a kill-in-order list.
+c              start at end of user supplied order list. work backwards.
+c              find first killed element if any. kill all elements from 
+c              that point to beginning of list unless already 
+c              being killed.
+c            
+      killed_found_in_order_list = .false.
+c
+      do i = num_kill_order_list, 1, -1                                   
+        elem     = kill_order_list(i)                                    
         elem_ptr = dam_ptr(elem)                                                
-        if( .not. killed_found ) then                                          
-          if( dam_state(elem_ptr) .ne. 0 ) killed_found = .true.               
-        else                                                                    
-          if( dam_state(elem_ptr) .eq. 0 ) then                                
-             write (out,9100) elem                                              
-             num_elements_killed = num_elements_killed + 1                      
-             call update_killed_energy( elem )                                  
-             call kill_element( elem, debug )                                   
-             call store_ifv( elem, elem_ptr, debug )                            
-             call update_node_elecnt( elem, debug )                             
-             if ( release_type .eq. 2 )                                         
-     &          call growth_set_dbar( elem, elem_ptr,
-     &               debug, -1 )                   
-          end if                                                                
+        if( dam_state(elem_ptr) == 0 ) cycle ! not yet killed
+        killed_found_in_order_list = .true.
+        index_killed = i
+        exit
+      end do ! i
+c
+      if( .not. killed_found_in_order_list ) return 
+c
+c              start killing elements from beginning of in-order list up to
+c              first element in list already being killed.
+c              
+      do i = 1, index_killed-1
+        elem     = kill_order_list(i)                                    
+        elem_ptr = dam_ptr(elem)                                                
+        if( dam_state(elem_ptr) .ne. 0 ) cycle ! already being killed
+        write(out,9100) elem                                              
+        num_elements_killed = num_elements_killed + 1  
+        if( standard_kill ) then                    
+          call chk_update_killed_energy( elem )                                  
+          call chk_kill_element_now( elem, ldebug )                                   
+          call chk_store_ifv( elem, elem_ptr, ldebug )                            
+          call chk_update_node_elecnt( elem, ldebug )                             
+          if ( release_type .eq. 2 )                                         
+     &       call growth_set_dbar( elem, elem_ptr, ldebug, -1 ) 
+        elseif( use_mesh_regularization ) then
+          call chk_get_ele_vals( elem, eps_plas_at_death,
+     &                           mises_at_death_local, 
+     &                           sig_1_at_death_local )
+          smcs_eps_plas_at_death(elem_ptr) = eps_plas_at_death
+          smcs_stress_at_death(elem_ptr) = sig_1_at_death_local
+          dam_state(elem_ptr) = 1
+          call chk_get_d( elem, zero, sig_1_at_death_local, 
+     &                    smcs_d_values(elem_ptr), out )
+        else
+          write(out,9200) elem
+          call die_abort
         end if                                                                  
-      end do  ! chk_kill
+      end do  ! i 
 c   
       return
 c
  9100 format(/,' >> element death option invoked before next step',             
-     &       /,'    element: ',i7,' is now killed to make crack',               
-     &       /,'    face uniform.')                                             
+     &       /,'    element: ',i7,' is now killed per user request',               
+     &       /,'    via kill in order input command')    
+ 9200 format('>>>> FATAL ERROR: chk_elem_kill_in_order. elem',i8,
+     &     /,10x,'Job terminated...',//)             
+                                         
 c
       end subroutine   chk_elem_kill_in_order 
 c                                                             
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_elem_kill_make_packets        *
+c     *                                                              *
+c     *                   last modified : 3/7/21 rhd                 *
+c     *                                                              *
+c     *     new element starting deletion. output packets            *
+c     *                                                              *
+c     ****************************************************************
+c
       subroutine chk_elem_kill_make_packets
+c
       implicit none
 c
       if( local_count .gt. max_local_list ) then                           
@@ -516,48 +845,23 @@ c
      & /,      '             job aborted.' )                                    
 c
       end subroutine chk_elem_kill_make_packets
-c
-      subroutine chk_elem_kill_chk_blk
-      implicit none
-c
-      do blk = 1, nelblk                                                        
-        if( dam_blk_killed(blk) ) cycle                                        
-        span  = elblks(0,blk)                                                   
-        felem = elblks(1,blk)                                                   
-        if( iand( iprops(30,felem), 2 ) .eq. 0 ) cycle                         
-        blk_killed = .true.                                                     
-        do i = 1, span                                                          
-         if( dam_state(dam_ptr(felem+i-1)) .eq. 0 ) blk_killed =.false.        
-        end do                                                                  
-        if( blk_killed ) dam_blk_killed(blk) = .true.                          
-      end do       
-c                                                             
-      return
-      end subroutine chk_elem_kill_chk_blk
-c
       end subroutine chk_elem_kill                                                                      
-
-
+c
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine dam_init2                    *          
+c     *                      subroutine chk_dam_init2                *          
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
 c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
-c     *        This routine is called when damage to an element      *          
-c     *        has occurred.  It initializes arrays to support       *          
-c     *        releasing of the internal forces present on element   *          
-c     *        at extinction.                                        *          
+c     *        called when 1st element is deleted to setup.          *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine dam_init2( debug ) 
+      subroutine chk_dam_init2( debug ) 
 c                                            
-      use global_data, only : out, nonode, noelem, iprops, c
+      use global_data, only : out, nonode, noelem, iprops, c ! coords
 c                                                                               
       use elem_extinct_data, only : dam_node_elecnt, dam_face_nodes             
       use main_data, only : incmap, incid, elems_to_blocks,                     
@@ -578,7 +882,7 @@ c
       double precision, parameter :: plane_tol = 0.01d0                                 
       integer, dimension(:,:), pointer :: cdest                                 
 c                                                                               
-      if( debug ) write(out,*) '>>>> in dam_init2'                             
+      if( debug ) write(out,*) '>>>> in chk_dam_init2'                             
 c                                                                               
       no_killed_elems = .false.                                                 
       do i = 1, nonode                                                          
@@ -599,7 +903,7 @@ c               we examine only the first 8 nodes of the element
 c               (corner nodes).                                                 
 c                                                                               
       if( release_type .ne. 2 ) then
-        if( debug ) write(out,*) '<<<< leaving dam_init2'                        
+        if( debug ) write(out,*) '<<<< leaving chkdam_init2'                        
         return                                                                    
       end if
 c
@@ -645,7 +949,7 @@ c
        end do                                                                  
       end if                                                                   
 c                                                                                                                                             
-      if( debug ) write(out,*) '<<<< leaving dam_init2'                        
+      if( debug ) write(out,*) '<<<< leaving chk_dam_init2'                        
       return                                                                    
  9030 format(' dam_node_elecnt(',i4,')=',i2)                                    
  9050 format(' elem: ',i7, '  face nodes: ',8i8)                                
@@ -816,14 +1120,6 @@ c
             write(out,9000) (dam_ifv(j,i), j=1, mxedof)                         
          end do                                                                 
          write (out,'(" > porosity_limit:",e14.6)') porosity_limit              
-         write (out,*) '> dam_blk_killed:'                                      
-         do blk = 1, nelblk                                                     
-            if( dam_blk_killed(blk) ) then                                      
-               write (out,'(" dam_blk_killed(",i3,") is true")') blk            
-            else                                                                
-               write (out,'(" dam_blk_killed(",i3,") is false")') blk           
-            endif                                                               
-         end do                                                                 
          if( kill_order ) then                                                  
             write (out,*) '> kill_order_list:'                                  
             do i = 1, num_kill_order_list                                       
@@ -964,133 +1260,170 @@ c
 c                                                                           
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      function chk_killed                     *          
+c     *               service function chk_killed                    *          
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
 c     *                   last modified : 12/6/20 rhd                *          
 c     *                                                              *          
 c     *     given an element, returns true if the                    *          
-c     *     element had been killed, or false otherwise.             *          
+c     *     element has been or is in-progress of being killed       *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      function chk_killed( elem ) result( t_chk_killed )                                      
+      logical function chk_killed( elem ) result( t_chk_killed )                                      
 c                                                                               
       use elem_extinct_data, only : dam_state                                   
-      use damage_data                                                           
+      use damage_data, only : dam_ptr                                                          
 c                                                                               
       implicit none
 c
       integer, intent(in) :: elem
-      logical :: t_chk_killed    
 c
       integer :: elem_ptr                                         
 c                                                                               
       t_chk_killed = .false.                                                      
-      elem_ptr =  dam_ptr(elem)                                               
-      if( elem_ptr .ne. 0 ) then  ! element is killable                                             
-       if( dam_state( elem_ptr) .gt. 0 )
-     &       t_chk_killed = .true.                                               
-      end if                                                                    
+      elem_ptr =  dam_ptr(elem)    ! assume checking elsewhere                                            
+      if( elem_ptr == 0 ) return ! element is not killable                                             
+      t_chk_killed = dam_state( elem_ptr) > 0
 c                                                                               
       return                                                                    
       end                                                                       
-c                                                                               
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                      function chk_killed_blk                 *
+c     *                    subroutine chk_killed_blk                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/6/2020 rhd              *
+c     *                   last modified : 3/28/21 rhd                *
 c     *                                                              *
 c     *     for the specified block of elements, return a logical    *
 c     *     vector indicating if each element is killed or active.   *
+c     *     "killed" can have two meanings based on type             *
 c     *     also a flag if the whole block is killed                 *
+c     *                                                              *
+c     *     service routine for tanstf and do_nleps_block            *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_killed_blk( block_no, status_vec, block_killed )
+      subroutine chk_killed_blk( span, felem, step, block_no, 
+     &                           status_vec, block_killed, type )
 c
-      use global_data, only : out, elblks, mxvl ! old common.main
-c
-      use elem_extinct_data, only : dam_state, dam_blk_killed
-      use damage_data, only : growth_by_kill, dam_ptr
+      use global_data, only : out, mxvl 
+      use elem_extinct_data, only : dam_state, smcs_d_values
+      use damage_data, only : growth_by_kill, dam_ptr, 
+     &                        use_mesh_regularization,
+     &                        tol_regular =>
+     &                        tolerance_mesh_regularization     
+      use constants
 c
       implicit none
 c
-      integer, intent(in) :: block_no
+c              parameters
+c
+      integer, intent(in)  :: span, block_no, felem, type, step
       logical, intent(out) :: status_vec(mxvl), block_killed
 c      
-      integer :: span, felem, i, n, nn, elem, elem_ptr
-      logical, parameter :: check_consistency = .false.
+c              locals
 c
-      span  = elblks(0,block_no)
-      felem = elblks(1,block_no) - 1
+      integer :: elem, elem_ptr, i
+      logical :: standard_kill_method
+      logical, parameter :: ldebug = .false.
+      double precision :: chk_value
 c
       block_killed = .false.
-      status_vec   = .false.
-      if( .not. growth_by_kill ) return
-c
-      if( .not. allocated(dam_blk_killed) ) then                                
-        write(out,9100) 1                                                         
-        call die_abort                                                          
-      end if                                                                    
+      status_vec   = .false. ! all entries
 
-      if( dam_blk_killed(block_no) ) then
-        block_killed = .true.
-        status_vec   = .true.
-        return
+      if( .not. growth_by_kill ) return
+c 
+      if( step <= 2 ) then
+        if( .not. allocated(dam_state) ) then         ! sanity check                                
+          write(out,9100) 1                                                         
+          call die_abort                                                          
+        end if 
       end if
 c
-      if( .not. allocated(dam_state) ) then                                     
-        write(out,9110) 2                                                         
-        call die_abort                                                          
+      if( dam_ptr(felem) == 0 ) return ! no killable elems in blk
+c
+c               standard_kill_method = no mesh regularization
+c               for standard, element is killed immediately. state > 0
+c
+c               for mesh regularization, have to check current value
+c               of the damage parameter 'd'. if > 0, element is 
+c               being killed (and d<1.0) or has been 
+c               fully killed (d>=1.0)
+c
+c               type = 1 used in tanstf. mark element killed if
+c                      d > 0.0. tanstf will use either the [Ke] saved
+c                      at death degraded by 1.0 - d or set [Ke] =0
+c                      if d >= 1.0
+c               type = 2 used in drive_eps_sig_internal_forces.
+c                      mark element killed only if d > 1.0.
+c                      for d < 1.0, the element strains, stresses
+c                      and internal forces are computed as usual.
+c                      routine addifv will degrade them by 1 - d before
+c                      assembly into structure. if d >= 1.0 we don't
+c                      want to process strains, stresses, internal 
+c                      forces for the element.
+c 
+c
+c               run sanity check. every element in blk must be 
+c               killable. 
+c
+      if( step <= 2 ) then  
+         do  i = 1, span  
+           elem = felem + i - 1
+           elem_ptr = dam_ptr( elem )
+           if( elem_ptr == 0 ) then ! bad data structures
+             write(out,9100) 3                                                         
+             call die_abort                                                          
+           end if 
+         end do 
       end if 
 c
-      if( check_consistency ) then      
-        n  = sizeof( dam_state )
-        nn = sizeof( dam_ptr )
-        do i = 1, span
-          elem = felem + i
-          if( elem > nn ) then
-            write(out,9120) elem, nn
-            call die_abort
-          end if   
+      standard_kill_method = .not. use_mesh_regularization
+c
+      if( standard_kill_method ) then
+        do i = 1, span  
+          elem = felem + i -1
           elem_ptr = dam_ptr( elem )
-          if( elem_ptr .ne. 0 ) then
-            if( elem_ptr > n .or. elem_ptr <=0 ) then
-               write(out,9130) elem, n
-               call die_abort
-            end if    
-            if( dam_state(elem_ptr) .gt. 0 ) status_vec(i) = .true.
-          end if
+          status_vec(i) = dam_state(elem_ptr) > 0
         end do
+        if( all( status_vec(1:span) ) ) block_killed = .true.
         return
       end if
 c
-      do i = 1, span  ! no consistency check
-        elem = felem + i
+      if( .not. use_mesh_regularization ) then
+          write(out,9100) 4
+          call die_abort
+      end if
+c
+      if( .not. allocated( smcs_d_values ) ) then ! really bad
+          write(out,9100) 5
+          call die_abort
+      end if
+c
+      if( type < 1 .or. type > 2 ) then
+          write(out,9100) 6
+          call die_abort
+      end if
+c 
+      chk_value = zero
+      if( type == 2 ) chk_value = tol_regular
+c
+      do i = 1, span  
+        elem = felem + i - 1
         elem_ptr = dam_ptr( elem )
-        if( elem_ptr .ne. 0 ) then
-          if( dam_state(elem_ptr) .gt. 0 ) status_vec(i) = .true.
-        end if
+        status_vec(i) = smcs_d_values(elem_ptr) > chk_value
       end do
 c
-      return
+      if( all( status_vec(1:span) ) ) block_killed = .true.
+c
+      return       
 c      
- 9100 format(/,'FATAL ERROR: chk_killed_nlk. Contact WARP3D group',             
+ 9100 format(/,'FATAL ERROR: chk_killed_blk. Contact WARP3D group',             
      &       /,'             Job terminated at ',i1,//)                         
- 9110 format(/,'FATAL ERROR: chk_killed_nlk. Contact WARP3D group',             
-     &       /,'             Job terminated at ',i1,//)   
- 9120 format(/,'FATAL ERROR: chk_killed_nlk at 3. elem, nn:',2i8,
-     &       /,'             Contact WARP3D group',             
-     &       /,'             Job terminated....'//)                                             
- 9130 format(/,'FATAL ERROR: chk_killed_nlk at 4. elem, n:',2i8,
-     &       /,'             Contact WARP3D group',             
-     &       /,'             Job terminated....'//)                                             
 c
       end
 c     ****************************************************************          
@@ -1119,8 +1452,8 @@ c
       integer :: now_step, now_iter
 c                                       
       integer :: elem, elem_ptr, dowhat
-      logical :: debug, local_debug, process                                                    
-      double precision :: d1, d2, d3, d4, d5, d6, d7, d8, d9
+      logical :: debug, local_debug, process, ld1                                                   
+      double precision :: d1, d2, d3, d4, d5, d6, d7, d8, d9, d10
 c        
       debug = .false.
       local_debug = .false. ! debug
@@ -1159,7 +1492,8 @@ c
          case( 3 ) !  SMCS   
           dowhat = 4
           call dam_param_3_get_values( elem, debug, d1, d2, d3, d4,            
-     &                                 d5, d6, d7, d8, dowhat, d9 )                
+     &                                 d5, d6, d7, d8, dowhat, d9,
+     &                                 ld1, d10 )                
          end select 
 c                         
       end do  ! over all model elements                                         
@@ -1167,3 +1501,593 @@ c$OMP END PARALLEL DO
 c      
       return    
       end
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine chk_store_ifv                *          
+c     *                                                              *          
+c     *                       written by : ag                        *          
+c     *                                                              *          
+c     *                   last modified : 03/9/21 rhd                *          
+c     *                                                              *          
+c     *        setup to gradually reduce newly killed element        *
+c     *        internal forces -- for standard death process         *
+c     *        use_mesh_regularization -- nothing to do.             *
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+      subroutine chk_store_ifv( elem, elem_ptr, gdebug )  
+c                           
+      use global_data, only : out, iprops, load                                                                               
+      use elem_extinct_data, only : dam_ifv, dam_state                          
+      use elem_block_data,   only : edest_blocks                                
+      use main_data,         only : elems_to_blocks                             
+      use damage_data, only : release_type, use_mesh_regularization  
+      use constants                                    
+c                                                                               
+      implicit none
+c
+      integer, intent(in) :: elem, elem_ptr
+      logical, intent(in) :: gdebug
+c
+      integer :: num_edof, i, blk, rel_elem                                                     
+      integer, dimension(:,:), pointer :: edest
+      logical :: ldebug                                 
+c     
+      ldebug = .false.
+c                                                                          
+      if( ldebug ) write (*,*) '>>>>> Entering chk_store_ifv'      
+c
+      if( use_mesh_regularization ) return                 
+c                                                                               
+c            initialize state of release for element                            
+c                                                                               
+      dam_state(elem_ptr) = 1                                                   
+c                                                                               
+c            subtract the element internal forces from the                      
+c            structure load vector. for all killable elements                   
+c            which are not in the process of releasing, we                      
+c            grab their internal forces at start of each load                   
+c            step in another routine so they are available                      
+c            here.                                                              
+c                                                                               
+      num_edof = iprops(2,elem) * iprops(4,elem)                                
+c                                                                               
+c            for the traction separation release, provide                       
+c            an option to immediately                                           
+c            drop the internal forces by a fraction, then release the           
+c            remaining forces linearly with opening displacement.               
+c            current reduction is zero.                                         
+c                                                                               
+      if( release_type .eq. 2 ) then                                           
+        do i = 1, num_edof                                                      
+            dam_ifv(i,elem_ptr) = one * dam_ifv(i,elem_ptr)                     
+        end do                                                                  
+      end if                                                                    
+c                                                                               
+      blk         = elems_to_blocks(elem,1)                                     
+      rel_elem    = elems_to_blocks(elem,2)                                     
+      edest       => edest_blocks(blk)%ptr                                      
+      do i = 1, num_edof                                                        
+        load(edest(i,rel_elem)) = load(edest(i,rel_elem)) -                     
+     &                            dam_ifv(i,elem_ptr)                           
+      end do                                                                    
+c                                                                               
+      if( ldebug ) then                                                         
+         write (*,*) '>>>>> load in storeifv for elem:',elem                    
+         do i = 1, num_edof                                                     
+            write (*,'("new load:",i5,1x,e14.6)') edest(i,rel_elem),            
+     &        load(edest(i,rel_elem))                                           
+         end do                                                                 
+         write (*,*) '>>>>>> Leaving chk_store_ifv'                                  
+      end if                                                                    
+c                                                                               
+      return                                                                    
+      end                                                                       
+c     ****************************************************************          
+c     *                                                              *          
+c     *                  subroutine chk_kill_element_now             *          
+c     *                                                              *          
+c     *                       written by : ag                        *          
+c     *                                                              *          
+c     *                   last modified : 03/18/21 rhd               *          
+c     *                                                              *          
+c     *        This routine actually kills an element in the model.  *          
+c     *        Material properties and history data for the element  *          
+c     *        are modified so that subsequent element [k]s will be  *          
+c     *        zero. the existing stresses are zeroed. the props and *          
+c     *        history changes are such that stresses will remain    *          
+c     *        zero for all subsequent steps.                        *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+c                                                                               
+      subroutine chk_kill_element_now( ielem, debug ) 
+c                                  
+      use global_data, only : out, iprops, props, nstrs, nstr,
+     &                             current_load_time_step
+      use main_data, only : elems_to_blocks, cohesive_ele_types                                                              
+      use elem_block_data, only : history_blocks, urcs_n_blocks,                
+     &                            urcs_n1_blocks, history_blk_list,
+     &                            eps_n_blocks, eps_n1_blocks 
+      use damage_data, only : dam_ptr, crack_growth_type,
+     &                        use_mesh_regularization
+      use elem_extinct_data, only : smcs_start_kill_step                                                    
+      use constants           
+c
+      implicit none   
+c   
+      integer, intent(in) :: ielem
+      logical, intent(in) :: debug
+c 
+c              locals
+c
+      integer :: elem_type, material_type, ngp, blk, rel_elem, device,
+     &           hist_size, hist_offset, gp, hisloc, start, end, i,
+     &           se, ss, elem_ptr
+      double precision :: porosity
+      double precision, dimension(:), pointer :: history, urcs_n1,
+     &                                           urcs_n, eps_n, eps_n1
+      logical :: gurson, regular_material, cohesive_elem, 
+     &           output_fully_killed_msg, fexists
+      character(len=80) :: file_name
+c                                                                               
+      if( debug ) write (out,*) '>>>> in chk_kill_element'                           
+c                                                                               
+c              for regular elements (hex, tet, et.c),                           
+c              set young's modulus and poisson's ratio to zero for              
+c              element so that any future request for a linear stiffness        
+c              computes zero. for cohesive elements, we set a row of            
+c              element props table = 1 so the element and cohesive model        
+c              routines know element is killed.                                 
+c                                                                               
+      elem_type     = iprops(1,ielem)   
+      material_type = iprops(25,ielem)      
+      gurson        = material_type .eq. 3  ! also could just be mises                                      
+      regular_material = .not. gurson
+      cohesive_elem = cohesive_ele_types(elem_type)    
+c                         
+      if( .not. cohesive_elem ) then                                           
+         props(7,ielem) = 0.0    !   E and nu                                                
+         props(8,ielem) = 0.0                                                  
+      else  ! cohesive elements                                                                    
+         props(7:9,ielem) = 0.0
+         props(20,ielem)  = 0.0
+         props(21,ielem)  = 0.0
+         iprops(32,ielem) = 1                                                   
+      end if                                                                    
+c                                                                              
+c              for each gauss point of the element:                             
+c               (a)  reset history data to a null state characteristic          
+c                    of an unstressed element                                   
+c               (b)  set stresses, streains at n and n+1 to zero.                        
+c                                                                               
+      ngp           = iprops(6,ielem)                                           
+      blk           = elems_to_blocks(ielem,1)                                  
+      rel_elem      = elems_to_blocks(ielem,2)                                  
+      hist_size     = history_blk_list(blk)                                     
+      hist_offset   = (rel_elem-1)*hist_size*ngp                                
+      history       => history_blocks(blk)%ptr                                  
+      urcs_n1       => urcs_n1_blocks(blk)%ptr                                  
+      urcs_n        => urcs_n_blocks(blk)%ptr                                   
+      urcs_n1       => urcs_n1_blocks(blk)%ptr                                  
+      eps_n         => eps_n_blocks(blk)%ptr                                   
+      eps_n1        => eps_n1_blocks(blk)%ptr                                   
+c    
+      if( gurson ) then ! don't zero porosity
+         do gp = 1, ngp                                                            
+           hisloc = hist_offset + (gp-1)*hist_size 
+           porosity = history(hisloc+5)                          
+           history(hisloc+1:hisloc+hist_size) = zero 
+           history(hisloc+5) = porosity  
+         end do                                         
+      end if
+c
+      if( cohesive_elem ) then
+         do gp = 1, ngp                                                            
+            hisloc = hist_offset + (gp-1)*hist_size                                
+            history(hisloc+1) = zero                                            
+            history(hisloc+2) = zero                                            
+            history(hisloc+3) = zero                                            
+         end do                                                                    
+      end if
+c
+      if( regular_material ) then
+         do gp = 1, ngp                                                            
+           hisloc = hist_offset + (gp-1)*hist_size 
+           history(hisloc+1:hisloc+hist_size) = zero 
+         end do
+      end if
+c                                                                               
+      start = (rel_elem-1)*nstrs*ngp + 1                                    
+      end   = start + ngp*nstrs - 1                                     
+      do i = start, end                                                
+        urcs_n1(i) = zero                                                      
+        urcs_n(i)  = zero                                                      
+      end do  
+c                                                                  
+      start = (rel_elem-1)*nstr*ngp + 1                                    
+      end   = start + ngp*nstr - 1                                     
+      do i = start, end                                                
+        eps_n1(i) = zero                                                      
+        eps_n(i)  = zero                                                      
+      end do                                                                    
+c 
+      output_fully_killed_msg = .true.
+      if( crack_growth_type .ne. 3 ) return
+      if( .not. use_mesh_regularization ) return
+      if( .not. output_fully_killed_msg ) return    
+      elem_ptr = dam_ptr(ielem)                                               
+      if( elem_ptr == 0 ) then
+         write(out,9000) ielem
+         call die_abort
+      end if
+c      
+      file_name = "fully_killed_ele_list.out"
+      inquire( file=file_name, exist=fexists )
+      open( newunit=device,file=file_name,
+     &          form='formatted', status='unknown', 
+     &          access='sequential', position='append' )   
+      if( .not. fexists ) write(device,9018)
+      se = current_load_time_step
+      ss = smcs_start_kill_step(elem_ptr)
+      write(device,9020) ielem, ss, se, se-ss
+      close(unit=device)    
+c                                                                          
+      if( debug ) write(out,*) '>>>> leaving chk_kill_element_now'                      
+c                                                                               
+      return
+c
+ 9000 format('>> FATAL ERROR: routine ',
+     & 'chk_kill_element_now',
+     & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
+ 9018 format('!',/,'!  SMCS steps numbers for element removal',/,
+     & 6x,'elem   start step     end step     # steps in release')  
+ 9020 format(2x,i8,5x,i6,5x,i6,14x,i6)
+c
+      end                                                                       
+c     ****************************************************************          
+c     *                                                              *          
+c     *                subroutine chk_update_killed_energy           *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 03/9/21 rhd                *          
+c     *                                                              *          
+c     *        An element is being killed. We need to save the       *          
+c     *        internal and plastic work right now so it can be      *          
+c     *        included in future work totals. this is because all   *          
+c     *        such data is about to be zeroed.                      *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+c                                                                               
+      subroutine chk_update_killed_energy( ielem )  
+c                                
+      use global_data, only : out, iprops, nstrs, killed_ele_int_work,
+     &                        killed_ele_pls_work
+      use main_data, only : elems_to_blocks, cohesive_ele_types
+      use elem_block_data, only : urcs_n_blocks, element_vol_blocks
+      use constants
+c            
+      implicit none
+c
+      integer :: ielem
+c
+      integer :: elem_type, ngp, blk, rel_elem, sig_start, gp
+      double precision :: sum_internal_energy, sum_plastic_energy,                       
+     &                    element_volume, rgp                                                  
+      double precision, pointer :: urcs_n(:) 
+      logical :: cohesive_elem   
+      logical, parameter :: debug = .false.                                           
+c                                                                               
+      if( debug ) write (out,*) '>>>> in update_killed_energy'                   
+c                                                                               
+c              for regular elements (hex, tet, et.c),                           
+c              compute the average internal energy and plastic energy           
+c              at the gauss points. these values are multipled by element       
+c              volume and added to accumluated totals for killed                
+c              elements.                                                        
+c                                                                               
+      elem_type     = iprops(1,ielem)                                           
+      cohesive_elem = cohesive_ele_types(elem_type)                             
+      if( cohesive_elem ) return                                               
+      ngp           = iprops(6,ielem)                                           
+      blk           = elems_to_blocks(ielem,1)                                  
+      rel_elem      = elems_to_blocks(ielem,2)                                  
+      urcs_n        => urcs_n_blocks(blk)%ptr                                   
+      sig_start     = (rel_elem-1) * nstrs * ngp                                
+c                                                                               
+      sum_internal_energy = zero                                                
+      sum_plastic_energy  = zero                                                
+c                                                                               
+      do gp = 1, ngp                                                            
+        sum_internal_energy = sum_internal_energy + urcs_n(sig_start+7)         
+        sum_plastic_energy  = sum_plastic_energy  + urcs_n(sig_start+8)         
+        sig_start           = sig_start + nstrs                                 
+      end do                                                                    
+c                                                                               
+      rgp                 = dble(ngp)                                           
+      sum_internal_energy = sum_internal_energy / rgp                           
+      sum_plastic_energy  = sum_plastic_energy  / rgp                           
+c                                                                               
+      element_volume      = element_vol_blocks(blk)%ptr(rel_elem)               
+      killed_ele_int_work = killed_ele_int_work +                               
+     &                      element_volume * sum_internal_energy                
+      killed_ele_pls_work = killed_ele_pls_work +                               
+     &                      element_volume * sum_plastic_energy                 
+c                                                                               
+      if ( debug ) write (out,*) '>>>> leaving update_killed_energy'              
+c                                                                               
+      return                                                                    
+      end                                                                       
+                                                                                
+c     ****************************************************************          
+c     *                                                              *          
+c     *                   subroutine chk_update_node_elecnt          *          
+c     *                                                              *          
+c     *                       written by : ag                        *          
+c     *                                                              *          
+c     *                   last modified : 03/9/21 rhd                *          
+c     *                                                              *          
+c     *        Updates the vector that holds the number of           *          
+c     *        elements connected to each node after a node is       *          
+c     *        killed.                                               *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+      subroutine chk_update_node_elecnt( ielem, debug ) 
+c                            
+      use global_data, only : out, iprops
+      use elem_extinct_data, only : dam_node_elecnt                             
+      use main_data, only : incid, incmap, inverse_incidences                   
+c                                                                               
+      implicit none
+c
+      integer, intent(in) :: ielem
+      logical, intent(in) :: debug                                                             
+c 
+      integer :: nnode, i, node, elem, ndof                                                                              
+c
+      if( debug ) write (out,*) '>>>> in update_node_elecnt '                    
+c                                                                               
+c                loop over nodes connected to killed element.  Get node         
+c                number.  Then decrease the count of the 
+c                elements connected to that node by one.                                           
+c                
+      nnode = iprops(2,ielem)                                                   
+      do i = 1, nnode                                                           
+         node = incid(incmap(ielem)+(i-1))                                      
+         elem = inverse_incidences(node)%element_list(1)                        
+         ndof = iprops(4,elem)                                                  
+         dam_node_elecnt(node)= dam_node_elecnt(node) - 1                       
+      end do                                                                    
+      if( debug ) write (out,*) '>>>> leaving update_node_elecnt'                  
+c                                                                               
+      return                                                                    
+ 9000 format ('>> node ',i2,' of elem ',i7,' is ',i6)                           
+ 9010 format ('>>   elems connected to node is ',i2)                            
+ 9020 format('old constraints for node ',i7,' :',3(1x,e14.6)) 
+c                  
+      end                                                                       
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                    subroutine chk_get_d                      *
+c     *                                                              *
+c     *                   last modified : 4/30/21 rhd                *
+c     *                                                              *
+c     *     get current value of damage parameter "d" for mesh       *
+c     *     regularization                                           *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine chk_get_d( elem, deps_plas, stress_at_death, d_now,
+     &                      out )
+      use damage_data, only : tol_regular =>
+     &                        tolerance_mesh_regularization,
+     &                        regular_npoints, regular_length,
+     &                        regular_up_max, regular_points, ! 10x2
+     &                        regular_type, regular_alpha,
+     &                        regular_Gf, regular_m_power
+      use constants
+c
+      implicit none
+c
+      integer, intent(in) :: out, elem
+      double precision, intent(in) :: deps_plas, stress_at_death
+      double precision, intent(out) :: d_now
+      double precision, external :: chklint
+c
+      double precision :: u_plastic, u_normed, Gf, m, up, uf, T0,
+     &                    T1, T2, Gtilde, Gratio, alpha
+      logical :: local_debug
+c
+      local_debug = elem == -1
+      u_plastic = regular_length * deps_plas
+c
+      select case( regular_type )
+      case( 1 )
+        u_normed =  u_plastic / regular_up_max
+        d_now = chklint( u_normed, regular_npoints, 
+     &                   regular_points(1,1), regular_points(1,2) )
+        if( u_plastic >= regular_up_max ) d_now = one 
+      case( 2 )
+        if( stress_at_death < zero ) then
+          write(out,9300) elem, stress_at_death
+          call die_abort
+        end if 
+        Gf = regular_Gf
+        m  = regular_m_power
+        T0 = stress_at_death
+        up = u_plastic
+        uf = Gf * (m+one) / m / T0
+        T1 = one - (up/uf)**m / (m + one)
+        Gtilde = T0 * up * T1
+        d_now = Gtilde / Gf
+        if( up >= uf ) d_now = one ! happens w/ power law + large jumps
+        if( local_debug ) write(out,9100) elem, u_plastic, regular_Gf,
+     &                    m, uf, Gtilde, stress_at_death, d_now
+      case( 3 )
+        if( stress_at_death < zero ) then
+          write(out,9300) elem, stress_at_death
+          call die_abort
+        end if 
+        Gf     = regular_Gf
+        m      = regular_m_power
+        alpha  = regular_alpha
+        T0     = stress_at_death
+        up     = u_plastic
+        uf     = Gf * (m+one) / m / T0
+        T1     = one - (up/uf)**m / (m + one)
+        Gtilde = T0 * up * T1
+        Gratio = Gtilde / Gf
+        T2     = one - exp( -alpha * Gratio )
+        d_now  = T2 / ( one - exp(-alpha))
+        if( up >= uf ) d_now = one ! happens w/ power law + large jumps
+        if( local_debug ) write(out,9200) elem, u_plastic, regular_Gf,
+     &                    m, alpha, uf, Gtilde, Gratio, stress_at_death,
+     &                    d_now
+      case default
+         write(out,9000)
+         call die_abort
+      end select
+c
+      if( d_now < zero ) d_now = zero
+      if( d_now > tol_regular ) d_now = one 
+      if( local_debug ) write(out,9020) d_now
+c
+      return
+ 9000 format('>> FATAL ERROR: routine ',
+     & 'chk_get_d.',
+     & 10x,'inconsistent condition.',
+     & ' job terminated.'//)
+ 9020 format(10x,'leaving chk_get_d w/ d_now: ',f6.3)
+ 9100 format(/,10x,'... compute d for element: ',i8,
+     & /,15x,'u plastic:         ',f10.6,
+     & /,15x,'Gf:                ',f10.6,
+     & /,15x,'m-power:           ',f10.6,
+     & /,15x,'computed uf:       ',f10.6,
+     & /,15x,'computed G-tilde:  ',f10.5,
+     & /,15x,'stress @ death:    ',f10.3,
+     & /,15x,'d now:             ',f10.3 ) 
+ 9200 format(/,10x,'... compute d for element: ',i8,
+     & /,15x,'u plastic:         ',f10.6,
+     & /,15x,'Gf:                ',f10.6,
+     & /,15x,'m-power:           ',f10.6,
+     & /,15x,'alpha:             ',f10.6,
+     & /,15x,'computed uf:       ',f10.6,
+     & /,15x,'computed G-tilde:  ',f10.5,
+     & /,15x,'Gratio:            ',f10.5,
+     & /,15x,'stress @ death:    ',f10.3,
+     & /,15x,'d now:             ',f10.3 ) 
+ 9300 format('>> FATAL ERROR: routine ',
+     & 'chk_get_d. the stress @ element death < 0. this is an',
+     & 10x,'inconsistent condition.',
+     & ' job terminated.'//)
+c
+      end
+c     ****************************************************************
+c     *                                                              *
+c     *         double precision function chklint                    *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 4/1/21 rhd                  *
+c     *                                                              *
+c     *    execute linear interpolation on a tabular function        *
+c     *    of a single variable where the x values are sorted in     *
+c     *    increasing value but are not req'd to be uniformly spaced *
+c     *                                                              *
+c     ****************************************************************
+c
+      function chklint( xvalue, n, x, y ) result( value )
+      implicit none
+c
+      integer :: n
+      double precision :: xvalue, x(n), y(n), value
+c
+      integer :: i, point
+      double precision :: x1, x2, y1, y2
+c
+      if( xvalue .le. x(1) ) then
+        value = y(1)
+        return
+      end if
+c
+      if( xvalue .ge. x(n) ) then
+        value = y(n)
+        return
+      end if
+c
+      do point = 2, n
+        if( xvalue .gt. x(point) ) cycle
+        x1 = x(point-1)
+        x2 = x(point)
+        y1 = y(point-1)
+        y2 = y(point)
+        value = y1 + (xvalue-x1)*(y2-y1)/(x2-x1)
+        return
+      end do
+c
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *          logical function chkcrack_is_elem_deleted           *
+c     *                                                              *
+c     *                   last modified : 3/28/21 rhd                *
+c     *                                                              *
+c     *     has element been (fully) deleted from the solution?      *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      logical function chkcrack_is_elem_deleted( elem ) result( test )
+c
+      use global_data, only : out
+      use dam_param_code, only : dam_param
+      use elem_extinct_data, only : dam_state, smcs_d_values
+      use damage_data, only : dam_ptr,
+     &                        use_mesh_regularization,
+     &                        tol_regular =>
+     &                        tolerance_mesh_regularization     
+c
+      implicit none
+c
+      integer, intent(in) :: elem
+c
+      integer :: elem_ptr
+      logical :: std_kill  
+c
+      test = .false.
+      elem_ptr = dam_ptr(elem)   ! assumes much checking before here
+c                                            
+      if( elem_ptr == 0 ) return ! element not killable        
+      if( dam_state(elem_ptr) == 0 ) return ! not yet started killing
+c
+      std_kill = .not. use_mesh_regularization
+      if( std_kill ) then
+        test = .true.
+        return ! dam_state /= 0 element actually deleted
+      end if
+c
+      if( use_mesh_regularization ) then
+        test = smcs_d_values(elem_ptr) > tol_regular ! fully deleted 
+        return
+      end if
+c
+      write(out,9000) elem
+      call die_abort
+c
+ 9000 format('>> FATAL ERROR: routine ',
+     & 'chkcrack_is_elem_deleted.',
+     & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
+c
+      end function chkcrack_is_elem_deleted
+

@@ -10,7 +10,7 @@ c     *                      subroutine dam_print_elem3              *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 11/20/20 rhd               *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
 c     *     This routine prints out the status of SMCS elements      *          
 c     *     marked as killable at the beginning of a load step       *          
@@ -46,11 +46,11 @@ c
       double precision :: dummy, eps_plas, eps_crit, sig_mean,
      &    sig_mises, d_eps_plas, max_d_eps_plas, ddummy1, ddummy2,
      &    ddummy3, triaxiality, mean_zeta, ratio, mean_omega,
-     &    mean_bar_theta, tear_param
+     &    mean_bar_theta, tear_param, sig_1
       double precision, allocatable :: strain_ratios(:)
       double precision, parameter :: eps_plas_tol = 1.0d-06,  
      &                               ratio_tol = 0.001d0              
-      logical :: debug, skip_element
+      logical :: debug, skip_element, ldummy
       character(len=1) :: cflag                                          
 c                                                                               
       write(out,*) ' '                                                          
@@ -111,7 +111,8 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega, 
-     &                   mean_bar_theta, 2, tear_param )  
+     &                   mean_bar_theta, 2, tear_param, ldummy,
+     &                   sig_1 )  
          skip_element = eps_plas < eps_plas_tol
          if( skip_element ) cycle
          cflag = " "
@@ -232,13 +233,16 @@ c
       subroutine dam_print_elem3_fill     
       implicit none
       integer :: k, element
+      logical :: ldummy
+      double precision :: sig_1
 c
       do k = 1, list_count
          element  = element_list(k)
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   mean_bar_theta, 2, tear_param )  
+     &                   mean_bar_theta, 2, tear_param, ldummy,
+     &                   sig_1 )  
          strain_ratios(k) =  eps_plas / eps_crit
       end do  ! elem_loop
 c
@@ -279,7 +283,8 @@ c
          call dam_param_3_get_values( element, debug, eps_plas,               
      &                   eps_crit, sig_mean, sig_mises,                         
      &                   triaxiality, mean_zeta, mean_omega,
-     &                   mean_bar_theta, 2, tear_param )  
+     &                   mean_bar_theta, 2, tear_param, ldummy,
+     &                   sig_1 )  
          if( load_size_control_crk_grth ) then                              
             d_eps_plas = eps_plas - old_plast_strain(dam_ptr(element))                           
             max_d_eps_plas = max(max_d_eps_plas, d_eps_plas)                 
@@ -306,9 +311,9 @@ c
 c
       integer :: header_file_number, flat_file_number, step_num,
      &           now_len, lenlst
-      logical ::  get_values, output_this_step
+      logical ::  get_values, output_this_step, ldummy
       logical, external :: scan_entry_in_list
-      double precision :: evalues(10)
+      double precision :: evalues(10), sig_1
       character(len=24) :: sdate_time_tmp
       character(len=20) :: form_type, access_type
       character(len=80) :: flat_name
@@ -383,7 +388,8 @@ c
         if( get_values ) then
            call dam_param_3_get_values( element, debug, eps_plas,               
      &         eps_crit, sig_mean, sig_mises, triaxiality, 
-     &         mean_zeta, mean_omega, mean_bar_theta, 2, tear_param )  
+     &         mean_zeta, mean_omega, mean_bar_theta, 2, tear_param,
+     &         ldummy, sig_1 )  
            evalues(1) = eps_plas
            evalues(2) = eps_crit
            evalues(3) = eps_plas / eps_crit
