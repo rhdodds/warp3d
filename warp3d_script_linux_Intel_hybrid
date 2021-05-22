@@ -115,7 +115,7 @@ ulimit -s 100000
 #
 #            set up for Intel MPI 2019 
 #
-if [ $mpi2021 -ne "1" ]; then
+if [ $mpi2021 -eq "1" ]; then
   export MPI_TYPE_MAX=4096
   export I_MPI_PIN_DOMAIN=omp
   export I_MPI_FABRICS=shm:ofi
