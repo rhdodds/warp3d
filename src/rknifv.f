@@ -16,6 +16,7 @@ c
      &                   nrow_ifv, local_work )
      &
       use segmental_curves, only : max_seg_points, max_seg_curves
+      use constants
       implicit none
       include 'param_def'
       include 'include_sig_up'
@@ -33,7 +34,6 @@ c
       double precision :: xi, eta, zeta, element_volumes_for_blk(mxvl),
      &                    bar_volumes(mxvl),
      &                    bar_areas_0(mxvl), bar_areas_n1(mxvl)
-      double precision, parameter :: zero = 0.0d0
       logical :: geonl, bbar
       logical, parameter :: local_debug = .false.
 c
@@ -55,9 +55,7 @@ c
 c
 c                       initiialize ifv's for the block.
 c
-!DIR$ VECTOR ALIGNED
       eleifv(1:span,1:totdof)         = zero
-!DIR$ VECTOR ALIGNED
       element_volumes_for_blk(1:span) = zero
 c
 c                       handle bar, link and std elements
@@ -96,8 +94,6 @@ c
      &                               element_volumes_for_blk )
       end if
 c
-      if ( local_debug ) write(iout,*)
-     &     "    >>> leaving rknifv ...."
       return
 c
       contains
@@ -107,7 +103,6 @@ c
       implicit none
 c
       integer :: i
-      if( local_debug ) write(iout,*) '>> calling gpifv3...'
       do i = 1, span
         bar_areas_0(i) = props(43,felem+i-1)
       end do
@@ -121,18 +116,7 @@ c
      &             eleifv, local_work%ce_n1, bar_areas_0,
      &             bar_areas_n1 )
 c
-      if( local_debug ) then
-         write(iout,9200) felem
-         do i = 1, span
-           write(iout,*) ' '
-           write(iout,*) 'element: ', felem+i-1
-           write(iout,9300) eleifv(i,1:totdof)
-         end do
-      end if
-c
       return
- 9200 format(/,2x,'... rknifv for block with first element: ',i7)
- 9300 format(5x,8e14.6)
       end subroutine rknifv_bar
 c
 c
@@ -150,33 +134,22 @@ c
         eleifv(i,5) = -local_work%urcs_blk_n1(i,3,1)
         eleifv(i,6) =  local_work%urcs_blk_n1(i,3,1)
       end do
-      if( local_debug ) then
-         write(iout,9200) felem
-         do i = 1, span
-           write(iout,*) ' '
-           write(iout,*) 'element: ', felem+i-1
-           write(iout,9300) eleifv(i,1:totdof)
-         end do
-      end if
 c
       return
- 9200 format(/,2x,'... rknifv for block with first element: ',i7)
- 9300 format(5x,8e14.6)
       end subroutine rknifv_link
-
 c
       subroutine rknifv_std
       implicit none
-
 c
 c                       compute all the shape function derivates, and
 c                       inverse jacobians.  also calculate volume
 c                       terms if using bbar. use element shape
 c                       at n+1 for geonl.
 c
-      if( bbar .and. elem_type .eq. 2 )
-     &  call rknifv_zero_vol( local_work%vol_block,
-     &                        local_work%volume_block, span, mxvl )
+      if( bbar .and. elem_type .eq. 2 ) then
+        local_work%vol_block = zero
+        local_work%volume_block = zero
+      end if
 c
 c             this subroutine is called only for a block of
 c             cohesive elements. here the element coordinates and
@@ -218,7 +191,6 @@ c
         end if
       end do
 c
-c
       if ( bbar .and. elem_type .eq. 2 )
      &  call vol_avg( local_work%vol_block, local_work%volume_block,
      &                span, mxvl )
@@ -235,13 +207,6 @@ c
      &                element_volumes_for_blk )
       end do
 c
-c      write(*,9200) felem
-c      do i = 1, span
-c         write(*,*) ' '
-c         write(*,*) 'element: ', felem+i-1
-c         write(*,9300) eleifv(i,1:totdof)
-c       end do
-
       return
 c
  9200 format(/,2x,'... rknifv for block with first element: ',i7)
@@ -257,109 +222,89 @@ c     *              subroutine update_element_volumes               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 01/08/2010                 *
-c     *                     removed increment of dam_state [bug]     *
+c     *                   last modified : 3/6/21 rhd                 *
 c     *                                                              *
-c     *     this subroutine saves the volume for elements not        *
-c     *     killed                                                   *
+c     *                handle updating of element volumes            *
 c     *                                                              *
 c     ****************************************************************
 c
-
-      subroutine update_element_volumes(
-     &  felem, span, updated_element_volumes, element_volumes_for_blk )
-      use global_data ! old common.main
+      subroutine update_element_volumes( felem, span, 
+     &                                   updated_element_volumes, 
+     &                                   element_volumes_for_blk )
 c
-      use elem_extinct_data, only : dam_state
-      use damage_data, only : dam_ptr, max_dam_state, growth_by_kill
+      use global_data, only : out
+      use elem_extinct_data, only : dam_state, smcs_d_values
+      use damage_data, only : dam_ptr, max_dam_state, growth_by_kill,
+     &                        use_mesh_regularization
+      use constants
 c
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameter declarations
 c
-      double precision
-     & updated_element_volumes(*), element_volumes_for_blk(*)
+      integer :: felem, span
+      double precision :: updated_element_volumes(*), 
+     &                    element_volumes_for_blk(*)
 c
 c                       local variables
 c
-      logical update_volume(mxvl), local_debug
-      data local_debug / .false. /
+      integer :: relem, element, elem_ptr
+      logical, allocatable :: update_volume(:)
+      logical :: simple_death
+      logical, parameter :: local_debug = .false.
 c
 c                       if crack growth by element killing is
-c                       not being used, all element volumes are
+c                       *not* being used, all element volumes are
 c                       updated.
 c
-      if ( local_debug )
-     &   write(*,*)
-     &       '... in update_ele...growth_by_killm felem, span: ',
-     &       growth_by_kill, felem, span
-      if ( .not. growth_by_kill ) then
-!DIR$ VECTOR ALIGNED
-        do i = 1, span
-           updated_element_volumes(i) = element_volumes_for_blk(i)
-        end do
+      if( .not. growth_by_kill ) then
+        updated_element_volumes(1:span) = 
+     &       element_volumes_for_blk(1:span)
         return
       end if
 c
-c                       don't update volume for killed elements.
-c                       build list of ones to do.
+c                       solution is using crack growth by element
+c                       deletion.  build list of ones to do.
+c                       decision based on mesh regularization:
+c                          none - skip update if element being or done 
+c                                 being killed
+c                          yes - skip if damage already exceeds 1.0
 c
-      do i = 1, span
-        update_volume(i) = .false.
-      end do
+      allocate( update_volume(1:span) )
+      update_volume(1:span) = .false. ! all terms
+      simple_death = .not. use_mesh_regularization 
 c
-      if( local_debug )  write(*,*)
-     & '      .. running over block. felem, span: ', felem,span
-      do i = 1, span
-       abselem     = felem + i - 1
-       elem_ptr    = dam_ptr(abselem)
-c
-c                       zero elem_ptr means element is not killable
-c
-       if ( elem_ptr .eq. 0 ) then
-         update_volume(i) = .true.
+      do relem = 1, span
+       element     = felem + relem - 1
+       elem_ptr    = dam_ptr(element)
+       if( elem_ptr == 0 ) then  ! means element is not killable
+         update_volume(relem) = .true.
          cycle
        end if
-c
-c                       if already killed, skip
-c
-       if ( dam_state(elem_ptr) .gt. 0 ) cycle
-c
-c                       element is killable but not yet killed.
-c
-       update_volume(i) = .true.
-c
+       if( simple_death ) then ! original element death
+         if( dam_state(elem_ptr) > 0 ) cycle ! already killed
+         update_volume(relem) = .true.
+         cycle
+       end if
+       if( use_mesh_regularization ) then
+         if( smcs_d_values(elem_ptr) < one ) 
+     &               update_volume(relem) = .true.
+         cycle
+       end if
+       write(out,9900)
+       call die_abort
       end do
 c
 c                       update volume of non-killed elements.
-!DIR$ VECTOR ALIGNED
-      do i = 1, span
-       if( update_volume(i) )  updated_element_volumes(i) =
-     &                         element_volumes_for_blk(i)
+c
+      do relem = 1, span
+       if( update_volume(relem) ) updated_element_volumes(relem) =
+     &                         element_volumes_for_blk(relem)
       end do
 c
       return
-      end
-
-
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine zero_vol                     *
-c     *                                                              *
-c     *                       written by : rhd                       *
-c     *                                                              *
-c     *                   last modified : 09/5/2017 rhd              *
-c     *                                   meant to be inlined        *
-c     *                                                              *
-c     ****************************************************************
 c
-      subroutine rknifv_zero_vol ( vol, volume, span, mxvl )
-      implicit none
-      integer :: span, mxvl
-      double precision  :: vol(mxvl,8,3), volume(span)
-      double precision, parameter :: zero = 0.0d0
-      vol = zero
-      volume = zero
-      return
+ 9900 format(">>>>> FATAL ERROR. invalid condition in routine",
+     & " update_element_volumes. Execution terminated.",//)
+c
       end
-

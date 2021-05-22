@@ -4,7 +4,7 @@ c     *                      subroutine rstgp1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/30/2020 rhd              *
+c     *                   last modified : 3/23/21 rhd                *
 c     *                                                              *
 c     *     compute strains, stresses and                            *
 c     *     accompaning stress data at an integration point          *
@@ -18,18 +18,19 @@ c
 c
       subroutine rstgp1( props, lprops, iprops, local_work )
 c
+      use global_data, only : mxelpr, max_slip_sys, nstr, mxvl
       use segmental_curves, only : max_seg_points
       use elem_block_data,  only : initial_state_data
+      use constants
 c
       implicit none
-      include 'param_def'
 c
 c                      parameter declarations
 c
-      real    :: props(mxelpr,*)   ! all 3 are same by read-only
-      logical :: lprops(mxelpr,*)
-      integer :: iprops(mxelpr,*)
-      include 'include_sig_up'
+      real, intent(in)    :: props(mxelpr,*)   ! all 3 are same by read-only
+      logical, intent(in) :: lprops(mxelpr,*)
+      integer, intent(in) :: iprops(mxelpr,*)
+      include 'include_sig_up'  ! definition for local_work
 c
 c                       locally defined variables
 c
@@ -38,7 +39,6 @@ c
       double precision :: internal_energy, beta_fact, eps_bbar,
      &                    plastic_work, bar_volumes(mxvl),
      &                    bar_areas_0(mxvl), bar_areas_mid(mxvl)
-      double precision, parameter :: zero = 0.0d0
       double precision, allocatable :: ddt(:,:), uddt(:,:),
      &                                 qnhalf(:,:,:), qn1(:,:,:)
       logical :: adaptive, geonl, bbar, material_cut_step,
@@ -96,7 +96,7 @@ c
 c        process bar elements separately
 c
       if( local_work%is_bar_elem ) then
-        if ( local_debug ) write(*,*) '>> calling gtlsn3...'
+        if( local_debug ) write(*,*) '>> calling gtlsn3...'
         bar_areas_0(1:span) = props(43,1:span)
         call gtlsn3_vols( span, mxvl, felem, iout, bar_areas_0(1),
      &                    bar_areas_mid(1),
@@ -176,8 +176,6 @@ c
 c                 include initial stresses if present (only step 1)
 c
       if( local_work%process_initial_stresses )  then
-       write(*,*) ' .. rstgp1, process_initial_stresses:',
-     &   local_work%process_initial_stresses
        do i = 1, span
 !DIR$ VECTOR ALIGNED
         local_work%urcs_blk_n(i,1:6,gpn) =
@@ -339,7 +337,7 @@ c     *                      subroutine rstgp2                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/13/2018 rhd              *
+c     *                   last modified : 3/23/21 rhd                *
 c     *                                                              *
 c     *     supervise the computation of strains, stresses and       *
 c     *     accompaning stress data at an integration point          *
@@ -352,18 +350,18 @@ c     ****************************************************************
 c
 c
       subroutine rstgp2( props, lprops, iprops, local_work )
-      use segmental_curves, only : max_seg_points, max_seg_curves
 c
+      use global_data, only : mxelpr, max_slip_sys, nstr, mxvl, nstrs
+      use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data,  only : initial_state_data
       implicit none
-      include 'param_def'
 c
 c                      parameter declarations
 c
-      real    ::  props(mxelpr,*) ! all 3 are same but read only
-      logical :: lprops(mxelpr,*) ! 1st col is 1st elem of blk
-      integer :: iprops(mxelpr,*)
-      include 'include_sig_up'
+      real, intent(in)    ::  props(mxelpr,*) ! all 3 are same but read only
+      logical, intent(in) :: lprops(mxelpr,*) ! 1st col is 1st elem of blk
+      integer, intent(in) :: iprops(mxelpr,*)
+      include 'include_sig_up' ! definition for local_work
 c
 c                       locally defined variables
 c
@@ -374,7 +372,7 @@ c
      &  uddt(mxvl,nstr), plastic_work, dummy_q(1), dummy_dfn1(1),
      &  bar_volumes(mxvl), bar_areas_0(mxvl), bar_areas_nx(mxvl)
       logical :: bbar, signal_flag, drive_material_model
-      logical, save :: local_debug = .false.
+      logical, parameter :: local_debug = .false.
 c
       internal_energy   = local_work%block_energy
       plastic_work      = local_work%block_plastic_work
@@ -1413,7 +1411,7 @@ c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 8/25/2020 rhd                    *
+c     *             last modified : 3/5/21 rhd                       *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1428,9 +1426,11 @@ c
      &                             now_blk_relem, sigma_curve_min_values
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
+      use damage_data, only : use_mesh_regularization
+      use constants
 c
       implicit none
-      include 'param_def'
+      include 'param_def' ! values are read-only
 c
 c                      parameter declarations
 c
@@ -1448,8 +1448,9 @@ c
      &  p_trial(mxvl), q_trial(mxvl),
      &  yld_func(mxvl), step_scale_fact, plastic_work, gp_temps(mxvl),
      &  gp_dtemps(mxvl), plastic_eps_rates(mxvl), gp_rtemps(mxvl),
-     &  zero, gp_alpha, et, ymfgm, copy_sigyld_vec(mxvl),
-     &  trans_factor, curve_min_value
+     &  gp_alpha, et, ymfgm, copy_sigyld_vec(mxvl),
+     &  curve_min_value
+      double precision, parameter :: trans_factor = 0.95d0
 c
 c                       locals automatically deallocated
 c
@@ -1462,14 +1463,13 @@ c
      &           local_debug, signal_flag, adaptive_flag,
      &           power_law, temperatures, allow_cut, segmental,
      &           temperatures_ref, fgm_enode_props,
-     &           nonlinear_update, linear_elastic_update
+     &           nonlinear_update, linear_elastic_update,
+     &           standard_kill_method
 c
       integer :: span, felem, type, order, ngp, nnode, ndof, step,
      &           iter, now_blk, mat_type, number_points, curve_set,
      &           hist_size_for_blk, curve_type, elem_type, i,
      &           numrows_stress
-c
-      data zero, trans_factor / 0.0d00, 0.95d00 /
 c
       dtime             = local_work%dt
       internal_energy   = local_work%block_energy
@@ -1503,6 +1503,7 @@ c
       adaptive          = adaptive_flag .and. step .gt. 1
       fgm_enode_props   = local_work%fgm_enode_props
       hist_size_for_blk = local_work%hist_size_for_blk
+      standard_kill_method = .not. use_mesh_regularization
 c
       local_debug       = .false. ! felem .eq. 1 .and. gpn .eq. 1
       if( local_debug ) then
@@ -1653,8 +1654,7 @@ c
       cep  = zero
 !DIR$ VECTOR ALIGNED
       do i = 1, span
-!DIR$ VECTOR ALIGNED
-       if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
+        if( local_work%killed_status_vec(i) ) uddt(i,1:nstr) = zero
       end do
 c
 c                set up local stress array at state 'n'. used by
@@ -1686,11 +1686,10 @@ c
         call drive_03_update_b
       end if
 c
-!DIR$ VECTOR ALIGNED
       do i = 1, span
-        if( .not. local_work%killed_status_vec(i) ) cycle
-        cep(i,1:6,1:6) = zero
-        local_work%urcs_blk_n1(i,:,gpn) = zero
+          if( .not. local_work%killed_status_vec(i) ) cycle
+          cep(i,1:6,1:6) = zero
+          local_work%urcs_blk_n1(i,:,gpn) = zero
       end do
 c
 c          save the [D] matrices (lower-triangle)
@@ -2961,7 +2960,7 @@ c     *            subroutine drive_06_update  (creep)               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : 3/23/21 rhd                *
 c     *                                                              *
 c     *     drives material model 06 to update stresses and history  *
 c     *     for all elements in the block for gauss point gpn        *
@@ -2971,32 +2970,36 @@ c
 c
       subroutine drive_06_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+      use global_data, only : nstr, mxvl, mxelpr, max_slip_sys, nstrs,
+     &                        nonlocal_shared_state_size
       use main_data, only : extrapolated_du
       use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
+      use constants
 c
-      implicit integer (a-z)
-      include 'param_def'
+      implicit none
 c
 c                      parameter declarations
 c
-      real     :: props(mxelpr,*)   ! all 3 are same but read-only
-      logical  :: lprops(mxelpr,*)
-      integer  :: iprops(mxelpr,*)
+      integer, intent(in)  :: gpn, iout
+      real, intent(in)     :: props(mxelpr,*)   ! all 3 are same but read-only
+      logical, intent(in)  :: lprops(mxelpr,*)
+      integer, intent(in)  :: iprops(mxelpr,*)
       double precision :: uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      include 'include_sig_up' ! definition of local-work
 c
 c                       locally defined variables
 c
+      integer :: elem_num, felem, hist_size_for_blk, i, iter, n,  nnode,
+     &           now_blk, order, span, type, step 
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, dtime, real_npts, uddt_temps(mxvl,nstr),
+     &  dtime, real_npts, uddt_temps(mxvl,nstr),
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, compute_creep_strains
-      data zero /  0.0d00 /
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -4856,13 +4859,16 @@ c
 c
       subroutine material_model_info( element_no, block_no, info_type,
      &                                 value )
-      use global_data ! old common.main
-      implicit integer (a-z)
+      use global_data, only : out, iprops, nelblk, noelem, elblks
+      implicit none
+c
+      integer, intent(in) :: element_no, block_no, info_type
+      integer, intent(out) :: value
 c
 c                      local data
 c
       integer :: info_vector(10)
-      integer :: inter_mat
+      integer :: inter_mat, local_element_no, mat_type
       logical :: is_inter_dmg
 c
       is_inter_dmg = .false.
@@ -4976,7 +4982,7 @@ c     *             subroutine rstgp1_update_strains                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/13/2018 rhd              *
+c     *                   last modified : 3/23/21 rhd                *
 c     *                                                              *
 c     *      computed total strains at n+1 by including the          *
 c     *      increment over the current step: n+1 = n + deps         *
@@ -4990,11 +4996,14 @@ c
 c
       subroutine rstgp1_update_strains( span, mxvl, nstr, deps,
      &                                  strain_np1 )
-      implicit integer (a-z)
+      implicit none
 c
 c                      parameter declarations
 c
+      integer, intent(in) :: span, mxvl, nstr
       double precision ::  deps(mxvl,*), strain_np1(mxvl,*)
+c
+      integer :: i
 c
 !DIR$ VECTOR ALIGNED
        do i = 1, span
@@ -5098,13 +5107,13 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine rstgp1_make_symmetric_store( matrix, symm_vector )
+      use constants
       implicit none
 
       double precision :: matrix(6,6), symm_vector(21)
 c
-      double precision :: tp(6,6), symm_version(6,6), half
+      double precision :: tp(6,6), symm_version(6,6)
       integer :: i, j, map(6)
-      data half / 0.5d00 /
       data map / 1,2,3,4,6,5 /
 c
 c         1. compute transpose of 6 x 6 matrix
@@ -5172,13 +5181,13 @@ c
 c
       subroutine rstgp1_a( ndof, nnode, span, ue, due, uenh, uen1,
      &                     mxvl )
+      use constants
       implicit none
       integer :: ndof, nnode, span, mxvl
       double precision :: ue(mxvl,*), due(mxvl,*), uenh(mxvl,*),
      &                    uen1(mxvl,*)
 c
       integer :: i, j
-      double precision, parameter :: half = 0.5d0
 c
       do j = 1, ndof*nnode
 !DIR$ VECTOR ALIGNED
@@ -5262,6 +5271,7 @@ c     ****************************************************************
       subroutine recstr_cep_uddt_for_block( mxvl, span, ceps_blk,
      &     deps_blk, stress_n, stress_np1, type, nrow_ceps_blk,
      &     gpn )
+      use constants
       implicit none
 c
 c                      parameter declarations
@@ -5274,9 +5284,7 @@ c
 c                      locals
 
       integer :: ielem, i, j, k
-      double precision ::
-     & full_cep(mxvl,6,6), zero
-      data zero  / 0.0d00 /
+      double precision :: full_cep(mxvl,6,6)
 c
 c              handle solid elements (type = 1) and cohesive elements
 c              (type = 2 ) to let compiler optimize loops.
@@ -5439,26 +5447,28 @@ c     *                 subroutine mm_return_values                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 4/29/2019 rhd              *
+c     *                   last modified : 3/27/21 rhd                *
 c     *                                                              *
 c     *  return requested results for an element if available        *
 c     *                                                              *
 c     ****************************************************************
 c
 c
-      subroutine mm_return_values( value_type, elem, vec, npts ) 
+      subroutine mm_return_values( value_type, elem, vec, npts )
+c 
       use global_data, only : out, iprops, nstr, nstrs, elblks
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, eps_n_blocks,                 
-     &                            urcs_n_blocks, history_blk_list               
+     &                            urcs_n_blocks, history_blk_list    
+      use constants            
 c
       implicit none       
 c
 c              parameters
 c
-      character(len=*) :: value_type
-      integer :: elem, npts
-      double precision :: vec(npts)
+      character(len=*), intent(in) :: value_type
+      integer, intent(in) :: elem, npts
+      double precision, intent(out) :: vec(npts)
 c
 c              local variables
 c
@@ -5485,6 +5495,10 @@ c
 c
        case( "plastic_strain" )
          call mm_return_values_eps_plas
+       case( "avg_mises" )
+         call mm_return_values_avg_mises
+       case( "avg_princ_stress" )
+         call mm_return_values_avg_princ_stress
        case default
          write(out,9000) elem, value_type, 1
          call die_gracefully
@@ -5499,13 +5513,82 @@ c
 c
       contains
 c     ========
-
+      subroutine mm_return_values_avg_princ_stress
+      implicit none
+c 
+      integer :: gp, j
+      double precision :: sig(6), evec(3,3), evals(3)
+c
+      if( npts /= ngp ) then
+        write(out,9020) elem, npts, ngp, 3
+        call die_gracefully
+      end if
+c
+      do gp = 1, ngp    
+        do j = 1, 6                                                     
+         sig(j) = sig(j) + urcs_n(sigoffset+j)  
+        end do                                      
+        sigoffset = sigoffset + nstrs                                        
+      end do 
+c
+      sig = sig / dble( ngp )
+      call principal_values( sig, evec, evals )
+      vec(1:3) = evals(1:3)
+c
+      return 
+c
+ 9020 format(/,'FATAL ERROR: mm_return_values. Contact WARP3D group',             
+     &       /,'             mismatched number of points.',
+     &       /,'             element, npts, ngp: ',i8,2i3,
+     &       /,'             Job terminated at ',i1,//)                         
+c
+      end subroutine mm_return_values_avg_princ_stress
+c
+      subroutine mm_return_values_avg_mises
+      implicit none
+c 
+      integer :: gp, j
+      double precision :: sig(6), sig_mean, s11, s22, s33, s12,
+     &                    s13, s23, j2
+c
+      if( npts /= ngp ) then
+        write(out,9020) elem, npts, ngp, 3
+        call die_gracefully
+      end if
+c
+      do gp = 1, ngp    
+        do j = 1, 6                                                     
+         sig(j) = sig(j) + urcs_n(sigoffset+j)  
+        end do                                      
+        sigoffset = sigoffset + nstrs                                        
+      end do 
+c
+      sig = sig / dble( ngp )
+      sig_mean  = (sig(1) + sig(2) + sig(3)) * third                    
+      s11 = sig(1) - sig_mean
+      s22 = sig(2) - sig_mean
+      s33 = sig(3) - sig_mean
+      s12 = sig(4)
+      s13 = sig(5)
+      s23 = sig(6)
+      j2 = half * ( s11**2 + s22**2 + s33**2 + 
+     &              two*(s12**2 + s23**2 + s13**2))
+      vec(1) = sqrt( three * j2 )
+c
+      return 
+c
+ 9020 format(/,'FATAL ERROR: mm_return_values. Contact WARP3D group',             
+     &       /,'             mismatched number of points.',
+     &       /,'             element, npts, ngp: ',i8,2i3,
+     &       /,'             Job terminated at ',i1,//)                         
+c
+      end subroutine mm_return_values_avg_mises
+c
       subroutine mm_return_values_eps_plas ! uniaxial plastic strain
       implicit none
 c 
       integer :: eps_plas_loc, gp, j, eps_plas_col
       double precision :: convert_factor
-      double precision, parameter :: root23 = dsqrt(2.0d0/3.0d0)
 c
       if( npts /= ngp ) then
         write(out,9020) elem, npts, ngp, 3

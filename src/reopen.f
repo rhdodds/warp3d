@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 12/12/20 rhd               *
+c     *                   last modified : 4/2/21 rhd                 *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -51,7 +51,8 @@ c
      &           ulen, nsize, local_length, isize
       character ::  dbname*100, string*80, dums*1
       logical :: flexst, scanms, nameok, initial_stresses_exist,
-     &          read_nod_load, msg_flag, read_table, exist_flag
+     &           read_nod_load, msg_flag, read_table, exist_flag,
+     &           standard_kill_method
       real :: dumr, restart_time
       real, external :: wcputime
       double precision :: dumd
@@ -448,7 +449,10 @@ c
      &              enforce_node_release, num_ctoa_released_nodes,
      &              print_top_list, num_top_list, smcs_type,
      &              smcs_states, smcs_stream, smcs_text,
-     &              stop_killed_elist_length  
+     &              stop_killed_elist_length,
+     &              smcs_allowable_in_release, use_estiff_at_death,
+     &              use_mesh_regularization, regular_npoints,
+     &              regular_type             
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,
@@ -464,9 +468,14 @@ c
      &              max_deff_change, critical_cohes_deff_fract,
      &              ppr_kill_displ_fraction, max_eps_critical,
      &              smcs_type_4_A, smcs_type_4_n, smcs_type_4_c1,
-     &              smcs_type_4_c2, smcs_type_4_c3
+     &              smcs_type_4_c2, smcs_type_4_c3,
+     &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
+     &              regular_length, regular_up_max,
+     &              tolerance_mesh_regularization,
+     &              regular_alpha, regular_GF, regular_m_power,
+     &              regular_points  ! (10x2)
       call chk_data_key( fileno, 8, 1 )
-      call allocate_damage( 12 )
+      call allocate_damage( 12 ) ! only dam_ptr
       call rdbk( fileno, dam_ptr, noelem )
       call chk_data_key( fileno, 8, 2 )
       write(out,9120)
@@ -475,13 +484,24 @@ c                       allocate and read arrays for element
 c                       extinction
 c
       if ( growth_by_kill ) then
+         standard_kill_method = .true.
+         if( use_mesh_regularization ) standard_kill_method = .false. 
          call allocate_damage( 1 )
          call read_damage( 1, fileno, prec_fact )
+         call chk_data_key( fileno, 8, 3 )
 c
          if( crack_growth_type .eq. 3 ) then
             call allocate_damage( 13 )
             call read_damage( 11, fileno, prec_fact )
          end if
+         call chk_data_key( fileno, 8, 4 )
+c
+         if( use_mesh_regularization ) then
+            call allocate_damage( 14 )
+            call read_damage( 12, fileno, prec_fact )
+            write(out,9250) 
+         end if
+         call chk_data_key( fileno, 8, 5 )
 c
          isize = stop_killed_elist_length
          if(  isize > 0 ) then
@@ -869,6 +889,7 @@ c
  9220 format(15x,'> user routine data read...')
  9230 format(15x,'> initial stress data read...')
  9240 format(15x,'> initial state arrays read...')
+ 9250 format(15x,'> mesh regularization data read...')
       return
       end
 c     ****************************************************************
@@ -877,7 +898,7 @@ c     *                      subroutine rdmass                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 01/20/2015                 *
+c     *                   last modified : 03/31/21 rhd               *
 c     *                                                              *
 c     *     create the blocked data structure for storage of element *
 c     *     nodal masses. if requested, read the blocks from the     *
@@ -886,17 +907,20 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-c
       subroutine rdmass
-      use global_data ! old common.main
+c
+      use global_data, only : out, nelblk, myid, iprops, elblks
       use elem_block_data, only: mass_blocks
-      implicit integer (a-z)
-      logical myblk
+c
+      implicit none
+c
+      integer :: blk, felem, idummy, iok, span, totdof, num_enode_dof,
+     &           num_enodes
+      logical :: myblk
 c
       allocate( mass_blocks(nelblk),stat=iok )
       if( iok .ne. 0 ) then
-          call iodevn( idummy, iout, dummy, 1 )
-          write(iout,9100) iok
+          write(out,9100) iok
           call die_abort
       end if
 c
@@ -921,8 +945,7 @@ c
          span           = elblks(0,blk)
          allocate( mass_blocks(blk)%ptr(num_enodes,span),stat=iok )
          if( iok .ne. 0 ) then
-           call iodevn( idummy, iout, dummy, 1 )
-           write(iout,9100) iok
+           write(out,9100) iok
            call die_abort
          end if
       end do
@@ -955,9 +978,14 @@ c
      &                            history_blk_list, gausspts_blk_list,
      &                            cep_blocks, cep_blk_list
 c
-      implicit integer (a-z)
+      implicit none
+c
+      integer, intent(in) :: fileno, proc_type
+c
+      integer :: alloc_stat, blk, felem, span, ngp, block_size,
+     &           cep_size, hist_size  
       double precision :: dummy(1)
-      logical myblk
+      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -971,7 +999,7 @@ c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
       allocate( history_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -979,7 +1007,7 @@ c
       end if
 c
       allocate( history1_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 2
            call die_abort
@@ -987,14 +1015,14 @@ c
       end if
 c
       allocate( history_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
            stop
       end if
       allocate( gausspts_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 6
            call die_abort
@@ -1002,14 +1030,14 @@ c
       end if
 c
       allocate( cep_blocks(nelblk), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 7
            call die_abort
            stop
       end if
       allocate( cep_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 8
            call die_abort
@@ -1034,8 +1062,8 @@ c                       if we are using the serial version:
 c                         the serial process is root, so allocate all blocks.
 c
         myblk = myid .eq. elblks(2,blk)
-        if ( root_processor ) myblk = .true.
-        if ( .not. myblk ) cycle
+        if( root_processor ) myblk = .true.
+        if( .not. myblk ) cycle
 c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
@@ -1050,7 +1078,7 @@ c
 c
         allocate( history_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 3
            call die_abort
@@ -1059,24 +1087,24 @@ c
 c
         allocate( history1_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 4
            call die_abort
            stop
         end if
 c
-        if ( proc_type .eq. 1 ) then
+        if( proc_type .eq. 1 ) then
           call ro_zero_vec( history_blocks(blk)%ptr, block_size )
           call ro_zero_vec( history1_blocks(blk)%ptr, block_size )
         end if
 c
-        if ( proc_type .eq. 2 ) then
-               read(fileno) history_blocks(blk)%ptr(1:block_size)
-               call chk_data_key( fileno, 200, blk )
-               call vec_ops( history1_blocks(blk)%ptr,
-     &                       history_blocks(blk)%ptr,
-     &                       dummy, block_size, 5 )
+        if( proc_type .eq. 2 ) then
+          read(fileno) history_blocks(blk)%ptr(1:block_size)
+          call chk_data_key( fileno, 200, blk )
+          call vec_ops( history1_blocks(blk)%ptr,
+     &                  history_blocks(blk)%ptr,
+     &                  dummy, block_size, 5 )
         end if
 c
         history_blk_list(blk)  = hist_size
@@ -1089,24 +1117,25 @@ c
         block_size = span * ngp * cep_size
         allocate( cep_blocks(blk)%vector(block_size),
      &             stat = alloc_stat )
-          if ( alloc_stat .ne. 0 ) then
+          if( alloc_stat .ne. 0 ) then
              write(out,9900)
              write(out,9910) 5
              call die_abort
              stop
           end if
 c
-        if ( proc_type .eq. 1 )
-     &         call ro_zero_vec( cep_blocks(blk)%vector(1), block_size )
+        if( proc_type .eq. 1 )
+     &    call ro_zero_vec( cep_blocks(blk)%vector(1), block_size )
 c
-        if ( proc_type .eq. 2 ) then
+        if( proc_type .eq. 2 ) then
           read(fileno) cep_blocks(blk)%vector(1:block_size)
           call chk_data_key( fileno, 200, blk )
         end if
 c
         cep_blk_list(blk)  = cep_size
 c
-      end do
+      end do ! over blk
+c
       return
 c
  9900 format('>>> FATAL ERROR: memory allocate failure...')
@@ -2187,21 +2216,25 @@ c
 c
 c
       subroutine chk_data_key( fileno, level1, level2 )
-      implicit integer (a-z)
 c
-      data check_data_key / 2147483647 /
+      use global_data, only : out
+      implicit none
+c
+      integer, intent(in) :: fileno, level1, level2
+c
+      integer :: checkvar
+      integer, parameter :: check_data_key = 2147483647
 c
       read (fileno,end=100) checkvar
 c
-      if ( checkvar .ne. check_data_key ) then
-         write(*,9000) level1, level2
+      if( checkvar .ne. check_data_key ) then
+         write(out,9000) level1, level2
          call die_abort
       end if
       return
 c
- 100  write(*,9100) level1, level2
+ 100  write(out,9100) level1, level2
       call die_abort
-
 c
       return
  9000 format(
@@ -2227,20 +2260,19 @@ c     *                    written by : rhd                          *
 c     *                                                              *
 c     *                last modified : 04/28/12                      *
 c     *                                                              *
-c     *            zero a vector. written to be inlined  everywhere  *
+c     *            zero a vector. written to be inlined everywhere   *
 c     *            in this .f                                        *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine ro_zero_vec( vec, isize )
+c
+      use constants
       implicit none
 c
-      double precision
-     &  vec(*), zero
-c
-      integer isize
-      data zero / 0.0d00 /
+      integer, intent(in) :: isize
+      double precision :: vec(isize)
 c
       vec(1:isize) = zero
 c
@@ -2262,7 +2294,8 @@ c
       subroutine ro_copy_vec( vec_left, vec_right, isize )
       implicit none
 c
-      integer vec_left(*), vec_right(*), isize
+      integer, intent(in) :: isize, vec_right(isize)
+      integer, intent(out) :: vec_left(isize)
 c
       vec_left(1:isize) = vec_right(1:isize)
 c
@@ -2291,14 +2324,11 @@ c
       use elem_block_data, only : solid_interface_lists,
      &                            nonlocal_flags, nonlocal_data_n,
      &                            nonlocal_data_n1
+      use constants
 c
       implicit integer (a-z)
 c
-      double precision
-     &  zero
-      data zero / 0.0 /
-c
-      logical local_debug
+      logical :: local_debug
 c
 c          global nonlocal flag must have be set in user input to
 c          include all data structures for nonlocal analyses of

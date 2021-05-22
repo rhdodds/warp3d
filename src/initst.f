@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/2/2021 rhd               *
+c     *                   last modified : 3/28/21 rhd                *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -62,6 +62,7 @@ c
      &                        nangles, srequired
 c
       use erflgs
+      use constants
 c
       implicit none
 c
@@ -70,10 +71,6 @@ c
       integer, external :: omp_get_max_threads
       logical :: promsw, echosw, comsw, atrdsw, eolsw, eofsw, menusw,
      &           ptsw, signsw, sbflg1, sbflg2
-      double precision, parameter :: zero = 0.0d0, one=1.0d0,
-     &            fourth=0.25d0, ten_billion=1.0e10,
-     &            hundredth=0.01d0, twentyth=0.05d0,
-     &            thousandth=0.001d0
 c
 c                       temporary fix until Intel fixes an inconsistency
 c                       in MKL. this call prevents lots of warning messages
@@ -416,6 +413,7 @@ c
       growth_by_kill        = .false.
       growth_by_release     = .false.
       porosity_limit        = 0.20d0
+      smcs_growth           = .false.
       smcs_alpha            = one
       smcs_beta             = zero
       smcs_type             = 0
@@ -446,7 +444,7 @@ c
       num_kill_elem         = 0
       print_status          = .false.
       kill_order            = .false.
-      release_type          = 1
+      release_type          = -1
       crk_pln_normal_idx    = 0
       gurson_cell_size      = zero
       release_fraction      = 0.1d0
@@ -494,6 +492,14 @@ c
       print_top_list = .false.
       num_top_list = 0
       stop_killed_elist_length = 0
+      use_estiff_at_death = .false.
+      use_mesh_regularization = .false.
+      regular_npoints = -1
+      regular_length = minus_one
+      regular_up_max = minus_one
+      regular_alpha  = minus_one
+      regular_Gf     = minus_one
+      tolerance_mesh_regularization = 0.97d0
 c
 c                       initialize the segmental stress strain curve definitions
 c

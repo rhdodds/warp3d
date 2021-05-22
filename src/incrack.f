@@ -4,12 +4,11 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 12/15/2020 rhd             *          
+c     *                   last modified : 4/10/21 rhd                *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
 c                                                                               
 c                                                                               
       subroutine incrack( sbflg1, sbflg2 )                                      
@@ -18,7 +17,6 @@ c
      &                        dstmap
       use constants
       use allocated_integer_list, only : trlist_allocated
-c                                                                               
       use main_data, only : cnstrn_in                                           
       use damage_data
 c                                                                               
@@ -84,6 +82,8 @@ c
       if ( matchs_exact('smcs') )       go to 2100
       if ( matchs_exact('killed') )     go to 2200
       if ( matchs_exact('stop') )       go to 2300
+      if ( matchs_exact('mesh') )       go to 2400
+      if ( matchs('regularization',7) ) go to 2400
 c                                                                               
       go to 9999                                                                
 c                                                                               
@@ -217,7 +217,7 @@ c
                growth_by_kill     = .true.                                      
                growth_by_release  = .false.                                     
                growth_by_cohesive = lcktype .eq. 4                              
-               call dam_init ( debug )     
+               call incrack_dam_init ( debug )     
                if( lcktype .eq. 3 ) call allocate_damage ( 13 ) 
             else                                                                
                call errmsg( 214, dum, dums, dumr, dumd )                        
@@ -471,8 +471,8 @@ c
 c           now allocate and fill the order array                               
 c                                                                               
       call allocate_damage( 2 )                                                 
-      call print_list_fill( scan_order_list, scan_order_list_size,              
-     &         debug )                                                          
+      call incrack_print_list_fill( scan_order_list,
+     &                              scan_order_list_size, debug )                                                          
 c                                                                               
       goto 510  
 c
@@ -587,7 +587,7 @@ c
 c           now allocate and fill the order array                               
 c                                                                               
       call allocate_damage( 3 )                                                 
-      call kill_order_fill( scan_kill_order_list,                               
+      call incrack_kill_order_fill( scan_kill_order_list,                               
      &          scan_kill_order_length, debug )                                 
 c                                                                               
       goto 10                                                                   
@@ -608,7 +608,10 @@ c
          call errmsg( 212, dum, dums, dumr, dumd )                              
          go to 10                                                               
       end if                                                                    
-c                                                                               
+c        
+      use_estiff_at_death = .false.
+      use_mesh_regularization = .false.
+c                                                                             
       if ( matchs('release',3) )  call splunj                                   
       if ( matchs('type',3)    )  call splunj                                   
       if ( matchs('steps',4)   ) then                                           
@@ -800,7 +803,10 @@ c
       if ( matchs ('porosity', 4) ) goto 1550                                   
       if ( matchs ('plastic', 4 ) ) goto 1510                                   
       if ( matchs ('strain', 3  ) ) goto 1560                                   
-      if ( matchs ('relative',4 ) ) goto 1570                                   
+      if ( matchs ('relative',4 ) ) goto 1570   
+      if ( matchs_exact('alpha_min') ) goto 1575                               
+      if ( matchs_exact('alpha_max') ) goto 1580   
+      if ( matchs ( 'allowable_release', 4 ) ) goto 1585                        
       if ( endcrd ( dum         ) ) goto 10                                     
 c                                                                               
       call errmsg( 201, dum, dums, dumr, dumd )                                 
@@ -893,6 +899,40 @@ c
             max_deff_change = temp_dble                                         
          end if                                                                 
       end if                                                                    
+      goto 1510 
+c                                                                               
+c          ========= additional adaptive parameters for SMCS
+c
+ 1575 continue                                                                  
+      if( .not. numd( temp_dble ) ) then                                       
+         call incrack_errmsg( 23 )
+      else                                                                      
+       if( temp_dble .le. 0.0d0 .or. temp_dble .ge. 1.d0 ) then                                           
+          call incrack_errmsg( 24 )
+         else                                                                   
+            smcs_adapt_alpha_min = temp_dble       
+         end if                                                                 
+      end if                                                                    
+      goto 1510                                                                 
+c
+ 1580 continue                                                                  
+      if( .not. numd( temp_dble ) ) then                                       
+         call incrack_errmsg( 25 )
+      else                                                                      
+       if( temp_dble .le. 1.0d0 ) then                                           
+          call incrack_errmsg( 26 )
+         else                                                                   
+            smcs_adapt_alpha_max = temp_dble                                         
+         end if                                                                 
+      end if                                                                    
+      goto 1510                                                                 
+c
+ 1585 continue                                                                  
+      if( .not. integr( temp_int ) ) then                                       
+         call incrack_errmsg( 27 )
+         go to 1510
+      end if
+      smcs_allowable_in_release = temp_int   
       goto 1510                                                                 
 c                                                                               
 c          ----------------------------                                         
@@ -993,7 +1033,7 @@ c
          call errmsg( 282, dum, dums, dumr, dumd )                              
       else                                                                      
          call allocate_damage( 10 )                                             
-         call master_list_fill( scan_master_list,                               
+         call incrack_master_list_fill( scan_master_list,                               
      &          scan_master_length, debug )                                     
       endif                                                                     
 c                                                                               
@@ -1100,9 +1140,37 @@ c
 c        
       call incrack_stop_elist                                                                       
       go to 10
+c
+c          ------------------------------------------                           
+c          | (mesh) regularization                  |                           
+c          ------------------------------------------                           
+c                                                                               
+ 2400 continue   
+c
+c                not supported yet with MPI
+c
+      if( use_mpi ) then
+         call incrack_errmsg( 65 )
+         go to 10
+      end if
+                                                                     
+c                                                                               
+c                don't change number if elements have been killed        
+c
+      if ( .not. no_killed_elems ) then             
+         call errmsg( 212, dum, dums, dumr, dumd )        
+         call scan_flushline                      
+         go to 10                                                               
+      end if                                                                    
+c
+      release_type = -1
+      call allocate_damage( 14 )
+      if( matchs('regularization',7) ) call splunj
+      call incrack_regularization                                                                       
+      go to 10
 c                                                                               
  9999 continue                                                                  
-      if ( debug ) write (out,*) '>>>>>>>>>>>>>>>>> leaving incrack.'           
+      if ( debug ) write (out,*) '>>>>>> leaving incrack.'           
       sbflg1 = .true.                                                           
       sbflg2 = .true.                                                           
       return  
@@ -1119,6 +1187,312 @@ c
 c
       contains
 c     ========
+c
+c          ------------------------------------------                           
+c          | contains: incrack_regularization       |                           
+c          ------------------------------------------                           
+c                                                                                           
+      subroutine incrack_regularization
+c
+      implicit none
+c
+c        on | off  type  <integer> L <value> up_max <value>,
+c              num_points <integer> [ <up,d. pair] (display)
+c    
+c        up vlaues are normalized 0.0 <= up <= 1.0
+c        d values are normalized  0.0 <= d <= 1.0
+c        first and last points must be set to req'd limits.
+c
+      integer :: i
+      logical :: ok, onflag, bad_type, bad
+      double precision :: x,y 
+      double precision, parameter :: local_tol = 0.00000001d0
+c
+      use_mesh_regularization = .false.
+      use_estiff_at_death = .false.
+      regular_type = -1
+      regular_length = -1.0d0
+      regular_npoints = 0
+      regular_up_max = zero
+c
+      if( matchs_exact('off') )  then
+        call scan_flushline
+        return
+      end if
+      onflag = .false.
+      if( matchs_exact('on') ) onflag = .true.
+      if( .not. onflag ) then  ! invalid command word
+        call incrack_errmsg( 28 )
+        return
+      end if
+c
+c              type <integer>
+c
+      if( endcrd(dum) ) then
+          call incrack_errmsg( 50 )
+          return
+      end if        
+c
+      if( matchs_exact('type') ) then
+        if( .not. integr( regular_type ) ) then
+          call incrack_errmsg( 30 )
+          return
+        end if
+      else
+         call incrack_errmsg( 29 )
+         return
+      end if
+c
+      bad_type = regular_type <=0 .or. regular_type > 3
+      if( bad_type ) then
+         call incrack_errmsg( 31 )
+      end if
+c
+c              length_scale or L <number>
+c
+      if( endcrd(dum) ) then
+          call incrack_errmsg( 50 )
+          return
+      end if        
+c
+      ok = .false.
+      if( matchs_exact('L') ) ok = .true.
+      if( matchs('length_scale',6) ) ok = .true.
+      if( .not. ok ) then 
+         call incrack_errmsg( 32 )
+         return
+      end if
+c
+      if( .not. numd( regular_length ) ) then
+         call incrack_errmsg( 33 )
+         return
+      end if
+c
+      if( regular_length <= zero ) then
+         call incrack_errmsg( 34 )
+         return
+      end if 
+c
+      if( regular_type == 1 ) then
+c
+c              up_max <number>
+c
+        if( endcrd(dum) ) then
+            call incrack_errmsg( 50 )
+            return
+        end if        
+c
+        if( .not. matchs_exact('up_max') ) then
+           call incrack_errmsg( 35 )
+           return
+        end if
+c
+        if( .not. numd( regular_up_max ) ) then
+           call incrack_errmsg( 36 )
+           return
+        end if
+c
+        if( regular_up_max <= zero ) then
+           call incrack_errmsg( 37 )
+           return
+        end if 
+c
+      end if !  on regular_type
+c
+c              input data for the type
+c
+      if( endcrd(dum) ) then
+          call incrack_errmsg( 50 )
+          return
+      end if        
+c
+      select case( regular_type )
+c
+      case( 1 )  ! piecewise linear. get #pts and data pairs
+         if( .not. matchs_exact('num_points') ) then 
+           call incrack_errmsg( 38 )
+           return
+         end if 
+         if( .not. integr( regular_npoints ) ) then 
+           call incrack_errmsg( 40 )
+           return
+         end if 
+         ok = regular_npoints > 0 .and. regular_npoints <= 10
+         if( .not. ok ) then 
+           call incrack_errmsg( 39 )
+           return
+         end if
+c
+         do i = 1, regular_npoints
+            x = zero
+            y = zero
+            if( matchs_exact(',') ) call splunj
+            if( endcrd( dum) ) then 
+              call incrack_errmsg( 50 )
+              return
+            end if
+            if( matchs_exact(',') ) call splunj
+            if( .not. numd( x ) ) then
+              call incrack_errmsg( 41)  ! no up value
+              return
+            end if
+            if( matchs_exact(',') ) call splunj
+            if( .not. numd( y ) ) then
+              call incrack_errmsg( 42 )  ! no d value
+              return
+            end if
+            regular_points(i,1) = x
+            regular_points(i,2) = y
+         end do   ! over i. need to check all values
+c
+         bad = .false.
+         if( regular_points(1,1) /= zero ) then
+           call incrack_errmsg( 43 )  ! bad 1st up value
+           bad = .true.
+         end if
+         if( regular_points(regular_npoints,2) /= one ) then
+           call incrack_errmsg( 44 )  ! bad last up value
+           bad = .true.
+         end if
+         if( regular_points(regular_npoints,1) /= one ) then
+           call incrack_errmsg( 45 )  ! bad last d value
+           bad = .true. 
+         end if
+c 
+         do i = 2, regular_npoints-1  ! check values each pair
+           x = regular_points(i,1)
+           y = regular_points(i,2)
+           ok = x > zero .and. x < one   .and.
+     &          y > zero .and. y < one  .and.
+     &          x > regular_points(i-1,1)
+           if( .not. ok ) write(out,9040) i, x, y
+           if( .not. ok ) bad = .true.
+         end do
+         if( bad )then
+           call incrack_errmsg( 46)
+           return
+         end if
+c
+      case( 2 )  ! G_f. d = G/G_f
+         if( .not. matchs_exact('Gf') ) then 
+           call incrack_errmsg( 56 )
+           return
+         end if 
+         if( .not. numd( regular_Gf ) ) then 
+           call incrack_errmsg( 57 )
+           return
+         end if
+         if( regular_Gf <= zero ) then
+           call incrack_errmsg( 58 )
+           return
+         end if
+         if( .not. matchs_exact('m') ) then 
+           call incrack_errmsg( 60 )
+           return
+         end if 
+         if( .not. numd( regular_m_power ) ) then 
+           call incrack_errmsg( 61 )
+           call scan_flushline
+           return
+         end if
+         if( regular_m_power <= zero ) then
+           call incrack_errmsg( 62 )
+           return
+         end if
+
+      case( 3 )  ! G_f w/ d = exponential form of G/G_f
+         if( .not. matchs_exact('Gf') ) then 
+           call incrack_errmsg( 56 )
+           return
+         end if 
+         if( .not. numd( regular_Gf ) ) then 
+           call incrack_errmsg( 57 )
+           return
+         end if
+         if( regular_Gf <= zero ) then
+           call incrack_errmsg( 58 )
+           return
+         end if
+         if( .not. matchs_exact('m') ) then 
+           call incrack_errmsg( 60 )
+           return
+         end if 
+         if( .not. numd( regular_m_power ) ) then 
+           call incrack_errmsg( 61 )
+           call scan_flushline
+           return
+         end if
+         if( regular_m_power <= zero ) then
+           call incrack_errmsg( 62 )
+           return
+         end if
+         if( .not. matchs_exact('alpha') ) then 
+           call incrack_errmsg( 63 )
+           return
+         end if 
+         if( .not. numd( regular_alpha ) ) then 
+           call incrack_errmsg( 64 )
+           call scan_flushline
+           return
+         end if
+c
+      case default
+         call incrack_errmsg( 35 )
+         call die_abort
+      end select 
+c
+c              input completed. no errors
+c
+      use_mesh_regularization = .true.
+      use_estiff_at_death = .true.
+c      
+      if( endcrd(dum) ) return
+      if( matchs_exact('display') ) then
+         select case( regular_type )
+         case( 1 ) 
+           write(out,9000) regular_type, regular_length, regular_up_max
+           write(out,9010) regular_npoints
+           do i = 1, regular_npoints
+             write(out,9020) i, regular_points(i,1),
+     &                          regular_points(i,2)
+           end do
+         case( 2 ) 
+           write(out,9001) regular_type, regular_length,
+     &                     regular_GF, regular_m_power
+         case( 3 ) 
+           write(out,9002) regular_type, regular_length,
+     &                     regular_GF, regular_m_power, regular_alpha
+         end select
+         write(out,9030) 
+      end if
+c
+      call scan_flushline ! just in case anything left
+      return
+c
+ 9000 format(/,5x,'... mesh regularization parameter values: ',/,
+     & 10x,'regular type:        ',i2, /,
+     & 10x,'length-scale:      ',f10.5, /,
+     & 10x,'up-max:            ',f10.5 )
+ 9001 format(/,5x,'... mesh regularization parameter values: ',/,
+     & 10x,'regular type:        ',i2, /,
+     & 10x,'length-scale:      ',f10.5, /,
+     & 10x,'Gf:                ',f10.5, /,
+     & 10x,'m exponent:        ',f10.5 )
+ 9002 format(/,5x,'... mesh regularization parameter values: ',/,
+     & 10x,'regular type:        ',i2, /,
+     & 10x,'length-scale:      ',f10.5, /,
+     & 10x,'Gf:                ',f10.5, /,
+     & 10x,'m exponent:        ',f10.5, /,
+     & 10x,'alpha:             ',f10.5 )
+ 9010 format(/,10x,'... number of curve points, values (x,y):',i3)
+ 9020 format(15x,i2,2f10.5)
+ 9030 format(/,5x,'... end of display',/)
+ 9040 format(/1x,'>>>>> error: bad data pair values. ',i2,2f10.5)
+! 9100 format(10x,'d0:                ',f10.5)
+! 9110 format(10x,'alpha:             ',f10.5)
+c
+      end subroutine incrack_regularization
+c 
 c
 c          ------------------------------------------                           
 c          | contains: incrack_smcs_parms           |                           
@@ -1149,6 +1523,8 @@ c
        call incrack_errmsg( 10 )
        return
       end if
+c
+      smcs_growth = .true.
 c
       do
        if( endcrd(dum) ) return
@@ -1428,6 +1804,12 @@ c
          open(newunit=device, file=smcs_list_file_name, status='old')
          close(device, status='delete')
       end if
+      inquire( file="fully_killed_ele_list.out", exist=fexists )
+      if( fexists ) then
+         open(newunit=device, file="fully_killed_ele_list.out",
+     &         status='old')
+         close(device, status='delete')
+      end if
 c
       end subroutine incrack_smcs_list_file
 c
@@ -1501,7 +1883,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine dam_init                     *          
+c     *                      subroutine incrack_dam_init             *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -1513,7 +1895,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dam_init( debug )                                              
+      subroutine incrack_dam_init( debug )                                              
       use global_data ! old common.main
 c                                                                               
       use damage_data                                                           
@@ -1529,7 +1911,7 @@ c
       real :: dumr                                                                 
       double precision  :: dumd                                                                    
 c                                                                               
-      if ( debug ) write (out,*) '>>>> in dam_init'                             
+      if ( debug ) write (out,*) '>>>> in incrack_dam_init'                             
 c                                                                               
 c                if the damage data structures have already been allocated,     
 c                then leave                                                     
@@ -1570,7 +1952,7 @@ c
 c                                                                               
       if ( debug ) then                                                         
          call dam_debug                                                         
-         write (out,*) '<<<< leaving dam_init'                                  
+         write (out,*) '<<<< leaving incrack_dam_init'                                  
       end if                                                                    
       return                                                                    
       end                                                                       
@@ -1578,7 +1960,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine dam_init_release             *          
+c     *              subroutine incrack_dam_init_release             *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -1594,7 +1976,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dam_init_release 
+      subroutine incrack_dam_init_release 
 c                                              
       use global_data ! old common.main
       use main_data, only : crdmap                                              
@@ -1613,7 +1995,7 @@ c
       integer, allocatable :: tmp_nodes(:)                                                  
       logical, parameter :: debug = .false.                                                             
 c                                                                               
-      if( debug ) write (out,*) '>>>> in dam_init_release'                      
+      if( debug ) write (out,*) '>>>> in incrack_dam_init_release'                      
 c                                                                               
 c                return if we have already initialized                          
 c                                                                               
@@ -1694,7 +2076,7 @@ c                 then initialize those data structures (e.g find
 c                 the neighbor nodes, find the initial crack front, etc.)       
 c                                                                               
       call allocate_damage ( 6 )                                                
-      call dam_init_release2 ( tmp_nodes, debug )                               
+      call incrack_dam_init_release2 ( tmp_nodes, debug )                               
 c                                                                               
  9999 continue                                                                  
       deallocate( tmp_nodes )                                                   
@@ -1706,11 +2088,12 @@ c
      &        /1x,'          distance from crack plane to crack plane',         
      &        /1x,'          node: ',e13.6)                                     
  9030 format (/1x,'         list of crack plane nodes:')                        
- 9040 format (13x,5(2x,i7))                                                     
+ 9040 format (13x,5(2x,i7))   
+c                                                  
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine dam_init_release2            *          
+c     *            subroutine incrack_dam_init_release2              *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -1725,7 +2108,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dam_init_release2( tmp_nodes, debug )                          
+      subroutine incrack_dam_init_release2( tmp_nodes, debug )                          
       use global_data ! old common.main
 c                                                                               
       use node_release_data                                                     
@@ -1743,14 +2126,14 @@ c
 c                     local declarations                                        
 c             
       integer :: node, entry, elem, i, elem_node, dum
-      integer, external :: master
+      integer, external :: incrack_master
       logical :: crack_node, first_node                                            
       double precision :: dumd     
       real :: dumr                                                                 
       character(len=1) :: dums                                                  
 c                                                                               
 c                                                                               
-      if ( debug ) write (out,*) '>>>> in dam_init_release'                     
+      if ( debug ) write (out,*) '>>>> in incrack_dam_init_release'                     
 c                                                                               
 c                fill the crack_plane_nodes array                               
 c                                                                               
@@ -1863,7 +2246,7 @@ c
      &        crk_pln_normal_idx )                                              
          if( .not. crack_node) cycle                                            
          if( const_front ) then                                                 
-            if( master(crack_plane_nodes(i)) .eq. 0 ) cycle                     
+            if( incrack_master(crack_plane_nodes(i)) .eq. 0 ) cycle                     
          end if                                                                 
          call add_to_list( crack_plane_nodes(i) )                               
 c                                                                               
@@ -1892,7 +2275,7 @@ c
 c                                                                               
       if ( debug ) then                                                         
          call dam_debug                                                         
-         write (out,*) '<<<< leaving dam_init_release2'                         
+         write (out,*) '<<<< leaving incrack_dam_init_release2'                         
       end if                                                                    
       return                                                                    
  9000 format (/1x,'       * find neighboring nodes...')                         
@@ -1902,7 +2285,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine find_release_height          *          
+c     *              subroutine incrack_find_release_height          *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -1914,7 +2297,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine find_release_height                                            
+      subroutine incrack_find_release_height                                            
       use global_data ! old common.main
 c                                                                               
       use damage_data
@@ -1960,7 +2343,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine print_list_fill              *          
+c     *              subroutine incrack_print_list_fill              *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -1972,7 +2355,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine print_list_fill( scan_order_list,                              
+      subroutine incrack_print_list_fill( scan_order_list,                              
      &         scan_order_list_size, debug )                                    
       use global_data ! old common.main
 c                                                                               
@@ -1987,7 +2370,7 @@ c
 c
       integer :: iplist, icn, list_entry, elem, i, dum                                                         
 c                                                                               
-      if ( debug ) write (out,*) '>>>> in print_list_fill'                      
+      if ( debug ) write (out,*) '>>>> in incrack_print_list_fill'                      
 c                                                                               
 c           now fill the order array with the specified elements                
 c                                                                               
@@ -2016,7 +2399,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine kill_order_fill              *          
+c     *              subroutine incrack_kill_order_fill              *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -2028,7 +2411,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine kill_order_fill( scan_kill_order_list,                         
+      subroutine incrack_kill_order_fill( scan_kill_order_list,                         
      &      scan_kill_order_length, debug )                                     
       use global_data ! old common.main
 c                                                                               
@@ -2043,7 +2426,7 @@ c
 c   
       integer :: iplist, icn, list_entry, elem, i
 c                                                                            
-      if ( debug ) write (out,*) '>>>> in kill_order_fill'                      
+      if ( debug ) write (out,*) '>>>> in incrack_kill_order_fill'                      
 c                                                                               
 c           now fill the order array                                            
 c                                                                               
@@ -2075,7 +2458,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine master_list_fill             *          
+c     *             subroutine incrack_master_list_fill              *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -2087,7 +2470,7 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine master_list_fill( scan_master_list,                            
+      subroutine incrack_master_list_fill( scan_master_list,                            
      &      scan_master_length, debug )                                         
       use global_data ! old common.main
 c                                                                               
@@ -2104,7 +2487,7 @@ c
 c
       integer :: iplist, icn, list_entry, node, i, dof
 c                                                                               
-      if ( debug ) write (out,*) '>>>> in master_list_fill'                     
+      if ( debug ) write (out,*) '>>>> in incrack_master_list_fill'                     
 c                                                                               
 c           now fill the order array                                            
 c                                                                               
@@ -2137,7 +2520,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      function master                         *          
+c     *                      function incrack_master                 *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -2148,7 +2531,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      function master( node ) result( iresult )                                              
+      function incrack_master( node ) result( iresult )                                              
 c                                                                               
       use node_release_data, only : master_nodes                                
       use damage_data, only : const_front, num_crack_fronts                                         
@@ -2176,7 +2559,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine init_ctoa_back               *          
+c     *              subroutine incrack_init_ctoa_back               *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -2196,7 +2579,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine init_ctoa_back                                                 
+      subroutine incrack_init_ctoa_back                                                 
       use global_data ! old common.main
 c                                                                               
       use node_release_data, only : master_nodes, num_neighbors,                
@@ -2211,7 +2594,7 @@ c
      &           neighbor_node, dof, master_node  
       logical, parameter :: debug = .false.                                                
 c                                                                               
-      if (debug) write (*,*) '>>> in init_ctoa_back'                            
+      if (debug) write (*,*) '>>> in incrack_init_ctoa_back'                            
 c                                                                               
 c         if we've already been here, then get out                              
 c                                                                               
@@ -2239,7 +2622,7 @@ c             the connectivity data to find the rest of the nodes on the master
 c             line in that direction.                                           
 c                                                                               
             num_lines = num_lines + 1                                           
-            call find_master_line (master_node, neighbor_node,                  
+            call incrack_find_master_line( master_node, neighbor_node,                  
      &           num_nodes_back, num_lines)                                     
 c                                                                               
          enddo                                                                  
@@ -2253,7 +2636,7 @@ c
             write (*,'(6x,i7,6x,20i7)') i, (master_lines(i,j),j=1,              
      &           num_nodes_back + 1)                                            
          enddo                                                                  
-         write (*,*) '<<< leaving init_ctoa_back'                               
+         write (*,*) '<<< leaving incrack_init_ctoa_back'                               
       endif                                                                     
 c                                                                               
       return                                                                    
@@ -2261,7 +2644,7 @@ c
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine find_master_line             *          
+c     *               subroutine incrck_find_master_line             *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -2277,7 +2660,7 @@ c     *     reached.                                                 *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine find_master_line( base_node, next_node,                        
+      subroutine incrack_find_master_line( base_node, next_node,                        
      &                      num_nodes_back, num_line )                                            
       use global_data ! old common.main
 c                                                                               
@@ -2292,7 +2675,7 @@ c
       logical :: reached_end 
       logical, parameter ::  debug = .false.                                               
 c                                                                               
-      if (debug) write (*,*) '>>> in find_master_line'                          
+      if (debug) write (*,*) '>>> in incrack_find_master_line'                          
 c                                                                               
 c         we are given two nodes on the master line. Using these two nodes      
 c         as a starting point, find num_nodes_back nodes on the master line     
@@ -2303,24 +2686,24 @@ c
       master_line_idx = 2                                                       
 c                                                                               
       do idx = 3, num_nodes_back + 1                                            
-         call find_master_line_node (base_node, next_node, new_node,            
-     &        reached_end )                                                     
+         call incrack_find_master_line_node( base_node, next_node,
+     &                                       new_node, reached_end )                                                     
          if (reached_end) exit                                                  
 c                                                                               
          master_lines(num_line,idx) = new_node                                  
          base_node = next_node                                                  
          next_node = new_node                                                   
 c                                                                               
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
-      if (debug) write (*,*) '<<< leaving find_master_line'                     
+      if (debug) write (*,*) '<<< leaving incrack_find_master_line'                     
 c                                                                               
       return                                                                    
       end                                                                       
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine find_master_line_node        *          
+c     *              subroutine incrack_find_master_line_node        *          
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
@@ -2334,8 +2717,8 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine find_master_line_node ( base_node, next_node, new_node,        
-     &        reached_end )                                                     
+      subroutine incrack_find_master_line_node ( base_node, 
+     &         next_node, new_node, reached_end )                                                     
       use global_data ! old common.main
 c                                                                               
       use node_release_data, only : num_neighbors, neighbor_nodes,              
@@ -2357,7 +2740,7 @@ c
       integer :: shared_elems(2)                                                 
 c                                                                               
       if (debug) then                                                           
-         write (*,*) '   >>> in find_master_line_node'                          
+         write (*,*) '   >>> in incrack_find_master_line_node'                          
          write (*,*) '    base_node:',base_node,' next_node:',next_node         
       endif                                                                     
 c                                                                               
@@ -2439,7 +2822,7 @@ c
          else                                                                   
             write (*,*) '   new_node:',new_node                                 
          endif                                                                  
-         write (*,*) '   <<< leaving find_master_line_node'                     
+         write (*,*) '   <<< leaving incrack_find_master_line_node'                     
       endif                                                                     
 c                                                                               
       return                                                                    
@@ -2450,7 +2833,7 @@ c     *                      subroutine incrack_errmsg               *
 c     *                                                              *          
 c     *                       written by : RHD                       *          
 c     *                                                              *          
-c     *                   last modified : 6/9/2019 rhd               *          
+c     *                   last modified : 5/15/21 rhd                *          
 c     *                                                              *          
 c     *                service routine for error messages            *          
 c     *                                                              *          
@@ -2598,9 +2981,213 @@ c
          input_ok = .false. 
          call scan_flushline
 c
+      case( 23 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9023)  'alpha_min'                                                      
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 24 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9024)                                                        
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 25 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9025)  'alpha_max'                                                      
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 26 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9026) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 27 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9027) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 28 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9028) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 29 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9029) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 30 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9030) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 31 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9031) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 32 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9032) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 33 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9033) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 34 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9034) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 35 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9035) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 36 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9036) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 37 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9037) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 38 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9038) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 39 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9039) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 40 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9040) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 41 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9041) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 42 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9042) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 43 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9043) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 44 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9044) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 45 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9045) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 46 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9046) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 50 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9050) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 56 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9056) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 57 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9057) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 58 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9058) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 60 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9060) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 61 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9061) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 62 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9062) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 63 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9063) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 64 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9064) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 65 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9065) 
+         input_ok = .false. 
+         call scan_flushline
+c
       case default                                                              
         write(out,9999)                                                         
-        stop                                                                    
+        call die_abort                                                                   
       end select                                                                
 c                                                                               
       return                                                                    
@@ -2672,15 +3259,114 @@ c
 c                                                                               
  9022 format(/1x,'>>>>> error: expecting keyword on or off ... ',            
      & /14x,'line ignored',/)                  
+c                                                                               
+ 9023 format(/1x,'>>>>> error: expecting number after keyword ',a,            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9024 format(/1x,'>>>>> error: alpha_min must be > 0 & < 1',            
+     & /14x,'line ignored',/)                  
+c
+ 9025 format(/1x,'>>>>> error: expecting number after keyword ',a,            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9026 format(/1x,'>>>>> error: alpha_max must be > 1',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9027 format(/1x,'>>>>> error: expecting # allowable elements',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9028 format(/1x,'>>>>> error: expecting keyword: on or off',            
+     & /14x,'command ignored',/)                  
+c                                                                               
+ 9029 format(/1x,'>>>>> error: expecting keyword: type',            
+     & /14x,'command ignored',/)                  
+c                                                                               
+ 9030 format(/1x,'>>>>> error: expecting <integer> type number',            
+     & /14x,'command ignored',/)    
+c              
+ 9031 format(/1x,'>>>>> error: invalid regularization type',            
+     & /14x,'command ignored',/)        
+c          
+ 9032 format(/1x,'>>>>> error: expecting keyword: L or length_scale',            
+     & /14x,'command ignored',/)        
+c          
+ 9033 format(/1x,'>>>>> error: expecting length value',            
+     & /14x,'command ignored',/)        
+c          
+ 9034 format(/1x,'>>>>> error: invalid value for length-scale',            
+     & /14x,'command ignored',/)        
+c          
+ 9035 format(/1x,'>>>>> error: expecting keyword: up_max',            
+     & /14x,'command ignored',/)        
+c          
+ 9036 format(/1x,'>>>>> error: expecting value for up_max',            
+     & /14x,'command ignored',/)  
+c      
+ 9037 format(/1x,'>>>>> error: invalid value for up_max',            
+     & /14x,'command ignored',/)        
+c      
+ 9038 format(/1x,'>>>>> error: expecting keyword: num_points',            
+     & /14x,'command ignored',/)        
+c      
+ 9039 format(/1x,'>>>>> error: invalid number of points. must be',            
+     & /14x,'>0 and <=10. command ignored',/)        
+c      
+ 9040 format(/1x,'>>>>> error: expecting number of points',            
+     & /14x,'command ignored',/)        
+c      
+ 9041 format(/1x,'>>>>> error: expecting up value',            
+     & /14x,'command ignored',/)        
+c      
+ 9042 format(/1x,'>>>>> error: expecting d value',            
+     & /14x,'command ignored',/)        
+c      
+ 9043 format(/1x,'>>>>> error: 1st up value must = 0.0')
+c      
+ 9044 format(/1x,'>>>>> error: last up value must = 1.0')
+c      
+ 9045 format(/1x,'>>>>> error: last d value must = 1.0')
+c      
+ 9046 format(/1x,'>>>>> error: bad curve points',            
+     & /14x,'command ignored',/)        
+c
+ 9050 format(/1x,'>>>>> error: incomplete regularization data',            
+     & /14x,'command ignored',/)                  
+c
+ 9056 format(/1x,'>>>>> error: expecting keyword: Gf',            
+     & /14x,'command ignored',/)                  
+c
+ 9057 format(/1x,'>>>>> error: expecting Gf value',            
+     & /14x,'command ignored',/)                  
+c
+ 9058 format(/1x,'>>>>> error: Gf must be > 0',            
+     & /14x,'command ignored',/)                  
+c
+ 9060 format(/1x,'>>>>> error: expecting keyword: m',            
+     & /14x,'command ignored',/)                  
+c
+ 9061 format(/1x,'>>>>> error: expecting m exponent value',            
+     & /14x,'command ignored',/)                  
+c
+ 9062 format(/1x,'>>>>> error: m must be > 0',            
+     & /14x,'command ignored',/)                  
+c
+ 9063 format(/1x,'>>>>> error: expecting keyword: alpha',            
+     & /14x,'command ignored',/)                  
+c
+ 9064 format(/1x,'>>>>> error: expecting alpha value',            
+     & /14x,'command ignored',/)                  
 c     
+ 9065 format(/1x,'>>>>> error: regularization not yet supported with',            
+     & ' MPI execution',
+     & /14x,'No solution allowed.',/)                  
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
-                                                                                
+c                                                                                
       end                                                                       
 c         
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine delete_elements              *          
+c     *              subroutine incrack_delete_elements              *          
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
@@ -2691,7 +3377,7 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c
-      subroutine delete_elements( sbflg1, sbflg2 )
+      subroutine incrack_delete_elements( sbflg1, sbflg2 )
       use global_data ! old common.main
       use allocated_integer_list
 c
@@ -2818,7 +3504,7 @@ c
       sbflg2 = .true.
 c
       if( debug ) then
-         write(out,*) '... leaving delete_elements ...'
+         write(out,*) '... leaving incrack_delete_elements ...'
          write(out,*) '  num_user_kill_elems: ',num_user_kill_elems
          if( num_user_kill_elems == 0 ) return
          do icn = 1, num_user_kill_elems

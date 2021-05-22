@@ -557,13 +557,18 @@ c
      &   ninety  = 90.d0,
      &   ninety_nine = 99.d0,
      &   hundred = 100.d0,
-     &   oneeighty = 180.d0
+     &   oneeighty = 180.d0,
+     &   ten_billion = 1.0d10,
+     &   minus_one= -1.0d0
 c
       double precision, parameter ::
+     &   pt_one  = 0.1d0,
+     &   ptone   = 0.1d0,
      &   tenth   = 0.1d0,
      &   quarter = 0.25d0,
      &   pt_25   = 0.25d0,
      &   pt25    = 0.25d0,
+     &   fourth  = 0.25d0,
      &   third   = one/three,
      &   half    = 0.5d0,
      &   pt75    = 0.75d0,
@@ -572,12 +577,14 @@ c
      &   one_pt_5 = 1.5d0,
      &   onept5   = 1.5d0,
      &   onep5    = 1.5d0,
-     &   pt_one = 0.1d0,
      &   hundredth = 0.01d0,
      &   onesixth = one / six,
      &   twothird = two / three,
      &   thirteenpt5 = 13.5d0,
-     &   sixpt75 = 6.75d0
+     &   sixpt75 = 6.75d0,
+     &   twentyth = 0.05d0,
+     &   thousandth = 0.001d0
+
 c
       double precision, parameter ::
      &   pi        = 3.1415926535897932384626433d0,

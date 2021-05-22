@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 11/14/20 rhd                *
+c     *                   last modified: 5/8/21 rhd                  *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -36,11 +36,12 @@ c
       use mod_mpc, only: mpcs_exist, tied_con_mpcs_constructed
       use stiffness_data, only :  total_lagrange_forces,
      &                            d_lagrange_forces,
-     &                            i_lagrange_forces
+     &                            i_lagrange_forces 
+      use constants
 c
       implicit none
 c
-      integer :: step, ldnum
+      integer, intent(in) :: step, ldnum
       double precision :: mf, mf_nm1, dt_original
       logical :: mf_ratio_change
 c
@@ -48,13 +49,12 @@ c           local variables
 c
       integer :: dum, i, iout, iter, now_step
       real :: dumr
-      double precision ::
-     &  mgres1, magdu1, zero, one, mgload, ext_tol,
-     &  scaling_load, dumd
+      double precision :: mgres1, magdu1, mgload, scaling_load, dumd
+      double precision, parameter :: ext_tol =  1.0d-20
       double precision, allocatable, dimension(:) ::u_n_local
 c
       logical :: dynamic, material_cut_step, emit_extrap_msg,
-     & emit_forced_linear_k_for_step, ls_request_adaptive,
+     & ls_request_adaptive,
      & diverging_flag, user_extrapolation_on, user_extrapolation_off,
      & setup_lagrange_data
 c
@@ -72,9 +72,6 @@ c
       end type
       type( info_mnralg ) info
 c
-      data zero, one, ext_tol, local_debug / 0.0d00, 1.0d00,
-     &      1.0d-20, .false. /
-c
 c          predct:          .true. if user requested extrapolate on
 c          adaptive_flag    .true. if user requested adaptive solution
 c          first_subinc     .true. if we are executing the the first
@@ -84,6 +81,7 @@ c          mf_ratio_change  .true. if the equivloads process says this
 c                           step load increment is NOT proportional to
 c                           step n laod increment
 c
+      local_debug = .false. 
       if( local_debug ) then
          write(out,*) " "
          write(out,*) "..... entered mnralg ....."
@@ -120,7 +118,6 @@ c
       user_extrapolation_on = extrapolate ! better name for local use
       user_extrapolation_off = .not. extrapolate ! convenience
       emit_extrap_msg = .true.
-      emit_forced_linear_k_for_step = .true.
       hypre_solver = solver_flag .eq. 9
       local_mf_ratio_change = mf_ratio_change
 c
@@ -184,21 +181,18 @@ c          this is target for starting an adaptive subincrement
 c          within the step. save critical values for solution state
 c          needed to support adaptive restart of the step if req'd.
 c
- 1000 continue
-c
 c          incorporate changes in load vector due to node/element
-c          releases for crack growth. skip for step 1. skip when
-c          this is the first subincrement in adaptive for step
-c          since checking/loads adjustment will have already been done
-c          for step. no crack growth of any type allowed during
-c          adaptive solution since we're trying to resolve only
-c          the Newton.
+c          releases for crack growth. skip for step 1. no crack growth
+c          of any type allowed during adaptive solution since we're 
+c          trying to resolve only the global Newton.
 c
-      check_crk_growth = step .gt. 1  .and.  (.not. first_subinc)
+      check_crk_growth = step .gt. 1 
       if( check_crk_growth ) then
          call chkcrack( step, 0 )
          call growth_loads
       end if
+
+ 1000 continue
       if( show_details ) write(out,9150) step
 c
 c          set up the displacement increment to start the step or

@@ -1,10 +1,10 @@
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      f-90 module crack_growth_data           *          
+c     *              f-90 module crack_growth_data                   *          
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 12/16/20 rhd               *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          
@@ -20,9 +20,9 @@ c
 c                                                                               
       integer, allocatable, dimension(:)  :: dam_node_elecnt                    
       integer, allocatable, dimension(:)  :: dam_state                          
+      integer, allocatable, dimension(:)  :: smcs_start_kill_step                          
       double precision, allocatable       :: dam_ifv(:,:)                       
       double precision, allocatable       :: dam_dbar_elems(:,:)                
-      logical, allocatable, dimension(:)  :: dam_blk_killed                     
       integer, allocatable, dimension(:)  :: dam_print_list                     
       integer, allocatable, dimension(:)  :: kill_order_list                    
       integer, allocatable                :: dam_face_nodes(:,:)                
@@ -35,8 +35,22 @@ c
      &                                       smcs_old_epsplas(:),
      &                                       smcs_weighted_zeta(:),
      &                                       smcs_weighted_bar_theta(:),
-     &                                       smcs_weighted_tear_parm(:)
-c                                                                               
+     &                                       smcs_weighted_tear_parm(:),
+     &                                       smcs_d_values(:),
+     &                                       smcs_eps_plas_at_death(:),
+     &                                       smcs_stress_at_death(:)
+c                                                                                 
+c                     stiffness matrices for element in process of
+c                     being killed. used as option for SMCS based
+c                     growth.                             
+c      
+      type :: killed_element_stiffness
+        integer :: num_terms
+        double precision, allocatable, dimension(:) :: estiff
+      end type
+      type(killed_element_stiffness), save, allocatable,
+     &                            dimension(:) :: killed_estiffs
+                                                                             
       end module  elem_extinct_data                                                            
 c                                                                               
 c                                                                               
@@ -76,7 +90,7 @@ c     *                      subroutine dam_param                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 12/18/20 rhd               *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
 c     *     for a killable element not yet killed, determine if the  *          
 c     *     element should be killed now. isolating decision here    *          
@@ -89,7 +103,7 @@ c
      &                      eps_plas, eps_crit, sig_mean, sig_mises,            
      &                      ext_gurson, ext_shape, ext_spacing,
      &                      avg_triaxiality, avg_zeta, avg_bar_theta,
-     &                      tear_param )
+     &                      tear_param, max_princ_stress)
       use global_data, only : iprops, out  ! old common.main
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
@@ -146,14 +160,14 @@ c
       double precision, optional, intent(out) ::
      &      porosity, eps_plas, eps_crit, sig_mean, sig_mises, 
      &      ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
-     &      avg_bar_theta, tear_param 
+     &      avg_bar_theta, tear_param, max_princ_stress 
 c                                                                               
 c              local declarations                                               
 c       
       integer :: mat_model
       logical :: kill_now_local
       double precision :: mean_zeta, mean_omega, triaxiality,
-     &                    mean_bar_theta, sig_mean_local,
+     &                    mean_bar_theta, sig_mean_local, sig_1_local,
      &                    sig_mises_local, eps_plas_local,
      &                    eps_crit_local, tear_param_local
 c                     
@@ -205,7 +219,8 @@ c
        call dam_param_3_get_values( 
      &    elem, debug, eps_plas_local, eps_crit_local, sig_mean_local,
      &    sig_mises_local, triaxiality, mean_zeta, mean_omega,
-     &    mean_bar_theta, 1, tear_param_local, kill_now_local )   
+     &    mean_bar_theta, 1, tear_param_local, kill_now_local, 
+     &    sig_1_local )   
        if( present( sig_mean ) ) sig_mean = sig_mean_local
        if( present( sig_mises ) ) sig_mises = sig_mises_local                            
        if( present( eps_plas ) ) eps_plas = eps_plas_local
@@ -215,6 +230,7 @@ c
        if( present( avg_bar_theta ) ) avg_bar_theta = mean_bar_theta
        if( present( tear_param ) ) tear_param = tear_param_local
        if( present( kill_now ) ) kill_now = kill_now_local
+       if( present( max_princ_stress ) ) max_princ_stress = sig_1_local
 c                                                                               
 c           4 cohesive - not processed here               
 c                                                                                                                                                             
@@ -236,7 +252,7 @@ c     *              subroutine dam_param_3_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 12/19/20 rhd               *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
 c     *             SMCS compute values for this element             *
 c     *                                                              *          
@@ -247,9 +263,10 @@ c
      &                      eps_plas, eps_crit, sig_mean, sig_mises,            
      &                      triaxiality, mean_zeta, mean_omega,
      &                      mean_bar_theta, dowhat,
-     &                      tear_param, kill_now )  
+     &                      tear_param, kill_now, max_princ_stress )  
 c              
-      use global_data, only : iprops, nstr, nstrs, out ! old common.main
+      use global_data, only : iprops, nstr, nstrs, out,
+     &                        now_step => current_load_time_step
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, eps_n_blocks,                 
      &                            urcs_n_blocks, history_blk_list               
@@ -302,7 +319,9 @@ c                                = 3 no longer used
 c                                = 4 compute/update damage variables  
 c        tear_param -- (output)  Wellman/Sandia tearing parameter
 c        kill_now  --  (output)  if dowhat = 1, set flag if critical
-c                                condition reached                           
+c                                condition reached  
+c        max_princ_stress -- (output) max principal stress for average
+c                                     stress tensor over element                            
 c                                                                                                                                                              
       implicit none                                                    
 c                                                                               
@@ -314,7 +333,7 @@ c
       double precision,intent(out) :: eps_crit, sig_mean, sig_mises,
      &                                triaxiality, eps_plas, mean_zeta,
      &                                mean_omega, mean_bar_theta,
-     &                                tear_param
+     &                                tear_param, max_princ_stress
 c                                                                               
 c               local declarations                                               
 c
@@ -323,8 +342,8 @@ c
      &           ngp, rel_elem, sigoffset, j, elem_ptr, ix
       double precision ::  sig(6), eps(6), fpngp, epspls_vec(27),
      &                     mean_triaxiality, sig_1, sig_2, sig_3,
-     &                     s11, s22, s33, s12, s13, s23,
-     &                     j2, j3, zeta, omega, t1, bar_theta,
+     &                     s11, s22, s33, s12, s13, s23, theta_mit,
+     &                     j2, j3, zeta, omega, t1, t2, bar_theta,
      &                     evals(3), evec(3,3), tp_kernel
       logical :: update, local_debug, threed_solid_elem, l1, l2, l3,
      &           l4, l5, l6, l7, l8, l9, l10, kill_now_local
@@ -340,6 +359,7 @@ c
       local_debug = .false.
       if( local_debug )then
          write(out,*) '... dam_param_3_get_values, dowhat: ...', dowhat
+         write(out,*) '     .. element: ', elem
       end if
 c
       if( present(kill_now) ) kill_now = .false.
@@ -365,9 +385,15 @@ c
       tp_kernel   = zero                         
       sig         = zero
       eps         = zero  !   strains not used current code       
+c
+      if( now_step < 2 ) then
       call set_element_type( elem_type, threed_solid_elem, l1, l2, l3,
      &                       l4, l5, l6, l7, l8, l9, l10 )  
-      if( .not. threed_solid_elem ) return                                 
+      if( .not. threed_solid_elem ) then
+          write(out,9300) elem
+          call die_abort
+        end if
+      end if
 c
       call mm_return_values( "plastic_strain", elem, epspls_vec, ngp )
 c
@@ -391,6 +417,7 @@ c
       sig = sig * fpngp
       call principal_values( sig, evec, evals )
       sig_1 = evals(1); sig_2 = evals(2); sig_3 = evals(3)
+      max_princ_stress = sig_1
       sig_mean  = (sig(1) + sig(2) + sig(3)) * third                    
       s11 = sig(1) - sig_mean
       s22 = sig(2) - sig_mean
@@ -408,12 +435,27 @@ c
       omega     = zero
       bar_theta = zero
       tear_param = zero
+
+      if( local_debug ) then
+         write(out,*) '    eps_pls: ', eps_plas
+         write(out,*) '    sig_mises: ', sig_mises
+         write(out,*) '    sig_mean: ', sig_mean
+      end if
 c
       if( sig_mises > small_mises ) then
         zeta  = onept5*root3 * j3 / j2**onept5
         omega = one - zeta*zeta 
-        t1    = thirteenpt5 * j3 / sig_mises**3
-        bar_theta = one - ( acos( t1 ) * two / pi )
+        t2 = thirteenpt5 * j3 / (three*j2)**onept5
+        if( abs(t2) > one+type_4_toler ) then
+          write(out,9118) elem, t2
+          call die_abort
+        end if
+        theta_mit = third * acos(t2)
+        if( theta_mit < zero .or. theta_mit > pi/three ) then
+          write(out,9119) elem, theta_mit
+          call die_abort
+        end if
+        bar_theta = one - six * theta_mit / pi
         if( abs(bar_theta) > one+type_4_toler ) then
           write(out,9120) elem, bar_theta  ! improve message
           call die_abort
@@ -546,8 +588,18 @@ c
  9100 format(10x,'mean, mises, eps_pls, princ. sigs:',2f10.3,f12.6,
      & /,10x,'principal vals: ',3f10.3)
  9110 format(10x,'T_mean, eps crit: ',f10.3,f12.6) 
+ 9118 format(/1x,'>>>>> error: inconsistency in bar_theta computation',
+     & ' for smcs type 4 (MIT)',/,
+     & 14x,'element: ',i8,' acos argument invalid: ',f6.2,/,
+     & 14x,'value must lie in range (-1.0,1.0)',/,
+     & 14x,'job aborted by routine dam_param_3_get_values',/)
+ 9119 format(/1x,'>>>>> error: inconsistency in bar_theta computation',
+     & ' for smcs type 4 (MIT)',/,
+     & 14x,'element: ',i8,' theta value: ',f6.2,/,
+     & 14x,'value must lie in range (0.0, pi/3)',/,
+     & 14x,'job aborted by routine dam_param_3_get_values',/)
  9120 format(/1x,'>>>>> error: inconsistency in bar_theta computation',
-     & ' for smcs type 4',/,
+     & ' for smcs type 4 (MIT)',/,
      & 14x,'element: ',i8,' bar_theta value: ',f6.2,/,
      & 14x,'value must lie in range (-1.0,1.0)',/,
      & 14x,'job aborted by routine dam_param_3_get_values',/)
@@ -557,6 +609,10 @@ c
  9200 format(/1x,'>>>>> FATAL ERROR: code inconsistency in routine: ',
      &   /,      '                   dam_param_3_get_values',
      &   /,      '                   analysis terminated'//)
+ 9300 format('>> FATAL ERROR: routine ',
+     & 'dam_param_3_get_values.',
+     & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
 c
       contains
 c     ========

@@ -4,11 +4,11 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 12/30/20 rhd                    *          
+c     *              last modified : 5/1/21 rhd                      *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
-c     *     model, ctoa, etc.)                                       *          
+c     *     model, ctoa, SMCS, etc.)                                 *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -22,9 +22,10 @@ c
      &          smcs_states_intlst(:), deleted_elist_to_stop(:)   
 c                            
       double precision ::                                                         
-     &   del_poros(mxstp_store), del_deff(mxstp_store)   
+     &   del_poros(mxstp_store), del_deff(mxstp_store),
+     &   regular_points(10,2)  
 c
-      integer :: user_kill_list_now(100)                      
+      integer :: user_kill_list_now(100)      
 c                                                                               
 c                     scalar double precision/reals                             
 c                                                                               
@@ -46,8 +47,10 @@ c
      &   max_plast_strain_change,                                               
      &   init_ctoa_dist, ctoa_dist,                                             
      &   crkpln_srch_tol, max_deff_change,                                      
-     &   critical_cohes_deff_fract,                                             
-     &   ppr_kill_displ_fraction
+     &   critical_cohes_deff_fract, 
+     &   ppr_kill_displ_fraction, tolerance_mesh_regularization,
+     &   regular_length, regular_up_max, regular_alpha,
+     &   regular_Gf, regular_m_power
 c                                                                               
 c                     scalar integers                                           
 c                                                                               
@@ -61,7 +64,7 @@ c
      &   num_elements_killed, stop_killed_elist_length,                                                  
      &   num_elements_in_force_release, num_ctoa_released_nodes,
      &   num_user_kill_elems, killed_element_limit, num_top_list,
-     &   smcs_allowable_in_release            
+     &   smcs_allowable_in_release, regular_type, regular_npoints            
 c                                                                               
 c                     scalar logicals                                           
 c                                                                               
@@ -72,11 +75,12 @@ c
      &  overshoot_control_crk_grth, overshoot_allocated,                        
      &  load_size_control_crk_grth, g_stp_cntrl_allocated,                      
      &  const_front, master_lines_set, load_reduced, all_elems_killed,
-     &  print_top_list, smcs_states, smcs_stream, smcs_text,
-     &  smcs_list_file_flag           
+     &  print_top_list, smcs_growth, smcs_states, smcs_stream,
+     &  smcs_text, smcs_list_file_flag, use_estiff_at_death ,
+     &  use_mesh_regularization           
 c                                                                               
 c                     character                             
 c      
-      character(len=80) :: smcs_list_file_name                                                                         
+      character(len=80) :: smcs_list_file_name        
 c                                                                               
       end module                                                                
