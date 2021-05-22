@@ -108,7 +108,7 @@ c                          effective dynamic load, crdmap.  also
 c                          allocate diagonal stiffness if using serial          
 c                          version.                                             
 c                                                                               
-         call mem_allocate( 12 )                                                
+         call mem_allocate( 12 )        ! dam_ptr                                        
          call mem_allocate( 13 )                                                
          call mem_allocate( 14 )                                                
 c                                                                               
