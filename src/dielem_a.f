@@ -147,7 +147,7 @@ c             and expansion coefficients at gauss points. if specified
 c             coefficients for the element are zero, we skip
 c             temperature processing of elements.
 c
-      debug    = .false.
+      debug    = gdebug
       debug_j  = .false.
       debug_i  = .false.
       ierr     = 0
@@ -384,7 +384,7 @@ c
 c
       return
 c
- 9007 format(3x,i3,2x,i8,2x,6e14.6)
+ 9007 format(3x,i3,2x,i3,2x,6e14.6)
  9008 format(' >>>>> node alpha(1->6) for nodes in crack x-y-z:' )
  9013 format(' >>>>> start of data set-up for edi' )
  9100 format(/,' >>>>> start of integration loop:' )

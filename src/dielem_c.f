@@ -113,10 +113,8 @@ c
       if ( flag .eq. 1 .or. faceno .eq. 0 ) return
       face_loading = .true.
       if ( ldebug ) write(out,150) faceno, (fnodes(j),j=1,nfnode)
-      if( ldebug ) write(out,*) '.. at 10 call dielrl'
       call dielrl( feload, eloads, cf_tractions, rotate, nnode, debug,
      &             out )
-      if( ldebug ) write(out,*) '.. at 11 back dielrl'
 c
 c             set-up is complete. calculate integrals.
 c
@@ -126,7 +124,6 @@ c
      &                        jterm, elemno, out, debug )
       end if
       if( comput_i ) then
-      if( ldebug ) write(out,*) '.. at 15 call di_calc_surface_i'
          call di_calc_surface_i( elemno, etype, nnode, nfnode, fnodes,
      &                        sfnodes, coord, front_nodes, front_coords,
      &                        domain_type, domain_origin,
@@ -136,7 +133,6 @@ c
      &                        ym_front_node, nu_front_node,
      &                        front_elem_flag, qp_node, crack_curvature,
      &                        out, debug )
-        if( ldebug ) write(out,*) '.. at 16 back di_calc_surface_i'
       end if
 c
       return

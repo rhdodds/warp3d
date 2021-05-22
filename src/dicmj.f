@@ -49,7 +49,7 @@ c
 c
       integer :: i, j, skipped_killed, ierr, blk
       integer, save :: message_count=0, message_count2=0
-      logical ::  chk_killed
+      logical, external ::  chk_killed
       double precision, parameter :: zero=0.0d0, one=1.0d0,
      &                               two=2.0d0, toler_static_j=1.0d-5
 c
@@ -60,7 +60,6 @@ c
       call wmpi_alert_slaves( 27 )
       call wmpi_send_jint
 c
-      debug_driver = .false.
       if( debug_driver ) write(iout,*) ' >>> entered element driver'
 c
 c          keep track of ring_count for storing and retrieving output
@@ -476,7 +475,7 @@ c     *                      dicmj_do_a_blk                          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/23/2018 rhd              *
+c     *                   last modified : 3/31/21 rhd                *
 c     *                                                              *
 c     *      Processing 1 domain and output values. Run MPI          *
 c     *      parallel over (mpi) domains, threads over blocks        *
@@ -550,11 +549,12 @@ c
       integer, dimension (:,:), pointer :: edest, cdest
       real :: e_props(mxelpr)
       logical, external :: dibmck
-      logical ::  geonl, chk_killed, omit_J7_J8_front_elems, ok,
+      logical ::  geonl, omit_J7_J8_front_elems, ok,
      &            elem_temps, face_loads_possible, is_front_element,
      &            front_elem_flag, seg_curves_flag, brick, linearform,
      &            process_swd_derivs, process_strain_derivs,
      &            process_grad_derivs, process_blk
+      logical, external :: chk_killed
       double precision, parameter :: zero=0.0d0, one=1.0d0,
      &                               two=2.0d0, toler_static_j=1.0d-5
 c
@@ -801,7 +801,7 @@ c
       implicit none
 c
       integer :: incpos, k1, k2, i1, i2, i3, enode, snode
-      logical, parameter :: local_debug = .false.
+      logical, parameter :: local_debug = .true.
 c
       seg_curves_flag = .false.
 c
@@ -986,7 +986,6 @@ c
             write(iout,9130) elemno, gpn, (e_strain(i,gpn),i=1,9)
          end do
       end if
-
 c
 c          for crack-face loading, make a copy of the tractions
 c          input by the user in the domain definition. if none
