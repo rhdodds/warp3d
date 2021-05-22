@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/12/20 rhd               *
+c     *                   last modified : 4/13/21 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -54,7 +54,7 @@ c
       integer, parameter :: check_data_key=2147483647
       character :: dbname*100
       logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
-     &           initial_stresses_exist
+     &           initial_stresses_exist, standard_kill_method
       real :: dumr
       real, parameter :: rzero = 0.0
       double precision :: dumd
@@ -456,7 +456,10 @@ c
      &              enforce_node_release, num_ctoa_released_nodes,
      &              print_top_list, num_top_list, smcs_type,
      &              smcs_states, smcs_stream, smcs_text,
-     &              stop_killed_elist_length  
+     &              stop_killed_elist_length,
+     &              smcs_allowable_in_release, use_estiff_at_death,
+     &              use_mesh_regularization, regular_npoints,
+     &              regular_type             
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
@@ -472,7 +475,12 @@ c
      &              max_deff_change, critical_cohes_deff_fract,
      &              ppr_kill_displ_fraction, max_eps_critical,
      &              smcs_type_4_A, smcs_type_4_n, smcs_type_4_c1,
-     &              smcs_type_4_c2, smcs_type_4_c3
+     &              smcs_type_4_c2, smcs_type_4_c3,
+     &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
+     &              regular_length, regular_up_max,
+     &              tolerance_mesh_regularization,
+     &              regular_alpha, regular_GF, regular_m_power,
+     &              regular_points  ! (10x2)
       write (fileno) check_data_key
       call wrtbk( fileno, dam_ptr, noelem )
       write (fileno) check_data_key
@@ -482,11 +490,15 @@ c                             save element extinction variables
 c
       if ( growth_by_kill ) then
 c
-         call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
-     &               prec_fact*mxedof, num_kill_elem )
-         call wrtbk( fileno, dam_state, num_kill_elem )
-         call wrtbk( fileno, dam_blk_killed, nelblk )
+         standard_kill_method = .true.
+         if( use_mesh_regularization ) standard_kill_method = .false. 
 c
+         call wrtbk( fileno, dam_state, num_kill_elem )
+         if( standard_kill_method )
+     &        call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
+     &                    prec_fact*mxedof, num_kill_elem )
+c
+         write (fileno) check_data_key
          if( crack_growth_type .eq. 3 ) then   ! smcs
                call wrtbk( fileno, smcs_weighted_T,
      &              prec_fact * num_kill_elem )
@@ -503,6 +515,19 @@ c
                if( isize > 0 ) write(fileno)
      &             smcs_states_intlst(1:isize)
          end if
+         write (fileno) check_data_key
+c
+         if( use_mesh_regularization ) then
+               call wrtbk( fileno, smcs_d_values,
+     &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_eps_plas_at_death,
+     &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_stress_at_death,
+     &              prec_fact * num_kill_elem )
+               call store_killed_estiffs( fileno, num_kill_elem )
+               write(out,9250)
+         end if
+         write (fileno) check_data_key
 c  
          isize = stop_killed_elist_length
          if(  isize > 0 ) then
@@ -834,6 +859,7 @@ c
  9220 format(15x,'> user routine data written...')
  9230 format(15x,'> initial stress data written...')
  9240 format(15x,'> initial state data arrays written...')
+ 9250 format(15x,'> mesh regularization data arrays written...')
       return
       end
 c     ****************************************************************
@@ -849,8 +875,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine store_blocks( fileno, proc_type )
-      use global_data ! old common.main
 c
+      use global_data, only : nelblk, out
       use elem_block_data, only : history_blocks, rot_n1_blocks,
      &                            eps_n_blocks, initial_state_data,
      &                            urcs_n_blocks, history_blk_list,
@@ -966,7 +992,7 @@ c     *                 subroutine store_cmplx_int                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 06/15/01                   *
+c     *                   last modified : 03/31/21 rhd               *
 c     *                                                              *
 c     *     write data into restart file for the requested data      *
 c     *     structures which additional complexity                   *
@@ -974,36 +1000,47 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine store_cmplx_int( fileno, proc_type )
-      use global_data ! old common.main
 c
+      use global_data, only : out, nonode
       use main_data, only : inverse_incidences, inverse_dof_map
 c
-      implicit integer (a-z)
-      data check_data_key / 2147483647 /
+      implicit none
 c
-      go to ( 100, 200, 300 ) proc_type
+      integer, intent(in) :: fileno, proc_type
 c
- 100  continue
-      write(fileno) ( inverse_incidences(stnd)%element_count, stnd = 1,
-     &                nonode )
+      integer :: i, j, stnd, ecount      
+c
+      select case( proc_type )
+c
+      case( 1 )
+         write(fileno) (inverse_incidences(stnd)%element_count,
+     &                   stnd = 1, nonode )
+c
+      case( 2 )
+        do stnd = 1, nonode
+          ecount = inverse_incidences(stnd)%element_count
+          write(fileno) (inverse_incidences(stnd)%element_list(i),
+     &                   i = 1, ecount)
+        end do
+c
+      case( 3 )
+        do stnd = 1, nonode
+          ecount = inverse_incidences(stnd)%element_count
+          write(fileno) ((inverse_dof_map(stnd)%edof_table(i,j),
+     &                  i = 1, ecount ), j = 1, 3)
+        end do
+c
+      case default
+        write(out,9000)
+        call die_abort
+c
+      end select
+c
       return
 c
- 200  continue
-      do stnd = 1, nonode
-        ecount = inverse_incidences(stnd)%element_count
-        write(fileno) ( inverse_incidences(stnd)%element_list(i),
-     &                  i = 1, ecount )
-      end do
-      return
+ 9000 format('>> FATAL ERROR: store_cmplx_int',
+     &     /,'                Job aborted', //)                                                                               
 c
- 300  continue
-      do stnd = 1, nonode
-        ecount = inverse_incidences(stnd)%element_count
-        write(fileno) (( inverse_dof_map(stnd)%edof_table(i,j),
-     &                  i = 1, ecount ), j = 1, 3 )
-      end do
-      return
-
       end
 c
 c     ****************************************************************
@@ -1019,7 +1056,9 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine write_cry_data(fileno)
+c
       use crystal_data
+c
       implicit none
       integer, intent(in) :: fileno
 c
@@ -1049,9 +1088,47 @@ c
       end if
 c
       return
-      end subroutine
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *               subroutine store_killed_estiffs                *
+c     *                                                              *
+c     *                    written by : rhd                          *
+c     *                                                              *
+c     *                last modified : 3/31/21 rhd                   *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine store_killed_estiffs( fileno, num_kill_elem )
+c
+      use elem_extinct_data, only : killed_estiffs
 
-
+      implicit none
+      integer, intent(in) :: fileno, num_kill_elem
+c
+      integer :: count, i, nrow_ek
+c
+c              count number of killed element stiffnesses actually
+c              stored
+c
+      count = 0
+      do i = 1, num_kill_elem
+        if( killed_estiffs(i)%num_terms > 0 ) count = count + 1
+      end do
+      write(fileno) count
+      if( count == 0 ) return
+c
+      do i = 1, num_kill_elem
+        nrow_ek = killed_estiffs(i)%num_terms
+        if( nrow_ek == 0 ) cycle
+        write(fileno) i, nrow_ek
+        write(fileno) killed_estiffs(i)%estiff(1:nrow_ek)
+      end do
+c
+      return
+      end
+ 
 
 
 
