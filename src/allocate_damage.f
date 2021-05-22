@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/18/20 rhd               *          
+c     *                   last modified : 4/13/21 rhd                *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -31,13 +31,14 @@ c
      &      dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
      &     dumd8, dumd9, dumd10, porosity, plast_strain,                                              
      &     values(20)         
-      logical :: debug, duml                                                       
+      logical :: debug, duml, standard_kill_method                                                       
       real :: dumr                                                                 
 c                                                                               
-      debug = .true.
+      debug = .false.
+      standard_kill_method = .true.
+      if( use_mesh_regularization ) standard_kill_method = .false. 
 c                                                                               
-c                               allocate dam_state, dam_ifv,                    
-c                               dam_blk_killed                                  
+c                               allocate dam_state, dam_ifv
 c  
       select case( dowhat )       
 c                                                                      
@@ -55,15 +56,8 @@ c
             return
          end if                                                                    
          allocate( dam_ifv(mxedof,num_kill_elem) )                                  
-         dam_ifv(1:mxedof,1:num_kill_elem) = zero                                  
+           dam_ifv = zero    
 c                                                                                  
-         if( allocated(dam_blk_killed) ) then                                      
-            call errmsg(215,dum,'dam_blk_killed',dumr,dumd1)                       
-            return
-         end if                                                                    
-         allocate( dam_blk_killed(nelblk) )                                        
-         dam_blk_killed(1:nelblk) = .false.                                        
-c                                                                                                                                                            
 c                               allocate dam_print_list                         
 c                               also allocate old_mises and                     
 c                               old_mean to calculate change in                 
@@ -96,7 +90,7 @@ c
             return
          end if                                                                    
          allocate(dam_node_elecnt(nonode))                                         
-         dam_node_elecnt(1:nonode) = 0                                             
+         dam_node_elecnt = 0
 c                                                                               
 c                                                                               
 c                               allocate dam_face_nodes and                     
@@ -326,7 +320,6 @@ c
          end select   !   crack_growth_type    
 c                                                                               
       g_stp_cntrl_allocated = .true.                                            
- 
 c                                                                               
 c                                                                               
 c                            allocate: (constant front growth)                  
@@ -378,6 +371,17 @@ c
 c                            SMCS data                             
 c                                                                               
        case( 13 )  ! dowhat
+c
+c                            data structures not needed for SMCS that
+c                            may have been allocated.
+c
+          if( allocated( dam_dbar_elems ) )
+     &        deallocate( dam_dbar_elems )               
+          if( allocated( dam_face_nodes ) )
+     &        deallocate( dam_face_nodes )     
+          if( allocated( old_porosity ) )
+     &        deallocate( old_porosity )    
+c 
           if( allocated( smcs_weighted_T ) )
      &        deallocate( smcs_weighted_T )               
           if( allocated( smcs_old_epsplas ) ) 
@@ -388,17 +392,60 @@ c
      &        deallocate( smcs_weighted_bar_theta  )  
           if( allocated( smcs_weighted_tear_parm ) ) 
      &        deallocate( smcs_weighted_tear_parm  )  
-          allocate( smcs_weighted_T(num_kill_elem),
-     &              smcs_old_epsplas(num_kill_elem),
-     &              smcs_weighted_zeta(num_kill_elem),
-     &              smcs_weighted_bar_theta(num_kill_elem),
-     &              smcs_weighted_tear_parm(num_kill_elem) )
+c
+          allocate( smcs_weighted_T(num_kill_elem) )
+          allocate( smcs_old_epsplas(num_kill_elem) )
+          allocate( smcs_weighted_zeta(num_kill_elem) )
+          allocate( smcs_weighted_bar_theta(num_kill_elem) )
+          allocate( smcs_weighted_tear_parm(num_kill_elem) )
+c
           do i = 1, num_kill_elem
             smcs_weighted_T(i)          = zero
             smcs_old_epsplas(i)         = zero  
             smcs_weighted_zeta(i)       = zero  
             smcs_weighted_bar_theta(i)  = zero  
             smcs_weighted_tear_parm(i)  = zero  
+          end do
+c
+c                            mesh regularization                             
+c                                                                               
+       case( 14 )  ! dowhat
+c
+c                            data structures not needed for SMCS that
+c                            may have been allocated.
+c
+          if( allocated( dam_ifv ) )
+     &        deallocate( dam_ifv )               
+          if( allocated( dam_dbar_elems ) )
+     &        deallocate( dam_dbar_elems )               
+          if( allocated( dam_face_nodes ) )
+     &        deallocate( dam_face_nodes )     
+          if( allocated( old_porosity ) )
+     &        deallocate( old_porosity )    
+c 
+          if( allocated( smcs_d_values ) ) 
+     &        deallocate( smcs_d_values  )  
+          if( allocated( smcs_eps_plas_at_death ) )
+     &        deallocate( smcs_eps_plas_at_death  )  
+          if( allocated( smcs_stress_at_death ) )
+     &        deallocate( smcs_stress_at_death  )  
+          if( allocated( killed_estiffs ) )
+     &        deallocate( killed_estiffs )               
+          if( allocated( smcs_start_kill_step ) )
+     &        deallocate( smcs_start_kill_step )               
+c
+          allocate( smcs_d_values(num_kill_elem) )
+          allocate( smcs_eps_plas_at_death(num_kill_elem) )
+          allocate( smcs_stress_at_death(num_kill_elem) )
+          allocate( killed_estiffs(num_kill_elem) )
+          allocate( smcs_start_kill_step(num_kill_elem) )
+c
+          do i = 1, num_kill_elem
+             smcs_d_values(i)            = zero
+             smcs_eps_plas_at_death(i)   = zero
+             smcs_stress_at_death(i)      = zero
+             killed_estiffs(i)%num_terms = 0
+             smcs_start_kill_step(i) = 0
           end do
 c
       end select  !  dowhat   

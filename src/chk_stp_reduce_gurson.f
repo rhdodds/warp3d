@@ -71,7 +71,8 @@ c
      &                        new_porosity - old_porosity( elem_ptr ) )         
          old_porosity(elem_ptr) = new_porosity                                  
 c                                                                               
-      end do ! elem                                                                   
+      end do ! elem     
+c                                                              
       if( debug ) write (out,*) '   >>> max poros change:',                     
      &     max_del_poros                                                        
 c                                                                               
