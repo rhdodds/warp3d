@@ -1,0 +1,35 @@
+# ****************************************************************************
+#                                                               
+#   Makefile.linux_Intel.omp      
+#
+#   Invoked by:    Makewarp.bash script
+#
+#   Updated:   May 12, 2021 rhd
+#
+#   Description:
+#     Makefile Header for use with the WARP3D 
+#     This header will make an OpenMP Makefile for Linux using the Intel
+#     Fortran Compiler + MKL systems
+#
+#     It sets specific flags required to compile the threaded version of WARP3D,
+#     then calls the part of the Makefile which is the same for both the OpenMP 
+#     and MPI versions of the code. 
+#
+# *****************************************************************************
+#
+
+HYINC = 
+MPIOPT =
+LIBMPI = 
+ODIR = ././../obj_linux_Intel_omp
+EXE_NAME = warp3d_Intel.omp
+#
+MKL_LIBS = ${WARP3D_HOME}/linux_packages/lib
+# 
+LIBMKL = -Wl,--start-group ${MKL_LIBS}/libmkl_intel_lp64.a \
+         ${MKL_LIBS}/libmkl_intel_thread.a \
+         ${MKL_LIBS}/libmkl_core.a \
+         -Wl,--end-group   ${MKL_LIBS}/libiomp5.so -lpthread -lm -ldl
+#
+include Makefile.linux_Intel.inc
+#
