@@ -381,11 +381,11 @@ c
           mkl_num_thrds = solver_threads
           if( using_mpi ) then
              write(out,9300) mkl_num_thrds, num_ranks, 
-     &                       mkl_string(38:45),
-     &                       mkl_string(61:68), wcputime(1)
+     &                       mkl_string(45:50),
+     &                       mkl_string(66:73), wcputime(1)
            else
-             write(out,9400) mkl_num_thrds, mkl_string(38:45),
-     &                       mkl_string(61:68), wcputime(1)
+             write(out,9400) mkl_num_thrds, mkl_string(45:50),
+     &                       mkl_string(66:73), wcputime(1)
           end if
       end if
       if( .not. allocated ( dof_eqn_map ) ) then
@@ -539,12 +539,12 @@ c
      &  10x, '>> solver wall time statistics (secs):'
      & /,15x,'number of MKL threads used      ',i10,
      & /,15x,'number of MPI ranks:            ',i10,
-     & /,15x,'MKL version, build: ',5x,a8,1x,a8,
+     & /,15x,'MKL version, build: ',5x,a6,1x,a8,
      & /,15x,'starting work                 @ ',f10.2 )
  9400  format (
      &  10x, '>> solver wall time statistics (secs):'
      & /,15x,'number of MKL threads used      ',i10,
-     & /,15x,'MKL version, build: ',5x,a8,1x,a8,
+     & /,15x,'MKL version, build: ',5x,a6,1x,a8,
      & /,15x,'starting work                 @ ',f10.2 )
  9409  format(
      &  15x, 'finished dof setup            @ ',f10.2 )
