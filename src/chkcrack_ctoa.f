@@ -11,7 +11,7 @@ c     *                      subroutine dam_print_node               *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 04/22/02                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *     This routine prints out the status of the crack front    *          
 c     *     nodes for a crack growth by node release model at the    *          
@@ -21,23 +21,29 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine dam_print_node( step, iter )                                   
-      use global_data ! old common.main
+c
+      use global_data, only : out, dstmap
 c                                                                               
       use node_release_data, only : crack_front_nodes, inv_crkpln_nodes,        
      &     num_neighbors, neighbor_nodes, crkpln_nodes_state                    
       use main_data, only : cnstrn, cnstrn_in, output_packets,                  
      &                      packet_file_no                                      
-c                                                                               
-      use damage_data                                                           
-      implicit integer (a-z)                                                    
-      parameter (max_local_list=300)                                            
-      double precision                                                          
-     &     d32460, angle, zero, max_angle, two,                                 
-     &     local_angles_list(max_local_list), denom_angle                       
-      dimension local_node_list(max_local_list,3)                               
-      character(len=1) :: star                                                  
-      data d32460, zero, two, star / 32460.0, 0.0, 2.0, '*'/                    
-      logical first_entry                                                       
+      use damage_data
+      use constants
+c                                                           
+      implicit none
+c
+      integer :: step, iter
+c                                                   
+      integer, parameter :: max_local_list=300                                           
+      integer :: i, use_init, pointer, max_node,
+     &           max_neighbor, node, node_data_entry, neighbor,
+     &           neighbor_node, num_local_list                               
+      integer :: local_node_list(max_local_list,3)
+      double precision :: angle, max_angle, denom_angle,                     
+     &                    local_angles_list(max_local_list) 
+      character(len=1), parameter :: star = "*"                                                  
+      logical :: first_entry                                                       
 c                                                                               
 c           print the header                                                    
 c                                                                               
@@ -47,16 +53,16 @@ c
       write(out,*) ' ********************************************* '            
       write(out,*)                                                              
 c                                                                               
-      write (out,*) 'crack front node  neighbor  CTOA(degrees)',                
+      write(out,*) 'crack front node  neighbor  CTOA(degrees)',                
      &     '  CTOA/critical CTOA'                                               
-      write (out,*) '----------------  --------  -------------',                
+      write(out,*) '----------------  --------  -------------',                
      &     '  ------------------'                                               
 c                                                                               
 c          set up for parsing the crack front node list                         
 c                                                                               
       pointer = crack_front_start                                               
       if( pointer .eq. -1 ) then                                                
-         write (out,*) '>>>>> No crack front nodes'                             
+         write(out,*) '>>>>> No crack front nodes'                             
          go to 9999                                                             
       end if                                                                    
       max_angle      = zero                                                     
@@ -97,7 +103,7 @@ c
          end if                                                                 
 c                                                                               
          num_local_list = num_local_list + 1                                    
-         if ( num_local_list .gt. max_local_list ) then                         
+         if( num_local_list .gt. max_local_list ) then                         
            write(out,9030)                                                      
            call die_gracefully                                                  
          end if                                                                 
@@ -161,7 +167,7 @@ c
       end if                                                                    
 c                                                                               
  9999 continue                                                                  
-      write (out,*)                                                             
+      write(out,*)                                                             
       return                                                                    
 c                                                                               
  9000 format (/1x,'** Max CTOA: ',f6.2,' degrees',                              
@@ -182,7 +188,7 @@ c     *                      subroutine dam_print_front              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/18/2016 rhd             *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *     This routine prints out the status of the crack front    *          
 c     *     nodes for a crack growth by node release model at the    *          
@@ -191,24 +197,24 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine dam_print_front( step, iter )                                  
-      use global_data ! old common.main
+      subroutine dam_print_front( step, iter ) 
+c                                 
+      use global_data, only : out
       use node_release_data, only : master_lines                                
       use main_data, only : output_packets, packet_file_no                      
-      use damage_data                                                           
+      use damage_data 
+      use constants                                                          
 c                                                                               
       implicit none                                                             
-                                                                                
+c                                                                                
       integer :: step, iter                                                     
-                                                                                
+c                                                                                
       integer, parameter ::  max_local_list = 200                               
-      double precision ::                                                       
-     &     d32460, angle, zero, max_angle, two,                                 
-     &     local_angles_list(max_local_list)                                    
+      double precision :: angle, max_angle,                                  
+     &                    local_angles_list(max_local_list)                                    
       integer :: i, local_master_list(max_local_list), max_node,                
      &           max_neighbor, num_local_list, num_line, node, idummy           
       character(len=3) :: special_char                                          
-      data d32460, zero, two / 32460.0d0, 0.0d0, 2.0d0 /                        
       logical :: use_init                                                       
 c                                                                               
 c           print the header                                                    
@@ -235,7 +241,7 @@ c
 c                                                                               
          call get_slope_master_line( num_line, use_init, angle,                 
      &                               idummy )                                   
-         if ( angle .eq. zero ) cycle                                           
+         if( angle .eq. zero ) cycle                                           
          node  = master_lines( num_line, 1)                                     
          angle = angle * two                                                    
          if( angle .gt. max_angle ) then                                        
@@ -255,7 +261,7 @@ c
 c          save into vector for packet output after loop                        
 c                                                                               
          num_local_list = num_local_list + 1                                    
-         if ( num_local_list .gt. max_local_list ) then                         
+         if( num_local_list .gt. max_local_list ) then                         
            write(out,9030)                                                      
            call die_gracefully                                                  
          end if                                                                 
@@ -301,8 +307,7 @@ c     *                      subroutine chk_node_release             *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 06/03/94                   *          
-c     *                   last modified : 07/28/95                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine updates previously released nodes and    *          
 c     *        checks the current crack front for crack growth       *          
@@ -311,13 +316,19 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine chk_node_release( debug, step, iter )                          
-      use global_data ! old common.main
+      subroutine chk_node_release( debug, step, iter )    
+c                      
+      use global_data, only : out, growth_k_flag
       use node_release_data, only: crkpln_nodes_state                           
       use damage_data                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      logical debug, killed_this_time                                           
+      implicit none
+c
+      integer :: step, iter                                                     
+      logical :: debug  
+c
+      integer :: i
+      logical :: killed_this_time                                         
 c                                                                               
 c                                                                               
 c     This routine:                                                             
@@ -354,7 +365,7 @@ c
       if( debug ) write(out,*) '>>>>>> Checking released nodes '                
 c                                                                               
       do i = 1, num_crack_plane_nodes                                           
-         if ( crkpln_nodes_state(i).gt.0 )                                      
+         if( crkpln_nodes_state(i) .gt. 0 )                                      
      &        crkpln_nodes_state(i) = crkpln_nodes_state(i) + 1                 
       end do                                                                    
 c                                                                               
@@ -372,7 +383,7 @@ c
          call chk_crack_front( killed_this_time, debug, step, iter )            
       end if                                                                    
 c                                                                               
-      if ( killed_this_time ) growth_k_flag = .true.                            
+      if( killed_this_time ) growth_k_flag = .true.                            
 c                                                                               
       enforce_node_release = .false.                                            
 c                                                                               
@@ -386,7 +397,7 @@ c     *                      subroutine chk_reconstraint             *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/10/95                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine checks the current constraints to see    *          
 c     *        if a previously released node has been re-constrained *          
@@ -399,20 +410,20 @@ c
 c                                                                               
 c                                                                               
       subroutine chk_reconstraint                                               
-      use global_data ! old common.main
+      use global_data, only : csthed, dstmap, cstmap
 c                                                                               
       use node_release_data, only : inv_crkpln_nodes,                           
      &     crkpln_nodes_state, crkpln_nodes_react                               
       use main_data, only : invdst, cnstrn_in, cnstrn                           
-      use damage_data                                                           
+      use damage_data 
+      use constants                                                          
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
+      implicit none                                                    
+c     
+      integer :: cst_ptr, above_ptr, node, crkpln_ptr                                                                           
       character(len=1) :: dums                                                  
-      real dumr                                                                 
-      double precision                                                          
-     &     d32460, dumd                                                         
-      data d32460 / 32460.0 /                                                   
+      real :: dumr                                                                 
+      double precision :: dumd                                                         
 c                                                                               
 c             traverse the singly-linked list of constraints in the model. If   
 c             the user has input new constraints, then some of the previously   
@@ -437,9 +448,9 @@ c
 c      if ( (crkpln_ptr .eq. 0) .or.                                            
 c     &     (cst_ptr .ne. dstmap(node) + crk_pln_normal_idx -1) .or.            
 c     &     (crkpln_nodes_state(crkpln_ptr) .eq. 0) ) go to 20                  
-      if (crkpln_ptr .eq. 0) go to 20                                           
-      if (cst_ptr .ne. dstmap(node) + crk_pln_normal_idx -1) go to 20           
-      if (crkpln_nodes_state(crkpln_ptr) .eq. 0) go to 20                       
+      if( crkpln_ptr .eq. 0 ) go to 20                                           
+      if( cst_ptr .ne. dstmap(node) + crk_pln_normal_idx -1 ) go to 20           
+      if( crkpln_nodes_state(crkpln_ptr) .eq. 0 ) go to 20                       
 c                                                                               
 c                    the node has been re-constrained and must be               
 c                    re-released.  write a warning message,                     
@@ -453,7 +464,7 @@ c
       cnstrn(cst_ptr)    = d32460                                               
       cnstrn_in(cst_ptr) = d32460                                               
 c                                                                               
-      if ( above_ptr .eq.-1 ) then                                              
+      if( above_ptr .eq.-1 ) then                                              
 c                                                                               
 c                           at top of list.  move head pointer.                 
 c                                                                               
@@ -466,7 +477,7 @@ c                           in middle of list. correct pointers
 c                                                                               
          cstmap(above_ptr) = cstmap(cst_ptr)                                    
          cstmap(cst_ptr)   = 0                                                  
-         if ( csttail .eq. cst_ptr ) csttail = above_ptr                        
+         if( csttail .eq. cst_ptr ) csttail = above_ptr                        
          cst_ptr = cstmap(above_ptr)                                            
       end if                                                                    
       go to 30                                                                  
@@ -482,7 +493,7 @@ c                    check to see if we are at end of list. if not, go to
 c                    next value.                                                
 c                                                                               
  30   continue                                                                  
-      if ( cst_ptr .ne. -1 ) go to 10                                           
+      if( cst_ptr .ne. -1 ) go to 10                                           
 c                                                                               
       return                                                                    
       end                                                                       
@@ -493,7 +504,7 @@ c     *                      subroutine chk_crack_front              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/29/02, rhd               *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine traverses the nodes on the current       *          
 c     *        crack front, releasing any nodes that have (1) CTOA   *          
@@ -504,23 +515,29 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine chk_crack_front( killed_this_time, debug, step, iter )         
-      use global_data ! old common.main
+      subroutine chk_crack_front( killed_this_time, debug, step, iter ) 
+c        
+      use global_data, only : out, dstmap
 c                                                                               
       use node_release_data, only : inv_crkpln_nodes, num_neighbors,            
      &     neighbor_nodes, crack_front_nodes, crkpln_nodes_state                
       use main_data, only : cnstrn, output_packets, packet_file_no              
-      use damage_data                                                           
+      use damage_data  
+      use constants                                                         
 c                                                                               
-      implicit integer (a-z)                                                    
-      parameter (max_local_list=200)                                            
-c                                                                               
-      double precision                                                          
-     &     d32460, angle, two, one, crit_angle, hundred,                        
-     &     local_killed_angles(max_local_list)                                  
-      dimension local_killed_list(max_local_list)                               
-      data d32460, two, one, hundred / 32460.0, 2.0, 1.0, 100.0/                
-      logical debug, kill, killed_this_time                                     
+      implicit none
+c
+      logical :: killed_this_time, debug
+      integer :: step, iter
+c
+      integer, parameter :: max_local_list=200                                            
+      integer :: local_killed_list(max_local_list)       
+      integer :: i, dof,  neighbor_node, neighbor,  node_data_entry,
+     &           node, node_ptr, prev_node, num_killed_now,
+     &           prev_node_ptr                        
+      double precision :: angle, crit_angle,                        
+     &                    local_killed_angles(max_local_list)                                  
+      logical :: kill                                     
 c                                                                               
 c          traverse the linked list of crack front nodes and                    
 c          check if nodes need to be released.                                  
@@ -569,14 +586,14 @@ c
 c                                                                               
          call get_slope( neighbor_node, node, crk_pln_normal_idx,               
      &        angle )                                                           
-         if( debug ) write (out,'("     Angle is: ",e13.6)') angle              
+         if( debug ) write(out,'("     Angle is: ",e13.6)') angle              
 c                                                                               
          if( crkpln_nodes_state(inv_crkpln_nodes(neighbor_node))                
-     &        .eq. 0) then                                                      
-            if(debug) write (out,*) ' using initiation angle'                   
+     &        .eq. 0 ) then                                                      
+            if( debug ) write(out,*) ' using initiation angle'                   
             crit_angle = init_crit_ang * ( one - CTOA_range )                   
          else                                                                   
-            if(debug) write (out,*) ' using crack growth angle'                 
+            if( debug ) write(out,*) ' using crack growth angle'                 
             crit_angle = critical_angle * ( one - CTOA_range )                  
          end if                                                                 
 c                                                                               
@@ -596,12 +613,12 @@ c           for the specimen.
 c                                                                               
       if( kill ) then                                                           
          if( debug ) write(out,*) ' -> Crit.CTOA reached. Kill node.'           
-         if( .not. killed_this_time ) write (out,9000)                          
+         if( .not. killed_this_time ) write(out,9000)                          
          write(out,9010) node, angle * two                                      
          killed_this_time = .true.                                              
          call release_node( node, node_data_entry, debug )                      
          num_killed_now = num_killed_now + 1                                    
-         if ( num_killed_now .gt. max_local_list ) then                         
+         if( num_killed_now .gt. max_local_list ) then                         
            write(out,9030)                                                      
            call die_gracefully                                                  
          end if                                                                 
@@ -668,7 +685,7 @@ c     *                subroutine chk_crack_front_const              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/29/02  rhd               *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine checks the crack front for the constant  *          
 c     *        front algorithm, where the CTOA is measured a given   *          
@@ -682,24 +699,26 @@ c
 c                                                                               
       subroutine chk_crack_front_const( killed_this_time, debug, step,          
      &                                  iter )                                  
-      use global_data ! old common.main
-c                                                                               
+      use global_data, only : out, c
       use node_release_data, only : master_lines                                
-      use main_data, only :  output_packets, packet_file_no                     
-      use damage_data                                                           
+      use main_data, only :  output_packets, packet_file_no, crdmap                    
+      use damage_data 
+      use constants                                                          
 c                                                                               
-      implicit integer (a-z)                                                    
-      parameter (max_local_list=200)                                            
+      implicit none     
+c
+      logical :: killed_this_time, debug                                             
+      integer :: step, iter
+c
+      integer, parameter :: max_local_list=200                                            
+      integer :: local_killed_list(max_local_list)   
+      integer :: i, orig_node, loop, num_line, num_killed_now, idummy,
+     &           mnode                          
+      double precision :: angle, crit_angle, dist, targ_dist, xc, yc,
+     &                    zc, local_killed_angles(max_local_list)                       
+      logical :: kill, use_init                           
 c                                                                               
-      double precision                                                          
-     &     d32460, angle, two, one, crit_angle, hundred, dist,                  
-     &     targ_dist, local_killed_angles(max_local_list)                       
-      dimension local_killed_list(max_local_list)                               
-      data d32460, two, one, hundred                                            
-     &     / 32460.0, 2.0, 1.0, 100.0/                                          
-      logical debug, kill, killed_this_time, use_init                           
-c                                                                               
-      if( debug ) write(*,*) '>>> in chk_front_master_line'                     
+      if( debug ) write(out,*) '>>> in chk_front_master_line'                     
 c                                                                               
       killed_this_time = .false.                                                
       num_killed_now   = 0                                                      
@@ -710,10 +729,10 @@ c
 c                                                                               
 c             get CTOA for each master node                                     
 c                                                                               
-         if( debug ) write (out,'("    check front:",i7)') num_line             
+         if( debug ) write(out,'("    check front:",i7)') num_line             
          call get_slope_master_line( num_line, use_init, angle,                 
-     &        dum)                                                              
-         if( debug ) write (out,'("     Angle is: ",e13.6)') angle              
+     &        idummy )                                                              
+         if( debug ) write(out,'("     Angle is: ",e13.6)') angle              
 c                                                                               
          if( use_init ) then                                                    
             if( debug ) write(out,*) ' using initiation angle'                  
@@ -769,16 +788,17 @@ c
                end if                                                           
                local_killed_angles(num_killed_now) = angle * two                
 c                                                                               
-               if( loop .eq. 1 ) then                                           
-                  write(out,9010) master_lines(num_line,1), angle * two         
-                  local_killed_list(num_killed_now) =                           
-     &                 master_lines(num_line,1)                                 
+               mnode = master_lines(num_line,1)
+               xc = c(crdmap(mnode)+0) 
+               yc = c(crdmap(mnode)+1)
+               zc = c(crdmap(mnode)+2)
+               if( loop .eq. 1 ) then 
+                  write(out,9010) mnode, angle*two, step-1, xc, yc, zc         
+                  local_killed_list(num_killed_now) = mnode
                else                                                             
-                  write(out,9015) master_lines(num_line,1), angle * two         
-                  local_killed_list(num_killed_now) =                           
-     &               -master_lines(num_line,1)                                  
+                  write(out,9015) mnode, angle*two, step-1, xc, yc, zc          
+                  local_killed_list(num_killed_now) = mnode
                end if                                                           
-                                                                                
 c                                                                               
 c                  release the front related to the master node, then           
 c                  update the crack front.                                      
@@ -841,12 +861,13 @@ c
       end if                                                                    
 c                                                                               
       if ( debug ) write(out,*) '>> leaving chk_front_master_line'              
-c                                                                               
-c                                                                               
+c                                                                                                                                                              
       return                                                                    
- 9000 format(/,' >> node release option invoked for the following:',/)          
- 9010 format(  '        master node:  ',i7,'  CTOA: ',f6.2,' (degrees)')        
- 9015 format(  '        interim node: ',i7,'  CTOA: ',f6.2,' (degrees)')        
+ 9000 format(/,' >> node release option invoked for the following:',/) 
+ 9010 format('  master node: ',i7,' CTOA: ',f6.2,' (degrees)',
+     & 2x, 'step:',i7,2x,'(X,Y,Z):',e10.3,1x,e10.3,1x,e10.3)        
+ 9015 format('  interim node:',i7,' CTOA: ',f6.2,' (degrees)',
+     & 2x, 'step:',i7,2x,'(X,Y,Z):',e10.3,1x,e10.3,1x,e10.3)        
  9020 format(/,'        * critical CTOA:',                                      
      &       /,'            for growth    : ',f6.2,' (degrees)',                
      &       /,'            for initiation: ',f6.2,' (degrees)',                
@@ -866,32 +887,30 @@ c     *                      subroutine release_node                 *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/10/95                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *    This routine releases a node -- removes the constraint    *          
 c     *    and sets up reaction force release information.           *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
       subroutine release_node( node, node_data_entry, debug )                   
-      use global_data ! old common.main
-c                                                                               
+c
+      use global_data, only : cstmap, load, dstmap, ifv, csthed, out
       use node_release_data, only : crkpln_nodes_state,                         
-     &     crkpln_nodes_react                                                   
+     &                              crkpln_nodes_react                                                   
       use main_data, only : cnstrn_in, cnstrn                                   
-      use damage_data                                                           
+      use damage_data
+      use constants                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none  
+c
+      integer :: node, node_data_entry  
+      logical :: debug    
+c
+      integer :: dof, cst_ptr                                                          
 c                                                                               
-      double precision                                                          
-     &     d32460, point_two, point_eight                                       
-      data d32460, point_two, point_eight / 32460.0, 0.2, 0.8/                  
-      logical debug                                                             
-c                                                                               
-c                                                                               
-      if (debug) write (*,*) '>> releasing node..'                              
+      if( debug ) write(out,*) '>> releasing node..'                              
 c                                                                               
 c           To release the node:                                                
 c                   a) set global flag that says "no elements                   
@@ -909,7 +928,7 @@ c
       cnstrn_in(dof) = d32460                                                   
       cst_ptr        = csthed                                                   
 c                                                                               
-      if ( cst_ptr .eq. dof ) then                                              
+      if( cst_ptr .eq. dof ) then                                              
 c                                                                               
 c                           we are killing the first entry in the list.         
 c                           move the list head pointer.                         
@@ -923,15 +942,15 @@ c                           found, make the entry that points to the
 c                           killed entry point to the next valid entry.         
 c                                                                               
          do while (.true.)                                                      
-            if ( cstmap(cst_ptr) .eq. dof ) then                                
+            if( cstmap(cst_ptr) .eq. dof ) then                                
                cstmap(cst_ptr) = cstmap(dof)                                    
-               if ( cstmap(cst_ptr) .eq. -1 ) csttail = cst_ptr                 
+               if( cstmap(cst_ptr) .eq. -1 ) csttail = cst_ptr                 
                cstmap(dof) = 0                                                  
                exit                                                             
             end if                                                              
             cst_ptr = cstmap(cst_ptr)                                           
-            if ( cst_ptr .eq. -1 ) then                                         
-               write (out,*) '>>>> Fatal Error: failed to find',                
+            if( cst_ptr .eq. -1 ) then                                         
+               write(out,*) '>>>> Fatal Error: failed to find',                
      &              'constraint in constraint linked list.'                     
                call die_gracefully                                              
                stop                                                             
@@ -944,10 +963,10 @@ c                     Store the internal force at the node, and initialize
 c                     the node's state to 1.                                    
 c                                                                               
       crkpln_nodes_state(node_data_entry) = 1                                   
-      if ( release_type .eq. 1 ) then                                           
+      if( release_type .eq. 1 ) then                                           
         crkpln_nodes_react(node_data_entry) = ifv(dof)                          
       end if                                                                    
-      if ( release_type .eq. 2 ) then                                           
+      if( release_type .eq. 2 ) then                                           
         load(dof) = load(dof) - point_two * ifv(dof)                            
         crkpln_nodes_react ( node_data_entry ) = point_eight * ifv(dof)         
       end if                                                                    
@@ -955,7 +974,7 @@ c
       num_ctoa_released_nodes = num_ctoa_released_nodes + 1                     
 c                                                                               
  9999 continue                                                                  
-      if (debug) write (*,*) '<< finished releasing node..'                     
+      if (debug) write(out,*) '<< finished releasing node..'                     
 c                                                                               
       return                                                                    
       end                                                                       
@@ -966,7 +985,7 @@ c     *                      subroutine release_front                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 7/31/97                    *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *    Used in the const_front algorithm. This routine, given a  *          
 c     *    master node, finds the attatched crack front, stores it   *          
@@ -976,26 +995,34 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine release_front( master_node, debug )                            
-      use global_data ! old common.main
-c                                                                               
+      subroutine release_front( master_node, debug )
+c                            
+      use global_data, only : out, dstmap
       use node_release_data, only : crkpln_nodes_state,                         
-     &     crkpln_nodes_react, crack_front_list, inv_crkpln_nodes,              
-     &     num_neighbors, neighbor_nodes                                        
+     &                              crkpln_nodes_react,
+     &                              crack_front_list, inv_crkpln_nodes,              
+     &                              num_neighbors, neighbor_nodes                                        
       use main_data, only : cnstrn                                              
-      use damage_data                                                           
+      use damage_data
+      use constants                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      character(len=1) :: dums                                                  
-      real dumr                                                                 
+      implicit none
+c
+      integer :: master_node
+      logical :: debug
+c
+      integer :: i, j, k, dof, entry, idum, list_entry, ptr, ptr_last, 
+     &           node, neighbor_node, neigh2, dof2, 
+     &           neighbor_data_entry, node_data_entry
+      character(len=1) :: dums    
+      double precision :: dumd                                              
+      real :: dumr                                                                 
 c                                                                               
-      double precision                                                          
-     &     d32460, dumd                                                         
-      data d32460 / 32460.0/                                                    
-      logical debug, crack_node, same_front                                     
+      logical :: crack_node
+      logical, external :: same_front                                     
 c                                                                               
 c                                                                               
-      if (debug) write (*,*) '>> releasing front...'                            
+      if( debug ) write(out,*) '>> releasing front...'                            
 c                                                                               
 c           check if master node has already been released. This can happen     
 c           if two cracks are just about to coalese, such that there is         
@@ -1003,7 +1030,7 @@ c           a single line of constrained nodes surrounded by free nodes.
 c           In this case, return.                                               
 c                                                                               
       dof = dstmap(master_node)+crk_pln_normal_idx-1                            
-      if (cnstrn(dof) .eq. d32460) goto 9999                                    
+      if( cnstrn(dof) .eq. d32460 ) goto 9999                                    
 c                                                                               
 c           initialize const_front_list for holding the crack front as          
 c           we find it.  This will be used by the reaction force                
@@ -1016,15 +1043,15 @@ c
 c               if no free space in the const_front_list                        
 c               is found, then stop execution                                   
 c                                                                               
-         if (entry .gt. num_crack_fronts * num_nodes_grwinc) then               
-            call errmsg (285, dum, dums, dumr, dumd)                            
+         if( entry .gt. num_crack_fronts * num_nodes_grwinc ) then               
+            call errmsg(285, idum, dums, dumr, dumd)                            
             call die_gracefully                                                 
             stop                                                                
          endif                                                                  
 c                                                                               
 c               free space found; start the list                                
 c                                                                               
-         if (crack_front_list(entry,1) .eq. 0) then                             
+         if( crack_front_list(entry,1) .eq. 0 ) then                             
             list_entry = entry                                                  
             crack_front_list(list_entry,1) = master_node                        
             exit                                                                
@@ -1039,26 +1066,26 @@ c           list.  In this way, the crack_front_node list will be both
 c           processed such that each node on it is released, and the list       
 c           will be expanded as new crack front nodes are found.                
 c                                                                               
-      if (debug) write (out,*) '> check crack_front_list'                       
+      if( debug ) write(out,*) '> check crack_front_list'                       
       ptr = 0                                                                   
       ptr_last = 1                                                              
       do while (.true.)                                                         
          ptr = ptr + 1                                                          
-         if (debug) write (out,*) '  - ptr = ', ptr                             
+         if( debug ) write(out,*) '  - ptr = ', ptr                             
 c                                                                               
 c              check if we have processed all the nodes on the list; exit       
 c              if we have.                                                      
 c                                                                               
-         if (ptr .gt. num_nodes_thick) exit                                     
+         if( ptr .gt. num_nodes_thick ) exit                                     
          node = crack_front_list ( entry, ptr )                                 
-         if (ptr .gt. ptr_last) exit                                            
-         if (node .eq. 0) exit                                                  
+         if( ptr .gt. ptr_last ) exit                                            
+         if( node .eq. 0 ) exit                                                  
          node_data_entry = inv_crkpln_nodes ( node )                            
 c                                                                               
 c              node has not yet been processed.  release it.                    
 c                                                                               
-         call release_node ( node, node_data_entry, debug )                     
-         if (node .ne. master_node) write (out,9000) node,master_node           
+         call release_node( node, node_data_entry, debug )                     
+         if( node .ne. master_node ) write(out,9000) node,master_node           
 c                                                                               
 c              now search the node's neighbors, looking for crack front         
 c              nodes.  A neighbor node is a crack front node if it is           
@@ -1071,13 +1098,13 @@ c
 c                                                                               
             neighbor_node = neighbor_nodes (i,node_data_entry)                  
             dof = dstmap(neighbor_node)+crk_pln_normal_idx-1                    
-            if (cnstrn(dof) .eq. d32460) cycle                                  
+            if( cnstrn(dof) .eq. d32460 ) cycle                                  
 c                                                                               
 c                       check if node is already assigned in                    
 c                       const_front_list; skip it if it is                      
 c                                                                               
             do j = 1, ptr_last                                                  
-               if ( crack_front_list(list_entry, j)                             
+               if( crack_front_list(list_entry, j )                             
      &             .eq. neighbor_node ) go to 100                               
             end do                                                              
 c                                                                               
@@ -1089,12 +1116,12 @@ c
             do j = 1, num_neighbors(neighbor_data_entry)                        
                neigh2 = neighbor_nodes (j,neighbor_data_entry)                  
                dof2   = dstmap(neigh2)+crk_pln_normal_idx-1                     
-               if ( cnstrn(dof2) .ne. d32460 ) cycle                            
+               if( cnstrn(dof2) .ne. d32460 ) cycle                            
 c                                                                               
 c                          check if node was released just this step            
 c                                                                               
                do k = 1, ptr_last                                               
-                  if ( crack_front_list(list_entry, k)                          
+                  if( crack_front_list(list_entry,k)                          
      &                .eq. neighbor_node ) cycle                                
                end do                                                           
 c                                                                               
@@ -1102,8 +1129,8 @@ c                          skip node if it is the node we are searching
 c                          from, or if node found is not on same crack          
 c                          front.                                               
 c                                                                               
-               if (neigh2 .eq. node) cycle                                      
-           if (.not. same_front(neighbor_node, neighbor_data_entry,             
+               if( neigh2 .eq. node ) cycle                                      
+           if( .not. same_front(neighbor_node, neighbor_data_entry,             
      &               node) ) cycle                                              
 c                                                                               
                crack_node = .true.                                              
@@ -1113,12 +1140,12 @@ c
 c                       if node is a crack node, then put it in                 
 c                       crack_front_list                                        
 c                                                                               
-            if (crack_node) then                                                
+            if( crack_node ) then                                                
                ptr_last = ptr_last + 1                                          
-               if (debug) write (out,*) '     cfn neighbor:',                   
+               if( debug ) write(out,*) '     cfn neighbor:',                   
      &                neighbor_node,' into ',ptr_last                           
-               if (ptr_last .gt. num_nodes_thick) then                          
-                  call errmsg (285, dum, dums, dumr, dumd)                      
+               if( ptr_last .gt. num_nodes_thick ) then                          
+                  call errmsg(285, idum, dums, dumr, dumd)                      
                   call die_gracefully                                           
                   stop                                                          
                endif                                                            
@@ -1135,18 +1162,18 @@ c
 c              if we are using release by steps, then we don't a                
 c              need the nodal list anymore.  Clear it out.                      
 c                                                                               
-      if (release_type .eq. 1) then                                             
-         do i=1, num_nodes_thick                                                
+      if( release_type .eq. 1 ) then                                             
+         do i = 1, num_nodes_thick                                                
             crack_front_list(list_entry,i) = 0                                  
          end do                                                                 
       endif                                                                     
 c                                                                               
 c                                                                               
  9999 continue                                                                  
-      if (debug) write (*,*) '<< finished releasing front..'                    
+      if( debug ) write(out,*) '<< finished releasing front..'                    
 c                                                                               
       return                                                                    
- 9000 format(  '             node: ',i7,'  slave of master node: ',i6)          
+ 9000 format('         node: ',i7,' connected to master node: ',i7)          
       end                                                                       
 c                                                                               
 c     ****************************************************************          
@@ -1155,7 +1182,7 @@ c     *                      subroutine update_crack_front           *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 3/30/21 rhd                *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *      This routine updates the crack front list, removing     *          
 c     *      entries of newly released nodes and adding to the       *          
@@ -1164,25 +1191,28 @@ c     *      in the direction normal to the crack plane.             *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine update_crack_front( debug )                                    
-      use global_data ! old common.main
-c                                                                               
+      subroutine update_crack_front( debug ) 
+c                                   
+      use global_data, only : out, dstmap                                                                               
       use node_release_data, only : inv_crkpln_nodes, num_neighbors,            
-     &     neighbor_nodes, crack_front_nodes, crkpln_nodes_state,               
-     &     master_nodes                                                         
+     &                              neighbor_nodes, crack_front_nodes,
+     &                              crkpln_nodes_state, master_nodes                                                         
       use main_data, only : cnstrn                                              
-      use damage_data                                                           
+      use damage_data 
+      use constants                                                          
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
+      implicit none
+c
+      logical :: debug
+c        
+      integer :: pointer, above_node_ptr, node, node_data_entry,
+     &           temp_ptr, neighbor, neighbor_node, dof, new_node,
+     &           master_entry, dumi                                                                      
       character(len=1) :: dums                                                  
-      real dumr                                                                 
-      double precision                                                          
-     &     d32460, dumd, zero                                                   
-      data d32460, zero  / 32460.0, 0.0 /                                       
-      logical debug, next_node_found                                            
-c                                                                               
-      integer, external :: incrack_master
+      real :: dumr                                                                 
+      double precision :: dumd
+      logical :: next_node_found                                            
+      integer, external :: incrack_master, find_in_list
 c                                                                               
 c                                                                               
 c            Traverse linked list of the crack front nodes.                     
@@ -1191,7 +1221,7 @@ c                   a) delete the node from the crack front list
 c                   b) add any neighbors of this node that are still            
 c                      constrained to the crack front list                      
 c                                                                               
-      if (debug) write (out,*) '>>>>>> Updating linked list.'                   
+      if( debug ) write(out,*) '>>>>>> Updating linked list.'                   
 c                                                                               
 c            initialize the pointers for traversing the list.                   
 c                                                                               
@@ -1207,7 +1237,7 @@ c            state and skip node if the state is not 1.
 c                                                                               
       node = crack_front_nodes(pointer,1)                                       
       node_data_entry = inv_crkpln_nodes(node)                                  
-      if (crkpln_nodes_state(node_data_entry).ne.1) goto 20                     
+      if( crkpln_nodes_state(node_data_entry) .ne. 1 ) goto 20                     
 c                                                                               
 c                  node is newly killed.                                        
 c                                                                               
@@ -1217,7 +1247,7 @@ c                       Note: by doing this, we won't need to move
 c                             the pointers for the next list entry              
 c                                                                               
       temp_ptr = crack_front_nodes(pointer,2)                                   
-      call rm_from_list (pointer, above_node_ptr)                               
+      call rm_from_list(pointer, above_node_ptr)                               
       pointer = temp_ptr                                                        
 c                                                                               
 c                    b) add any still constrained neighbors to                  
@@ -1227,8 +1257,8 @@ c
       do neighbor = 1, num_neighbors(node_data_entry)                           
 c                                                                               
          neighbor_node = neighbor_nodes(neighbor,node_data_entry)               
-         dof= dstmap(neighbor_node)+crk_pln_normal_idx-1                        
-         if (cnstrn(dof).ne.d32460) then                                        
+         dof = dstmap(neighbor_node)+crk_pln_normal_idx-1                        
+         if( cnstrn(dof) .ne. d32460 ) then                                        
 c                                                                               
 c                         neighbor is constrained. check if it is               
 c                         already on the list.  If it isn't, add to             
@@ -1238,12 +1268,12 @@ c                         if we are doing const_growth, then replace the
 c                         old master node in the list of master nodes with      
 c                         the new node.                                         
 c                                                                               
-            new_node = neighbor_node                                            
-            next_node_found = .true.                                            
-           if (find_in_list(neighbor_node,dumi).eq.-1) then                     
-               call add_to_list (neighbor_node)                                 
+           new_node = neighbor_node                                            
+           next_node_found = .true.                                            
+           if( find_in_list(neighbor_node,dumi).eq.-1 ) then                     
+               call add_to_list( neighbor_node )                                 
                master_entry = incrack_master(node)                                      
-               if (master_entry .gt. 0) then                                    
+               if( master_entry .gt. 0 ) then                                    
                   master_nodes(master_entry) = neighbor_node                    
                endif                                                            
             endif                                                               
@@ -1256,7 +1286,7 @@ c            line list.  If we removed a node, but didn't add a new
 c            one, then a crack has coalesed, so we zero out the                 
 c            corresponding entry.                                               
 c                                                                               
-      if ( const_front ) call update_master_line (node, new_node,               
+      if( const_front ) call update_master_line( node, new_node,               
      &     next_node_found, debug )                                             
 c                                                                               
       goto 30                                                                   
@@ -1271,9 +1301,9 @@ c
 c            if we are not at end of list, check the next node.                 
 c                                                                               
  30   continue                                                                  
-      if (pointer .ne. -1) goto 10                                              
+      if( pointer .ne. -1 ) goto 10                                              
 c                                                                               
-      if (debug) write (out,*) '>>>>>> Linked list is now updated.'             
+      if( debug ) write(out,*) '>>>>>> Linked list is now updated.'             
 c                                                                               
       return                                                                    
       end                                                                       
@@ -1284,7 +1314,7 @@ c     *                      subroutine update_master_line           *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/16/97                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine updates the master line list after       *          
 c     *        all the crack front releases have been calculated.    *          
@@ -1295,31 +1325,31 @@ c     *        to indicate the crack front no longer exists.         *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-      subroutine update_master_line( old_node, new_node,                        
-     &     next_node_found, debug )                                             
-      use global_data ! old common.main
-c                                                                               
+      subroutine update_master_line( old_node, new_node, 
+     &                               next_node_found, debug )                                             
+c
+      use global_data, only : out
       use node_release_data, only : master_lines, old_angles_at_front           
-      use damage_data                                                           
+      use damage_data
+      use constants                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     zero                                                                 
-      data zero  / 0.0 /                                                        
-c                                                                               
-      logical next_node_found, debug                                            
+      implicit none
+c
+      integer :: old_node, new_node, num_line
+      logical :: next_node_found, debug  
+c
+      integer :: i, j                                          
 c                                                                               
 c          if no replacement node was found, then the crack is coalesing        
 c          or ending.  Zero out the corresponding entry in the master_lines     
 c          structure.                                                           
 c                                                                               
-      if ( .not. next_node_found ) then                                         
+      if( .not. next_node_found ) then                                         
 c                                                                               
          do i = 1, num_crack_fronts                                             
-            if ( master_lines(i,1) .eq. old_node ) then                         
-               if (debug) write (*,*) '-> dead node, zero master_line:',        
-     &              old_node                                                    
+            if( master_lines(i,1) .eq. old_node ) then                         
+               if( debug ) write(out,*) 
+     &           '-> dead node, zero master_line:', old_node                                                    
                do j = 1, num_nodes_back + 1                                     
                   master_lines(i,j) = 0                                         
                enddo                                                            
@@ -1334,15 +1364,15 @@ c
       else                                                                      
 c                                                                               
          do num_line = 1, num_crack_fronts                                      
-            if ( master_lines(num_line,1) .eq. old_node ) then                  
+            if( master_lines(num_line,1) .eq. old_node ) then                  
                do i = num_nodes_back,1,-1                                       
-                  master_lines( num_line, i+1 ) =                               
-     &                 master_lines( num_line, i )                              
+                  master_lines(num_line,i+1) =                               
+     &                 master_lines(num_line,i)                              
                enddo                                                            
                exit                                                             
             endif                                                               
          enddo                                                                  
-         master_lines( num_line, 1 ) = new_node                                 
+         master_lines(num_line,1) = new_node                                 
 c                                                                               
       endif                                                                     
 c                                                                               
@@ -1355,7 +1385,7 @@ c     *                      subroutine get_slope                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 08/28/95                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine gets the angle between a crack front     *          
 c     *        node and an unconstrained neighboring crack face      *          
@@ -1363,18 +1393,18 @@ c     *        node.  This is used in the node_release algorithm.    *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
+      subroutine get_slope( node1, node2, normal, angle )
+c                       
+      use global_data, only : c, dstmap, u
+      use main_data, only : crdmap
+      use constants                                              
 c                                                                               
+      implicit none
+c
+      integer :: node1, node2, normal
+      double precision :: angle
 c                                                                               
-      subroutine get_slope( node1, node2, normal, angle )                       
-      use global_data ! old common.main
-c                                                                               
-      use main_data, only : crdmap                                              
-c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision                                                          
-     &      angle, dist_x, dist_y, dist_z, plane_dist, pi                       
-      data pi /3.14159/                                                         
+      double precision :: dist_x, dist_y, dist_z, plane_dist
 c                                                                               
 c               calculate the distances in the three coordinate                 
 c               directions between the two nodes.                               
@@ -1386,29 +1416,28 @@ c
       dist_z = c(crdmap(node1)+2) + u(dstmap(node1)+2)                          
      &      - ( c(crdmap(node2)+2) + u(dstmap(node2)+2))                        
 c                                                                               
-      if ( normal .eq. 1 ) then                                                 
+      if( normal .eq. 1 ) then                                                 
 c                                                                               
 c               x is direction of crack plane normal                            
 c                                                                               
          plane_dist = sqrt (dist_y ** 2 + dist_z ** 2)                          
-         angle = atan( dist_x / plane_dist ) * 180.0 / pi                       
+         angle = atan( dist_x / plane_dist ) * oneeighty / pi                       
 c                                                                               
-      else if (normal .eq. 2) then                                              
+      else if( normal .eq. 2 ) then                                              
 c                                                                               
 c               y is direction of crack plane normal                            
 c                                                                               
          plane_dist = sqrt (dist_x ** 2 + dist_z ** 2)                          
-         angle = atan( dist_y / plane_dist ) * 180.0 / pi                       
+         angle = atan( dist_y / plane_dist ) * oneeighty / pi                       
 c                                                                               
-      else if ( normal .eq. 3 ) then                                            
+      else if( normal .eq. 3 ) then                                            
 c                                                                               
 c               z is direction of crack plane normal                            
 c                                                                               
          plane_dist = sqrt (dist_x ** 2 + dist_y ** 2)                          
-         angle = atan( dist_z / plane_dist ) * 180.0 / pi                       
+         angle = atan( dist_z / plane_dist ) * oneeighty / pi                       
 c                                                                               
       end if                                                                    
-c                                                                               
 c                                                                               
       return                                                                    
       end                                                                       
@@ -1419,42 +1448,43 @@ c     *                      subroutine get_slope_master_line        *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/16/97                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine gets the CTOA at a master node at a      *          
 c     *        defined distance behind the crack front, as defined   *          
 c     *        by the master_line for the node.                      *          
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
-c                                                                               
-c                                                                               
+c
       subroutine get_slope_master_line( num_line, use_init, angle,              
-     &     num_elems_back)                                                      
-      use global_data ! old common.main
-c                                                                               
+     &                                  num_elems_back)                                                      
+c
+      use global_data, only : out
       use node_release_data, only : master_lines, crkpln_nodes_state,           
-     &     inv_crkpln_nodes                                                     
-      use damage_data                                                           
+     &                              inv_crkpln_nodes                                                     
+      use damage_data     
+      use constants                                                      
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision                                                          
-     &     angle, dist, d_dist, height, pi, zero, factor, d_height,             
-     &     one_eighty, one, four, ctoa_dist_back, dumd                          
-      data zero, one_eighty, one, four / 0.0, 180.0, 1.0, 4.0/                  
-      real dumr                                                                 
+      implicit none
+c
+      integer :: num_line, num_elems_back
+      double precision :: angle  
+      logical :: use_init                                                 
+c                    
+      integer :: i, base_node, next_node, node_idx, istate                                                           
+      double precision :: dist, d_dist, height, factor, d_height,             
+     &                    ctoa_dist_back, dumd, old_height                         
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      logical debug, use_init                                                   
+      logical :: debug                                                
 c                                                                               
       debug = .false.                                                           
-      pi = four * atan(one)                                                     
       num_elems_back = 0                                                        
 c                                                                               
 c           if master_lines entry is zeroed, then set angle to zero             
 c           and leave.                                                          
 c                                                                               
-      if (master_lines(num_line,1) .eq. 0) then                                 
+      if( master_lines(num_line,1) .eq. 0 ) then                                 
          angle = zero                                                           
          return                                                                 
       endif                                                                     
@@ -1462,16 +1492,17 @@ c             determine if we should use the initial angle or continuation
 c             angle. If the second node in the master_line list has never       
 c             been released, then the crack has not yet moved, so we can        
 c             use the initiation angle and distance.                            
-c                                                                               
-      if ( crkpln_nodes_state( inv_crkpln_nodes(                                
-     &     master_lines( num_line, 2 ) ) ) .eq.0 ) then                         
+c               
+      i = master_lines(num_line,2)
+      istate = crkpln_nodes_state(inv_crkpln_nodes(i))                                                                
+      if( istate .eq. 0 ) then                         
          use_init = .true.                                                      
          ctoa_dist_back = init_ctoa_dist                                        
-         if (debug) write (*,*) 'Using initiation angle'                        
+         if( debug ) write(out,*) 'Using initiation angle'                        
       else                                                                      
          use_init = .false.                                                     
          ctoa_dist_back = ctoa_dist                                             
-         if (debug) write (*,*) 'Using release angle'                           
+         if( debug ) write(out,*) 'Using release angle'                           
       endif                                                                     
 c                                                                               
 c           calculate arc distance along the master line until we               
@@ -1492,18 +1523,18 @@ c
 c                                                                               
 c                  get distance                                                 
 c                                                                               
-         call get_dist ( next_node, base_node, crk_pln_normal_idx,              
-     &        d_dist, d_height)                                                 
+         call get_dist( next_node, base_node, crk_pln_normal_idx,              
+     &                  d_dist, d_height )                                                 
 c                                                                               
 c                  check distance -- if further than we want to go,             
 c                  calculate the angle                                          
 c                                                                               
-         if (dist + d_dist .ge. ctoa_dist_back) then                            
+         if( dist + d_dist .ge. ctoa_dist_back ) then                            
 c                                                                               
             factor = ( ctoa_dist_back - dist ) / d_dist                         
             dist = dist + d_dist * factor                                       
             height = height + d_height * factor                                 
-            angle = atan( height / dist ) * one_eighty / pi                     
+            angle = atan( height / dist ) * oneeighty / pi                     
             exit                                                                
 c                                                                               
          else                                                                   
@@ -1514,27 +1545,27 @@ c
             dist = dist + d_dist                                                
             height = height + d_height                                          
             node_idx = node_idx + 1                                             
-            if (node_idx .gt. num_nodes_back + 1) then                          
-               call errmsg( 290, num_nodes_back, dums, dumr, dumd)              
+            if( node_idx .gt. num_nodes_back + 1 ) then                          
+               call errmsg( 290, num_nodes_back, dums, dumr, dumd )              
                call die_gracefully                                              
                stop                                                             
             endif                                                               
             base_node = next_node                                               
             next_node = master_lines(num_line,node_idx)                         
-            if (next_node .eq. 0) then                                          
+            if( next_node .eq. 0 ) then                                          
                call errmsg( 291, master_lines(num_line,1), dums, dumr,          
-     &              dumd)                                                       
+     &              dumd )                                                       
                call die_gracefully                                              
-               stop                                                             
             endif                                                               
 c                                                                               
          endif                                                                  
 c                                                                               
-      end do                                                                    
-      if (debug) then                                                           
-         write (*,*) ' nodes;',base_node, next_node                             
-         write (*,*) ' number of elements back;',num_elems_back                 
-         write (*,*) ' dist:',dist, '  height:',height                          
+      end do    
+c                                                                 
+      if( debug ) then                                                           
+         write(out,*) ' nodes;',base_node, next_node                             
+         write(out,*) ' number of elements back;',num_elems_back                 
+         write(out,*) ' dist:',dist, '  height:',height                          
       endif                                                                     
 c                                                                               
       return                                                                    
@@ -1549,7 +1580,7 @@ c     *                      subroutine get_dist_to_node             *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/5/98                     *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine gets the distance from a given old       *          
 c     *        master node to the current master node.               *          
@@ -1558,28 +1589,31 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine get_dist_to_node( num_line, old_node, dist)                    
-      use global_data ! old common.main
-c                                                                               
+      subroutine get_dist_to_node( num_line, old_node, dist )                    
+c
+      use global_data, only : out
       use node_release_data, only : master_lines                                
-      use damage_data                                                           
+      use damage_data
+      use constants                                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision                                                          
-     &     dist, d_dist, height, zero, factor, d_height,                        
-     &     one_eighty, one, four, ctoa_dist_back, dumd                          
-      data zero, one_eighty, one, four / 0.0, 180.0, 1.0, 4.0/                  
-      real dumr                                                                 
+      implicit none
+c
+      integer :: num_line, old_node
+      double precision :: dist
+c      
+      integer :: base_node, next_node, node_idx                                                                         
+      double precision :: d_dist, height, factor, d_height,                        
+     &                    ctoa_dist_back, dumd                          
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      logical debug, use_init                                                   
+      logical :: debug, use_init                                                   
 c                                                                               
       debug = .false.                                                           
 c                                                                               
 c           if master_lines entry is zeroed, then set distance to zero          
 c           and leave.                                                          
 c                                                                               
-      if (master_lines(num_line,1) .eq. 0) then                                 
+      if( master_lines(num_line,1) .eq. 0 ) then                                 
          dist = zero                                                            
          return                                                                 
       endif                                                                     
@@ -1598,34 +1632,34 @@ c
 c                                                                               
 c                  get distance                                                 
 c                                                                               
-         call get_dist ( next_node, base_node, crk_pln_normal_idx,              
-     &        d_dist, d_height)                                                 
+         call get_dist( next_node, base_node, crk_pln_normal_idx,              
+     &                  d_dist, d_height )                                                 
 c                                                                               
 c                  check distance -- if further than we want to go,             
 c                  calculate the angle                                          
 c                                                                               
          dist = dist + d_dist                                                   
          node_idx = node_idx + 1                                                
-         if (node_idx .gt. num_nodes_back + 1) then                             
-            call errmsg( 290, num_nodes_back, dums, dumr, dumd)                 
+         if( node_idx .gt. num_nodes_back + 1 ) then                             
+            call errmsg( 290, num_nodes_back, dums, dumr, dumd )                 
             call die_gracefully                                                 
-            stop                                                                
          endif                                                                  
          base_node = next_node                                                  
          next_node = master_lines(num_line,node_idx)                            
-         if ( base_node .eq. old_node ) then                                    
+         if( base_node .eq. old_node ) then                                    
             exit                                                                
-         else if (next_node .eq. 0) then                                        
+         else if( next_node .eq. 0 ) then                                        
             call errmsg( 291, master_lines(num_line,1), dums, dumr,             
-     &           dumd)                                                          
+     &           dumd )                                                          
             call die_gracefully                                                 
             stop                                                                
          endif                                                                  
 c                                                                               
       end do                                                                    
 c                                                                               
-      if (debug) then                                                           
-         write (*,*) '>>>>> in get_dist_to_node: dist to old node:',dist        
+      if( debug ) then                                                           
+         write(out,*) 
+     &       '>>>>> in get_dist_to_node: dist to old node:',dist        
       endif                                                                     
 c                                                                               
       return                                                                    
@@ -1637,7 +1671,7 @@ c     *                      subroutine get_dist                     *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 10/16/97                   *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *        This routine calculates the distance between two      *          
 c     *        nodes originally on the crack plane.  Distance is     *          
@@ -1645,15 +1679,17 @@ c     *        given in terms of planar distance and height.         *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine get_dist( node1, node2, normal, plane_dist, height)            
-      use global_data ! old common.main
-c                                                                               
+      subroutine get_dist( node1, node2, normal, plane_dist, height )            
+c
+      use global_data, only : c, u, dstmap
       use main_data, only : crdmap                                              
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
+c 
+      integer :: node1, node2, normal
+      double precision :: height, plane_dist                          
 c                                                                               
-      double precision                                                          
-     &      height, dist_x, dist_y, dist_z, plane_dist                          
+      double precision :: dist_x, dist_y, dist_z
 c                                                                               
 c               calculate the distances in the three coordinate                 
 c               directions between the two nodes.                               
@@ -1665,21 +1701,21 @@ c
       dist_z = c(crdmap(node1)+2) + u(dstmap(node1)+2)                          
      &      - ( c(crdmap(node2)+2) + u(dstmap(node2)+2))                        
 c                                                                               
-      if ( normal .eq. 1 ) then                                                 
+      if( normal .eq. 1 ) then                                                 
 c                                                                               
 c               x is direction of crack plane normal                            
 c                                                                               
          plane_dist = sqrt (dist_y ** 2 + dist_z ** 2)                          
          height = dist_x                                                        
 c                                                                               
-      else if (normal .eq. 2) then                                              
+      else if( normal .eq. 2 ) then                                              
 c                                                                               
 c               y is direction of crack plane normal                            
 c                                                                               
          plane_dist = sqrt (dist_x ** 2 + dist_z ** 2)                          
          height = dist_y                                                        
 c                                                                               
-      else if ( normal .eq. 3 ) then                                            
+      else if( normal .eq. 3 ) then                                            
 c                                                                               
 c               z is direction of crack plane normal                            
 c                                                                               
@@ -1698,7 +1734,7 @@ c     *                      function same_front                     *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 7/29/97                    *          
+c     *                   last modified : 6/22/21 rhd (cleanup)      *          
 c     *                                                              *          
 c     *   This function, given two nodes on crack fronts, returns    *          
 c     *   as true if the nodes are neighbors on the same crack front.*          
@@ -1707,20 +1743,22 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      logical function same_front (new_node, new_data_entry,                    
-     &    check_node )                                                          
+      logical function same_front( new_node, new_data_entry,                    
+     &                             check_node )                                                          
 c       
-      use global_data                                                                         
+      use global_data, only : dstmap                                                                         
       use node_release_data, only : inv_crkpln_nodes, num_neighbors,            
-     &     neighbor_nodes                                                       
+     &                              neighbor_nodes                                                       
       use main_data, only : cnstrn, cnstrn_in                                   
-      use damage_data                                                           
+      use damage_data  
+      use constants                                                         
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision                                                          
-     &     d32460                                                               
-      data d32460  / 32460.0 /                                                  
+      implicit none
+c
+      integer :: new_node, new_data_entry, check_node
+c
+      integer :: i, j, k, node1, node1_data_entry, dof, node2,
+     &           node2_data_entry, node3  
 c                                                                               
 c           This function checks a newly found crack front node to see if       
 c           it is on the same front as the node from which the new node         
@@ -1747,7 +1785,7 @@ c
          node1 = neighbor_nodes(i,new_data_entry)                               
          if( node1 .eq. check_node ) cycle                                      
          node1_data_entry = inv_crkpln_nodes(node1)                             
-         dof = dstmap(node1)+crk_pln_normal_idx-1                               
+         dof = dstmap(node1) + crk_pln_normal_idx-1                               
          if( cnstrn(dof) .ne. d32460 ) cycle                                    
          do j = 1, num_neighbors(node1_data_entry)                              
             node2 = neighbor_nodes(j,node1_data_entry)                          

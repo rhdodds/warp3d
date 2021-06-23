@@ -564,6 +564,8 @@ c
       double precision, parameter ::
      &   pt_one  = 0.1d0,
      &   ptone   = 0.1d0,
+     &   point_two = 0.2d0,
+     &   pt_two  = 0.2d0, 
      &   tenth   = 0.1d0,
      &   quarter = 0.25d0,
      &   pt_25   = 0.25d0,
