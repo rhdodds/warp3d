@@ -1,0 +1,124 @@
+!
+!	 small scale yielding model for crack growth analysis by
+!    element deletion at a critical plastic strain
+!
+!    plane-strain, K_I loading only by displacements on remote boundary
+!    1 layer of elements
+!    radius 2000 mm
+!    8-node hexes, B-bar, finite strain
+!    50 um x 50 um "cell" type elements along crack plane
+!
+!    crack extends for about 10 mm
+!    compute J on a remote domain
+!
+!    solution runs automatically with self-adjusting load step 
+!    sizes until element 1599 is deleted (about da = 10 mm)
+!
+!    Material: Zircaloy 4 (Paredes, Wierzbicki, IJSS 2020)
+!
+!    Reference:
+!
+!        Paredes, M. and Wierzbicki, T. On mechanical response of
+!        Zircaloy-4 under a wide range of stress states: from uniaxial
+!        tension to uniaxial compression
+!        IJSS, Vol 206, p 198-233, 2020.
+!        doi.org/10.1016/j.ijsolstr.2020.09.007
+!
+ structure ssy
+!
+  stress-strain curve 1
+    0.005168 454.784,
+    0.012080 479.597,
+    0.020839 505.435,
+    0.032065 531.438,
+    0.046538 556.722,
+    0.065260 580.654,
+    0.089527 603.113,
+    0.121015 624.556,
+    0.161901 645.781,
+    0.215012 667.532,
+    0.284021 690.257,
+    0.373702 714.146,
+    0.490260 739.279,
+    0.641760 765.713,
+    0.838687 793.506,
+    1.094672 822.721,
+    1.427433 853.425,
+    1.860003 885.688,
+    2.422328 919.587,
+    2.989999 948.216
+!
+ material Zr4_killable
+    properties mises e 88000 nu 0.34 curve 1 rho 0.0 killable
+!
+ material Zr4
+    properties mises e 88000 nu 0.34 curve 1 rho 0.0
+!
+ number of nodes   3910 elements  1795
+!
+ elements
+    1-1567 type l3disop  nonlinear material  Zr4,
+                       order 2x2x2 center_output bbar
+    1568-1795 type l3disop  nonlinear material  Zr4_killable,
+                          order 2x2x2 center_output bbar
+!
+*input './coords_mm.inp'
+*input './incid.inp'
+ blocking automatic size 64
+ constraints
+   all w = 0   $ plane-strain
+   plane y = 0 symmetry 
+*input './cons_KI_1.inp'
+!
+! output patran neutral
+ output model flat patran convention text file "model"
+! stop
+!
+ loading test
+  nonlinear
+    step 1-25000 constraints 0.5
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 10 $ global Newton iterations
+   minimum iterations 2
+   extrapolate on
+   convergence test norm res tol 0.001
+   line search on
+   divergence check on
+   nonconvergent solutions continue
+   adaptive off   $ global Newton iterations
+   batch messages off
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!
+ crack growth parameters
+     type of crack growth smcs
+     smcs type 4 A 923.34 n 0.187 c_1 0.06 c_2 449.67 c_3 0.93,
+                 max_eps_critical 0.8,
+                 cutoff_triaxiality 0.0 display
+     force release type steps
+     release steps 1
+     adaptive load control off plastic strain change 0.015,
+         alpha_min 0.75 alpha_max 2.0 allowable_release 240
+      print status top 20 elements
+      killed element limit 5000
+      stop if killed elements on 1599
+     smcs states on stream steps 1-10000 by 1
+!
+ output commands use file "./get_output.inp" steps 1-20000 by 1
+!
+*input from './commands.inp'
+!
+ stop
+
+
+
+
+

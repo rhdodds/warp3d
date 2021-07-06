@@ -1,0 +1,11 @@
+!
+ domain remote
+  normal plane  nx 0 ny 1 nz 0.0
+  symmetric
+  front nodes 3901 3902 linear
+  ignore crack face loading $ needed for killed elements
+  elements 1-1795
+  q-values 1-3550 3591-3638 3679-3716 3757-3796 3837-3910 1.0
+  function type d
+  compute domain integral
+!
