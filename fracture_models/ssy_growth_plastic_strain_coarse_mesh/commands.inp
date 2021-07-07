@@ -1,3 +1,4 @@
+
 !
 compute displacements for loading test step 1
 *input './get_J_average.inp'

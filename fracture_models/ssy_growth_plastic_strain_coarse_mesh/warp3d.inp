@@ -1,6 +1,6 @@
 !
 !	 small scale yielding model for crack growth analysis by
-!    element deletion at a critical plastic strain
+!    critical opening angle
 !
 !    plane-strain, K_I loading only by displacements on remote boundary
 !    1 layer of elements
@@ -11,8 +11,10 @@
 !    crack extends for about 10 mm
 !    compute J on a remote domain
 !
-!    solution runs automatically with self-adjusting load step 
-!    sizes until element 116 is deleted (about da = 10 mm)
+!    solution will run ~ 10,000 steps
+!
+!    solution runs automatically with self-adjusting load step
+!    sizes until node 2580 is released (about da = 10 mm)
 !
 !    Material: Zircaloy 4 (Paredes, Wierzbicki, IJSS 2020)
 !
@@ -22,9 +24,9 @@
 !        Zircaloy-4 under a wide range of stress states: from uniaxial
 !        tension to uniaxial compression
 !        IJSS, Vol 206, p 198-233, 2020.
-!        doi.org/10.1016/j.ijsolstr.2020.09.007
-!        
-  structure ssy
+!        doi.org/10.1016/j.ijsolstr.2020.09.007!
+! 
+ structure ssy
 !
   stress-strain curve 1
     0.005168 454.784,
@@ -62,7 +64,7 @@
     121-1191 type l3disop  nonlinear material  Zr4,
                           order 2x2x2 center_output bbar
 !
-*input './coords_mm.inp'
+*input './coords_mm_ctoa.inp'
 *input './incid.inp'
  blocking automatic size 60
  constraints
@@ -74,10 +76,10 @@
  output model flat patran convention text file "model"
 ! stop
 !
- loading test
+ loading test  $ remote K_I 
   nonlinear
-    step 1-5000 constraints 1
-!
+    step 1-20000 constraints 1.0
+! 
  nonlinear analysis parameters
    solution technique sparse direct
    time step 1.0e06
@@ -88,7 +90,7 @@
    line search on
    divergence check on
    nonconvergent solutions continue
-   adaptive off   $ global Newton iterations
+   adaptive on   $ global Newton iterations
    batch messages off
    wall time limit off
    material messages off
@@ -99,25 +101,29 @@
    user_routine off
 !
  crack growth parameters
-     type of crack growth smcs
-     smcs type 4 A 923.34 n 0.187 c_1 0.06 c_2 449.67 c_3 0.93,
-                 max_eps_critical 0.8,
-                 cutoff_triaxiality 0.0 display
-    regularization on type 3  Length_scale 0.088 Gf 100 m 1.0 alpha 4,
-           display
-     smcs deleted elements file on name 'delete_elements_data.out'
-     adaptive load control off plastic strain change 0.025,
-         alpha_min 0.75 alpha_max 2.0 allowable_release 240
-      print status top 20 elements
-      killed element limit 5000
-      stop if killed elements on 116
-!      smcs states on stream steps 10-10000 by 10
+   type of crack growth node_release
+   crack plane normal y coordinate 0.0 search tolerance 0.05
 !
- output commands use file "./get_output.inp" steps 1-10000
+   constant front growth on
+   master list 1 
+   number of nodes through thickness 2
+   characteristic length 0.1
+   angle for initiation 10 distance 0.1
+   angle for release 10 distance 0.1
 !
- *input file './commands.inp'
+   overshoot control on percent overshoot 1.0
+   auto load reduction on minimum steps 4
+   print status on crack front nodes crack plane nodes
+   force release type traction-separation
+   release fraction 0.1
 !
-stop
+   stop if nodes released on 2580
+!
+ output commands use file "./get_output.inp" steps 20-20000 by 20
+!
+ *input from './commands.inp'
+!
+ stop
 
 
 
