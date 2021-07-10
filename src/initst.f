@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/28/21 rhd                *
+c     *                   last modified : 6/28/21 rhd                *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -492,6 +492,7 @@ c
       print_top_list = .false.
       num_top_list = 0
       stop_killed_elist_length = 0
+      stop_released_nlist_length = 0
       use_estiff_at_death = .false.
       use_mesh_regularization = .false.
       regular_npoints = -1
