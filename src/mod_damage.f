@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 5/1/21 rhd                      *          
+c     *              last modified : 6/28/21 rhd                     *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -19,7 +19,8 @@ c
 c                     arrays                                                    
 c                                                                               
       integer, save, allocatable :: dam_ptr(:),
-     &          smcs_states_intlst(:), deleted_elist_to_stop(:)   
+     &          smcs_states_intlst(:), deleted_elist_to_stop(:),
+     &          released_nlist_to_stop(:)
 c                            
       double precision ::                                                         
      &   del_poros(mxstp_store), del_deff(mxstp_store),
@@ -64,7 +65,8 @@ c
      &   num_elements_killed, stop_killed_elist_length,                                                  
      &   num_elements_in_force_release, num_ctoa_released_nodes,
      &   num_user_kill_elems, killed_element_limit, num_top_list,
-     &   smcs_allowable_in_release, regular_type, regular_npoints            
+     &   smcs_allowable_in_release, regular_type, regular_npoints,
+     &   stop_released_nlist_length             
 c                                                                               
 c                     scalar logicals                                           
 c                                                                               
