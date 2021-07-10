@@ -4,7 +4,7 @@ c     *                      subroutine elem_load                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 2/21/2021 rhd              *          
+c     *                   last modified : 7/7/21 rhd                 *          
 c     *                                                              *          
 c     *     this subroutine sets up the equivalent nodal loads       *          
 c     *     calcs for all element loads on a 3-d isoparametrics      *          
@@ -55,11 +55,13 @@ c
 c                                                                               
 c                local variables                                                
 c              
-      integer :: now_thread, erow, exe_thread, element, i, j                                                                 
+      integer :: now_thread, erow, exe_thread, element, i, j  
+      logical :: skip                                                               
       logical, parameter :: debug = .false.                                                         
       double precision :: nrmeq                                                             
       double precision, allocatable :: del_eqload(:,:)     
-      integer, external :: omp_get_thread_num                         
+      integer, external :: omp_get_thread_num    
+      logical, external :: chk_killed                     
 c                                                                               
       if( debug ) then                                                         
          write(out,*) '>>>> entering elem_load.'                                 
@@ -78,13 +80,15 @@ c            parallel section. each processor runs down the entire do
 c            loop, but only performs work on the elements assigned              
 c            to it. otherwise the loop cycles.                                  
 c            each change in the eqload vector is marked by processor.           
-c                                                                               
-c$OMP PARALLEL PRIVATE( erow, now_thread, element, exe_thread )                      
+c         
+c$OMP PARALLEL PRIVATE( erow, now_thread, element, exe_thread, skip)                      
       now_thread =  omp_get_thread_num() + 1                                       
       do erow = 1, size                                                          
          exe_thread = thread_number(erow)                                       
          if( now_thread .ne. exe_thread ) cycle                                
-         element    = eload_data(erow,1)                                        
+         element = eload_data(erow,1)       
+         skip    = chk_killed( element ) 
+         if( skip ) cycle
          if( debug ) write(out,*) 'erow,elem,myid,exid',                           
      &        erow,element,now_thread,exe_thread                                
          call do_elem_load( element, eload_data(erow,2),                        

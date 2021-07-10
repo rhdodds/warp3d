@@ -375,7 +375,8 @@ c
           call eqldjb( dsf, ecoord, nnode, jacob, jacobi, det, ierr )      
           if( ierr .eq. 1 ) then
               write(out,9000) element, face
-              call die_abort
+              qmat = zero
+              return
           end if     
           call shapef( etype, fcoor(1,ptno), fcoor(2,ptno),                     
      &                 fcoor(3,ptno), sf )                                      
@@ -401,10 +402,11 @@ c
       return      
 c
  9000 format(' ',
-     & /,5x,'>>>>> FATAL ERROR: failed computation for element ',
+     & /,5x,'>>>>> WARNING: failed computation for element ',
      &   'equivalent forces...',
      & /,5x,'                   element # loaded face:',i8,i3,
-     & /,5x,'                   Face [J] invalid. Job terminated.',//)
+     & /,5x,'                   Face [J] invalid. ',
+     & /,5x,'                   Loading contribution ignored.')
 c
  9100 format(10x,i2,10f15.7)
 c                                                                               
