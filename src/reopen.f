@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 4/2/21 rhd                 *
+c     *                   last modified : 6/28/21 rhd                 *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -452,7 +452,7 @@ c
      &              stop_killed_elist_length,
      &              smcs_allowable_in_release, use_estiff_at_death,
      &              use_mesh_regularization, regular_npoints,
-     &              regular_type             
+     &              regular_type, stop_released_nlist_length              
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,
@@ -568,6 +568,13 @@ c
          end if
          call chk_data_key( fileno, 9, 7 )
          write(out,9140)
+c
+         isize = stop_released_nlist_length
+         if(  isize > 0 ) then
+           allocate( released_nlist_to_stop(isize) )
+           call rdbk( fileno, released_nlist_to_stop, isize )
+         end if
+
 c
       end if
       call chk_data_key( fileno, 9, 8 )

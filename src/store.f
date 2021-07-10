@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/13/21 rhd                *
+c     *                   last modified : 6/28/21 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -459,7 +459,7 @@ c
      &              stop_killed_elist_length,
      &              smcs_allowable_in_release, use_estiff_at_death,
      &              use_mesh_regularization, regular_npoints,
-     &              regular_type             
+     &              regular_type, stop_released_nlist_length             
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
@@ -619,6 +619,11 @@ c
          end if
          write (fileno) check_data_key
          write(out,9140)
+c  
+         isize = stop_released_nlist_length
+         if(  isize > 0 ) then
+           call wrtbk( fileno, released_nlist_to_stop, isize )
+         end if
 c
       end if
       write (fileno) check_data_key
