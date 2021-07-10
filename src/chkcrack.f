@@ -1264,7 +1264,7 @@ c     *               service function chk_killed                    *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/6/20 rhd                *          
+c     *                   last modified : 7/7/21 rhd                 *          
 c     *                                                              *          
 c     *     given an element, returns true if the                    *          
 c     *     element has been or is in-progress of being killed       *          
@@ -1282,7 +1282,8 @@ c
 c
       integer :: elem_ptr                                         
 c                                                                               
-      t_chk_killed = .false.                                                      
+      t_chk_killed = .false.  
+      if( .not. allocated( dam_ptr ) ) return                                                    
       elem_ptr =  dam_ptr(elem)    ! assume checking elsewhere                                            
       if( elem_ptr == 0 ) return ! element is not killable                                             
       t_chk_killed = dam_state( elem_ptr) > 0

@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 4/10/21 rhd                *          
+c     *                   last modified : 6/28/21 rhd                *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -1133,12 +1133,25 @@ c
       go to 10
 c                                                                               
 c          ------------------------------------------                           
-c          | stop if elements killed <list>         |                           
+c          | stop if elements killed <list>         |   
+c          | stop of nodes released <list>          |                      
 c          ------------------------------------------                           
 c                                                                               
  2300 continue                                                                  
-c        
-      call incrack_stop_elist                                                                       
+c                          
+c              stop (if) killed (elements) < list >  
+c              stop (if) nodes released <list>
+c                 
+      if( matchs_exact('if') ) call splunj
+      if( matchs_exact('killed') ) then
+          call incrack_stop_elist
+          go to 10
+      end if
+      if( matchs('nodes',4) ) then
+          call incrack_stop_nlist
+          go to 10
+      end if
+      call incrack_errmsg( 21 )
       go to 10
 c
 c          ------------------------------------------                           
@@ -1820,11 +1833,6 @@ c
 c                          
 c              stop (if) killed (elements) < list >  
 c                 
-      if( matchs_exact('if') ) call splunj
-      if( .not. matchs_exact('killed') ) then
-         call incrack_errmsg( 21 )
-         return
-      end if     
       if( matchs('elements',3) ) call splunj
       stop_killed_elist_length = 0
       if( allocated( deleted_elist_to_stop ) ) 
@@ -1878,6 +1886,67 @@ c
      &   /,14x,'job terminated now ...',/)
 c
       end subroutine incrack_stop_elist
+c
+      subroutine incrack_stop_nlist 
+      implicit none
+      integer :: vector_length, errnum  
+      logical, parameter :: ldebug = .false.                                                        
+c                          
+c              stop (if) nodes (released) < list >  
+c                 
+      if( matchs('released',3) ) call splunj
+      stop_released_nlist_length = 0
+      if( allocated( released_nlist_to_stop ) ) 
+     &    deallocate( released_nlist_to_stop )     
+      if( matchs_exact('off') ) return
+      if( .not. matchs_exact('on') ) then
+         call incrack_errmsg( 22 )
+         return
+      end if     
+      call scan
+      call trlist_allocated( released_nlist_to_stop, vector_length, 
+     &                       0, stop_released_nlist_length, errnum )
+c
+c              1 = no error. list found
+c              2 = parse rules failed in list
+c              3 = list overflowed its maximum length of mxlsz
+c              4 = no list found 
+c
+       if( errnum .eq. 4 ) then 
+          write(out,9000) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+      if( errnum .eq. 2 ) then
+          write(out,9010) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+      if( errnum .eq. 3 ) then
+          write(out,9020) 
+          call scan_flushline
+          num_error = num_error + 1
+          return
+      end if
+c
+      if( errnum .ne. 1 ) then  ! something bad wrong
+         write(out,9050)
+         call die_gracefully
+      end if
+c     
+      return
+ 9000 format(/1x,'>>>>> error: no node list found',
+     &   /,14x,'read new line ...',/)
+ 9010 format(/1x,'>>>>> error: integer list rules failed....',
+     &   ' read new line ...',/)
+ 9020 format(/1x,'>>>>> error: too many nodes in list....',
+     &   ' read new line ...',/)
+ 9050 format(/1x,'>>>>> FATAL ERROR: released nodes inconsistency',
+     &   /,14x,'job terminated now ...',/)
+c
+      end subroutine incrack_stop_nlist
 c
       end subroutine incrack                                                                 
 c                                                                               
