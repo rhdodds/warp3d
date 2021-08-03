@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 3/20/2021 rhd
+#   Last modifications: 8/2/21 rhd
 #
 #   How to run:
 #
@@ -22,8 +22,8 @@
 #     Links with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
 #
-#     Build tested with gfortran version 8.1.0 and MKL 19.0.5
-#     on OSX 10.15.7 (Catalina) and 10.14.5 (High Sierra)
+#     Build tested with gfortran version 10+ and MKL 2021.3
+#     on OSX 11.4 (Big Sur), OSX 10.5.4 (Catalina)
 #
 #     How we handle MKL libraries. The few required libraries are
 #     included in the WARP3D directory OSX_MKL_files.
@@ -117,19 +117,18 @@ ifeq  ($(BUILD_SYS), gfortran) #   gfortran options
   HARDWARE_SPECIFIC = -march=native
   MACHINE_TYPE = $(MINIMUM_MACHINE_TYPE)
   FCOPTS   =  -O3 $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form  \
-              -fcray-pointer -fopenmp  -Wno-argument-mismatch \
-             -fdec -cpp $(FTRAP) $(INLINE)  $(CHECKFLOAT) -J$(ODIR) 
+              -fcray-pointer -fopenmp  \
+              -fdec -cpp $(FTRAP) $(INLINE)  $(CHECKFLOAT) -J$(ODIR) \
+              -w -fallow-argument-mismatch
   OSX_LIBDIR = ../OSX_MKL_files
-  LINKOPS1  = -static-libgfortran  -Wl,-rpath,${OSX_LIBDIR}/libiomp5.a \
+  LINKOPS1  = -static-libgfortran ${OSX_LIBDIR}/libiomp5.a \
               ${OSX_LIBDIR}/libmkl_intel_lp64.a \
               ${OSX_LIBDIR}/libmkl_intel_thread.a \
-              ${OSX_LIBDIR}/libmkl_core.a \
-               ${OSX_LIBDIR}/libiomp5.a -lpthread -lm -ldl
+              ${OSX_LIBDIR}/libmkl_core.a 
   LINKOPS   = $(LINKOPS1)
 else  #  Intel Composer options
   COMPILER = ifort 
-  OPENMP   = -qopenmp -reentrancy -static-intel \
-             -qopenmp-link=static
+  OPENMP   = -qopenmp -reentrancy 
   FTRAP    =
   OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
   OPT_REPORT =
@@ -141,19 +140,19 @@ else  #  Intel Composer options
   CHECKFLOAT = -fp-speculation=safe
 #
   OSX_LIBDIR = ../OSX_MKL_files
-  LINKOPS1  =  -Wl,-rpath,${OSX_LIBDIR}/libiomp5.a \
+  LINKOPS2  = -static-intel -qopenmp-link=static \
+              ${OSX_LIBDIR}/libiomp5.a \
               ${OSX_LIBDIR}/libmkl_intel_lp64.a \
               ${OSX_LIBDIR}/libmkl_intel_thread.a \
-              ${OSX_LIBDIR}/libmkl_core.a \
-               ${OSX_LIBDIR}/libiomp5.a -lpthread -lm -ldl
-  LINKOPS   = $(LINKOPS1)
+              ${OSX_LIBDIR}/libmkl_core.a 
+  LINKOPS   = $(LINKOPS2)
   ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE = $(ALL_PROCESSORS) #a$(HARDWARE_SPECIFIC) 
+  MACHINE_TYPE =   $(HARDWARE_SPECIFIC) # $(ALL_PROCESSORS) #
 
 #
-  FCOPTS   =  -O3 -fpp -ip -fpconstant -fixed -72 -traceback $(PROFILE) \
+  FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
               $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
 endif
@@ -460,6 +459,7 @@ ifneq  ($(BUILD_SYS), gfortran)
 	$(RMC)  $@
 	$(FOR) -inline-level=1  $< -c -o $@  # ifort has inline bug - ugh!
 endif
+
 
 #
 #       ---  Abaqus compatible user routines. Listed explicitly for clarity ------
