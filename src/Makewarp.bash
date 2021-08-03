@@ -123,8 +123,8 @@ hash gfortran 2>&- || {
 #
 version=$(echo `gfortran --version` | cut -c 18-20)
 #
-if [ "$version" -lt "7" ]; then
-      printf "\n... ERROR: gfortran must be version 7 or newer"
+if [ "$version" -lt "10" ]; then
+      printf "\n... ERROR: gfortran must be version 10 or newer"
       echo -e  "\n...        you have version: " $version
       printf "...        from:  gfortran --version"
       printf "\n... Quitting...\n\n"
