@@ -2,7 +2,7 @@
 #
 #     Makewarp.bash (5th version)
 #
-#     modified: May 2021 RHD
+#     modified: July 2021
 #
 #     Description:
 #
@@ -72,35 +72,32 @@ hash ifort 2>&- || {
 printf "[ERROR]\n"
 printf "... Cannot find the Intel Fortran compiler (ifort) in your PATH.\n"
 printf "... See Intel Fortran install documentation. Most often a line of\n"
-printf "... the form: source /opt/intel/compilers_and_libraries/... intel64 is placed\n"
+printf "... the form: source /opt/intel/... is placed\n"
 printf "... in the /etc/bashrc our your ~/.bashrc file.\n"
 printf "Quitting...\n\n"
 exit 1
 }
-version=$(echo `ifort --version` | cut -c 15-16)
-if [ "$version" -lt "20" ]; then
-    printf "\n... ERROR: ifort must be version 19 or newer"
-    echo -e  "\n...        you have version: " $version
-    printf "...        from:  ifort --version"
+/bin/rm zqq03 >& /dev/null
+ifort --version >zqq03
+sed -i -e '2,10d' zqq03
+echo -e "\n ... Intel Fortran detected:" `cat zqq03`
+count2=`grep "2021.3" zqq03 |wc -l`
+count3=`grep "2021.4" zqq03 |wc -l`
+/bin/rm zqq03*
+ok=0
+if [ $count2 -eq "1" ]; then
+   ok=1
+fi
+if [ $count3 -eq "1" ]; then
+   ok=1
+fi
+if [ $ok -eq "0" ]; then
+    printf "\n... ERROR: ifort must be one of these versions:"
+    printf "\n... 2021.3 or newer"
+    printf "\n... other versions have known bugs that affect WARP3D"
     printf "\n... Quitting...\n\n"
     exit 1
 fi
-# if [ -z "$MKLROOT" ]; then
-#     printf "[ERROR]\n"
-#     printf "... Environment variable MKLROOT is not set.\n"
-#     printf "... See Intel Fortran install documentation.\n"
-#     printf "Quitting...\n"
-#     exit 1
-#  fi
-# #
-# #         The MKL libraries must be accesible.
-# #
-# if [ ! -d "$MKLROOT/lib" ]; then
-#     printf "[ERROR]\n"
-#     printf "... Directory MKLROOT/lib does not exist.\n"
-#     printf "Quitting...\n\n"
-#     exit 1
-# fi
 #
 return
 }
@@ -124,7 +121,7 @@ hash gfortran 2>&- || {
   exit 1
 }
 #
-version=$(echo `gfortran --version` | cut -c 18-19)
+version=$(echo `gfortran --version` | cut -c 18-20)
 #
 if [ "$version" -lt "7" ]; then
       printf "\n... ERROR: gfortran must be version 7 or newer"
@@ -245,7 +242,7 @@ function print_windows_message
   printf "   Windows command prompt shell. The shell must be setup \n"
   printf "   64-bit building with the Intel Fortran Compser suite.\n\n"
 
-  printf "   The Intel Visual Fortran Compiler creates a link to the proper \n"
+  printf "   The Intel Fortran Compiler creates a link to the proper \n"
   printf "   command prompt build environment in the Windows 'start' menu. \n\n"
 }
 
