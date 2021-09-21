@@ -28,7 +28,7 @@ c            of the solution while the geometry of the model is changed
 c            due to crack growth.                                               
 c                                                                               
 c       
-      if( debug ) write(*,*) '>>>> entered growth_loads'                            
+      if( debug ) write(out,*) '>>>> entered growth_loads'                            
 c                                                                               
       if( growth_by_kill ) then                                                
          call killed_elem_loads
@@ -36,11 +36,11 @@ c
          call released_node_loads( debug )                                      
       end if                                                                    
 c                                                                               
-      if ( debug ) then                                                        
-         write (*,*) ' These are non-zero terms in new load_vector:'           
+      if( debug ) then                                                        
+         write(out,*) ' These are non-zero terms in new load_vector:'           
          do i = 1, nodof                                                       
-            if ( load(i) .ne. zero ) write(*,'(" load(",i7,")=",e13.6)')       
-     &           i,load(i)                                                     
+            if( load(i) .ne. zero )
+     &        write(out,'(" load(",i7,")=",e13.6)') i,load(i)                                                     
          end do                                                                
       end if                                                                   
 c                                                                               
@@ -54,24 +54,25 @@ c     *                      subroutine killed_elem_loads            *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 3/27/21 rhd                *          
+c     *                   last modified : 8/28/2021 rhd              *          
 c     *                                                              *          
 c     *     this subroutine releases the nodal loads that are        *          
 c     *     imposed on the structure when an element is killed       *          
-c     *     through element extinction (gurson) crack growth.        *          
+c     *     through element extinction crack growth.                 *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
       subroutine killed_elem_loads
 c
-      use global_data, only : out, noelem, iprops, load, mxedof
+      use global_data, only : out, noelem, iprops, load, mxedof, mxgp
       use elem_extinct_data, only : dam_ifv, dam_state, dam_dbar_elems,
-     &                              smcs_d_values          
+     &                              smcs_d_values, Oddy_metrics          
       use damage_data, only : dam_ptr, max_dam_state, release_fraction,
      &                        gurson_cell_size, release_type,
      &                        num_elements_in_force_release,
-     &                        use_mesh_regularization,
+     &                        use_mesh_regularization, 
+     &                        use_distortion_metric,
      &                        tol_regular =>
      &                        tolerance_mesh_regularization     
       use dam_param_code, only : growth_set_dbar      
@@ -81,7 +82,7 @@ c
 c              
 c              locals
 c
-      integer :: rcount, elem, num_dof, sdof, elem_ptr, dof
+      integer :: rcount, elem, num_dof, sdof, elem_ptr, dof, numpts
       logical :: no_print, std_kill
       logical, parameter :: debug = .false.                                                
       integer :: edest(mxedof)                                                     
@@ -130,7 +131,13 @@ c
             d_now = smcs_d_values(elem_ptr)
             if( d_now > tol_regular ) cycle
             if( d_now <= zero ) cycle
-            write(out,9600) elem, smcs_d_values(elem_ptr)
+            if( use_distortion_metric ) then
+              write(out,9600) elem, smcs_d_values(elem_ptr), 
+     &                        Oddy_metrics(elem_ptr,2) /
+     &                        Oddy_metrics(elem_ptr,1)
+            else
+              write(out,9610) elem, smcs_d_values(elem_ptr)
+            end if
             no_print = .false.
             rcount = rcount + 1
             cycle
@@ -227,7 +234,9 @@ c
  9500 format(1x,'       total elements in active release: ',i6)      
  9501 format(1x,'   total elements in active',
      &  ' regularization: ',i6)      
- 9600 format(1x,'   element: ',i7,', damage parameter (d): ',f5.3)             
+ 9600 format(1x,'   element: ',i7,', damage parameter (d): ',f5.3,
+     &     2x,'max Oddy ratio:',f7.2)             
+ 9610 format(1x,'   element: ',i7,', damage parameter (d): ',f5.3)
 c                                                                                
       end  subroutine killed_elem_loads                                                                     
 c                                                                               

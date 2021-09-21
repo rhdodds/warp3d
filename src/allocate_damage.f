@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/13/21 rhd                *          
+c     *                   last modified : 8/28/21 rhd                *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -56,7 +56,7 @@ c
             return
          end if                                                                    
          allocate( dam_ifv(mxedof,num_kill_elem) )                                  
-           dam_ifv = zero    
+         dam_ifv = zero    
 c                                                                                  
 c                               allocate dam_print_list                         
 c                               also allocate old_mises and                     
@@ -447,6 +447,38 @@ c
              killed_estiffs(i)%num_terms = 0
              smcs_start_kill_step(i) = 0
           end do
+c
+c                            allocate Oddy distortion metrics
+c                                                                               
+       case( 15 )  ! dowhat
+c
+         if( allocated( Oddy_metrics ) ) then
+            write(out,*) '... FATAL ERROR: allocating track_Oddy'
+            call die_abort
+         end if
+         if( use_distortion_metric ) then
+             allocate( Oddy_metrics(num_kill_elem,2) )
+             Oddy_metrics = 100000.0  ! single precision, large number
+         end if  
+c
+c                            de-allocate Oddy distortion metrics
+c                                                                               
+       case( 16 )  ! dowhat
+c
+         if( allocated( Oddy_metrics ) ) deallocate( Oddy_metrics )
+         if( allocated( Oddy_metrics_initial ) ) 
+     &           deallocate( Oddy_metrics_initial )
+c
+c                            allocate Oddy distortion metrics at
+c                            time = 0 for output to a file
+c                                                                               
+       case( 17 )  ! dowhat
+c  
+           if( Oddy_print_initial ) then
+               allocate( Oddy_metrics_initial(num_kill_elem,2) )
+                Oddy_metrics_initial(1:num_kill_elem,1) = 100000.0
+                Oddy_metrics_initial(1:num_kill_elem,2) = -100000.0
+           end if
 c
       end select  !  dowhat   
 c                                                                               

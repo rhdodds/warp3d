@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 6/28/21 rhd                 *
+c     *                   last modified : 8/26/21 rhd                *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -449,10 +449,12 @@ c
      &              enforce_node_release, num_ctoa_released_nodes,
      &              print_top_list, num_top_list, smcs_type,
      &              smcs_states, smcs_stream, smcs_text,
-     &              stop_killed_elist_length,
+     &              stop_killed_elist_length, use_distortion_metric,
      &              smcs_allowable_in_release, use_estiff_at_death,
      &              use_mesh_regularization, regular_npoints,
-     &              regular_type, stop_released_nlist_length              
+     &              regular_type, stop_released_nlist_length,              
+     &              smcs_deleted_list_file_flag,
+     &              smcs_removed_list_file_flag       
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,
@@ -471,9 +473,13 @@ c
      &              smcs_type_4_c2, smcs_type_4_c3,
      &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
      &              regular_length, regular_up_max,
-     &              tolerance_mesh_regularization,
+     &              tolerance_mesh_regularization, Oddy_critical_ratio,
      &              regular_alpha, regular_GF, regular_m_power,
-     &              regular_points  ! (10x2)
+     &              regular_points,  ! (10x2)
+     &              distortion_plastic_limit
+c
+      read(fileno) smcs_deleted_list_file_name, 
+     &             smcs_removed_list_file_name
       call chk_data_key( fileno, 8, 1 )
       call allocate_damage( 12 ) ! only dam_ptr
       call rdbk( fileno, dam_ptr, noelem )
@@ -502,6 +508,9 @@ c
             write(out,9250) 
          end if
          call chk_data_key( fileno, 8, 5 )
+c
+         call read_damage( 13, fileno, prec_fact )
+         call chk_data_key( fileno, 8, 6 )
 c
          isize = stop_killed_elist_length
          if(  isize > 0 ) then

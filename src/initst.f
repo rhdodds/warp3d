@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/28/21 rhd                *
+c     *                   last modified : 9/19/2021 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -501,6 +501,14 @@ c
       regular_alpha  = minus_one
       regular_Gf     = minus_one
       tolerance_mesh_regularization = 0.97d0
+      use_distortion_metric = .false.
+      Oddy_critical_ratio = 25.d0 
+      distortion_plastic_limit = hundred
+      Oddy_print_initial = .false.
+      smcs_deleted_list_file_flag = .false.
+      smcs_removed_list_file_flag = .false.
+      smcs_deleted_list_file_name =' '
+      smcs_removed_list_file_name =' '
 c
 c                       initialize the segmental stress strain curve definitions
 c

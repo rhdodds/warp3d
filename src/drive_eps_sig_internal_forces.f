@@ -3,7 +3,7 @@ c     *                drive_eps_sig_internal_forces                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/6/2021 rhd               *
+c     *                   last modified : 9/10/2021 rhd              *
 c     *                                                              *
 c     *      recovers all the strains, stresses                      *
 c     *      and internal forces (integral B-transpose * sigma)      *
@@ -362,6 +362,12 @@ c            set flag indicating that the internal force
 c            vector has been calculated.
 c
       ifvcmp = .true.
+c
+c            if finished step = 1 and iter = 1, write Oddy initial
+c            metrics file if required.
+c
+      if( step == 1 .and. iter == 1 ) call chkcrack_Oddy_initial_print
+c
       call thyme( 6, 2 )
 c
       return

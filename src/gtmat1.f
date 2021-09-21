@@ -4,7 +4,7 @@ c     *                      subroutine gtmat1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/1/2018 rhd               *
+c     *                   last modified : 9/1/21 rhd                 *
 c     *                                                              *
 c     *      computes deformation gradients and stress               *
 c     *      transformation matrices necessary for stress            *
@@ -21,16 +21,20 @@ c
 c
 c          parameter declarations
 c
-      integer :: error
+      integer, intent(inout) :: error
       double precision :: qnhalf(mxvl,nstr,*),  qn1(mxvl,nstr,*)
       include 'include_sig_up'   ! defines local_work
 c
 c          local declarations - make allocatable
-c          to reduce stack size
+c          to reduce stack size. they are automatically released
+c          on return 
 c
-      integer :: span, felem, type, order, nnode, gpn, step
+      integer :: span, iter, felem, type, order, nnode, gpn, step, itype
+      logical :: lflag
       double precision, allocatable :: rnh(:,:,:), fnh(:,:,:),
-     &                                 theta(:,:), dfh(:), dfn(:)
+     &                                 theta(:,:), dfh(:), dfn(:),
+     &                                 jac_Oddy(:,:,:), det_j_Oddy(:),
+     &                                 gama_Oddy(:,:,:)
 c
       span  = local_work%span
       felem = local_work%felem
@@ -39,6 +43,7 @@ c
       nnode = local_work%num_enodes
       gpn   = local_work%gpn
       step  = local_work%step
+      iter  = local_work%iter
 c
       allocate( rnh(mxvl,ndim,ndim), fnh(mxvl,ndim,ndim), dfh(mxvl),
      &          theta(mxvl,mxtnsz), dfn(mxvl) )
@@ -89,7 +94,7 @@ c
 c
       call fcomp1( span, felem, gpn, local_work%fn1,
      &             local_work%dfn1, theta, error )
-      if ( error .eq. 1 ) go to 9000
+      if ( error .eq. 1 ) return
       call rtcmp1( span, local_work%fn1,
      &             local_work%rot_blk_n1(1,1,gpn) )
 c
@@ -111,7 +116,7 @@ c
      &             local_work%gama(1,1,1,gpn), local_work%uenh, nnode )
 c
       call fcomp1( span, felem, gpn, fnh, dfh, theta, error )
-      if ( error .eq. 1 ) go to 9000
+      if ( error .eq. 1 ) return
       call rtcmp1( span, fnh, rnh )
       call getrm1( span, qnhalf, rnh, 1 )
 c
@@ -125,7 +130,7 @@ c
 c
            call fcomp1( span, felem, gpn, local_work%fn, dfn,
      &              theta, error )
-            if ( error .eq. 1 ) go to 9000
+            if ( error .eq. 1 ) return
          end if
       end if
 c
@@ -146,10 +151,40 @@ c
      &            local_work%volume_block_0, step, .false.  )
       end if
 c
-c                  done
+c           done with [F] computations. compute Oddy distortion metric
+c           if needed to support crack growth by element deletion.
 c
- 9000 continue
-      deallocate( rnh, fnh, dfh, theta, dfn )
+      call chkcrack_Oddy_needed( felem, lflag )
+      if( .not. lflag ) return
+c
+c            compute [J] using current element shape for use
+c            assessing distortion level during growth by element
+c            deletion. sepical call with undeformed coords for setup.
+c
+      if( iter == 0 ) return
+c
+      allocate( jac_Oddy(mxvl,3,3),  det_j_Oddy(mxvl),
+     &          gama_Oddy(mxvl,3,3) )
+c
+      if( step == 1 .and. iter == 1 ) then
+       itype = 1
+       call jacob1( type, span, felem, gpn, jac_Oddy,
+     &             det_j_Oddy, gama_Oddy,
+     &             local_work%cohes_rot_block,
+     &             local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &             local_work%nzeta(1,gpn), local_work%ce_0, nnode )
+     c
+       call chkcrack_Oddy( step, itype, span, felem, gpn, det_j_Oddy, 
+     &                    jac_Oddy )
+      end if
+      itype = 2
+      call jacob1( type, span, felem, gpn, jac_Oddy,
+     &             det_j_Oddy, gama_Oddy,
+     &             local_work%cohes_rot_block,
+     &             local_work%nxi(1,gpn), local_work%neta(1,gpn),
+     &             local_work%nzeta(1,gpn), local_work%ce_n1, nnode )
+       call chkcrack_Oddy( step, itype, span, felem, gpn, det_j_Oddy, 
+     &                    jac_Oddy )
 c
       return
       end
@@ -385,7 +420,6 @@ c
            end do
         end do
       end if
-
 c
 c           calculate the determinate of the jacobian matrix
 c

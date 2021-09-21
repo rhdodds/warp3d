@@ -4,7 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 3/31/21 rhd                *          
+c     *                   last modified : 8/28/21 rhd                *          
 c     *                                                              *          
 c     *              reads damage data from restart file             * 
 c     *                                                              *          
@@ -23,7 +23,7 @@ c
 c
       integer, intent(in) :: action, fileno, prec_fact
 c
-      integer :: isize, count, i, j, nrow_ek
+      integer :: isize, count, i, j, nrow_ek, np
       logical :: std_kill                                                  
 c                                                                               
       std_kill = .not. use_mesh_regularization
@@ -134,7 +134,9 @@ c
       call rdbk( fileno, smcs_eps_plas_at_death, 
      &           num_kill_elem * prec_fact )    
       call rdbk( fileno, smcs_stress_at_death, 
-     &           num_kill_elem * prec_fact )   
+     &           num_kill_elem * prec_fact )
+      call rdbk( fileno, smcs_start_kill_step, num_kill_elem )   
+c
       read(fileno) count
       if( count == 0 ) return
       do j = 1, count
@@ -143,6 +145,14 @@ c
         allocate( killed_estiffs(i)%estiff(nrow_ek) )
         read(fileno) killed_estiffs(i)%estiff(1:nrow_ek)
       end do
+c                                                                               
+c              read the Oddy distortion metrics
+c                                                                               
+      case( 13 )
+      if( .not. use_distortion_metric ) return
+      if( .not. allocated( Oddy_metrics ) ) 
+     &        allocate( Oddy_metrics(num_kill_elem,2) )
+      read(fileno) Oddy_metrics
 c
       case default
          write(out,9000)
@@ -153,8 +163,23 @@ c
       return    
 c
  9000 format('>> FATAL ERROR: routine read_damage'                                     
-     &  /,   '                job terminated' )                                 
-c                                                                
-      end                                                                       
+     &  /,   '                job terminated' )      
+ 9100 format(10x,8f5.2)                          
+c
+      contains
+c     ========
+c
+      subroutine read_damage_dvector( vec, n )
+      implicit none
+c
+      integer, intent(in) :: n
+      double precision, intent(out) :: vec(n)
+c
+      read(fileno) vec(1:n)
+c
+      return
+c
+      end subroutine read_damage_dvector                                                                
+      end subroutine read_damage                                                                       
                                                                                 
                                                                                 

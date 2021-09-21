@@ -4,7 +4,7 @@ c     *                   f-90 module damage_data                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *              last modified : 6/28/21 rhd                     *          
+c     *              last modified : 9/19/2021 rhd                   *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     crack growth using damage parameters (e.g., the Gurson   *          
@@ -22,9 +22,8 @@ c
      &          smcs_states_intlst(:), deleted_elist_to_stop(:),
      &          released_nlist_to_stop(:)
 c                            
-      double precision ::                                                         
-     &   del_poros(mxstp_store), del_deff(mxstp_store),
-     &   regular_points(10,2)  
+      double precision ::  del_poros(mxstp_store), regular_points(10,2), 
+     &                     del_deff(mxstp_store)
 c
       integer :: user_kill_list_now(100)      
 c                                                                               
@@ -46,12 +45,12 @@ c
      &   min_load_fact, overshoot_limit, CTOA_range,                            
      &   perm_load_fact, max_porosity_change,                                   
      &   max_plast_strain_change,                                               
-     &   init_ctoa_dist, ctoa_dist,                                             
+     &   init_ctoa_dist, ctoa_dist, distortion_plastic_limit,                                            
      &   crkpln_srch_tol, max_deff_change,                                      
      &   critical_cohes_deff_fract, 
      &   ppr_kill_displ_fraction, tolerance_mesh_regularization,
      &   regular_length, regular_up_max, regular_alpha,
-     &   regular_Gf, regular_m_power
+     &   regular_Gf, regular_m_power, Oddy_critical_ratio
 c                                                                               
 c                     scalar integers                                           
 c                                                                               
@@ -78,11 +77,15 @@ c
      &  load_size_control_crk_grth, g_stp_cntrl_allocated,                      
      &  const_front, master_lines_set, load_reduced, all_elems_killed,
      &  print_top_list, smcs_growth, smcs_states, smcs_stream,
-     &  smcs_text, smcs_list_file_flag, use_estiff_at_death ,
-     &  use_mesh_regularization           
+     &  smcs_text, smcs_deleted_list_file_flag, use_estiff_at_death,
+     &  use_mesh_regularization, use_distortion_metric,
+     &  gt_list_file_flag, Oddy_print_initial,
+     &  smcs_removed_list_file_flag         
 c                                                                               
 c                     character                             
 c      
-      character(len=80) :: smcs_list_file_name        
+      character(len=80) :: smcs_deleted_list_file_name,  
+     &                     smcs_removed_list_file_name,
+     &                     gt_list_file_name        
 c                                                                               
       end module                                                                

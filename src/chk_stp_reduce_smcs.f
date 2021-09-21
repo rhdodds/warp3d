@@ -146,20 +146,20 @@ c
      &  "element: ",i8, /,                                
      & 5x,"user-specified allowable strain change:",f15.8,    
      & /,5x,"step-size (decrease) factor multiplier: ",f10.5,
-     & /,5x,"updated global step multiplier: ",f10.5,//)
+     & /,5x,"updated global step multiplier: ",e13.6,//)
  9010 format(">>> crack growth processor decreasing global ",
      & "load step size:",
      & /,5x,"max # elements in release: ",i4,
      & 5x,"exceeds allowable of: ",i4,    
      & /,5x,"step-size (decrease) factor multiplier: ",f10.5,
-     & /,5x,"updated global step multiplier: ",f10.5,//)
+     & /,5x,"updated global step multiplier: ",e13.6,//)
  9100 format(">>> crack growth processor increasing global ",
      & "load step size:",
      & /,5x,"max change plastic strain over step:    ",f15.8,2x, 
      &  "element: ",i8, /,                                
      & 5x,"user-specified allowable strain change: ",f15.8,    
      & /,5x,"step-size (increase) factor multiplier: ",f10.5,
-     & /,5x,"updated global step multiplier: ",f10.5,//)
+     & /,5x,"updated global step multiplier: ",e13.6,//)
  9050 format(5x,"**** max change, allocable change:",f15.8)
 c                                       
             end        

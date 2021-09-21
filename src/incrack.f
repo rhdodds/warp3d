@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 6/28/21 rhd                *          
+c     *                   last modified : 9/10/21 rhd                *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -56,34 +56,41 @@ c         branch on the crack growth parameter command
 c                                                                               
  10   call readsc                                                               
 c                                                                               
-      if ( matchs('type',4)    )        go to 200                               
-      if ( matchs('critical',4) )       go to 300                               
-      if ( matchs('release',4) )        go to 400                               
-      if ( matchs('print',5) )          go to 500                               
-      if ( matchs_exact('kill') )       go to 600                               
-      if ( matchs('sequential',4) )     go to 600                               
-      if ( matchs('force',4) )          go to 700                               
-      if ( matchs('crack',4) )          go to 800                               
-      if ( matchs('cell',3) )           go to 900                               
-      if ( matchs('angle',3) )          go to 1000                              
-      if ( matchs('dump',4) )           go to 1100                              
-      if ( matchs('characteristic',4) ) go to 1200                              
-      if ( matchs('alpha',4) )          go to 1300                              
-      if ( matchs('beta',4) )           go to 1400                              
-      if ( matchs_exact('gamma') )      go to 1450                              
-      if ( matchs('overshoot',4) )      go to 100                               
-      if ( matchs('automatic',4) )      go to 1500                              
-      if ( matchs('adaptive',4) )       go to 1500                              
-      if ( matchs('constant',5) )       go to 1600                              
-      if ( matchs('master',4) )         go to 1700                              
-      if ( matchs('number',4) )         go to 1800                              
-      if ( matchs('enforce',4) )        go to 1900                              
-      if ( matchs_exact('ppr') )        go to 2000
-      if ( matchs_exact('smcs') )       go to 2100
-      if ( matchs_exact('killed') )     go to 2200
-      if ( matchs_exact('stop') )       go to 2300
-      if ( matchs_exact('mesh') )       go to 2400
-      if ( matchs('regularization',7) ) go to 2400
+      if( matchs('type',4)    )        go to 200                               
+      if( matchs('critical',4) )       go to 300                               
+      if( matchs('release',4) )        go to 400                               
+      if( matchs('print',5) )          go to 500                               
+      if( matchs_exact('kill') )       go to 600                               
+      if( matchs('sequential',4) )     go to 600                               
+      if( matchs('force',4) )          go to 700                               
+      if( matchs('crack',4) )          go to 800                               
+      if( matchs('cell',3) )           go to 900                               
+      if( matchs('angle',3) )          go to 1000                              
+      if( matchs('dump',4) )           go to 1100                              
+      if( matchs('characteristic',4) ) go to 1200                              
+      if( matchs('alpha',4) )          go to 1300                              
+      if( matchs('beta',4) )           go to 1400                              
+      if( matchs_exact('gamma') )      go to 1450                              
+      if( matchs('overshoot',4) )      go to 100                               
+      if( matchs('automatic',4) )      go to 1500                              
+      if( matchs('adaptive',4) )       go to 1500                              
+      if( matchs('constant',5) )       go to 1600                              
+      if( matchs('master',4) )         go to 1700                              
+      if( matchs('number',4) )         go to 1800                              
+      if( matchs('enforce',4) )        go to 1900                              
+      if( matchs_exact('ppr') )        go to 2000
+      if( matchs_exact('smcs') )       go to 2100
+      if( matchs_exact('killed') )     go to 2200
+      if( matchs_exact('stop') )       go to 2300
+      if( matchs_exact('mesh') )       go to 2400
+      if( matchs('regularization',7) ) go to 2400
+      if( matchs_exact('use') )        go to 2500
+      if( matchs('distortion',6) ) then
+        call reset
+        if( true() ) call splunj
+        go to 2500
+      end if
+      if( matchs_exact('gurson') )     go to 2600
 c                                                                               
       go to 9999                                                                
 c                                                                               
@@ -1111,7 +1118,11 @@ c
         go to 10
       end if
       if( matchs_exact('deleted') ) then
-        call incrack_smcs_list_file
+        call incrack_smcs_deleted_list_file
+        go to 10
+      end if
+      if( matchs_exact('removed') ) then
+        call incrack_smcs_removed_list_file
         go to 10
       end if
       call incrack_errmsg( 8 )
@@ -1182,6 +1193,134 @@ c
       call incrack_regularization                                                                       
       go to 10
 c                                                                               
+c
+c          -----------------------------------------------------------                           
+c          | use distortion metric on|off                            |
+c          |      (write initial values file) 
+c          |      Oddy critical ratio <value>                        | 
+c          |      plastic strain limit <value>  display                     |
+c          -----------------------------------------------------------                           
+c                                                                               
+ 2500 continue   
+c
+c                not supported yet with MPI
+c
+      use_distortion_metric = .false.
+      Oddy_print_initial = .false.
+      distortion_plastic_limit = hundred  ! so never gets invoked 
+c
+      if( use_mpi ) then
+         call incrack_errmsg( 66 )
+         go to 10
+      end if
+c
+      if( .not. matchs('distortion',6) ) then
+         call incrack_errmsg( 67 )
+         go to 10
+      end if
+c
+      if( matchs_exact('metric') ) call splunj
+      if( matchs_exact('off') ) go to 10
+      if( .not. matchs_exact('on') ) then
+         call incrack_errmsg( 68 )
+         go to 10
+      end if
+c
+      use_distortion_metric = .true.
+      call allocate_damage( 15 )
+      if( endcrd() ) go to 10  
+c
+      if( matchs_exact('display') ) write(out,9060) 
+     &     use_distortion_metric, Oddy_print_initial, 
+     &     Oddy_critical_ratio, distortion_plastic_limit 
+c
+      if( matchs_exact('write') ) then
+        if( matchs('initial',4) ) call splunj
+        if( matchs('values',3) ) call splunj
+        if( .not. matchs_exact('file') ) then
+         call incrack_errmsg( 73 )
+         use_distortion_metric = .false.
+         Oddy_print_initial = .false.
+         call allocate_damage( 16 ) ! delete if allocated
+         go to 10
+        end if
+        if( matchs_exact('off') ) go to 2510
+        if( .not. matchs_exact('on') ) then
+         call incrack_errmsg( 74 )
+         use_distortion_metric = .false.
+         Oddy_print_initial = .false.
+         call allocate_damage( 16 ) ! delete if allocated
+         go to 10
+        end if
+        Oddy_print_initial = .true.
+        call allocate_damage( 17 ) 
+      end if 
+c
+ 2510 continue
+      if( matchs_exact('display') ) write(out,9060) 
+     &     use_distortion_metric, Oddy_print_initial, 
+     &     Oddy_critical_ratio, distortion_plastic_limit 
+
+c
+      if( endcrd() ) go to 10
+      if( .not. matchs_exact('Oddy') ) then
+         call incrack_errmsg( 75 )
+         use_distortion_metric = .false.
+         Oddy_print_initial = .false.
+         call allocate_damage( 16 ) ! delete if allocated
+         go to 10
+      end if
+      if( matchs('critical',3) ) call splunj
+      if( matchs('ratio',3) ) call splunj
+      if( .not. numd(Oddy_critical_ratio) ) then
+         call incrack_errmsg( 69 )
+         use_distortion_metric = .false.
+         Oddy_print_initial = .false.
+         call allocate_damage( 16 ) ! delete if allocated
+         go to 10
+      end if
+c
+       if( matchs_exact('display') ) write(out,9060) 
+     &     use_distortion_metric, Oddy_print_initial, 
+     &     Oddy_critical_ratio, distortion_plastic_limit 
+c
+      if( endcrd() ) go to 10
+c
+      if( .not. matchs_exact('plastic') ) then
+         call incrack_errmsg( 70 )
+         use_distortion_metric = .false.
+         Oddy_print_initial = .false.
+         call allocate_damage( 16 ) ! delete if allocated
+         go to 10 
+      end if
+      if( matchs('strain',3) ) call splunj
+      if( matchs('limit',3) ) call splunj
+      if( .not. numd(distortion_plastic_limit) ) then
+         call incrack_errmsg( 71 )
+         use_distortion_metric = .false.
+         Oddy_print_initial = .false.
+         call allocate_damage( 16 ) ! delete if allocated
+         go to 10 
+      end if
+c
+      if( matchs_exact('display') ) write(out,9060) 
+     &     use_distortion_metric, Oddy_print_initial, 
+     &     Oddy_critical_ratio, distortion_plastic_limit 
+      go to 10
+c                                                                               
+c          ---------------------------------------------------------                           
+c          | gurson deleted (elements) file on|off (name) <string> |                           
+c          ---------------------------------------------------------                           
+c                                                                               
+ 2600 continue            
+      if( matchs_exact('deleted') ) then
+        call incrack_gt_list_file
+        go to 10
+      end if
+      call incrack_errmsg( 72 )
+      go to 10
+      
+c
  9999 continue                                                                  
       if ( debug ) write (out,*) '>>>>>> leaving incrack.'           
       sbflg1 = .true.                                                           
@@ -1196,6 +1335,10 @@ c
      &   ' read new line ...',/)
  9050 format(/1x,'>>>>> FATAL ERROR: delete_elements inconsistency',
      &   /,14x,'job terminated now ...',/)
+ 9060 format(/,5x,'... use distortion metrics: ',l1,
+     &       /,5x,'... make file of initial Oddy values: ',l1,
+     &       /,5x,'... critical Oddy ratio: ',f12.3,
+     &       /,5x,'... plastic strain limit: ',f12.5, //)
  9100 format(/1x,'>>>>> error: invalid element number: ',i8)
 c
       contains
@@ -1759,12 +1902,12 @@ c
       end subroutine incrack_smcs_states
 c
 c          ------------------------------------------                           
-c          | contains: incrack_smcs_list_file       |                           
+c          | contains: incrack_gt_list_file         |                           
 c          ------------------------------------------                           
 c                                                                                           
-      subroutine incrack_smcs_list_file
+      subroutine incrack_gt_list_file
 c
-      use damage_data, only : smcs_list_file_flag, smcs_list_file_name
+      use damage_data, only : gt_list_file_flag, gt_list_file_name
       implicit none
 c
       integer :: idummy, nchars, device
@@ -1772,10 +1915,10 @@ c
       logical :: fexists
       character(len=80) :: temp_name
 c
-c        smcs deleted element file on | off text | name <string> 
+c        gurson deleted element file on | off text | name <string> 
 c
-      smcs_list_file_flag = .false.
-      smcs_list_file_name = " "
+      gt_list_file_flag = .false.
+      gt_list_file_name = " "
 c
       if( matchs('element',4) ) call splunj
       if( .not. matchs('file',4) ) then
@@ -1785,14 +1928,14 @@ c
       end if
 c
       if( matchs_exact('on') ) then
-         smcs_list_file_flag = .true.
+         gt_list_file_flag = .true.
       elseif( matchs_exact('off') ) then 
-         smcs_list_file_flag = .false.
+         gt_list_file_flag = .false.
          call scan_flushline
          return
       else
          call incrack_errmsg( 15 )
-         smcs_list_file_flag = .false.
+         gt_list_file_flag = .false.
          call scan_flushline
          return
       end if
@@ -1806,25 +1949,154 @@ c
       else
         call incrack_errmsg( 18 ) 
         call scan_flushline
-        smcs_list_file_flag = .false.
+        gt_list_file_flag = .false.
         return
       end if
 c
-      smcs_list_file_name(1:) = temp_name(1:nchars)
-      inquire( file=smcs_list_file_name, exist=fexists )
+      gt_list_file_name(1:) = temp_name(1:nchars)
+      inquire( file=gt_list_file_name, exist=fexists )
       if( fexists ) then
          call incrack_errmsg( 20 ) 
-         open(newunit=device, file=smcs_list_file_name, status='old')
+         open(newunit=device, file=gt_list_file_name, status='old')
          close(device, status='delete')
       end if
-      inquire( file="fully_killed_ele_list.out", exist=fexists )
+c
+      end subroutine incrack_gt_list_file
+c
+ 
+c          -------------------------------------------------                           
+c          | contains: incrack_smcs_deleted_list_file       |                           
+c          --------------------------------------------------                           
+c                                                                                           
+      subroutine incrack_smcs_deleted_list_file
+c
+      use damage_data, only : smcs_deleted_list_file_flag, 
+     &                        smcs_deleted_list_file_name
+      implicit none
+c
+      integer :: idummy, nchars, device
+      logical, external :: label, string
+      logical :: fexists
+      character(len=80) :: temp_name
+c
+c        smcs deleted element file on | off text | name <string> 
+c
+      smcs_deleted_list_file_flag = .false.
+      smcs_deleted_list_file_name = " "
+c
+      if( matchs('element',4) ) call splunj
+      if( .not. matchs('file',4) ) then
+        call incrack_errmsg( 19 )
+        call scan_flushline
+        return
+      end if
+c
+      if( matchs_exact('on') ) then
+         smcs_deleted_list_file_flag = .true.
+      elseif( matchs_exact('off') ) then 
+         smcs_deleted_list_file_flag = .false.
+         call scan_flushline
+         return
+      else
+         call incrack_errmsg( 15 )
+         smcs_deleted_list_file_flag = .false.
+         call scan_flushline
+         return
+      end if
+c
+      if( matchs('name',4) ) call splunj
+c
+      if( label( idummy) ) then
+        call entits( temp_name, nchars )
+      elseif( string( idummy ) ) then
+        call entits( temp_name, nchars )
+      else
+        call incrack_errmsg( 18 ) 
+        call scan_flushline
+        smcs_deleted_list_file_flag = .false.
+        return
+      end if
+c
+      smcs_deleted_list_file_name(1:) = temp_name(1:nchars)
+      inquire( file=smcs_deleted_list_file_name, exist=fexists )
       if( fexists ) then
-         open(newunit=device, file="fully_killed_ele_list.out",
+         call incrack_errmsg( 20 ) 
+         open(newunit=device, file=smcs_deleted_list_file_name, 
+     &        status='old')
+         close(device, status='delete')
+      end if
+c
+      end subroutine incrack_smcs_deleted_list_file
+ 
+c          --------------------------------------------------                           
+c          | contains: incrack_smcs_removed_list_file       |                           
+c          ---------------------------------------------------                           
+c                                                                                           
+      subroutine incrack_smcs_removed_list_file
+c
+      use damage_data, only : smcs_removed_list_file_flag, 
+     &                        smcs_removed_list_file_name
+      implicit none
+c
+      integer :: idummy, nchars, device
+      logical, external :: label, string
+      logical :: fexists
+      character(len=80) :: temp_name
+c
+c        smcs removed element file on | off text | name <string> 
+c
+      smcs_removed_list_file_flag = .false.
+      smcs_removed_list_file_name = " "
+c
+      if( matchs('element',4) ) call splunj
+      if( .not. matchs('file',4) ) then
+        call incrack_errmsg( 19 )
+        call scan_flushline
+        return
+      end if
+c
+      if( matchs_exact('on') ) then
+         smcs_removed_list_file_flag = .true.
+      elseif( matchs_exact('off') ) then 
+         smcs_removed_list_file_flag = .false.
+         call scan_flushline
+         return
+      else
+         call incrack_errmsg( 15 )
+         smcs_removed_list_file_flag = .false.
+         call scan_flushline
+         return
+      end if
+c
+      if( matchs('name',4) ) call splunj
+c
+      if( label( idummy) ) then
+        call entits( temp_name, nchars )
+      elseif( string( idummy ) ) then
+        call entits( temp_name, nchars )
+      else
+        call incrack_errmsg( 18 ) 
+        call scan_flushline
+        smcs_removed_list_file_flag = .false.
+        return
+      end if
+c
+      smcs_removed_list_file_name(1:) = temp_name(1:nchars)
+      inquire( file=smcs_removed_list_file_name, exist=fexists )
+      if( fexists ) then
+         call incrack_errmsg( 20 ) 
+         open(newunit=device, file=smcs_removed_list_file_name, 
+     &        status='old')
+         close(device, status='delete')
+      end if
+      inquire( file=smcs_removed_list_file_name, exist=fexists )
+      if( fexists ) then
+         open(newunit=device, file=smcs_removed_list_file_name,
      &         status='old')
          close(device, status='delete')
       end if
 c
-      end subroutine incrack_smcs_list_file
+      end subroutine incrack_smcs_removed_list_file
 c
       subroutine incrack_stop_elist 
       implicit none
@@ -2902,7 +3174,7 @@ c     *                      subroutine incrack_errmsg               *
 c     *                                                              *          
 c     *                       written by : RHD                       *          
 c     *                                                              *          
-c     *                   last modified : 5/15/21 rhd                *          
+c     *                   last modified : 8/25/21 rhd                 *          
 c     *                                                              *          
 c     *                service routine for error messages            *          
 c     *                                                              *          
@@ -3254,6 +3526,66 @@ c
          input_ok = .false. 
          call scan_flushline
 c
+      case( 66 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9066) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 67 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9067) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 68 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9068) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 69 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9069) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 70 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9070) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 71 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9071) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 72 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9072) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 73 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9073) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 74 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9074) 
+         input_ok = .false. 
+         call scan_flushline
+c
+      case( 75 )                                                                 
+         num_error = num_error + 1                                              
+         write(out,9075) 
+         input_ok = .false. 
+         call scan_flushline
+c
       case default                                                              
         write(out,9999)                                                         
         call die_abort                                                                   
@@ -3428,6 +3760,38 @@ c
  9065 format(/1x,'>>>>> error: regularization not yet supported with',            
      & ' MPI execution',
      & /14x,'No solution allowed.',/)                  
+c     
+ 9066 format(/1x,'>>>>> error: distortion metric not yet supported with',            
+     & ' MPI execution',
+     & /14x,'No solution allowed.',/)     
+c                                                                               
+ 9067 format(/1x,'>>>>> error: expecting keyword: distortion ... ',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9068 format(/1x,'>>>>> error: expecting keyword: on or off ... ',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9069 format(/1x,'>>>>> error: expecting value for critical ',
+     &      ' distortion ... ', /14x,'line ignored',/)                  
+c                                                                               
+ 9070 format(/1x,'>>>>> error: expecting keyword: plastic ... ',            
+     & /14x,'line ignored',/)                  
+c                                                                               
+ 9071 format(/1x,'>>>>> error: expecting value for plastic ',
+     &      ' strain limit ... ', /14x,'line ignored',/)      
+c                                                                               
+ 9072 format(/1x,'>>>>> error: expecting keyword: deleted ... ',            
+     & /14x,'line ignored',/)                       
+c                                                                               
+ 9073 format(/1x,'>>>>> error: expecting keyword: file for  ... ',            
+     & /14x,'for write file option. line ignored',/)                       
+c                                                                               
+ 9074 format(/1x,'>>>>> error: expecting keyword: on | off for  ... ',            
+     & /14x,'for write file option. line ignored',/)                       
+c                                                                               
+ 9075 format(/1x,'>>>>> error: expecting keyword: Oddy  ... ',            
+     & /14x,'line ignored',/)                       
+c                  
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
 c                                                                                

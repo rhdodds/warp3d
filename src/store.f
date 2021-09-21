@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 6/28/21 rhd                *
+c     *                   last modified : 9/19/21 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -50,7 +50,7 @@ c
       integer :: dum, fileno, last, prec_fact, node, local_length,
      &           i,  how_defined, node_count, num_patterns, mpc,
      &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize,
-     &           isize
+     &           isize, np
       integer, parameter :: check_data_key=2147483647
       character :: dbname*100
       logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
@@ -456,10 +456,12 @@ c
      &              enforce_node_release, num_ctoa_released_nodes,
      &              print_top_list, num_top_list, smcs_type,
      &              smcs_states, smcs_stream, smcs_text,
-     &              stop_killed_elist_length,
+     &              stop_killed_elist_length, use_distortion_metric,
      &              smcs_allowable_in_release, use_estiff_at_death,
      &              use_mesh_regularization, regular_npoints,
-     &              regular_type, stop_released_nlist_length             
+     &              regular_type, stop_released_nlist_length,  
+     &              smcs_deleted_list_file_flag,
+     &              smcs_removed_list_file_flag       
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
@@ -478,9 +480,13 @@ c
      &              smcs_type_4_c2, smcs_type_4_c3,
      &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
      &              regular_length, regular_up_max,
-     &              tolerance_mesh_regularization,
+     &              tolerance_mesh_regularization, Oddy_critical_ratio,
      &              regular_alpha, regular_GF, regular_m_power,
-     &              regular_points  ! (10x2)
+     &              regular_points,  ! (10x2)
+     &              distortion_plastic_limit 
+c
+      write(fileno) smcs_deleted_list_file_name, 
+     &              smcs_removed_list_file_name
       write (fileno) check_data_key
       call wrtbk( fileno, dam_ptr, noelem )
       write (fileno) check_data_key
@@ -498,7 +504,7 @@ c
      &        call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
      &                    prec_fact*mxedof, num_kill_elem )
 c
-         write (fileno) check_data_key
+         write(fileno) check_data_key
          if( crack_growth_type .eq. 3 ) then   ! smcs
                call wrtbk( fileno, smcs_weighted_T,
      &              prec_fact * num_kill_elem )
@@ -515,7 +521,7 @@ c
                if( isize > 0 ) write(fileno)
      &             smcs_states_intlst(1:isize)
          end if
-         write (fileno) check_data_key
+         write(fileno) check_data_key
 c
          if( use_mesh_regularization ) then
                call wrtbk( fileno, smcs_d_values,
@@ -524,24 +530,29 @@ c
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_stress_at_death,
      &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_start_kill_step, 
+     &                     num_kill_elem )
                call store_killed_estiffs( fileno, num_kill_elem )
                write(out,9250)
          end if
-         write (fileno) check_data_key
-c  
+         write(fileno) check_data_key
+c 
+         if( use_distortion_metric ) write(fileno) Oddy_metrics 
+         write(fileno) check_data_key
+c
          isize = stop_killed_elist_length
          if(  isize > 0 ) then
            call wrtbk( fileno, deleted_elist_to_stop, isize )
          end if
 c
-         if ( print_status ) then
+         if( print_status ) then
             call wrtbk( fileno, dam_print_list, num_print_list )
             call wrtbk( fileno, old_mises, num_print_list*prec_fact )
             call wrtbk( fileno, old_mean, num_print_list*prec_fact )
          end if
          write (fileno) check_data_key
 c
-         if ( kill_order ) then
+         if( kill_order ) then
             call wrtbk( fileno, kill_order_list, num_kill_order_list )
          end if
          write (fileno) check_data_key
@@ -1130,6 +1141,27 @@ c
         write(fileno) i, nrow_ek
         write(fileno) killed_estiffs(i)%estiff(1:nrow_ek)
       end do
+c
+      return
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *               subroutine store_dvector                       *
+c     *                                                              *
+c     *                    written by : rhd                          *
+c     *                                                              *
+c     *                last modified : 8/19/21 rhd                   *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine store_dvector( fileno, vec, n )
+      implicit none
+c
+      integer, intent(in) :: fileno, n
+      double precision :: vec(n)
+c
+      write(fileno) vec(1:n)
 c
       return
       end

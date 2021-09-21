@@ -84,7 +84,7 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/13/21 rhd                *          
+c     *                   last modified : 9/15/21 rhd                *          
 c     *                                                              *          
 c     *        checks conditions to see if crack growth will occur   *          
 c     *        by element extinction. if so start the deletion.      *          
@@ -95,27 +95,27 @@ c
       subroutine chk_elem_kill( debug, step, iter )
 c                             
       use global_data, only : out, noelem, current_load_time_step, 
-     &                        iprops, props, nelblk, elblks, num_error
+     &                        iprops, props, nelblk, elblks, num_error,
+     &                        mxgp
       use dam_param_code, only : dam_param, growth_set_dbar
       use elem_extinct_data, only : dam_state, smcs_start_kill_step,                 
      &                              kill_order_list, dam_print_list,
      &                              smcs_d_values,
      &                              smcs_eps_plas_at_death,
-     &                              smcs_stress_at_death
+     &                              smcs_stress_at_death,
+     &                              Oddy_metrics
       use main_data, only : output_packets, packet_file_no
       use damage_data, only : no_killed_elems, dam_ptr, max_dam_state,
-     &                        crack_growth_type, num_user_kill_elems,
-     &                        release_type, user_kill_list_now,
-     &                        all_elems_killed, killed_element_limit,
-     &                        num_elements_killed, kill_order,
-     &                        smcs_list_file_flag, smcs_list_file_name,
-     &                        num_kill_order_list, smcs_type,
-     &                        stop_killed_elist_length,
-     &                        deleted_elist_to_stop,
-     &                        smcs_type_5_tp_critical,
-     &                        use_mesh_regularization,
-     &                        tol_regular =>
-     &                        tolerance_mesh_regularization     
+     &     crack_growth_type, num_user_kill_elems, release_type, 
+     &     user_kill_list_now, all_elems_killed, killed_element_limit,
+     &     num_elements_killed, kill_order, smcs_deleted_list_file_flag, 
+     &     smcs_deleted_list_file_name, num_kill_order_list, smcs_type,
+     &     stop_killed_elist_length, deleted_elist_to_stop, 
+     &     distortion_plastic_limit, smcs_type_5_tp_critical,
+     &     use_mesh_regularization,
+     &     tol_regular =>
+     &     tolerance_mesh_regularization, use_distortion_metric, 
+     &     Oddy_critical_ratio    
       use constants                   
 c                                                         
       implicit none
@@ -132,7 +132,7 @@ c
      &           local_count, blk,  cohes_type, count, 
      &           element, felem, i, span
       integer, parameter :: local_pkt_type(5) = (/ 20, 0, 21, 10, 0 / )                   
-      logical :: blk_killed, killed_this_time,            
+      logical :: blk_killed, killed_this_time, distortion_killed,           
      &           kill_the_elem, ldummy1, ldummy2,
      &           local_debug, stop_solution, standard_kill, 
      &           elements_have_been_killed,  
@@ -146,7 +146,7 @@ c
      &   values(20), local_status(max_local_list,3), orig_poros,                
      &   ext_shape, ext_spacing, avg_triaxiality, avg_zeta,
      &   avg_bar_theta, tear_param, sig_mises, mises_at_death,
-     &   sig_1, sig_1_at_death
+     &   sig_1, sig_1_at_death, sig_mean
 c        
       local_debug = .false.
       if( local_debug ) then      
@@ -177,10 +177,8 @@ c
 c          
          elem_ptr = dam_ptr(elem)                                               
          if( elem_ptr == 0 ) cycle     ! element not killable                                      
-         if( local_debug ) then
-            write(out,*) 'killable element, dam state:',elem,
-     &            dam_state(elem_ptr)
-         end if
+         if( local_debug ) write(out,*) 'killable element, dam state:',
+     &                                  elem, dam_state(elem_ptr)
 c                                                                               
 c                If we previously started killing element, update it's             
 c                unloading state vector or damage parameter, 
@@ -212,8 +210,13 @@ c
             call dam_param(
      &         elem=elem, kill_now=kill_the_elem, debug=debug,
      &         porosity=porosity, eps_plas=eps_plas, eps_crit=eps_crit,
+     &         sig_mean=sig_mean, sig_mises=sig_mises, 
      &         ext_gurson=ext_gurson, ext_shape=ext_shape,
      &         ext_spacing=ext_spacing )
+            distortion_killed = .false.
+            if( .not. kill_the_elem ) then ! distortion may kill it
+               if( use_distortion_metric ) call chk_gt_kill_distortion
+            end if      
          case( 3 )  ! SMCS   
             call dam_param(
      &         elem=elem, kill_now=kill_the_elem, debug=debug,              
@@ -252,7 +255,11 @@ c                  stiffness, strains, stresses, .. are zeroed and no
 c                  further element computations occur
 c
          local_count = local_count + 1                                          
-         call chk_output_kill_messages
+         if( crack_growth_type == 1 ) call chk_output_kill_messages_1
+         if( crack_growth_type == 3 ) call chk_output_kill_messages_3
+         if( crack_growth_type == 4 ) call chk_output_kill_messages_4
+         if( crack_growth_type == 5 ) call chk_output_kill_messages_5
+c
          if( output_packets ) call chk_elem_kill_make_packets
 c                                                                               
 c                 initialize global variables for 1st killed element.
@@ -352,7 +359,7 @@ c
 c         (8) if limit on number of killed elements is exceeded,
 c             stop the solution.
 c
-      if( num_elements_killed > killed_element_limit ) then
+      if( num_elements_killed >= killed_element_limit ) then
           write(out,9000) killed_element_limit
           call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
           call warp3d_normal_stop
@@ -394,11 +401,65 @@ c
       contains
 c     ========
 c
+c
 c     ****************************************************************
+c     *                                                              *
+c     *          internal subroutine chk_gt_kill_distortion          *
+c     *                                                              *
+c     *                   last modified : 8/29/21 rhd                *
+c     *                                                              *
+c     *     Gurson element did not fail by critical porosity.        *
+c     *     Check if it fails by distortion metrics                  *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine chk_gt_kill_distortion
+c
+      implicit none
+c
+      logical :: local_debug, kill_by_Oddy, kill_immediately,
+     &           kill_by_plastic_limit
+      double precision :: total_plastic_strain, max_Oddy
+c
+      local_debug = elem == -1
+      if( local_debug ) write(out,9000) elem
+c
+c              current plastic strain
+c
+      total_plastic_strain = eps_plas
+      if( eps_plas < zero ) total_plastic_strain = zero ! roundoff
+c
+c               could also delete by distortion
+c               limit or plastic strain limit.
+c
+      max_Oddy = Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
+      kill_by_Oddy = max_Oddy >= Oddy_critical_ratio 
+      kill_by_plastic_limit = total_plastic_strain >= 
+     &                        distortion_plastic_limit
+      kill_immediately = kill_by_Oddy  .or. kill_by_plastic_limit
+      if( local_debug ) then
+        write(out,9020) total_plastic_strain, max_Oddy
+      end if  
+      if( .not. kill_immediately ) return
+c      
+      kill_the_elem = .true.
+      distortion_killed = .true. 
+      return
+c
+ 9000 format(5x,"... entered chk_xxx: ",i8)
+ 9010 format(10x,'eps_plas ',f12.8)
+ 9020 format(10x,'eps_plas, gt_max_Oddy: ',f8.5,f7.2)
+ 9200 format(/,' @2  >> element removed by distortion metrics: ',i7,
+     & '  max Oddy ratio: ',f7.2,2x,'plastic strain: ',
+     & f4.2,2x,a)
+c
+      end subroutine chk_gt_kill_distortion
+cc     ****************************************************************
 c     *                                                              *
 c     *          internal subroutine chk_elem_kill_upmr              *
 c     *                                                              *
-c     *                   last modified : 4/30/21 rhd                *
+c     *                   last modified : 8/28/21 rhd                *
 c     *                                                              *
 c     *     element in deletion via SMCS using mesh regularization.  *
 c     *     update damage parameter. if fully deleted, updated       *
@@ -416,11 +477,14 @@ c              regularization is being used. Update the damage
 c              parameter "d" for the element. It was zeroed
 c              upon triggering deletion. When d >=1, the
 c              element is to be fully deleted as in the standard
-c              killing process.'
-
-      logical :: local_debug
+c              killing process.
+c
+      logical :: local_debug, kill_by_Oddy, kill_by_d_value, 
+     &           kill_immediately, kill_by_plastic_limit
       double precision ::  avg_eps_plas, avg_sig_mises, d_now, d_old,
-     &                     deps_plas, stress_at_death, avg_sig_1
+     &                     deps_plas, stress_at_death, avg_sig_1,
+     &                     max_Oddy, total_plastic_strain, max_eps_plas
+      character(len=50) :: distortion_msg
 c
       local_debug = elem == -1
       if( local_debug ) write(out,9000) elem
@@ -431,7 +495,7 @@ c              current plastic strain and mises stress averages
 c              for element
 c
       call chk_get_ele_vals( elem, avg_eps_plas, avg_sig_mises, 
-     &                       avg_sig_1 )
+     &                       avg_sig_1, max_eps_plas )
       deps_plas = avg_eps_plas - smcs_eps_plas_at_death(elem_ptr)
       if( local_debug ) then
         write(out,9010) avg_eps_plas, deps_plas, 
@@ -439,7 +503,9 @@ c
       end if
       if( deps_plas < zero ) deps_plas = zero ! round-off @ just killed
 c
-c               get current damage parameter value "d"
+c               get current damage parameter value "d". decide to
+c               fully delete element. could also delete by distortion
+c               limit or plastic strain limit.
 c
       stress_at_death = smcs_stress_at_death(elem_ptr)
       call chk_get_d( elem, deps_plas, stress_at_death, d_now, out )
@@ -450,7 +516,23 @@ c
       end if
       smcs_d_values(elem_ptr) = d_now
       if( local_debug ) write(out,9020) d_old, d_now, stress_at_death
-      if( d_now <= tol_regular ) return
+c
+      if( use_distortion_metric ) then
+         max_Oddy = Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
+         total_plastic_strain = max_eps_plas
+      else
+         max_Oddy = zero
+         total_plastic_strain = -one ! actual value ust be larger
+      end if 
+c
+      kill_by_Oddy = max_Oddy >= Oddy_critical_ratio 
+      kill_by_d_value = d_now > tol_regular
+      kill_by_plastic_limit = total_plastic_strain >= 
+     &                        distortion_plastic_limit
+c      
+      kill_immediately = kill_by_Oddy  .or. kill_by_d_value .or. 
+     &                   kill_by_plastic_limit
+      if( .not. kill_immediately ) return
       smcs_d_values(elem_ptr) = hundred
 c
 c               fully kill the element. 
@@ -467,8 +549,19 @@ c
       call chk_update_killed_energy( elem )     
       call chk_kill_element_now( elem, debug )                                    
       call chk_update_node_elecnt( elem, debug )  
-      call chk_free_nodes( .false. ) ! debug flag     
-      write(out,9200) elem 
+      call chk_free_nodes( .false. ) ! debug flag  
+      if( use_distortion_metric ) then
+        distortion_msg = ' '
+        if( kill_by_Oddy ) distortion_msg = '** Oddy exceeds limit'
+        if( kill_by_plastic_limit ) distortion_msg =
+     &                '** eps plastic exceeds limit'
+        if( kill_by_Oddy .and. kill_by_plastic_limit )
+     &     distortion_msg = '** Oddy & eps plastic exceed limits'
+        write(out,9200) elem, d_now, max_Oddy, total_plastic_strain, 
+     &                  distortion_msg(1:len(distortion_msg))
+      else
+        write(out,9210) elem, d_now
+      end if  
 c               
       return
 c
@@ -483,19 +576,22 @@ c
      &       /,1x,"      in routine chk_elem_kill_upmr", 
      &       /,1x,"      Execution will stop at next Compute cmd",
      &       /)
-
  9100 format('>> FATAL ERROR: routine ',
      & 'chk_elem_kill_update_mesh_regularization.',
      & 10x,'inconsistent condition. for element:',i8,
      & ' job terminated.'//)
- 9200 format(/,' >> element fully removed by regularization: ',i7 )
+ 9200 format(/,' >> element removed by regularization: ',i7,
+     & '  d: ', f5.2,'  max Oddy ratio: ',f7.2,2x,'plastic strain: ',
+     & f4.2,2x,a)
+ 9210 format(/,' >> element removed by regularization: ',i7,
+     & '  d: ', f5.2 )
 c
       end subroutine chk_elem_kill_upmr
 c     ****************************************************************
 c     *                                                              *
 c     *          internal subroutine chk_get_ele_vals                *
 c     *                                                              *
-c     *                   last modified : 4/13/21 rhd                *
+c     *                   last modified : 8/26/21 rhd                *
 c     *                                                              *
 c     *         service routine to get strain-stress values for a    *
 c     *         single element                                       *
@@ -504,7 +600,7 @@ c     ****************************************************************
 c
 c
       subroutine chk_get_ele_vals( elem, avg_eps_plas, avg_sig_mises,
-     &                             avg_sig_1  )
+     &                             avg_sig_1, max_eps_plas  )
 c
       implicit none
 c
@@ -513,7 +609,7 @@ c              average mises stress for element
 c
       integer, intent(in) :: elem
       double precision, intent(out) :: avg_eps_plas, avg_sig_mises,
-     &                                 avg_sig_1
+     &                                 avg_sig_1, max_eps_plas
 c
       integer :: elem_type, ngp
       logical :: threed_solid_elem, l1, l2, l3, l4, l5, l6, l7, l8,
@@ -521,7 +617,7 @@ c
       logical :: ldebug 
       double precision :: workvec(27)
 c
-      ldebug = elem .eq. 4 .and. step > 57
+      ldebug = .false. ! elem .eq. 4 .and. step > 57
       if( ldebug ) 
      &    write(out,9000) elem
 c
@@ -539,6 +635,7 @@ c
 c 
       call mm_return_values( "plastic_strain", elem, workvec, ngp )
       avg_eps_plas = sum( workvec(1:ngp) ) * ( one / dble( ngp ) )
+      max_eps_plas = maxval( workvec(1:ngp) )
 c
       call mm_return_values( "avg_mises", elem, workvec, ngp )
       avg_sig_mises = workvec(1)
@@ -562,83 +659,136 @@ c
 c
 c     ****************************************************************
 c     *                                                              *
-c     *        internal subroutine chk_output_kill_messages          *
+c     *        internal subroutine chk_output_kill_messages_1        *
 c     *                                                              *
-c     *                   last modified : 3/7/21 rhd                 *
+c     *                   last modified : 9/19/21 rhd                *
 c     *                                                              *
-c     *     element deletion by any method started. output messages  *
+c     *                     Gurson crack growth                      *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_output_kill_messages
+      subroutine chk_output_kill_messages_1
+c
+      implicit none
+c
+      integer :: device
+      logical :: fexists, kill_by_Oddy, kill_by_plastic_limit
+      double precision ::  total_plastic_strain, max_Oddy
+      character(len=50) :: distortion_msg      
+c
+      if( ext_gurson ) then
+         write(out,9002) elem, porosity, ext_spacing, ext_shape    
+         return
+      endif
+c     
+      if( distortion_killed ) then
+        total_plastic_strain = eps_plas
+        if( eps_plas < zero ) total_plastic_strain = zero ! roundoff
+        max_Oddy = Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
+        kill_by_Oddy = max_Oddy >= Oddy_critical_ratio 
+        kill_by_plastic_limit = total_plastic_strain >= 
+     &                          distortion_plastic_limit
+        distortion_msg = ' '
+        if( kill_by_Oddy ) distortion_msg = '** Oddy exceeds limit'
+        if( kill_by_plastic_limit ) distortion_msg =
+     &                '** eps plastic exceeds limit'
+        if( kill_by_Oddy .and. kill_by_plastic_limit )
+     &     distortion_msg = '** Oddy & eps plastic exceed limits'
+        write(out,9200) elem, porosity, max_Oddy, total_plastic_strain, 
+     &                  distortion_msg(1:len(distortion_msg))
+      else  !  killed by porosity
+      if( .not. use_distortion_metric ) write(out,9000) elem, porosity
+      if( use_distortion_metric )  write(out,9010) elem, porosity,
+     &              Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)   
+      end if 
+c   
+c              use same file name for list of deleted elements
+c              as used for scs since both cannot be used in
+c              same model 
+      
+      if( .not. smcs_deleted_list_file_flag ) return ! delete elements file
+      inquire( file=smcs_deleted_list_file_name, exist=fexists )
+      open( newunit=device,file=smcs_deleted_list_file_name,
+     &      form='formatted', status='unknown', 
+     &      access='sequential', position='append' )   
+      if( .not. fexists ) then
+        if( .not. use_distortion_metric ) write(device,9018)
+        if( use_distortion_metric ) write(device,9019)
+      end if   
+      if( .not. use_distortion_metric )
+     &  write(device,9020) current_load_time_step,
+     &                   elem, porosity, sig_mean, sig_mises, eps_plas
+      if( use_distortion_metric ) then
+         max_Oddy = Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
+         write(device,9020) current_load_time_step,
+     &                   elem, porosity, sig_mean, sig_mises, eps_plas,
+     &                   max_Oddy
+      end if         
+      close(unit=device)    
+                 
+
+ 9000 format(/,' @1  >> element death invoked for element: ',i7,                  
+     & '.   f: ',f6.3)                                                          
+ 9002 format(/,'   >> element death invoked for element: ',i7,                  
+     & '.   f, W, X: ',3f8.3)                                                   
+ 9010 format(/,' @1  >> element death invoked for element: ',i7,                  
+     & '.   f: ',f6.3,2x,'Oddy metric: ',f8.3)                                                          
+ 9018 format('!',/,'!   Gurson quantities when elements deleted',/,
+     & '!   (element deletion begins at listed step number)',
+     & /,'!',/,
+     & 6x,'step     elem   porosity     mean stress    mises stress',
+     & '  plastic strain')
+ 9019 format('!',/,'!  Gurson quantities when elements deleted',/,
+     & '!   (element deletion begins at listed step number)',
+     & /,'!',/,
+     & 6x,'step     elem   porosity     mean stress    mises stress',
+     & '  plastic strain  Oddy metric')
+ 9020 format(2x,i8,i9,3x,f8.5,2x,e14.6,2x,e14.6,2x,e14.6,2x,f7.2)    
+ 9200 format(/,' @2  >> element removed by distortion metrics: ',i7,
+     & '  f: ', f5.3,' max Oddy ratio: ',f7.2,2x,'plastic strain: ',
+     & f4.2,2x,a)
+c
+      end subroutine chk_output_kill_messages_1
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_output_kill_messages_3        *
+c     *                                                              *
+c     *                   last modified : 8/29/21 rhd                *
+c     *                                                              *
+c     *                     SMCS crack growth                        *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chk_output_kill_messages_3
 c
       implicit none
 c
       integer :: device
       logical :: fexists
 c
-c                 start killing this element right now. record status               
-c                 for subsequent packet output if neeeded. write usual              
-c                 output about element death.                                   
-c
-      select case( crack_growth_type )
-      case( 1 )
-          if( .not. ext_gurson ) write(out,9000) elem, porosity              
-          if( ext_gurson ) write(out,9002) elem, porosity,                   
-     &                     ext_spacing, ext_shape     
-          return                       
-      case( 3 )
-          if( smcs_type <= 4 ) then
-            write(out,9010) elem, eps_plas, eps_crit, avg_triaxiality,
-     &                    avg_zeta, avg_bar_theta
-          end if
-          if( smcs_type == 5 ) then
-            write(out,9025) elem, tear_param, smcs_type_5_tp_critical
-          end if
-           if( .not. smcs_list_file_flag ) return ! delete elements file
-          inquire( file=smcs_list_file_name, exist=fexists )
-          open( newunit=device,file=smcs_list_file_name,
-     &          form='formatted', status='unknown', 
-     &          access='sequential', position='append' )   
-          if( .not. fexists ) write(device,9018)
-          write(device,9020) current_load_time_step,
-     &                       elem, eps_plas, eps_crit,
-     &                       avg_triaxiality, avg_zeta, avg_bar_theta,
-     &                       tear_param 
-          close(unit=device)    
-        return
-      case( 4 )
-          cohes_type         = iprops(27,elem)                               
-          option_exponential = cohes_type .eq. 4                             
-          option_ppr         = cohes_type .eq. 6                             
-          option_cavit       = cohes_type .eq. 7                             
-          found_exponential  = found_exponential .or.                         
-     &                         option_exponential                             
-          found_ppr   = found_ppr .or. option_ppr                            
-          found_cavit = found_cavit .or. option_cavit                        
-          count = 0                                                          
-          if( found_exponential ) count = count + 1                          
-          if( found_ppr ) count = count + 1                                  
-          if( found_cavit ) count = count + 1                                
-          if( count .gt. 1 ) then                                            
-            write(out,9400) elem                                            
-            call die_gracefully                                              
-          end if                                                             
-          if( option_exponential )                                           
-     &       write(out,9200) elem, values(6)/values(7), values(8)            
-          if( option_ppr )   write(out,9220) elem                            
-          if( option_cavit ) write(out,9230) elem  
-          return 
-      case( 5 )
-          write(out,9240) elem                         
-      end select
+      if( smcs_type <= 4 ) then
+        write(out,9010) elem, eps_plas, eps_crit, avg_triaxiality,
+     &                avg_zeta, avg_bar_theta
+      end if
+      if( smcs_type == 5 ) then
+        write(out,9025) elem, tear_param, smcs_type_5_tp_critical
+      end if
+      if( .not. smcs_deleted_list_file_flag ) return ! delete elements file
+      inquire( file=smcs_deleted_list_file_name, exist=fexists )
+      open( newunit=device,file=smcs_deleted_list_file_name,
+     &      form='formatted', status='unknown', 
+     &      access='sequential', position='append' )   
+      if( .not. fexists ) write(device,9018)
+      write(device,9020) current_load_time_step,
+     &                   elem, eps_plas, eps_crit,
+     &                   avg_triaxiality, avg_zeta, avg_bar_theta,
+     &                   tear_param 
+      close(unit=device)    
 c
       return
 c
- 9000 format(/,' @1  >> element death invoked for element: ',i7,                  
-     & '.   f: ',f6.3)                                                          
- 9002 format(/,'   >> element death invoked for element: ',i7,                  
-     & '.   f, W, X: ',3f8.3)                                                   
  9010 format(/,' >> element death option invoked before next step',             
      &       /,'    element: ',i7,' is now killed.',                            
      &       /,'    plastic strain: ',f8.5,' is > limit of: ',f8.5,
@@ -655,20 +805,85 @@ c
      &       /,'    element: ',i7,' is now killed.',                            
      &       /,'    tearing parameter: ',f9.3,' is > limit of: ',
      &        f9.3 )
+c 
+      end subroutine chk_output_kill_messages_3
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_output_kill_messages_4        *
+c     *                                                              *
+c     *                   last modified : 8/29/21 rhd                *
+c     *                                                              *
+c     *                    cohesive element/material growth          *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chk_output_kill_messages_4
+c
+      implicit none
+c
+c                 start killing this element right now. record status               
+c                 for subsequent packet output if neeeded. write usual              
+c                 output about element death.                                   
+c
+      cohes_type         = iprops(27,elem)                               
+      option_exponential = cohes_type .eq. 4                             
+      option_ppr         = cohes_type .eq. 6                             
+      option_cavit       = cohes_type .eq. 7                             
+      found_exponential  = found_exponential .or.                         
+     &                     option_exponential                             
+      found_ppr   = found_ppr .or. option_ppr                            
+      found_cavit = found_cavit .or. option_cavit                        
+      count = 0                                                          
+      if( found_exponential ) count = count + 1                          
+      if( found_ppr ) count = count + 1                                  
+      if( found_cavit ) count = count + 1                                
+      if( count .gt. 1 ) then                                            
+        write(out,9400) elem                                            
+        call die_gracefully                                              
+      end if                                                             
+      if( option_exponential )                                           
+     &   write(out,9200) elem, values(6)/values(7), values(8)            
+      if( option_ppr )   write(out,9220) elem                            
+      if( option_cavit ) write(out,9230) elem  
+c
+      return
+c
  9200 format(/,'   >> element death invoked for element: ',i7,                  
      & '.   Deff/Dpeak: ',f5.2,' Teff/Tpeak: ',f5.2)                            
  9220 format(/,'   >> element death invoked for element: ',i7,                  
      & '.  PPR cohesive option')                                                
  9230 format(/,'   >> element death invoked for element: ',i7,                  
      & '.  cavit cohesive option')                                              
- 9240 format(/,'   >> element death invoked for element: ',i7,                  
-     & '.  user-directed removal')                                              
  9400 format(/,'FATAL ERROR: mixed cohesive options not allowed',               
      & /,      '             at present in WARP3D with crack growth.'           
      & /,      '             found while processing element: ',i7,              
      & /,      '             job aborted.' )  
 c 
-      end subroutine chk_output_kill_messages
+      end subroutine chk_output_kill_messages_4
+c     ****************************************************************
+c     *                                                              *
+c     *        internal subroutine chk_output_kill_messages_5        *
+c     *                                                              *
+c     *                   last modified : 8/29/21 rhd                *
+c     *                                                              *
+c     *                 user directed element deletion               *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chk_output_kill_messages_5
+c
+      implicit none
+c
+      write(out,9240) elem                         
+c
+      return
+c
+ 9240 format(/,'   >> element death invoked for element: ',i7,                  
+     & '.  user-directed removal')                                              
+c
+      end subroutine chk_output_kill_messages_5
 c     ****************************************************************
 c     *                                                              *
 c     *        internal subroutine chk_elem_kill_output_packets      *
@@ -726,7 +941,7 @@ c
       logical :: killed_found_in_order_list
       logical, parameter :: ldebug = .false.
       double precision :: eps_plas_at_death, mises_at_death_local,
-     &                    sig_1_at_death_local
+     &                    sig_1_at_death_local, max_eps_plas
 c
       if( ldebug ) write (out,*) '>>> chk_elem_kill_in_order....'       
 c
@@ -769,7 +984,8 @@ c
         elseif( use_mesh_regularization ) then
           call chk_get_ele_vals( elem, eps_plas_at_death,
      &                           mises_at_death_local, 
-     &                           sig_1_at_death_local )
+     &                           sig_1_at_death_local,
+     &                           max_eps_plas )
           smcs_eps_plas_at_death(elem_ptr) = eps_plas_at_death
           smcs_stress_at_death(elem_ptr) = sig_1_at_death_local
           dam_state(elem_ptr) = 1
@@ -1476,7 +1692,7 @@ c
 c              Loop for all elements. process killable elements.
 c                                                                               
 c$OMP PARALLEL DO PRIVATE( elem, elem_ptr, dowhat, d1, d2, d3, d4, 
-c$OMP&                     d5, d6, d7, d8 )
+c$OMP&                     d5, d6, d7, d8, d9, ld1, d10 )
       do elem = 1, noelem
          elem_ptr = dam_ptr(elem)                                               
          if( elem_ptr .eq. 0 ) cycle     ! element not killable                                      
@@ -1590,7 +1806,7 @@ c     *                  subroutine chk_kill_element_now             *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 03/18/21 rhd               *          
+c     *                   last modified : 9/19/21 rhd                *          
 c     *                                                              *          
 c     *        This routine actually kills an element in the model.  *          
 c     *        Material properties and history data for the element  *          
@@ -1612,8 +1828,11 @@ c
      &                            urcs_n1_blocks, history_blk_list,
      &                            eps_n_blocks, eps_n1_blocks 
       use damage_data, only : dam_ptr, crack_growth_type,
-     &                        use_mesh_regularization
-      use elem_extinct_data, only : smcs_start_kill_step                                                    
+     &                        use_mesh_regularization,
+     &                        use_distortion_metric,
+     &                        smcs_removed_list_file_flag,
+     &                        smcs_removed_list_file_name
+      use elem_extinct_data, only : smcs_start_kill_step, Oddy_metrics
       use constants           
 c
       implicit none   
@@ -1625,7 +1844,7 @@ c              locals
 c
       integer :: elem_type, material_type, ngp, blk, rel_elem, device,
      &           hist_size, hist_offset, gp, hisloc, start, end, i,
-     &           se, ss, elem_ptr
+     &           se, ss, elem_ptr, npts
       double precision :: porosity
       double precision, dimension(:), pointer :: history, urcs_n1,
      &                                           urcs_n, eps_n, eps_n1
@@ -1724,15 +1943,20 @@ c
          call die_abort
       end if
 c      
-      file_name = "fully_killed_ele_list.out"
-      inquire( file=file_name, exist=fexists )
-      open( newunit=device,file=file_name,
-     &          form='formatted', status='unknown', 
-     &          access='sequential', position='append' )   
+      if( .not. smcs_removed_list_file_flag ) return ! remove elements file
+      inquire( file=smcs_removed_list_file_name, exist=fexists )
+      open( newunit=device,file=smcs_removed_list_file_name,
+     &      form='formatted', status='unknown', 
+     &      access='sequential', position='append' )   
       if( .not. fexists ) write(device,9018)
       se = current_load_time_step
       ss = smcs_start_kill_step(elem_ptr)
-      write(device,9020) ielem, ss, se, se-ss
+      if( use_distortion_metric ) then
+         write(device,9020) ielem, ss, se, se-ss, 
+     &    Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
+      else
+         write(device,9020) ielem, ss, se, se-ss
+      end if   
       close(unit=device)    
 c                                                                          
       if( debug ) write(out,*) '>>>> leaving chk_kill_element_now'                      
@@ -1743,9 +1967,12 @@ c
      & 'chk_kill_element_now',
      & 10x,'inconsistent condition. for element:',i8,
      & ' job terminated.'//)
- 9018 format('!',/,'!  SMCS steps numbers for element removal',/,
-     & 6x,'elem   start step     end step     # steps in release')  
- 9020 format(2x,i8,5x,i6,5x,i6,14x,i6)
+ 9018 format('!',/,
+     & '!  SMCS steps numbers for element removal', /,
+     & 6x,'elem  start step   end step # steps release',
+     & '  max Oddy ratio')  
+ 9020 format(2x,i8,4x,i6,5x,i6,8x,i6,4x,f9.2)
+ 9100 format(10x,8f5.2)
 c
       end                                                                       
 c     ****************************************************************          
@@ -2091,4 +2318,295 @@ c
      & ' job terminated.'//)
 c
       end function chkcrack_is_elem_deleted
+c
+c     ****************************************************************
+c     *                                                              *
+c     *          subroutine chkcrack_Oddy_needed                     *
+c     *                                                              *
+c     *            last modified : 8/29/21 rhd                       *
+c     *                                                              *
+c     ****************************************************************
+c
+c
+      subroutine chkcrack_Oddy_needed( felem, lflag )
+c
+      use global_data, only : out
+      use elem_extinct_data, only : dam_state
+      use damage_data, only : dam_ptr, crack_growth_type, 
+     &                        use_distortion_metric
+      use constants
+c
+      implicit none
+c
+      integer, intent(in) :: felem
+      logical, intent(out) :: lflag
+c
+      integer :: elem, elem_ptr
+      logical :: process
+c
+      lflag = .false.
+c
+      if( .not. use_distortion_metric ) return
+      process = crack_growth_type .eq. 1  .or. crack_growth_type .eq. 3
+      if( .not. process ) return  ! no element deletion growth
+      elem = felem
+      elem_ptr = dam_ptr(elem)                                               
+      if( elem_ptr == 0 ) return ! no elements in block killable
+      lflag = .true. ! killable element in block
+c
+      return
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *          subroutine chkcrack_Oddy_initial_print              *
+c     *                                                              *
+c     *            last modified : 9/10/21 rhd                       *
+c     *                                                              *
+c     *     after step = 1, iter = 1, print a file of Oddy metrics   *
+c     *     if requested by the user. file name is fixed             *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chkcrack_Oddy_initial_print
+c
+      use global_data, only : out, noelem
+      use damage_data, only :  dam_ptr, Oddy_print_initial
+      use elem_extinct_data, only : oddy_metrics_initial
+      use constants
+c
+      integer :: elem, elem_ptr, fileno, element_min, element_max,
+     &           element_max_ratio
+      logical, save :: already_printed = .false.
+      real :: Oddy_min, Oddy_max, global_min, global_max, 
+     &        global_max_ratio
+      character(len=80) :: fname
+c
+      if( .not. Oddy_print_initial ) return
+      if( already_printed ) return ! only print file once
+      already_printed = .true.
+c
+      if( .not. allocated( dam_ptr ) ) then
+         write(out,9900) 1
+         call die_abort
+      end if
+      if( .not. allocated( Oddy_metrics_initial ) ) then
+         write(out,9900) 2
+         call die_abort
+      end if
+c          
+      fname = "Oddy_initial_metrics_killable_elements"
+      open(newunit=fileno,file=fname,status="unknown")
+      write(fileno,9010) 
+c
+      global_min = 1000000.0
+      global_max = -100000.0
+      global_max_ratio = -100000.0
+c
+      do elem = 1, noelem
+       elem_ptr = dam_ptr(elem)                                               
+       if( elem_ptr == 0 ) cycle 
+       Oddy_min = Oddy_metrics_initial(elem_ptr,1)
+       Oddy_max = Oddy_metrics_initial(elem_ptr,2)
+       if( Oddy_min < global_min ) then
+         global_min = Oddy_min
+         element_min = elem
+       end if
+       if( Oddy_max > global_max ) then
+         global_max = Oddy_max
+         element_max = elem
+       end if
+       ele_ratio = Oddy_max / oddy_min
+       if( ele_ratio > global_max_ratio ) then
+         global_max_ratio = ele_ratio
+         element_max_ratio = elem
+       end if
+       write(fileno,9000) elem, Oddy_min, Oddy_max, ele_ratio
+      end do
+c
+      write(fileno,9020) global_min, element_min, global_max,
+     &                   element_max, global_max_ratio, 
+     &                   element_max_ratio
+      write(fileno,*) " "
+c
+      close(unit=fileno,status='keep')
+      deallocate( Oddy_metrics_initial ) ! not saved in restart
+c
+      return
+c
+ 9000 format(2x,i8,2x,f12.3,2x,f12.3,2x,f12.3)
+ 9010 format(/," Oddy metrics for killable elements @ t=0",
+     & /,/,'    element      Oddy min      Oddy max      max/min')
+ 9020 format(/,5x,'minimum:       ',f12.3,' @ element: ',i8,/,
+     &         5x,'maximum:       ',f12.3,' @ element: ',i8,/,
+     &         5x,'maximum ratio: ',f12.3,' @ element: ',i8,/)
+ 9900 format('>> FATAL ERROR: @',i2,' in chkcrack_Oddy_initial_print',
+     & /,    '                Job terminated',//)           
+c
+      end
+c
+c     ****************************************************************
+c     *                                                              *
+c     *          subroutine chkcrack_Oddy                            *
+c     *                                                              *
+c     *            last modified : 9/10/21 rhd                       *
+c     *                                                              *
+c     *     compute/store the Oddy distortion paramter for block     *
+c     *     of killable elements. only called if calcs needed        *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chkcrack_Oddy( step, itype, span, felem, gpn, detJ,
+     &                          jac )
+c
+      use global_data, only : out, mxvl, iprops, props
+      use dam_param_code, only : dam_param
+      use elem_extinct_data, only : dam_state, Oddy_metrics, 
+     &    oddy_metrics_initial
+      use damage_data, only : dam_ptr, Oddy_print_initial
+      use constants
+c
+c              compute/store the current Oddy paramter for a block 
+c              of killable elements at gpn.
+c              allocate space during step 1 as needed. 
+c              called by gtmat while processing blocks in parallel
+c              to compute various required deformation gradients F.
+c              gtmat1 comoutes coordinate jacobian (and det) for
+c              current element (deformed) shape.
+c              this routines runs on each thread.
+c
+      implicit none
+c
+      integer, intent(in) :: step, itype, span, felem, gpn
+      double precision, intent(in) :: detJ(mxvl), jac(mxvl,3,3)
+c
+      integer :: i, elem, elem_ptr
+      logical :: process
+      logical, parameter :: ldebug1 = .false., ldebug2 = .false.,
+     &                      ldebug3 = .false., print = .false.
+      logical, save :: header = .true.
+      double precision :: Oddy_value, Oddy_prior_value, Oddy_new
+      real :: ymod, old_value, new_value, old_min, new_min, old_max,
+     &        new_max
+c
+      if( ldebug1 ) write(out,9000) step, itype, felem, gpn, span
+      if( .not. allocated( dam_ptr ) ) then
+         write(out,8900)
+         call die_abort
+      end if
+c
+c              use special loop for step 1. undeformed Jac passed
+c
+      if( itype == 1 ) then
+        do i = 1, span
+          elem = felem + i - 1
+          elem_ptr = dam_ptr(elem)                                               
+          if( elem_ptr == 0 ) cycle ! really fatal error
+          call chkcrack_Oddy_compute( i, Oddy_value )
+          old_value = Oddy_metrics(elem_ptr,1)
+          new_value = min( sngl(Oddy_value), old_value )
+          if( new_value <= 0.0) new_value = 1.0 ! cubical elems
+          Oddy_metrics(elem_ptr,1) = new_value
+          Oddy_metrics(elem_ptr,2) = 0.0
+          if( ldebug1 .and. elem == 1 ) then
+              write(out,9010) elem, detJ(i), Oddy_value, new_value
+              write(out,9012) jac(i,1:3,1:3)
+          end if
+          if( Oddy_print_initial ) then
+            old_min = Oddy_metrics_initial(elem_ptr,1)
+            new_min = min( old_min, sngl(Oddy_value) )
+            old_max = Oddy_metrics_initial(elem_ptr,2)
+            new_max = max( old_max, sngl(Oddy_value) )
+            Oddy_metrics_initial(elem_ptr,1) = new_min
+            Oddy_metrics_initial(elem_ptr,2) = new_max
+          end if
+          if( .not. print ) cycle
+          if( header ) write(out,9310)
+          header = .false.
+          write(out,9320) elem, gpn, new_min, new_max
+        end do
+        return
+      end if
+c
+c              regular loop after step 1. all data allocated. put 
+c              current Oddy value in row 2 of table. only need to 
+c              process elements being killed and not yet fully 
+c              deleted from model
+c
+      if( itype /= 2 ) then
+        write(out,9300) 
+        call die_abort
+      end if
+c        
+      do i = 1, span
+        elem = felem + i - 1
+        ymod = props(7,elem)  ! has been zeroed for fully killed element
+        if( ymod <= 0.0 ) cycle  ! props is single precision
+        elem_ptr = dam_ptr(elem) 
+        call chkcrack_Oddy_compute( i, Oddy_value )
+        Oddy_prior_value = dble( Oddy_metrics(elem_ptr,2) )
+        if( Oddy_value <= zero ) Oddy_value = one
+        Oddy_new = max( Oddy_prior_value, Oddy_value )
+        Oddy_metrics(elem_ptr,2) = sngl(Oddy_new) 
+        if( step <4 .and. ldebug3 .and. elem == 1 ) then
+            write(out,9200) elem, gpn, Oddy_prior_value, Oddy_value, 
+     &                      Oddy_new
+            write(out,9012) jac(i,1:3,1:3)
+        end if    
+      end do
+c
+      return 
+c
+ 8900 format(/1x,'>>>>> FATAL ERROR: routine chkcrack_Oddy.'
+     &  /,'                    should not be called',
+     &  /,'        Execution terminated.',/)
+ 9000 format(/,'.... Enter chkcrack_Oddy:',/,
+     &  10x,'step, itype, felem, gpn, span: ',i7,i3,i7,i3,i4) 
+ 9010 format(10x,'elem, detJ, Oddy value, Oddy new:',i8,3f10.4)
+ 9012 format(15x,3f10.5)
+ 9100 format(10x, i8, 3f10.4 )
+ 9200 format('.... Oddy trace. elem, gp, Oddy prior, Oddy now, ',
+     &   ' Oddy new: ', i8,i4,3f10.4) 
+ 9300 format(/,">>>>>  FATAL ERROR: routine chkcrack_Oddy",/,
+     &         "         Job terminated.")
+ 9310 format(5x,'--------   Oddy metric values undeformed element  ',
+     &   '--------',/,
+     &       15x,'Element     Gauss Pt     min Oddy value   ',
+     &       'max Oddy value') 
+ 9320 format(15x, i7, 8x, i2, 9x, f8.3, 9x, f8.3)          
+c
+      contains
+c     --------
+c
+      subroutine chkcrack_Oddy_compute( relem, Oddy_value )
+      implicit none
+      integer, intent(in) :: relem
+      double precision, intent(out) :: Oddy_value
+c
+      double precision :: tens(3,3), trans_tens(3,3), C(3,3), 
+     &                    Cvec(9), t1, t2
+      equivalence ( C, Cvec )
+c
+      tens(1:3,1:3) = jac(relem,1:3,1:3) / detJ(relem)**third 
+      trans_tens = transpose( tens )
+      C = matmul( trans_tens, tens )
+      t2 = ( C(1,1) + C(2,2) + C(3,3) )**2 / three
+      t1 = dot_product( Cvec, Cvec ) ! tensor contraction C:C
+      Oddy_value = one +  (t1 - t2)
+      if( ldebug2 .and. elem == 1 ) then
+         write(out,9000)
+         write(out,9010) C
+         write(out,9015) t1, t2
+      end if
+c
+      return
+ 9000 format(10x,"... [C] ....:")
+ 9010 format(15x,3f10.5)
+ 9015 format(10x,"... t1,t2: ", 2f10.5)
+c
+      end subroutine chkcrack_Oddy_compute
+      end subroutine chkcrack_Oddy
+        
+
+
 

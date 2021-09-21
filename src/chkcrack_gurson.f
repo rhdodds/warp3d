@@ -11,7 +11,7 @@ c     *                    subroutine dam_param_gt                   *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 12/15/2020                 *          
+c     *                   last modified : 8/29/21 rhd                *          
 c     *                                                              *          
 c     *    evaluate current damage state for an element associated   *          
 c     *    with the standard GT material model (#3)                  *          
@@ -21,7 +21,7 @@ c
 c                                                                               
 c                                                                               
       subroutine dam_param_gt( elem, kill_now, debug, porosity,                 
-     &                         sig_mean, sig_mises )                            
+     &                         sig_mean, sig_mises, eps_plastic )                            
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
 c                               killing                                         
@@ -37,8 +37,9 @@ c                               over element. just used for output
 c                               messages                                        
 c        sig_mises -- (ouput)   all models. average mises stress                
 c                               over element. just used for output.             
-c                                                                               
-c                                                                               
+c        eps_plstic -- (output)  all models. average (macroscopic) plastic
+c                               strain over element
+c                                                                                                                                                           
       use global_data, only : iprops, nstrs, out
       use main_data,       only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, urcs_n_blocks,                
@@ -53,7 +54,8 @@ c
       integer, intent(in) :: elem                                                                
       logical, intent(out):: kill_now                                                   
       logical, intent(in):: debug
-      double precision, intent(out) :: porosity, sig_mean, sig_mises
+      double precision, intent(out) :: porosity, sig_mean, sig_mises, 
+     &                                 eps_plastic
 c                                        
 c              local declarations                                               
 c      
@@ -74,7 +76,8 @@ c          element.
 c                                                                               
       porosity    = zero                                                        
       sig_mean    = zero                                                        
-      sig_mises   = zero                                                        
+      sig_mises   = zero   
+      eps_plastic = zero                                                     
       ngp         = iprops(6,elem)                                              
       blk         = elems_to_blocks(elem,1)                                     
       rel_elem    = elems_to_blocks(elem,2)                                     
@@ -94,7 +97,7 @@ c                  nstrs: number of stress values stored per gauss point
 c       hist_size: number of history values stored per gauss point              
 c                                                                               
       do gp = 1, ngp                                                            
-        sigoffset   = (rel_elem-1)*nstrs*ngp + (gp-1)*nstrs                     
+        sigoffset = (rel_elem-1)*nstrs*ngp + (gp-1)*nstrs                     
         sig_xx = urcs_n(sigoffset + 1)                                          
         sig_yy = urcs_n(sigoffset + 2)                                          
         sig_zz = urcs_n(sigoffset + 3)                                          
@@ -107,7 +110,8 @@ c
      &           (sig_xx-sig_zz)**2 + six*( sig_xy**2 +                         
      &           sig_yz**2 + sig_xz**2 ) ) * iroot2                             
         hist_offset = offset+4+(gp-1)*hist_size                                 
-        porosity = porosity + history(hist_offset)                              
+        porosity = porosity + history(hist_offset)     
+        eps_plastic = eps_plastic + urcs_n(sigoffset + 9)                           
       end do                                                                    
 c                                                                               
 c          final average values over element. check average porosity            
@@ -116,7 +120,8 @@ c
       fpngp = dble( ngp )                                                      
       porosity = porosity / fpngp                                               
       sig_mean  = sig_mean * third / fpngp                                      
-      sig_mises = sig_mises / fpngp                                             
+      sig_mises = sig_mises / fpngp
+      eps_plastic = eps_plastic / fpngp                                              
       kill_now  =  porosity .gt. porosity_limit                                 
 c                                                                               
       if( debug ) then                                                         
@@ -290,7 +295,7 @@ c     *                      subroutine dam_print_elem1              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/15/20 rhd               *          
+c     *                   last modified : 8/30/21 rhdd               *          
 c     *                                                              *          
 c     *     This routine prints out the status of killable Gurson    *          
 c     *     and extended Gurson elements at the beginning of a       *          
@@ -302,16 +307,16 @@ c
 c                                                                               
       subroutine dam_print_elem1( step, iter )                                     
 c
-      use global_data, only : out, iprops, props
+      use global_data, only : out, iprops, props, lprops
       use main_data, only : elems_to_blocks, output_packets,
      &                      packet_file_no   
       use dam_param_code, only : dam_param                                                          
       use elem_extinct_data, only : dam_state, dam_print_list,                  
-     &     old_porosity, old_mises, old_mean                                    
+     &     old_porosity, old_mises, old_mean, Oddy_metrics                                    
       use elem_block_data, only : history_blocks, history_blk_list              
       use damage_data, only : dam_ptr, load_size_control_crk_grth,
      &                        num_elements_killed, porosity_limit,
-     &                        num_print_list
+     &                        num_print_list, use_distortion_metric
       use constants
 c                                                        
       implicit none                                                                      
@@ -326,12 +331,13 @@ c
      &           rel_elem, hist_size, hist_offset, offset, sigbar_loc,
      &           gp, ebarp_loc, mises_flag, mean_flag     
       double precision :: porosity, orig_porosity, ebarp, sigma_bar,
-     &     d_poros, max_d_poros, fpngp, sig_mean,             
-     &     sig_mises, ext_shape, ext_spacing    
+     &     d_poros, max_d_poros, fpngp, sig_mean, max_Oddy_ratio,             
+     &     sig_mises, ext_shape, ext_spacing, avg_eps_plas    
       double precision, dimension(:), pointer :: history
       logical, parameter :: debug = .false.                                        
-      logical :: all_killed, lmises(num_print_list), 
-     &           lmean(num_print_list), ext_gurson                             
+      logical :: all_killed, lmises(num_print_list), geo_non_flg,
+     &           lmean(num_print_list), ext_gurson, 
+     &           print_distort_metric                             
       character(len=1) :: mises_char, mean_char                                 
 c                                                                               
 c           check to see if all elements in print list have been killed.        
@@ -374,7 +380,7 @@ c
       lmean  = .false.                                                          
       do elem_loop = 1, num_print_list                                          
          element  = dam_print_list(elem_loop)                                     
-         elem_ptr = dam_ptr(element)                                            
+         elem_ptr = dam_ptr(element)  
 c                                                                               
 c             check if element is a killable element and if it has              
 c             been killed.                                                      
@@ -394,12 +400,15 @@ c
          rel_elem  = elems_to_blocks(element,2)                                 
          hist_size = history_blk_list(blk)                                      
          offset    = (rel_elem-1)*hist_size*ngp + 1                             
-         history   => history_blocks(blk)%ptr                                   
+         history   => history_blocks(blk)%ptr   
+         geo_non_flg = lprops(18,element)                                          
 c                                                                               
          call dam_param( element, debug=debug, porosity=porosity,                     
-     &                   sig_mean=sig_mean, sig_mises=sig_mises,                     
+     &                   eps_plas=avg_eps_plas, sig_mean=sig_mean, 
+     &                   sig_mises=sig_mises,                     
      &                   ext_gurson=ext_gurson, ext_shape=ext_shape,
-     &                   ext_spacing=ext_spacing )                   
+     &                   ext_spacing=ext_spacing )   
+     
 c                                                                               
 c             if the mises stress or mean stress from this step are             
 c             lower than the previous step, then put a * by the                 
@@ -442,17 +451,34 @@ c
               sigma_bar = sigma_bar +                                           
      &                history(hist_offset+sigbar_loc) / fpngp                   
             end do                                                              
-c                                                                               
+c 
+            print_distort_metric = .false. 
+            if( use_distortion_metric .and. geo_non_flg ) then
+                 max_Oddy_ratio = Oddy_metrics(elem_ptr,2) /
+     &                            Oddy_metrics(elem_ptr,1)     
+                 print_distort_metric = .true.
+            end if                                             
+c                                                             
             if( load_size_control_crk_grth ) then                               
                d_poros = porosity - old_porosity(dam_ptr(element))              
-               max_d_poros = max(max_d_poros, d_poros)                          
-               write(out,9005) element, orig_porosity, porosity, ebarp,         
+               max_d_poros = max(max_d_poros, d_poros)  
+               if( .not.  print_distort_metric )                        
+     &          write(out,9005) element, orig_porosity, porosity, ebarp,         
      &              sigma_bar, sig_mean, mean_char, sig_mises,                  
-     &              mises_char, d_poros                                         
-            else                                                                
-               write(out,9000) element, orig_porosity, porosity, ebarp,         
+     &              mises_char, d_poros, avg_eps_plas                                       
+               if( print_distort_metric )                        
+     &          write(out,9005) element, orig_porosity, porosity, ebarp,         
      &              sigma_bar, sig_mean, mean_char, sig_mises,                  
-     &              mises_char                                                  
+     &              mises_char, d_poros, avg_eps_plas, max_Oddy_ratio                                       
+            else 
+              if( .not. print_distort_metric )                        
+     &         write(out,9000) element, orig_porosity, porosity, ebarp,         
+     &              sigma_bar, sig_mean, mean_char, sig_mises,                  
+     &              mises_char, avg_eps_plas                                                  
+             if( print_distort_metric )                        
+     &         write(out,9000) element, orig_porosity, porosity, ebarp,         
+     &              sigma_bar, sig_mean, mean_char, sig_mises,                  
+     &              mises_char, avg_eps_plas, max_Oddy_ratio                                                  
             end if                                                              
 c                                                                               
          local_count = local_count + 1                                          
@@ -506,7 +532,7 @@ c
          offset    = (rel_elem-1)*hist_size*ngp + 1                             
          history   => history_blocks(blk)%ptr                                   
 c                                                                               
-        call dam_param( element, debug=debug, porosity=porosity,                     
+         call dam_param( element, debug=debug, porosity=porosity,                     
      &                   sig_mean=sig_mean, sig_mises=sig_mises,                     
      &                   ext_gurson=ext_gurson, ext_shape=ext_shape,
      &                   ext_spacing=ext_spacing )                   
@@ -597,13 +623,14 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 9000 format(1x,i7,1x,f12.5,3x,f12.5,3(1x,e14.6),a1,(1x,e14.6),a1)              
+ 9000 format(1x,i7,1x,f12.5,3x,f12.5,3(1x,e14.6),a1,(1x,e14.6),a1,
+     &        4x,f7.5,6x,f7.3)
  9005 format(1x,i7,1x,f12.5,3x,f12.5,                                           
      &       e14.6,                                                             
      &       2x,e14.6,                                                          
      &       3x,e14.6,a1,                                                       
      &       1x,e14.6,a1,                                                       
-     &       1x,f10.6 )                                                         
+     &       1x,f10.6,4x,f7.5,7x,f7.3 )                                                         
  9010 format(5x,'>> max. delta-f for step:',f8.5,                               
      &      '.  f-critical (%): ',f7.3,                                         
      &     '. f-initial (%): ',f7.3,/)                                          
@@ -611,16 +638,16 @@ c
      &       /,5x,'>> total number of elements killed: ',i7)                    
  9020 format(1x,'element     inital f     current f       Ep    ',              
      &       '        sigma bar      mean stress    ',                          
-     &       'mises stress     delta f        ',/,1x,                           
-     &       '-------     --------     ---------       --    ',                 
+     &       'mises stress     delta f    eps_plastic  Oddy ratio',                         
+     &  /,1x '-------     --------     ---------       --    ',                 
      &       '        ---------      -----------    ',                          
-     &       '------------     -------        ')                                
+     &       '------------     -------    -----------  ----------')                                
  9030 format(1x,'element     inital f     current f       Ep    ',              
      &       '      sigma bar      mean stress    ',                            
-     &       'mises stress',/,1x,                                               
+     &       'mises stress    eps_plastic  Oddy ratio',/,1x,                                               
      &       '-------     --------     ---------       --    ',                 
      &       '      ---------      -----------    ',                            
-     &       '------------')                                                    
+     &       '------------    -----------  ----------')    
  9040 format(1x,'*** NOTE: all elements in the killable element',               
      & ' status list have been killed.',/)                                      
 c                                                                               

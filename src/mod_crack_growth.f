@@ -4,7 +4,7 @@ c     *              f-90 module crack_growth_data                   *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 4/13/21 rhd                *          
+c     *                   last modified : 8/14/2021 rhd              *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          
@@ -38,8 +38,7 @@ c
      &                                       smcs_weighted_tear_parm(:),
      &                                       smcs_d_values(:),
      &                                       smcs_eps_plas_at_death(:),
-     &                                       smcs_stress_at_death(:)
-c                                                                                 
+     &                                       smcs_stress_at_death(:)                                                                                 
 c                     stiffness matrices for element in process of
 c                     being killed. used as option for SMCS based
 c                     growth.                             
@@ -50,7 +49,15 @@ c
       end type
       type(killed_element_stiffness), save, allocatable,
      &                            dimension(:) :: killed_estiffs
-                                                                             
+c
+c                     for killable elements, track the Oddy distortion
+c                     metric. col 1 has minimum value over element
+c                     integration points at end of step 1. col 2 has
+c                     max value over integration points / col 1
+c                     value.
+c
+      real, allocatable :: Oddy_metrics(:,:), Oddy_metrics_initial(:,:)
+c                                                                             
       end module  elem_extinct_data                                                            
 c                                                                               
 c                                                                               
@@ -90,7 +97,7 @@ c     *                      subroutine dam_param                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 4/13/21 rhd                *          
+c     *                   last modified : 8/29/21 rhd                *          
 c     *                                                              *          
 c     *     for a killable element not yet killed, determine if the  *          
 c     *     element should be killed now. isolating decision here    *          
@@ -115,7 +122,7 @@ c                               debugging info output
 c        porosity  -- (output)  for Gurson-type material models,                
 c                               this is the average element porosity.           
 c                               Just used for output messages                   
-c        eps_plas  -- (output)  for SMCS type models. this the                  
+c        eps_plas  -- (output)  for GT/SMCS type models. this the                  
 c                               average plastic strain over element.            
 c                               Just used for output                            
 c        eps_crit  -- (output)  for SMCS type models. this the                  
@@ -190,10 +197,12 @@ c
        mat_model = iprops(25,elem)                                               
        if( mat_model .eq. 3 ) then                                               
          call dam_param_gt( elem, kill_now_local, debug, porosity,                    
-     &                      sig_mean_local, sig_mises_local )   
+     &                      sig_mean_local, sig_mises_local,
+     &                      eps_plas_local )   
          if( present( kill_now ) ) kill_now = kill_now_local
          if( present( sig_mean ) ) sig_mean = sig_mean_local
          if( present( sig_mises ) ) sig_mises = sig_mises_local                            
+         if( present( eps_plas ) ) eps_plas = eps_plas_local
        else if( mat_model .eq. 6 ) then                                          
          ext_gurson = .true.                                                    
          call dam_param_agt( elem, kill_now_local, debug, porosity,                   
