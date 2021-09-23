@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 8/26/21 rhd                *
+c     *                   last modified : 9/22/21 rhd                *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -471,6 +471,7 @@ c
      &              ppr_kill_displ_fraction, max_eps_critical,
      &              smcs_type_4_A, smcs_type_4_n, smcs_type_4_c1,
      &              smcs_type_4_c2, smcs_type_4_c3,
+     &              smcs_type_5_power, smcs_type_5_tp_critical,
      &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
      &              regular_length, regular_up_max,
      &              tolerance_mesh_regularization, Oddy_critical_ratio,

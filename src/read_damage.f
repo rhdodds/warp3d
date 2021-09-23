@@ -4,7 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 8/28/21 rhd                *          
+c     *                   last modified : 9/22/21 rhd                *          
 c     *                                                              *          
 c     *              reads damage data from restart file             * 
 c     *                                                              *          
@@ -121,6 +121,8 @@ c
       call rdbk( fileno, smcs_weighted_bar_theta, 
      &           num_kill_elem * prec_fact )           
       call rdbk( fileno, smcs_old_epsplas, num_kill_elem * prec_fact ) 
+      call rdbk( fileno, smcs_weighted_tear_parm, 
+     &           num_kill_elem * prec_fact )           
       read(fileno) isize
       if( isize > 0 )then
           allocate(smcs_states_intlst(isize)) 

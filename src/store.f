@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/19/21 rhd                *
+c     *                   last modified : 9/22/21 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -478,6 +478,7 @@ c
      &              ppr_kill_displ_fraction, max_eps_critical,
      &              smcs_type_4_A, smcs_type_4_n, smcs_type_4_c1,
      &              smcs_type_4_c2, smcs_type_4_c3,
+     &              smcs_type_5_power, smcs_type_5_tp_critical,
      &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
      &              regular_length, regular_up_max,
      &              tolerance_mesh_regularization, Oddy_critical_ratio,
@@ -513,6 +514,8 @@ c
                call wrtbk( fileno, smcs_weighted_bar_theta,
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_old_epsplas,
+     &              prec_fact * num_kill_elem )
+               call wrtbk( fileno, smcs_weighted_tear_parm,
      &              prec_fact * num_kill_elem )
                isize = 0
                if( allocated(smcs_states_intlst) ) isize =
