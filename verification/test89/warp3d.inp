@@ -1,0 +1,136 @@
+!
+!  Plane-strain model of C(T) with blunt notch and nearby circular hole.
+!  Crack initiation and growth using SMCS criteria with various options.
+!  
+!  Problem is similar to Sandia Challenge I: The Sandia Fracture 
+!       Challenge: blind round robin predictions of ductile tearing
+!
+!  Int J Fract (2014) 186:5–68. DOI 10.1007/s10704-013-9904-6
+!
+!  Geometry is similar but not exactly the same as model in paper. Sandia
+!  specimen has 3 holes asymmetrically located about the the blunt notch
+!  plane. The model here has 2 holes symmetric about the blunt notch plane.
+!  The model here is slightly larger as well. Plane-strain thickness is 0.1 in.
+!
+!  Material is 15-5 PH stainless steel. Thickness 3.1 mm. Mostly
+!  isotropic.
+!
+!  Crack/initiation growth in this model uses Wellman's tearing
+!  parameter calibrated for the material.
+!
+!  Model is symmetric about Y=0 plane. Sandia test article is not
+!  symmetric.
+!
+!  Plane strain used here to manage run times for a verification
+!  test case.
+!
+!  By step 250, lots of growth. At step 500,the crack has breached hole
+!
+!  For lots of crack growth, the load step sizes need to approach
+!  the sizes used in explicit solutions.
+!
+!  Solution convergence is still just too sensitive to load step size.
+!  Adaptive load steps on global Newton doesn't really help.
+!
+!
+!  Units: kips, inches
+!
+!
+!
+ structure holey_ct
+!
+  material ss15PH
+    properties mises e 28500 nu 0.3 yld_pt 140 n_power 15
+!
+  material stiff
+    properties bilinear e 100000 nu 0.4 yld_pt 1.0e10 $ n_power 10
+!
+  material ss15PHk
+    properties mises e 28500 nu 0.3  yld_pt 140 n_power 15 killable
+! 
+ number of nodes 6290  elements 3016
+!
+ elements
+  1-803, 806-854, 857-1255 type l3disop nonlinear material ss15PH,
+                 order 2x2x2 bbar center_output short
+!
+  804 805 855 856  type l3disop nonlinear material stiff,
+                 order 2x2x2 bbar center_output short
+!
+   1256-3016 type l3disop nonlinear material ss15PHk,
+                 order 2x2x2 bbar center_output short
+! 
+*input from 'coords.inp'
+*input from 'incid.inp'
+ blocking automatic size = 32 
+*echo on
+ constraints
+  all w = 0
+  plane y=0 v 0
+  108 3218 u 0
+  971 4079 v 1.0
+!
+ output model flat patran convention text file "model"
+!
+ loading test
+  nonlinear
+   step 1-40 constraints      0.000500 $ 0.00050
+   step 41-80 constraints     0.000100
+   step 81-125 constraints    0.000100
+   step 126-160 constraints   0.000040
+   step 161-2000 constraints  0.000030
+! 
+ nonlinear analysis parameters
+   solution technique sparse direct 
+   time step 1.0e06 
+   maximum iterations 20 
+   minimum iterations 2
+   extrapolate off $ seems important
+   convergence test norm res tol 0.5
+   line search on
+   divergence check off 
+   nonconvergent solutions stop
+   adaptive off  $ global Newton iterations
+   batch messages off file "messages.msg"
+   wall time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   trace solution on
+   display tied mesh mpcs off
+   user_routine off
+!  
+!
+!   regularization: Gf = 0.04 corresponds to Kc ~ 35.5 ksi*sqrt(in)
+!   note the plastic strain limit of 0.2 during regularization
+!
+ crack growth parameters
+  type of crack growth smcs
+  smcs type 5 power 4 tp_critical 1.9,
+       cutoff_triaxiality 0.0 display
+!  smcs type 4 A 187.0 n 0.03 c_1 0.059 c_2 126. c_3 0.92,
+!                 max_eps_critical 0.8,
+!                 cutoff_triaxiality 0.0 display
+  regularization on type 3 Length_scale 0.005 Gf 0.04 m 1.0 alpha 4
+  smcs deleted elements file on  name 'deleted_elements_data.out'
+  smcs removed elements file on  name 'removed_elements_data.out'
+  distortion metric on write initial values file on,
+             Oddy critical ratio 5,
+             plastic strain limit 0.2  $ <<<< note the limit
+  adaptive load control on max plastic strain 0.02,
+         alpha_min 0.75 alpha_max 2.0 allowable_release 5
+  print status top 20 elements
+!   stop if killed elements on 116
+!      smcs states on stream steps 10-10000 by 10
+!       killed element limit 300
+!
+! output commands use file "get_output.inp" steps 1-3000 by 1
+ compute displacements for loading test step 125
+ save to file "results_at_step_125.db"
+ stop
+!
+
+
+ compute displacements for loading test step 250
+!
+ stop

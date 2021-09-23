@@ -1,0 +1,5 @@
+!
+ restart from "results_at_step_125.db"
+ compute displacements for loading test step 250
+!
+ stop
