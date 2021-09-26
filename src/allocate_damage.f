@@ -452,10 +452,7 @@ c                            allocate Oddy distortion metrics
 c                                                                               
        case( 15 )  ! dowhat
 c
-         if( allocated( Oddy_metrics ) ) then
-            write(out,*) '... FATAL ERROR: allocating track_Oddy'
-            call die_abort
-         end if
+         if( allocated( Oddy_metrics ) ) deallocate( Oddy_metrics )
          if( use_distortion_metric ) then
              allocate( Oddy_metrics(num_kill_elem,2) )
              Oddy_metrics = 100000.0  ! single precision, large number
@@ -475,7 +472,9 @@ c
        case( 17 )  ! dowhat
 c  
            if( Oddy_print_initial ) then
-               allocate( Oddy_metrics_initial(num_kill_elem,2) )
+                if( allocated( Oddy_metrics_initial ) ) 
+     &               deallocate(  Oddy_metrics_initial ) 
+                allocate( Oddy_metrics_initial(num_kill_elem,2) )
                 Oddy_metrics_initial(1:num_kill_elem,1) = 100000.0
                 Oddy_metrics_initial(1:num_kill_elem,2) = -100000.0
            end if
