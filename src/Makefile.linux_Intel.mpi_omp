@@ -33,7 +33,7 @@ LIBMKL = -Wl,--start-group ${MKL_LIBS}/libmkl_intel_lp64.a \
          ${MKL_LIBS}/libmkl_intel_thread.a \
          ${MKL_LIBS}/libmkl_core.a \
          ${MKL_LIBS}/libmkl_core.a \
-         ${MKL_LIBS}/libmkl_blacs_intelmpi_lp64.so \
+         ${MKL_LIBS}/libmkl_blacs_intelmpi_lp64.a \
          ${MKL_LIBS}/libHYPRE.a \
          -Wl,--end-group ${MKL_LIBS}/libiomp5.so -lpthread -lm -ldl
 #
