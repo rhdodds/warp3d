@@ -1219,7 +1219,7 @@ c
          go to 10
       end if
 c
-      if( matchs_exact('metric') ) call splunj
+      if( matchs('metrics',6) ) call splunj
       if( matchs_exact('off') ) go to 10
       if( .not. matchs_exact('on') ) then
          call incrack_errmsg( 68 )
