@@ -1,0 +1,9 @@
+!
+ domain one
+  symmetry
+  normal plane ny 1.0
+  front nodes 1929 1 l3disop verify
+  q-values automatic rings  2-10
+  function type d
+  compute domain integral
+!

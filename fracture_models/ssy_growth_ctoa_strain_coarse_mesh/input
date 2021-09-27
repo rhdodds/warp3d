@@ -1,0 +1,168 @@
+!
+!   SSY 3D Model with Sharp Crack R = 1.0
+!   =====================================
+!
+!   Units: kips, inches
+!   Plane strain BCs
+!   Mode I loading (displacements)
+!   T-stress = 0
+!
+!   Collapsed elements at tip. Tip can open.
+!   Tip element size: 0.0001 in.
+!
+!   Deformation plasticity. Can change to other models.
+!
+ structure ssy_sharp
+!
+ material steel
+   properties deformation  e 30000 nu 0.3  yld_pt 60  n_power 10.
+!
+ number of nodes 3838 elements  1800
+!
+ elements
+  1-1800 type l3disop linear material steel,
+                   order 2x2x2 bbar short
+!
+ *input from 'coords.inp'
+ *input from 'incid.inp'
+!
+ blocking automatic
+!
+ output model flat patran convention text file "model.text"
+! 
+ constraints
+!
+!    v = 0  (symmetry plane constraints on y=0)
+!
+ 1   20 39  58 77  96 115 134, 
+ 153 172 191 210 229 248 267 286, 
+ 305 324 343 362 381 400 419 438, 
+ 457 476 495 514 533 552 571 590, 
+ 609 628 647 666 685 704 723 742, 
+ 761 780 799 818 837 856 875 894, 
+ 913 932 951 970 989 1008 1027 1046,
+ 1065 1084 1103 1122 1141 1160 1179 1198,
+ 1217 1236 1255 1274 1293 1312 1331 1350,
+ 1369 1388 1407 1426 1445 1464 1483 1502,
+ 1521 1540 1559 1578 1597 1616 1635 1654,
+ 1673 1692 1711 1730 1749 1768 1787 1806,
+ 1825 1844 1863 1882 1901 1920 1939 1958,
+ 1977 1996 2015 2034 2053 2072 2091 2110,
+ 2129 2148 2167 2186 2205 2224 2243 2262,
+ 2281 2300 2319 2338 2357 2376 2395 2414,
+ 2433 2452 2471 2490 2509 2528 2547 2566,
+ 2585 2604 2623 2642 2661 2680 2699 2718,
+ 2737 2756 2775 2794 2813 2832 2851 2870,
+ 2889 2908 2927 2946 2965 2984 3003 3022,
+ 3041 3060 3079 3098 3117 3136 3155 3174,
+ 3193 3212 3231 3250 3269 3288 3307 3326,
+ 3345 3364 3383 3402 3421 3440 3459 3478,
+ 3497 3516 3535 3554 3573 3592 3611 3630,
+ 3649 3668 3687 3706 3725 3744 3763 3782,
+ 3801 3820 v 0.0
+!
+!    w = 0   (plane-strain constraints)
+!
+  1-3838 w 0.0
+!
+!     delta K = 1.0 ksi sqrt(in) per step
+!
+     1901 u    0.97792896E-04 v   0.00000000E+00
+     1902 u    0.99270815E-04 v   0.86850710E-05
+     1903 u    0.10356725E-03 v   0.18261700E-04
+     1904 u    0.11027985E-03 v   0.29549397E-04
+     1905 u    0.11876952E-03 v   0.43228571E-04
+     1906 u    0.12820534E-03 v   0.59783131E-04
+     1907 u    0.13762309E-03 v   0.79456729E-04
+     1908 u    0.14599345E-03 v   0.10222572E-03
+     1909 u    0.15229505E-03 v   0.12779072E-03
+     1910 u    0.15558755E-03 v   0.15558755E-03
+     1911 u    0.15507956E-03 v   0.18481663E-03
+     1912 u    0.15018695E-03 v   0.21448919E-03
+     1913 u    0.14057729E-03 v   0.24348701E-03
+     1914 u    0.12619766E-03 v   0.27063176E-03
+     1915 u    0.10728356E-03 v   0.29475917E-03
+     1916 u    0.84348595E-04 v   0.31479324E-03
+     1917 u    0.58155314E-04 v   0.32981518E-03
+     1918 u    0.29669387E-04 v   0.33912264E-03
+     1919 u    0.20957616E-19 v   0.34227515E-03
+     3820 u    0.97792896E-04 v   0.00000000E+00
+     3821 u    0.99270815E-04 v   0.86850710E-05
+     3822 u    0.10356725E-03 v   0.18261700E-04
+     3823 u    0.11027985E-03 v   0.29549397E-04
+     3824 u    0.11876952E-03 v   0.43228571E-04
+     3825 u    0.12820534E-03 v   0.59783131E-04
+     3826 u    0.13762309E-03 v   0.79456729E-04
+     3827 u    0.14599345E-03 v   0.10222572E-03
+     3828 u    0.15229505E-03 v   0.12779072E-03
+     3829 u    0.15558755E-03 v   0.15558755E-03
+     3830 u    0.15507956E-03 v   0.18481663E-03
+     3831 u    0.15018695E-03 v   0.21448919E-03
+     3832 u    0.14057729E-03 v   0.24348701E-03
+     3833 u    0.12619766E-03 v   0.27063176E-03
+     3834 u    0.10728356E-03 v   0.29475917E-03
+     3835 u    0.84348595E-04 v   0.31479324E-03
+     3836 u    0.58155314E-04 v   0.32981518E-03
+     3837 u    0.29669387E-04 v   0.33912264E-03
+     3838 u    0.20957616E-19 v   0.34227515E-03
+! 
+ loading ssy
+  nonlinear
+    step 1-100 constraints 1.0
+!
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 10
+   minimum iterations 2
+   convergence test norm res tol .01 
+   adaptive on
+   consistent q off
+   time step 10000000
+   nonconvergent solutions stop
+   trace solution on
+   bbar stabilization factor 0.0   
+!
+ output commands use file "get_output.inp" steps 1-1000
+!
+ compute displacements for loading ssy  steps   5 
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   10
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   15
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   20
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   25
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   30
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   35
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   40
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   45
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   50
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   55
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   60
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   65
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   70
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   75
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   80
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   85
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   90
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps   95
+*input from 'get_j.inp'
+  compute displacements for loading ssy steps  100
+!
+ stop
+                                       
