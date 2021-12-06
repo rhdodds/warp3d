@@ -149,6 +149,8 @@ c
   9700 9701 9704 9705 9708 9709 9710 9711 9712 9713
  output patran binary displacements
 c
+ stop
+c
  compute displacements for loading test step      160
  output totals only reactions  9625 9627 9628,
   9630 9631 9633 9635 9636 9637 9638 9640 9642 9643,
@@ -199,7 +201,6 @@ c
   9700 9701 9704 9705 9708 9709 9710 9711 9712 9713
  output patran binary displacements
  save to file "A.rest"
-stop
 c
  compute displacements for loading test step      210
  output totals only reactions  9625 9627 9628,
