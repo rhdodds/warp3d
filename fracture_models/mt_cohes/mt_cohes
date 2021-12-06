@@ -18,6 +18,8 @@ c       model. the simple exponential model and the PPR model are defined
 c       for use. the PPR model properties make it match very closely the
 c       exponential response.
 c
+c       this inout file uses the PPR cohesive model
+c
 c       background material is Al-2024T3 with segmental stress-strain
 c       curve for L orientation
 c
@@ -25,8 +27,11 @@ c       loading by remotely imposed axial displacements.
 c       input is setup for 2000 uniform load steps. adaptive crack growth
 c       reduces-increases the step sizes during the solutions.
 c
-c       the compute-output comamnd file stops analysis at 200 load steps 
-c       for this example. 200 steps kills about 28 interface-cohesive elements
+c       the compute-output comamnd file stops analysis at 150 load steps 
+c       for this example. 200 steps kills about 28 interface-cohesive elements.
+c
+c       the large displacement option makes achieving convergence more
+c       difficult at large load levels. 
 c
 c       full details in the paper:
 c         Ductile Tearing in This AL Panels: Experiments and Analyses Using
@@ -72,7 +77,7 @@ elements
                  order 2x2x2 bbar center_output short
    8937 -  11669 type q3disop    nonlinear material al2024t3,
                  order 2x2x2 bbar center_output short
-  11670 -  12513 type inter_8    nonlinear material exp_model,
+  11670 -  12513 type inter_8    nonlinear material ppr_model, $exp_model,
                  order 2x2gs surface top
 
 *input mt_cohes_coord_incid
@@ -81,18 +86,20 @@ elements
 c
  loading test
    nonlinear
-     steps 1-2000 constraints 5.0 
+     steps 1-150 constraints 5.0 
+     steps 151-2000 constraints 2.0
 c
  nonlinear analysis parameters
    solution technique direct sparse 
    adaptive solution on
    maximum iterations 10
    minimum iterations 2
-   convergence test norm res tol 0.001 max resid tol 0.1
+   convergence test norm res tol 0.001 $ max resid tol 0.1
    time step 1.0e06
    trace solution on
-   extrapolate off
-   consistent q-matrix on
+   line search on
+   extrapolate on
+   consistent q-matrix off
    bbar stabilization factor 0.0
    batch messages on
 c
