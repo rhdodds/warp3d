@@ -1,52 +1,52 @@
-
-structure disk
-
+!
+ structure disk
+!
  stress-strain curve 1   
         0.001   1.0,  $ yield - 1.0, modulus E=1000
         0.02106  1.06,
         0.20124 1.24,
         100.0   2.0
-
+!
  material metal
     properties mises e 1000 nu 0.3 yld_pt 1.0 curve 1 rho 0.0
- 
+! 
  number of nodes 637 elements 450
-
+!
  elements
    1-450 type l3disop nonlinear material metal,
           order 2x2x2 bbar  short
- 
+! 
 *input from file 'coordinates.inp'
 *input from file 'incidences.inp' 
- 
+! 
  blocking automatic
- 
+! 
  constraints
   plane y=0 symmetry
   plane x=0 symmetry
   plane z=0 symmetry
   plane y=6 u 0 w 0
- 
+! 
  loading upset
    nonlinear
      step 1-100 constraints 1.0
- 
+! 
  nonlinear analysis parameters
    solution technique sparse direct 
    time step 0.00001  $ can be larger, 0.001 works.
    maximum iterations 8 $  newton iterations
-   minimum iterations 1
+   minimum iterations 2
    convergence test norm res tol 0.01 $ could use 0.1, 0.001, 0.0001 
    adaptive on
-   consistent q-matrix on
+   consistent q-matrix on  $ converges better with on
    trace solution on
    batch messages on
- 
+! 
 !   contact plane is defined to have a normal as (0,-1,0) global
 !   global v (Y) velocity is negative to push plane down.
 !
 !   contact algorithm needs this orientation for proper functioning.
-
+!
  contact surfaces
    surface 1 plane
    	point -20 6 -20
@@ -54,22 +54,22 @@ structure disk
    	point -20 6 20 
    	stiffness 1.e04
    	velocity 0.0 -1.0 0.0
- 
+! 
  list 'bottom_nodes' y = 0.0 display
  list 'top_nodes' y=6 display
-
- output commands use file "get_output.inp" steps all
-
+!
+ output commands use file "get_output.inp" steps 1-1000
+!
  compute displacements for loadings upset step 1
- 
+! 
  nonlinear analysis parameters
    time step 0.05
- 
+! 
  compute displacements for loading upset step 5
- 
+! 
  nonlinear analysis parameters
    time step 0.08
- 
+! 
  compute displacements for loading upset step 40
-
+!
  stop
