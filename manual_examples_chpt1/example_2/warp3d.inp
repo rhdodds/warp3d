@@ -58,7 +58,7 @@
  list 'bottom_nodes' y = 0.0 display
  list 'top_nodes' y=6 display
 !
- output commands use file "get_output.inp" steps 1-1000
+ output commands use file "get_output.inp" steps 1-1000 $ cannot use all
 !
  compute displacements for loadings upset step 1
 ! 
