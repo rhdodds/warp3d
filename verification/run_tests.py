@@ -617,9 +617,11 @@ def initialize():
    warp_name = '$WARP3D_HOME"/run_windows/warp3d.exe" '
 #
  str_threads = str(input(">>> Number of threads to use: " )  )
- threads = 'set OMP_NUM_THREADS='+str_threads + continuation + \
-           'set MKL_NUM_THREADS='+str_threads
+ threads = 'export OMP_NUM_THREADS='+str_threads + continuation + \
+           'export MKL_NUM_THREADS='+str_threads
  run_warp = threads + continuation + warp_name
+# print(run_warp)
+# exit(0)
 # 
  print("\n>>> Note: comparison and output values may be" \
                " different in the last 1 or 2")
