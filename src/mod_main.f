@@ -532,7 +532,7 @@ c     *                    f-90 module constants                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 12/15/20 rhd                    *
+c     *              last modified : 1/10/22 rhd                     *
 c     *                                                              *
 c     *     numerical values used throughout the code                *
 c     *                                                              *
@@ -552,6 +552,11 @@ c
      &   eight = 8.d0,
      &   nine  = 9.d0,
      &   ten   = 10.d0,
+     &   eleven = 11.0d0,
+     &   twelve = 12.0d0, 
+     &   thirteen = 13.0d0,
+     &   fourteen = 14.0d0,
+     &   fifteen = 15.0d0,  
      &   sixteen = 16.d0,
      &   twentyseven = 27.0d0,
      &   ninety  = 90.d0,
@@ -572,6 +577,7 @@ c
      &   pt25    = 0.25d0,
      &   fourth  = 0.25d0,
      &   third   = one/three,
+     &   pt4     = 0.4d0, 
      &   half    = 0.5d0,
      &   pt75    = 0.75d0,
      &   point_eight  = 0.8d0,
