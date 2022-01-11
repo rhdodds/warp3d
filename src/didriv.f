@@ -11,7 +11,7 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 9/15/2018 rhd                *
+c *                 last modified: 1/10/22 rhd                  *
 c *                                                             *
 c ***************************************************************
 c
@@ -24,6 +24,8 @@ c
      c  scoords => c, sdispl => u, svelocities => v,
      d  saccel => a! old common.main
 c
+      use constants
+c
       use main_data, only : incmap, incid, crdmap, output_packets,
      a                      packet_file_no, inverse_incidences,
      b                      fgm_node_values,
@@ -33,7 +35,7 @@ c
      f                      initial_stresses_input
 c
       use j_data, only : debug_driver, domain_type, crack_plane_normal,
-     a  front_order, q_values, max_exp_front, expanded_front_nodes,
+     a  front_order, q_values, expanded_front_nodes,
      b  num_front_nodes, qvals_given, last_compr, front_element_list,
      c  comput_i, comput_j, front_q_area, front_length, compr_q_list,
      d  e_front, front_nodes, domain_min_i, front_list_length,
@@ -41,11 +43,11 @@ c
      f  block_seg_curves, seg_snode_e, seg_snode_nu, domain_origin,
      g  snode_alpha_ij, print_elem_values, domain_max_j, print_totals,
      h  domain_max_j, domain_avg_j, domain_max_i, domain_avg_i,
-     i  static_min, static_max, static_avg, first_domain, node_set,
+     i  static_min, static_max, static_avg, first_domain, 
      j  nowring, j_storage, i_storage, j_from_ks, ks_from_j, ring_list,
      k  max_domain_rings, q_element_maps, num_auto_rings, static_j,
      l  j_geonl_formulation, j_linear_formulation,
-     m  temperatures_on_model
+     m  temperatures_on_model, domain_node_sets
 c
       implicit none
 c
@@ -58,9 +60,8 @@ c
       logical :: error, bad_domain, last_domain, user_def_ct, ldum,
      &           setup_node_props, bad
       double precision :: nx, ny, nz
-      double precision, parameter :: zero=0.0d0
       real :: rword
-      real, parameter :: rzero=0.0, e_tol=0.001
+      real, parameter :: e_tol=0.001
       equivalence ( rword, iword ) ! still needed for
 !                                    integers-reals mixed in same vector
 c
@@ -108,9 +109,10 @@ c                  of coincident front nodes at each front location.
 c
       allocate( q_values(nonode) )
       q_values(1:nonode) = rzero
-      max_exp_front      = 200
-      allocate( expanded_front_nodes(0:max_exp_front,num_front_nodes) )
-      expanded_front_nodes(0:max_exp_front,1:num_front_nodes) = 0
+      if( allocated( expanded_front_nodes ) ) 
+     &   deallocate( expanded_front_nodes )
+      allocate( expanded_front_nodes(num_front_nodes) )
+      expanded_front_nodes(1:num_front_nodes)%node_count = 0
 c
 c               4. output header information for domain
 c
@@ -138,8 +140,7 @@ c
 c               7a. create vector with list of elements on the
 c                   crack front for this domain
 c
-      call di_cf_elem(  num_front_nodes, max_exp_front,
-     &                  expanded_front_nodes, front_list_length )
+      call di_cf_elem( num_front_nodes, front_list_length )
 c
 c               7b. use crack front element to set if J computations
 c                   will use small or large strain formulation.
@@ -504,7 +505,7 @@ c ***************************************************************
 c *                                                             *
 c *                      didrive_release                        *
 c *                                                             *
-c *                 last modified: 3/25/2018 rhd                *
+c *                 last modified: 1/6/22 rhd                   *
 c *                                                             *
 c ***************************************************************
 c
@@ -523,8 +524,8 @@ c
       if( allocated( compr_q_list ) )
      &  deallocate( compr_q_list, stat=flags(1) )
 c
-      if( allocated( node_set ) )
-     &  deallocate( node_set, stat=flags(2) )
+      if( allocated( domain_node_sets ) )
+     &  deallocate( domain_node_sets, stat=flags(2) )
 c
       if( allocated( expanded_front_nodes ) )
      &  deallocate( expanded_front_nodes, stat=flags(3) )
@@ -638,14 +639,15 @@ c *                                                             *
 c * domain_check  - exhaustive testing of domain defintiion for *
 c *                 consistency                                 *
 c *                                                             *
-c *                last modified: 12/14/2018 rhd                *
+c *                last modified: 1/10/22 rhd                   *
 c *                                                             *
 c ***************************************************************
 c
       subroutine dickdm( bad_domain, iout, scoord, coord_map,
      &                   nonode, noelem )
+      use constants
       use j_data, only : front_nodes, num_front_nodes, rings_given,
-     &                   qvals_given, front_order, node_set,
+     &                   qvals_given, front_order, domain_node_sets,
      &                   compr_q_list, q_element_maps, domain_type
       implicit none
 c
@@ -657,10 +659,9 @@ c
 c
 c              locals
 c
-      integer :: numfrn, frtint, node_id, i, j, node_err, dtype, ftype
+      integer :: numfrn, frtint, node_id, i, j, node_err, dtype, ftype,
+     &           node_set_id 
       double precision :: x, y, z, x1, y1, z1, distance, cum_distance
-      real, parameter :: rzero = 0.0
-      double precision, parameter :: zero = 0.0d0
       integer inttbl(3,7)
       data  ((inttbl(i,j),i=1,3),j=1,7) 
      & / 4,0,0, 1,0,0,  3,1,0,  4,0,1,  4,3,0,  4,0,0,  4,4,3 /
@@ -716,7 +717,8 @@ c             from the first node.
 c
       if( numfrn .gt. 1 ) then
         if( user_def_ct ) then
-          node_id = node_set(-front_nodes(1),1)
+          node_set_id = -front_nodes(1)
+          node_id = domain_node_sets(node_set_id)%node_list(1)
           x1 = scoord(coord_map(node_id))
           y1 = scoord(coord_map(node_id)+1)
           z1 = scoord(coord_map(node_id)+2)
@@ -728,7 +730,8 @@ c
         cum_distance = zero
         do i = 2, numfrn
           if( user_def_ct ) then
-            node_id = node_set(-front_nodes(i),1)
+            node_set_id = -front_nodes(i)
+            node_id = domain_node_sets(node_set_id)%node_list(1)
             x = scoord(coord_map(node_id))
             y = scoord(coord_map(node_id)+1)
             z = scoord(coord_map(node_id)+2)
@@ -868,21 +871,20 @@ c *                                                                    *
 c * di_cf_elem - create a list of elements incident on the crack front *
 c *                                                                    *
 c *              written by:    mcw                                    *
-c *              last modified: 4/8/2018 rhd                           *
+c *              last modified: 1/7/22 rhd                             *
 c *                                                                    *
 c **********************************************************************
 c
-      subroutine di_cf_elem( num_front_nodes, max_exp_front,
-     &                       expanded_front_nodes, front_list_length )
+      subroutine di_cf_elem( num_front_nodes, front_list_length )
+c
       use main_data, only: inverse_incidences
-      use j_data, only :  front_element_list
-
+      use j_data, only : front_element_list, expanded_front_nodes 
+c
       implicit none
 c
 c             parameters
 c
-      integer :: num_front_nodes, max_exp_front, front_list_length,
-     &         expanded_front_nodes(0:max_exp_front,1:num_front_nodes)
+      integer :: num_front_nodes, front_list_length       
 c
 c             local arguments
 c
@@ -891,6 +893,8 @@ c
       integer, parameter :: start_list_size = 50
       integer, allocatable, dimension(:) :: new_list
 c
+      if( allocated( front_element_list ) ) 
+     &    deallocate( front_element_list )
       allocate( front_element_list(1:start_list_size) )
       size = start_list_size
       now_size = 0
@@ -899,9 +903,9 @@ c             find and add non-duplicate front elements to list
 c             that resizes as needed
 c
       do i = 1, num_front_nodes
-         numexpanded_nodes = expanded_front_nodes(0,i)
+         numexpanded_nodes = expanded_front_nodes(i)%node_count
          do j = 1, numexpanded_nodes
-            fnode = expanded_front_nodes(j,i)
+            fnode = expanded_front_nodes(i)%node_list(j)
             numelems_connected = inverse_incidences(fnode)%element_count
             do k = 1, numelems_connected
                elem = inverse_incidences(fnode)%element_list(k)
@@ -941,7 +945,8 @@ c
         if( front_element_list(i) == elem ) return
       end do
 c
-c              add to list. resize if needed
+c              add to list. resize if needed. move_alloc frees old
+c              front_element_list
 c
       if( now_size == size ) then
         size = size * 2

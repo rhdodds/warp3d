@@ -586,6 +586,7 @@ c **********************************************************************
 c
       subroutine di_setup_J7_J8( do_it_local )
 c
+      use constants
       use main_data, only: fgm_node_values, temperatures_ref,
      &                     fgm_node_values_defined,
      &                     fgm_node_values_used,
@@ -605,7 +606,6 @@ c
 c
 c          local variables
 c
-      double precision, parameter :: zero=0.0d0
       integer, parameter :: num_flags = 4
       integer :: i, node, flags(num_flags), ios, do_it
       logical :: debug, build_J7_J8_data
@@ -777,6 +777,7 @@ c **********************************************************************
 c
       subroutine di_node_vals( extrap_counts, swd_at_nodes,
      &                         strain_at_nodes, displ_grad_at_nodes  )
+      use constants
       use global_data, only : noelem, nonode, myid, out, elblks
       use main_data, only : elems_to_blocks
       use j_data, only : j_linear_formulation, j_geonl_formulation
@@ -794,7 +795,6 @@ c
       integer :: i, elemno, blk, enode, snode, skipped_killed
       double precision :: rc, time_start, time_end
       double precision, external :: omp_get_wtime
-      double precision, parameter :: one=1.0d0
       logical, parameter :: debug = .false.
       logical, external :: chk_killed
 c
@@ -888,6 +888,8 @@ c
       use elem_block_data, only : urcs_n_blocks, eps_n_blocks,
      &                            initial_state_data
 c
+      use constants
+c
       implicit none
 c
 c         parameters
@@ -914,7 +916,6 @@ c
      &     e_coords_n(3,mxndel), detvol_0, detvol_n, vol_0, vol_n,
      &     f_vec(9), f_tens(3,3), detf, factor, j_bar
       equivalence (f_vec, f_tens)
-      double precision, parameter :: zero=0.0d0, one=1.0d0, two=2.d0
       double precision, pointer :: urcs_n(:), eps_n(:), z(:,:)
       logical :: geonl, linearform, ok
       logical, parameter :: debug = .false.
@@ -1125,6 +1126,7 @@ c
      &        num_gpts, int_order, e_coords, e_displ, displ_grads )
 c
       use global_data, only : out, mxndel, mxgp
+      use constants
 c
       implicit none
 c
@@ -1147,8 +1149,6 @@ c
      &                    jbar, vol_0, dux, dvx, dwx,
      &                    duy, dvy, dwy, duz, dvz, dwz, nx, ny, nz,
      &                    J_bar, detf(mxgp), factor, sum_detF_dvel
-      double precision, parameter :: third = 1.0d0/3.0d0, zero = 0.0d0,
-     &                               one = 1.0d0
 c
 c              compute the displacement gradient tensor F-I at
 c              each integration point.
@@ -1293,6 +1293,8 @@ c
      &     int_order, num_gpts, gpt_vals, enode_vals, nvalues,
      &     lg, out )
 c
+      use constants
+c
       implicit none
 c
 c              parameters
@@ -1306,7 +1308,6 @@ c              locals
 c
       integer :: gpn, enode, idummy_vec(1)
       double precision :: rdummy_vec(1), xi, eta, zeta
-      double precision, parameter ::  one=1.0d0, zero=0.d0
       logical :: lagrangian_extrap, debug
 c
       debug = .false.
@@ -1440,7 +1441,7 @@ c
 c
       rg_count = dble(ring_count)
 c
-      write( out,9000 )
+      write(out,9000 )
 c
 c             write j-integral results to standard output
 c
@@ -2037,6 +2038,8 @@ c
       use j_data, only : domain_type, num_front_nodes, front_coords,
      a                   front_order, e33_front, comput_i, out_pstrain,
      b                   front_node_displ
+c
+      use constants
       implicit none
 c
 c             parameter declarations
@@ -2050,8 +2053,6 @@ c
      &                    displ_coords(3,30), length_undisp,
      &                    length_disp, j1, j2, j3, detj, dieldp, w,
      &                    dummy, x1, z1, x2, z2, x3, z3
-      double precision, parameter ::  zero=0.d0, half=0.5d0, one=1.0d0,
-     &                                two=2.0d0
       logical :: debug
 c
       debug = .false.
@@ -2174,6 +2175,9 @@ c
       subroutine di_calc_curvature( debug, out )
       use j_data, only : front_order, num_front_nodes, front_coords,
      a                   crack_curvature
+c
+      use constants
+c
       implicit none
 c
 c             parameters
@@ -2186,8 +2190,7 @@ c
       integer :: i, j
       double precision :: x1, z1, x2, z2, x3, z3, x4, z4,
      & x5, z5, a, b, c, d, e, x_center, z_center, circle_radius, q
-      double precision, parameter :: zero=0.0d0, half=0.5d0, one=1.0d0,
-     &                               two=2.0d0, toler=1.0d-04
+      double precision, parameter :: toler=1.0d-04
 c
 c             return if elements are not quadratic
 c
@@ -2414,6 +2417,9 @@ c
       subroutine di_calc_coefficients( x1, z1, x2, z2, x3, z3, x4, z4,
      &                                 x5, z5, aa, bb, cc, dd, ee,
      &                                 out, debug )
+c
+      use constants
+c 
       implicit none
 c
 c             parameters
@@ -2430,8 +2436,7 @@ c
       integer :: iwork(5)
       double precision :: workmax, r, rmax, xmult, sum
       double precision :: a(5,5), x(5), b(5), dwork(5)
-      double precision, parameter :: zero=0.0d0, half=0.5d0, one=1.0d0,
-     &                               two=2.0d0, tolerance=1.0d-20
+      double precision, parameter :: tolerance=1.0d-20
 c
       nrow_a   = 5
       neqns    = 5
@@ -2563,6 +2568,8 @@ c *******************************************************************
 c
       subroutine di1dsfa( xsi, dsf, sf, nlnode )
 c
+      use constants
+c
 c              parameter declarations
 c
       implicit none
@@ -2573,8 +2580,6 @@ c
 c              local declarations
 c
       double precision :: xsisqr
-      double precision, parameter :: half = 0.5d0, one = 1.0d0,
-     &                               two = 2.0d0
 c
       select case( nlnode )
 c

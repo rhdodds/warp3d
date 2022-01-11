@@ -503,14 +503,14 @@ c
 c
 c             dummy variables
 c
-      integer elemno, out
-      double precision
+      integer :: elemno, out
+      double precision ::
      &     dcijkl_x1(3), sijkl(3), dsijkl_x1(3), e, nu, de_x1,
      &     dnu_x1
 c
 c             local variables
 c
-      logical debug
+      logical :: debug
 c
 c
 c
@@ -623,12 +623,13 @@ c
      &                              du211, du212, du213,
      &                              du311, du312, du313, out )
 c
+      use constants 
       implicit none
 c
 c             dummy variables
 c
-      integer elemno, ptno, out
-      double precision
+      integer :: elemno, ptno, out
+      double precision ::
      &     r, t, e_front, nu_front,
      &     dcijkl_x1(3), sijkl(3), dsijkl_x1(3),
      &     aux_stress(9,8), aux_strain(9,8), daux_strain_x1(9,8),
@@ -639,8 +640,8 @@ c
 c
 c             local variables
 c
-      integer i, j, p, node, snode, enode
-      double precision
+      integer :: i, j, p, node, snode, enode
+      double precision ::
      &     mu_front, ucoeff, t2, tt2, kappa, k(3),
      &     s11, s22, s33, s12, s13, s23,
      &     ds111, ds121, ds131, ds221, ds231, ds331,
@@ -648,16 +649,9 @@ c
      &     u1(8), u2(8), u3(8),
      &     e11, e22, e33, e12, e23, e13,
      &     de111, de221, de331, de121, de231, de131,
-     &     sum1a, sum1b, sum2a, sum2b, sum3a, sum3b,
-     &     zero, one, two, three, pi, four, five, six, eight,
-     &     nine, ten, eleven, twelve, fourteen
+     &     sum1a, sum1b, sum2a, sum2b, sum3a, sum3b
 c
       logical debug
-c
-      data zero, one, two, three, pi, four, five, six, eight, nine, ten,
-     &     eleven, twelve, fourteen
-     & / 0.d0, 1.d0, 2.d0, 3.d0, 3.14159265359d0, 4.d0, 5.d0, 6.d0,
-     &   8.d0, 9.d0, 10.d0, 11.d0, 12.d0, 14.d0 /
 c
       debug = .false.
 c
@@ -1134,12 +1128,14 @@ c
      &                              du111, du112, du113,
      &                              du211, du212, du213,
      &                              du311, du312, du313, out )
+c
+      use constants
       implicit none
 c
 c             dummy variables
 c
-      integer elemno, ptno, out
-      double precision
+      integer :: elemno, ptno, out
+      double precision ::
      &     r, t, e_front, nu_front,
      &     dcijkl_x1(3), sijkl(3), dsijkl_x1(3),
      &     aux_stress(9,8), aux_strain(9,8), daux_strain_x1(9,8),
@@ -1150,8 +1146,8 @@ c
 c
 c             local variables
 c
-      integer i, j, p, node, snode, enode
-      double precision
+      integer :: i, j, p, node, snode, enode
+      double precision ::
      &     two_t, four_t, three_t, kappa, f,
      &     s11, s22, s33, s12, s13, s23,
      &     ds111, ds121, ds131, ds221, ds231, ds331,
@@ -1159,12 +1155,9 @@ c
      &     e11, e22, e33, e12, e23, e13,
      &     de111, de221, de331, de121, de231, de131,
      &     sum1a, sum1b, sum2a, sum2b, sum3a, sum3b,
-     &     zero, one, two, three, pi, four, five, mu_front
+     &     mu_front
 c
       logical debug
-c
-      data zero, one, two, three, pi, four, five
-     & / 0.d0, 1.d0, 2.d0, 3.d0, 3.14159265359d0, 4.d0, 5.0d0 /
 c
       debug = .false.
 c
@@ -1515,12 +1508,14 @@ c
      &                         point_temp, point_q, weight, elemno,
      &                         fgm_e, fgm_nu, iterm, out, debug)
 c
+      use constants
+c
       implicit none
 c
 c             dummy variables
 c
-      integer ptno, elemno, out
-      double precision
+      integer :: ptno, elemno, out
+      double precision ::
      &     dqx, dqy, dqz, dux, dvx, dwx, dtx, csig(10,27),
      &     aux_stress(9,8), ceps_gp(9,27), aux_strain(9,8),
      &     dstrain_x1(9), daux_strain_x1(9,8), dcijkl_x1(3),
@@ -1530,17 +1525,13 @@ c
      &     du311_aux(8), du312_aux(8), du313_aux(8),
      &     elem_alpha(6), dalpha_x1(6), point_temp, point_q, weight,
      &     iterm(8,8)
-      logical process_temps, fgm_e, fgm_nu, debug
+      logical :: process_temps, fgm_e, fgm_nu, debug
 c
 c             local variables
 c
-      integer i, j
-      double precision
-     &     temp1, temp2, temp3, temp4, zero, half, two
-c
-      data zero, half, two
-     & / 0.d0, 0.5d0, 2.d0 /
-c
+      integer :: i, j
+      double precision :: temp1, temp2, temp3, temp4
+
 c
         if( debug ) write(out,1000) elemno, ptno
 c

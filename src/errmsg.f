@@ -3,14 +3,13 @@ c     *                      suboutine errmsg                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/14/2018 rhd             *
+c     *                   last modified : 1/6/22 rhd                 *
 c     *                                                              *
 c     *     this subroutine prints assorted error messages in re-    *
 c     *     ponse to calls from all over the program. virtually all  *
 c     *     error messages in the program are generated here.        *
 c     *                                                              *
 c     ****************************************************************
-c
 c
 c
       subroutine errmsg( errnum, param, sparam, rparam, dparam )
@@ -674,7 +673,7 @@ c
  580  continue
       num_error = num_error + 1
       write(out,9057) param
- 9057 format(/1x,'>>>>> error: ',i7,': the current node is less than',
+ 9057 format(/1x,'>>>>> error: ',i7,': the current node is <=',
      &           ' zero. it will be'/14x,'ignored.'/)
       go to 9999
 c
@@ -2506,20 +2505,14 @@ c
       goto 9999
 c
  2620 continue
-      num_fatal = num_fatal + 1
-      write(out,9280) int(rparam)
- 9280 format(/1x,'>>>>> Fatal error in crack tip definition. ',
-     &       'Exceeded maximum allowable crack-tip nodes'/
-     &       'per node set. Maximum equals ',i6 )
-      input_ok = .false.
+      write(out,9280) 
+ 9280 format(/1x,'**** available message ***')
       goto 9999
 c
  2630 continue
       num_fatal = num_fatal + 1
-      write(out,9281) int(rparam)
- 9281 format(/1x,'>>>>> Fatal error in crack tip definition. ',
-     &       'Exceeded maximum allowable node sets.'/
-     &       'Maximum equals ',i6 )
+      write(out,9281) 
+ 9281 format(/1x,'**** available *****')
       input_ok = .false.
       goto 9999
 c

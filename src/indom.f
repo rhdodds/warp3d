@@ -4,7 +4,7 @@ c     *                      subroutine indom                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/21/2019 rhd             *
+c     *                   last modified : 1/6/22 rhd                 *
 c     *                                                              *
 c     *                   input a domain definition                  *
 c     *                                                              *
@@ -14,7 +14,8 @@ c
 c
       subroutine indom( sbflg1, sbflg2 )
 
-      use global_data, only : nonode, noelem, bits, out, input_ok 
+      use global_data, only : nonode, noelem, bits, out, input_ok,
+     &                        num_error  
       use j_data
       use allocated_integer_list
 c
@@ -27,9 +28,9 @@ c
 c              locals
 c
       integer :: iword, dum, dummy, dofn, list_entry, list_size,
-     a           kount_set, ring_num, node_set_id, elemno, iplist, node,
-     b           dup_error, word, errnum, nchar, lenlst, icn, bit, 
-     c          param, q_node_count, element_count
+     &           ring_num, elemno, iplist, node, iset, ival,
+     &           dup_error, word, errnum, nchar, lenlst, icn, bit, 
+     &           param, q_node_count, element_count
       integer, allocatable :: intlst(:)
       real :: dumr, qnow, rword
       real, parameter :: rzero=0.0
@@ -132,9 +133,9 @@ c
       go to 10
 c
 c
-c               front nodes
-c               ===========
-c               list of front nodes, front order and verify
+c               front nodes or node sets
+c               ========================
+c               list of front nodes or node sets, front order and verify
 c               coincident node verify flag.
 c
  300  continue
@@ -186,26 +187,40 @@ c                      nodes and get a count.
 c
         icn    = 0
         iplist = 1
- 310    call trxlst(intlst,lenlst,iplist,icn,node)
+ 310    call trxlst(intlst,lenlst,iplist,icn,ival)
 c
 c                       check that the list node does not exceed
 c                       the number of nodes in the structure.
+c                       set number cannot larger than max allowed
 c
-        if( node .gt. nonode) then
-         param = node
-         call errmsg(16,param,dums,dumr,dumd)
-         go to 320
-        end if
+        iset = ival
+        node = ival
+        if( user_def_ct ) then
+           if( iset > max_node_set ) then
+             write(out,9400) iset
+             num_error = num_error + 1
+             go to 320
+           end if
+           if( iset <= 0 ) then
+             write(out,9410) iset
+             num_error = num_error + 1
+             go to 320
+           end if
+        end if 
+        if( .not. user_def_ct ) then
+           if( node > nonode) then
+            param = node
+            call errmsg(16,param,dums,dumr,dumd)
+            go to 320
+           end if
+           if( node <= 0 ) then
+            param = node
+            call errmsg(58,param,dums,dumr,dumd)
+            go to 320
+           end if
+        end if 
 c
-c                       check that the list node is not negative.
-c
-      if( node .lt. 0 ) then
-         param = node
-         call errmsg(58,param,dums,dumr,dumd)
-         go to 320
-      end if
-c
-c                       save the front node in the list
+c                       save the front node/set in the list
 c                       if the user is inputing node sets, then
 c                       save the value as a negative number.
 c
@@ -215,11 +230,8 @@ c
          call errmsg(331,max_front_nodes,dums,dumr,dumd)
          go to 320
       end if
-      if( user_def_ct ) then
-         front_nodes(num_front_nodes) = -node
-      else
-         front_nodes(num_front_nodes) = node
-      end if
+      front_nodes(num_front_nodes) = node
+      if( user_def_ct ) front_nodes(num_front_nodes) = -node
 c
  320  if( iplist .ne. 0 ) go to 310
       if( true( dummy ) ) call splunj
@@ -725,113 +737,13 @@ c
 c
       go to 10
 c
-c        node sets to define the initially blunted crack tip
-c        at a front position
+c        node sets to define the starting list nodes for a domain
+c        at a front position (blunted front or non-std initial domain
+c        definition
 c        =====================================================
 c
  2500 continue
-c
-      kount_set = 0
-c
-      if( matchs('set',3) ) call splunj
-      if( .not. numi( node_set_id ) )
-     &           call errmsg(261,param,dums,dumr,dumd)
-c
-c
-c               set-up list of nodes to be parsed.
-c
-      if( allocated( intlst ) ) deallocate( intlst )
-      call scan
-      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
-c
-c                       branch on the return code from trlist. a
-c                       value of 1 indicates no error. a value of
-c                       2 indicates that the parse rules failed in
-c                       the list. a value of 3 indicates that the
-c                       list overflowed its maximum length of mxlsz.
-c                       a value of 4 indicates that no list was found.
-c                       in the last three cases, command will be ig-
-c                       nored and a new domain parameter command
-c                       will be sought.
-c
-            if( errnum .eq. 2 ) then
-               param = 1
-               call errmsg(24,param,dums,dumr,dumd)
-               go to 10
-            else if( errnum .eq. 3 ) then
-               param = 2
-               call errmsg(24,param,dums,dumr,dumd)
-               go to 10
-            else if( errnum .eq. 4 ) then
-               param = 4
-               call errmsg(24,param,dums,dumr,dumd)
-               go to 10
-            else
-               if( errnum .ne. 1 ) then
-                  param = 3
-                  call errmsg(24,param,dums,dumr,dumd)
-                  go to 10
-               end if
-            end if
-c
-c                      we got a valid integer list.
-c
-      if( true( dummy ) ) call splunj
-      call backsp( 1 )
-c
-      icn    = 0
-      iplist = 1
-      if( .not. allocated( node_set ) ) then
-         allocate( node_set(max_node_set,max_ct_node) )
-         node_set(1:max_node_set,1:max_ct_node) = 0
-      end if
- 2510 call trxlst(intlst,lenlst,iplist,icn,node)
-c
-c                       check that the list node does not exceed
-c                       the number of nodes in the structure.
-c
-      if( node .gt. nonode) then
-         param = node
-         call errmsg(259,param,dums,dumr,dumd)
-         go to 2520
-      end if
-c
-c                       check that the list node is positive.
-c
-      if( node .le. 0 ) then
-         param = node
-         call errmsg(260,param,dums,dumr,dumd)
-         go to 2520
-      end if
-c
-c                       check that the node set id is less than
-c                       maximum allowable node sets.
-c
-      if( node_set_id .gt. max_node_set ) then
-         dumr = node_set_id
-         call errmsg(263,param,dums,dumr,dumd)
-         go to 2520
-      end if
-c
-c                       check that the number of ct nodes is less than
-c                       maximum allowable ct nodes.
-c
-      if( kount_set+1 .gt. max_ct_node ) then
-         dumr = kount_set+1
-         call errmsg(262,param,dums,dumr,dumd)
-         go to 2520
-      end if
-c
-      kount_set = kount_set + 1
-      node_set(node_set_id,kount_set) = node
-      max_node_set_id = max( max_node_set_id, node_set_id )
-c
- 2520 if( iplist .ne. 0 ) go to 2510
-      call indom_chk_dup_nodes( node_set_id, out, dup_error )
-      if( dup_error .gt. 0 ) input_ok = .false.
-      if( true( dummy ) ) call splunj
-      call backsp( 1 )
-c
+      call indom_node_sets
       go to 10
 c
 c               direction cosines for tangent vector at front.
@@ -866,8 +778,8 @@ c
 c
 c
  9000 format(//,5x,'Domain definition:',2x,a24,/)
- 9010 format(/,5x,'... number of nodes in list: ',i10,/)
- 9012 format(/,5x,'... number of elements in list: ',i10,/)
+ 9010 format(/,15x,'... number of nodes in list: ',i10,/)
+ 9012 format(/,15x,'... number of elements in list: ',i10,/)
  9100 format(8x,'Number of front nodes: ',i4,' Nodes on front:',
      &     /,8x,10i7,/,8x,10i6,/,8x,10i6 )
  9110 format(8x,'** no front nodes specified **')
@@ -889,66 +801,178 @@ c
  9300 format(8x,'Q-values by automatic rings: ')
  9310 format(8x,'Rings to be computed/printed:')
  9320 format(15x,i8)
+ 9400 format(/1x,'>>>>> error: set # exceeds limit: ',i4,/)
+ 9410 format(/1x,'>>>>> error: set # must be > 0: ',i4,/)
  9500 format(/,5x,'** end of domain definition **' )
  9710 format(8x,'Tangent vector direction cosines: ',3f10.6 )
  9720 format(8x,'Tangent vector defined: ',l1 )
       return
-      end
+c
+      contains
 c     ****************************************************************
 c     *                                                              *
-c     *                      subroutine indom_chk_dup_node           *
+c     *              internal routine indom_node_sets                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/9/2020 rhd               *
-c     *                                                              *
-c     *     input of a node set completed. check for duplicates      *
-c     *     in the list                                              *
+c     *                   last modified : 1/6/22 rhd                 *
 c     *                                                              *
 c     ****************************************************************
 c
+      subroutine indom_node_sets
+      implicit none
 c
-      subroutine indom_chk_dup_nodes( set_id, out, dup_error )
-      use j_data, only : node_set, max_ct_node
-      implicit integer (a-z)
+      integer :: nnl, node_set_id, kount_set, i, j, base_node
+      integer, external :: iszlst
+      logical :: found_duplicate
+      logical, parameter :: ldebug = .false.
 c
-      logical found_duplicate
+      if( matchs('set',3) ) call splunj
 c
-      dup_error = 0
+      if( .not. numi( node_set_id ) ) then
+        call errmsg(261,param,dums,dumr,dumd)
+        call scan_flushline; return
+      end if
 c
-c           count number of nodes in this node set on front
+      if( node_set_id <= 0 .or. node_set_id .gt. max_node_set ) then
+         write(out,9300) max_node_set
+         call scan_flushline; num_error = num_error + 1; return
+      end if
 c
-      count = 0
-      do i = 1, max_ct_node
-       if( node_set(set_id,i) .gt. 0 ) count = count + 1
-      end do
+c               set-up list for node parsing
+c                list_size: final allocated size of intlst
+c                lenlst: number of position used in intlst
 c
-c            traverse list looking for duplicates. simple (slow)
-c            algortihm but lists are very short (maybe 20-50 entries).
+      if( allocated( intlst ) ) deallocate( intlst )
+      call scan
+      call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
+c
+c                       branch on the return code from trlist. a
+c                       value of 1 indicates no error. a value of
+c                       2 indicates that the parse rules failed in
+c                       the list. a value of 3 indicates that the
+c                       list overflowed its maximum length of mxlsz.
+c                       a value of 4 indicates that no list was found.
+c                       in the last three cases, command will be ig-
+c                       nored and a new domain parameter command
+c                       will be sought.
+c
+      if( errnum .eq. 2 ) then
+         param = 1
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline; return
+      else if( errnum .eq. 3 ) then
+         param = 2
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline; return
+      else if( errnum .eq. 4 ) then
+         param = 4
+         call errmsg(24,param,dums,dumr,dumd)
+         call scan_flushline; return
+      else
+         if( errnum .ne. 1 ) then
+            param = 3
+            call errmsg(24,param,dums,dumr,dumd)
+            call scan_flushline; return
+         end if
+      end if
+c
+c                      we got a valid integer list. extract terms
+c
+      if( true( dummy ) ) call splunj
+      call backsp( 1 )
+c
+c                      number of node entries in the list. allocate.
+c
+      nnl = iszlst( intlst, lenlst ) ! # nodes in list
+      if( .not. allocated(domain_node_sets) ) 
+     &    allocate( domain_node_sets(max_node_set) )
+      if( allocated( domain_node_sets(node_set_id)%node_list ) )
+     &    deallocate( domain_node_sets(node_set_id)%node_list )
+      domain_node_sets(node_set_id)%node_count = nnl
+c
+      allocate( domain_node_sets(node_set_id)%node_list(nnl) )
+      associate( lst => domain_node_sets(node_set_id)%node_List ) 
+      lst(1:nnl) = 0
+c      
+      icn    = 0
+      iplist = 1
+      kount_set = 0
+c
+      do while ( iplist .ne. 0 )
+c
+       call trxlst(intlst,lenlst,iplist,icn,node)
+c
+c                       check that the list node does not exceed
+c                       the number of nodes in the structure.
+c
+       if( node .gt. nonode) then
+         param = node
+         call errmsg(259,param,dums,dumr,dumd)
+         deallocate( domain_node_sets(node_set_id)%node_list )
+         call scan_flushline; num_error = num_error + 1; return
+       end if
+c
+c                       check that the list node is positive.
+c
+       if( node .le. 0 ) then
+         param = node
+         call errmsg(260,param,dums,dumr,dumd)
+         deallocate( domain_node_sets(node_set_id)%node_list )
+         call scan_flushline; num_error = num_error + 1; return
+       end if
+c
+       kount_set = kount_set + 1
+       lst(kount_set) = node
+c
+      end do ! do while iplist
+c
+c                       node set list parsed and stored.
+c                       check for duplicate entries
 c
       found_duplicate = .false.
-      do i = 1, count
-        base_node = node_set(set_id,i)
-        do j = 1, count
+      do i = 1, nnl
+        base_node = lst(i)
+        do j = 1, nnl
           if( i .eq. j ) cycle
-          if( node_set(set_id,j) .ne. base_node ) cycle
+          if( lst(j) .ne. base_node ) cycle
           if( .not. found_duplicate ) then
-             write(out,9000) set_id
-             dup_error = 1
+             write(out,9000) node_set_id
              found_duplicate = .true.
           end if
           write(out,9010) base_node, j
         end do
        end do
 c
+      if( found_duplicate ) then
+        input_ok = .false.
+        call scan_flushline
+        num_error = num_error + 1
+        return
+      end if
+c
+      if( ldebug ) then
+         write(out,9200) node_set_id, nnl       
+         write(out,9210) lst(1:nnl)
+      end if
+c
+      end associate          
+c
       return
 c
+c
  9000 format(
-     & /1x,'>>>>> fatal error: 1 or more duplicate nodess found in',
-     & /,        '                    list for node set: ',i4 )
+     & /1x,'>>>>> error: 1 or more duplicate nodess found in',
+     & /,  '             list for node set: ',i4 /)
  9010 format(10x,'      node:',i9,
-     & ' has duplicate in list position: ',i4)
-      end
+     & ' has duplicate in list position: ',i4/)
+ 9200 format(/,10x,".... node set id, # nodes: ", i5,i10)
+ 9210 format(15x,5i8) 
+ 9300 format(
+     & /1x,'>>>>> error: set # must be > 0 and <= limit of: ',i4 /)
+c
+      end subroutine indom_node_sets
+      end subroutine indom
 
 c     ****************************************************************
 c     *                                                              *
@@ -956,7 +980,7 @@ c     *                      subroutine initdm                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/23/2018 rhd              *
+c     *                   last modified : 1/6/22 rhd                 *
 c     *                                                              *
 c     *     initializes various variables and arrays                 *
 c     *     that define a domain for j-integral computations         *
@@ -976,7 +1000,8 @@ c
 c
       if( allocated( compr_q_list ) ) deallocate( compr_q_list )
       if( allocated( q_element_maps ) ) deallocate( q_element_maps )
-      if( allocated( node_set ) ) deallocate( node_set )
+      if( allocated( domain_node_sets ) ) 
+     &    deallocate( domain_node_sets )
 c
       crack_plane_normal(1)  = zero
       crack_plane_normal(2)  = zero
@@ -1004,7 +1029,6 @@ c
       ring_list              = 0    ! all terms
       ignore_face_loads      = .false.
       omit_crack_front_elems = .false.
-      max_node_set_id        = 0
       num_auto_rings         = 0
       output_packet_j        = .false.
       comput_j               = .false.

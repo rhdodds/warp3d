@@ -4,7 +4,7 @@ c     *                    f-90 module j_data                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 6/23/2018 rhd                   *
+c     *              last modified : 1/7/22 rhd                      *
 c     *     define the variables and data structures to support      *
 c     *     j-integral and i-integral computations                   *
 c     *                                                              *
@@ -14,7 +14,7 @@ c
 c
       module j_data
 c
-c                     Note: there are 19 allocatable variables here
+c                     Note: there are allocatable variables here
 c                           various of these are created during
 c                           input of a domain definition and
 c                           computation of the J, I integrals.
@@ -28,7 +28,7 @@ c
 c                     max sets and front nodes should be
 c                     same value
 c
-      integer, parameter :: max_node_set=200, max_ct_node=80,
+      integer, parameter :: max_node_set=200,
      &                      max_front_nodes=200, max_domain_rings=300,
      &                      size_j_values=8, size_i_values=8
 c
@@ -48,11 +48,9 @@ c
       integer ::
      & num_front_nodes, front_nodes(max_front_nodes), front_order,
      & nowring, ring_list(max_domain_rings), domain_type, last_compr,
-     & max_node_set_id, num_auto_rings, domain_origin, max_exp_front,
+     & num_auto_rings, domain_origin,
      & ring_count, front_list_length
-      integer, allocatable, dimension (:,:) :: compr_q_list,
-     &                                               node_set,
-     &                                              expanded_front_nodes
+      integer, allocatable, dimension (:,:) :: compr_q_list
       integer, allocatable, dimension (:)   :: q_element_maps
       integer, allocatable, dimension (:)   :: count_alpha
       integer, allocatable, dimension (:)   :: extrap_counts
@@ -93,6 +91,18 @@ c
 c                     characters
 c
       character(len=24) :: domain_id
+c
+c                     defined types
+c
+      type :: nodes_in_set
+        integer :: node_count
+        integer, allocatable, dimension(:) :: node_list
+      end type
+      type(nodes_in_set), save, allocatable,
+     &                            dimension(:) :: domain_node_sets
+      type(nodes_in_set), save, allocatable,
+     &                            dimension(:) :: expanded_front_nodes
+
 c
       end module
 

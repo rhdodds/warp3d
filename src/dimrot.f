@@ -12,6 +12,7 @@ c     ****************************************************************
 c
       subroutine dimrot( scoord, coord_map, u, dstmap, debug, iout )
 c
+      use constants
       use main_data, only : trn, trnmat
       use j_data, only : num_front_nodes, front_order, front_nodes,
      &                   front_coords, front_node_displ,
@@ -32,7 +33,6 @@ c
      &           nfnode
       double precision :: nx, ny, nz, xcrack(3), tvec(3),
      &                    length, x, y, z, unode, vnode, wnode
-      double precision, parameter :: zero = 0.0d0, one = 1.0d0
 c
       if( debug ) then
          write(iout,*) ' '
@@ -315,6 +315,8 @@ c
       subroutine dimrott( nfnode, fnodes, caseno, scoord,
      &                    coord_map, tvec, fnctyp, crack_front_tangent,
      &                    tangent_vector_defined, iout, debug, status )
+c
+      use constants
       implicit none
 c
 c               parameter declarations
@@ -329,8 +331,6 @@ c
       integer :: ii, jj, coord_loc, nfn
       double precision :: dsf(4), sf(4), tvec1(3), tvec2(3),
      &                    dx, dy, dz, xsi
-      double precision, parameter :: zero = 0.0d0, half = 0.5d0,
-     &                               one = 1.0d0
 c
 c             compute or load unit tangent vector to the crack
 c             front according to the situation indicated by the
@@ -497,6 +497,8 @@ c *******************************************************************
 c
       subroutine di1dsfc( xsi, dsf, sf, nlnode )
 c
+      use constants
+c
 c              parameter declarations
 c
       implicit none
@@ -507,8 +509,6 @@ c
 c              local declarations
 c
       double precision :: xsisqr
-      double precision, parameter :: half = 0.5d0, one = 1.0d0,
-     &                               two = 2.0d0
 c
       select case( nlnode )
 c

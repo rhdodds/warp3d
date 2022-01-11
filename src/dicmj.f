@@ -6,12 +6,14 @@ c *                  domain                                     *
 c *                                                             *
 c *                  -> drive MPI to process all elements       *
 c *                                                             *
-c *                  last update:  5/31/2018 rhd                *
+c *                  last update:  1/9/22 rhd                   *
 c *                                                             *
 c ***************************************************************
 c
 c
       subroutine dicmj
+c
+      use constants
 c
       use global_data, only : myid, iout=>out, nelblk, elblks,
      a                        worker_processor, numprocs, num_threads
@@ -19,7 +21,7 @@ c
       use j_data, only : debug_driver, ring_count, symmetric_domain,
      a  print_elem_values, q_element_maps, q_values,
      b  front_element_list, comput_i, e_front, nu_front, comput_j,
-     d  cf_traction_flags, expanded_front_nodes, front_q_area,
+     d  cf_traction_flags, front_q_area,
      e  face_loading, static_j,
      f  domain_min_j, domain_max_j,
      g  domain_min_i, domain_max_i, domain_avg_i, static_min,
@@ -50,8 +52,7 @@ c
       integer :: i, j, skipped_killed, ierr, blk
       integer, save :: message_count=0, message_count2=0
       logical, external ::  chk_killed
-      double precision, parameter :: zero=0.0d0, one=1.0d0,
-     &                               two=2.0d0, toler_static_j=1.0d-5
+      double precision, parameter :: toler_static_j=1.0d-5
 c
 c          if running parallel MPI:
 c             alert all workers to enter this routine, then send all
@@ -119,8 +120,6 @@ c
         if( allocated( q_element_maps ) ) deallocate( q_element_maps )
         if( allocated( front_element_list ) )
      &      deallocate( front_element_list )
-        if( allocated( expanded_front_nodes ) )
-     &      deallocate( expanded_front_nodes )
         return
       end if
 c
@@ -489,6 +488,8 @@ c
      &                           iiterms, message_count,
      &                           message_count2 )
 c
+      use constants
+c
       use global_data, only : myid, iout=>out, noelem, nonode, bits,
      a                        iprops, props, lprops, elblks, mxndel,
      b                        nstrs, mxgp, mxelpr, nstr,
@@ -555,8 +556,7 @@ c
      &            process_swd_derivs, process_strain_derivs,
      &            process_grad_derivs, process_blk
       logical, external :: chk_killed
-      double precision, parameter :: zero=0.0d0, one=1.0d0,
-     &                               two=2.0d0, toler_static_j=1.0d-5
+      double precision, parameter :: toler_static_j=1.0d-5
 c
       span  = elblks(0,blk)
       felem = elblks(1,blk)

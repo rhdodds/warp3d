@@ -12,6 +12,7 @@ c     ****************************************************************
 c
       subroutine di_front_q_area( scoord, coord_map, iout,
      &                            debug, error, bad_domain )
+      use constants
       use j_data, only : num_front_nodes, q_values, front_q_area,
      &                   front_order, front_length, front_nodes
       implicit none
@@ -29,7 +30,7 @@ c
       double precision :: sf(3), dsf(3), xsi(3), weight(3),
      &                    x1, y1, z1, x2, y2, z2, dl, dx, dy, dz,
      &                    qvalue, x, y, z
-      double precision, parameter :: zero = 0.0d0, half = 0.5d0,
+      double precision, parameter ::
      &  gp_loc = sqrt(0.6d0), weight13 = 5.d0/9.d0, weight2 = 8.d0/9.d0
 c
 c             if no nodes on the crack front return with error.
@@ -145,6 +146,8 @@ c *******************************************************************
 c
       subroutine di1dsfb( xsi, dsf, sf, nlnode )
 c
+      use constants
+c
 c              parameter declarations
 c
       implicit none
@@ -155,8 +158,6 @@ c
 c              local declarations
 c
       double precision :: xsisqr
-      double precision, parameter :: half = 0.5d0, one = 1.0d0,
-     &                               two = 2.0d0
 c
       select case( nlnode )
 c

@@ -54,6 +54,7 @@ c
      &     iterm, front_elem_flag, qp_node, crack_curvature,
      &     face_loading, out, debug )
 c
+      use constants
       use global_data, only : mxndel, mxgp
       use j_data, only : size_j_values, size_i_values
       implicit none
@@ -77,7 +78,6 @@ c
      &           sfnodes(mxndel), flag
       logical, parameter :: ldebug = .false.
       double precision :: sum_load, eloads(3,mxndel)
-      double precision, parameter :: zero=0.0d0
 c
       if( ldebug ) write(out,100) elemno
 c
@@ -352,6 +352,7 @@ c
      &                           dsf, jacobi, cdispl, eloads, qvals,
      &                           jterm, elemno, out, debug )
 c
+      use constants
       use global_data, only : mxndel, mxgp
       implicit none
 c
@@ -369,7 +370,6 @@ c
       double precision :: xsi, eta, zeta, weight, dux, dvx, dwx,
      &                    nx, ny, nz, dieldp, cderiv(27,3), termu,
      &                    termv, termw, dum_vec(1), lg(mxgp+1)
-      double precision, parameter :: zero=0.0d0
 c
 c             set integration order for face integrals for
 c             tractions applied on crack face. we always use
@@ -498,6 +498,7 @@ c
      &                           front_elem_flag, qp_node,
      &                           crack_curvature, out, debug )
 c
+      use constants
       use global_data, only : mxndel, mxgp
       implicit none
 c
@@ -524,9 +525,6 @@ c
      &     point_z, gpq, r, t, du11_aux(7), du21_aux(7),
      &     du31_aux(7), ave_y_coord, dieldp, mu_front, kappa,
      &     eta_old, eta_shifted, sum, ratio
-      double precision, parameter :: zero=0.0d0, half=0.5d0, one=1.0d0,
-     &                               two=2.0d0, three=3.0d0,
-     &                               pi=3.14159265359d0, four=4.0d0
       logical :: approx, shift
 c
 c
@@ -991,6 +989,8 @@ c
      &                          front_coords, domain_type,
      &                          domain_origin, front_order,
      &                          crack_curvature, out )
+c
+      use constants 
       use global_data, only : mxndel
       implicit none
 c
@@ -1009,8 +1009,6 @@ c
       double precision :: x1_1, x1_2, measure, d1, d1_old,
      &                    coord_temp(3,mxndel), node_x, node_y,
      &                    node_z, r, t, rs(4)
-      double precision, parameter :: zero=0.0d0, half=0.5d0, one=1.0d0,
-     &                               two=2.0d0, huge=1.0d10
       logical :: debug
 c
       debug = .false.
@@ -1036,8 +1034,8 @@ c
          rs(i) = r
       end do
 c
-      d1     = huge
-      d1_old = huge
+      d1     = ten_billion
+      d1_old = ten_billion
       pair   = 0
 c
       do i = 1,4

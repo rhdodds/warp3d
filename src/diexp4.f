@@ -1,13 +1,25 @@
 c ***************************************************************
 c *                                                             *
-c * domain expand 4 - expand type 4 automatic domain            *
+c *              subroutine diexp4                              *
+c *                                                             *
+c *                  expand type 4 automatic domain             *
+c *                 using the domain integral technique.        *
+c *                                                             *
+c *                 or:                                         *
+c *                                                             *
+c *                 drive the computation of mixed-mode         *
+c *                 stress intensity factors and t-stress       *
+c *                 using the interaction integral.             *
+c *                                                             *
+c *                 last modified: 1/7/22 rhd                   *
 c *                                                             *
 c ***************************************************************
 c
 c
       subroutine diexp4( ring, node_map, nonode, noelem, incmap,
-     &                    eprops, incid, out, q_map_len, bits )
+     &                   eprops, incid, out, q_map_len, bits )
 c
+      use constants 
       use j_data, only : debug_driver, num_front_nodes, q_values,
      &                   expanded_front_nodes, q_element_maps
       use main_data, only : inverse_incidences
@@ -25,7 +37,6 @@ c
       integer :: front_pos, i, ii, snode, elem, incptr, nnode, elnd,
      &           count, index
       integer :: local_list(10)
-      real, parameter :: rzero=0.0, rone=1.0
       logical, external :: dibmck
 c
 c             build list of all nodes for elements appearing in
@@ -37,8 +48,8 @@ c
 c
       if( ring .eq. 1 ) then
          do front_pos = 1, num_front_nodes
-           do ii = 1, expanded_front_nodes(0,front_pos)
-             snode = expanded_front_nodes(ii,front_pos)
+           do ii = 1, expanded_front_nodes(front_pos)%node_count
+             snode = expanded_front_nodes(front_pos)%node_list(ii)
              call diadit( node_map, snode, bits )
            end do
          end do
@@ -141,6 +152,8 @@ c ***************************************************************
 c
       subroutine diexp13( ring, nonode, noelem, incmap, eprops, incid,
      &                    out, bits, newmap, nodmap, q_map_len )
+c
+      use constants
       use j_data, only : debug_driver, q_values, domain_type,
      a  q_element_maps, num_front_nodes, front_order,
      b  expanded_front_nodes
@@ -163,7 +176,6 @@ c
      &           edge_table(0:3,20)
       logical, external :: dibmck
       logical :: flags1(3), flags2(3), fl1, fl2
-      real, parameter :: rzero=0.0, rone=1.0
 c
       if( debug_driver ) write(out,9000) ring
       if( ring == 1 ) call diexp13_ring_1
@@ -238,9 +250,9 @@ c
       do cornno = 1, 3
         frnpos = corner(cornno)
         if( frnpos .eq. 0 ) cycle
-        count = expanded_front_nodes(0,frnpos)
+        count = expanded_front_nodes(frnpos)%node_count
         do fnode = 1, count
-          snode = expanded_front_nodes(fnode,frnpos)
+          snode = expanded_front_nodes(frnpos)%node_list(fnode)
           call diadit( newmap(1,cornno), snode, bits )
         end do
       end do

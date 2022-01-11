@@ -48,6 +48,7 @@ c
      j                    e_iresults, cf_traction_flags, cf_tractions,
      k                    front_elem_flag, seg_curves_flag )
 c
+      use constants
       use global_data, only : mxgp, mxndel, myid, numprocs, out
       use main_data, only : fgm_node_values_defined,
      a                      initial_stresses_input
@@ -57,7 +58,7 @@ c
      c                   domain_origin, domain_type, front_order,
      d                   expanded_front_nodes, crack_curvature,
      e                   face_loading, process_temperatures,
-     f                   max_exp_front,  comput_i, comput_j,
+     f                   comput_i, comput_j,
      g                   j_linear_formulation, j_geonl_formulation,
      h                   process_initial_state
 
@@ -133,9 +134,6 @@ c
      g   ym_front_node, dudotx, dvdotx, dwdotx
 c
       real, parameter :: neg_99=-99.0, fgm_tol=1.0
-      double precision, parameter :: zero=0.0d0, half=0.5d0, two=2.0d0,
-     &                               four=4.0d0, eight=8.0d0,
-     &                               one=1.0d0
       double precision, external :: didet
 c
 c             set up basic element properties. load all six thermal
@@ -236,9 +234,8 @@ c             interpolations for 20, 15, 12-node elements.
 c
       call dieliq( qvals, debug, iout, nnode, etype, elemno, snodes,
      &             coord, front_elem_flag, num_front_nodes, front_nodes,
-     &             front_coords, expanded_front_nodes, domain_type,
-     &             domain_origin, front_order, qp_node, crack_curvature,
-     &             max_exp_front )
+     &             front_coords, domain_type, domain_origin, 
+     &             front_order, qp_node, crack_curvature )
 c
 c        6:   compute coordinate jacobian at all gauss points
 c             and the center point of element. these are now in
@@ -500,7 +497,7 @@ c
       integer :: enode
       double precision :: f
 c
-      f = 2.0d0
+      f = two
 c
 !DIR$ VECTOR ALIGNED
       do enode = 1, nnode
@@ -780,7 +777,6 @@ c
      &                    alpha(3,3), alpha_vec(9), j4_a, j4_b, swd,
      &                    product, rho, j1_incr, j2_incr, j3_incr,
      &                    j4_incr, j5_incr, j6_incr, j7_incr, j8_incr
-      double precision, parameter :: zero=0.0d0, half=0.5d0
       logical :: ldebug, neglect_term_j6, include_term_j6,
      &           neglect_terms_j7_j8
       equivalence( pk1, pk1_vec ), ( alpha, alpha_vec )
@@ -1259,6 +1255,9 @@ c
      &                   nu_nodes, point_ym, point_nu, fgm_e, fgm_nu,
      &                   coord, point_x, point_y, point_z,
      &                   seg_curves_flag, out )
+c
+      use constants
+c
       implicit none
 c
 c          parameters -- already in crack front coords
@@ -1279,7 +1278,6 @@ c
       double precision :: gp_temp, avg_temp,
      &                    gp_alpha, avg_alpha, compl_tens(3,2),
      &                    avg_ym, avg_nu
-      double precision, parameter :: zero=0.0d0
 c
       debug = .false.
 c
@@ -1503,6 +1501,9 @@ c
 c
       subroutine dielcj( nxi, neta, nzeta, coord, nnode, cj, cjinv,
      &                   det, ierr, iout, debug )
+c
+      use constants
+c       
       implicit none
 c
 c              compute the 3 x 3 jacobian, its determinate and
@@ -1518,7 +1519,6 @@ c
       integer :: i, j
       double precision :: det, deti
       double precision, external :: dieldp, didet
-      double precision, parameter :: zero=0.0d0, one=1.0d0
       logical :: debug
 c
 c              compute jacobian at the point. use a dot product
@@ -1570,35 +1570,36 @@ c *         if any 1/4-point node is detected, special integration *
 c *         for crack-face traction on crack-front element faces   *
 c *         is not used.                                           *
 c *                                                                *
-c *                last modified: 11/20/03                         *
-c *                     by: mcw                                    *
+c *                last modified: 1/7/22 rhd                       *
+c *                 original by: mcw                               *
 c *                                                                *
 c ******************************************************************
 c
       subroutine dieliq( qvals, debug, out, nnode, etype, elemno,
      &                   snodes, coord, front_elem_flag,
      &                   num_front_nodes, front_nodes, front_coords,
-     &                   expanded_front_nodes, domain_type,
-     &                   domain_origin, front_order, qp_node,
-     &                   crack_curvature, max_exp_front )
+     &                   domain_type, domain_origin, front_order,
+     &                   qp_node, crack_curvature )
+c
+      use constants
+      use j_data, only : expanded_front_nodes
+c
       implicit none
 c
       double precision :: qvals(*), coord(3,*), front_coords(3,*),
      &                    crack_curvature(*)
       logical :: debug, front_elem_flag, qp_node
       integer :: out, nnode, etype, elemno, snodes(*), num_front_nodes,
-     &           max_exp_front, front_nodes(*),
-     &           expanded_front_nodes(0:max_exp_front,*),
-     &           domain_type, domain_origin, front_order
-c
+     &           front_nodes(*), domain_type, domain_origin,
+     &           front_order
+cß
 c             local variables
 c
       integer :: i, j, k, snode, num_qp_nodes
       logical :: found
       double precision :: r_max, r, t, rs(nnode), node_x,
      &                    node_y, node_z
-      double precision, parameter :: zero=0.0d0, toler=1.0d-5,
-     &                               half=0.5d0, p4=0.4d0, p75=0.75d0
+      double precision, parameter :: toler=1.0d-5
 c
       qp_node      = .false.
       num_qp_nodes = 0
@@ -1707,14 +1708,14 @@ c
 c             skip node if it's on the crack front
 c
         found = .false.
-        do j = 1, num_front_nodes
-            if( found ) exit
-            do k = 1, max_exp_front
-               if( expanded_front_nodes(k,j) .eq. snode ) then
-                  found = .true.
-                  exit
-               end if
-            end do
+        do j = 1, num_front_nodes ! or front node sets
+          if( found ) exit
+          do k = 1, expanded_front_nodes(j)%node_count
+            if( expanded_front_nodes(j)%node_list(k) == snode ) then
+              found = .true.
+              exit
+            end if
+          end do
         end do
         if( found ) cycle
 c
@@ -1730,8 +1731,8 @@ c              using straight lines), consider the node as a 1/4-point
 c              node. this identification will work when element
 c              distortion or curvature is not too large.
 c
-            if( rs(i) .lt. r_max * p4 ) then
-               qvals(i)     = p75
+            if( rs(i) .lt. r_max * pt4 ) then
+               qvals(i)     = pt75
                qp_node      = .true.
                num_qp_nodes = num_qp_nodes + 1
             end if
@@ -1781,15 +1782,12 @@ c *                                                                 *
 c *******************************************************************
 c
       subroutine digetr( q, r  )
+      use constants
       implicit none
 c
 c           parameters
 c
       double precision :: q(6,6), r(3,3)
-c
-c           locals
-c
-      double precision, parameter :: two=2.0d0
 c
 c       cauchy stress {T} = [q] * (unrotated) cauchy stress {t}.
 c       in tensor form:
@@ -1890,6 +1888,8 @@ c
       subroutine digrad( sig, displ_grad, iout, gdebug, ptno, elemno,
      &                   gp_det_F )
 c
+      use constants
+c
       implicit none
 c
 c                    parameters
@@ -1907,7 +1907,6 @@ c
       double precision :: det_F, F(3,3), pk1(3,3),
      &                    pk1vec(9), deti, sigtens(3,3), sigvec(9),
      &                    Fit(3,3)
-      double precision, parameter :: zero=0.0d0, one=1.0d0
       double precision, external :: didet
       equivalence( sigtens, sigvec ), ( pk1, pk1vec )
 c
@@ -2000,6 +1999,9 @@ c *******************************************************************
 c
 c
       subroutine dippie( rotate, iout, debug, elem_alpha )
+c
+      use constants
+c
       implicit none
 c
 c                    parameters
@@ -2011,7 +2013,6 @@ c
 c                    locals
 c
       double precision :: work(3,3), tensor(3,3), trot(3,3)
-      double precision, parameter :: zero=0.0d0, half=0.5d0
 c
 c                    the 6 alpha values for thermal expansion define
 c                    a symmetric 3x3 tensor to define initial
@@ -2057,13 +2058,14 @@ c   *******************************************************************
 c
       function dieldp( veca, vecb, nterms, stepa, stepb ) result( res )
 c
+      use constants
+c
       implicit none
 c
       double precision :: veca(*), vecb(*), res
       integer :: stepa, stepb, nterms
 c
       integer :: indexa, indexb, i
-      double precision, parameter :: zero=0.0d0
 c
       indexa = 1
       indexb = 1
