@@ -3994,7 +3994,7 @@ c     *                  subroutine wmpi_send_jint                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/28/2018 rhd              *
+c     *                   last modified : 1/9/2022 rhd               *
 c     *                                                              *
 c     *           send/receive data to processes to set up           *
 c     *           j-integral and i-integral computation for          *
@@ -4006,8 +4006,8 @@ c
       subroutine wmpi_send_jint
       use global_data, only : numprocs, nonode, noelem, out, myid,
      &                 root_processor,  worker_processor, MPI_VAL
-      use j_data, only : num_front_nodes, max_exp_front, q_values,
-     &    q_element_maps, front_element_list, expanded_front_nodes,
+      use j_data, only : num_front_nodes, q_values,
+     &    q_element_maps, front_element_list,
      &    first_domain, front_nodes, front_order, front_element_list,
      &    domain_type, omit_crack_front_elems, face_loading,
      &    symmetric_domain, q_vals_linear, one_point_rule, static_j,
@@ -4022,7 +4022,7 @@ c
       implicit none
       include "mpif.h"
 c
-      integer :: ierr, flags(4), num
+      integer :: ierr, flags(4)
       logical :: logical_vec(17)
       logical, parameter :: debug = .false.
 c
@@ -4039,8 +4039,6 @@ c         logic simpler
 c
       call MPI_BCAST( num_front_nodes, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD, ierr )
-      call MPI_BCAST( max_exp_front, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
-     &                ierr )
       call MPI_BCAST( front_list_length, 1, MPI_INTEGER, 0,
      &                MPI_COMM_WORLD,  ierr )
 c
@@ -4053,10 +4051,6 @@ c
        if( allocated( front_element_list) )
      &     deallocate( front_element_list )
        allocate( front_element_list(front_list_length), stat=flags(3) )
-       if( allocated( expanded_front_nodes ) )
-     &     deallocate( expanded_front_nodes )
-       allocate( expanded_front_nodes(0:max_exp_front,num_front_nodes),
-     &           stat=flags(4) )
        if( any( flags .ne. 0 ) ) then
           write(out,9100); call die_abort
        end if
@@ -4088,9 +4082,6 @@ c
 c
       call MPI_BCAST( omit_crack_front_elems, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr )
-c
-      call MPI_BCAST( max_exp_front, 1, MPI_INTEGER, 0, MPI_COMM_WORLD,
-     &                ierr )
 c
       call MPI_BCAST( face_loading, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
@@ -4162,10 +4153,6 @@ c
 c
       call MPI_BCAST( front_coords, 3*max_front_nodes, MPI_VAL, 0,
      &                MPI_COMM_WORLD,ierr)
-c
-      num = (max_exp_front + 1) * num_front_nodes
-      call MPI_BCAST( expanded_front_nodes, num, MPI_INTEGER, 0,
-     &                MPI_COMM_WORLD, ierr )
 c
       call MPI_BCAST( e_front, 1, MPI_VAL, 0, MPI_COMM_WORLD, ierr )
 c
