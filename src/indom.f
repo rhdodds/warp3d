@@ -39,7 +39,7 @@ c
       double precision, parameter :: zero=0.0d0
       logical :: stress_flag, strain_flag, user_def_ct
       logical, external :: matchs, endcrd, numd, realn, true,
-     &                     label, string, numi
+     &                     label, string, numi, matchs_exact
       equivalence (iword,rword)
 c
 c                       locally allocated
@@ -815,18 +815,21 @@ c     *              internal routine indom_node_sets                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/6/22 rhd                 *
+c     *                   last modified : 1/12/22 rhd                *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine indom_node_sets
       implicit none
 c
-      integer :: nnl, node_set_id, kount_set, i, j, base_node
+      integer :: nnl, node_set_id, kount_set, i, j, base_node, 
+     &           set_1st_node, fnode
       integer, external :: iszlst
-      logical :: found_duplicate
-      logical, parameter :: ldebug = .false.
+      logical :: found_duplicate, ldebug 
 c
+      ldebug = .false.
+      if( matchs_exact('debug') ) ldebug = .true.
+c      
       if( matchs('set',3) ) call splunj
 c
       if( .not. numi( node_set_id ) ) then
@@ -839,12 +842,26 @@ c
          call scan_flushline; num_error = num_error + 1; return
       end if
 c
-c               set-up list for node parsing
+      set_1st_node = 0
+      if( matchs_exact('first') ) then
+        if( matchs('node',3) ) call splunj
+        if( .not. numi( fnode ) ) then
+          write(out,9305) 
+          call scan_flushline; num_error = num_error + 1; return
+        end if
+        if( fnode <= 0 .or. fnode > nonode ) then
+          write(out,9310) fnode 
+          call scan_flushline; num_error = num_error + 1; return
+        end if
+        set_1st_node = fnode
+        call scan 
+      end if
+c
+c                set-up list for node parsing
 c                list_size: final allocated size of intlst
 c                lenlst: number of position used in intlst
 c
       if( allocated( intlst ) ) deallocate( intlst )
-      call scan
       call trlist_allocated( intlst, list_size, 0, lenlst, errnum )
 c
 c                       branch on the return code from trlist. a
@@ -948,11 +965,35 @@ c
         input_ok = .false.
         call scan_flushline
         num_error = num_error + 1
+        domain_node_sets(node_set_id)%node_count = 0
+        deallocate( domain_node_sets(node_set_id)%node_list )
         return
       end if
 c
+c                       the user may have specified the 1st node
+c                       to appear in the list of nodes in the set. that
+c                       node must be in the list.
+c                       if needed, create the final list with that
+c                       node in the first position
+c
+      if( set_1st_node > 0 ) then
+        if( .not. any( lst == set_1st_node ) ) then
+          write(out,9315) set_1st_node
+          call scan_flushline
+          num_error = num_error + 1
+          domain_node_sets(node_set_id)%node_count = 0
+          deallocate( domain_node_sets(node_set_id)%node_list )
+          return
+        end if 
+c 
+        if( set_1st_node .ne. lst(1) ) then 
+          call indom_node_sets_reorder( set_1st_node, 
+     &                                  node_set_id, nnl )
+        end if
+      end if ! set_1st_node
+c
       if( ldebug ) then
-         write(out,9200) node_set_id, nnl       
+         write(out,9200) node_set_id, nnl, set_1st_node       
          write(out,9210) lst(1:nnl)
       end if
 c
@@ -966,12 +1007,54 @@ c
      & /,  '             list for node set: ',i4 /)
  9010 format(10x,'      node:',i9,
      & ' has duplicate in list position: ',i4/)
- 9200 format(/,10x,".... node set id, # nodes: ", i5,i10)
+ 9200 format(/,10x,".... node set id, # nodes, user specified ",
+     & "1st node: ", i5,2i10)
  9210 format(15x,5i8) 
  9300 format(
      & /1x,'>>>>> error: set # must be > 0 and <= limit of: ',i4 /)
+ 9305 format(
+     & /1x,'>>>>> error: expecting user-specified 1st node'/)
+ 9310 format(
+     & /1x,'>>>>> error: specified 1st node invalid: ',i10 /)
+ 9315 format(
+     & /1x,'>>>>> error: specified 1st node must be in',
+     &  ' list of nodes: ',i10 /)
 c
       end subroutine indom_node_sets
+c     ****************************************************************
+c     *                                                              *
+c     *              internal routine indom_node_sets_reorder        *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 1/12/22 rhd                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine indom_node_sets_reorder( set_1st_node, node_set_id,
+     &                                    nnl )
+      implicit none
+c
+c                       make the user specified 1st node
+c                       the first one in list of nodes for the set
+c
+      integer :: set_1st_node, nnl, node_set_id
+      integer :: pos, i, jnode
+      integer, allocatable :: temp_list(:)
+c
+      allocate( temp_list(nnl) )
+      temp_list(1) = set_1st_node
+      pos = 2
+      do i = 1, nnl
+        jnode = domain_node_sets(node_set_id)%node_list(i)
+        if( jnode == set_1st_node ) cycle
+        temp_list(pos) = jnode
+        pos = pos + 1
+      end do
+      domain_node_sets(node_set_id)%node_list = temp_list
+c
+      return
+      end subroutine indom_node_sets_reorder
       end subroutine indom
 
 c     ****************************************************************
