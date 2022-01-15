@@ -4,7 +4,7 @@ c     *                      subroutine compute                      *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 12/3/2019 rhd              *          
+c     *                   last modified : 1/14/2022 rhd              *          
 c     *                                                              *          
 c     *     scan the compute command, make some checks and call      *          
 c     *     various driver routines                                  *          
@@ -43,7 +43,7 @@ c
       if( matchs('interaction',8) ) comput_i = .true.                           
       if( matchs('domain',5) ) comput_j = .true.                                
       if( comput_j .or. comput_i ) then                                         
-       call didriv; go to 9999                                                  
+       call thyme( 12,1 );call didriv;call thyme( 12,2 ); go to 9999                                                  
       end if                                                                    
 c                                                                               
       if( .not. matchs('displacements',5) ) then                                

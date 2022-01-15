@@ -42,13 +42,13 @@ c
          else if(calc.eq.7) then                                                
             clctyp= 'patran output:                '                            
          else if(calc.eq.9) then                                                
-            clctyp= 'step length:                  '                            
+            clctyp= 'output services:              '                            
          else if(calc.eq.10) then                                               
             clctyp= 'solution matrix factorization:'                            
          else if(calc.eq.11) then                                               
             clctyp= 'system solution:              '                            
          else if(calc.eq.12) then                                               
-            clctyp= 'pseudo residual:              '                            
+            clctyp= 'domain integrals:             '                            
          else if(calc.eq.13) then                                               
             clctyp= 'beta scaling factor:          '                            
          else if(calc.eq.14) then                                               

@@ -692,7 +692,9 @@ c
          param= 5
          call errmsg(11,param,dums,dumr,dumd)
       else
+         call thyme( 9, 1 )
          call oudrive(sbflg1,sbflg2,stname,ltmstp)
+         call thyme( 9, 2 )
       end if
       go to 10
 c
