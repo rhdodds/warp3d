@@ -11,7 +11,7 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 1/7/22 rhd                   *
+c *                 last modified: 1/17/22 rhd                  *
 c *                                                             *
 c ***************************************************************
 c
@@ -37,7 +37,9 @@ c
       integer :: front_pos, i, ii, snode, elem, incptr, nnode, elnd,
      &           count, index
       integer :: local_list(10)
+      logical :: same_q_values, local_debug_1
       logical, external :: dibmck
+      real :: q1
 c
 c             build list of all nodes for elements appearing in
 c             the previous domain. if ring = 1 we use the list of
@@ -53,39 +55,39 @@ c
              call diadit( node_map, snode, bits )
            end do
          end do
-      else
-         do elem = 1, noelem
-          if( dibmck( elem, q_element_maps, bits ) ) then
-             incptr = incmap(elem)-1
-             nnode  = eprops(2,elem)
-             do elnd = 1, nnode
-               snode = incid(incptr+elnd)
-               call diadit( node_map, snode, bits )
-             end do
-           end if
-         end do
-       end if
+      end if
+c
+      if( ring > 1 ) then
+        do elem = 1, noelem
+          if( .not. dibmck( elem, q_element_maps, bits ) ) cycle
+          incptr = incmap(elem)-1
+          nnode  = eprops(2,elem)
+          do elnd = 1, nnode
+             snode = incid(incptr+elnd)
+             call diadit( node_map, snode, bits )
+          end do
+        end do ! elem
+      end if
 c
 c              debug for list of nodes just created
 c
        if( debug_driver ) then
-           write(out,9010)
-           count = 0
-           index = 0
-           do snode = 1, nonode
-             if( dibmck( snode, node_map, bits ) ) then
-               index = index + 1
-               local_list(index) = snode
-               count = count + 1
-               if( mod(index,10) .eq. 0 ) then
-                   write(out,9040) local_list
-                   index = 0
-               end if
-             end if
-           end do
-           if( index .gt. 0 ) write(out,9040) (local_list(ii),
-     &                                          ii=1,index)
-           write(out,9015) count
+         write(out,9010)
+         count = 0
+         index = 0
+         do snode = 1, nonode
+           if( .not. dibmck( snode, node_map, bits ) ) cycle
+           index = index + 1
+           local_list(index) = snode
+           count = count + 1
+           if( mod(index,10) .eq. 0 ) then
+                 write(out,9040) local_list
+                 index = 0
+           end if
+         end do
+         if( index .gt. 0 ) write(out,9040) (local_list(ii),
+     &                                        ii=1,index)
+         write(out,9015) count
        end if
 c
 c             build list of all elements incident on nodes in
@@ -93,12 +95,11 @@ c             current list. use nodal incidences to greatly
 c             speed up this process.
 c
       do snode = 1, nonode
-         if( dibmck( snode, node_map, bits ) ) then
-           do i = 1, inverse_incidences(snode)%element_count
-             elem = inverse_incidences(snode)%element_list(i)
-             call diadit( q_element_maps, elem, bits )
-           end do
-         end if
+         if( .not. dibmck( snode, node_map, bits ) ) cycle
+         do i = 1, inverse_incidences(snode)%element_count
+            elem = inverse_incidences(snode)%element_list(i)
+            call diadit( q_element_maps, elem, bits )
+         end do
       end do
 c
 c              debug for list of elements to be in domain.
@@ -108,14 +109,13 @@ c
            index = 0
            count = 0
            do elem = 1, noelem
-             if( dibmck( elem, q_element_maps, bits ) ) then
-               index = index + 1
-               local_list(index) = elem
-               count = count + 1
-               if( mod(index,10) .eq. 0 ) then
+             if( .not. dibmck( elem, q_element_maps, bits ) ) cycle
+             index = index + 1
+             local_list(index) = elem
+             count = count + 1
+             if( mod(index,10) .eq. 0 ) then
                   write(out,9040) local_list
                   index = 0
-               end if
              end if
            end do
            if( index .gt. 0 ) write(out,9040) (local_list(ii),
@@ -125,13 +125,34 @@ c
 c
 c             for all nodes in the node map, set the q-value = 1
 c
+      q_values(1:nonode) = rzero
       do snode = 1, nonode
-         if( dibmck( snode, node_map, bits ) ) then
-           q_values(snode) = rone
-         else
-           q_values(snode) = rzero
-         end if
+         if( dibmck( snode, node_map, bits ) ) q_values(snode) = rone
       end do
+c
+      local_debug_1 = .false.
+      if( .not. local_debug_1 ) return
+c
+      count = 0
+      do elem = 1, noelem
+       if( .not. dibmck( elem, q_element_maps, bits ) ) cycle
+       incptr = incmap(elem)-1
+       nnode  = eprops(2,elem)
+       snode = incid(incptr+1)
+       q1 = q_values(snode)
+       same_q_values = .true.
+       do elnd = 2, nnode
+         snode = incid(incptr+elnd)
+         if( abs(q1-q_values(snode)) < 0.001 ) cycle
+         same_q_values = .false.
+         exit
+       end do 
+       if( same_q_values ) cycle
+       count = count +1
+       write(out,*) '... element: ', elem
+      end do
+      write(out,*) '... # elements with non-constant q-values: ', count
+       
 c
       return
 c
