@@ -618,7 +618,7 @@ c           stop solution at cleanup in this routine.
 c                                                                               
       if( kill ) then                                                           
          if( debug ) write(out,*) ' -> Crit.CTOA reached. Kill node.'           
-         if( .not. killed_this_time ) write(out,9000)                          
+         if( .not. killed_this_time ) write(out,9000) step - 1                      
          write(out,9010) node, angle * two                                      
          killed_this_time = .true.                                              
          call release_node( node, node_data_entry, debug )                      
@@ -681,7 +681,7 @@ c
 c                                                                               
 c                                                                               
       return                                                                    
- 9000 format(/,' >> node release option invoked for the following:',/)          
+ 9000 format(/,' >> node release option invoked after step:',i10/)          
  9010 format(  '        node: ',i7,'  CTOA: ',f6.2,' (degrees)')                
  9020 format(/,'        * critical CTOA:',                                      
      &       /,'            for growth    : ',f6.2,' (degrees)',                
@@ -798,7 +798,7 @@ c                  released.
 c                                                                               
                loop = loop + 1                                                  
                if( .not. killed_this_time ) then                                
-                  write(out,9000)                                               
+                  write(out,9000)  step - 1                                            
                   killed_this_time = .true.                                     
                end if                                                           
 c                                                                               
@@ -904,7 +904,7 @@ c
       if ( debug ) write(out,*) '>> leaving chk_front_master_line'              
 c                                                                                                                                                              
       return                                                                    
- 9000 format(/,' >> node release option invoked for the following:',/) 
+ 9000 format(/,' >> node release option invoked after step:',i10/)          
  9010 format('  master node: ',i7,' CTOA: ',f6.2,' (degrees)',
      & 2x, 'step:',i7,2x,'(X,Y,Z):',e10.3,1x,e10.3,1x,e10.3)        
  9015 format('  interim node:',i7,' CTOA: ',f6.2,' (degrees)',
