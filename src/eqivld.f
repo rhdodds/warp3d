@@ -957,5 +957,5 @@ c
       return
  9000 format(1x,a,' total applied load pattern factors through step: ',
      & i7 )
- 9010 format(6x,'> ',3(a12,' ',f10.3,2x))
+ 9010 format(6x,'> ',3(a12,' ',f12.4,2x))
       end
