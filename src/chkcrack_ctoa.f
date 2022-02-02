@@ -378,7 +378,7 @@ c
       if( debug ) write(out,*) '>>>>>> Checking crack front nodes'              
       if( const_front ) then                                                    
          call chk_crack_front_const( killed_this_time, debug,                   
-     &                               step, iter )                               
+     &                               step, iter )      
       else                                                                      
          call chk_crack_front( killed_this_time, debug, step, iter )            
       end if                                                                    
@@ -504,7 +504,7 @@ c     *                      subroutine chk_crack_front              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/28/21 rhd                *          
+c     *                   last modified : 1/31/2022 rhd              *          
 c     *                                                              *          
 c     *        This routine traverses the nodes on the current       *          
 c     *        crack front, releasing any nodes that have (1) CTOA   *          
@@ -517,7 +517,8 @@ c
 c                                                                               
       subroutine chk_crack_front( killed_this_time, debug, step, iter ) 
 c        
-      use global_data, only : out, dstmap
+      use global_data, only : out, dstmap, last_node_released,
+     &                        node_causing_stop
 c                                                                               
       use node_release_data, only : inv_crkpln_nodes, num_neighbors,            
      &     neighbor_nodes, crack_front_nodes, crkpln_nodes_state                
@@ -534,11 +535,11 @@ c
       integer :: local_killed_list(max_local_list)       
       integer :: i, dof,  neighbor_node, neighbor,  node_data_entry,
      &           node, node_ptr, prev_node, num_killed_now,
-     &           prev_node_ptr, node_causing_stop                        
+     &           prev_node_ptr                     
       double precision :: angle, crit_angle,                        
      &                    local_killed_angles(max_local_list)                                  
-      logical :: kill, last_node_released, ldummy1, ldummy2, test   
-      integer, external :: scan_entry_in_list                       
+      logical :: kill, test
+      logical, external :: scan_entry_in_list                       
 c                                                                               
 c          traverse the linked list of crack front nodes and                    
 c          check if nodes need to be released.                                  
@@ -617,7 +618,15 @@ c           if this newly released node is is the list,
 c           stop solution at cleanup in this routine.
 c                                                                               
       if( kill ) then                                                           
-         if( debug ) write(out,*) ' -> Crit.CTOA reached. Kill node.'           
+         if( debug ) write(out,*) ' -> Crit.CTOA reached. Kill node.'   
+         if( .not. last_node_released ) then        
+           if( stop_released_nlist_length > 0 ) then
+             test = scan_entry_in_list( node, released_nlist_to_stop, 
+     &                             stop_released_nlist_length ) 
+             if( test ) last_node_released = .true.
+             node_causing_stop = node 
+           end if   
+         end if            
          if( .not. killed_this_time ) write(out,9000) step - 1                      
          write(out,9010) node, angle * two                                      
          killed_this_time = .true.                                              
@@ -629,12 +638,6 @@ c
          end if                                                                 
          local_killed_list(num_killed_now) = node                               
          local_killed_angles(num_killed_now) = angle * two 
-         if( stop_released_nlist_length > 0 ) then
-           test = scan_entry_in_list( node, released_nlist_to_stop, 
-     &                             stop_released_nlist_length ) 
-           if( test ) last_node_released = .true.
-                node_causing_stop = node 
-         end if               
       end if                                                                    
 c                                                                               
 c            move to the next entry in the list.  If we are not at the end,     
@@ -670,15 +673,8 @@ c
      &         local_killed_angles(i)                                           
         end do                                                                  
       end if                                                                    
-c
-      if( last_node_released ) then 
-          write(out,9060) node_causing_stop
-          call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
-          call warp3d_normal_stop
-      end if                                                                  
                                                                                 
       if( debug ) write(out,*) '>> leaving chk_crack_front'                     
-c                                                                               
 c                                                                               
       return                                                                    
  9000 format(/,' >> node release option invoked after step:',i10/)          
@@ -705,7 +701,7 @@ c     *                subroutine chk_crack_front_const              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/28/21 rhd                *          
+c     *                   last modified : 1/31/2022 rhd              *          
 c     *                                                              *          
 c     *        This routine checks the crack front for the constant  *          
 c     *        front algorithm, where the CTOA is measured a given   *          
@@ -719,7 +715,8 @@ c
 c                                                                               
       subroutine chk_crack_front_const( killed_this_time, debug, step,          
      &                                  iter )                                  
-      use global_data, only : out, c
+      use global_data, only : out, c, last_node_released, 
+     &                        node_causing_stop 
       use node_release_data, only : master_lines                                
       use main_data, only :  output_packets, packet_file_no, crdmap                    
       use damage_data 
@@ -733,18 +730,16 @@ c
       integer, parameter :: max_local_list=200                                            
       integer :: local_killed_list(max_local_list)   
       integer :: i, orig_node, loop, num_line, num_killed_now, idummy,
-     &           mnode, node_causing_stop                          
+     &           mnode                      
       double precision :: angle, crit_angle, dist, targ_dist, xc, yc,
      &                    zc, local_killed_angles(max_local_list)                       
-      logical :: kill, use_init, last_node_released, ldummy1,
-     &           ldummy2, test   
-      integer, external :: scan_entry_in_list
+      logical :: kill, use_init, test   
+      logical, external :: scan_entry_in_list
 c                                                                               
       if( debug ) write(out,*) '>>> in chk_front_master_line'                     
 c                                                                               
       killed_this_time = .false.                                                
       num_killed_now   = 0 
-      last_node_released  = .false.                                                   
 c                                                                               
 c          loop over the entries in master_lines                                
 c                                                                               
@@ -817,13 +812,15 @@ c                 the user may have provided a list if nodes.
 c                 if this newly released node is is the list,
 c                 stop solution at cleanup in this routine.
 c
-               if( stop_released_nlist_length > 0 ) then
-                test = scan_entry_in_list( mnode, 
-     &                  released_nlist_to_stop,
-     &                  stop_released_nlist_length )
-                if( test ) last_node_released = .true.
-                node_causing_stop = mnode 
-               end if
+               if( .not. last_node_released ) then     
+                  if( stop_released_nlist_length > 0 ) then
+                     test = scan_entry_in_list( mnode, 
+     &                      released_nlist_to_stop,
+     &                     stop_released_nlist_length )
+                     if( test ) last_node_released = .true.
+                     node_causing_stop = mnode 
+                  end if
+              end if
                xc = c(crdmap(mnode)+0) 
                yc = c(crdmap(mnode)+1)
                zc = c(crdmap(mnode)+2)
@@ -895,12 +892,6 @@ c
         end do                                                                  
       end if  
 c
-      if( last_node_released ) then 
-          write(out,9060) node_causing_stop
-          call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
-          call warp3d_normal_stop
-      end if                                                                  
-c                                                                               
       if ( debug ) write(out,*) '>> leaving chk_front_master_line'              
 c                                                                                                                                                              
       return                                                                    
@@ -919,10 +910,6 @@ c
  9030 format(/,'FATAL ERROR: list length exceeded in',                          
      &       /,'             chk_crack_front_const. job aborted.' )             
  9050 format(8x,'** Total nodes released in model: ',i5,' **')  
- 9060 format(/,1x,">>>>> Limiting node released: ",i7,
-     &       /,7x,"Restart file: kill_limit_restart.db written.",
-     &       /,7x,"Job ended normally."// )
-                
 c                                                                               
       end                                                                       
 c                                                                               

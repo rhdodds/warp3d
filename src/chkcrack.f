@@ -57,7 +57,7 @@ c
          call chk_elem_kill( debug, step, iter )                                
       case(2)                                                                  
          if(debug) write (out,*) '>>>> use node release crack growth.'         
-         call chk_node_release( debug, step, iter )                             
+         call chk_node_release( debug, step, iter )    
       case(3)                                                                  
          if(ldebug) write (out,*) '>>>> use smcs crack growth.'                 
          call chk_elem_kill( debug, step, iter )                                

@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/22/21 rhd                *
+c     *                   last modified : 1/31/2022 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -461,7 +461,7 @@ c
      &              use_mesh_regularization, regular_npoints,
      &              regular_type, stop_released_nlist_length,  
      &              smcs_deleted_list_file_flag,
-     &              smcs_removed_list_file_flag       
+     &              smcs_removed_list_file_flag      
       write (fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,

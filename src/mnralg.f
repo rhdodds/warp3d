@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 5/8/21 rhd                  *
+c     *                   last modified: 1/31/2022 rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -54,7 +54,7 @@ c
       double precision, allocatable, dimension(:) ::u_n_local
 c
       logical :: dynamic, material_cut_step, emit_extrap_msg,
-     & ls_request_adaptive,
+     & ls_request_adaptive, ldummy1, ldummy2,
      & diverging_flag, user_extrapolation_on, user_extrapolation_off,
      & setup_lagrange_data
 c
@@ -186,12 +186,21 @@ c          releases for crack growth. skip for step 1. no crack growth
 c          of any type allowed during adaptive solution since we're 
 c          trying to resolve only the global Newton.
 c
+c          if met/exceeded user set limit on amount of growth,
+c          save restart file and stop.
+c
       check_crk_growth = step .gt. 1 
       if( check_crk_growth ) then
          call chkcrack( step, 0 )
          call growth_loads
+         if( last_node_released ) then 
+          write(out,9060) node_causing_stop
+          call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
+          call warp3d_normal_stop
+         end if 
       end if
-
+      last_node_released  = .false.                                                               
+c
  1000 continue
       if( show_details ) write(out,9150) step
 c
@@ -668,6 +677,11 @@ c
      & ' mf_ratio_change: ',i7,2f10.6, l2)
  9002 format(/,1x,'... mnralg:  mf_nm1, scaling_load',
      & 2f10.6)
+ 9060 format(///,1x,">>>>> Solution ending during crack growth.",
+     &  /,7x,"A node in the user-specified list has been ",
+     &       "released: ",i7,
+     &   /,7x,"Job will end normally after"
+     &   /,7x,"restart file written: kill_limit_restart.db",//)
  9150 format(/,7x,
      & '>> starting global newton solution for step:       ',i7)
  9152 format(7x,

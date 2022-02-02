@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 9/22/21 rhd                *
+c     *                   last modified : 1/31/2022 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -453,8 +453,8 @@ c
      &              smcs_allowable_in_release, use_estiff_at_death,
      &              use_mesh_regularization, regular_npoints,
      &              regular_type, stop_released_nlist_length,              
-     &              smcs_deleted_list_file_flag,
-     &              smcs_removed_list_file_flag       
+     &              smcs_deleted_list_file_flag, 
+     &              smcs_removed_list_file_flag
       call chk_data_key( fileno, 8, 0 )
 c
       read(fileno) porosity_limit, gurson_cell_size,

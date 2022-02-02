@@ -450,6 +450,7 @@ c
       release_fraction      = 0.1d0
       critical_angle        = zero
       init_crit_ang         = zero
+      last_node_released    = .false.
       num_crack_plane_nodes = 0
       no_released_nodes     = .true.
       char_length           = zero

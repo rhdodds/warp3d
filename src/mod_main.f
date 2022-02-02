@@ -22,7 +22,7 @@ c     *                    f-90 module erflgs                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 12/3/2019 rhd                   *
+c     *              last modified : 1/31/2022 rhd                   *
 c     *                                                              *
 c     *     this small module replaces the old common.main           *
 c     *                                                              *
@@ -85,7 +85,7 @@ c
      &    sparse_stiff_output, sparse_stiff_binary, 
      &    sparse_research, solver_mkl_iterative, temperatures,
      &    root_processor, slave_processor, worker_processor,
-     &    use_mpi, ! end of scalars
+     &    use_mpi, last_node_released, ! end of scalars
      &    trace(ntrc), convrg(10)
 c
 !dir$ attributes align: 64 :: lprops
@@ -117,7 +117,7 @@ c
      &    num_term_loads, mathed, csthed,  lodhed, inctop, crdtop,
      &    in, out, histep, lowstp, ltmstp, num_warn, num_error,
      &    num_fatal, solver_flag, old_solver_flag, solver_memory,
-     &    num_threads,  max_mpc, max_mpc_tied, 
+     &    num_threads,  max_mpc, max_mpc_tied,  node_causing_stop,
      &    myid, numprocs, MPI_VAL, douextdb, mxnmbl,
      &    current_load_time_step, solver_threads
 c

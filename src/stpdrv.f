@@ -253,7 +253,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/21/2016 rhd              *
+c     *                   last modified : 1/31/2022 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -264,7 +264,7 @@ c
       implicit none
 c
       integer :: now_step
-      logical :: stpdrv_error
+      logical :: stpdrv_error, ldummy1, ldummy2 
 c
       integer :: i
 c
@@ -274,7 +274,7 @@ c
         call close_packets_file( msg_flag )
         call open_packets_file( msg_flag )
       end if
-c
+cc
 c          check to make sure the load-time step to be com-
 c          puted is defined in the loading given. if
 c          not, then cease processing of the loading
@@ -375,7 +375,7 @@ c
 c
       return
 c
- 9121 format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i7,
+9121  format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i7,
      &       /1x,'                   is not defined for loading: ',a8,
      &       /1x,'                   job terminated....')
 
