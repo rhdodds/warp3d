@@ -40,26 +40,29 @@ c    actually killing them.
 c
 c    the material in linear + power law with n=10, E/sig-0=500,
 c    nu=0.3. initial porosity in the cell is 0.005.
-c    
+c  
+c
+*input from 'param_defs.inp'
+!  
 structure seb
 c 
 material steel 
- properties mises e 29000 nu 0.3 yld_pt 58.0 n_power 10,
+ properties mises e @ymod nu @nu yld_pt @yield n_power @n,
             rho 0.0
 c
 material void_strip
- properties gurson e 29000 nu 0.3 yld_pt 58.0 n_power 10,
-            f_0 0.005 q1 1.25 q2 1.0 q3 1.5625 rho 0.0,
+ properties gurson e @ymod nu @nu yld_pt @yield n_power @n,
+            f_0 @f0 q1 1.25 q2 1.0 q3 @q3 rho 0.0,
 c            killable
-            killable, e_n 0.4 s_n 0.05 f_n 0.50 nucleation
+            killable, e_n 0.4 s_n 0.05 f_n 0.50 @nuc_flag
 c
 number of nodes 1568 elements 715
 c
 c
 elements
-   1-60 type l3disop nonlinear material void_strip order 2x2x2,
+   1-60 type l3disop @lgsmeps material void_strip order 2x2x2,
              bbar center_output 
-   61-715 type l3disop nonlinear material steel order 2x2x2,
+   61-715 type l3disop @lgsmeps material steel order 2x2x2,
                bbar center_output 
 *echo off
 coordinates
@@ -3952,8 +3955,8 @@ c
    force release type traction-separation
    crack plane normal y coord 0.0
    cell height 0.004
-   release fraction 0.1
-   critical porosity 0.2
+   release fraction @rel_frac
+   critical porosity @crit_por
 c
    compute displacements for loading bend step 1-10
      output displacements 5 7 15

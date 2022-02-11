@@ -1,0 +1,6 @@
+!
+*parameter ymod = '29000' nu = '0.3' yield = '58' n = '10'
+*parameter f0 ='0.005', q3 ='1.5625', lgsmeps = 'geonl'
+*parameter nuc_flag = 'nucleation'
+!
+*parameter crit_por = "0.2" rel_frac = "0.1"
