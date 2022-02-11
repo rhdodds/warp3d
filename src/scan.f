@@ -1700,7 +1700,7 @@ c
          k = k+ncpw                                                             
  10   continue                                                                  
       return                                                                    
-      end                                                                       
+      end     
 c **********************************************************************        
 c *                                                                    *        
 c * scanin                                                             *        
@@ -1708,34 +1708,55 @@ c *                                                                    *
 c **********************************************************************        
       subroutine scanin( in, buff, reclen, errcod ) 
       use scanln    
-      use scanim                             
+      use scanim    
+      use scan_macros                         
+      use scanio, only : iout                      
 c
       implicit none
 c                                                                               
 c         input a record from a device                                          
 c                                                                               
       integer :: in, reclen, errcod, recsiz                                            
-      real :: buff(80)                                                        
+      real :: buff(80)  
+c
+      integer :: i, iatchar     
       character(len=1) :: chartab(4)                                            
+      real :: holtab
       equivalence ( holtab, chartab(1) )
 c
-      integer :: i  
-      real :: holtab
-c                                                                               
+      character(len=132) :: inline
+      character(len=1) :: c1, c2
+      logical :: comment, do_substitution
+c
 c             create a holerith tab for checking for tabs                       
 c                                                                               
       holtab = blank                                                            
       chartab(1) = char(9)                                                      
 c                                                                               
-c             do the read                                                       
+c             do the read. make parameter substitutions
+c             as required. use faster code if no parameters/macros
+c             are defined.                                                      
 c                                                                               
       recsiz = reclen                                                           
-      errcod = 0                                                                
-      read(in,1001,err=20,end=30)(buff(i),i=1,recsiz)                           
+      errcod = 0     
+      if( num_macros == 0 ) then  ! std, quick process                                                         
+        read(in,1001,err=20,end=30) (buff(i),i=1,recsiz) 
+      else
+        inline = " "
+        read(in,1002,err=20,end=30) inline(1:) 
+        c1 = inline(1:1)
+        c2 = inline(2:2)
+        comment = c1 == "c" .or. c1 == "C" .or. c1 == "#" .or. c1 == "!"
+        comment = comment .and. c2 == " "
+        iatchar = index( inline, "@" )
+        do_substitution = iatchar > 0 .and. .not. comment
+        if( do_substitution ) call scanin_process_macros
+        call scanin_restore_line
+      end if
 c                                                                               
 c             find length of line. count tabs at end of line as                 
 c             blanks                                                            
-c                                                                               
+c 
       do i = 1, recsiz                                                          
          if(.not.(buff(reclen).eq.blank) .and.                                  
      &      .not.(buff(reclen).eq.holtab)     ) then                            
@@ -1756,8 +1777,139 @@ c             ready to return.
 c                                                                               
    40 reclen = max0(reclen,2)                                                   
       return                                                                    
- 1001 format(80a1)                                                              
-      end                                                                       
+ 1001 format(80a1)  
+ 1002 format(a)
+c
+      contains
+c     ========
+c
+      subroutine scanin_restore_line
+      implicit none
+c
+      integer :: i
+      integer :: three_blanks 
+      data three_blanks / Z'20202000' / ! req'd form, gfortran
+c
+c             make buff same as if thru the read
+c     
+      do i = 1, recsiz
+        buff(i) = transfer( three_blanks + ichar( inline(i:i) ), 1.0 )
+      end do
+      return
+      end subroutine scanin_restore_line
+
+      subroutine scanin_process_macros
+      implicit none
+c
+      integer :: i, j, k, iat, macro_col, ncv, next_col_work, 
+     &           next_blank, start_col, end_col, nc_id, at_count,
+     &           at_cols(30), last_col 
+      character(len=200) :: work_line
+      character(len=80)  :: param_name 
+      logical :: found
+      logical, parameter :: ldb = .false.
+c
+c             build a replacement input line with @<params> replaced
+c             by their values. a bit tricky to keep track especially
+c             with multiple macros/parameters on the line. iatchar
+c             defined before entry.
+c
+      work_line = " "
+      work_line(1:) = inline(1:iatchar) 
+      next_col_work = iatchar
+      if( ldb )write(*,*) ".. @ 1. next_col_work: ", next_col_work
+c
+c             count number of @ on line and their index. simplifies 
+c             login in main loop
+
+      at_count = 0
+      do i = 1, reclen
+       if( inline(i:i) .ne. "@" ) cycle
+       at_count = at_count + 1
+       at_cols(at_count) = i
+       if( ldb )write(*,*) '...@1.1 atcount, at_cols:',at_count,
+     &         at_cols(at_count)
+      end do
+c
+      do iat = 1, at_count
+c
+c                  get name of parameter/macro from user inout line 
+c
+         iatchar = at_cols(iat)
+         next_blank = iatchar + index( inline(iatchar:), " " ) - 1
+         j = next_blank - 1
+         if( inline(j:j) == "," ) next_blank = next_blank - 1
+         start_col = iatchar + 1
+         end_col = next_blank - 1
+         param_name(1:) = inline(start_col:end_col)
+         nc_id = end_col - start_col + 1
+         if( ldb ) write(*,*) "..@2. next_blank,param_name,nc_id: ",
+     &             next_blank,param_name,nc_id
+c
+c                  find parameter in table. fatal, stop if not found
+c
+         found = .false.
+         do i = 1, num_macros
+           if( nc_id /= macros(i)%nchars_id  ) cycle
+           if( param_name(1:nc_id) /= macros(i)%id(1:nc_id) ) cycle
+           found = .true.
+           macro_col = i
+           exit
+         end do
+         if( .not. found ) then
+           write(iout,9100) param_name(1:len_trim(param_name))
+           call die_gracefully
+         end if
+c
+c                  insert parameter value then copy in user input line
+c                  up to next @macro
+c
+         ncv = macros(macro_col)%nchars_value 
+         work_line(next_col_work:) = macros(macro_col)%value(1:ncv)
+         next_col_work = next_col_work + ncv  
+         if( iat == at_count ) then
+              work_line(next_col_work:) = inline(end_col+1:)
+         else
+              j = end_col + 1
+              k = at_cols(iat+1) - 1
+              work_line(next_col_work:) = inline(j:k)
+              next_col_work = next_col_work + (k-j+1)
+         end if
+         if( ldb ) write(iout,9000) work_line(1:100) 
+c
+      end do ! over iat
+c
+c                  possible overflow of allowed line length in scan 
+c                  system after all macro value substitutions.
+c                  set user inout line for processing to the
+c                  work line with substitutions
+c
+      last_col = len_trim( work_line ) 
+      if( last_col > reclen ) then
+        write(iout,9200) reclen, inline, work_line(1:last_col)
+        call die_gracefully
+      end if
+      inline = " "
+      inline(1:) = work_line(1:reclen)
+      if( ldb ) write(iout,9010) inline(1:reclen) 
+c
+      return
+c
+ 9000 format(".. end of while loop: ",1x,a)
+ 9010 format(".. new inline: ",a)
+ 9100 format(/,">>>> Fatal Error: unknown @ parameter: ",a,
+     &       /,"                  job terminated",///)
+ 9200 format(/,">>>> Fatal Error: input line after parameter ",
+     & "substitutions has more than",
+     &       /,"                  allowed number of characters: ", i3,
+     &       /,"        input line:",a, 
+     &       /,"     expanded line:",a,
+     &       /,"                  job terminated",///)
+c
+      end subroutine scanin_process_macros
+c
+      end subroutine scanin                                                           
+                                                         
 c **********************************************************************        
 c *                                                                    *        
 c * scanpk                                                             *        
@@ -1789,7 +1941,6 @@ c
    10 continue                                                                  
    20 return                                                                    
       end                                                                       
-                                                                                
 c **********************************************************************        
 c *                                                                    *        
 c * scanrd                                                             *        

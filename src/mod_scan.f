@@ -140,3 +140,22 @@ c
 c
       end module scanct
 c
+c
+      module scan_macros
+c     ------------------
+      implicit none
+c
+      save
+      integer:: num_macros = 0
+      integer, parameter :: max_macros = 300
+c
+      type :: smacros
+        integer :: nchars_id
+        integer :: nchars_value
+        character(len=80) :: id
+        character(len=80) :: value
+      end type
+      type( smacros ), allocatable :: macros(:)
+c
+      end module scan_macros
+
