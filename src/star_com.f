@@ -36,6 +36,11 @@ c               command: *input -- getting input from file
 c                                                                               
       if( matchs('input',5) ) then                                                
          call infile                                                            
+         if( debug ) write (out,9010)    
+         return
+      end if
+      if( matchs('inout',5) ) then  ! because Bob types wrong many times                                              
+         call infile                                                            
          if( debug ) write (out,9010) 
          return
       end if
@@ -62,7 +67,8 @@ c               command: *reset -- resets after a fatal error
 c                         call WARP3D routine                  
 c                                                                               
       if( matchs('reset',5) ) then                                           
-         input_ok = .true.                                                      
+         input_ok = .true.  
+         num_error = 0                                                    
          call errmsg(184,dum,dums,dumr,dumd)  
          if( debug ) write (out,9010)
          return

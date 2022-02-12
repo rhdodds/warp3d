@@ -1761,7 +1761,7 @@ c
  1760 continue
       num_error = num_error + 1
       write(out,9186) sparam
- 9186 format(/1x,'>>>>> error: error in opening file.',a)
+ 9186 format(/1x,'>>>>> error: unknown error in opening file.',a)
       goto 9999
 c
 c

@@ -1972,7 +1972,7 @@ c
       doread = .false.                                                          
    10 continue                                                                  
       reread = .false.                                                          
-      incol = recsiz                                                            
+      incol = recsiz  
       if (  promt .and. ( inunit .eq. inremo ) )                                
      1                call wrnocr( 3h > , iotrem )                              
       call scanin( inunit, rcard, incol, ierr )                                  
@@ -2239,29 +2239,6 @@ c                return.
 c                                                                               
       integer :: outrem, prompt                                                  
       write(outrem,fmt='(a3$)' ) prompt                                         
-      return                                                                    
-      end                                                                       
-c                                                                               
-c     ****************************************************************          
-c     *                                                              *          
-c     *            subroutine check_to_prompt                        *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 07/20/99                   *          
-c     *     this determines if scan should issue a prompt before     *          
-c     *     a read.                                                  *          
-c     *                                                              *          
-c     ****************************************************************          
-c                                                                               
-c                                                                               
-      subroutine check_to_prompt( prompt )  
-c
-      implicit none
-c                                    
-      logical :: prompt    
-c                                                        
-      prompt =  .false.                                                         
       return                                                                    
       end                                                                       
 c     ****************************************************************          

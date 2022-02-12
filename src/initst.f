@@ -67,10 +67,11 @@ c
       implicit none
 c
       integer :: nblank, reclen, endchr, lword, rword, i, strtop,
-     &           strstp, rottop, k
+     &           strstp, rottop, k, in_remote
       integer, external :: omp_get_max_threads
       logical :: promsw, echosw, comsw, atrdsw, eolsw, eofsw, menusw,
      &           ptsw, signsw, sbflg1, sbflg2
+      logical, external :: isatty
 c
 c                       temporary fix until Intel fixes an inconsistency
 c                       in MKL. this call prevents lots of warning messages
@@ -133,8 +134,8 @@ c
 c
 c                       initialize scan
 c
-      call setin(in)
-      call setout(out)
+      call setin( in )
+      call setout( out )
       nblank= 80
       reclen= 80
       endchr= id_dollar
@@ -147,7 +148,6 @@ c
       menusw= .false.
       ptsw= .false.
       signsw= .false.
-      call check_to_prompt( promsw )
       call scinit(nblank,reclen,endchr,promsw,echosw,comsw,atrdsw,
      &            eolsw,eofsw,menusw,ptsw,signsw)
 c

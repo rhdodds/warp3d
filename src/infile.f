@@ -4,93 +4,102 @@ c     *                      subroutine infile                       *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified :  01/20/2016 rhd            *          
+c     *                   last modified :  02/12/2022 rhd            *          
 c     *                                                              *          
-c     *     this subroutine gets the name of a file for input        *          
-c     *     as part of the *input from file command                  *          
-c     *     opens and attaches file to the scanner                   *          
+c     *     gets the name of a file for input as part of the         *
+c     *     *input from <...>  command                               *          
+c     *     opens and attaches file or window to the scanner         *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine infile                                                         
+c                                                                                                                                                             
+      subroutine infile  
+c                                                       
       use global_data ! old common.main
-      use file_info                                                             
-      implicit integer (a-z)                                                    
+      use file_info
+c                                                             
+      implicit none  
+c
+      integer :: dum, filchr, ierror                                                  
       real :: dumr                                                              
       character(len=8) :: dums                                                  
       character(len=80) :: filnam, infil                                        
-      logical :: ok, nameok, endcrd,label,matchs,string                         
+      logical :: ok, nameok, isatty
+      logical, external :: endcrd, label, matchs, string                         
       double precision :: dumd                                                  
 c                                                                               
-c                       if "from terminal" or "from display"                    
-c                       then set keyboard as input  device                      
+c              if "to window", then set screen as output device.
+c              allowed only if stdin *not* set to a file
 c                                                                               
-      if( matchs('from',4) ) call splunj                                        
-      if( matchs('terminal',5) ) then                                           
+      if( matchs('from',4) ) call splunj   
+      ok = .false.                                     
+      if( matchs('terminal',5) ) ok = .true.
+      if( matchs('window',5) )   ok = .true.
+      if( matchs('screen',5) )   ok = .true.
+      if( matchs('display',5) )  ok = .true.
+      if( ok ) then                                     
          filcnt = 1                                                             
-         call setin (inlun(filcnt))                                             
-         in = inlun(filcnt)                                                     
+         call setin( inlun(filcnt) )                                             
+         in = inlun(filcnt)   
+         if( .not. isatty( in ) ) then
+           write(out,*) " "
+           write(out,9020)
+         end if                                           
          return                                                                 
-      endif                                                                     
-      if( matchs('display',5) ) then                                            
-         filcnt = 1                                                             
-         call setin (inlun(filcnt))                                             
-         in = inlun(filcnt)                                                     
-         return                                                                 
-      endif                                                                     
+      end if                                                                     
 c                                                                               
-c                       file is the input device:                               
-c                         check to see if the file name is given,               
-c                         then get name as label or string                      
+c              from a file. file name must be given. resolve full path
+c              name if ~ is present
 c                                                                               
       if( matchs('file',4) ) call splunj                                        
-      if (endcrd(dum)) then                                                     
-         call errmsg(175,dum,dums,dumr,dumd)                                    
+      if( endcrd(dum) ) then                                                     
+         call errmsg( 175, dum, dums, dumr, dumd )                                    
          return                                                                 
-      endif                                                                     
+      end if                                                                     
       filnam = ' '                                                              
       infil = ' '                                                               
       if( label(dum) ) then                                                     
-         call entits (filnam,filchr)                                            
+         call entits( filnam, filchr )                                            
          infil = filnam(1:filchr)                                               
       else if( string(dum) ) then                                               
-         call entits (filnam,filchr)                                            
-         call tilde (filnam,infil,nameok)                                       
-         if( .not.nameok ) then                                                 
-            call errmsg(189,dum,infil,dumr,dumd)                                
+         call entits( filnam, filchr )                                            
+         call tilde( filnam, infil, nameok )                                       
+         if( .not. nameok ) then                                                 
+            call errmsg( 189, dum, infil, dumr, dumd )                                
             return                                                              
-         endif                                                                  
+         end if                                                                  
       else                                                                      
-         call errmsg(175,dum,dums,dumr,dumd)                                    
+         call errmsg( 175, dum, dums, dumr, dumd)                                    
          return                                                                 
-      endif                                                                     
+      end if                                                                     
 c                                                                               
-c                  check if file is there, then increase                        
-c                  file number and open                                         
-c                                                                               
+c              file must exist. add to input file stack. 
+c              open file, attach to scan as current source
+c                                                                                             
       inquire( file = infil, iostat = ierror, exist = ok )                      
-      if( ierror .gt. 0 ) then                                                  
-         call errmsg(176,dum,infil,dumr,dumd)                                   
+      if( ierror > 0 ) then                                                  
+         call errmsg( 176, dum, infil, dumr, dumd )                                   
          return                                                                 
       else if( .not. ok ) then                                                  
-         call errmsg(177,dum,infil,dumr,dumd)                                   
+         call errmsg( 177, dum, infil, dumr, dumd )                                   
          return                                                                 
-      endif                                                                     
+      end if                                                                     
       filcnt = filcnt + 1                                                       
-      if( filcnt .gt. max_opened_input_files ) then                             
-         call errmsg(178,dum,dums,dumr,dumd)                                    
-         filcnt = filcnt-1                                                      
+      if( filcnt > max_opened_input_files ) then                             
+         call errmsg( 178, dum, dums, dumr, dumd )                                    
+         filcnt = filcnt - 1                                                      
          return                                                                 
-      endif                                                                     
+      end if                                                                     
       open( unit=inlun(filcnt), file = infil, status = 'old' )                  
       in = inlun(filcnt)                                                        
-      call setin(inlun(filcnt))                                                 
+      call setin( inlun(filcnt) )                                                 
       write(out,9000) trim( infil )                                             
 c                                                                               
       return                                                                    
  9000 format (1x,'>>>>> input file is: ',a)                                     
+ 9020 format('>>>>> *input command ignored. stdin set to a file',
+     & /,    '       on startup. stdin must be the interactive',
+     & /,    '       window for this command to work....',//)                                      
       end                                                                       
                                                                                 
                                                                                 
@@ -100,19 +109,22 @@ c     *               subroutine infile_stpdrv_open                  *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 06/27/2014                 *          
+c     *                   last modified : 02/12/2022 rhd             *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine infile_stpdrv_open( file_name )                                
-      use global_data ! old common.main
-      use file_info                                                             
-      implicit integer (a-z)                                                    
+      subroutine infile_stpdrv_open( file_name ) 
+c                               
+      use global_data, only : in, out 
+      use file_info       
+c                                                      
+      implicit none
+c                                                    
       character(len=80) :: file_name                                            
-      logical ok                                                                
-      integer ierror                                                            
+      logical :: ok                                                                
+      integer :: ierror                                                            
 c                                                                               
       inquire ( file = file_name, iostat = ierror, exist = ok )                 
 c                                                                               
@@ -150,22 +162,27 @@ c     *               subroutine infile_stpdrv_close                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 06/27/2014                 *          
+c     *                   last modified : 02/12/2022 rhd             *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine infile_stpdrv_close( file_name )                               
-      use global_data ! old common.main
-      use file_info                                                             
-      implicit integer (a-z)                                                    
+      subroutine infile_stpdrv_close( file_name )     
+c                          
+      use global_data, only : out,in
+      use file_info    
+c                                                         
+      implicit none
+c
       character(len=80) :: file_name                                            
-      logical now_open                                                      
-      integer ierror                                                            
+      logical :: now_open                                                      
+      integer :: ierror, dum
+      real :: dumr
+      double precision :: dumd
+      character(len=1) :: dums                                                            
                                                                                 
 c                                                                               
-      inquire ( file = file_name, iostat = ierror,                              
-     &          opened = now_open  )                                            
+      inquire ( file = file_name, iostat = ierror, opened = now_open )                                            
 c                                                                               
       if( .not. now_open ) then                                                 
          write(out,9110) file_name                                              
@@ -175,11 +192,11 @@ c
       close( inlun(filcnt) )                                                    
       filcnt = filcnt-1                                                         
       if( filcnt .eq. 0 ) then                                                  
-         call errmsg(204,dum,dums,dumr,dumd)                                    
+         call errmsg( 204, dum, dums, dumr, dumd )                                    
          call die_gracefully                                                    
       end if                                                                    
 c                                                                               
-      call setin(inlun(filcnt))                                                 
+      call setin( inlun(filcnt) )                                                 
       in = inlun(filcnt)                                                        
 c                                                                               
       return                                                                    
