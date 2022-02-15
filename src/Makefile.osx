@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 9/25/21 rhd
+#   Last modifications: 2/15/2022 rhd
 #
 #   How to run:
 #
@@ -16,14 +16,14 @@
 #   Description:
 #
 #     Build OMP version of WARP3D (64-bit) running on
-#     OS X, Intel processors.
+#     MacOS, Intel processors.
 #
-#     Build with either gfortran or Intel Composer Fortran.
+#     Build with either gfortran or Intel (Classic) Fortran.
 #     Links with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
 #
 #     Build tested with gfortran version 10+ and MKL 2021.3
-#     on OSX 11.4 (Big Sur), OSX 10.5.4 (Catalina)
+#     on MacOS 11.6 (Big Sur)
 #
 #     How we handle MKL libraries. The few required libraries are
 #     included in the WARP3D directory OSX_MKL_files.
@@ -78,7 +78,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4220
+BUILDNUM := 4240
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -126,7 +126,7 @@ ifeq  ($(BUILD_SYS), gfortran) #   gfortran options
               ${OSX_LIBDIR}/libmkl_intel_thread.a \
               ${OSX_LIBDIR}/libmkl_core.a 
   LINKOPS   = $(LINKOPS1)
-else  #  Intel Composer options
+else  #  Intel Fortran options
   COMPILER = ifort 
   OPENMP   = -qopenmp -reentrancy 
   FTRAP    =
@@ -151,8 +151,7 @@ else  #  Intel Composer options
   ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
-
+  MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
 #
   FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
@@ -461,8 +460,6 @@ ifneq  ($(BUILD_SYS), gfortran)
 	$(RMC)  $@
 	$(FOR) -inline-level=1  $< -c -o $@  # ifort has inline bug - ugh!
 endif
-
-
 #
 #       ---  Abaqus compatible user routines. Listed explicitly for clarity ------
 #            ==============================================================
@@ -490,7 +487,7 @@ ifeq ($(BUILD_SYS), gfortran) # gfortran
                                 $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
-else  # Intel Composer
+else  # Intel Fortranr
   $(ODIR)/user_routines_module$O : user_routines_module.f
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@

@@ -7,7 +7,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 9/25/21 rhd
+#   Last modifications: 2/15/2022 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10 (7/8)
 #    on x86 Processors (64-bit mode).
@@ -16,7 +16,7 @@
 #    Makewarp.bat or Makewarp_jom.bat (which sets the 64-bit
 #    mode for use here)
 #
-#    Tested with Intel Fortran 19.0.3 and included MKL
+#    Tested with Intel Fortran 19.1.3 and included MKL
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
@@ -61,7 +61,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 4220
+BUILDNUM = 4240
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows

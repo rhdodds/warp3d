@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 9/25/21 rhd
+#   Last modifications: 2/15/2022 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -63,7 +63,7 @@
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 4220
+BUILDNUM := 4240
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.
@@ -95,7 +95,7 @@ CHECKFLOAT =
 ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                  -align array64byte  -qopt-zmm-usage=high
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) #
+MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
 KMP_ERROR := KMP_ERROR    # temp fix for MKL to suppress warning messages
 #
 FCOPTS = -fpp -O3 -ip -fpconstant -fixed -72 -traceback -ftz $(CHECKFLOAT) \

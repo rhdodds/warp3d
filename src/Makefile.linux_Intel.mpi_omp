@@ -3,16 +3,17 @@
 #
 #   File: Header.linux_em64t.mpi
 #
-#   Updated: May 15, 2021 rhd
+#   Updated: Feb 15, 2022 RHD
 #
 #   Description:
 #     Makefile Header for use with the WARP3D
 #     This header will make an MPI + OpenMP Makefile for Linux using 
 #     Intel Fortran Compiler and Intel MPI
 #
-#     It sets specific flags required to compile the MPI+threaded version of WARP3D,
-#     then calls the part of the Makefile which is the same for both the OpenMP
-#     and MPI versions of the code.
+#     It sets specific flags required to compile the MPI+threaded 
+#     version of WARP3D,
+#     then calls the part of the Makefile which is the same for both 
+#     the OpenMP and MPI versions of the code.
 #
 # *****************************************************************************
 #

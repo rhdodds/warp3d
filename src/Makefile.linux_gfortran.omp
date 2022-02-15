@@ -5,8 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 9/25/21 rhd
-#
+#   Last modifications: 2/15/2022 rhd
 #
 #   How to run:
 #
@@ -33,7 +32,7 @@
 #     This build tested with gfortran version 8.1.0  and 
 #     MKL 2020.0.4 (included in linux_packages/lib)
 #
-#     Distributed executables built on Ubuntu/Kubuntu 18.04.5 LTS.
+#     Distributed executables built on Ubuntu/Kubuntu 18.04.6 LTS.
 #     Build tested on Redhat 7.5
 #     
 #     Notes:
@@ -69,7 +68,7 @@
 #          in the linux_pacakages/lib directory of the WARP3D distribution
 
 OSNAME   := Linux
-BUILDNUM := 4220
+BUILDNUM := 4240
 #
 BUILD_SYS := gfortran
 ODIR = ././../obj_linux_gfortran_omp
