@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/30/21 rhd                *
+c     *                   last modified : 2/15/2022 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -1082,10 +1082,6 @@ c
      &     " 'license_agreement' **",/,
      &     "    **              Enter the Command 'license' to",
      &     ' Display Text      **',/,
-     &     '    **                                             ',
-     &     '                  **',/,
-     &     '    **     Limits (nodes, elements): none as of 17.9.3',
-     &     '               **',/,
      &     '    **                                             ',
      &     '                  **',/,
      &     '    ***********************************************',

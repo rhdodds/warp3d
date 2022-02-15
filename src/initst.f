@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/19/2021 rhd              *
+c     *                   last modified : 2/15/2022 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -129,7 +129,6 @@ c         ascii data packet file:       96
 c         binary data packet file:      97
 c         binary results file:          98
 c         formatted results file:       99
-
 c
 c
 c                       initialize scan
