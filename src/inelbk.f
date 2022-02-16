@@ -359,22 +359,38 @@ c            call die_abort
          call inelbk_load_block_props( felem )                                  
       end do ! on element                                                       
 c                                                                               
-c                     simplest assignment of blocks to domains.                 
+c                     simplest assignment of blocks to domains using
+c                     round-robin.             
 c                     probably works well if user optimized element             
 c                     number in code like Patran                                
-c                                                                               
-      if( auto_domains ) then                                                   
-        auto_num_domains = 1                                                    
-        if( use_mpi ) auto_num_domains = numprocs                               
-        lblk = 1                                                                
-        blks_per_domain = nelblk / auto_num_domains                             
-        do idomain = 1, auto_num_domains                                        
-          hblk = min( nelblk, idomain * blks_per_domain )                       
-          if( idomain .eq. auto_num_domains ) hblk = nelblk                     
-          elblks(2,lblk:hblk) = idomain - 1                                     
-          lblk = hblk + 1                                                       
-        end do                                                                  
-      end if                                                                    
+c      
+                                                                       
+      if( auto_domains ) then     
+        if( .not. use_mpi ) then
+           elblks(2,:) = 0
+        else
+          auto_num_domains = 0
+          do i = 1, nelblk
+            elblks(2,i) = auto_num_domains
+            auto_num_domains = auto_num_domains + 1
+            if( auto_num_domains + 1 > numprocs ) auto_num_domains = 0
+          end do
+        end if
+      end if
+! 
+!                   old algorithm: discontinued Feb 16, 2022
+!
+!        auto_num_domains = 1                                                    
+!        if( use_mpi ) auto_num_domains = numprocs                               
+!        lblk = 1                                                                
+!        blks_per_domain = real(nelblk) / real(auto_num_domains) + 1.0                             
+!        do idomain = 1, auto_num_domains                                        
+!          hblk = min( nelblk, idomain * blks_per_domain )                       
+!          if( idomain .eq. auto_num_domains ) hblk = nelblk                     
+!          elblks(2,lblk:hblk) = idomain - 1                                     
+!          lblk = hblk + 1                                                       
+!        end do                                                                  
+!      end if                                                                    
 c                                                                               
 c                     display blocking table if requested                       
 c                                                                               
@@ -387,13 +403,13 @@ c
       write(out,*) ' '                                                          
 c                                                                               
       if( .not. use_mpi ) return                                                
-      counts_blks_ea_domain(0:max_procs-1,1:2) = 0                              
+      counts_blks_ea_domain = 0                              
       do blk = 1, nelblk                                                        
        domain = elblks(2,blk)                                                   
        counts_blks_ea_domain(domain,1) =                                        
      &        counts_blks_ea_domain(domain,1) + 1                               
        counts_blks_ea_domain(domain,2) =                                        
-     &        counts_blks_ea_domain(domain,2) + elblks(0,domain)                
+     &        counts_blks_ea_domain(domain,2) + elblks(0,blk)                
       end do                                                                    
       write(out,9030)                                                           
       write(out,9040)                                                           
@@ -413,7 +429,7 @@ c
  9020 format(1x,i8, 10x,i9,25x,i4,10x,i6)                                       
  9030 format(/,'>> Domain statistics:')                                         
  9040 format(/,5x,'domain     # element blks    total # elements' )             
- 9050 format(5x,i5,8x,i4,13x,i7)                                                
+ 9050 format(5x,i6,8x,i6,13x,i10)                                                
                                                                                 
                                                                                 
       contains                                                                  
