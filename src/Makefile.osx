@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 2/15/2022 rhd
+#   Last modifications: 2/16/2022 rhd
 #
 #   How to run:
 #
@@ -144,8 +144,10 @@ else  #  Intel Fortran options
               ${OSX_LIBDIR}/libiomp5.a \
               ${OSX_LIBDIR}/libmkl_intel_lp64.a \
               ${OSX_LIBDIR}/libmkl_intel_thread.a \
-              ${OSX_LIBDIR}/libmkl_core.a 
-  LINKOPS   = $(LINKOPS2)
+              ${OSX_LIBDIR}/libmkl_core.a \
+              -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib   
+#                ^^^ may not be needed on some MacOS versions
+  LINKOPS   = $(LINKOPS2) 
   ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \

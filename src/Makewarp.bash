@@ -566,7 +566,7 @@ touch main_program.f
 
 #****************************************************************************
 #
-#     Function:   Global defaults and tests for Mac OS X  - OpenMP only
+#     Function:   Global defaults and tests for MacOS  - OpenMP only
 #
 # ****************************************************************************
 function mac_main
@@ -639,8 +639,8 @@ function compile_mac
 #
 printf " \n"
 printf ".... This Mac appears configured properly to build WARP3D\n"
-printf ".... Compiling WARP3D for Mac OS\n"
-printf ".... Installing WARP3D packages for Mac OS..\n"
+printf ".... Compiling WARP3D for MacOS\n"
+printf ".... Installing WARP3D packages for MacOS..\n"
 #
 # modify source code to install or unistall WARP3D packages for Mac OS X.
 #
@@ -671,13 +671,16 @@ touch main_program.f   # so the compile date is always current
 #
 # run the makefile for Mac OS
 #
-printf "... Starting make program for Mac OS.... \n"
+printf "... Starting make program for MacOS.... \n"
 #
 if [ "$INTEL_FORTRAN" = "yes" ]; then
+  printf "... Note: ignore Linker messages: ipo: warning #11109: unable to ..."
+  printf "\n\n"
   make  BUILD_SYS=Intel -j $JCOMP -f Makefile.osx
 fi
 if [ "$GFORTRAN" = "yes" ]; then
-   make  BUILD_SYS=gfortran -j $JCOMP -f Makefile.osx
+  printf "\n\n"
+  make  BUILD_SYS=gfortran -j $JCOMP -f Makefile.osx
 fi
 #
 }
