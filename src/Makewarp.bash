@@ -81,8 +81,8 @@ exit 1
 ifort --version >zqq03
 sed -i -e '2,10d' zqq03
 echo -e "\n ... Intel Fortran detected:" `cat zqq03`
-count2=`grep "2021.3" zqq03 |wc -l`
-count3=`grep "2021.4" zqq03 |wc -l`
+count2=`grep "2021." zqq03 |wc -l`
+count3=`grep "2022." zqq03 |wc -l`
 /bin/rm zqq03*
 ok=0
 if [ $count2 -eq "1" ]; then
@@ -93,7 +93,7 @@ if [ $count3 -eq "1" ]; then
 fi
 if [ $ok -eq "0" ]; then
     printf "\n... ERROR: ifort must be one of these versions:"
-    printf "\n... 2021.3 or newer"
+    printf "\n... 2021..1 or newer"
     printf "\n... other versions have known bugs that affect WARP3D"
     printf "\n... Quitting...\n\n"
     exit 1
